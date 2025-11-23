@@ -1,141 +1,177 @@
 
-import { User, WorkItem, Category, Connection } from './types';
+import { User, Association, WorkItemB2B, ActivityLog, SystemHealth, AssociationDetail } from './types';
 
 export const MOCK_DB = {
-  user: {
-    id: 'u-cristiano-001',
-    name: 'Cristiano',
-    role: 'Gestor da Vida',
-    phone: '12345',
-    credits_balance: 2450,
-    user_status: 'connected',
+  currentUser: {
+    id: 'admin-01',
+    name: 'Gestor Sênior',
+    role: 'Admin do Sistema',
+    phone: '0000',
+    email: 'gestor@aica.system',
+    avatar_url: 'GS'
   } as User,
 
-  categories: [
+  // ZONA 1: KPI DATA
+  kpi: {
+    totalAssociations: 42,
+    activeUsers: 158,
+    creditsUsed: 14500,
+    creditsTotal: 20000,
+    activeUsersTrend: 12, // +12%
+    assocTrend: 5, // +5%
+  },
+
+  systemHealth: {
+    syncSuccessRate: 98.5,
+    failedSyncs: 3,
+    activeWebhooks: 12,
+  } as SystemHealth,
+
+  // ZONA 2: ANALYTICS DATA
+  workloadDistribution: {
+    backlog: 45,
+    todo: 32,
+    in_progress: 28,
+    review: 12,
+    done: 156 // Completed this cycle
+  },
+
+  priorityDistribution: {
+    urgent: 8,
+    high: 15,
+    medium: 42,
+    low: 20
+  },
+
+  // DATA FOR ASSOCIATIONS VIEW
+  associationsList: [
     {
-      id: 'cat-finance',
-      name: 'Finanças',
-      type: 'finance',
-      colorBg: 'bg-emerald-500',
-      colorText: 'text-emerald-600',
-      iconName: 'Wallet',
-      description: 'Contas'
+      id: 'asc-01',
+      name: 'Assoc. Moradores Gávea',
+      cnpj: '12.345.678/0001-90',
+      workspaceSlug: 'amagapa-ws',
+      membersCount: 145,
+      syncStatus: 'synced',
+      lastSync: '2 min atrás',
+      healthScore: 98,
+      projectsCount: 4
     },
     {
-      id: 'cat-health',
-      name: 'Saúde',
-      type: 'health',
-      colorBg: 'bg-orange-500',
-      colorText: 'text-orange-600',
-      iconName: 'Heart',
-      description: 'Corpo'
+      id: 'asc-02',
+      name: 'ONG Pedrinho Social',
+      cnpj: '98.765.432/0001-10',
+      workspaceSlug: 'pedrinho-social',
+      membersCount: 23,
+      syncStatus: 'failed',
+      lastSync: '4 horas atrás',
+      healthScore: 65,
+      projectsCount: 2
     },
     {
-      id: 'cat-work',
-      name: 'Associações',
-      type: 'work',
-      colorBg: 'bg-blue-600',
-      colorText: 'text-blue-600',
-      iconName: 'Building2',
-      description: 'Projetos'
+      id: 'asc-03',
+      name: 'Cond. Edifício Solar',
+      cnpj: '45.123.789/0001-55',
+      workspaceSlug: 'ed-solar',
+      membersCount: 89,
+      syncStatus: 'synced',
+      lastSync: '10 min atrás',
+      healthScore: 92,
+      projectsCount: 3
     },
     {
-      id: 'cat-education',
-      name: 'Educação',
-      type: 'education',
-      colorBg: 'bg-purple-600',
-      colorText: 'text-purple-600',
-      iconName: 'BookOpen',
-      description: 'Estudos'
+      id: 'asc-04',
+      name: 'Assoc. Com. Vila Nova',
+      cnpj: '33.444.555/0001-22',
+      workspaceSlug: 'vila-nova',
+      membersCount: 310,
+      syncStatus: 'pending',
+      lastSync: '1 hora atrás',
+      healthScore: 88,
+      projectsCount: 6
+    },
+    {
+      id: 'asc-05',
+      name: 'Instituto Tech For Good',
+      cnpj: '11.222.333/0001-44',
+      workspaceSlug: 'tech-good',
+      membersCount: 12,
+      syncStatus: 'synced',
+      lastSync: '5 min atrás',
+      healthScore: 100,
+      projectsCount: 1
     }
-  ] as Category[],
+  ] as AssociationDetail[],
 
-  work_items: [
-    // MANHÃ
+  // ZONA 3: RISK RADAR (Exceções)
+  riskItems: [
     {
-      id: 't-01',
-      title: 'Caminhada',
-      description: 'Parque',
-      categoryId: 'cat-health',
-      priority: 'medium',
-      isCompleted: true,
-      startTime: '07:00',
-      endTime: '08:00',
-      durationLabel: '1h'
-    },
-    {
-      id: 't-02',
-      title: 'Cloro na Caixa D\'água',
-      description: 'Manutenção casa',
-      categoryId: 'cat-health', 
+      id: 'wi-102',
+      title: 'Renovação Certificado Digital',
+      associationName: 'Assoc. Moradores Gávea',
+      state: 'todo',
       priority: 'urgent',
-      isCompleted: false,
-      startTime: '09:00',
-      endTime: '10:00',
-      durationLabel: '1h'
+      dueDate: '2023-10-24', // Past date
+      assigneeName: 'Carlos Fin.',
+      isOverdue: true,
+      syncStatus: 'synced'
     },
-
-    // ALMOÇO/MEIO DIA - FINANCEIRO
     {
-      id: 't-07',
-      title: 'Pagar Internet',
-      description: 'Vencimento hoje',
-      categoryId: 'cat-finance',
-      priority: 'urgent',
-      isCompleted: true,
-      startTime: '12:00',
-      endTime: '12:30',
-      durationLabel: '30min'
-    },
-
-    // TARDE - TRABALHO
-    {
-      id: 't-03',
-      title: 'Reunião Diretoria',
-      description: 'AMAGAPA',
-      categoryId: 'cat-work',
+      id: 'wi-105',
+      title: 'Sync Falhou: Lote de Faturas',
+      associationName: 'ONG Pedrinho',
+      state: 'in_progress',
       priority: 'high',
-      isCompleted: false,
-      startTime: '14:00',
-      endTime: '15:30',
-      durationLabel: '1h 30min'
+      dueDate: '2023-10-26',
+      assigneeName: 'Sistema',
+      isOverdue: false,
+      syncStatus: 'failed'
     },
     {
-      id: 't-04',
-      title: 'Vistoria Rua Zola',
-      description: 'Verificar limpeza',
-      categoryId: 'cat-work',
-      priority: 'medium',
-      isCompleted: false,
-      startTime: '16:00',
-      endTime: '17:00',
-      durationLabel: '1h'
-    },
-
-    // NOITE - EDUCAÇÃO & SAÚDE
-    {
-      id: 't-05',
-      title: 'Aula Inglês',
-      description: 'Verbo To Be',
-      categoryId: 'cat-education',
-      priority: 'high',
-      isCompleted: false,
-      startTime: '18:00',
-      endTime: '19:00',
-      durationLabel: '1h'
-    },
-    {
-      id: 't-06',
-      title: 'Krav Maga',
-      description: 'Treino Mestre Carlos',
-      categoryId: 'cat-health',
+      id: 'wi-108',
+      title: 'Aprovação de Orçamento Obras',
+      associationName: 'Cond. Edifício Solar',
+      state: 'review',
       priority: 'urgent',
-      isCompleted: false,
-      startTime: '19:30',
-      endTime: '21:00',
-      durationLabel: '1h 30min'
-    },
-  ] as WorkItem[],
+      dueDate: '2023-10-25',
+      assigneeName: 'Ana Síndica',
+      isOverdue: true,
+      syncStatus: 'synced'
+    }
+  ] as WorkItemB2B[],
 
-  connections: [] as Connection[]
+  // ZONA 3: ACTIVITY FEED
+  recentActivity: [
+    {
+      id: 'log-1',
+      user: 'João Dev',
+      action: 'moveu para Done',
+      target: 'API Integration v2',
+      timestamp: '2 min atrás',
+      type: 'success'
+    },
+    {
+      id: 'log-2',
+      user: 'Maria Gestora',
+      action: 'criou novo ciclo',
+      target: 'Ciclo Outubro/24',
+      timestamp: '15 min atrás',
+      type: 'info'
+    },
+    {
+      id: 'log-3',
+      user: 'Sistema',
+      action: 'falha de sincronização',
+      target: 'Plane.so Webhook',
+      timestamp: '42 min atrás',
+      type: 'warning'
+    },
+    {
+      id: 'log-4',
+      user: 'Pedro Financeiro',
+      action: 'anexou comprovante',
+      target: 'Pagamento CEMIG',
+      timestamp: '1h atrás',
+      type: 'info'
+    }
+  ] as ActivityLog[]
 };
