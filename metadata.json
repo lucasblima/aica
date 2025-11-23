@@ -1,0 +1,5 @@
+{
+  "name": "Aica",
+  "description": "Uma aplicação de gestão de tarefas acessível com alto contraste, botões grandes e suporte a text-to-speech, focado em usabilidade simplificada.",
+  "requestFramePermissions": []
+}
