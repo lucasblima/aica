@@ -13,7 +13,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (phone === '12345') {
-      onLogin(MOCK_DB.user);
+      onLogin(MOCK_DB.currentUser);
     }
   };
 

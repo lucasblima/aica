@@ -3,43 +3,68 @@ export interface User {
   id: string; 
   name: string;
   role: string;
-  phone: string; 
-  credits_balance: number;
-  user_status: 'visitor' | 'registered' | 'connected';
-  photo_url?: string;
+  phone: string;
+  avatar_url?: string;
+  email?: string;
 }
 
-export interface Category {
+// B2B Entities based on SQL Schema
+
+export interface Association {
   id: string;
   name: string;
-  type: 'finance' | 'health' | 'work' | 'education' | 'home';
-  colorBg: string; // Tailwind gradient/color class
-  colorText: string; // Tailwind text color
-  iconName: string;
-  description: string;
+  cnpj?: string;
+  isActive: boolean;
+  planeSyncStatus: 'synced' | 'pending' | 'failed';
+  membersCount: number;
 }
 
-export interface WorkItem {
+export interface AssociationDetail {
+  id: string;
+  name: string;
+  cnpj: string;
+  workspaceSlug: string;
+  membersCount: number;
+  syncStatus: 'synced' | 'pending' | 'failed';
+  lastSync: string;
+  healthScore: number; // 0-100
+  projectsCount: number;
+}
+
+export interface MetricCard {
+  label: string;
+  value: string | number;
+  trend?: number; // percentage
+  trendDirection?: 'up' | 'down' | 'neutral';
+  status?: 'success' | 'warning' | 'danger' | 'neutral';
+  iconName: string;
+}
+
+export interface WorkItemB2B {
   id: string;
   title: string;
-  description: string | null;
-  categoryId: string;
+  associationName: string;
+  state: 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
   priority: 'urgent' | 'high' | 'medium' | 'low';
-  isCompleted: boolean;
-  
-  // Timeline specific
-  startTime: string; // "HH:MM" format (24h)
-  endTime: string;   // "HH:MM" format
-  durationLabel: string; // "1h", "30min"
+  dueDate: string; // ISO Date
+  assigneeName?: string;
+  isOverdue: boolean;
+  syncStatus: 'synced' | 'failed';
 }
 
-export interface Connection {
+export interface ActivityLog {
   id: string;
-  name: string;
-  role: string;
-  initials: string;
-  status: 'online' | 'offline' | 'busy';
-  photoBg: string;
+  user: string;
+  action: string; // e.g., "moveu tarefa", "criou ciclo"
+  target: string;
+  timestamp: string; // "2 min ago"
+  type: 'success' | 'info' | 'warning';
 }
 
-export type ViewState = 'life-dashboard' | 'timeline-agenda';
+export interface SystemHealth {
+  syncSuccessRate: number; // 0-100
+  failedSyncs: number;
+  activeWebhooks: number;
+}
+
+export type ViewState = 'dashboard' | 'associations' | 'settings';
