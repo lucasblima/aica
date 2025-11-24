@@ -3,8 +3,8 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Copiar package.json e package-lock.json
-COPY package*.json ./
+# Copiar apenas package.json (ignorando lockfile do Windows para evitar erros de plataforma)
+COPY package.json ./
 
 # Instalar dependências (incluindo devDependencies para o build)
 # Usar npm install para garantir instalação de dependências nativas do Linux
