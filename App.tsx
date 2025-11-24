@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getProjects, getAllIssuesForProjects } from './src/services/planeApi';
 import { getAssociations } from './src/services/supabaseService';
+import { supabase } from './src/supabaseClient';
 import {
    transformPlaneProjectToAssociation,
    calculateWorkloadDistribution,
@@ -34,6 +35,24 @@ export default function App() {
    const [priorityDist, setPriorityDist] = useState(MOCK_DB.priorityDistribution);
 
    useEffect(() => {
+      // Check active session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+         setIsAuthenticated(!!session);
+      });
+
+      // Listen for auth changes (login, logout, etc.)
+      const {
+         data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+         setIsAuthenticated(!!session);
+      });
+
+      return () => subscription.unsubscribe();
+   }, []);
+
+   useEffect(() => {
+      if (!isAuthenticated) return;
+
       const fetchData = async () => {
          try {
             setLoading(true);
