@@ -90,6 +90,11 @@ export default function App() {
          } catch (error: any) {
             console.error("Failed to fetch dashboard data", error);
             setError(error.message || 'Erro ao carregar dados do Plane');
+
+            // Use fallback mock data to show something useful
+            setAssociations(MOCK_DB.associationsList);
+            setRiskItems(MOCK_DB.riskItems);
+            setRecentActivity(MOCK_DB.recentActivity);
          } finally {
             setLoading(false);
          }
@@ -185,22 +190,21 @@ export default function App() {
    // --- HEADER COMPONENT ---
    const Header = ({ title, subtitle }: { title: string, subtitle: string }) => (
       <header className="pt-8 px-6 pb-6 bg-white/80 backdrop-blur-md shadow-sm z-20 sticky top-0 border-b border-slate-100">
-         <div className="flex justify-between items-end">
-            <div>
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{subtitle}</p>
-               <h1 className="text-2xl font-black text-slate-800 tracking-tight">{title}</h1>
-            </div>
-            {/* Logo Fallback se a imagem não carregar */}
-            <div className="flex items-center justify-center">
+         <div className="flex justify-between items-center">
+            {/* Logo da Aica */}
+            <div className="flex items-center gap-3">
                <img
-                  src="/logo.png"
+                  src="/aica-logo.png"
                   alt="Aica"
-                  className="h-12 w-auto object-contain drop-shadow-sm"
+                  className="h-10 w-auto object-contain drop-shadow-sm"
                   onError={(e) => {
                      e.currentTarget.style.display = 'none';
-                     e.currentTarget.parentElement!.innerHTML = '<div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border-2 border-white shadow-md">A</div>';
                   }}
                />
+            </div>
+            <div className="text-right">
+               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">{subtitle}</p>
+               <h1 className="text-xl font-black text-slate-800 tracking-tight">{title}</h1>
             </div>
          </div>
       </header>
