@@ -1,5 +1,5 @@
 # Stage 1: Build do React/Vite
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -7,8 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependências (incluindo devDependencies para o build)
-# Instalar dependências (forçando devDependencies mesmo se NODE_ENV=production)
-RUN npm ci --include=dev
+# Usar npm install para garantir instalação de dependências nativas do Linux
+RUN npm install
 
 # Copiar código fonte
 COPY . .
