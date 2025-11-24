@@ -9,13 +9,12 @@ import type {
     PlaneListResponse
 } from '../types/planeTypes';
 
-const PLANE_BASE_URL = import.meta.env.VITE_PLANE_BASE_URL;
 const PLANE_API_KEY = import.meta.env.VITE_PLANE_API_KEY;
 const WORKSPACE_SLUG = import.meta.env.VITE_PLANE_WORKSPACE_SLUG;
 
-// Use proxy in development to avoid CORS issues
-const isDevelopment = import.meta.env.DEV;
-const API_BASE_URL = isDevelopment ? '' : PLANE_BASE_URL;
+// Always use relative path /api to leverage Proxy (Vite in Dev, Nginx in Prod)
+// This solves CORS issues in both environments
+const API_BASE_URL = '/api';
 
 export const planeApi = axios.create({
     baseURL: API_BASE_URL,
@@ -43,7 +42,7 @@ planeApi.interceptors.response.use(
 
 export const getWorkspaceDetails = async () => {
     try {
-        const response = await planeApi.get(`/api/v1/workspaces/${WORKSPACE_SLUG}/`);
+        const response = await planeApi.get(`/v1/workspaces/${WORKSPACE_SLUG}/`);
         return response.data;
     } catch (error) {
         console.error('Error fetching workspace details:', error);
@@ -54,7 +53,7 @@ export const getWorkspaceDetails = async () => {
 export const getWorkspaceMembers = async (): Promise<PlaneWorkspaceMember[]> => {
     try {
         const response = await planeApi.get<PlaneWorkspaceMember[]>(
-            `/api/v1/workspaces/${WORKSPACE_SLUG}/members/`
+            `/v1/workspaces/${WORKSPACE_SLUG}/members/`
         );
         return response.data;
     } catch (error) {
@@ -68,7 +67,7 @@ export const getWorkspaceMembers = async (): Promise<PlaneWorkspaceMember[]> => 
 export const getProjects = async (): Promise<PlaneListResponse<PlaneProject>> => {
     try {
         const response = await planeApi.get<PlaneListResponse<PlaneProject>>(
-            `/api/v1/workspaces/${WORKSPACE_SLUG}/projects/`
+            `/v1/workspaces/${WORKSPACE_SLUG}/projects/`
         );
         return response.data;
     } catch (error) {
@@ -80,7 +79,7 @@ export const getProjects = async (): Promise<PlaneListResponse<PlaneProject>> =>
 export const getProjectById = async (projectId: string): Promise<PlaneProject> => {
     try {
         const response = await planeApi.get<PlaneProject>(
-            `/api/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/`
+            `/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/`
         );
         return response.data;
     } catch (error) {
@@ -94,7 +93,7 @@ export const getProjectById = async (projectId: string): Promise<PlaneProject> =
 export const getIssues = async (projectId: string): Promise<PlaneListResponse<PlaneIssue>> => {
     try {
         const response = await planeApi.get<PlaneListResponse<PlaneIssue>>(
-            `/api/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/issues/`
+            `/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/issues/`
         );
         return response.data;
     } catch (error) {
@@ -127,7 +126,7 @@ export const getAllIssuesForProjects = async (projectIds: string[]): Promise<Pla
 export const getStates = async (projectId: string): Promise<PlaneListResponse<PlaneState>> => {
     try {
         const response = await planeApi.get<PlaneListResponse<PlaneState>>(
-            `/api/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/states/`
+            `/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/states/`
         );
         return response.data;
     } catch (error) {
@@ -141,7 +140,7 @@ export const getStates = async (projectId: string): Promise<PlaneListResponse<Pl
 export const getModules = async (projectId: string): Promise<PlaneListResponse<PlaneModule>> => {
     try {
         const response = await planeApi.get<PlaneListResponse<PlaneModule>>(
-            `/api/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/modules/`
+            `/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/modules/`
         );
         return response.data;
     } catch (error) {
@@ -155,7 +154,7 @@ export const getModules = async (projectId: string): Promise<PlaneListResponse<P
 export const getCycles = async (projectId: string): Promise<PlaneListResponse<PlaneCycle>> => {
     try {
         const response = await planeApi.get<PlaneListResponse<PlaneCycle>>(
-            `/api/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/cycles/`
+            `/v1/workspaces/${WORKSPACE_SLUG}/projects/${projectId}/cycles/`
         );
         return response.data;
     } catch (error) {
