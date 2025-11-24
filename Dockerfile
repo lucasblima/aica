@@ -7,7 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependências (incluindo devDependencies para o build)
-RUN npm ci
+# Instalar dependências (forçando devDependencies mesmo se NODE_ENV=production)
+RUN npm ci --include=dev
 
 # Copiar código fonte
 COPY . .
