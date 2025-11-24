@@ -18,7 +18,6 @@ steps:
       - '--platform=managed'
       - '--image=gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA'
       - '--region=$_DEPLOY_REGION'
-      - '--allow-unauthenticated' # Remova se for um app privado
 
 images:
   - 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA'
