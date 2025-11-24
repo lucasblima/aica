@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ViewState, WorkItemB2B, AssociationDetail, ActivityLog } from './types';
 import { MOCK_DB } from './constants';
 import { BottomNav } from './components/BottomNav';
+import Login from './src/components/Login';
 import {
    Building2, Users, Activity, CreditCard,
    AlertTriangle, RefreshCw,
@@ -22,16 +23,13 @@ import type { PlaneIssue } from './src/types/planeTypes';
 
 export default function App() {
    const [currentView, setCurrentView] = useState<ViewState>('dashboard');
-
-   // State for API Data
+   const [isAuthenticated, setIsAuthenticated] = useState(false);
    const [associations, setAssociations] = useState<AssociationDetail[]>([]);
    const [allIssues, setAllIssues] = useState<PlaneIssue[]>([]);
    const [riskItems, setRiskItems] = useState<WorkItemB2B[]>([]);
    const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
-
-   // Derived Metrics
    const [workload, setWorkload] = useState(MOCK_DB.workloadDistribution);
    const [priorityDist, setPriorityDist] = useState(MOCK_DB.priorityDistribution);
 
@@ -222,190 +220,201 @@ export default function App() {
                   <p className="text-slate-600 font-medium">Carregando dados do Plane...</p>
                </div>
             </div>
-         ) : error ? (
-            <div className="m-6 p-8 bg-rose-50 border border-rose-200 rounded-2xl">
-               <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
-                  <div>
-                     <h3 className="font-bold text-rose-900 mb-1">Erro ao conectar com Plane</h3>
-                     <p className="text-sm text-rose-700">{error}</p>
-                     <button
-                        onClick={() => window.location.reload()}
-                        className="mt-4 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium text-sm hover:bg-rose-700"
-                     >
-                        Tentar Novamente
-                     </button>
-                  </div>
-               </div>
-            </div>
          ) : (
-            <div className="p-6 space-y-6">
-               {/* ZONA 1: PULSE (KPIs) */}
-               <section className="grid grid-cols-2 gap-3">
-                  {/* Card: Associações */}
-                  <div className="glass-panel p-4 rounded-2xl bg-white border border-slate-100 shadow-sm relative overflow-hidden group">
-                     <div className="flex justify-between items-start mb-2">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                           <Building2 className="w-4 h-4" />
-                        </div>
-                        <div className="flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                           <ArrowUpRight className="w-3 h-3 mr-0.5" /> {MOCK_DB.kpi.assocTrend}%
-                        </div>
-                     </div>
-                     <div className="relative z-10">
-                        <span className="text-3xl font-black text-slate-800 block">{associations.length}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">Associações Ativas</span>
-                     </div>
-                  </div>
-
-                  {/* Card: Usuários */}
-                  <div className="glass-panel p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
-                     <div className="flex justify-between items-start mb-2">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                           <Users className="w-4 h-4" />
-                        </div>
-                        <div className="flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                           <ArrowUpRight className="w-3 h-3 mr-0.5" /> {MOCK_DB.kpi.activeUsersTrend}%
-                        </div>
-                     </div>
-                     <div>
-                        <span className="text-3xl font-black text-slate-800 block">{MOCK_DB.kpi.activeUsers}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">Usuários Conectados</span>
+            <>
+               {error && (
+                  <div className="mx-6 mt-6 p-6 bg-white border border-rose-100 rounded-2xl shadow-sm flex items-center gap-6 relative overflow-hidden">
+                     <div className="absolute right-0 top-0 bottom-0 w-2 bg-rose-500"></div>
+                     <img
+                        src="/error-illustration.png"
+                        alt="Connection Error"
+                        className="w-24 h-24 object-contain opacity-90"
+                     />
+                     <div className="flex-1">
+                        <h3 className="font-bold text-rose-900 text-lg mb-1">Conexão Interrompida</h3>
+                        <p className="text-sm text-slate-600 mb-3">
+                           Não foi possível sincronizar com o Plane. Exibindo dados em cache/demonstração.
+                           <br />
+                           <span className="text-xs text-rose-500 font-mono mt-1 block">{error}</span>
+                        </p>
+                        <button
+                           onClick={() => window.location.reload()}
+                           className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg font-bold text-xs hover:bg-rose-100 transition-colors flex items-center gap-2"
+                        >
+                           <RefreshCw className="w-3 h-3" /> Tentar Reconectar
+                        </button>
                      </div>
                   </div>
+               )}
 
-                  {/* Card: Sync Health */}
-                  <div className={`col-span-1 p-4 rounded-2xl border shadow-sm flex flex-col justify-between ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'bg-rose-50 border-rose-100' : 'bg-white border-slate-100'}`}>
-                     <div className="flex justify-between items-start">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'bg-white text-rose-500' : 'bg-emerald-50 text-emerald-600'}`}>
-                           <Activity className="w-4 h-4" />
+               <div className="p-6 space-y-6">
+                  {/* ZONA 1: PULSE (KPIs) */}
+                  <section className="grid grid-cols-2 gap-3">
+                     {/* Card: Associações */}
+                     <div className="glass-panel p-4 rounded-2xl bg-white border border-slate-100 shadow-sm relative overflow-hidden group">
+                        <div className="flex justify-between items-start mb-2">
+                           <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                              <Building2 className="w-4 h-4" />
+                           </div>
+                           <div className="flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                              <ArrowUpRight className="w-3 h-3 mr-0.5" /> {MOCK_DB.kpi.assocTrend}%
+                           </div>
                         </div>
-                        {MOCK_DB.systemHealth.failedSyncs > 0 && <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>}
+                        <div className="relative z-10">
+                           <span className="text-3xl font-black text-slate-800 block">{associations.length}</span>
+                           <span className="text-[10px] text-slate-500 font-medium">Associações Ativas</span>
+                        </div>
                      </div>
-                     <div>
-                        <div className="flex items-baseline gap-1">
-                           <span className={`text-2xl font-black ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'text-rose-700' : 'text-slate-800'}`}>
-                              {MOCK_DB.systemHealth.syncSuccessRate}%
+
+                     {/* Card: Usuários */}
+                     <div className="glass-panel p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                           <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                              <Users className="w-4 h-4" />
+                           </div>
+                           <div className="flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                              <ArrowUpRight className="w-3 h-3 mr-0.5" /> {MOCK_DB.kpi.activeUsersTrend}%
+                           </div>
+                        </div>
+                        <div>
+                           <span className="text-3xl font-black text-slate-800 block">{MOCK_DB.kpi.activeUsers}</span>
+                           <span className="text-[10px] text-slate-500 font-medium">Usuários Conectados</span>
+                        </div>
+                     </div>
+
+                     {/* Card: Sync Health */}
+                     <div className={`col-span-1 p-4 rounded-2xl border shadow-sm flex flex-col justify-between ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'bg-rose-50 border-rose-100' : 'bg-white border-slate-100'}`}>
+                        <div className="flex justify-between items-start">
+                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'bg-white text-rose-500' : 'bg-emerald-50 text-emerald-600'}`}>
+                              <Activity className="w-4 h-4" />
+                           </div>
+                           {MOCK_DB.systemHealth.failedSyncs > 0 && <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>}
+                        </div>
+                        <div>
+                           <div className="flex items-baseline gap-1">
+                              <span className={`text-2xl font-black ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'text-rose-700' : 'text-slate-800'}`}>
+                                 {MOCK_DB.systemHealth.syncSuccessRate}%
+                              </span>
+                           </div>
+                           <span className={`text-[10px] font-medium ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'text-rose-600' : 'text-slate-500'}`}>
+                              {MOCK_DB.systemHealth.failedSyncs > 0 ? `${MOCK_DB.systemHealth.failedSyncs} Falhas Críticas` : 'Sincronização OK'}
                            </span>
                         </div>
-                        <span className={`text-[10px] font-medium ${MOCK_DB.systemHealth.failedSyncs > 0 ? 'text-rose-600' : 'text-slate-500'}`}>
-                           {MOCK_DB.systemHealth.failedSyncs > 0 ? `${MOCK_DB.systemHealth.failedSyncs} Falhas Críticas` : 'Sincronização OK'}
-                        </span>
                      </div>
-                  </div>
 
-                  {/* Card: Credits */}
-                  <div className="glass-panel p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
-                     <div className="flex justify-between items-start mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-                           <CreditCard className="w-4 h-4" />
-                        </div>
-                     </div>
-                     <div>
-                        <div className="w-full h-1.5 bg-slate-100 rounded-full mb-2 overflow-hidden">
-                           <div className="h-full bg-amber-500" style={{ width: '72%' }}></div>
-                        </div>
-                        <span className="text-[10px] text-slate-500 font-medium block">72% de Créditos Utilizados</span>
-                     </div>
-                  </div>
-               </section>
-
-               {/* ZONA 2: CORE ANALYTICS (Flow) */}
-               <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Workload Card */}
-                  <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/50">
-                     <div className="flex justify-between items-center mb-1">
-                        <h3 className="font-bold text-slate-800">Status do Fluxo</h3>
-                        <span className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg">Items Ativos</span>
-                     </div>
-                     <StackedBarChart />
-                  </div>
-
-                  {/* Priority Card */}
-                  <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/50">
-                     <div className="flex justify-between items-center mb-1">
-                        <h3 className="font-bold text-slate-800">Radar de Urgência</h3>
-                        <span className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg">Prioridade</span>
-                     </div>
-                     <PriorityDonut />
-                  </div>
-               </section>
-
-               {/* ZONA 3: RISK RADAR & FEED */}
-               <div className="grid grid-cols-1 gap-6">
-
-                  {/* Risk Radar Table */}
-                  <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                     <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-rose-500" />
-                        <h3 className="font-bold text-slate-800 text-sm">Itens Precisando de Atenção</h3>
-                     </div>
-                     <div className="divide-y divide-slate-50">
-                        {riskItems.length > 0 ? riskItems.map(item => (
-                           <div key={item.id} className="p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
-                              <div className="flex-1 min-w-0 pr-4">
-                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className={`w-1.5 h-1.5 rounded-full ${item.priority === 'urgent' ? 'bg-red-500 animate-pulse' : 'bg-orange-500'}`}></span>
-                                    <h4 className="text-sm font-bold text-slate-800 truncate">{item.title}</h4>
-                                 </div>
-                                 <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                                    <span className="font-medium text-indigo-600 bg-indigo-50 px-1.5 rounded-md">{item.associationName}</span>
-                                    <span>•</span>
-                                    <span>{item.assigneeName}</span>
-                                    {item.isOverdue && <span className="text-rose-600 font-bold">• Atrasado</span>}
-                                 </div>
-                              </div>
-                              <div className="flex flex-col items-end gap-1">
-                                 {item.syncStatus === 'failed' ? (
-                                    <span className="flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-full border border-rose-100">
-                                       <RefreshCw className="w-3 h-3" /> Falha Sync
-                                    </span>
-                                 ) : (
-                                    <span className="text-[10px] font-medium text-slate-400 border border-slate-100 px-2 py-1 rounded-full">
-                                       {item.dueDate.split('-').reverse().slice(0, 2).join('/')}
-                                    </span>
-                                 )}
-                              </div>
+                     {/* Card: Credits */}
+                     <div className="glass-panel p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
+                           <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                              <CreditCard className="w-4 h-4" />
                            </div>
-                        )) : (
-                           <div className="p-8 text-center">
-                              <p className="text-sm text-slate-400">Nenhum item crítico no momento</p>
+                        </div>
+                        <div>
+                           <div className="w-full h-1.5 bg-slate-100 rounded-full mb-2 overflow-hidden">
+                              <div className="h-full bg-amber-500" style={{ width: '72%' }}></div>
                            </div>
-                        )}
-                     </div>
-                     <div className="px-5 py-3 bg-slate-50/50 text-center">
-                        <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Ver Todos ({allIssues.length})</button>
+                           <span className="text-[10px] text-slate-500 font-medium block">72% de Créditos Utilizados</span>
+                        </div>
                      </div>
                   </section>
 
-                  {/* Activity Feed */}
-                  <section>
-                     <h3 className="font-bold text-slate-800 text-sm mb-3 px-1">Atividade Recente</h3>
-                     <div className="relative border-l-2 border-slate-200 ml-3 space-y-6 pb-2">
-                        {recentActivity.length > 0 ? recentActivity.map((log) => (
-                           <div key={log.id} className="relative pl-6">
-                              <div className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-slate-50 ${log.type === 'success' ? 'bg-emerald-400' :
-                                 log.type === 'warning' ? 'bg-rose-400' : 'bg-blue-400'
-                                 }`}></div>
-                              <div className="flex flex-col">
-                                 <span className="text-xs text-slate-800">
-                                    <span className="font-bold">{log.user}</span> {log.action} <span className="font-medium text-slate-600">"{log.target}"</span>
-                                 </span>
-                                 <span className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> {log.timestamp}
-                                 </span>
-                              </div>
-                           </div>
-                        )) : (
-                           <div className="pl-6">
-                              <p className="text-sm text-slate-400">Nenhuma atividade recente</p>
-                           </div>
-                        )}
+                  {/* ZONA 2: CORE ANALYTICS (Flow) */}
+                  <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {/* Workload Card */}
+                     <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/50">
+                        <div className="flex justify-between items-center mb-1">
+                           <h3 className="font-bold text-slate-800">Status do Fluxo</h3>
+                           <span className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg">Items Ativos</span>
+                        </div>
+                        <StackedBarChart />
+                     </div>
+
+                     {/* Priority Card */}
+                     <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/50">
+                        <div className="flex justify-between items-center mb-1">
+                           <h3 className="font-bold text-slate-800">Radar de Urgência</h3>
+                           <span className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg">Prioridade</span>
+                        </div>
+                        <PriorityDonut />
                      </div>
                   </section>
 
+                  {/* ZONA 3: RISK RADAR & FEED */}
+                  <div className="grid grid-cols-1 gap-6">
+
+                     {/* Risk Radar Table */}
+                     <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-2">
+                           <AlertTriangle className="w-4 h-4 text-rose-500" />
+                           <h3 className="font-bold text-slate-800 text-sm">Itens Precisando de Atenção</h3>
+                        </div>
+                        <div className="divide-y divide-slate-50">
+                           {riskItems.length > 0 ? riskItems.map(item => (
+                              <div key={item.id} className="p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
+                                 <div className="flex-1 min-w-0 pr-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                       <span className={`w-1.5 h-1.5 rounded-full ${item.priority === 'urgent' ? 'bg-red-500 animate-pulse' : 'bg-orange-500'}`}></span>
+                                       <h4 className="text-sm font-bold text-slate-800 truncate">{item.title}</h4>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                       <span className="font-medium text-indigo-600 bg-indigo-50 px-1.5 rounded-md">{item.associationName}</span>
+                                       <span>•</span>
+                                       <span>{item.assigneeName}</span>
+                                       {item.isOverdue && <span className="text-rose-600 font-bold">• Atrasado</span>}
+                                    </div>
+                                 </div>
+                                 <div className="flex flex-col items-end gap-1">
+                                    {item.syncStatus === 'failed' ? (
+                                       <span className="flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-full border border-rose-100">
+                                          <RefreshCw className="w-3 h-3" /> Falha Sync
+                                       </span>
+                                    ) : (
+                                       <span className="text-[10px] font-medium text-slate-400 border border-slate-100 px-2 py-1 rounded-full">
+                                          {item.dueDate.split('-').reverse().slice(0, 2).join('/')}
+                                       </span>
+                                    )}
+                                 </div>
+                              </div>
+                           )) : (
+                              <div className="p-8 text-center">
+                                 <p className="text-sm text-slate-400">Nenhum item crítico no momento</p>
+                              </div>
+                           )}
+                        </div>
+                        <div className="px-5 py-3 bg-slate-50/50 text-center">
+                           <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Ver Todos ({allIssues.length})</button>
+                        </div>
+                     </section>
+
+                     {/* Activity Feed */}
+                     <section>
+                        <h3 className="font-bold text-slate-800 text-sm mb-3 px-1">Atividade Recente</h3>
+                        <div className="relative border-l-2 border-slate-200 ml-3 space-y-6 pb-2">
+                           {recentActivity.length > 0 ? recentActivity.map((log) => (
+                              <div key={log.id} className="relative pl-6">
+                                 <div className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-slate-50 ${log.type === 'success' ? 'bg-emerald-400' :
+                                    log.type === 'warning' ? 'bg-rose-400' : 'bg-blue-400'
+                                    }`}></div>
+                                 <div className="flex flex-col">
+                                    <span className="text-xs text-slate-800">
+                                       <span className="font-bold">{log.user}</span> {log.action} <span className="font-medium text-slate-600">"{log.target}"</span>
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                       <Clock className="w-3 h-3" /> {log.timestamp}
+                                    </span>
+                                 </div>
+                              </div>
+                           )) : (
+                              <div className="pl-6">
+                                 <p className="text-sm text-slate-400">Nenhuma atividade recente</p>
+                              </div>
+                           )}
+                        </div>
+                     </section>
+
+                  </div>
                </div>
-            </div>
+            </>
          )}
       </div>
    );
@@ -561,6 +570,10 @@ export default function App() {
          </div>
       </div>
    );
+
+   if (!isAuthenticated) {
+      return <Login onLogin={() => setIsAuthenticated(true)} />;
+   }
 
    return (
       <div className="h-[100dvh] w-full bg-slate-50 relative overflow-hidden flex flex-col font-sans">
