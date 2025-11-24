@@ -19,21 +19,23 @@ RUN npm run build
 # Stage 2: Servidor Nginx para servir arquivos estáticos
 FROM nginx:alpine
 
+# Instalar gettext para ter o comando envsubst
+RUN apk add --no-cache gettext
+
 # Copiar arquivos built da etapa anterior
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copiar configuração customizada do nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar configuração customizada do nginx (template)
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
 # Expor porta (Cloud Run usa $PORT, mas nginx usa 80 por padrão)
 EXPOSE 8080
 
 # Cloud Run espera que o servidor ouça na porta $PORT
-# Criar script para substituir a porta
+# Criar script para substituir a porta e a URL da API
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo 'export PORT=${PORT:-8080}' >> /docker-entrypoint.sh && \
-    echo 'envsubst '\''$PORT'\'' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp' >> /docker-entrypoint.sh && \
-    echo 'mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
+    echo 'envsubst '\''$PORT $VITE_PLANE_BASE_URL'\'' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
     echo 'nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 
