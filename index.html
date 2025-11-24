@@ -1,98 +1,45 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>AICA - Life OS</title>
-    
-    <!-- CSS Reset / Fallback para evitar tela preta se o JS falhar -->
-    <style>
-      body {
-        background-color: #f8fafc; /* Slate-50 */
-        color: #0f172a; /* Slate-900 */
-        font-family: sans-serif;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
-            },
-            colors: {
-              'aurora-blue': '#6366f1',
-              'aurora-purple': '#a855f7',
-              'aurora-teal': '#14b8a6',
-            },
-            animation: {
-              'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
-              'scale-in': 'scaleIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
-              'float': 'float 8s ease-in-out infinite',
-              'pulse-slow': 'pulseSlow 3s infinite',
-            },
-            keyframes: {
-              fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-              scaleIn: {
-                '0%': { opacity: '0', transform: 'scale(0.9)' },
-                '100%': { opacity: '1', transform: 'scale(1)' },
-              },
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-15px)' },
-              },
-              pulseSlow: {
-                '0%, 100%': { opacity: '1', transform: 'scale(1)' },
-                '50%': { opacity: '0.9', transform: 'scale(0.95)' },
-              }
-            }
-          }
-        }
-      }
-    </script>
-    
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-      
-      body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        overscroll-behavior-y: none;
-      }
-      * {
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      
-      /* Glassmorphism Utilities */
-      .glass-panel {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-      }
-    </style>
-    <script type="importmap">
-    {
-      "imports": {
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AICA - Life OS</title>
+  <style>
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      -moz-osx-font-smoothing: grayscale;
+      overscroll-behavior-y: none;
     }
-    </script>
-  </head>
-  <body class="bg-slate-50 text-slate-900 h-screen w-screen overflow-hidden selection:bg-indigo-200 selection:text-indigo-900">
-    <div id="root" class="h-full w-full relative"></div>
-  </body>
+
+    * {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+  </style>
+</head>
+
+<body
+  class="bg-slate-50 text-slate-900 h-screen w-screen overflow-hidden selection:bg-indigo-200 selection:text-indigo-900">
+  <div id="root" class="h-full w-full relative"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>
