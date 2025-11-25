@@ -190,3 +190,54 @@ export const getLifeAreas = async () => {
         throw error;
     }
 };
+
+// Send WhatsApp message (via Supabase -> Webhook -> n8n)
+export const sendMessage = async (content: string, senderId: string, matchId: string) => {
+    try {
+        const { data, error } = await supabase
+            .from('pair_conversations')
+            .insert([
+                {
+                    content,
+                    sender_id: senderId,
+                    match_id: matchId,
+                    delivered: false,
+                    moderation_status: 'pending'
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+    }
+};
+
+// Subscribe to message status updates
+export const subscribeToMessageStatus = (messageId: string, onUpdate: (status: string) => void) => {
+    return supabase
+        .channel(`message-${messageId}`)
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'pair_conversations',
+                filter: `id=eq.${messageId}`
+            },
+            (payload) => {
+                // Assuming 'moderation_status' or a new 'status' field tracks delivery
+                // The user mentioned 'status' = 'sent' in their example, but schema has 'delivered' boolean and 'moderation_status'.
+                // We will check 'delivered' boolean or 'moderation_status'.
+                // Let's assume n8n updates 'delivered' to true.
+                if (payload.new.delivered === true) {
+                    onUpdate('sent');
+                }
+            }
+        )
+        .subscribe();
+};
+
