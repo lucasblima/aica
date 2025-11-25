@@ -1,6 +1,6 @@
 
 export interface User {
-  id: string; 
+  id: string;
   name: string;
   role: string;
   phone: string;
@@ -67,4 +67,4 @@ export interface SystemHealth {
   activeWebhooks: number;
 }
 
-export type ViewState = 'dashboard' | 'associations' | 'settings';
+export type ViewState = 'vida' | 'agenda';
