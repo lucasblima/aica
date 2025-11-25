@@ -7,12 +7,14 @@ import {
    ChevronRight, X
 } from 'lucide-react';
 import { supabase } from './src/supabaseClient';
-import { getAssociations } from './src/services/supabaseService';
+import { getAssociations, getDailyAgenda, getLifeAreas } from './src/services/supabaseService';
 
 export default function App() {
    const [currentView, setCurrentView] = useState<ViewState>('vida');
    const [isAuthenticated, setIsAuthenticated] = useState(false);
    const [associations, setAssociations] = useState<AssociationDetail[]>([]);
+   const [agenda, setAgenda] = useState<any[]>([]);
+   const [lifeAreas, setLifeAreas] = useState<any[]>([]);
    const [showSettings, setShowSettings] = useState(false);
 
    // Auth check
@@ -30,20 +32,27 @@ export default function App() {
       return () => subscription.unsubscribe();
    }, []);
 
-   // Fetch associations when authenticated
+   // Fetch data when authenticated
    useEffect(() => {
       if (!isAuthenticated) return;
 
-      const fetchAssociations = async () => {
+      const fetchData = async () => {
          try {
-            const data = await getAssociations();
-            setAssociations(data as any);
+            const [assocs, daily, areas] = await Promise.all([
+               getAssociations(),
+               getDailyAgenda(),
+               getLifeAreas()
+            ]);
+
+            setAssociations(assocs as any);
+            setAgenda(daily as any);
+            setLifeAreas(areas as any);
          } catch (error) {
-            console.error('Error fetching associations:', error);
+            console.error('Error fetching data:', error);
          }
       };
 
-      fetchAssociations();
+      fetchData();
    }, [isAuthenticated]);
 
    const handleMicClick = () => {
@@ -52,92 +61,103 @@ export default function App() {
       alert('🎤 Integração de voz em breve!');
    };
 
+   // Helper to find module/area by name (case insensitive partial match)
+   const findArea = (name: string) => {
+      return lifeAreas.find(area => area.name.toLowerCase().includes(name.toLowerCase()));
+   };
+
    // ==================== MINHA VIDA VIEW ====================
-   const renderVida = () => (
-      <div className="flex flex-col w-full pb-32 animate-fade-in-up min-h-screen bg-gradient-to-b from-slate-50 to-white">
-         {/* Header */}
-         <header className="pt-8 px-6 pb-6">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">LIFE OS</p>
-            <h1 className="text-3xl font-black text-slate-800">Minha Vida</h1>
-         </header>
+   const renderVida = () => {
+      const financeArea = findArea('finan') || { name: 'Finanças', description: 'Sem dados' };
+      const healthArea = findArea('saúde') || findArea('bem-estar') || { name: 'Saúde & Bem-estar', description: 'Sem dados' };
+      const educationArea = findArea('educa') || { name: 'Educação', description: 'Sem dados' };
 
-         <div className="px-6 space-y-4">
-            {/* Finanças Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
-               <Wallet className="absolute right-4 top-4 w-24 h-24 opacity-20" />
-               <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                     <Wallet className="w-5 h-5" />
-                     <span className="text-xs font-bold uppercase tracking-wide opacity-90">Finanças</span>
-                  </div>
-                  <h2 className="text-2xl font-black mb-1">Mensalidades em dia</h2>
-                  <div className="flex items-center gap-1 text-sm opacity-90">
-                     <span className="w-2 h-2 rounded-full bg-white"></span>
-                     Próximo vencimento: 05/Dez
-                  </div>
-               </div>
-            </div>
+      return (
+         <div className="flex flex-col w-full pb-32 animate-fade-in-up min-h-screen bg-gradient-to-b from-slate-50 to-white">
+            {/* Header */}
+            <header className="pt-8 px-6 pb-6">
+               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">LIFE OS</p>
+               <h1 className="text-3xl font-black text-slate-800">Minha Vida</h1>
+            </header>
 
-            {/* Saúde Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-lg">
-               <Heart className="absolute right-4 top-4 w-24 h-24 opacity-20" />
-               <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                     <Heart className="w-5 h-5" />
-                     <span className="text-xs font-bold uppercase tracking-wide opacity-90">Saúde & Bem-estar</span>
-                  </div>
-                  <h2 className="text-2xl font-black mb-1">Fazer Mega 10k</h2>
-                  <div className="mt-2 text-sm opacity-90">
-                     Meta de atividade física
-                  </div>
-               </div>
-            </div>
-
-            {/* Associações Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
-               <Building2 className="absolute right-4 top-4 w-24 h-24 opacity-20" />
-               <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                     <Building2 className="w-5 h-5" />
-                     <span className="text-xs font-bold uppercase tracking-wide opacity-90">Minhas Associações</span>
-                  </div>
-                  <h2 className="text-2xl font-black mb-2">
-                     {associations.length > 0 ? associations.length : '...'} Associações
-                  </h2>
-                  {associations.length > 0 && (
-                     <div className="space-y-1 text-sm opacity-90">
-                        {associations.slice(0, 2).map(assoc => (
-                           <div key={assoc.id} className="flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                              {assoc.name}
-                           </div>
-                        ))}
+            <div className="px-6 space-y-4">
+               {/* Finanças Card */}
+               <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
+                  <Wallet className="absolute right-4 top-4 w-24 h-24 opacity-20" />
+                  <div className="relative z-10">
+                     <div className="flex items-center gap-2 mb-2">
+                        <Wallet className="w-5 h-5" />
+                        <span className="text-xs font-bold uppercase tracking-wide opacity-90">Finanças</span>
                      </div>
-                  )}
-               </div>
-            </div>
-
-            {/* Educação Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg">
-               <BookOpen className="absolute right-4 top-4 w-24 h-24 opacity-20" />
-               <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                     <BookOpen className="w-5 h-5" />
-                     <span className="text-xs font-bold uppercase tracking-wide opacity-90">Educação</span>
-                  </div>
-                  <h2 className="text-2xl font-black mb-2">Inglês Comunitário</h2>
-                  <div className="flex items-center gap-3">
-                     <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-                        <div className="h-full bg-white rounded-full" style={{ width: '85%' }}></div>
+                     <h2 className="text-2xl font-black mb-1">{financeArea.name !== 'Finanças' ? financeArea.name : 'Mensalidades em dia'}</h2>
+                     <div className="flex items-center gap-1 text-sm opacity-90">
+                        <span className="w-2 h-2 rounded-full bg-white"></span>
+                        {financeArea.description || 'Próximo vencimento: 05/Dez'}
                      </div>
-                     <span className="text-2xl font-black">85%</span>
                   </div>
-                  <p className="text-xs mt-1 opacity-80">Concluído</p>
+               </div>
+
+               {/* Saúde Card */}
+               <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-lg">
+                  <Heart className="absolute right-4 top-4 w-24 h-24 opacity-20" />
+                  <div className="relative z-10">
+                     <div className="flex items-center gap-2 mb-2">
+                        <Heart className="w-5 h-5" />
+                        <span className="text-xs font-bold uppercase tracking-wide opacity-90">Saúde & Bem-estar</span>
+                     </div>
+                     <h2 className="text-2xl font-black mb-1">{healthArea.name !== 'Saúde & Bem-estar' ? healthArea.name : 'Fazer Mega 10k'}</h2>
+                     <div className="mt-2 text-sm opacity-90">
+                        {healthArea.description || 'Meta de atividade física'}
+                     </div>
+                  </div>
+               </div>
+
+               {/* Associações Card */}
+               <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+                  <Building2 className="absolute right-4 top-4 w-24 h-24 opacity-20" />
+                  <div className="relative z-10">
+                     <div className="flex items-center gap-2 mb-2">
+                        <Building2 className="w-5 h-5" />
+                        <span className="text-xs font-bold uppercase tracking-wide opacity-90">Minhas Associações</span>
+                     </div>
+                     <h2 className="text-2xl font-black mb-2">
+                        {associations.length > 0 ? associations.length : '...'} Associações
+                     </h2>
+                     {associations.length > 0 && (
+                        <div className="space-y-1 text-sm opacity-90">
+                           {associations.slice(0, 3).map(assoc => (
+                              <div key={assoc.id} className="flex items-center gap-1">
+                                 <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                 {assoc.name}
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+               </div>
+
+               {/* Educação Card */}
+               <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg">
+                  <BookOpen className="absolute right-4 top-4 w-24 h-24 opacity-20" />
+                  <div className="relative z-10">
+                     <div className="flex items-center gap-2 mb-2">
+                        <BookOpen className="w-5 h-5" />
+                        <span className="text-xs font-bold uppercase tracking-wide opacity-90">Educação</span>
+                     </div>
+                     <h2 className="text-2xl font-black mb-2">{educationArea.name !== 'Educação' ? educationArea.name : 'Inglês Comunitário'}</h2>
+                     <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                           <div className="h-full bg-white rounded-full" style={{ width: `${educationArea.progress_percentage || 85}%` }}></div>
+                        </div>
+                        <span className="text-2xl font-black">{educationArea.progress_percentage || 85}%</span>
+                     </div>
+                     <p className="text-xs mt-1 opacity-80">Concluído</p>
+                  </div>
                </div>
             </div>
          </div>
-      </div>
-   );
+      );
+   };
 
    // ==================== MEU DIA VIEW ====================
    const renderAgenda = () => (
@@ -159,57 +179,43 @@ export default function App() {
 
          <div className="p-6">
             {/* Timeline */}
-            <div className="space-y-2">
-               {/* 12:00 */}
-               <div className="flex gap-4">
-                  <div className="w-16 text-xs font-medium text-slate-400 pt-3">12:00</div>
-                  <div className="flex-1 rounded-2xl p-4 bg-gradient-to-r from-emerald-400 to-teal-500 text-white shadow">
-                     <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase opacity-90">12:00 - 12:30</span>
-                     </div>
-                     <h3 className="font-bold text-sm">Almoço</h3>
+            <div className="space-y-4">
+               {agenda.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400">
+                     <p>Nenhuma tarefa para hoje.</p>
                   </div>
-               </div>
+               ) : (
+                  agenda.map((item, index) => {
+                     // Mock times based on index since DB doesn't have time
+                     const startHour = 12 + index;
+                     const endHour = startHour + 1;
+                     const isNow = index === 1; // Mock "Now" for demo
 
-               {/* 13:00 - Now */}
-               <div className="flex gap-4">
-                  <div className="w-16 text-xs font-medium text-slate-400 pt-3">13:00</div>
-                  <div className="flex-1 rounded-2xl p-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow relative">
-                     <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded">
-                        AGORA
-                     </div>
-                     <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase opacity-90">13:00 - 14:30</span>
-                     </div>
-                     <h3 className="font-bold text-sm">Reunião Diretoria AMAGAPA</h3>
-                  </div>
-               </div>
-
-               {/* 15:00 */}
-               <div className="flex gap-4">
-                  <div className="w-16 text-xs font-medium text-slate-400 pt-3">15:00</div>
-                  <div className="flex-1 rounded-2xl p-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow">
-                     <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase opacity-90">15:00 - 16:00</span>
-                     </div>
-                     <h3 className="font-bold text-sm">Vistoria Limpeza</h3>
-                  </div>
-               </div>
-
-               {/* 18:00 */}
-               <div className="flex gap-4">
-                  <div className="w-16 text-xs font-medium text-slate-400 pt-3">18:00</div>
-                  <div className="flex-1 rounded-2xl p-4 bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow">
-                     <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase opacity-90">18:00 - 19:00</span>
-                     </div>
-                     <h3 className="font-bold text-sm">Inglês Comunitário</h3>
-                  </div>
-               </div>
+                     return (
+                        <div key={item.id} className="flex gap-4">
+                           <div className="w-16 text-xs font-medium text-slate-400 pt-3">{startHour}:00</div>
+                           <div className={`flex-1 rounded-2xl p-4 text-white shadow relative ${index % 3 === 0 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
+                                 index % 3 === 1 ? 'bg-gradient-to-r from-blue-500 to-indigo-600' :
+                                    'bg-gradient-to-r from-purple-500 to-violet-600'
+                              }`}>
+                              {isNow && (
+                                 <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded">
+                                    AGORA
+                                 </div>
+                              )}
+                              <div className="flex items-center gap-2 mb-1">
+                                 <Clock className="w-4 h-4" />
+                                 <span className="text-[10px] font-bold uppercase opacity-90">{startHour}:00 - {endHour}:00</span>
+                              </div>
+                              <h3 className="font-bold text-sm">{item.title}</h3>
+                              {item.association && (
+                                 <p className="text-xs opacity-75 mt-1">{item.association.name}</p>
+                              )}
+                           </div>
+                        </div>
+                     );
+                  })
+               )}
             </div>
          </div>
       </div>
@@ -249,8 +255,8 @@ export default function App() {
                      <p className="text-2xl font-black">{associations.length}</p>
                   </div>
                   <div>
-                     <p className="text-xs opacity-75 uppercase tracking-wide">IA Uso</p>
-                     <p className="text-2xl font-black">98%</p>
+                     <p className="text-xs opacity-75 uppercase tracking-wide">Tarefas Hoje</p>
+                     <p className="text-2xl font-black">{agenda.length}</p>
                   </div>
                </div>
             </div>
