@@ -130,3 +130,63 @@ export const getUserPlaneMapping = async (userId: string) => {
         throw error;
     }
 };
+
+// Get user profile
+export const getUserProfile = async (userId: string) => {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error(`Error fetching profile for user ${userId}:`, error);
+        throw error;
+    }
+};
+
+// Get daily agenda (work items due today or overdue)
+export const getDailyAgenda = async () => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data, error } = await supabase
+            .from('work_items')
+            .select(`
+                *,
+                association:associations(name)
+            `)
+            .or(`due_date.eq.${today},due_date.lt.${today}`) // Today or Overdue
+            .eq('archived', false)
+            .order('due_date', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching daily agenda:', error);
+        throw error;
+    }
+};
+
+// Get life areas (modules)
+export const getLifeAreas = async () => {
+    try {
+        const { data: modules, error: modulesError } = await supabase
+            .from('modules')
+            .select(`
+                *,
+                association:associations(name)
+            `)
+            .eq('archived', false);
+
+        if (modulesError) throw modulesError;
+
+        return modules || [];
+    } catch (error) {
+        console.error('Error fetching life areas:', error);
+        throw error;
+    }
+};
