@@ -195,8 +195,8 @@ export default function App() {
                         <div key={item.id} className="flex gap-4">
                            <div className="w-16 text-xs font-medium text-slate-400 pt-3">{startHour}:00</div>
                            <div className={`flex-1 rounded-2xl p-4 text-white shadow relative ${index % 3 === 0 ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
-                                 index % 3 === 1 ? 'bg-gradient-to-r from-blue-500 to-indigo-600' :
-                                    'bg-gradient-to-r from-purple-500 to-violet-600'
+                              index % 3 === 1 ? 'bg-gradient-to-r from-blue-500 to-indigo-600' :
+                                 'bg-gradient-to-r from-purple-500 to-violet-600'
                               }`}>
                               {isNow && (
                                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded">
@@ -211,6 +211,24 @@ export default function App() {
                               {item.association && (
                                  <p className="text-xs opacity-75 mt-1">{item.association.name}</p>
                               )}
+
+                              {/* WhatsApp Action Button */}
+                              <button
+                                 onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Mock sending for now since we don't have real match_ids in the mock data
+                                    // In production: handleSendMessage(item)
+                                    const confirmSend = window.confirm(`Enviar mensagem de cobrança para ${item.assignee_name || 'o responsável'} via WhatsApp?`);
+                                    if (confirmSend) {
+                                       alert('Mensagem enviada para a fila de processamento (Supabase -> n8n).');
+                                       // TODO: Call sendMessage() here
+                                    }
+                                 }}
+                                 className="mt-3 flex items-center gap-1.5 bg-white/20 hover:bg-white/30 transition-colors px-3 py-1.5 rounded-lg text-xs font-bold w-fit"
+                              >
+                                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                                 Cobrar via WhatsApp
+                              </button>
                            </div>
                         </div>
                      );
