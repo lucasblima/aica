@@ -1,26 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { ViewState, AssociationDetail } from './types';
+import { LayoutGrid, Calendar, Settings, Plus, ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, Briefcase, Globe, ArrowRight, X, CheckCircle2 } from 'lucide-react';
+import { supabase } from './src/supabaseClient';
 import { BottomNav } from './components/BottomNav';
-import Login from './src/components/Login';
 import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
-import {
-   Wallet, Heart, Building2, BookOpen, Clock, Settings as SettingsIcon,
-   ChevronRight, X, Plus, Users, ArrowLeft, LayoutGrid
-} from 'lucide-react';
-import { supabase } from './src/supabaseClient';
-import {
-   getAssociations,
-   getDailyAgenda,
-   getLifeAreas,
-   createWorkItem,
-   createAssociation,
-   createModule,
-   getAssociationModules,
-   getModuleTasks
-} from './src/services/supabaseService';
+import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
+import Login from './src/components/Login';
 
-// Module Card Component to fetch and display tasks
+// Types
+type ViewState = 'vida' | 'agenda' | 'association_detail';
+type TabState = 'personal' | 'network';
+
+// Reusable Module Card Component
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
    const [tasks, setTasks] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
@@ -33,8 +24,8 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) =>
    }, [moduleId]);
 
    return (
-      <div className="ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300">
-         <Icon className={`absolute -right-4 -bottom-4 w-32 h-32 opacity-5 ${accentColor.split(' ')[2]}`} />
+      <div className={`ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 group cursor-pointer`}>
+         <Icon className={`absolute -right-4 -bottom-4 w-32 h-32 opacity-5 ${accentColor.split(' ')[2]} group-hover:scale-110 transition-transform duration-500`} />
          <div className="relative z-10">
             <div className="flex items-center gap-2 mb-4">
                <div className="ceramic-inset p-2">
@@ -46,24 +37,24 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) =>
             <div className="space-y-2">
                {loading ? (
                   <div className="space-y-2 animate-pulse">
-                     <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                     <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                     <div className="h-4 bg-ceramic-text-secondary/10 rounded w-3/4"></div>
+                     <div className="h-4 bg-ceramic-text-secondary/10 rounded w-1/2"></div>
                   </div>
                ) : tasks.length > 0 ? (
                   tasks.map(task => (
-                     <div key={task.id} className="flex items-start gap-2 group cursor-pointer">
-                        <div className={`mt-1.5 w-2 h-2 rounded-full ${accentColor.split(' ')[2].replace('text-', 'bg-')}`}></div>
-                        <span className="text-sm font-medium text-ceramic-text-primary line-clamp-2 group-hover:text-ceramic-text-secondary transition-colors">{task.title}</span>
+                     <div key={task.id} className="flex items-start gap-2 group/task cursor-pointer">
+                        <div className={`mt-1.5 w-2 h-2 rounded-full ${accentColor.split(' ')[1]} group-hover/task:scale-125 transition-transform`}></div>
+                        <span className="text-xs font-medium text-ceramic-text-primary line-clamp-2 group-hover/task:text-ceramic-text-secondary transition-colors">{task.title}</span>
                      </div>
                   ))
                ) : (
-                  <p className="text-xs text-ceramic-text-secondary italic">Nenhuma tarefa pendente</p>
+                  <p className="text-xs text-ceramic-text-secondary italic font-light">Nenhuma tarefa pendente</p>
                )}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-ceramic-text-secondary/10 flex justify-between items-center">
-               <span className="text-[10px] font-bold opacity-60 uppercase text-ceramic-text-secondary">Ver todos</span>
-               <ChevronRight className="w-3 h-3 opacity-60 text-ceramic-text-secondary" />
+            <div className="mt-4 pt-3 border-t border-ceramic-text-secondary/10 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+               <span className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">Ver todos</span>
+               <ChevronRight className="w-3 h-3 text-ceramic-text-secondary" />
             </div>
          </div>
       </div>
@@ -72,19 +63,18 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) =>
 
 export default function App() {
    const [currentView, setCurrentView] = useState<ViewState>('vida');
+   const [activeTab, setActiveTab] = useState<TabState>('personal');
    const [isAuthenticated, setIsAuthenticated] = useState(false);
    const [userId, setUserId] = useState<string | null>(null);
-   const [associations, setAssociations] = useState<AssociationDetail[]>([]);
+   const [associations, setAssociations] = useState<any[]>([]);
    const [agenda, setAgenda] = useState<any[]>([]);
    const [lifeAreas, setLifeAreas] = useState<any[]>([]);
    const [showSettings, setShowSettings] = useState(false);
 
-   // New Interactive State
-   const [activeTab, setActiveTab] = useState<'personal' | 'network'>('personal');
-   const [selectedAssociation, setSelectedAssociation] = useState<AssociationDetail | null>(null);
+   // Association Detail State
+   const [selectedAssociation, setSelectedAssociation] = useState<any>(null);
    const [associationModules, setAssociationModules] = useState<any[]>([]);
 
-   // Auth check
    useEffect(() => {
       supabase.auth.getSession().then(({ data: { session } }) => {
          setIsAuthenticated(!!session);
@@ -101,7 +91,6 @@ export default function App() {
       return () => subscription.unsubscribe();
    }, []);
 
-   // Fetch data when authenticated
    useEffect(() => {
       if (!isAuthenticated) return;
 
@@ -140,12 +129,11 @@ export default function App() {
       fetchData();
    }, [isAuthenticated]);
 
-   // Handle opening an association
-   const handleOpenAssociation = async (assoc: AssociationDetail) => {
+   const handleOpenAssociation = async (assoc: any) => {
       setSelectedAssociation(assoc);
       setCurrentView('association_detail');
-      // Fetch modules for this association
-      const modules = await getAssociationModules(assoc.id);
+      // Filter modules for this association
+      const modules = lifeAreas.filter(area => area.association_id === assoc.id);
       setAssociationModules(modules);
    };
 
@@ -160,23 +148,23 @@ export default function App() {
          <div className="flex justify-between items-center mb-4">
             <div>
                <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">LIFE OS</p>
-               <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">Minha Vida</h1>
+               <h1 className="text-3xl font-black text-ceramic-text-primary text-etched tracking-tight">Minha Vida</h1>
             </div>
             {/* User Profile / Settings Icon */}
          </div>
 
-         {/* Tabs */}
-         <div className="flex p-1 ceramic-inset rounded-xl">
+         {/* Tabs - Trough Effect */}
+         <div className="flex p-1 ceramic-trough rounded-full">
             <button
                onClick={() => setActiveTab('personal')}
-               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'personal' ? 'ceramic-card text-ceramic-text-primary' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+               className={`flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 ${activeTab === 'personal' ? 'ceramic-card text-ceramic-text-primary shadow-sm scale-[0.98]' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
                   }`}
             >
                Pessoal
             </button>
             <button
                onClick={() => setActiveTab('network')}
-               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'network' ? 'ceramic-card text-ceramic-text-primary' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+               className={`flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 ${activeTab === 'network' ? 'ceramic-card text-ceramic-text-primary shadow-sm scale-[0.98]' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
                   }`}
             >
                Conexões
@@ -248,62 +236,57 @@ export default function App() {
                         moduleId="education"
                         title="Educação"
                         icon={BookOpen}
-                        color="violet"
-                        accentColor="bg-violet-50 border-violet-100 text-violet-600"
+                        color="amber"
+                        accentColor="bg-amber-50 border-amber-100 text-amber-600"
+                     />
+
+                     {/* Jurídico */}
+                     <ModuleCard
+                        moduleId="legal"
+                        title="Jurídico"
+                        icon={Scale}
+                        color="slate"
+                        accentColor="bg-slate-50 border-slate-100 text-slate-600"
                      />
                   </div>
                </div>
             </div>
          );
       } else {
-         // Network Tab
+         // NETWORK TAB
          const networkAssocs = associations.filter(a => a.type !== 'personal');
 
          return (
             <div className="flex flex-col w-full pb-32 animate-fade-in-up min-h-screen bg-ceramic-base">
                {renderHeader()}
 
-               <div className="px-6 space-y-4">
+               <div className="px-6 grid grid-cols-1 gap-4">
+                  {/* Create New Association Button */}
+                  <button className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group">
+                     <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Plus className="w-5 h-5" />
+                     </div>
+                     <span className="font-bold text-sm">Criar ou Entrar em Associação</span>
+                  </button>
+
                   {networkAssocs.map(assoc => (
                      <div
                         key={assoc.id}
                         onClick={() => handleOpenAssociation(assoc)}
-                        className="ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 cursor-pointer"
+                        className="ceramic-card p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group"
                      >
-                        <Building2 className="absolute right-4 top-4 w-24 h-24 opacity-5 text-ceramic-text-primary" />
-                        <div className="relative z-10">
-                           <div className="flex items-center gap-2 mb-2">
-                              <div className="ceramic-inset p-2">
-                                 <Building2 className="w-5 h-5 text-ceramic-text-primary" />
-                              </div>
-                              <span className="text-xs font-bold uppercase tracking-wide text-ceramic-text-secondary">Associação</span>
+                        <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
+                              <Users className="w-6 h-6 text-ceramic-text-primary" />
                            </div>
-                           <h2 className="text-2xl font-black mb-2 text-ceramic-text-primary text-etched">{assoc.name}</h2>
-                           <p className="text-sm text-ceramic-text-secondary">{assoc.description}</p>
+                           <div>
+                              <h3 className="font-bold text-lg text-ceramic-text-primary text-etched">{assoc.name}</h3>
+                              <p className="text-xs text-ceramic-text-secondary font-light">{assoc.description || 'Sem descrição'}</p>
+                           </div>
                         </div>
+                        <ChevronRight className="w-5 h-5 text-ceramic-text-secondary group-hover:translate-x-1 transition-transform" />
                      </div>
                   ))}
-
-                  {/* Add Association Button */}
-                  <button
-                     onClick={async () => {
-                        const name = prompt('Nome da Associação (ex: AMAGAPA):');
-                        if (name) {
-                           await createAssociation({
-                              name,
-                              description: 'Nova associação',
-                              type: 'association'
-                           });
-                           // Refresh
-                           const assocs = await getAssociations();
-                           setAssociations(assocs as any);
-                        }
-                     }}
-                     className="w-full py-4 ceramic-inset rounded-3xl text-ceramic-text-secondary font-bold flex items-center justify-center gap-2 hover:text-ceramic-text-primary transition-colors"
-                  >
-                     <Users className="w-5 h-5" />
-                     Criar/Entrar em Associação
-                  </button>
                </div>
             </div>
          );
@@ -315,156 +298,117 @@ export default function App() {
       if (!selectedAssociation) return null;
 
       return (
-         <div className="flex flex-col w-full pb-32 animate-fade-in-right min-h-screen bg-ceramic-base">
+         <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32 animate-fade-in-up">
             {/* Header */}
-            <header className="pt-8 px-6 pb-6 bg-ceramic-base">
+            <div className="pt-8 px-6 pb-6">
                <button
                   onClick={() => setCurrentView('vida')}
-                  className="flex items-center gap-2 text-ceramic-text-secondary font-bold mb-4 hover:text-ceramic-text-primary"
+                  className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Voltar
+                  <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
+                     <ArrowRight className="w-4 h-4 rotate-180" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
                </button>
-               <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">GERENCIAMENTO</p>
-               <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">{selectedAssociation.name}</h1>
-               <p className="text-sm text-ceramic-text-secondary mt-1">{selectedAssociation.description}</p>
-            </header>
 
-            <div className="p-6 space-y-6">
-               {/* Modules Section */}
-               <div>
-                  <h3 className="text-lg font-bold text-ceramic-text-primary mb-3 text-etched">Módulos & Rotinas</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                     {associationModules.map(module => (
-                        <div key={module.id} className="ceramic-card p-4">
-                           <h4 className="font-bold text-ceramic-text-primary">{module.name}</h4>
-                           <p className="text-xs text-ceramic-text-secondary mt-1">{module.description}</p>
-                        </div>
-                     ))}
-
-                     {/* Add Module Button */}
-                     <button
-                        onClick={async () => {
-                           const name = prompt(`Novo Módulo para ${selectedAssociation.name}:`);
-                           if (name) {
-                              await createModule({
-                                 name,
-                                 association_id: selectedAssociation.id,
-                                 description: 'Rotina da associação'
-                              });
-                              const modules = await getAssociationModules(selectedAssociation.id);
-                              setAssociationModules(modules);
-                           }
-                        }}
-                        className="ceramic-inset p-4 rounded-2xl flex flex-col items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-                     >
-                        <Plus className="w-6 h-6" />
-                        <span className="text-xs font-bold">Novo Módulo</span>
-                     </button>
+               <div className="flex items-center gap-4 mb-2">
+                  <div className="w-16 h-16 ceramic-card flex items-center justify-center">
+                     <Users className="w-8 h-8 text-ceramic-text-primary" />
+                  </div>
+                  <div>
+                     <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5">Associação</p>
+                     <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">{selectedAssociation.name}</h1>
                   </div>
                </div>
+               <p className="text-ceramic-text-secondary font-light pl-20">{selectedAssociation.description}</p>
+            </div>
 
-               {/* Quick Actions */}
-               <div>
-                  <h3 className="text-lg font-bold text-ceramic-text-primary mb-3 text-etched">Ações Rápidas</h3>
-                  <button
-                     onClick={() => {
-                        const title = prompt('Nova Tarefa/Rotina:');
-                        if (title) {
-                           createWorkItem({
-                              title,
-                              association_id: selectedAssociation.id,
-                              priority: 'high',
-                              due_date: new Date().toISOString().split('T')[0]
-                           }).then(() => alert('Tarefa criada! O n8n irá processar se configurado.'));
-                        }
-                     }}
-                     className="w-full ceramic-card py-3 rounded-xl font-bold text-ceramic-text-primary hover:scale-[1.02] transition-transform"
-                  >
-                     + Criar Rotina (Dispara n8n)
-                  </button>
-               </div>
+            {/* Modules Grid */}
+            <div className="px-6 grid grid-cols-2 gap-4">
+               {associationModules.length > 0 ? (
+                  associationModules.map(module => (
+                     <ModuleCard
+                        key={module.id}
+                        moduleId={module.id}
+                        title={module.name}
+                        icon={Briefcase} // Default icon for dynamic modules
+                        color="indigo"
+                        accentColor="bg-indigo-50 border-indigo-100 text-indigo-600"
+                     />
+                  ))
+               ) : (
+                  <div className="col-span-2 ceramic-inset p-8 text-center">
+                     <p className="text-ceramic-text-secondary font-light">Nenhum módulo configurado nesta associação.</p>
+                     <button className="mt-4 px-6 py-2 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
+                        Adicionar Módulo
+                     </button>
+                  </div>
+               )}
             </div>
          </div>
       );
    };
 
-   // ==================== MEU DIA VIEW ====================
+   // ==================== MEU DIA (AGENDA) VIEW ====================
    const renderAgenda = () => (
       <div className="flex flex-col w-full pb-32 animate-fade-in-up min-h-screen bg-ceramic-base">
-         {/* Header */}
-         <header className="pt-8 px-6 pb-6 bg-ceramic-base flex justify-between items-center">
+         <header className="pt-8 px-6 pb-6 flex justify-between items-end">
             <div>
                <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">HOJE</p>
-               <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">Meu Dia</h1>
-               <p className="text-sm text-ceramic-text-secondary font-medium mt-0.5">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+               <h1 className="text-3xl font-black text-ceramic-text-primary text-etched tracking-tight">Meu Dia</h1>
             </div>
-            <div className="flex gap-2">
-               <button
-                  onClick={() => {
-                     const title = prompt('Nova Tarefa:');
-                     if (title) {
-                        // Default to Personal Association
-                        const personalAssoc = associations.find(a => a.type === 'personal');
-                        const assocId = personalAssoc?.id || associations[0]?.id;
-
-                        if (!assocId) {
-                           alert('Erro: Nenhuma associação encontrada.');
-                           return;
-                        }
-                        createWorkItem({
-                           title,
-                           association_id: assocId,
-                           priority: 'medium',
-                           due_date: new Date().toISOString().split('T')[0]
-                        }).then(() => {
-                           getDailyAgenda().then(data => setAgenda(data as any));
-                        });
-                     }
-                  }}
-                  className="w-10 h-10 ceramic-card rounded-full flex items-center justify-center text-ceramic-text-primary hover:scale-110 transition-transform"
-               >
+            <div className="flex gap-3">
+               <button className="w-10 h-10 ceramic-card flex items-center justify-center text-ceramic-text-primary hover:scale-110 transition-transform">
                   <Plus className="w-5 h-5" />
                </button>
-               <button className="w-10 h-10 ceramic-inset rounded-full flex items-center justify-center text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors">
-                  <SettingsIcon className="w-5 h-5" />
+               <button
+                  onClick={() => setShowSettings(true)}
+                  className="w-10 h-10 ceramic-card flex items-center justify-center text-ceramic-text-secondary hover:text-ceramic-text-primary hover:rotate-90 transition-all"
+               >
+                  <Settings className="w-5 h-5" />
                </button>
             </div>
          </header>
 
-         {/* Pomodoro Timer */}
-         <PomodoroTimer />
+         <div className="px-6 space-y-6">
+            {/* Pomodoro Timer */}
+            <PomodoroTimer />
 
-         {/* Timeline */}
-         <div className="px-6 mt-6 space-y-4">
-            {agenda.length === 0 ? (
-               <div className="text-center py-12">
-                  <p className="text-ceramic-text-secondary mb-2">Nenhuma tarefa para hoje.</p>
-                  <p className="text-xs text-ceramic-text-secondary opacity-60">Toque no + para adicionar</p>
-               </div>
-            ) : (
-               agenda.map((item, index) => (
-                  <div key={item.id} className="flex gap-4 animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-                     <div className="flex flex-col items-center">
-                        <div className={`w-3 h-3 rounded-full mt-2 ${item.priority === 'urgent' ? 'bg-red-500' :
-                           item.priority === 'high' ? 'bg-orange-500' : 'bg-indigo-500'
-                           }`}></div>
-                        <div className="w-0.5 h-full bg-ceramic-text-secondary/20 mt-1"></div>
+            {/* Timeline */}
+            <div className="space-y-4">
+               <h2 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider pl-2">Próximas Tarefas</h2>
+
+               {agenda.length === 0 ? (
+                  <div className="ceramic-inset p-8 text-center">
+                     <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-500/50" />
                      </div>
-                     <div className="flex-1 ceramic-card p-4 mb-2">
-                        <div className="flex justify-between items-start">
-                           <h3 className="font-bold text-ceramic-text-primary">{item.title}</h3>
-                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase">{item.association?.name}</span>
-                        </div>
-                        <p className="text-sm text-ceramic-text-secondary mt-1 line-clamp-2">{item.description}</p>
-                        <div className="flex items-center gap-2 mt-3 text-xs font-medium text-ceramic-text-secondary">
-                           <Clock className="w-3 h-3" />
-                           <span>{item.due_date ? new Date(item.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Dia todo'}</span>
-                        </div>
-                     </div>
+                     <p className="text-ceramic-text-primary font-bold">Tudo limpo por hoje!</p>
+                     <p className="text-xs text-ceramic-text-secondary mt-1 font-light">Aproveite seu tempo livre.</p>
                   </div>
-               ))
-            )}
+               ) : (
+                  agenda.map((item, index) => (
+                     <div key={item.id} className="ceramic-card p-4 flex gap-4 items-center group cursor-pointer hover:scale-[1.01] transition-transform">
+                        <div className="flex flex-col items-center min-w-[3rem]">
+                           <span className="text-xs font-bold text-ceramic-text-secondary">10:00</span>
+                           <div className="h-full w-0.5 bg-ceramic-text-secondary/10 mt-1 group-hover:bg-ceramic-accent transition-colors"></div>
+                        </div>
+                        <div className="flex-1">
+                           <h3 className="font-bold text-ceramic-text-primary text-sm group-hover:text-ceramic-text-primary transition-colors">{item.title}</h3>
+                           <div className="flex items-center gap-2 mt-1">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${item.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'}`}>
+                                 {item.priority === 'high' ? 'Prioridade' : 'Normal'}
+                              </span>
+                              <span className="text-[10px] text-ceramic-text-secondary font-light">
+                                 {new Date(item.due_date).toLocaleDateString()}
+                              </span>
+                           </div>
+                        </div>
+                        <div className="w-6 h-6 rounded-full border-2 border-ceramic-text-secondary/30 group-hover:border-ceramic-accent transition-colors"></div>
+                     </div>
+                  ))
+               )}
+            </div>
          </div>
       </div>
    );

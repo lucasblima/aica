@@ -53,20 +53,58 @@ body {
   color: #5C554B;
 }
 
+/* 1. Shadow Hygiene: Taupe/Cool Brown shadows */
 .ceramic-card {
   background-color: #F0EFE9;
   border-radius: 24px;
   box-shadow:
-    8px 8px 16px rgba(163, 158, 145, 0.4),
-    -8px -8px 16px rgba(255, 255, 255, 1.0);
+    6px 6px 12px rgba(163, 158, 145, 0.20),
+    -6px -6px 12px rgba(255, 255, 255, 0.90);
 }
 
+/* Standard Inset (Pill Shape) */
 .ceramic-inset {
   background-color: #F0EFE9;
   border-radius: 9999px;
   box-shadow:
     inset 4px 4px 8px rgba(163, 158, 145, 0.35),
     inset -4px -4px 8px rgba(255, 255, 255, 1.0);
+}
+
+/* Tray: Rectangular Inset for Grids */
+.ceramic-tray {
+  background-color: #F0EFE9;
+  border-radius: 32px;
+  box-shadow:
+    inset 4px 4px 8px rgba(163, 158, 145, 0.35),
+    inset -4px -4px 8px rgba(255, 255, 255, 1.0);
+}
+
+/* 2. Trough: Deep channel for toggles */
+.ceramic-trough {
+  background-color: #EBE9E4;
+  /* Slightly darker than body */
+  border-radius: 9999px;
+  box-shadow:
+    inset 3px 3px 6px rgba(163, 158, 145, 0.40),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.80);
+}
+
+/* 3. Groove: Sharp, milled effect for timers/bars */
+.ceramic-groove {
+  background-color: #F0EFE9;
+  box-shadow:
+    inset 2px 2px 5px rgba(163, 158, 145, 0.4),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+}
+
+/* 4. Concave: For circular buttons like Mic */
+.ceramic-concave {
+  background-color: #F0EFE9;
+  border-radius: 9999px;
+  box-shadow:
+    inset 6px 6px 12px rgba(163, 158, 145, 0.30),
+    inset -6px -6px 12px rgba(255, 255, 255, 1.0);
 }
 
 .text-etched {
