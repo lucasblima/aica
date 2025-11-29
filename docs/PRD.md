@@ -33,6 +33,14 @@
   - **Context:** AI relies on "Memories" (summarized facts) rather than raw logs.
 - **Contact Network:**
   - Tracks *last interaction date* and *relationship health* based on metadata, without storing message content.
+  - **Connections Tab:**
+    - Create and manage **Associations** and **Contacts**.
+    - Display connections as **Cards**.
+    - **Profile View:** Clicking a card opens a profile showing:
+      - Modules/Life Areas.
+      - Tasks/Work Items.
+      - Categorized Subjects.
+      - Shared Associations (for Users).
 
 ### 3.4. Emotional Intelligence
 - **Memories (The "Encrypted" Context):**

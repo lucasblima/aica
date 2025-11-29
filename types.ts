@@ -6,6 +6,17 @@ export interface User {
   phone: string;
   avatar_url?: string;
   email?: string;
+  birthDate?: string; // ISO Date YYYY-MM-DD
+}
+
+export interface LifeEvent {
+  id: string;
+  title: string;
+  description?: string;
+  weekNumber: number;
+  eventDate?: string;
+  type: 'milestone' | 'goal' | 'memory';
+  status: 'planned' | 'completed' | 'skipped';
 }
 
 // B2B Entities based on SQL Schema
@@ -29,6 +40,7 @@ export interface AssociationDetail {
   lastSync: string;
   healthScore: number; // 0-100
   projectsCount: number;
+  type: 'personal' | 'association' | 'company' | 'network';
 }
 
 export interface MetricCard {
@@ -67,4 +79,4 @@ export interface SystemHealth {
   activeWebhooks: number;
 }
 
-export type ViewState = 'vida' | 'agenda';
+export type ViewState = 'vida' | 'agenda' | 'association_detail';

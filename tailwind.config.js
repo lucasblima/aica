@@ -13,6 +13,11 @@ export default {
                 'aurora-blue': '#6366f1',
                 'aurora-purple': '#a855f7',
                 'aurora-teal': '#14b8a6',
+                'ceramic-base': '#F0EFE9',
+                'ceramic-text-primary': '#5C554B',
+                'ceramic-text-secondary': '#948D82',
+                'ceramic-accent': '#D9CBB6',
+                'ceramic-highlight': '#E6D5C3',
             },
             animation: {
                 'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
