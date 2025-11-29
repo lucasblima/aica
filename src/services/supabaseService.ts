@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from '../supabaseClient';
 
 // Fetch all associations from Supabase
 export const getAssociations = async () => {
@@ -9,6 +9,7 @@ export const getAssociations = async () => {
         id,
         name,
         description,
+        type,
         cnpj,
         plane_project_id,
         plane_workspace_slug,
@@ -187,6 +188,140 @@ export const getLifeAreas = async () => {
         return modules || [];
     } catch (error) {
         console.error('Error fetching life areas:', error);
+        throw error;
+    }
+};
+
+// Create a new work item
+export const createWorkItem = async (item: {
+    title: string;
+    association_id: string;
+    priority?: string;
+    due_date?: string;
+    module_id?: string;
+}) => {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Get default state (first one)
+        const { data: states } = await supabase
+            .from('states')
+            .select('id')
+            .eq('association_id', item.association_id)
+            .order('sequence', { ascending: true })
+            .limit(1);
+
+        const state_id = states?.[0]?.id;
+
+        const { data, error } = await supabase
+            .from('work_items')
+            .insert([{
+                ...item,
+                state_id,
+                created_by: user.id,
+                priority: item.priority || 'medium'
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error creating work item:', error);
+        throw error;
+    }
+};
+
+// Create a new module
+export const createModule = async (module: {
+    name: string;
+    association_id: string;
+    description?: string;
+}) => {
+    try {
+        const { data, error } = await supabase
+            .from('modules')
+            .insert([module])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error creating module:', error);
+        throw error;
+    }
+};
+
+// Create a new association
+export const createAssociation = async (association: {
+    name: string;
+    description?: string;
+    type: 'personal' | 'association' | 'company' | 'network';
+}) => {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { data, error } = await supabase
+            .from('associations')
+            .insert([{
+                ...association,
+                workspace_id: '11111111-1111-1111-1111-111111111111', // Default workspace for MVP
+                owner_user_id: user.id,
+                is_active: true
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Add user as admin member
+        await supabase
+            .from('association_members')
+            .insert([{
+                association_id: data.id,
+                user_id: user.id,
+                role: 'admin'
+            }]);
+
+        // Create default states for the association
+        const states = [
+            { name: 'A Fazer', color: '#EF4444', sequence: 1 },
+            { name: 'Fazendo', color: '#FBBF24', sequence: 2 },
+            { name: 'Feito', color: '#10B981', sequence: 3 }
+        ];
+
+        await supabase
+            .from('states')
+            .insert(states.map(s => ({
+                association_id: data.id,
+                entity_type: 'work_item',
+                ...s
+            })));
+
+        return data;
+    } catch (error) {
+        console.error('Error creating association:', error);
+        throw error;
+    }
+};
+
+// Get modules for a specific association
+export const getAssociationModules = async (associationId: string) => {
+    try {
+        const { data, error } = await supabase
+            .from('modules')
+            .select('*')
+            .eq('association_id', associationId)
+            .eq('archived', false)
+            .order('name');
+
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error(`Error fetching modules for association ${associationId}:`, error);
         throw error;
     }
 };
@@ -463,18 +598,61 @@ export const updateTaskMetrics = async (taskId: string, metrics: Partial<TaskMet
         if (metrics.difficulty) updateData.difficulty = metrics.difficulty;
         if (metrics.estimatedDuration) updateData.estimated_duration = metrics.estimatedDuration;
         if (metrics.actualDuration) updateData.actual_duration = metrics.actualDuration;
-        if (metrics.priorityQuadrant) updateData.priority_quadrant = metrics.priorityQuadrant;
-        if (metrics.roiScore) updateData.roi_score = metrics.roiScore;
 
         const { error } = await supabase
-            .from('task_metrics')
-            .upsert({ work_item_id: taskId, ...updateData, updated_at: new Date().toISOString() })
-            .eq('work_item_id', taskId);
+            .from('work_items')
+            .update(updateData)
+            .eq('id', taskId);
 
         if (error) throw error;
     } catch (error) {
         console.error('Error updating task metrics:', error);
         throw error;
+    }
+};
+
+// Get tasks for a specific module (Life Area)
+export const getModuleTasks = async (moduleId: string, limit: number = 3) => {
+    try {
+        // Since we might not have a dedicated 'module' column in work_items yet,
+        // we'll use a text search on title/description or tags if available.
+        // Ideally, this should use a 'module' column or a 'tags' array.
+
+        // Mapping module IDs to keywords
+        const keywords: Record<string, string[]> = {
+            'finance': ['pagar', 'compra', 'investimento', 'banco', 'cartão', 'dinheiro', 'finanças'],
+            'health': ['médico', 'exame', 'treino', 'dieta', 'saúde', 'dentista', 'terapia'],
+            'education': ['estudar', 'curso', 'aula', 'livro', 'ler', 'faculdade', 'inglês'],
+            'legal': ['contrato', 'advogado', 'processo', 'documento', 'cartório', 'lei'],
+            'community': ['reunião', 'festa', 'encontro', 'evento', 'associação', 'grupo'],
+        };
+
+        const searchTerms = keywords[moduleId] || [];
+
+        let query = supabase
+            .from('work_items')
+            .select('*')
+            .eq('archived', false)
+            .is('completed_at', null) // Only pending tasks
+            .order('created_at', { ascending: false })
+            .limit(limit);
+
+        if (searchTerms.length > 0) {
+            // Construct an OR filter for keywords
+            // ilike(column, pattern)
+            // We want: title.ilike.%term1% OR title.ilike.%term2%...
+            // Supabase 'or' syntax: 'title.ilike.%term1%,title.ilike.%term2%'
+            const orFilter = searchTerms.map(term => `title.ilike.%${term}%`).join(',');
+            query = query.or(orFilter);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error(`Error fetching tasks for module ${moduleId}:`, error);
+        return [];
     }
 };
 
@@ -609,3 +787,102 @@ export const awardAchievement = async (userId: string, achievementId: string): P
     }
 };
 
+
+// Update user profile (e.g. birth_date)
+export const updateUserProfile = async (userId: string, updates: any) => {
+    try {
+        // 1. Try to update first
+        const { data, error } = await supabase
+            .from('users')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', userId)
+            .select(); // Remove .single() to avoid error on 0 rows
+
+        if (error) throw error;
+
+        // 2. If updated successfully and found a row, return it
+        if (data && data.length > 0) {
+            return data[0];
+        }
+
+        // 3. If no row updated, user might not exist in public.users. Let's create them.
+        console.log('User not found in public.users, creating...');
+
+        // Get auth user details to populate required fields (like name)
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user || user.id !== userId) {
+            throw new Error('User context mismatch or not logged in');
+        }
+
+        // Determine name from metadata or email
+        const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+
+        // Insert new user row with required fields
+        const { data: newData, error: insertError } = await supabase
+            .from('users')
+            .insert([{
+                id: userId,
+                name: name, // Required field based on error logs
+                active: true,
+                ...updates,
+                updated_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+
+        if (insertError) throw insertError;
+        return newData;
+
+    } catch (error) {
+        console.error('Error updating user profile:', error);
+        throw error;
+    }
+};
+
+// Get life events
+export const getLifeEvents = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('life_events')
+            .select('*')
+            .order('week_number', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching life events:', error);
+        throw error;
+    }
+};
+
+// Create life event
+export const createLifeEvent = async (event: {
+    title: string;
+    description?: string;
+    week_number: number;
+    event_date?: string;
+    type?: string;
+    status?: string;
+    module?: string;
+}) => {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { data, error } = await supabase
+            .from('life_events')
+            .insert([{
+                ...event,
+                user_id: user.id
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error creating life event:', error);
+        throw error;
+    }
+};
