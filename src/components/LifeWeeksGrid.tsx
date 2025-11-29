@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Calendar, Brain, ChevronDown, ChevronUp, X, Sparkles, CheckCircle2, AlertCircle, Wallet, Heart, Users, Building2, Scale } from 'lucide-react';
 import { updateUserProfile, getLifeEvents, createLifeEvent, getUserProfile } from '../services/supabaseService';
 
@@ -30,6 +30,9 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
     const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
     const [isPlanning, setIsPlanning] = useState(false);
 
+    // Auto-scroll ref
+    const currentWeekRef = useRef<HTMLDivElement>(null);
+
     // Planning Modal State
     const [eventTitle, setEventTitle] = useState('');
     const [eventDescription, setEventDescription] = useState('');
@@ -41,6 +44,15 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
     useEffect(() => {
         loadData();
     }, [userId]);
+
+    // Auto-scroll effect
+    useEffect(() => {
+        if (isExpanded && currentWeekRef.current) {
+            setTimeout(() => {
+                currentWeekRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300); // Delay for expansion animation
+        }
+    }, [isExpanded]);
 
     const loadData = async () => {
         try {
@@ -418,8 +430,8 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                         </div>
                     </div>
 
-                    {/* Thick Progress Bar */}
-                    <div className="relative h-4 ceramic-inset rounded-full overflow-hidden">
+                    {/* Thick Progress Bar - GROOVE EFFECT */}
+                    <div className="relative h-4 ceramic-groove rounded-full overflow-hidden">
                         <div
                             className="absolute inset-y-0 left-0 bg-ceramic-text-primary rounded-full transition-all duration-1000"
                             style={{ width: `${percentLived}%` }}
@@ -451,7 +463,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                             </p>
                             <div className="flex gap-3 text-xs font-medium text-ceramic-text-secondary">
                                 <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 bg-ceramic-text-primary rounded-full"></div>
+                                    <div className="w-3 h-3 bg-[#8C867A] rounded-full"></div>
                                     <span>Vivido</span>
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -459,7 +471,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                                     <span>Agora</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 ceramic-inset rounded-full"></div>
+                                    <div className="w-3 h-3 bg-[#E3E0D8] shadow-inner rounded-full"></div>
                                     <span>Futuro</span>
                                 </div>
                             </div>
@@ -467,10 +479,17 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
 
                         {/* Grid with rows of 26 weeks (half year) */}
                         <div className="overflow-x-auto pb-4">
-                            <div className="space-y-1 min-w-max max-h-96 overflow-y-auto p-4 ceramic-inset rounded-2xl">
+                            <div className="space-y-1 min-w-max max-h-96 overflow-y-auto p-4 ceramic-tray rounded-3xl">
                                 {(() => {
+                                    // Calculate start week to show only ~3 years before current week
+                                    // 1 year = 52 weeks = 2 rows of 26
+                                    // 3 years = 6 rows
+                                    const currentRow = Math.floor((currentWeek - 1) / 26);
+                                    const startRow = Math.max(0, currentRow - 6);
+                                    const startWeekIndex = startRow * 26;
+
                                     const rows = [];
-                                    for (let i = 0; i < totalWeeks; i += 26) {
+                                    for (let i = startWeekIndex; i < totalWeeks; i += 26) {
                                         const rowWeeks = [];
                                         for (let j = 0; j < 26 && (i + j) < totalWeeks; j++) {
                                             const weekNum = i + j + 1;
@@ -484,11 +503,11 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                                     }
 
                                     return rows.map((row, rowIndex) => {
-                                        const isYearEnd = rowIndex % 2 === 1;
+                                        const isYearEnd = (startRow + rowIndex) % 2 === 1;
 
                                         return (
                                             <div
-                                                key={rowIndex}
+                                                key={startRow + rowIndex}
                                                 className={`flex gap-1 ${isYearEnd ? 'mb-3' : ''}`}
                                             >
                                                 {row.map(({ weekNum, isPast, isCurrent, event }) => {
@@ -498,16 +517,19 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                                                         const module = MODULES.find(m => m.id === event.module);
                                                         className += module ? `${module.color} hover:opacity-80 cursor-pointer shadow-sm` : "bg-amber-500 hover:bg-amber-600 cursor-pointer shadow-sm";
                                                     } else if (isCurrent) {
-                                                        className += "bg-ceramic-accent animate-pulse shadow-sm";
+                                                        className += "bg-ceramic-accent animate-pulse shadow-sm scale-125 z-10";
                                                     } else if (isPast) {
-                                                        className += "bg-ceramic-text-primary/80 hover:bg-ceramic-text-primary";
+                                                        // Past: Darker, filled peg look
+                                                        className += "bg-[#8C867A] shadow-sm";
                                                     } else {
-                                                        className += "bg-ceramic-base shadow-inner hover:bg-white/50 cursor-pointer";
+                                                        // Future: Empty hole look
+                                                        className += "bg-[#E3E0D8] shadow-inner hover:bg-white/50 cursor-pointer";
                                                     }
 
                                                     return (
                                                         <div
                                                             key={weekNum}
+                                                            ref={isCurrent ? currentWeekRef : null}
                                                             className={className}
                                                             title={event ? `${event.title} (${event.module || 'Geral'})` : `Semana ${weekNum}`}
                                                             onClick={() => {

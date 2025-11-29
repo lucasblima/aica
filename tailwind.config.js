@@ -16,7 +16,7 @@ export default {
                 'ceramic-base': '#F0EFE9',
                 'ceramic-text-primary': '#5C554B',
                 'ceramic-text-secondary': '#948D82',
-                'ceramic-accent': '#D9CBB6',
+                'ceramic-accent': '#D97706', // Glazed Amber
                 'ceramic-highlight': '#E6D5C3',
             },
             animation: {
