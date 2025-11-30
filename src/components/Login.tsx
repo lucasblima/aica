@@ -57,41 +57,53 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-600 via-violet-700 to-purple-800 relative overflow-hidden">
-            {/* Animated background blobs */}
-            <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="flex items-center justify-center min-h-screen bg-[#F0EFE9] relative overflow-hidden">
+            {/* Subtle texture overlay */}
+            <div className="absolute inset-0 opacity-5 bg-gradient-to-br from-[#5C554B] to-transparent pointer-events-none"></div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
+            {/* Login Card - Ceramic Floating Block */}
+            <div
+                className="bg-[#F0EFE9] p-10 w-full max-w-md relative z-10 rounded-[40px]"
+                style={{ boxShadow: '20px 20px 60px #bebebe, -20px -20px 60px #ffffff' }}
+            >
                 {/* Logo/Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl mb-4">
-                        <Sparkles className="w-8 h-8 text-white" />
+                    <div
+                        className="inline-flex items-center justify-center w-16 h-16 bg-[#F0EFE9] rounded-2xl mb-4"
+                        style={{ boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff' }}
+                    >
+                        <Sparkles className="w-8 h-8 text-[#5C554B]" />
                     </div>
-                    <h2 className="text-3xl font-black text-slate-800">Aica Login</h2>
-                    <p className="text-sm text-slate-500 mt-1">Entre para acessar o dashboard</p>
+                    <h2 className="text-3xl font-black text-[#5C554B]">Aica Login</h2>
+                    <p className="text-sm text-[#948D82] mt-1">Entre para acessar o dashboard</p>
                 </div>
 
                 {/* Error/Success Messages */}
                 {error && (
-                    <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-sm">
+                    <div
+                        className="mb-4 p-3 bg-[#EBE9E4] rounded-xl text-[#5C554B] text-sm"
+                        style={{ boxShadow: 'inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff' }}
+                    >
                         {error}
                     </div>
                 )}
                 {success && (
-                    <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm">
+                    <div
+                        className="mb-4 p-3 bg-[#EBE9E4] rounded-xl text-[#5C554B] text-sm"
+                        style={{ boxShadow: 'inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff' }}
+                    >
                         {success}
                     </div>
                 )}
 
-                {/* Mode Toggle */}
-                <div className="flex gap-2 mb-6">
+                {/* Mode Toggle - Ceramic Trough */}
+                <div className="flex gap-2 mb-6 p-1 ceramic-trough rounded-full">
                     <button
                         type="button"
                         onClick={() => setMode('password')}
-                        className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${mode === 'password'
-                                ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
-                                : 'bg-slate-50 text-slate-600 border-2 border-transparent hover:bg-slate-100'
+                        className={`flex-1 py-2 px-4 rounded-full font-bold text-sm transition-all ${mode === 'password'
+                                ? 'ceramic-card text-[#5C554B]'
+                                : 'text-[#948D82] hover:text-[#5C554B]'
                             }`}
                     >
                         <Lock className="w-4 h-4 inline mr-1" />
@@ -100,9 +112,9 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                     <button
                         type="button"
                         onClick={() => setMode('magic')}
-                        className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${mode === 'magic'
-                                ? 'bg-violet-100 text-violet-700 border-2 border-violet-300'
-                                : 'bg-slate-50 text-slate-600 border-2 border-transparent hover:bg-slate-100'
+                        className={`flex-1 py-2 px-4 rounded-full font-bold text-sm transition-all ${mode === 'magic'
+                                ? 'ceramic-card text-[#5C554B]'
+                                : 'text-[#948D82] hover:text-[#5C554B]'
                             }`}
                     >
                         <Sparkles className="w-4 h-4 inline mr-1" />
@@ -114,29 +126,31 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 {mode === 'password' && (
                     <form onSubmit={handlePasswordLogin} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                            <label className="block text-sm font-bold text-[#5C554B] mb-2">Email</label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#948D82]" />
                                 <input
                                     type="email"
                                     placeholder="seu@email.com"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                                    className="w-full pl-12 pr-4 py-4 bg-[#EBE9E4] text-[#5C554B] placeholder-[#948D82] rounded-2xl border-none outline-none font-medium"
+                                    style={{ boxShadow: 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff' }}
                                     required
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Senha</label>
+                            <label className="block text-sm font-bold text-[#5C554B] mb-2">Senha</label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#948D82]" />
                                 <input
                                     type="password"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                                    className="w-full pl-12 pr-4 py-4 bg-[#EBE9E4] text-[#5C554B] placeholder-[#948D82] rounded-2xl border-none outline-none font-medium"
+                                    style={{ boxShadow: 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff' }}
                                     required
                                 />
                             </div>
@@ -144,7 +158,8 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-indigo-600 to-violet-700 text-white py-3 rounded-lg font-bold hover:from-indigo-700 hover:to-violet-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-[#F0EFE9] text-[#5C554B] py-4 rounded-2xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:shadow-[inset_4px_4px_8px_#c5c5c5,inset_-4px_-4px_8px_#ffffff]"
+                            style={{ boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff' }}
                         >
                             {loading ? 'Entrando...' : 'Entrar'}
                         </button>
@@ -155,15 +170,16 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 {mode === 'magic' && (
                     <form onSubmit={handleMagicLink} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                            <label className="block text-sm font-bold text-[#5C554B] mb-2">Email</label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#948D82]" />
                                 <input
                                     type="email"
                                     placeholder="seu@email.com"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none transition"
+                                    className="w-full pl-12 pr-4 py-4 bg-[#EBE9E4] text-[#5C554B] placeholder-[#948D82] rounded-2xl border-none outline-none font-medium"
+                                    style={{ boxShadow: 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff' }}
                                     required
                                 />
                             </div>
@@ -171,24 +187,23 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-violet-600 to-purple-700 text-white py-3 rounded-lg font-bold hover:from-violet-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full bg-[#F0EFE9] text-[#5C554B] py-4 rounded-2xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:shadow-[inset_4px_4px_8px_#c5c5c5,inset_-4px_-4px_8px_#ffffff]"
+                            style={{ boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff' }}
                         >
                             <Sparkles className="w-5 h-5" />
                             {loading ? 'Enviando...' : 'Enviar Magic Link'}
                         </button>
-                        <p className="text-xs text-slate-500 text-center">
+                        <p className="text-xs text-[#948D82] text-center">
                             Você receberá um link mágico no seu email para fazer login sem senha
                         </p>
                     </form>
                 )}
 
-                {/* Divider */}
+                {/* Divider - Engraved */}
                 <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-slate-200"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="px-4 bg-white text-slate-500 font-medium">ou continue com</span>
+                    <div className="h-px bg-gradient-to-r from-transparent via-[#D9CBB6] to-transparent opacity-50"></div>
+                    <div className="relative flex justify-center -mt-3">
+                        <span className="px-4 bg-[#F0EFE9] text-[#948D82] font-medium text-sm">ou continue com</span>
                     </div>
                 </div>
 
@@ -197,7 +212,8 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                     type="button"
                     onClick={handleGoogleLogin}
                     disabled={loading}
-                    className="w-full bg-white border-2 border-slate-200 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm hover:shadow flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#F0EFE9] text-[#5C554B] py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed active:shadow-[inset_4px_4px_8px_#c5c5c5,inset_-4px_-4px_8px_#ffffff]"
+                    style={{ boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff' }}
                 >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

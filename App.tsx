@@ -4,6 +4,9 @@ import { supabase } from './src/supabaseClient';
 import { BottomNav } from './components/BottomNav';
 import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
+import { DailyTimeline } from './src/components/DailyTimeline';
+import { SettingsMenu } from './src/components/SettingsMenu';
+import { HeaderGlobal } from './src/components/HeaderGlobal';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
 import Login from './src/components/Login';
 
@@ -66,10 +69,10 @@ export default function App() {
    const [activeTab, setActiveTab] = useState<TabState>('personal');
    const [isAuthenticated, setIsAuthenticated] = useState(false);
    const [userId, setUserId] = useState<string | null>(null);
+   const [userEmail, setUserEmail] = useState<string | null>(null);
    const [associations, setAssociations] = useState<any[]>([]);
    const [agenda, setAgenda] = useState<any[]>([]);
    const [lifeAreas, setLifeAreas] = useState<any[]>([]);
-   const [showSettings, setShowSettings] = useState(false);
 
    // Association Detail State
    const [selectedAssociation, setSelectedAssociation] = useState<any>(null);
@@ -79,6 +82,7 @@ export default function App() {
       supabase.auth.getSession().then(({ data: { session } }) => {
          setIsAuthenticated(!!session);
          setUserId(session?.user?.id || null);
+         setUserEmail(session?.user?.email || null);
       });
 
       const {
@@ -86,6 +90,7 @@ export default function App() {
       } = supabase.auth.onAuthStateChange((_event, session) => {
          setIsAuthenticated(!!session);
          setUserId(session?.user?.id || null);
+         setUserEmail(session?.user?.email || null);
       });
 
       return () => subscription.unsubscribe();
@@ -142,37 +147,6 @@ export default function App() {
       return lifeAreas.find(area => area.name.toLowerCase().includes(name.toLowerCase()));
    };
 
-   // ==================== HEADER COMPONENT ====================
-   const renderHeader = () => (
-      <header className="pt-8 px-6 pb-6">
-         <div className="flex justify-between items-center mb-4">
-            <div>
-               <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">LIFE OS</p>
-               <h1 className="text-3xl font-black text-ceramic-text-primary text-etched tracking-tight">Minha Vida</h1>
-            </div>
-            {/* User Profile / Settings Icon */}
-         </div>
-
-         {/* Tabs - Trough Effect */}
-         <div className="flex p-1 ceramic-trough rounded-full">
-            <button
-               onClick={() => setActiveTab('personal')}
-               className={`flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 ${activeTab === 'personal' ? 'ceramic-card text-ceramic-text-primary shadow-sm scale-[0.98]' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
-                  }`}
-            >
-               Pessoal
-            </button>
-            <button
-               onClick={() => setActiveTab('network')}
-               className={`flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 ${activeTab === 'network' ? 'ceramic-card text-ceramic-text-primary shadow-sm scale-[0.98]' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
-                  }`}
-            >
-               Conexões
-            </button>
-         </div>
-      </header>
-   );
-
    // ==================== MINHA VIDA VIEW ====================
    const renderVida = () => {
       const personalAssoc = associations.find(a => a.type === 'personal');
@@ -181,10 +155,18 @@ export default function App() {
          const personalModules = lifeAreas.filter(m => m.association_id === personalAssoc?.id);
 
          return (
-            <div className="flex flex-col w-full pb-32 animate-fade-in-up min-h-screen bg-ceramic-base">
-               {renderHeader()}
+            <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+               <HeaderGlobal
+                  title="Minha Vida"
+                  subtitle="LIFE OS"
+                  userEmail={userEmail || undefined}
+                  onLogout={() => setIsAuthenticated(false)}
+                  showTabs={true}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+               />
 
-               <div className="px-6 space-y-4">
+               <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 space-y-4">
                   {/* Life Weeks Grid */}
                   {userId && <LifeWeeksGrid userId={userId} />}
 
@@ -249,7 +231,7 @@ export default function App() {
                         accentColor="bg-slate-50 border-slate-100 text-slate-600"
                      />
                   </div>
-               </div>
+               </main>
             </div>
          );
       } else {
@@ -292,6 +274,23 @@ export default function App() {
          );
       }
    };
+
+   // ==================== MEU DIA (AGENDA) VIEW ====================
+   const renderAgenda = () => (
+      <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+         <HeaderGlobal
+            title="Meu Dia"
+            subtitle="HOJE"
+            userEmail={userEmail || undefined}
+            onLogout={() => setIsAuthenticated(false)}
+         />
+
+         <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
+            {/* Liquid Agenda - Daily Timeline */}
+            {userId && <DailyTimeline userId={userId} />}
+         </main>
+      </div>
+   );
 
    // ==================== ASSOCIATION DETAIL VIEW ====================
    const renderAssociationDetail = () => {
@@ -349,69 +348,6 @@ export default function App() {
       );
    };
 
-   // ==================== MEU DIA (AGENDA) VIEW ====================
-   const renderAgenda = () => (
-      <div className="flex flex-col w-full pb-32 animate-fade-in-up min-h-screen bg-ceramic-base">
-         <header className="pt-8 px-6 pb-6 flex justify-between items-end">
-            <div>
-               <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">HOJE</p>
-               <h1 className="text-3xl font-black text-ceramic-text-primary text-etched tracking-tight">Meu Dia</h1>
-            </div>
-            <div className="flex gap-3">
-               <button className="w-10 h-10 ceramic-card flex items-center justify-center text-ceramic-text-primary hover:scale-110 transition-transform">
-                  <Plus className="w-5 h-5" />
-               </button>
-               <button
-                  onClick={() => setShowSettings(true)}
-                  className="w-10 h-10 ceramic-card flex items-center justify-center text-ceramic-text-secondary hover:text-ceramic-text-primary hover:rotate-90 transition-all"
-               >
-                  <Settings className="w-5 h-5" />
-               </button>
-            </div>
-         </header>
-
-         <div className="px-6 space-y-6">
-            {/* Pomodoro Timer */}
-            <PomodoroTimer />
-
-            {/* Timeline */}
-            <div className="space-y-4">
-               <h2 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider pl-2">Próximas Tarefas</h2>
-
-               {agenda.length === 0 ? (
-                  <div className="ceramic-inset p-8 text-center">
-                     <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-500/50" />
-                     </div>
-                     <p className="text-ceramic-text-primary font-bold">Tudo limpo por hoje!</p>
-                     <p className="text-xs text-ceramic-text-secondary mt-1 font-light">Aproveite seu tempo livre.</p>
-                  </div>
-               ) : (
-                  agenda.map((item, index) => (
-                     <div key={item.id} className="ceramic-card p-4 flex gap-4 items-center group cursor-pointer hover:scale-[1.01] transition-transform">
-                        <div className="flex flex-col items-center min-w-[3rem]">
-                           <span className="text-xs font-bold text-ceramic-text-secondary">10:00</span>
-                           <div className="h-full w-0.5 bg-ceramic-text-secondary/10 mt-1 group-hover:bg-ceramic-accent transition-colors"></div>
-                        </div>
-                        <div className="flex-1">
-                           <h3 className="font-bold text-ceramic-text-primary text-sm group-hover:text-ceramic-text-primary transition-colors">{item.title}</h3>
-                           <div className="flex items-center gap-2 mt-1">
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${item.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'}`}>
-                                 {item.priority === 'high' ? 'Prioridade' : 'Normal'}
-                              </span>
-                              <span className="text-[10px] text-ceramic-text-secondary font-light">
-                                 {new Date(item.due_date).toLocaleDateString()}
-                              </span>
-                           </div>
-                        </div>
-                        <div className="w-6 h-6 rounded-full border-2 border-ceramic-text-secondary/30 group-hover:border-ceramic-accent transition-colors"></div>
-                     </div>
-                  ))
-               )}
-            </div>
-         </div>
-      </div>
-   );
 
    if (!isAuthenticated) {
       return <Login onLogin={() => setIsAuthenticated(true)} />;
