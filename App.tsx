@@ -239,37 +239,47 @@ export default function App() {
          const networkAssocs = associations.filter(a => a.type !== 'personal');
 
          return (
-            <div className="flex flex-col w-full pb-32 animate-fade-in-up min-h-screen bg-ceramic-base">
-               {renderHeader()}
+            <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+               <HeaderGlobal
+                  title="Minha Vida"
+                  subtitle="LIFE OS"
+                  userEmail={userEmail || undefined}
+                  onLogout={() => setIsAuthenticated(false)}
+                  showTabs={true}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+               />
 
-               <div className="px-6 grid grid-cols-1 gap-4">
-                  {/* Create New Association Button */}
-                  <button className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group">
-                     <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Plus className="w-5 h-5" />
-                     </div>
-                     <span className="font-bold text-sm">Criar ou Entrar em Associação</span>
-                  </button>
-
-                  {networkAssocs.map(assoc => (
-                     <div
-                        key={assoc.id}
-                        onClick={() => handleOpenAssociation(assoc)}
-                        className="ceramic-card p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group"
-                     >
-                        <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
-                              <Users className="w-6 h-6 text-ceramic-text-primary" />
-                           </div>
-                           <div>
-                              <h3 className="font-bold text-lg text-ceramic-text-primary text-etched">{assoc.name}</h3>
-                              <p className="text-xs text-ceramic-text-secondary font-light">{assoc.description || 'Sem descrição'}</p>
-                           </div>
+               <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
+                  <div className="grid grid-cols-1 gap-4">
+                     {/* Create New Association Button */}
+                     <button className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group">
+                        <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                           <Plus className="w-5 h-5" />
                         </div>
-                        <ChevronRight className="w-5 h-5 text-ceramic-text-secondary group-hover:translate-x-1 transition-transform" />
-                     </div>
-                  ))}
-               </div>
+                        <span className="font-bold text-sm">Criar ou Entrar em Associação</span>
+                     </button>
+
+                     {networkAssocs.map(assoc => (
+                        <div
+                           key={assoc.id}
+                           onClick={() => handleOpenAssociation(assoc)}
+                           className="ceramic-card p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group"
+                        >
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
+                                 <Users className="w-6 h-6 text-ceramic-text-primary" />
+                              </div>
+                              <div>
+                                 <h3 className="font-bold text-lg text-ceramic-text-primary text-etched">{assoc.name}</h3>
+                                 <p className="text-xs text-ceramic-text-secondary font-light">{assoc.description || 'Sem descrição'}</p>
+                              </div>
+                           </div>
+                           <ChevronRight className="w-5 h-5 text-ceramic-text-secondary group-hover:translate-x-1 transition-transform" />
+                        </div>
+                     ))}
+                  </div>
+               </main>
             </div>
          );
       }
