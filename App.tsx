@@ -4,9 +4,9 @@ import { supabase } from './src/supabaseClient';
 import { BottomNav } from './components/BottomNav';
 import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
-import { DailyTimeline } from './src/components/DailyTimeline';
 import { SettingsMenu } from './src/components/SettingsMenu';
 import { HeaderGlobal } from './src/components/HeaderGlobal';
+import { AgendaView } from './src/views/AgendaView';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
 import Login from './src/components/Login';
 
@@ -287,19 +287,13 @@ export default function App() {
 
    // ==================== MEU DIA (AGENDA) VIEW ====================
    const renderAgenda = () => (
-      <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-         <HeaderGlobal
-            title="Meu Dia"
-            subtitle="HOJE"
+      userId ? (
+         <AgendaView
+            userId={userId}
             userEmail={userEmail || undefined}
             onLogout={() => setIsAuthenticated(false)}
          />
-
-         <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
-            {/* Liquid Agenda - Daily Timeline */}
-            {userId && <DailyTimeline userId={userId} />}
-         </main>
-      </div>
+      ) : null
    );
 
    // ==================== ASSOCIATION DETAIL VIEW ====================

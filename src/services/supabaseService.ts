@@ -199,39 +199,62 @@ export const createWorkItem = async (item: {
     priority?: string;
     due_date?: string;
     module_id?: string;
+    description?: string;
+    estimated_duration?: number;
+    priority_quadrant?: 'urgent-important' | 'important' | 'urgent' | 'low';
 }) => {
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         // Get default state (first one)
-        const { data: states } = await supabase
+        const { data: states, error: statesError } = await supabase
             .from('states')
             .select('id')
             .eq('association_id', item.association_id)
             .order('sequence', { ascending: true })
             .limit(1);
 
+        if (statesError) {
+            console.warn('[createWorkItem] Could not fetch states:', statesError);
+        }
+
         const state_id = states?.[0]?.id;
+
+        // If no state exists, we'll create the work item without a state_id
+        const workItemData = {
+            title: item.title,
+            association_id: item.association_id,
+            module_id: item.module_id || null,
+            due_date: item.due_date || null,
+            description: item.description || null,
+            estimated_duration: item.estimated_duration || null,
+            priority: item.priority || 'medium',
+            priority_quadrant: item.priority_quadrant || 'low',
+            state_id: state_id || null,
+            created_by: user.id,
+            archived: false,
+            completed_at: null
+        };
 
         const { data, error } = await supabase
             .from('work_items')
-            .insert([{
-                ...item,
-                state_id,
-                created_by: user.id,
-                priority: item.priority || 'medium'
-            }])
+            .insert([workItemData])
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('[createWorkItem] Insert error:', error);
+            throw error;
+        }
+
         return data;
     } catch (error) {
         console.error('Error creating work item:', error);
         throw error;
     }
 };
+
 
 // Create a new module
 export const createModule = async (module: {

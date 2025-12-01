@@ -1,28 +1,89 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Play, CheckCircle2, Circle, CalendarDays } from 'lucide-react';
+import { Clock, Play, CalendarDays } from 'lucide-react';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '../supabaseClient';
 import { PomodoroTimer } from './PomodoroTimer';
-
-interface TimeBlock {
-    id: string;
-    title: string;
-    startTime: string; // HH:MM format
-    duration: number; // minutes
-    priority: string;
-    association?: { name: string };
-    completed: boolean;
-}
+import { Task } from '../../types';
 
 interface DailyTimelineProps {
     userId: string;
+    tasks: Task[];
+    isLoading: boolean;
+    onRefresh: () => void;
 }
 
-export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId }) => {
+const TimelineSlot: React.FC<{ time: string; children?: React.ReactNode }> = ({ time, children }) => {
+    const { isOver, setNodeRef } = useDroppable({
+        id: `timeline-slot-${time}`,
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={`absolute left-0 right-0 border-t border-ceramic-text-secondary/10 transition-colors ${isOver ? 'bg-amber-50/50' : ''
+                }`}
+            style={{ top: children ? undefined : 0, height: '80px' }} // 80px per hour
+        >
+            {children}
+        </div>
+    );
+};
+
+const DraggableTimelineTask: React.FC<{ task: Task; style: React.CSSProperties; onClick: () => void }> = ({ task, style, onClick }) => {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id: task.id,
+    });
+
+    const dragStyle = {
+        ...style,
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 50 : 10,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={dragStyle}
+            {...listeners}
+            {...attributes}
+            className={`absolute left-0 right-0 p-3 cursor-grab active:cursor-grabbing group transition-all
+                bg-[#F7F6F4] shadow-md rounded-xl border-l-4 border-amber-400 hover:scale-[1.02]
+                ${task.completed_at ? 'opacity-50 grayscale' : ''}
+            `}
+            onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+            }}
+        >
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-ceramic-text-primary truncate">{task.title}</h4>
+                    {task.association && (
+                        <p className="text-xs text-ceramic-text-secondary truncate">{task.association.name}</p>
+                    )}
+                    <p className="text-xs text-ceramic-text-secondary font-mono mt-1">
+                        {task.scheduled_time} • {task.estimated_duration || 30}min
+                    </p>
+                </div>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onClick();
+                    }}
+                    className="flex-shrink-0 w-8 h-8 rounded-full bg-ceramic-text-primary/5 hover:bg-ceramic-text-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <Play className="w-4 h-4 text-ceramic-text-primary ml-0.5" />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId, tasks, isLoading, onRefresh }) => {
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
-    const [anyTimeTasks, setAnyTimeTasks] = useState<TimeBlock[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [activePomodoroTask, setActivePomodoroTask] = useState<TimeBlock | null>(null);
+    const [activePomodoroTask, setActivePomodoroTask] = useState<Task | null>(null);
 
     // Generate week days centered on selected date
     const getWeekDays = () => {
@@ -43,72 +104,13 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId }) => {
                 dayNumber: day.getDate(),
                 isToday,
                 isSelected,
-                taskCount: 0 // Will be populated by data
+                taskCount: 0 // Could be populated if we had data for other days
             });
         }
         return days;
     };
 
     const weekDays = getWeekDays();
-
-    useEffect(() => {
-        loadDayTasks();
-    }, [selectedDate, userId]);
-
-    const loadDayTasks = async () => {
-        try {
-            setIsLoading(true);
-            const dateStr = selectedDate.toISOString().split('T')[0];
-
-            // Fetch work items for the selected date
-            const { data: tasks, error } = await supabase
-                .from('work_items')
-                .select(`
-                    *,
-                    association:associations(name)
-                `)
-                .eq('due_date', dateStr)
-                .eq('archived', false)
-                .order('due_date', { ascending: true });
-
-            if (error) throw error;
-
-            // Separate tasks with time vs anytime
-            const scheduled: TimeBlock[] = [];
-            const anytime: TimeBlock[] = [];
-
-            tasks?.forEach((task: any) => {
-                const block: TimeBlock = {
-                    id: task.id,
-                    title: task.title,
-                    startTime: task.scheduled_time || '',
-                    duration: task.estimated_duration || task.estimate_hours * 60 || 30,
-                    priority: task.priority || 'medium',
-                    association: task.association,
-                    completed: !!task.completed_at
-                };
-
-                if (task.scheduled_time) {
-                    scheduled.push(block);
-                } else {
-                    anytime.push(block);
-                }
-            });
-
-            setTimeBlocks(scheduled);
-            setAnyTimeTasks(anytime);
-        } catch (error) {
-            console.error('[DailyTimeline] Error loading tasks:', error);
-            setTimeBlocks([]);
-            setAnyTimeTasks([]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handlePlayTask = (task: TimeBlock) => {
-        setActivePomodoroTask(task);
-    };
 
     const handleCompletePomodoro = async () => {
         if (activePomodoroTask) {
@@ -119,7 +121,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId }) => {
                 .eq('id', activePomodoroTask.id);
 
             setActivePomodoroTask(null);
-            loadDayTasks(); // Refresh
+            onRefresh();
         }
     };
 
@@ -134,21 +136,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId }) => {
         return { top: `${top}px`, height: `${height}px` };
     };
 
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'urgent': return 'bg-red-500 border-red-600';
-            case 'high': return 'bg-amber-500 border-amber-600';
-            case 'medium': return 'bg-blue-500 border-blue-600';
-            case 'low': return 'bg-slate-400 border-slate-500';
-            default: return 'bg-ceramic-text-secondary border-ceramic-text-primary';
-        }
-    };
-
     if (activePomodoroTask) {
         return (
             <div className="fixed inset-0 z-50 bg-ceramic-base/95 backdrop-blur-sm flex items-center justify-center p-4">
                 <PomodoroTimer
-                    initialMinutes={activePomodoroTask.duration}
+                    initialMinutes={activePomodoroTask.estimated_duration || 30}
                     taskTitle={activePomodoroTask.title}
                     onComplete={handleCompletePomodoro}
                     onClose={() => setActivePomodoroTask(null)}
@@ -175,15 +167,12 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId }) => {
                             key={idx}
                             onClick={() => setSelectedDate(day.date)}
                             className={`flex-shrink-0 w-16 h-20 rounded-xl flex flex-col items-center justify-center transition-all ${day.isSelected
-                                    ? 'ceramic-inset text-ceramic-text-primary scale-105'
-                                    : 'ceramic-card text-ceramic-text-secondary hover:scale-102'
+                                ? 'ceramic-inset text-ceramic-text-primary scale-105'
+                                : 'ceramic-card text-ceramic-text-secondary hover:scale-102'
                                 }`}
                         >
                             <span className="text-xs font-bold uppercase">{day.dayName}</span>
                             <span className="text-2xl font-black text-etched">{day.dayNumber}</span>
-                            {day.taskCount > 0 && (
-                                <div className="w-1.5 h-1.5 bg-ceramic-accent rounded-full mt-1"></div>
-                            )}
                             {day.isToday && !day.isSelected && (
                                 <div className="w-1.5 h-1.5 bg-ceramic-accent rounded-full mt-1 animate-pulse"></div>
                             )}
@@ -198,140 +187,71 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId }) => {
                     <p className="text-ceramic-text-secondary mt-4">Carregando agenda...</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Timeline View */}
-                    <div className="lg:col-span-2 ceramic-card p-6">
-                        <div className="flex items-center gap-2 mb-6">
-                            <Clock className="w-5 h-5 text-ceramic-text-secondary" />
-                            <h3 className="text-lg font-black text-ceramic-text-primary text-etched">
-                                Linha do Tempo
-                            </h3>
-                        </div>
-
-                        <div className="relative">
-                            {/* Time Labels */}
-                            <div className="absolute left-0 top-0 bottom-0 w-16 flex flex-col">
-                                {timelineHours.map((hour) => (
-                                    <div key={hour} className="h-20 flex items-start text-xs text-ceramic-text-secondary font-mono">
-                                        {hour.toString().padStart(2, '0')}:00
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Timeline Grid */}
-                            <div className="ml-20 relative" style={{ height: `${timelineHours.length * 80}px` }}>
-                                {/* Hour Lines */}
-                                {timelineHours.map((hour, idx) => (
-                                    <div
-                                        key={hour}
-                                        className="absolute left-0 right-0 border-t border-ceramic-text-secondary/10"
-                                        style={{ top: `${idx * 80}px` }}
-                                    />
-                                ))}
-
-                                {/* Current Time Indicator */}
-                                {(() => {
-                                    const now = new Date();
-                                    const isToday = now.toDateString() === selectedDate.toDateString();
-                                    if (!isToday) return null;
-
-                                    const currentHour = now.getHours();
-                                    const currentMinute = now.getMinutes();
-                                    if (currentHour < 8 || currentHour > 20) return null;
-
-                                    const currentTop = ((currentHour - 8) * 60 + currentMinute) / 60 * 80;
-                                    return (
-                                        <div
-                                            className="absolute left-0 right-0 border-t-2 border-ceramic-accent z-10"
-                                            style={{ top: `${currentTop}px` }}
-                                        >
-                                            <div className="absolute -left-2 -top-1.5 w-3 h-3 bg-ceramic-accent rounded-full animate-pulse"></div>
-                                        </div>
-                                    );
-                                })()}
-
-                                {/* Task Blocks */}
-                                {timeBlocks.map((block) => {
-                                    const position = getTaskPosition(block.startTime, block.duration);
-                                    return (
-                                        <div
-                                            key={block.id}
-                                            className={`absolute left-0 right-0 rounded-lg p-3 transition-all hover:scale-[1.02] cursor-pointer group ${block.completed ? 'opacity-50' : ''
-                                                } ${getPriorityColor(block.priority)}`}
-                                            style={position}
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-sm font-bold text-white truncate">{block.title}</h4>
-                                                    {block.association && (
-                                                        <p className="text-xs text-white/80 truncate">{block.association.name}</p>
-                                                    )}
-                                                    <p className="text-xs text-white/60 font-mono mt-1">
-                                                        {block.startTime} • {block.duration}min
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePlayTask(block);
-                                                    }}
-                                                    className="flex-shrink-0 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <Play className="w-4 h-4 text-white ml-0.5" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                <div className="ceramic-card p-6">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Clock className="w-5 h-5 text-ceramic-text-secondary" />
+                        <h3 className="text-lg font-black text-ceramic-text-primary text-etched">
+                            Linha do Tempo
+                        </h3>
                     </div>
 
-                    {/* Anytime Tasks */}
-                    <div className="ceramic-card p-6">
-                        <div className="flex items-center gap-2 mb-6">
-                            <Circle className="w-5 h-5 text-ceramic-text-secondary" />
-                            <h3 className="text-lg font-black text-ceramic-text-primary text-etched">
-                                A Fazer
-                            </h3>
+                    <div className="relative">
+                        {/* Time Labels */}
+                        <div className="absolute left-0 top-0 bottom-0 w-16 flex flex-col">
+                            {timelineHours.map((hour) => (
+                                <div key={hour} className="h-20 flex items-start text-xs text-ceramic-text-secondary font-mono">
+                                    {hour.toString().padStart(2, '0')}:00
+                                </div>
+                            ))}
                         </div>
 
-                        <div className="space-y-3">
-                            {anyTimeTasks.length === 0 ? (
-                                <p className="text-ceramic-text-secondary text-sm text-center py-8">
-                                    Nenhuma tarefa sem horário definido.
-                                </p>
-                            ) : (
-                                anyTimeTasks.map((task) => (
+                        {/* Timeline Grid */}
+                        <div className="ml-20 relative" style={{ height: `${timelineHours.length * 80}px` }}>
+                            {/* Hour Lines / Droppable Zones */}
+                            {timelineHours.map((hour, idx) => (
+                                <div
+                                    key={hour}
+                                    className="absolute left-0 right-0"
+                                    style={{ top: `${idx * 80}px`, height: '80px' }}
+                                >
+                                    <TimelineSlot time={`${hour.toString().padStart(2, '0')}:00`} />
+                                </div>
+                            ))}
+
+                            {/* Current Time Indicator */}
+                            {(() => {
+                                const now = new Date();
+                                const isToday = now.toDateString() === selectedDate.toDateString();
+                                if (!isToday) return null;
+
+                                const currentHour = now.getHours();
+                                const currentMinute = now.getMinutes();
+                                if (currentHour < 8 || currentHour > 20) return null;
+
+                                const currentTop = ((currentHour - 8) * 60 + currentMinute) / 60 * 80;
+                                return (
                                     <div
-                                        key={task.id}
-                                        className={`ceramic-card p-4 hover:scale-[1.02] transition-all cursor-pointer group ${task.completed ? 'opacity-50' : ''
-                                            }`}
+                                        className="absolute left-0 right-0 border-t-2 border-ceramic-accent z-10 pointer-events-none"
+                                        style={{ top: `${currentTop}px` }}
                                     >
-                                        <div className="flex items-start gap-3">
-                                            <div className={`w-1 h-full rounded-full ${getPriorityColor(task.priority)} flex-shrink-0`}></div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="text-sm font-bold text-ceramic-text-primary truncate">{task.title}</h4>
-                                                {task.association && (
-                                                    <p className="text-xs text-ceramic-text-secondary truncate">{task.association.name}</p>
-                                                )}
-                                                <p className="text-xs text-ceramic-text-secondary mt-1">
-                                                    {task.duration}min
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handlePlayTask(task);
-                                                }}
-                                                className="flex-shrink-0 w-10 h-10 rounded-full ceramic-inset flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <Play className="w-4 h-4 text-ceramic-text-primary ml-0.5" />
-                                            </button>
-                                        </div>
+                                        <div className="absolute -left-2 -top-1.5 w-3 h-3 bg-ceramic-accent rounded-full animate-pulse"></div>
                                     </div>
-                                ))
-                            )}
+                                );
+                            })()}
+
+                            {/* Task Blocks */}
+                            {tasks.map((task) => {
+                                if (!task.scheduled_time) return null;
+                                const position = getTaskPosition(task.scheduled_time, task.estimated_duration || 30);
+                                return (
+                                    <DraggableTimelineTask
+                                        key={task.id}
+                                        task={task}
+                                        style={position}
+                                        onClick={() => setActivePomodoroTask(task)}
+                                    />
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -339,3 +259,4 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId }) => {
         </div>
     );
 };
+
