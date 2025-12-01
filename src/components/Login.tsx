@@ -4,21 +4,9 @@ import { Mail, Lock, Sparkles } from 'lucide-react';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState<'password' | 'magic'>('password');
-
-    const handlePasswordLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        setLoading(false);
-        if (error) setError(error.message);
-        else onLogin();
-    };
 
     const handleMagicLink = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,108 +84,36 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                     </div>
                 )}
 
-                {/* Mode Toggle - Ceramic Trough */}
-                <div className="flex gap-2 mb-6 p-1 ceramic-trough rounded-full">
-                    <button
-                        type="button"
-                        onClick={() => setMode('password')}
-                        className={`flex-1 py-2 px-4 rounded-full font-bold text-sm transition-all ${mode === 'password'
-                                ? 'ceramic-card text-[#5C554B]'
-                                : 'text-[#948D82] hover:text-[#5C554B]'
-                            }`}
-                    >
-                        <Lock className="w-4 h-4 inline mr-1" />
-                        Senha
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMode('magic')}
-                        className={`flex-1 py-2 px-4 rounded-full font-bold text-sm transition-all ${mode === 'magic'
-                                ? 'ceramic-card text-[#5C554B]'
-                                : 'text-[#948D82] hover:text-[#5C554B]'
-                            }`}
-                    >
-                        <Sparkles className="w-4 h-4 inline mr-1" />
-                        Magic Link
-                    </button>
-                </div>
-
-                {/* Password Form */}
-                {mode === 'password' && (
-                    <form onSubmit={handlePasswordLogin} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-bold text-[#5C554B] mb-2">Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#948D82]" />
-                                <input
-                                    type="email"
-                                    placeholder="seu@email.com"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-4 bg-[#EBE9E4] text-[#5C554B] placeholder-[#948D82] rounded-2xl border-none outline-none font-medium"
-                                    style={{ boxShadow: 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff' }}
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-[#5C554B] mb-2">Senha</label>
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#948D82]" />
-                                <input
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-4 bg-[#EBE9E4] text-[#5C554B] placeholder-[#948D82] rounded-2xl border-none outline-none font-medium"
-                                    style={{ boxShadow: 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff' }}
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-[#F0EFE9] text-[#5C554B] py-4 rounded-2xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:shadow-[inset_4px_4px_8px_#c5c5c5,inset_-4px_-4px_8px_#ffffff]"
-                            style={{ boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff' }}
-                        >
-                            {loading ? 'Entrando...' : 'Entrar'}
-                        </button>
-                    </form>
-                )}
-
                 {/* Magic Link Form */}
-                {mode === 'magic' && (
-                    <form onSubmit={handleMagicLink} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-bold text-[#5C554B] mb-2">Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#948D82]" />
-                                <input
-                                    type="email"
-                                    placeholder="seu@email.com"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-4 bg-[#EBE9E4] text-[#5C554B] placeholder-[#948D82] rounded-2xl border-none outline-none font-medium"
-                                    style={{ boxShadow: 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff' }}
-                                    required
-                                />
-                            </div>
+                <form onSubmit={handleMagicLink} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-bold text-[#5C554B] mb-2">Email</label>
+                        <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#948D82]" />
+                            <input
+                                type="email"
+                                placeholder="seu@email.com"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                className="w-full pl-12 pr-4 py-4 bg-[#EBE9E4] text-[#5C554B] placeholder-[#948D82] rounded-2xl border-none outline-none font-medium"
+                                style={{ boxShadow: 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff' }}
+                                required
+                            />
                         </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-[#F0EFE9] text-[#5C554B] py-4 rounded-2xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:shadow-[inset_4px_4px_8px_#c5c5c5,inset_-4px_-4px_8px_#ffffff]"
-                            style={{ boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff' }}
-                        >
-                            <Sparkles className="w-5 h-5" />
-                            {loading ? 'Enviando...' : 'Enviar Magic Link'}
-                        </button>
-                        <p className="text-xs text-[#948D82] text-center">
-                            Você receberá um link mágico no seu email para fazer login sem senha
-                        </p>
-                    </form>
-                )}
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-[#F0EFE9] text-[#5C554B] py-4 rounded-2xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:shadow-[inset_4px_4px_8px_#c5c5c5,inset_-4px_-4px_8px_#ffffff]"
+                        style={{ boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff' }}
+                    >
+                        <Sparkles className="w-5 h-5" />
+                        {loading ? 'Enviando...' : 'Enviar Magic Link'}
+                    </button>
+                    <p className="text-xs text-[#948D82] text-center">
+                        Você receberá um link mágico no seu email para fazer login sem senha
+                    </p>
+                </form>
 
                 {/* Divider - Engraved */}
                 <div className="relative my-6">

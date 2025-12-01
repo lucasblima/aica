@@ -80,3 +80,17 @@ export interface SystemHealth {
 }
 
 export type ViewState = 'vida' | 'agenda' | 'association_detail';
+
+export type Quadrant = 'urgent-important' | 'important' | 'urgent' | 'low';
+
+export interface Task {
+  id: string;
+  title: string;
+  due_date?: string;
+  priority_quadrant?: Quadrant;
+  association?: { name: string };
+  estimated_duration?: number;
+  scheduled_time?: string;
+  completed_at?: string;
+  priority?: string;
+}
