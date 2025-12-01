@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Calendar, Settings, Plus, ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, Briefcase, Globe, ArrowRight, X, CheckCircle2 } from 'lucide-react';
+import { LayoutGrid, Calendar, Settings, Plus, ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, Briefcase, Globe, ArrowRight, X, CheckCircle2, Mic } from 'lucide-react';
 import { supabase } from './src/supabaseClient';
 import { BottomNav } from './components/BottomNav';
 import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
@@ -7,11 +7,12 @@ import { PomodoroTimer } from './src/components/PomodoroTimer';
 import { SettingsMenu } from './src/components/SettingsMenu';
 import { HeaderGlobal } from './src/components/HeaderGlobal';
 import { AgendaView } from './src/views/AgendaView';
+import { PodcastModule } from './src/views/PodcastModule';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
 import Login from './src/components/Login';
 
 // Types
-type ViewState = 'vida' | 'agenda' | 'association_detail';
+type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast';
 type TabState = 'personal' | 'network';
 
 // Reusable Module Card Component
@@ -230,6 +231,29 @@ export default function App() {
                         color="slate"
                         accentColor="bg-slate-50 border-slate-100 text-slate-600"
                      />
+
+                     {/* Podcast Copilot */}
+                     <div
+                        onClick={() => setCurrentView('podcast')}
+                        className="ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+                     >
+                        <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-purple-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
+                        <div className="relative z-10">
+                           <div className="flex items-center gap-2 mb-3">
+                              <div className="ceramic-inset p-2">
+                                 <Mic className="w-5 h-5 text-purple-600" />
+                              </div>
+                              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Studio</span>
+                           </div>
+                           <p className="text-sm text-ceramic-text-primary mb-3 font-medium">
+                              Podcast Copilot
+                           </p>
+                           <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium mt-4 group-hover:translate-x-1 transition-transform">
+                              <span>Gerar Pauta</span>
+                              <ChevronRight className="w-3 h-3" />
+                           </div>
+                        </div>
+                     </div>
                   </div>
                </main>
             </div>
@@ -352,6 +376,15 @@ export default function App() {
       );
    };
 
+   // ==================== PODCAST VIEW ====================
+   const renderPodcast = () => (
+      <PodcastModule
+         userEmail={userEmail || undefined}
+         onLogout={() => setIsAuthenticated(false)}
+         onBack={() => setCurrentView('vida')}
+      />
+   );
+
 
    if (!isAuthenticated) {
       return <Login onLogin={() => setIsAuthenticated(true)} />;
@@ -362,8 +395,9 @@ export default function App() {
          {currentView === 'vida' && renderVida()}
          {currentView === 'agenda' && renderAgenda()}
          {currentView === 'association_detail' && renderAssociationDetail()}
+         {currentView === 'podcast' && renderPodcast()}
 
-         {currentView !== 'association_detail' && (
+         {currentView !== 'association_detail' && currentView !== 'podcast' && (
             <BottomNav
                currentView={currentView}
                onChange={setCurrentView}
