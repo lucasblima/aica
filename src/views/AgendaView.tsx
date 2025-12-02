@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -17,6 +17,9 @@ import { PriorityMatrix } from '../components/PriorityMatrix';
 import { DailyTimeline } from '../components/DailyTimeline';
 import { HeaderGlobal } from '../components/HeaderGlobal';
 import { Task, Quadrant } from '../../types';
+import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
+import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
+import { AtlasTask } from '../modules/atlas/types/plane';
 
 interface AgendaViewProps {
     userId: string;
@@ -35,6 +38,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Atlas Module Integration
+    const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -49,6 +55,33 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useEffect(() => {
         loadAllTasks();
     }, [userId]);
+
+    // Merge Atlas Tasks with Matrix Tasks
+    const mergedMatrixTasks = useMemo(() => {
+        const merged = { ...matrixTasks };
+
+        atlasTasks.forEach(atlasTask => {
+            // Map Atlas Priority to Quadrant
+            let quadrant: Quadrant = 'low';
+            if (atlasTask.priority === 'urgent') quadrant = 'urgent';
+            else if (atlasTask.priority === 'high') quadrant = 'important';
+            else if (atlasTask.priority === 'medium') quadrant = 'urgent-important';
+
+            // Map AtlasTask to Task
+            const task: Task = {
+                id: atlasTask.id,
+                title: atlasTask.title,
+                priority_quadrant: quadrant,
+                priority: atlasTask.priority,
+                // Add visual indicator for optimistic/syncing state if needed
+                // For now, we just treat it as a normal task
+            };
+
+            merged[quadrant] = [task, ...merged[quadrant]];
+        });
+
+        return merged;
+    }, [matrixTasks, atlasTasks]);
 
     const loadAllTasks = async () => {
         try {
@@ -110,7 +143,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         let task: Task | undefined;
 
         // Check matrix
-        for (const tasks of Object.values(matrixTasks)) {
+        for (const tasks of Object.values(matrixTasks) as Task[][]) {
             task = tasks.find(t => t.id === taskId);
             if (task) break;
         }
@@ -135,7 +168,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const overId = over.id as string;
 
         // Determine source and destination
-        const isSourceMatrix = Object.values(matrixTasks).some(tasks => tasks.some(t => t.id === taskId));
+        const isSourceMatrix = (Object.values(matrixTasks) as Task[][]).some(tasks => tasks.some(t => t.id === taskId));
         const isDestTimeline = overId.startsWith('timeline-slot-');
         const isDestMatrix = ['urgent-important', 'important', 'urgent', 'low'].includes(overId);
 
@@ -159,10 +192,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         let task: Task | undefined;
         let fromQuadrant: Quadrant | undefined;
 
-        for (const [q, tasks] of Object.entries(matrixTasks)) {
+        for (const [q, tasks] of Object.entries(matrixTasks) as [Quadrant, Task[]][]) {
             task = tasks.find(t => t.id === taskId);
             if (task) {
-                fromQuadrant = q as Quadrant;
+                fromQuadrant = q;
                 break;
             }
         }
@@ -190,10 +223,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         let task: Task | undefined;
         let fromQuadrant: Quadrant | undefined;
 
-        for (const [q, tasks] of Object.entries(matrixTasks)) {
+        for (const [q, tasks] of Object.entries(matrixTasks) as [Quadrant, Task[]][]) {
             task = tasks.find(t => t.id === taskId);
             if (task) {
-                fromQuadrant = q as Quadrant;
+                fromQuadrant = q;
                 break;
             }
         }
@@ -248,11 +281,19 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onDragEnd={handleDragEnd}
             >
                 <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 space-y-6">
+                    {/* Atlas Quick Add */}
+                    <div className="flex-none max-w-2xl mx-auto w-full">
+                        <TaskCreationInput
+                            onAddTask={addAtlasTask}
+                            isSyncing={isAtlasSyncing}
+                        />
+                    </div>
+
                     {/* Priority Matrix - Collapsible/Fixed Header feel */}
                     <div className="flex-none">
                         <PriorityMatrix
                             userId={userId}
-                            tasks={matrixTasks}
+                            tasks={mergedMatrixTasks}
                             isLoading={isLoading}
                             onRefresh={loadAllTasks}
                         />

@@ -47,6 +47,30 @@
   - Instead of storing "I'm sad because X", store structured insights: `{"sentiment": "negative", "trigger": "work_deadline", "timestamp": "..."}`.
   - **Embeddings:** Vector representations of *summarized* context for RAG, allowing the AI to "remember" patterns without reading old chats.
 
+### 3.5. Podcast Copilot (AI-Assisted Media Production)
+- **Multi-Podcast Management:**
+  - Create and manage multiple podcast shows/series.
+  - Track episodes with topics, guest information, and production metadata.
+  - Organize topics by category for research and reference.
+- **Studio Workflow:**
+  - **Preparation Mode:** AI-assisted pauta (outline) generation using guest profiles and research.
+  - **Studio Mode:** Live recording interface with Gemini Live API for real-time guest conversation.
+  - **Audio Console:** Recording management and track organization.
+  - **Technical Sheet:** Guest research panel with automated intelligence gathering.
+- **Team Management:**
+  - Manage team members with roles (host, guest, producer, tech).
+  - Store WhatsApp contact information for team coordination.
+  - Maintain team member profiles and bio information.
+- **AI Integration:**
+  - **Gemini Live API:** Real-time conversation with podcast guests during recording.
+  - **Intelligent Search:** Automated research service for guest preparation.
+  - **Pauta Generation:** AI-assisted outline creation based on guest profiles and topics.
+- **Episode Lifecycle:**
+  - Episode creation and editing.
+  - Topic management and categorization.
+  - Production history and archiving.
+  - Integration with life modules for cross-functional context.
+
 ## 4. Technical Architecture
 
 ### 4.1. Source of Truth
@@ -63,23 +87,40 @@
    - Update `contact_network`: Last interaction = Now.
 4. **Purge:** Raw message payload is discarded from memory.
 
-### 4.3. Database Schema (Target ~15 Tables)
+### 4.3. Database Schema (Target ~16-18 Tables)
 - **Core:** `users`, `profiles`, `workspaces`, `associations`, `modules`, `work_items`, `states`.
 - **Gamification:** `user_stats`, `task_metrics`, `activity_log`.
 - **Context:** `memories` (includes embeddings), `daily_reports`.
 - **Network:** `contact_network` (metadata only).
+- **Podcast:** `podcast_shows`, `podcast_episodes`, `podcast_topics`, `podcast_topic_categories`, `team_members`.
 
 ## 5. Roadmap
 
 ### Phase 1: Foundation (Done)
-- UI Redesign & Basic Supabase connection.
+- ✓ UI Redesign & Basic Supabase connection.
+- ✓ Core Views: Minha Vida, Meu Dia, Podcast Copilot.
+- ✓ Supabase authentication and task management.
 
-### Phase 2: Cleanup & Privacy (Current)
-- [ ] Schema Cleanup (Drop 30+ tables).
-- [ ] Implement Privacy-First Webhook logic.
+### Phase 2: Cleanup & Privacy (Current - 20% Complete)
+- [ ] Schema Cleanup (Remove Plane legacy references).
+- [ ] Implement Privacy-First Webhook logic (Evolution API integration).
+- [ ] Create memories & contact_network tables.
+- [ ] Implement message processing pipeline.
 
-### Phase 3: Gamification & Visualization
-- [ ] Life Grid & Priority Matrix components.
+### Phase 3: Gamification & Visualization (30% Complete)
+- [x] Life Grid & Priority Matrix components.
+- [ ] Complete XP/leveling system UI.
+- [ ] Implement achievement badges.
+- [ ] Build daily efficiency score visualization.
 
-### Phase 4: AI & Voice
-- [ ] Voice interface & Sentiment analysis.
+### Phase 4: Emotional Intelligence & Context (0% Complete)
+- [ ] Implement Memories system with embeddings.
+- [ ] Create Aica Auto intelligent priority engine.
+- [ ] Build daily reports and mood tracking.
+- [ ] Implement Gemini embeddings for RAG.
+
+### Phase 5: AI & Voice (10% Complete)
+- [x] Gemini Live API integration for Podcast.
+- [ ] Voice interface & Speech-to-Text.
+- [ ] Sentiment analysis from communications.
+- [ ] Contact network AI insights.

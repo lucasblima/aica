@@ -26,7 +26,7 @@ export interface Association {
   name: string;
   cnpj?: string;
   isActive: boolean;
-  planeSyncStatus: 'synced' | 'pending' | 'failed';
+  syncStatus: 'synced' | 'pending' | 'failed';
   membersCount: number;
 }
 

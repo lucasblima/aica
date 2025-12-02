@@ -161,7 +161,7 @@ export const MOCK_DB = {
       id: 'log-3',
       user: 'Sistema',
       action: 'falha de sincronização',
-      target: 'Plane.so Webhook',
+      target: 'Webhook Integration',
       timestamp: '42 min atrás',
       type: 'warning'
     },

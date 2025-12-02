@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(curl:*)",
+      "Bash(node query_tables.js:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

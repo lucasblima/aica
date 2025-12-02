@@ -1,0 +1,247 @@
+/* Notification Container Styles */
+
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.notification {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-left: 4px solid;
+  pointer-events: auto;
+  animation: slideInRight 0.3s ease;
+  max-height: 120px;
+  overflow: hidden;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+}
+
+.notification.hiding {
+  animation: slideOutRight 0.3s ease;
+}
+
+/* Notification Types */
+.notification-info {
+  border-left-color: #2196f3;
+  background: #f1f8ff;
+}
+
+.notification-success {
+  border-left-color: #4caf50;
+  background: #f1f8f4;
+}
+
+.notification-warning {
+  border-left-color: #ff9800;
+  background: #fff8f0;
+}
+
+.notification-error {
+  border-left-color: #f44336;
+  background: #fff1f0;
+}
+
+.notification-daily_report {
+  border-left-color: #667eea;
+  background: #f0f4ff;
+}
+
+.notification-achievement {
+  border-left-color: #ffc107;
+  background: #fff9e6;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+}
+
+.notification-suggestion {
+  border-left-color: #9c27b0;
+  background: #faf5ff;
+}
+
+/* Content */
+.notification-content {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  align-items: center;
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.notification-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  word-break: break-word;
+}
+
+.notification-message {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Action Button */
+.notification-action {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid #667eea;
+  color: #667eea;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.notification-action:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Close Button */
+.notification-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.notification-close:hover {
+  color: #333;
+}
+
+/* Color Coding for Types */
+.notification-info .notification-title {
+  color: #1565c0;
+}
+
+.notification-success .notification-title {
+  color: #2e7d32;
+}
+
+.notification-warning .notification-title {
+  color: #e65100;
+}
+
+.notification-error .notification-title {
+  color: #c62828;
+}
+
+.notification-daily_report .notification-title {
+  color: #3f51b5;
+}
+
+.notification-achievement .notification-title {
+  color: #f57f17;
+}
+
+.notification-suggestion .notification-title {
+  color: #6a1b9a;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .notification-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .notification {
+    margin-bottom: 8px;
+    padding: 12px;
+  }
+
+  .notification-icon {
+    font-size: 20px;
+  }
+
+  .notification-title {
+    font-size: 13px;
+  }
+
+  .notification-message {
+    font-size: 12px;
+  }
+
+  .notification-action {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+/* Stacking Animation */
+.notification:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.notification:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.notification:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.notification:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.notification:nth-child(5) {
+  animation-delay: 0.2s;
+}

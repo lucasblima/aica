@@ -6,8 +6,10 @@ import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
 import { SettingsMenu } from './src/components/SettingsMenu';
 import { HeaderGlobal } from './src/components/HeaderGlobal';
+import { EfficiencyScoreCard } from './src/components/EfficiencyScoreCard';
+import { EfficiencyTrendChart } from './src/components/EfficiencyTrendChart';
 import { AgendaView } from './src/views/AgendaView';
-import { PodcastModule } from './src/views/PodcastModule';
+import { PodcastCopilotView } from './src/views/PodcastCopilotView';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
 import Login from './src/components/Login';
 
@@ -170,6 +172,12 @@ export default function App() {
                <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 space-y-4">
                   {/* Life Weeks Grid */}
                   {userId && <LifeWeeksGrid userId={userId} />}
+
+                  {/* Efficiency Score Card */}
+                  {userId && <EfficiencyScoreCard userId={userId} />}
+
+                  {/* Efficiency Trend Chart */}
+                  {userId && <EfficiencyTrendChart userId={userId} days={30} />}
 
                   {/* Life Modules Grid - Bento Style */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -376,15 +384,20 @@ export default function App() {
       );
    };
 
+
+
+
+   const [showPodcastNav, setShowPodcastNav] = useState(true);
+
    // ==================== PODCAST VIEW ====================
    const renderPodcast = () => (
-      <PodcastModule
+      <PodcastCopilotView
          userEmail={userEmail || undefined}
          onLogout={() => setIsAuthenticated(false)}
-         onBack={() => setCurrentView('vida')}
+         onExit={() => setCurrentView('vida')}
+         onNavVisibilityChange={setShowPodcastNav}
       />
    );
-
 
    if (!isAuthenticated) {
       return <Login onLogin={() => setIsAuthenticated(true)} />;
@@ -397,7 +410,7 @@ export default function App() {
          {currentView === 'association_detail' && renderAssociationDetail()}
          {currentView === 'podcast' && renderPodcast()}
 
-         {currentView !== 'association_detail' && currentView !== 'podcast' && (
+         {currentView !== 'association_detail' && (currentView !== 'podcast' || showPodcastNav) && (
             <BottomNav
                currentView={currentView}
                onChange={setCurrentView}

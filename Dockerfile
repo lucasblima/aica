@@ -30,7 +30,6 @@ EXPOSE 8080
 # Nginx irá automaticamente processar templates em /etc/nginx/templates/
 # e substituir variáveis de ambiente
 ENV PORT=8080
-ENV VITE_PLANE_BASE_URL=https://project-management-plane.w9jo16.easypanel.host
 
 # Usar o entrypoint padrão do nginx:alpine que processa templates
 CMD ["nginx", "-g", "daemon off;"]
