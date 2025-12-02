@@ -7,15 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       port: 3000,
-      host: '0.0.0.0',
-      proxy: {
-        '/api': {
-          target: 'https://project-management-plane.w9jo16.easypanel.host',
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path,
-        }
-      }
+      host: '0.0.0.0'
     },
     plugins: [react()],
     define: {

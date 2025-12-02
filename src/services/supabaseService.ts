@@ -11,9 +11,6 @@ export const getAssociations = async () => {
         description,
         type,
         cnpj,
-        plane_project_id,
-        plane_workspace_slug,
-        plane_synced_at,
         is_active,
         created_at,
         updated_at
@@ -71,7 +68,7 @@ export const getWorkItemsByAssociation = async (associationId: string) => {
             .from('work_items')
             .select(`
         *,
-        state:states(id, name, plane_state_id),
+        state:states(id, name),
         assignees:work_item_assignees(
           user:users(id, name)
         )
@@ -91,7 +88,7 @@ export const getWorkItemsByAssociation = async (associationId: string) => {
 // Update association sync status
 export const updateAssociationSyncStatus = async (
     associationId: string,
-    syncStatus: { plane_synced_at?: string }
+    syncStatus: { synced_at?: string }
 ) => {
     try {
         const { data, error } = await supabase
@@ -108,26 +105,6 @@ export const updateAssociationSyncStatus = async (
         return data;
     } catch (error) {
         console.error(`Error updating association ${associationId} sync status:`, error);
-        throw error;
-    }
-};
-
-// Get user plane mapping
-export const getUserPlaneMapping = async (userId: string) => {
-    try {
-        const { data, error } = await supabase
-            .from('user_plane_mapping')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-
-        if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
-            throw error;
-        }
-        return data;
-    } catch (error) {
-        console.error(`Error fetching plane mapping for user ${userId}:`, error);
         throw error;
     }
 };

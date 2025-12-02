@@ -30,20 +30,41 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout 
 
     const handleLogout = async () => {
         try {
+            // Try to sign out via Supabase API
             const { error } = await supabase.auth.signOut();
-            if (!error) {
-                setIsOpen(false);
-                if (onLogout) {
-                    onLogout();
-                } else {
-                    // Force page reload to trigger auth state change
-                    window.location.href = '/';
-                }
-            } else {
+
+            // If error is session missing, just clear storage and reload
+            if (error && error.message.includes('session')) {
+                console.log('Session already expired, clearing local storage...');
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+                return;
+            }
+
+            // Handle other errors
+            if (error) {
                 console.error('Logout error:', error);
+                // Even with error, try to clear and restart
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+                return;
+            }
+
+            // Successful logout
+            setIsOpen(false);
+            if (onLogout) {
+                onLogout();
+            } else {
+                window.location.href = '/';
             }
         } catch (err) {
             console.error('Logout failed:', err);
+            // Force logout by clearing everything
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/';
         }
     };
 

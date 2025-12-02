@@ -1,0 +1,348 @@
+/* Efficiency Trend Chart Styles */
+
+.efficiency-trend-chart {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-badges {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.badge-label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.range-selector {
+  display: flex;
+  gap: 8px;
+  background: #f8f9fa;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.range-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.range-btn:hover {
+  background: white;
+  color: #333;
+}
+
+.range-btn.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Chart Container */
+.chart-container {
+  margin-bottom: 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.chart-wrapper {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.trend-chart-svg {
+  min-height: 300px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.05));
+}
+
+.chart-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: #999;
+}
+
+/* Distribution Section */
+.distribution-section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.distribution-title {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.distribution-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.distribution-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 40px;
+  align-items: center;
+  gap: 12px;
+}
+
+.distribution-info {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.distribution-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.distribution-count {
+  font-size: 11px;
+  color: #999;
+}
+
+.distribution-bar {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.distribution-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.distribution-percent {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-align: right;
+}
+
+/* Weekly Goals */
+.weekly-goals {
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%);
+  border-radius: 12px;
+  border: 1px solid #667eea20;
+}
+
+.goals-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.goals-header svg {
+  color: #667eea;
+}
+
+.goals-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.goal-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.goal-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  grid-column: 1;
+}
+
+.goal-progress {
+  height: 8px;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+  grid-column: 1;
+}
+
+.goal-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.goal-percentage {
+  font-size: 13px;
+  font-weight: 700;
+  color: #667eea;
+  grid-column: 2;
+  text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .efficiency-trend-chart {
+    padding: 16px;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .distribution-item {
+    grid-template-columns: 70px 1fr 35px;
+  }
+
+  .stat-badges {
+    width: 100%;
+  }
+
+  .range-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .range-btn {
+    flex: 1;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .efficiency-trend-chart {
+    padding: 12px;
+  }
+
+  .chart-header {
+    gap: 12px;
+  }
+
+  .stat-badges {
+    gap: 8px;
+  }
+
+  .stat-badge {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .badge-value {
+    font-size: 16px;
+  }
+
+  .distribution-item {
+    grid-template-columns: 60px 1fr 30px;
+    gap: 8px;
+  }
+
+  .distribution-label {
+    font-size: 12px;
+  }
+
+  .distribution-count {
+    font-size: 10px;
+  }
+
+  .distribution-percent {
+    font-size: 11px;
+  }
+
+  .weekly-goals {
+    padding: 12px;
+  }
+
+  .goal-item {
+    gap: 8px;
+  }
+
+  .goal-name {
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,299 @@
+/* Gamification Widget Styles */
+
+.gamification-widget {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.gamification-widget.compact {
+  padding: 16px;
+}
+
+.gamification-widget.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Level Section */
+.level-section {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.level-badge {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+}
+
+.level-number {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.level-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 8px;
+  opacity: 0.9;
+}
+
+.xp-container {
+  flex: 1;
+}
+
+.xp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.xp-label {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.xp-value {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.xp-bar {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+
+.total-xp {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Streak Section */
+.streak-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #fff9e6;
+  border-radius: 12px;
+  border: 2px solid #ffc107;
+  margin-bottom: 20px;
+}
+
+.streak-section.inactive {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.streak-icon {
+  font-size: 40px;
+}
+
+.streak-info {
+  flex: 1;
+}
+
+.streak-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+}
+
+.streak-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.streak-best {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* Badges Section */
+.badges-section {
+  margin-bottom: 20px;
+}
+
+.badges-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid;
+  text-align: center;
+  background: white;
+  transition: transform 0.2s;
+}
+
+.badge:hover {
+  transform: translateY(-4px);
+}
+
+.badge-common {
+  border-color: #95a5a6;
+  background: #f8f8f8;
+}
+
+.badge-rare {
+  border-color: #3498db;
+  background: #e3f2fd;
+}
+
+.badge-epic {
+  border-color: #9b59b6;
+  background: #f3e5f5;
+}
+
+.badge-legendary {
+  border-color: #f39c12;
+  background: #fff8e1;
+  box-shadow: 0 0 8px rgba(243, 156, 18, 0.2);
+}
+
+.badge-icon {
+  font-size: 32px;
+}
+
+.badge-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #333;
+}
+
+.badge-xp {
+  font-size: 10px;
+  color: #667eea;
+  font-weight: 500;
+}
+
+/* Quick Stats */
+.quick-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .level-section {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .level-badge {
+    width: 80px;
+    height: 80px;
+  }
+
+  .level-number {
+    font-size: 36px;
+  }
+
+  .badges-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gamification-widget {
+    padding: 12px;
+  }
+
+  .level-section {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .level-badge {
+    width: 70px;
+    height: 70px;
+  }
+
+  .level-number {
+    font-size: 28px;
+  }
+
+  .badges-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .badge-icon {
+    font-size: 24px;
+  }
+}
