@@ -23,6 +23,7 @@ coverage/
 
 # Dependency directories
 jspm_packages/
+node_modules
 
 # Logs
 logs
@@ -33,7 +34,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# Build output
 dist
 dist-ssr
 *.local
@@ -49,55 +50,14 @@ dist-ssr
 *.sln
 *.sw?
 
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Test and E2E directories
+test-results/
+tests/e2e/
+playwright-report/
+tests-results/
 
-node_modules
-dist
-dist-ssr
-*.local
+# Supabase migrations (não enviar para o repo)
+supabase/migrations/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-/playwright-report
-/tests
-/tests-results
-
+# Claude Code
+.claude
