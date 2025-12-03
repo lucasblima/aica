@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, X, User, Phone } from 'lucide-react';
 import { TeamMember } from '../types';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../services/supabaseClient';
 
 interface TeamMemberFormProps {
     episodeId: string;

@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../services/supabaseClient';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // =====================================================

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, Play, CalendarDays } from 'lucide-react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../services/supabaseClient';
 import { PomodoroTimer } from './PomodoroTimer';
 import { Task } from '../../types';
 

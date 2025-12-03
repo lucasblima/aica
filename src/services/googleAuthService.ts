@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 
 /**
  * Chaves para localStorage - rastreamento de estado Google Calendar

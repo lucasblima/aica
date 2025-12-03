@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../services/supabaseClient';
 import { Topic, TopicDB, IceBreaker, TopicCategory } from '../types';
 import { getCategories } from '../services/databaseService';
 import { arrayMove } from '@dnd-kit/sortable';

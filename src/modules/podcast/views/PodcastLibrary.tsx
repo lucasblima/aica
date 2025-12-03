@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, ArrowRight, Mic2 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../services/supabaseClient';
 import { PodcastShow } from '../types';
 import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
 import { HeaderGlobal } from '../../../components/HeaderGlobal';

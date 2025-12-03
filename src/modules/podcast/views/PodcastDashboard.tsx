@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, User, Clock, Settings, ArrowLeft, Mic2 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../services/supabaseClient';
 
 interface Episode {
     id: string;

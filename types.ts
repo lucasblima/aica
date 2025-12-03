@@ -88,7 +88,7 @@ export interface Task {
   title: string;
   due_date?: string;
   priority_quadrant?: Quadrant;
-  association?: { name: string };
+  associations?: { name: string };
   estimated_duration?: number;
   scheduled_time?: string;
   completed_at?: string;

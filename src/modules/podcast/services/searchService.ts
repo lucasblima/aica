@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../services/supabaseClient';
 import { Dossier } from '../types';
 import { analyzeNews } from './geminiService';
 import { generateIntelligentSearchQueries } from './intelligentSearch';

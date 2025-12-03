@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import { ContactNetwork } from '../types/memoryTypes';
 import { getContactById } from '../services/contactNetworkService';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../services/supabaseClient';
 import './ContactProfileView.css';
 
 interface ContactProfileProps {

@@ -10,7 +10,7 @@
  * - Rewards and unlockables
  */
 
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 import { notificationService } from './notificationService';
 
 // ============================================================================
