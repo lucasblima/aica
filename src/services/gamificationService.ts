@@ -495,7 +495,7 @@ export async function checkAndAwardAchievements(userId: string): Promise<Achieve
       .from('work_items')
       .select('id')
       .eq('user_id', userId)
-      .eq('completed_at', 'not.is', null);
+      .not('completed_at', 'is', null);
 
     const completedTasksCount = taskMetrics?.length || 0;
 
@@ -581,16 +581,22 @@ export async function getUserLeaderboardPosition(userId: string): Promise<number
     const userStats = await getUserGameProfile(userId);
     if (!userStats) return -1;
 
+    // Count users with higher XP OR (same XP but higher level)
+    // Since Supabase .or() with nested AND is complex, we'll fetch all and filter in memory
     const { data, error } = await supabase
       .from('user_stats')
-      .select('id')
-      .eq('is_active', true)
-      .filter('total_xp', 'gt', userStats.total_xp)
-      .or(`and(total_xp.eq.${userStats.total_xp},level.gt.${userStats.level})`);
+      .select('id, total_xp, level')
+      .eq('is_active', true);
 
     if (error) throw error;
 
-    return (data?.length || 0) + 1;
+    // Filter users who rank higher: more XP OR (same XP AND higher level)
+    const higherRankedUsers = (data || []).filter(user =>
+      user.total_xp > userStats.total_xp ||
+      (user.total_xp === userStats.total_xp && user.level > userStats.level)
+    );
+
+    return higherRankedUsers.length + 1;
   } catch (error) {
     console.error('Error fetching leaderboard position:', error);
     return -1;

@@ -87,7 +87,7 @@ export async function calculateDailyEfficiency(
       .from('daily_reports')
       .select('productivity_score, mood, energy_level, stress_level')
       .eq('user_id', userId)
-      .eq('date', date)
+      .eq('report_date', date)
       .single();
 
     const report = dailyReports;
@@ -170,11 +170,11 @@ async function calculateTrend(userId: string, date: string): Promise<'improving'
 
     const { data: reports } = await supabase
       .from('daily_reports')
-      .select('productivity_score, date')
+      .select('productivity_score, report_date')
       .eq('user_id', userId)
-      .gte('date', threeDay.toISOString().split('T')[0])
-      .lte('date', date)
-      .order('date', { ascending: true });
+      .gte('report_date', threeDay.toISOString().split('T')[0])
+      .lte('report_date', date)
+      .order('report_date', { ascending: true });
 
     if (!reports || reports.length < 2) return 'stable';
 
@@ -279,14 +279,14 @@ export async function getEfficiencyTrends(
 
     const { data: reports } = await supabase
       .from('daily_reports')
-      .select('date, productivity_score, tasks_completed')
+      .select('report_date, productivity_score, tasks_completed')
       .eq('user_id', userId)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .lte('date', endDate.toISOString().split('T')[0])
-      .order('date', { ascending: true });
+      .gte('report_date', startDate.toISOString().split('T')[0])
+      .lte('report_date', endDate.toISOString().split('T')[0])
+      .order('report_date', { ascending: true });
 
     return (reports || []).map(report => ({
-      date: report.date,
+      date: report.report_date,
       score: report.productivity_score || 0,
       tasksCompleted: report.tasks_completed || 0,
       productivityLevel: getProductivityLevel(report.productivity_score || 0),
@@ -320,15 +320,15 @@ export async function getEfficiencyMetrics(
       .from('daily_reports')
       .select('productivity_score')
       .eq('user_id', userId)
-      .gte('date', weekStart.toISOString().split('T')[0])
-      .lte('date', date);
+      .gte('report_date', weekStart.toISOString().split('T')[0])
+      .lte('report_date', date);
 
     const { data: monthReports } = await supabase
       .from('daily_reports')
       .select('productivity_score')
       .eq('user_id', userId)
-      .gte('date', monthStart.toISOString().split('T')[0])
-      .lte('date', date);
+      .gte('report_date', monthStart.toISOString().split('T')[0])
+      .lte('report_date', date);
 
     const weeklyAverage = weekReports && weekReports.length > 0
       ? Math.round(weekReports.reduce((sum, r) => sum + (r.productivity_score || 0), 0) / weekReports.length)

@@ -229,7 +229,6 @@ CREATE TRIGGER update_contact_health_from_memory_trigger
 AFTER INSERT ON memories
 FOR EACH ROW
 EXECUTE FUNCTION update_contact_health_from_memory();
-```
 
 ### In Supabase:
 1. **SQL Editor** → **New Query**

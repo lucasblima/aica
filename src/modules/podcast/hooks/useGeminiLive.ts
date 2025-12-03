@@ -4,6 +4,20 @@ import { arrayBufferToBase64, floatTo16BitPCM, downsampleBuffer } from '../servi
 import { LiveServerMessage, Modality } from '@google/genai';
 import { Dossier } from '../types';
 
+// Type definitions for Live API client
+interface LiveClientEventMap {
+    content: (content: LiveServerMessage) => void;
+    [key: string]: (data: any) => void;
+}
+
+interface LiveClient {
+    on<K extends keyof LiveClientEventMap>(event: K, handler: LiveClientEventMap[K]): () => void;
+    off<K extends keyof LiveClientEventMap>(event: K, handler: LiveClientEventMap[K]): void;
+    connect?: () => Promise<void>;
+    send?: (data: any) => void;
+    close?: () => Promise<void>;
+}
+
 export type LiveMode = 'idle' | 'monitor' | 'cohost';
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
@@ -212,30 +226,38 @@ export const useGeminiLive = ({ dossier }: UseGeminiLiveProps) => {
         }
     };
 
-    // Need to verify how to listen to messages.
-    // I will assume `liveClient` is the MultimodalLiveClient.
-    // It usually has an `on` method.
-
+    // Listen to server messages from Gemini Live API
     useEffect(() => {
-        const liveClient = getLiveClient();
-        // @ts-ignore - Assuming the client has an event emitter interface
-        const unsubscribe = liveClient.on('content', (content: any) => {
-            // Adapt this based on actual SDK
-            if (content.modelTurn) {
-                // Handle text
-                if (content.modelTurn.parts?.some((p: any) => p.text)) {
-                    setRealtimeTranscript(prev => prev + ' ' + content.modelTurn.parts.find((p: any) => p.text).text);
+        const liveClient = getLiveClient() as unknown as LiveClient;
+
+        // Handler for content events from the Live API
+        const handleContent = (content: LiveServerMessage) => {
+            // Check if message contains model response
+            if ('modelTurn' in content && content.modelTurn) {
+                const parts = content.modelTurn.parts || [];
+
+                // Handle text parts
+                const textPart = parts.find((p: any) => 'text' in p && p.text);
+                if (textPart && 'text' in textPart) {
+                    setRealtimeTranscript(prev => prev + ' ' + textPart.text);
                 }
-                // Handle audio
-                if (content.modelTurn.parts?.some((p: any) => p.inlineData)) {
-                    const audioPart = content.modelTurn.parts.find((p: any) => p.inlineData);
+
+                // Handle audio parts
+                const audioPart = parts.find((p: any) => 'inlineData' in p && p.inlineData);
+                if (audioPart && 'inlineData' in audioPart && audioPart.inlineData?.data) {
                     playAudioChunk(audioPart.inlineData.data);
                 }
             }
-        });
+        };
 
+        // Subscribe to content events
+        const unsubscribe = liveClient.on('content', handleContent);
+
+        // Cleanup on unmount
         return () => {
-            // Cleanup listener if needed
+            if (typeof unsubscribe === 'function') {
+                unsubscribe();
+            }
         }
     }, []);
 
