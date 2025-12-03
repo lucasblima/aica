@@ -1,7 +1,17 @@
 import { supabase } from './supabaseClient';
+import {
+    saveGoogleCalendarTokens,
+    getGoogleCalendarTokens,
+    getValidAccessToken as getValidAccessTokenFromDB,
+    isGoogleCalendarConnected as isConnectedInDB,
+    disconnectGoogleCalendar as disconnectFromDB,
+    updateLastSyncTime,
+    getGoogleUserInfo,
+} from './googleCalendarTokenService';
 
 /**
- * Chaves para localStorage - rastreamento de estado Google Calendar
+ * DEPRECATED: Estas chaves foram substituídas por armazenamento no banco de dados
+ * Mantidas por compatibilidade com código legado
  */
 const GOOGLE_CALENDAR_TOKEN_KEY = 'google_calendar_access_token';
 const GOOGLE_CALENDAR_REFRESH_KEY = 'google_calendar_refresh_token';
@@ -18,7 +28,7 @@ const GOOGLE_CALENDAR_SCOPES = [
 
 /**
  * Inicia o fluxo OAuth com Google para autorizar acesso ao Google Calendar
- * Com suporte a refresh tokens para sincronização em background
+ * Após autorização, os tokens são salvos no banco de dados por usuário
  */
 export async function connectGoogleCalendar(): Promise<void> {
     try {
@@ -37,6 +47,9 @@ export async function connectGoogleCalendar(): Promise<void> {
         if (error) {
             throw new Error(`Erro OAuth: ${error.message}`);
         }
+
+        // Após o OAuth ser concluído com sucesso, a sessão será atualizada
+        // Use handleOAuthCallback() para processar os tokens
     } catch (error) {
         console.error('Erro ao conectar Google Calendar:', error);
         throw error;
@@ -44,22 +57,58 @@ export async function connectGoogleCalendar(): Promise<void> {
 }
 
 /**
- * Desconecta o Google Calendar revogando tokens
+ * Processa o callback do OAuth e salva os tokens no banco de dados
+ * Deve ser chamado após o redirecionamento do OAuth
+ */
+export async function handleOAuthCallback(): Promise<void> {
+    try {
+        // Obter a sessão atual (que agora contém o provider_token)
+        const { data } = await supabase.auth.getSession();
+
+        if (!data.session?.provider_token) {
+            throw new Error('Token do Google não encontrado na sessão');
+        }
+
+        // Obter informações do usuário Google (opcional, para melhor UX)
+        let userInfo: any = {};
+        try {
+            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                headers: {
+                    'Authorization': `Bearer ${data.session.provider_token}`,
+                }
+            });
+
+            if (userInfoResponse.ok) {
+                userInfo = await userInfoResponse.json();
+            }
+        } catch (err) {
+            console.warn('Não foi possível obter informações do usuário Google:', err);
+        }
+
+        // Salvar tokens no banco de dados associados ao usuário
+        await saveGoogleCalendarTokens(
+            data.session.provider_token,
+            data.session.provider_refresh_token,
+            undefined, // O Supabase não fornece expires_in no callback
+            {
+                email: userInfo.email,
+                name: userInfo.name,
+                picture: userInfo.picture,
+            }
+        );
+    } catch (error) {
+        console.error('Erro ao processar callback OAuth:', error);
+        throw error;
+    }
+}
+
+/**
+ * Desconecta o Google Calendar revogando tokens e removendo do banco de dados
  */
 export async function disconnectGoogleCalendar(): Promise<void> {
     try {
-        // Revogar tokens do localStorage
-        localStorage.removeItem(GOOGLE_CALENDAR_TOKEN_KEY);
-        localStorage.removeItem(GOOGLE_CALENDAR_REFRESH_KEY);
-        localStorage.removeItem(GOOGLE_CALENDAR_EXPIRY_KEY);
-        localStorage.removeItem(GOOGLE_CALENDAR_CONNECTED_KEY);
-
-        // Se houver suporte, revogar tokens no servidor Supabase
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.provider_token) {
-            // Chamar endpoint de revogação do Google
-            await revokeGoogleToken(data.session.provider_token);
-        }
+        // Usar a nova função de desconexão do banco de dados
+        await disconnectFromDB();
     } catch (error) {
         console.error('Erro ao desconectar Google Calendar:', error);
         throw error;
@@ -67,25 +116,12 @@ export async function disconnectGoogleCalendar(): Promise<void> {
 }
 
 /**
- * Verifica se o Google Calendar está conectado
+ * Verifica se o Google Calendar está conectado para o usuário autenticado
  */
 export async function isGoogleCalendarConnected(): Promise<boolean> {
     try {
-        // Primeiro, checar localStorage para resposta rápida
-        const storedConnection = localStorage.getItem(GOOGLE_CALENDAR_CONNECTED_KEY);
-        if (storedConnection === 'true') {
-            // Verificar se o token ainda é válido
-            return await isTokenValid();
-        }
-
-        // Verificar se há sessão ativa do Supabase com Google
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.user?.user_metadata?.provider === 'google') {
-            localStorage.setItem(GOOGLE_CALENDAR_CONNECTED_KEY, 'true');
-            return true;
-        }
-
-        return false;
+        // Verificar se há tokens no banco de dados para o usuário
+        return await isConnectedInDB();
     } catch (error) {
         console.error('Erro ao verificar conexão:', error);
         return false;
@@ -93,22 +129,13 @@ export async function isGoogleCalendarConnected(): Promise<boolean> {
 }
 
 /**
- * Obtém o token de acesso válido (refresh se necessário)
+ * Obtém o token de acesso válido, renovando se necessário
+ * Usa tokens armazenados no banco de dados por usuário
  */
 export async function getValidAccessToken(): Promise<string | null> {
     try {
-        let accessToken = localStorage.getItem(GOOGLE_CALENDAR_TOKEN_KEY);
-        const expiryTime = localStorage.getItem(GOOGLE_CALENDAR_EXPIRY_KEY);
-
-        // Se o token expirou, tentar refreshar
-        if (expiryTime && Date.now() >= parseInt(expiryTime)) {
-            const refreshToken = localStorage.getItem(GOOGLE_CALENDAR_REFRESH_KEY);
-            if (refreshToken) {
-                accessToken = await refreshAccessToken(refreshToken);
-            }
-        }
-
-        return accessToken;
+        // Usar a função do banco de dados que gerencia renovação automática
+        return await getValidAccessTokenFromDB();
     } catch (error) {
         console.error('Erro ao obter token válido:', error);
         return null;
@@ -116,114 +143,16 @@ export async function getValidAccessToken(): Promise<string | null> {
 }
 
 /**
- * Armazena tokens após OAuth bem-sucedido
- * (Será chamado após redirect do OAuth)
+ * DEPRECATED: Função legada - use handleOAuthCallback() em vez disso
+ * Armazena tokens após OAuth bem-sucedido no banco de dados
  */
-export function storeGoogleTokens(
+export async function storeGoogleTokens(
     accessToken: string,
     refreshToken?: string,
     expiresIn?: number
-): void {
-    localStorage.setItem(GOOGLE_CALENDAR_TOKEN_KEY, accessToken);
-
-    if (refreshToken) {
-        localStorage.setItem(GOOGLE_CALENDAR_REFRESH_KEY, refreshToken);
-    }
-
-    if (expiresIn) {
-        const expiryTime = Date.now() + expiresIn * 1000;
-        localStorage.setItem(GOOGLE_CALENDAR_EXPIRY_KEY, expiryTime.toString());
-    }
-
-    localStorage.setItem(GOOGLE_CALENDAR_CONNECTED_KEY, 'true');
-}
-
-/**
- * Validação interna de token
- */
-async function isTokenValid(): Promise<boolean> {
-    try {
-        const token = localStorage.getItem(GOOGLE_CALENDAR_TOKEN_KEY);
-        if (!token) return false;
-
-        // Fazer chamada GET simples ao Google Calendar API para validar
-        const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            }
-        });
-
-        return response.ok;
-    } catch (error) {
-        console.error('Erro ao validar token:', error);
-        return false;
-    }
-}
-
-/**
- * Refresh do token de acesso usando refresh token
- */
-async function refreshAccessToken(refreshToken: string): Promise<string | null> {
-    try {
-        // Nota: Isso requer um backend específico ou proxy OAuth
-        // Para implementação direta, use a API de refresh do Google
-        const response = await fetch('https://oauth2.googleapis.com/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                client_id: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || '',
-                client_secret: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET || '',
-                refresh_token: refreshToken,
-                grant_type: 'refresh_token',
-            }).toString(),
-        });
-
-        if (!response.ok) {
-            throw new Error('Falha ao renovar token');
-        }
-
-        const data = await response.json();
-        const newAccessToken = data.access_token;
-
-        // Armazenar novo token
-        localStorage.setItem(GOOGLE_CALENDAR_TOKEN_KEY, newAccessToken);
-
-        if (data.expires_in) {
-            const expiryTime = Date.now() + data.expires_in * 1000;
-            localStorage.setItem(GOOGLE_CALENDAR_EXPIRY_KEY, expiryTime.toString());
-        }
-
-        return newAccessToken;
-    } catch (error) {
-        console.error('Erro ao renovar token:', error);
-        return null;
-    }
-}
-
-/**
- * Revoga token com Google
- */
-async function revokeGoogleToken(token: string): Promise<void> {
-    try {
-        const response = await fetch(`https://oauth2.googleapis.com/revoke`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                token: token,
-            }).toString(),
-        });
-
-        if (!response.ok) {
-            console.warn('Aviso: Não foi possível revogar token completamente');
-        }
-    } catch (error) {
-        console.error('Erro ao revogar token:', error);
-    }
+): Promise<void> {
+    // Usar a nova função que armazena no banco de dados
+    await saveGoogleCalendarTokens(accessToken, refreshToken, expiresIn);
 }
 
 /**
