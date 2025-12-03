@@ -32,20 +32,41 @@ Tests use **global authentication setup** that:
 
 ### Configuration
 
-Set environment variables for automatic authentication:
+#### Option 1: API-Based Authentication (Recommended)
 
-```bash
-# .env or shell
-export TEST_EMAIL="your-test-account@gmail.com"
-export TEST_PASSWORD="your-secure-password"
-export VITE_SUPABASE_URL="https://your-project.supabase.co"
-export VITE_SUPABASE_ANON_KEY="your-anon-key"
-```
+1. **Copy the example env file:**
+   ```bash
+   cp .env.example .env
+   ```
 
-Without these variables:
-- Tests will still run
-- But will fail at auth check (expected behavior)
-- This is intentional to prevent tests running on unauthenticated state
+2. **Fill in your Supabase credentials in `.env`:**
+   ```bash
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+3. **Create a test user in Supabase:**
+   - Go to Supabase console → Authentication → Users
+   - Click "Add user"
+   - Enter email and password
+   - Add to `.env`:
+   ```bash
+   TEST_EMAIL=your-test-account@example.com
+   TEST_PASSWORD=your-secure-test-password
+   ```
+
+4. **Run tests:**
+   ```bash
+   npm run test:e2e
+   ```
+
+#### Option 2: Without Environment Variables
+
+If you don't configure credentials:
+- Setup will create minimal auth file (`.auth.json`)
+- Tests will proceed but may fail at authentication checks
+- This is expected behavior - you'll see warnings in console
+- For production use, **always configure credentials**
 
 ### How It Works
 

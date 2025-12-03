@@ -1,24 +1,3 @@
-// ============================================
-// Multi-Podcast Architecture Types
-// ============================================
-
-export interface PodcastShow {
-  id: string;
-  title: string; // Changed from 'name' to match database
-  description?: string;
-  cover_url?: string; // Changed from 'cover_image_url'
-  user_id?: string;
-  created_at: string;
-  updated_at: string;
-  // Stats (from view)
-  episodes_count?: number;
-  last_episode_date?: string;
-}
-
-export interface TeamMember {
-  id: string;
-  episode_id: string;
-  name: string;
   role: 'host' | 'guest' | 'producer' | 'tech';
   whatsapp?: string; // Format: +5511999999999
   created_at: string;
