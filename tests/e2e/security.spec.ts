@@ -2,12 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Security & Privacy', () => {
   test.beforeEach(async ({ page }) => {
-    // Login
+    /**
+     * Authentication is handled globally via playwright.config.ts
+     * which uses storageState to inject pre-authenticated session.
+     */
     await page.goto('/');
-    await page.fill('input[type="email"]', 'test@aica.app');
-    await page.fill('input[type="password"]', 'SecureTest123!@#');
-    await page.locator('button:has-text("Login")').click();
-    await page.waitForURL(/\/(dashboard|meu-dia)/);
   });
 
   test('Test 12.1: HTTPS Enforcement', async ({ page }) => {
