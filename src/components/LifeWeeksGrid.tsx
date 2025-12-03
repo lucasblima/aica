@@ -91,6 +91,8 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
             await updateUserProfile(userId, { birth_date: date });
             setBirthDate(date);
             console.log('[LifeWeeks] Birth date saved successfully');
+            // Reload data to ensure component re-renders with the new birth date
+            await loadData();
         } catch (error: any) {
             console.error('[LifeWeeks] Error saving birth date:', error);
             alert(`Erro ao salvar data de nascimento:\n${error.message || JSON.stringify(error)}`);
@@ -430,131 +432,110 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                         </div>
                     </div>
 
-                    {/* Thick Progress Bar - GROOVE EFFECT */}
-                    <div className="relative h-4 ceramic-groove rounded-full overflow-hidden">
-                        <div
-                            className="absolute inset-y-0 left-0 bg-ceramic-text-primary rounded-full transition-all duration-1000"
-                            style={{ width: `${percentLived}%` }}
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
-                        </div>
-                        {/* Current Week Marker */}
-                        <div
-                            className="absolute top-0 bottom-0 w-1 bg-ceramic-accent shadow-lg"
-                            style={{ left: `${percentLived}%` }}
-                        >
-                            <div className="absolute -top-1 -left-1 w-3 h-3 bg-ceramic-accent rounded-full animate-pulse"></div>
+                    {/* Thick Progress Bar - INSET EFFECT */}
+                    <div className="relative h-4">
+                        <div className="absolute inset-0 ceramic-inset rounded-full overflow-hidden" style={{ backgroundColor: '#ffaa00ff' }}>
+                            <div
+                                className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000"
+                                style={{ width: `${percentLived}%`, backgroundColor: '#4A453D' }}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
+                            </div>
                         </div>
                     </div>
 
-                    {!isExpanded && (
-                        <p className="text-xs text-ceramic-text-secondary mt-3 text-center">
-                            Restam aproximadamente <span className="font-bold text-ceramic-text-primary">{formatter.format(remainingWeeks)}</span> semanas · Clique para ver a grade completa
-                        </p>
-                    )}
+                    <p className="text-xs text-ceramic-text-secondary mt-3 text-center">
+                        {formatter.format(remainingWeeks)} semanas restantes
+                    </p>
                 </div>
 
-                {/* Expanded State - The Grid */}
+                {/* Expanded State - Full Grid */}
                 {isExpanded && (
-                    <div className="px-6 pb-6 pt-2 border-t border-ceramic-text-secondary/10">
+                    <div className="p-6 border-t border-ceramic-text-secondary/10 bg-ceramic-base/30">
                         <div className="mb-4 flex items-center justify-between">
-                            <p className="text-sm text-ceramic-text-secondary">
-                                Cada quadrado = 1 semana · 2 linhas = 1 ano (52 semanas)
-                            </p>
-                            <div className="flex gap-3 text-xs font-medium text-ceramic-text-secondary">
-                                <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 bg-[#8C867A] rounded-full"></div>
-                                    <span>Vivido</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 bg-ceramic-accent rounded-full animate-pulse"></div>
-                                    <span>Agora</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 bg-[#E3E0D8] shadow-inner rounded-full"></div>
-                                    <span>Futuro</span>
-                                </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-ceramic-text-primary text-etched">Sua Vida em Semanas</h4>
+                                <p className="text-xs text-ceramic-text-secondary mt-1">
+                                    Cada quadrado = 1 semana. Clique em uma semana futura para planejar marcos.
+                                </p>
                             </div>
                         </div>
 
-                        {/* Grid with rows of 26 weeks (half year) */}
-                        <div className="overflow-x-auto pb-4">
-                            <div className="space-y-1 min-w-max max-h-96 overflow-y-auto p-4 ceramic-tray rounded-3xl">
-                                {(() => {
-                                    // Calculate start week to show only ~3 years before current week
-                                    // 1 year = 52 weeks = 2 rows of 26
-                                    // 3 years = 6 rows
-                                    const currentRow = Math.floor((currentWeek - 1) / 26);
-                                    const startRow = Math.max(0, currentRow - 6);
-                                    const startWeekIndex = startRow * 26;
+                        {/* Legend */}
+                        <div className="flex items-center gap-4 mb-4 text-xs">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-sm ceramic-inset"></div>
+                                <span className="text-ceramic-text-secondary">Vividas</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-sm ceramic-base border-2 border-ceramic-text-primary animate-pulse"></div>
+                                <span className="text-ceramic-text-secondary">Semana Atual</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-sm bg-ceramic-highlight"></div>
+                                <span className="text-ceramic-text-secondary">Futuras</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-sm bg-emerald-500"></div>
+                                <span className="text-ceramic-text-secondary">Com Marcos</span>
+                            </div>
+                        </div>
 
-                                    const rows = [];
-                                    for (let i = startWeekIndex; i < totalWeeks; i += 26) {
-                                        const rowWeeks = [];
-                                        for (let j = 0; j < 26 && (i + j) < totalWeeks; j++) {
-                                            const weekNum = i + j + 1;
+                        {/* Grid Container */}
+                        <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                            {(() => {
+                                const rows: number[][] = [];
+                                for (let i = 0; i < totalWeeks; i += 26) {
+                                    rows.push(Array.from({ length: Math.min(26, totalWeeks - i) }, (_, j) => i + j));
+                                }
+
+                                return rows.map((row, rowIndex) => (
+                                    <div key={rowIndex} className="flex gap-1">
+                                        {row.map((weekNum) => {
                                             const isPast = weekNum < currentWeek;
                                             const isCurrent = weekNum === currentWeek;
-                                            const event = lifeEvents.find(e => e.week_number === weekNum);
+                                            const event = lifeEvents.find((e) => e.week_number === weekNum);
 
-                                            rowWeeks.push({ weekNum, isPast, isCurrent, event });
-                                        }
-                                        rows.push(rowWeeks);
-                                    }
+                                            let className = 'w-3 h-3 rounded-sm transition-all cursor-pointer hover:scale-150 hover:z-10 relative ';
 
-                                    return rows.map((row, rowIndex) => {
-                                        const isYearEnd = (startRow + rowIndex) % 2 === 1;
+                                            if (isPast) {
+                                                className += 'ceramic-inset';
+                                            } else if (isCurrent) {
+                                                className += 'ceramic-base border-2 border-ceramic-text-primary animate-pulse shadow-lg';
+                                            } else if (event) {
+                                                const moduleColor = MODULES.find(m => m.id === event.module)?.color || 'bg-ceramic-accent';
+                                                className += `${moduleColor} shadow-md`;
+                                            } else {
+                                                className += 'bg-ceramic-highlight hover:bg-ceramic-accent';
+                                            }
 
-                                        return (
-                                            <div
-                                                key={startRow + rowIndex}
-                                                className={`flex gap-1 ${isYearEnd ? 'mb-3' : ''}`}
-                                            >
-                                                {row.map(({ weekNum, isPast, isCurrent, event }) => {
-                                                    let className = "w-3 h-3 rounded-full transition-all duration-200 ";
-
-                                                    if (event) {
-                                                        const module = MODULES.find(m => m.id === event.module);
-                                                        className += module ? `${module.color} hover:opacity-80 cursor-pointer shadow-sm` : "bg-amber-500 hover:bg-amber-600 cursor-pointer shadow-sm";
-                                                    } else if (isCurrent) {
-                                                        className += "bg-ceramic-accent animate-pulse shadow-sm scale-125 z-10";
-                                                    } else if (isPast) {
-                                                        // Past: Darker, filled peg look
-                                                        className += "bg-[#8C867A] shadow-sm";
-                                                    } else {
-                                                        // Future: Empty hole look
-                                                        className += "bg-[#E3E0D8] shadow-inner hover:bg-white/50 cursor-pointer";
-                                                    }
-
-                                                    return (
-                                                        <div
-                                                            key={weekNum}
-                                                            ref={isCurrent ? currentWeekRef : null}
-                                                            className={className}
-                                                            title={event ? `${event.title} (${event.module || 'Geral'})` : `Semana ${weekNum}`}
-                                                            onClick={() => {
-                                                                if (!isPast && !event) {
-                                                                    setSelectedWeek(weekNum);
-                                                                    setIsPlanning(true);
-                                                                } else if (event) {
-                                                                    alert(`Marco: ${event.title}\nÁrea: ${event.module || 'Geral'}`);
-                                                                }
-                                                            }}
-                                                        />
-                                                    );
-                                                })}
-                                                {row.length < 26 && (
-                                                    <>
-                                                        {[...Array(26 - row.length)].map((_, i) => (
-                                                            <div key={`empty-${i}`} className="w-3 h-3"></div>
-                                                        ))}
-                                                    </>
-                                                )}
-                                            </div>
-                                        );
-                                    });
-                                })()}
-                            </div>
+                                            return (
+                                                <div
+                                                    key={weekNum}
+                                                    ref={isCurrent ? currentWeekRef : null}
+                                                    className={className}
+                                                    title={event ? `${event.title} (${event.module || 'Geral'})` : `Semana ${weekNum}`}
+                                                    onClick={() => {
+                                                        if (!isPast && !event) {
+                                                            setSelectedWeek(weekNum);
+                                                            setIsPlanning(true);
+                                                        } else if (event) {
+                                                            alert(`Marco: ${event.title}\nÁrea: ${event.module || 'Geral'}`);
+                                                        }
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                        {row.length < 26 && (
+                                            <>
+                                                {[...Array(26 - row.length)].map((_, i) => (
+                                                    <div key={`empty-${i}`} className="w-3 h-3"></div>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                ));
+                            })()}
                         </div>
                     </div>
                 )}
