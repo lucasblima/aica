@@ -38,11 +38,11 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         const { supabase } = await import('../modules/podcast/supabaseClient');
         const { data } = await supabase
             .from('podcast_shows')
-            .select('title')
+            .select('name')
             .eq('id', showId)
             .single();
 
-        setCurrentShowTitle(data?.title || 'Podcast');
+        setCurrentShowTitle(data?.name || 'Podcast');
         setView('dashboard');
     };
 
@@ -124,6 +124,8 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             <PodcastLibrary
                 onSelectShow={handleSelectShow}
                 onCreateNew={handleCreateNewShow}
+                userEmail={userEmail}
+                onLogout={onLogout}
             />
         );
     }

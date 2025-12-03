@@ -1,3 +1,18 @@
+import React, { useState, useEffect } from 'react';
+import { Search, User, MessageSquare, Zap, Loader2, ArrowRight, Clock, Calendar, Hash, MapPin, Sparkles, Wand2 } from 'lucide-react';
+import { generateDossier, suggestTrendingTheme, suggestTrendingGuest } from '../services/geminiService';
+import { createProject, updateProject, listProjects } from '../services/databaseService';
+import { getTopics, createTopic } from '../services/databaseService';
+import { Dossier, Project } from '../types';
+import { TeamMemberForm } from '../components/TeamMemberForm';
+import HistoryPanel from '../components/HistoryPanel';
+
+interface Props {
+  onDossierReady: (dossier: Dossier, projectId: string) => void;
+  onGoToStudio: (projectId: string) => void;
+  currentProjectId?: string | null;
+}
+
 const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, currentProjectId }) => {
   const [guestName, setGuestName] = useState('');
   const [theme, setTheme] = useState('');
