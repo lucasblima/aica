@@ -1,4 +1,5 @@
 import { test as setup } from '@playwright/test';
+import * as fs from 'fs';
 
 /**
  * Global Authentication Setup for E2E Tests
@@ -34,8 +35,7 @@ setup('authenticate via Supabase API', async ({ request }) => {
    */
 
   try {
-    // eslint-disable-next-line no-undef
-    const fs = require('fs');
+    // Create directory if it doesn't exist
     fs.mkdirSync('tests/e2e', { recursive: true });
 
     // Attempt to authenticate with email/password if configured
@@ -93,8 +93,6 @@ setup('authenticate via Supabase API', async ({ request }) => {
 
   // Helper function to create empty auth file
   function createEmptyAuthFile() {
-    // eslint-disable-next-line no-undef
-    const fs = require('fs');
     fs.writeFileSync(
       authFile,
       JSON.stringify({
