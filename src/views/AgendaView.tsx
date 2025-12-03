@@ -16,6 +16,7 @@ import { supabase } from '../supabaseClient';
 import { PriorityMatrix } from '../components/PriorityMatrix';
 import { DailyTimeline } from '../components/DailyTimeline';
 import { HeaderGlobal } from '../components/HeaderGlobal';
+import GoogleCalendarConnect from '../components/GoogleCalendarConnect';
 import { Task, Quadrant } from '../../types';
 import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
 import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
@@ -287,6 +288,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             onAddTask={addAtlasTask}
                             isSyncing={isAtlasSyncing}
                         />
+                    </div>
+
+                    {/* Google Calendar Sync */}
+                    <div className="flex-none max-w-2xl mx-auto w-full">
+                        <GoogleCalendarConnect />
                     </div>
 
                     {/* Priority Matrix - Collapsible/Fixed Header feel */}
