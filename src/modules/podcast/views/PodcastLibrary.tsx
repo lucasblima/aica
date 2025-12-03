@@ -3,13 +3,16 @@ import { Plus, ArrowRight, Mic2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { PodcastShow } from '../types';
 import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
+import { HeaderGlobal } from '../../../components/HeaderGlobal';
 
 interface PodcastLibraryProps {
     onSelectShow: (showId: string) => void;
     onCreateNew: () => void;
+    userEmail?: string;
+    onLogout?: () => void;
 }
 
-export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, onCreateNew }) => {
+export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, onCreateNew, userEmail, onLogout }) => {
     const [shows, setShows] = useState<PodcastShow[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -45,7 +48,7 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
             const { error } = await supabase
                 .from('podcast_shows')
                 .insert({
-                    title,
+                    name: title,
                     description,
                     user_id: user.id
                 });
@@ -63,41 +66,35 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
     };
 
     return (
-        <div className="min-h-screen bg-ceramic-base p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-12 text-center">
-                    <div className="flex justify-center mb-4">
-                        <div className="h-16 w-16 bg-ceramic-text-primary rounded-2xl flex items-center justify-center ceramic-card">
-                            <Mic2 className="h-8 w-8 text-ceramic-base" />
-                        </div>
-                    </div>
-                    <h1 className="text-4xl font-bold text-ceramic-text-primary mb-2">
-                        Meus Podcasts
-                    </h1>
-                    <p className="text-ceramic-text-secondary text-lg">
-                        Escolha um show para gerenciar episódios
-                    </p>
-                </div>
+        <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+            {/* Header with HeaderGlobal */}
+            <HeaderGlobal
+                title="Estúdio Aica"
+                subtitle="PODCAST COPILOT"
+                userEmail={userEmail}
+                onLogout={onLogout}
+            />
 
+            {/* Main Content Area */}
+            <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
                 {/* Shows Grid */}
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="ceramic-card h-64 animate-pulse" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="ceramic-card h-48 animate-pulse" />
                         ))}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* New Show Card */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {/* New Show Card - Inset Style */}
                         <button
                             onClick={() => setShowModal(true)}
-                            className="group ceramic-card p-6 flex flex-col items-center justify-center gap-4 hover:scale-[1.02] transition-all duration-300 border-2 border-dashed border-ceramic-text-tertiary/30 hover:border-ceramic-text-primary/30"
+                            className="group ceramic-inset p-4 flex flex-col items-center justify-center gap-3 hover:scale-[1.02] transition-all duration-300 min-h-[12rem] rounded-2xl"
                         >
-                            <div className="h-16 w-16 rounded-full bg-ceramic-text-primary/5 flex items-center justify-center group-hover:bg-ceramic-text-primary/10 transition-colors">
-                                <Plus className="h-8 w-8 text-ceramic-text-primary" />
+                            <div className="h-12 w-12 rounded-full border-2 border-dashed border-ceramic-text-secondary/50 flex items-center justify-center group-hover:border-ceramic-text-primary transition-colors">
+                                <Plus className="h-6 w-6 text-ceramic-text-secondary group-hover:text-ceramic-text-primary transition-colors" />
                             </div>
-                            <span className="font-bold text-ceramic-text-primary">Criar Novo Podcast</span>
+                            <span className="text-xs font-bold text-ceramic-text-secondary group-hover:text-ceramic-text-primary transition-colors text-center">Criar Novo</span>
                         </button>
 
                         {/* Existing Shows */}
@@ -105,64 +102,42 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
                             <button
                                 key={show.id}
                                 onClick={() => onSelectShow(show.id)}
-                                className="group ceramic-card p-6 text-left hover:scale-[1.02] transition-all duration-300 flex flex-col"
+                                className="group ceramic-card p-4 text-left hover:scale-[1.02] transition-all duration-300 flex flex-col rounded-2xl"
                             >
                                 {/* Cover Image */}
-                                <div className="ceramic-inset rounded-xl mb-4 aspect-square overflow-hidden bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+                                <div className="ceramic-inset rounded-xl mb-3 aspect-square overflow-hidden bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
                                     {show.cover_url ? (
                                         <img
                                             src={show.cover_url}
-                                            alt={show.title}
+                                            alt={show.name}
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
-                                        <Mic2 className="w-16 h-16 text-amber-600 opacity-30" />
+                                        <Mic2 className="w-12 h-12 text-amber-600 opacity-30" />
                                     )}
                                 </div>
 
                                 {/* Show Info */}
                                 <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-ceramic-text-primary mb-2 group-hover:text-amber-600 transition-colors">
-                                        {show.title}
+                                    <h3 className="text-sm font-bold text-ceramic-text-primary mb-1 group-hover:text-amber-600 transition-colors line-clamp-2">
+                                        {show.name}
                                     </h3>
-                                    {show.description && (
-                                        <p className="text-sm text-ceramic-text-secondary line-clamp-2 mb-3">
-                                            {show.description}
-                                        </p>
-                                    )}
-                                    <div className="flex items-center gap-2 text-xs text-ceramic-text-tertiary">
-                                        <span>{show.episodes_count || 0} episódios</span>
-                                        {show.last_episode_date && (
-                                            <>
-                                                <span>•</span>
-                                                <span>Último: {new Date(show.last_episode_date).toLocaleDateString('pt-BR')}</span>
-                                            </>
-                                        )}
+                                    {/* Episode Count Badge */}
+                                    <div className="flex items-center gap-1.5 mt-2">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                                            {show.episodes_count || 0} eps
+                                        </span>
                                     </div>
                                 </div>
 
                                 {/* Hover Arrow */}
-                                <div className="flex justify-end mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ArrowRight className="w-5 h-5 text-amber-600" />
+                                <div className="flex justify-end mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ArrowRight className="w-4 h-4 text-amber-600" />
                                 </div>
                             </button>
                         ))}
 
-                        {/* Create New Card */}
-                        <button
-                            onClick={onCreateNew}
-                            className="ceramic-card p-6 hover:scale-[1.02] transition-all duration-300 flex flex-col items-center justify-center text-center min-h-[16rem] group"
-                        >
-                            <div className="ceramic-concave w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <Plus className="w-8 h-8 text-ceramic-text-primary" />
-                            </div>
-                            <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
-                                Criar Novo Podcast
-                            </h3>
-                            <p className="text-sm text-ceramic-text-secondary">
-                                Adicione um novo show à sua biblioteca
-                            </p>
-                        </button>
+
                     </div>
                 )}
 
@@ -179,15 +154,15 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
                             Crie seu primeiro show para começar a produzir episódios
                         </p>
                         <button
-                            onClick={onCreateNew}
-                            className="ceramic-btn px-6 py-3 text-ceramic-text-primary font-bold rounded-xl hover:scale-105 transition-transform"
+                            onClick={() => setShowModal(true)}
+                            className="ceramic-card px-6 py-3 text-ceramic-text-primary font-bold rounded-xl hover:scale-105 transition-transform inline-flex items-center gap-2"
                         >
-                            <Plus className="w-5 h-5 inline mr-2" />
+                            <Plus className="w-5 h-5" />
                             Criar Primeiro Podcast
                         </button>
                     </div>
                 )}
-            </div>
+            </main>
             {/* Create Modal */}
             <CreatePodcastDialog
                 isOpen={showModal}
