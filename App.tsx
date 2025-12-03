@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Calendar, Settings, Plus, ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, Briefcase, Globe, ArrowRight, X, CheckCircle2, Mic } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
+import { handleOAuthCallback } from './src/services/googleAuthService';
 import { BottomNav } from './components/BottomNav';
 import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
@@ -98,6 +99,33 @@ export default function App() {
 
       return () => subscription.unsubscribe();
    }, []);
+
+   /**
+    * Processa callback do OAuth do Google Calendar
+    * Salva tokens no banco de dados para o usuário autenticado
+    */
+   useEffect(() => {
+      if (!isAuthenticated) return;
+
+      // Procesar Google OAuth callback se houver provider_token
+      const processGoogleOAuth = async () => {
+         try {
+            const { data } = await supabase.auth.getSession();
+
+            // Se há provider_token, significa que o OAuth foi concluído recentemente
+            if (data.session?.provider_token && data.session?.user?.user_metadata?.provider === 'google') {
+               console.log('[App] Google OAuth callback detected, saving tokens to database...');
+               await handleOAuthCallback();
+               console.log('[App] Google Calendar tokens saved successfully');
+            }
+         } catch (error) {
+            console.error('[App] Erro ao processar callback do Google Calendar:', error);
+            // Não interrompe o fluxo da app se houver erro no callback
+         }
+      };
+
+      processGoogleOAuth();
+   }, [isAuthenticated]);
 
    useEffect(() => {
       if (!isAuthenticated) return;
