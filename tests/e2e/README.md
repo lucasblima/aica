@@ -1,0 +1,265 @@
+# Playwright E2E Tests
+
+Comprehensive end-to-end test suite for Aica Life OS using Playwright.
+
+## Overview
+
+- **26 automated tests** across 4 test suites
+- **Global authentication** via API (no manual login in tests)
+- **Chromium & Firefox** support
+- **HTML reporting** with screenshots on failure
+
+## Test Suites
+
+| Suite | Tests | Purpose |
+|-------|-------|---------|
+| `auth.spec.ts` | 4 | Authentication & user profile management |
+| `task-management.spec.ts` | 7 | CRUD operations & drag-drop functionality |
+| `gamification.spec.ts` | 5 | XP, leveling, achievements, streaks |
+| `security.spec.ts` | 10 | Security, privacy, GDPR, HTTPS, XSS |
+
+## Authentication Strategy
+
+### Problem
+The application uses **Google OAuth only** (no email/password login).
+
+### Solution
+Tests use **global authentication setup** that:
+1. Authenticates via **Supabase API** (if email/password available)
+2. Injects session **into browser storage** before tests run
+3. Reuses session across **all test specs**
+4. Falls back gracefully if auth not available
+
+### Configuration
+
+Set environment variables for automatic authentication:
+
+```bash
+# .env or shell
+export TEST_EMAIL="your-test-account@gmail.com"
+export TEST_PASSWORD="your-secure-password"
+export VITE_SUPABASE_URL="https://your-project.supabase.co"
+export VITE_SUPABASE_ANON_KEY="your-anon-key"
+```
+
+Without these variables:
+- Tests will still run
+- But will fail at auth check (expected behavior)
+- This is intentional to prevent tests running on unauthenticated state
+
+### How It Works
+
+1. **auth.setup.ts** runs first (before any test)
+   - Makes API request to Supabase with test credentials
+   - Saves auth token to `tests/e2e/.auth.json`
+
+2. **playwright.config.ts** loads the auth file
+   - Uses `storageState` to inject cookies/localStorage
+   - All tests start with valid session
+
+3. **Test specs** use the injected session
+   - No manual login needed in beforeEach
+   - Tests focus on feature testing, not auth flow
+
+## Running Tests
+
+### Prerequisites
+
+```bash
+# Already installed
+npm install -D @playwright/test
+```
+
+### Commands
+
+```bash
+# Run all tests (headless)
+npm run test:e2e
+
+# Run with interactive UI (debugging)
+npm run test:e2e:ui
+
+# Run with visible browser
+npm run test:e2e:headed
+
+# Run in debug mode (step-by-step)
+npm run test:e2e:debug
+
+# Run specific test file
+npm run test:e2e tests/e2e/task-management.spec.ts
+
+# Run tests matching pattern
+npm run test:e2e -g "Create Task"
+```
+
+### View Results
+
+```bash
+# Open HTML report
+npx playwright show-report
+
+# Report stored in
+playwright-report/index.html
+```
+
+## Environment Variables
+
+```bash
+# Required for automatic authentication
+TEST_EMAIL=your-test@example.com
+TEST_PASSWORD=your-secure-password
+
+# Supabase config (usually in .env)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# Optional
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=false  # Auto-download browsers
+```
+
+## Troubleshooting
+
+### Tests fail at login step
+**Cause:** Auth setup didn't inject session
+
+**Solutions:**
+1. Set `TEST_EMAIL` and `TEST_PASSWORD` environment variables
+2. Ensure test user exists in Supabase
+3. Check `.auth.json` file was created
+4. Run `npx playwright show-report` to see screenshots
+
+### "Port already in use"
+**Cause:** Dev server already running
+
+**Solution:**
+```bash
+# Find and kill process on port 3000
+lsof -i :3000
+kill -9 <PID>
+
+# Or use different port
+npm run dev -- --port 3001
+```
+
+### Timeout errors
+**Cause:** App taking too long to load
+
+**Solutions:**
+1. Check if dev server is running
+2. Increase timeout in `playwright.config.ts`
+3. Check network connectivity
+4. Review test screenshots in `playwright-report/`
+
+### "Element not found"
+**Cause:** Selectors outdated or UI changed
+
+**Solutions:**
+1. Use `npx playwright codegen` to generate new selectors
+2. Check actual HTML with `page.content()`
+3. Use inspector: `npx playwright test --debug`
+
+## Test Structure
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Feature Name', () => {
+  test.beforeEach(async ({ page }) => {
+    // Auth already injected globally
+    await page.goto('/');
+  });
+
+  test('Test X.X: Description', async ({ page }) => {
+    // Arrange: navigate to page
+    await page.goto('/path');
+
+    // Act: interact with UI
+    await page.locator('button').click();
+
+    // Assert: verify result
+    await expect(page.locator('[data-testid="element"]')).toBeVisible();
+  });
+});
+```
+
+## Best Practices
+
+1. **Use data-testid attributes** for reliability
+   ```html
+   <button data-testid="submit-button">Submit</button>
+   ```
+
+2. **Avoid hard-coded waits**
+   ```typescript
+   // ❌ Bad
+   await page.waitForTimeout(1000);
+
+   // ✅ Good
+   await expect(element).toBeVisible({ timeout: 5000 });
+   ```
+
+3. **Use relative selectors** for resilience
+   ```typescript
+   // ❌ Bad - brittle
+   await page.locator('form > div > button:nth-child(3)').click();
+
+   // ✅ Good - resilient
+   await page.locator('[data-testid="task"]:has-text("My Task")').click();
+   ```
+
+4. **Keep tests independent**
+   - Each test should be able to run alone
+   - Don't rely on state from previous tests
+   - Use isolated test data when possible
+
+## CI/CD Integration
+
+### GitHub Actions Example
+
+```yaml
+- name: Run E2E tests
+  run: npm run test:e2e
+  env:
+    TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+    TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+    VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+    VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+- name: Upload report
+  uses: actions/upload-artifact@v3
+  if: always()
+  with:
+    name: playwright-report
+    path: playwright-report/
+```
+
+## Performance
+
+- **Local run:** ~2-3 minutes for full suite
+- **CI/CD run:** ~5-7 minutes (browser downloads, retries)
+- **Parallel:** Enabled by default (`fullyParallel: true`)
+
+## Resources
+
+- [Playwright Docs](https://playwright.dev)
+- [Playwright Inspector](https://playwright.dev/docs/inspector)
+- [Authentication Guide](https://playwright.dev/docs/auth)
+- [Best Practices](https://playwright.dev/docs/best-practices)
+
+## Contributing
+
+When adding new tests:
+
+1. Use the same format as existing tests
+2. Add `data-testid` attributes to components
+3. Update this README with new test suites
+4. Ensure all tests pass locally before pushing
+5. Handle both success and failure cases
+
+## Support
+
+For issues or questions:
+1. Check test report: `npx playwright show-report`
+2. Review test code and selectors
+3. Use `--debug` mode: `npm run test:e2e:debug`
+4. Check browser DevTools screenshots

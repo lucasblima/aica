@@ -6,8 +6,8 @@ import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
 import { SettingsMenu } from './src/components/SettingsMenu';
 import { HeaderGlobal } from './src/components/HeaderGlobal';
-import { EfficiencyScoreCard } from './src/components/EfficiencyScoreCard';
 import { EfficiencyTrendChart } from './src/components/EfficiencyTrendChart';
+import { EfficiencyMedallion } from './src/components/EfficiencyMedallion';
 import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
@@ -174,7 +174,7 @@ export default function App() {
                   {userId && <LifeWeeksGrid userId={userId} />}
 
                   {/* Efficiency Score Card */}
-                  {userId && <EfficiencyScoreCard userId={userId} />}
+                  <EfficiencyMedallion score={84} focusTime={245} streak={7} xp={1250} status="excellent" />
 
                   {/* Efficiency Trend Chart */}
                   {userId && <EfficiencyTrendChart userId={userId} days={30} />}
@@ -421,3 +421,4 @@ export default function App() {
       </div>
    );
 }
+

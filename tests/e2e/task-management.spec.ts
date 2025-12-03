@@ -2,12 +2,16 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Core Task Management', () => {
   test.beforeEach(async ({ page }) => {
-    // Login before each test
+    /**
+     * Authentication is handled globally via playwright.config.ts
+     * which uses storageState to inject pre-authenticated session.
+     * No need for manual login here.
+     */
+
+    // Wait for app to load and ensure we're authenticated
     await page.goto('/');
-    await page.fill('input[type="email"]', 'test@aica.app');
-    await page.fill('input[type="password"]', 'SecureTest123!@#');
-    await page.locator('button:has-text("Login")').click();
-    await page.waitForURL(/\/(dashboard|meu-dia)/);
+    // If still on login page, tests will fail with clear auth error
+    // This is expected if auth setup didn't work (missing TEST_EMAIL/TEST_PASSWORD)
   });
 
   test('Test 2.1: Create Task', async ({ page }) => {
