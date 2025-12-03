@@ -18,11 +18,8 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    // Store cookies/local storage for authentication persistence
-    storageState: 'tests/e2e/.auth.json',
   },
 
-  // Run auth setup before all tests
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:3000',
@@ -30,13 +27,28 @@ export default defineConfig({
   },
 
   projects: [
+    // Setup project - runs FIRST to authenticate
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Test projects - depend on setup
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'tests/e2e/.auth.json', // Only set if setup succeeded
+      },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: 'tests/e2e/.auth.json',
+      },
+      dependencies: ['setup'],
     },
   ],
 });
