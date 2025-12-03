@@ -9,7 +9,7 @@
  * - Historical data aggregation
  */
 
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 
 // ============================================================================
 // TYPES

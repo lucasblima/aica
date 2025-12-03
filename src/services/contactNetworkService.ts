@@ -12,7 +12,7 @@
  * 5. Suggest relationship improvements
  */
 
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 import { ContactNetwork, ContactNetworkCreateInput, ContactNetworkUpdateInput, ContactNetworkStats } from '../types/memoryTypes';
 
 // ============================================================================

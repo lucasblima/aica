@@ -4,7 +4,13 @@
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(curl:*)",
-      "Bash(node query_tables.js:*)"
+      "Bash(node query_tables.js:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(npm run build:*)",
+      "mcp__supabase__list_projects"
     ],
     "deny": [],
     "ask": []

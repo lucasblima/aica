@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../../services/supabaseClient';
 import { Dossier, Project } from '../types';
 import { X, Clock, User, Search, Loader2, Trash2, Calendar, MapPin } from 'lucide-react';
 import { listProjects, deleteProject, listProjectsBySeason, listProjectsByStudio } from '../services/databaseService';

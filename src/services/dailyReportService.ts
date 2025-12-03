@@ -11,7 +11,7 @@
  * - Trigger notifications
  */
 
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 import { DailyReport, DailyReportCreateInput } from '../types/memoryTypes';
 import { generateDailyReportInsights } from './geminiMemoryService';
 import { notificationService, sendDailyReportNotification } from './notificationService';

@@ -12,7 +12,7 @@ import {
     DragOverEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../services/supabaseClient';
 import { PriorityMatrix } from '../components/PriorityMatrix';
 import { DailyTimeline } from '../components/DailyTimeline';
 import { HeaderGlobal } from '../components/HeaderGlobal';
@@ -100,7 +100,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     scheduled_time,
                     completed_at,
                     priority,
-                    association:associations(name)
+                    associations!association_id(name)
                 `)
                 .is('completed_at', null)
                 .eq('archived', false)

@@ -10,7 +10,7 @@
  * Provides smart suggestions for task reordering in Priority Matrix
  */
 
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 import { calculateSimilarity } from './geminiMemoryService';
 
 // ============================================================================

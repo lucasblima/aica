@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../services/supabaseClient';
 import { Sparkles } from 'lucide-react';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {

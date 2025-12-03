@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Sparkles, Calendar, Clock } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../services/supabaseClient';
 import { Task, Quadrant } from '../../types';
 
 interface QuadrantConfig {

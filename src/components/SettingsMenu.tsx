@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Settings, LogOut, User } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../services/supabaseClient';
 
 interface SettingsMenuProps {
     userEmail?: string;

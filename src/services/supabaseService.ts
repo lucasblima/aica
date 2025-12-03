@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 
 // Fetch all associations from Supabase
 export const getAssociations = async () => {
