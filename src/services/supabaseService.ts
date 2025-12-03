@@ -22,7 +22,7 @@ export const getAssociations = async () => {
         return data || [];
     } catch (error) {
         console.error('Error fetching associations from Supabase:', error);
-        throw error;
+        return []; // Return empty array instead of throwing
     }
 };
 
@@ -39,7 +39,7 @@ export const getAssociationById = async (id: string) => {
         return data;
     } catch (error) {
         console.error(`Error fetching association ${id}:`, error);
-        throw error;
+        return null; // Return null for single item queries
     }
 };
 
@@ -57,7 +57,7 @@ export const getStatesByAssociation = async (associationId: string) => {
         return data || [];
     } catch (error) {
         console.error(`Error fetching states for association ${associationId}:`, error);
-        throw error;
+        return []; // Return empty array instead of throwing
     }
 };
 
@@ -81,7 +81,7 @@ export const getWorkItemsByAssociation = async (associationId: string) => {
         return data || [];
     } catch (error) {
         console.error(`Error fetching work items for association ${associationId}:`, error);
-        throw error;
+        return []; // Return empty array instead of throwing
     }
 };
 
@@ -137,7 +137,7 @@ export const getDailyAgenda = async () => {
                 *,
                 association:associations(name)
             `)
-            .or(`due_date.eq.${today},due_date.lt.${today}`) // Today or Overdue
+            .lte('due_date', today) // Due today or earlier (overdue) - simplified filter
             .eq('archived', false)
             .order('due_date', { ascending: true });
 
@@ -145,7 +145,7 @@ export const getDailyAgenda = async () => {
         return data || [];
     } catch (error) {
         console.error('Error fetching daily agenda:', error);
-        throw error;
+        return []; // Return empty array instead of throwing
     }
 };
 
@@ -165,7 +165,7 @@ export const getLifeAreas = async () => {
         return modules || [];
     } catch (error) {
         console.error('Error fetching life areas:', error);
-        throw error;
+        return []; // Return empty array instead of throwing
     }
 };
 

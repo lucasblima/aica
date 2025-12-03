@@ -100,7 +100,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     scheduled_time,
                     completed_at,
                     priority,
-                    associations!association_id(name)
+                    associations(name)
                 `)
                 .is('completed_at', null)
                 .eq('archived', false)

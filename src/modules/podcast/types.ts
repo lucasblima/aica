@@ -1,3 +1,7 @@
+export interface TeamMember {
+  id: string;
+  episode_id: string;
+  name: string;
   role: 'host' | 'guest' | 'producer' | 'tech';
   whatsapp?: string; // Format: +5511999999999
   created_at: string;

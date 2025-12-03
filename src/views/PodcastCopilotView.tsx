@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 import PreparationMode from '../modules/podcast/views/PreparationMode';
 import StudioMode from '../modules/podcast/views/StudioMode';
 import PodcastLibrary from '../modules/podcast/views/PodcastLibrary';
@@ -35,7 +36,6 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         setCurrentShowId(showId);
 
         // Fetch show title
-        const { supabase } = await import('../services/supabaseClient');
         const { data } = await supabase
             .from('podcast_shows')
             .select('name')
@@ -57,7 +57,6 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         if (!currentShowId) return;
 
         // Create a new draft episode
-        const { supabase } = await import('../services/supabaseClient');
         const { data, error } = await supabase
             .from('podcast_episodes')
             .insert({

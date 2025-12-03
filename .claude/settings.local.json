@@ -12,7 +12,8 @@
       "Bash(npm run build:*)",
       "mcp__supabase__list_projects",
       "mcp__supabase__execute_sql",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

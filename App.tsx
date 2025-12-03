@@ -13,6 +13,7 @@ import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
 import Login from './src/components/Login';
+import { FinanceCard } from './src/modules/finance/components/FinanceCard';
 
 // Types
 type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast';
@@ -210,13 +211,19 @@ export default function App() {
                   {/* Life Modules Grid - Bento Style */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      {/* Finanças */}
-                     <ModuleCard
-                        moduleId="finance"
-                        title="Finanças"
-                        icon={Wallet}
-                        color="emerald"
-                        accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
-                     />
+                     {userId ? (
+                        <div className="col-span-2 row-span-2">
+                           <FinanceCard userId={userId} />
+                        </div>
+                     ) : (
+                        <ModuleCard
+                           moduleId="finance"
+                           title="Finanças"
+                           icon={Wallet}
+                           color="emerald"
+                           accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
+                        />
+                     )}
 
                      {/* Saúde & Bem-estar */}
                      <ModuleCard

@@ -7,14 +7,18 @@ export default function GoogleCalendarConnect() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    console.log('[GoogleCalendarConnect] Component rendered', { connected, loading, error });
+
     // Verificar se já está conectado ao carregar
     useEffect(() => {
+        console.log('[GoogleCalendarConnect] useEffect: Checking connection...');
         const checkConnection = async () => {
             try {
                 const isConnected = await isGoogleCalendarConnected();
+                console.log('[GoogleCalendarConnect] Connection status:', isConnected);
                 setConnected(isConnected);
             } catch (err) {
-                console.error('Erro ao verificar conexão:', err);
+                console.error('[GoogleCalendarConnect] Erro ao verificar conexão:', err);
             }
         };
 
