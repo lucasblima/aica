@@ -13,7 +13,8 @@
       "mcp__supabase__list_projects",
       "mcp__supabase__execute_sql",
       "mcp__supabase__apply_migration",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(claude mcp list:*)"
     ],
     "deny": [],
     "ask": []
