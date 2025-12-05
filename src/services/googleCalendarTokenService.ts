@@ -167,10 +167,31 @@ export async function isGoogleCalendarConnected(): Promise<boolean> {
  */
 export async function getValidAccessToken(): Promise<string | null> {
     try {
+        console.log('[getValidAccessToken] 🔑 Obtendo token válido...');
         const tokens = await getGoogleCalendarTokens();
 
         if (!tokens) {
+            console.error('[getValidAccessToken] ❌ Token não encontrado');
             throw new Error('Token não encontrado. Autorize o Google Calendar primeiro.');
+        }
+
+        console.log('[getValidAccessToken] 📋 Token info:', {
+            hasAccessToken: !!tokens.access_token,
+            hasRefreshToken: !!tokens.refresh_token,
+            tokenExpiry: tokens.token_expiry,
+            isConnected: tokens.is_connected
+        });
+
+        // Se não temos token_expiry (null), assumir que pode estar expirado
+        // e tentar renovar se temos refresh_token
+        if (!tokens.token_expiry && tokens.refresh_token) {
+            console.log('[getValidAccessToken] ⚠️ token_expiry é null - tentando renovar...');
+            const newToken = await refreshAccessToken(tokens.refresh_token);
+            if (newToken) {
+                console.log('[getValidAccessToken] ✅ Token renovado com sucesso');
+                return newToken;
+            }
+            console.warn('[getValidAccessToken] ⚠️ Falha ao renovar, usando token existente');
         }
 
         // Verificar se o token expirou
@@ -178,18 +199,26 @@ export async function getValidAccessToken(): Promise<string | null> {
             const expiryTime = new Date(tokens.token_expiry).getTime();
             const timeUntilExpiry = expiryTime - Date.now();
 
+            console.log('[getValidAccessToken] ⏰ Tempo até expiração:', {
+                expiryTime: new Date(tokens.token_expiry).toISOString(),
+                timeUntilExpiryMinutes: Math.round(timeUntilExpiry / 60000)
+            });
+
             // Se vai expirar em menos de 5 minutos, renovar agora
             if (timeUntilExpiry < 5 * 60 * 1000 && tokens.refresh_token) {
+                console.log('[getValidAccessToken] 🔄 Token expirando em breve - renovando...');
                 const newToken = await refreshAccessToken(tokens.refresh_token);
                 if (newToken) {
+                    console.log('[getValidAccessToken] ✅ Token renovado com sucesso');
                     return newToken;
                 }
             }
         }
 
+        console.log('[getValidAccessToken] ✅ Retornando access_token existente');
         return tokens.access_token;
     } catch (error) {
-        console.error('Erro ao obter token válido:', error);
+        console.error('[getValidAccessToken] ❌ Erro ao obter token válido:', error);
         return null;
     }
 }
@@ -199,6 +228,11 @@ export async function getValidAccessToken(): Promise<string | null> {
  */
 export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
     try {
+        console.log('[refreshAccessToken] 🔄 Iniciando renovação do token...');
+        console.log('[refreshAccessToken] 🔑 Refresh token presente:', !!refreshToken);
+        console.log('[refreshAccessToken] 🔑 Client ID:', import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID?.substring(0, 20) + '...');
+        console.log('[refreshAccessToken] 🔑 Client Secret:', !!import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET);
+
         const response = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: {
@@ -212,20 +246,37 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
             }).toString(),
         });
 
+        console.log('[refreshAccessToken] 📡 Resposta recebida:', {
+            status: response.status,
+            ok: response.ok
+        });
+
         if (!response.ok) {
-            throw new Error('Falha ao renovar token de acesso');
+            const errorText = await response.text();
+            console.error('[refreshAccessToken] ❌ Erro na resposta:', errorText);
+            throw new Error(`Falha ao renovar token de acesso: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
         const newAccessToken = data.access_token;
         const expiresIn = data.expires_in;
 
+        console.log('[refreshAccessToken] ✅ Novo token recebido:', {
+            hasAccessToken: !!newAccessToken,
+            expiresIn
+        });
+
         // Atualizar token no banco de dados
         const { data: session } = await supabase.auth.getSession();
         if (session?.session?.user?.id) {
             const newExpiry = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-            await supabase
+            console.log('[refreshAccessToken] 💾 Salvando novo token no banco...', {
+                userId: session.session.user.id,
+                newExpiry
+            });
+
+            const { error } = await supabase
                 .from('google_calendar_tokens')
                 .update({
                     access_token: newAccessToken,
@@ -233,11 +284,17 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
                     last_refresh: new Date().toISOString(),
                 })
                 .eq('user_id', session.session.user.id);
+
+            if (error) {
+                console.error('[refreshAccessToken] ❌ Erro ao salvar token:', error);
+            } else {
+                console.log('[refreshAccessToken] ✅ Token salvo com sucesso');
+            }
         }
 
         return newAccessToken;
     } catch (error) {
-        console.error('Erro ao renovar token de acesso:', error);
+        console.error('[refreshAccessToken] ❌ Erro ao renovar token de acesso:', error);
         return null;
     }
 }
