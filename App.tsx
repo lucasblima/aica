@@ -118,14 +118,27 @@ export default function App() {
          try {
             const { data } = await supabase.auth.getSession();
 
+            console.log('[App] 🔍 DEBUG OAuth Session:', {
+               hasSession: !!data.session,
+               hasProviderToken: !!data.session?.provider_token,
+               hasProviderRefreshToken: !!data.session?.provider_refresh_token,
+               provider: data.session?.user?.user_metadata?.provider,
+               userMetadata: data.session?.user?.user_metadata,
+            });
+
             // Se há provider_token, significa que o OAuth foi concluído recentemente
-            if (data.session?.provider_token && data.session?.user?.user_metadata?.provider === 'google') {
-               console.log('[App] Google OAuth callback detected, saving tokens to database...');
+            if (data.session?.provider_token) {
+               console.log('[App] ✅ Google OAuth callback detected! Saving tokens to database...');
+               console.log('[App] Provider Token presente:', data.session.provider_token.substring(0, 20) + '...');
+
                await handleOAuthCallback();
-               console.log('[App] Google Calendar tokens saved successfully');
+
+               console.log('[App] ✅ Google Calendar tokens saved successfully!');
+            } else {
+               console.log('[App] ⚠️ No provider_token found in session');
             }
          } catch (error) {
-            console.error('[App] Erro ao processar callback do Google Calendar:', error);
+            console.error('[App] ❌ Erro ao processar callback do Google Calendar:', error);
             // Não interrompe o fluxo da app se houver erro no callback
          }
       };
