@@ -62,16 +62,28 @@ export async function connectGoogleCalendar(): Promise<void> {
  */
 export async function handleOAuthCallback(): Promise<void> {
     try {
+        console.log('[handleOAuthCallback] 🔄 Iniciando processamento do callback OAuth...');
+
         // Obter a sessão atual (que agora contém o provider_token)
         const { data } = await supabase.auth.getSession();
+
+        console.log('[handleOAuthCallback] 📋 Session data:', {
+            hasSession: !!data.session,
+            hasProviderToken: !!data.session?.provider_token,
+            hasProviderRefreshToken: !!data.session?.provider_refresh_token,
+            userId: data.session?.user?.id,
+        });
 
         if (!data.session?.provider_token) {
             throw new Error('Token do Google não encontrado na sessão');
         }
 
+        console.log('[handleOAuthCallback] ✅ Provider token encontrado!');
+
         // Obter informações do usuário Google (opcional, para melhor UX)
         let userInfo: any = {};
         try {
+            console.log('[handleOAuthCallback] 🔍 Buscando informações do usuário Google...');
             const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: {
                     'Authorization': `Bearer ${data.session.provider_token}`,
@@ -80,10 +92,16 @@ export async function handleOAuthCallback(): Promise<void> {
 
             if (userInfoResponse.ok) {
                 userInfo = await userInfoResponse.json();
+                console.log('[handleOAuthCallback] ✅ Informações do usuário obtidas:', {
+                    email: userInfo.email,
+                    name: userInfo.name,
+                });
             }
         } catch (err) {
-            console.warn('Não foi possível obter informações do usuário Google:', err);
+            console.warn('[handleOAuthCallback] ⚠️ Não foi possível obter informações do usuário Google:', err);
         }
+
+        console.log('[handleOAuthCallback] 💾 Salvando tokens no banco de dados...');
 
         // Salvar tokens no banco de dados associados ao usuário
         await saveGoogleCalendarTokens(
@@ -96,8 +114,10 @@ export async function handleOAuthCallback(): Promise<void> {
                 picture: userInfo.picture,
             }
         );
+
+        console.log('[handleOAuthCallback] ✅ Tokens salvos com sucesso!');
     } catch (error) {
-        console.error('Erro ao processar callback OAuth:', error);
+        console.error('[handleOAuthCallback] ❌ Erro ao processar callback OAuth:', error);
         throw error;
     }
 }
