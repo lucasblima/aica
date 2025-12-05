@@ -1,0 +1,14 @@
+# Auth storage - contains sensitive session data
+.auth.json
+
+# Playwright traces and artifacts
+.playwright/
+playwright-report/
+test-results/
+
+# Browser cache
+browsers/
+
+# Debugging
+*.log
+*.debug
