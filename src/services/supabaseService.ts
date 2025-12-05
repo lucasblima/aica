@@ -906,3 +906,69 @@ export const createLifeEvent = async (event: {
         throw error;
     }
 };
+
+// ============================================
+// ONBOARDING SERVICES
+// ============================================
+
+// Check if user has completed onboarding
+export const hasCompletedOnboarding = async (userId: string): Promise<boolean> => {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('onboarding_completed')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            // If user doesn't exist yet, they haven't completed onboarding
+            return false;
+        }
+
+        return data?.onboarding_completed ?? false;
+    } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        return false;
+    }
+};
+
+// Mark onboarding as completed
+export const completeOnboarding = async (userId: string, connectedCalendar: boolean = false): Promise<void> => {
+    try {
+        const { error } = await supabase
+            .from('users')
+            .update({
+                onboarding_completed: true,
+                onboarding_completed_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', userId);
+
+        if (error) {
+            // If update fails, user might not exist - create them
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('User not authenticated');
+
+            const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+
+            const { error: insertError } = await supabase
+                .from('users')
+                .insert([{
+                    id: userId,
+                    name: name,
+                    active: true,
+                    onboarding_completed: true,
+                    onboarding_completed_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }]);
+
+            if (insertError) throw insertError;
+        }
+
+        // Log onboarding completion
+        console.log(`[Onboarding] User ${userId} completed onboarding. Calendar connected: ${connectedCalendar}`);
+    } catch (error) {
+        console.error('Error completing onboarding:', error);
+        throw error;
+    }
+};
