@@ -11,9 +11,10 @@ import { EfficiencyTrendChart } from './src/components/EfficiencyTrendChart';
 import { EfficiencyMedallion } from './src/components/EfficiencyMedallion';
 import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
-import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from './src/services/supabaseService';
+import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding } from './src/services/supabaseService';
 import Login from './src/components/Login';
 import { FinanceCard } from './src/modules/finance/components/FinanceCard';
+import OnboardingWizard from './src/components/OnboardingWizard';
 
 // Types
 type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast';
@@ -83,6 +84,10 @@ export default function App() {
    const [selectedAssociation, setSelectedAssociation] = useState<any>(null);
    const [associationModules, setAssociationModules] = useState<any[]>([]);
 
+   // Onboarding State
+   const [showOnboarding, setShowOnboarding] = useState(false);
+   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
    useEffect(() => {
       supabase.auth.getSession().then(({ data: { session } }) => {
          setIsAuthenticated(!!session);
@@ -128,6 +133,27 @@ export default function App() {
       processGoogleOAuth();
    }, [isAuthenticated]);
 
+   // Check onboarding status after authentication
+   useEffect(() => {
+      const checkOnboarding = async () => {
+         if (!userId) {
+            setCheckingOnboarding(false);
+            return;
+         }
+
+         try {
+            const completed = await hasCompletedOnboarding(userId);
+            setShowOnboarding(!completed);
+         } catch (error) {
+            console.error('Error checking onboarding:', error);
+         } finally {
+            setCheckingOnboarding(false);
+         }
+      };
+
+      checkOnboarding();
+   }, [userId]);
+
    useEffect(() => {
       if (!isAuthenticated) return;
 
@@ -172,6 +198,30 @@ export default function App() {
       // Filter modules for this association
       const modules = lifeAreas.filter(area => area.association_id === assoc.id);
       setAssociationModules(modules);
+   };
+
+   // Handle onboarding completion
+   const handleOnboardingComplete = async (connectedCalendar: boolean) => {
+      if (userId) {
+         try {
+            await completeOnboarding(userId, connectedCalendar);
+            setShowOnboarding(false);
+         } catch (error) {
+            console.error('Error completing onboarding:', error);
+         }
+      }
+   };
+
+   // Handle onboarding skip
+   const handleOnboardingSkip = async () => {
+      if (userId) {
+         try {
+            await completeOnboarding(userId, false);
+            setShowOnboarding(false);
+         } catch (error) {
+            console.error('Error skipping onboarding:', error);
+         }
+      }
    };
 
    // Helper to find module/area by name (case insensitive partial match)
@@ -451,6 +501,14 @@ export default function App() {
                onChange={setCurrentView}
                onMicClick={() => alert('Voice AI Coming Soon')}
                isListening={false}
+            />
+         )}
+
+         {/* Onboarding Wizard */}
+         {!checkingOnboarding && showOnboarding && (
+            <OnboardingWizard
+               onComplete={handleOnboardingComplete}
+               onSkip={handleOnboardingSkip}
             />
          )}
       </div>

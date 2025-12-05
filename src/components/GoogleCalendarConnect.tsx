@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle, LogOut, Loader2 } from 'lucide-react';
+import { Calendar, CheckCircle, LogOut, Loader2, Info } from 'lucide-react';
 import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
 
 export default function GoogleCalendarConnect() {
     const [connected, setConnected] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showTooltip, setShowTooltip] = useState(false);
 
     console.log('[GoogleCalendarConnect] Component rendered', { connected, loading, error });
 
@@ -74,9 +75,32 @@ export default function GoogleCalendarConnect() {
 
             {/* Conteúdo Textual */}
             <div className="flex-grow">
-                <h3 className="text-xl font-bold text-[#5C554B] mb-1">
-                    Sincronizar Agenda
-                </h3>
+                <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-xl font-bold text-[#5C554B]">
+                        Sincronizar Agenda
+                    </h3>
+                    <div className="relative">
+                        <button
+                            onMouseEnter={() => setShowTooltip(true)}
+                            onMouseLeave={() => setShowTooltip(false)}
+                            onClick={() => setShowTooltip(!showTooltip)}
+                            className="w-5 h-5 flex items-center justify-center rounded-full bg-[#EBE9E4] text-[#948D82] hover:text-[#5C554B] transition-colors"
+                        >
+                            <Info className="w-3 h-3" />
+                        </button>
+
+                        {/* Tooltip */}
+                        {showTooltip && (
+                            <div className="absolute left-0 top-6 w-64 z-10 bg-[#5C554B] text-white text-xs rounded-lg p-3 shadow-lg">
+                                <p className="mb-2 font-semibold">Por que autorizar novamente?</p>
+                                <p className="leading-relaxed opacity-90">
+                                    O login inicial do Aica usa apenas autenticação básica. Para acessar seus eventos do Google Calendar, precisamos de uma permissão específica adicional.
+                                </p>
+                                <div className="absolute -top-1 left-4 w-2 h-2 bg-[#5C554B] transform rotate-45"></div>
+                            </div>
+                        )}
+                    </div>
+                </div>
                 <p className="text-sm text-[#948D82] leading-relaxed">
                     Importe suas reuniões para a Timeline Líquida
                 </p>
