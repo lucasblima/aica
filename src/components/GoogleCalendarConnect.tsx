@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle, LogOut, Loader2, Info } from 'lucide-react';
+import { Calendar, CheckCircle, LogOut, Loader2, Info, RefreshCw } from 'lucide-react';
 import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
 
-export default function GoogleCalendarConnect() {
+interface GoogleCalendarConnectProps {
+    onSync?: () => void | Promise<void>;
+    lastSyncTime?: Date | null;
+    isSyncing?: boolean;
+}
+
+export default function GoogleCalendarConnect({
+    onSync,
+    lastSyncTime,
+    isSyncing = false
+}: GoogleCalendarConnectProps) {
     const [connected, setConnected] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
-    console.log('[GoogleCalendarConnect] Component rendered', { connected, loading, error });
+    console.log('[GoogleCalendarConnect] Component rendered', {
+        connected,
+        loading,
+        error,
+        lastSyncTime,
+        isSyncing
+    });
 
     // Verificar se já está conectado ao carregar
     useEffect(() => {
@@ -51,6 +67,29 @@ export default function GoogleCalendarConnect() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSync = async () => {
+        if (onSync) {
+            console.log('[GoogleCalendarConnect] 🔄 Sincronização manual solicitada');
+            await onSync();
+        }
+    };
+
+    const getTimeSinceLastSync = (): string => {
+        if (!lastSyncTime) return 'Nunca';
+
+        const now = new Date();
+        const diff = now.getTime() - lastSyncTime.getTime();
+        const minutes = Math.floor(diff / 60000);
+
+        if (minutes < 1) return 'Agora mesmo';
+        if (minutes === 1) return 'Há 1 minuto';
+        if (minutes < 60) return `Há ${minutes} minutos`;
+
+        const hours = Math.floor(minutes / 60);
+        if (hours === 1) return 'Há 1 hora';
+        return `Há ${hours} horas`;
     };
 
     return (
@@ -105,6 +144,14 @@ export default function GoogleCalendarConnect() {
                     Importe suas reuniões para a Timeline Líquida
                 </p>
 
+                {/* Indicador de última sincronização */}
+                {connected && lastSyncTime && (
+                    <p className="text-xs text-[#948D82] mt-2 flex items-center gap-1">
+                        <span className="opacity-70">Última sincronização:</span>
+                        <span className="font-medium">{getTimeSinceLastSync()}</span>
+                    </p>
+                )}
+
                 {/* Mensagem de Erro */}
                 {error && (
                     <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
@@ -137,12 +184,31 @@ export default function GoogleCalendarConnect() {
                         )}
                     </button>
                 ) : (
-                    // Status Sincronizado + Botão Desconectar
+                    // Status Sincronizado + Botões de Ação
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl border border-green-200">
                             <CheckCircle className="w-5 h-5 text-green-600" />
                             <span className="text-sm font-semibold text-green-700">Sincronizado</span>
                         </div>
+
+                        {/* Botão Sincronizar Agora */}
+                        <button
+                            onClick={handleSync}
+                            disabled={loading || isSyncing || !onSync}
+                            className="flex items-center gap-2 px-4 py-2 bg-[#F0EFE9] text-[#5C554B] text-sm font-medium rounded-lg transition-all hover:scale-[1.05] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                                boxShadow: '4px 4px 8px #d4d3cd, -4px -4px 8px #ffffff'
+                            }}
+                            title="Sincronizar agora"
+                        >
+                            {isSyncing ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <RefreshCw className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Botão Desconectar */}
                         <button
                             onClick={handleDisconnect}
                             disabled={loading}

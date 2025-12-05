@@ -49,7 +49,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         events: calendarEvents,
         isConnected: isCalendarConnected,
         isLoading: isLoadingCalendar,
-        error: calendarError
+        error: calendarError,
+        sync: syncCalendar,
+        lastSyncTime
     } = useGoogleCalendarEvents({
         autoSync: true,
         syncInterval: 300 // 5 minutos
@@ -80,6 +82,22 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             events: calendarEvents
         });
     }, [calendarEvents, isCalendarConnected, isLoadingCalendar, calendarError]);
+
+    // Sincronizar ao voltar para a aba (Visibility API)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && isCalendarConnected) {
+                console.log('[AgendaView] 👁️ Aba visível - sincronizando Google Calendar...');
+                syncCalendar();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [isCalendarConnected, syncCalendar]);
 
     // Transform Google Calendar events to Task format
     const transformCalendarEventToTask = (event: TimelineEvent): Task => {
@@ -364,7 +382,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
                     {/* Google Calendar Sync */}
                     <div className="flex-none max-w-2xl mx-auto w-full">
-                        <GoogleCalendarConnect />
+                        <GoogleCalendarConnect
+                            onSync={syncCalendar}
+                            lastSyncTime={lastSyncTime}
+                            isSyncing={isLoadingCalendar}
+                        />
                     </div>
 
                     {/* Priority Matrix - Collapsible/Fixed Header feel */}
