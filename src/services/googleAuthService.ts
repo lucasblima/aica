@@ -19,10 +19,18 @@ const GOOGLE_CALENDAR_EXPIRY_KEY = 'google_calendar_token_expiry';
 const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
 
 /**
- * Escopo do Google Calendar para leitura
+ * Escopos do Google Calendar para leitura de eventos
+ *
+ * Escopos solicitados:
+ * - calendar.events.readonly: Permite ler eventos do calendário
+ * - calendar.readonly: Permite ler calendários e metadados
+ * - userinfo.email: Permite obter email do usuário
+ *
+ * Nota: Usar .readonly em vez de escrita para seguir princípio do menor privilégio
  */
 const GOOGLE_CALENDAR_SCOPES = [
-    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/calendar.events.readonly',
+    'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/userinfo.email',
 ];
 
@@ -32,6 +40,9 @@ const GOOGLE_CALENDAR_SCOPES = [
  */
 export async function connectGoogleCalendar(): Promise<void> {
     try {
+        console.log('[connectGoogleCalendar] 🔐 Solicitando escopos OAuth:', GOOGLE_CALENDAR_SCOPES);
+        console.log('[connectGoogleCalendar] 🔑 Escopos concatenados:', GOOGLE_CALENDAR_SCOPES.join(' '));
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
