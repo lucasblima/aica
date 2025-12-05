@@ -12,12 +12,19 @@ import { GoogleGenAI } from '@google/genai';
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-if (!GEMINI_API_KEY) {
-  console.warn('⚠️  VITE_GEMINI_API_KEY not found in environment variables');
-}
+// Initialize Gemini client only if API key exists
+let genAI: GoogleGenAI | null = null;
 
-// Initialize Gemini client
-const genAI = GEMINI_API_KEY ? new GoogleGenAI(GEMINI_API_KEY) : null;
+try {
+  if (GEMINI_API_KEY && GEMINI_API_KEY.trim().length > 0) {
+    genAI = new GoogleGenAI(GEMINI_API_KEY);
+  } else {
+    console.warn('⚠️  VITE_GEMINI_API_KEY not found - Gemini Deep Research will use mock data');
+  }
+} catch (error) {
+  console.error('Failed to initialize Gemini API:', error);
+  genAI = null;
+}
 
 export interface DeepResearchRequest {
   query: string;
