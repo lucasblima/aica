@@ -434,13 +434,21 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
 
                     {/* Thick Progress Bar - INSET EFFECT */}
                     <div className="relative h-4">
-                        <div className="absolute inset-0 ceramic-inset rounded-full overflow-hidden" style={{ backgroundColor: '#ffaa00ff' }}>
+                        <div className="absolute inset-0 ceramic-inset rounded-full overflow-hidden" style={{ backgroundColor: '#C8C3B8' }}>
                             <div
                                 className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000"
                                 style={{ width: `${percentLived}%`, backgroundColor: '#4A453D' }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
                             </div>
+                        </div>
+
+                        {/* Current Week Marker - Outside overflow-hidden */}
+                        <div
+                            className="absolute top-0 bottom-0 w-1 bg-[#FFD700] shadow-lg z-10"
+                            style={{ left: `${percentLived}%` }}
+                        >
+                            <div className="absolute -top-1 -left-1 w-3 h-3 bg-[#FFD700] rounded-full shadow-md ring-2 ring-white"></div>
                         </div>
                     </div>
 
@@ -468,8 +476,8 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                                 <span className="text-ceramic-text-secondary">Vividas</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-sm ceramic-base border-2 border-ceramic-text-primary animate-pulse"></div>
-                                <span className="text-ceramic-text-secondary">Semana Atual</span>
+                                <div className="w-3 h-3 rounded-full bg-[#FFD700] ring-1 ring-white shadow-sm"></div>
+                                <span className="text-ceramic-text-secondary">Agora</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-sm bg-ceramic-highlight"></div>
@@ -501,7 +509,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                                             if (isPast) {
                                                 className += 'ceramic-inset';
                                             } else if (isCurrent) {
-                                                className += 'ceramic-base border-2 border-ceramic-text-primary animate-pulse shadow-lg';
+                                                className += 'bg-[#FFD700] ring-2 ring-white shadow-md scale-125 z-10';
                                             } else if (event) {
                                                 const moduleColor = MODULES.find(m => m.id === event.module)?.color || 'bg-ceramic-accent';
                                                 className += `${moduleColor} shadow-md`;

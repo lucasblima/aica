@@ -15,6 +15,7 @@ import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getMo
 import Login from './src/components/Login';
 import { FinanceCard } from './src/modules/finance/components/FinanceCard';
 import OnboardingWizard from './src/components/OnboardingWizard';
+import { NotificationContainer } from './src/components/NotificationContainer';
 
 // Types
 type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast';
@@ -524,6 +525,9 @@ export default function App() {
                onSkip={handleOnboardingSkip}
             />
          )}
+
+         {/* Notification Toast Container */}
+         <NotificationContainer />
       </div>
    );
 }

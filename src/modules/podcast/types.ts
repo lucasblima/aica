@@ -19,6 +19,7 @@ export interface Topic {
   order: number;
   archived: boolean;
   categoryId?: string;
+  sponsorScript?: string; // Script for sponsor reads
 }
 
 export interface TechnicalSheet {
@@ -116,6 +117,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: number;
+  sources?: number[]; // IDs of citations
 }
 
 export interface IceBreaker {
@@ -131,6 +133,8 @@ export interface TopicCategory {
   name: string;
   color: string;
   episode_id: string;
+  icon?: string;
+  order?: number;
 }
 
 export interface PodcastShow {
@@ -142,4 +146,24 @@ export interface PodcastShow {
   created_at: string;
   updated_at: string;
   episodes_count?: number;
+}
+
+// ============================================
+// Research & Sources Types
+// ============================================
+
+export interface CustomSource {
+  id: string;
+  type: 'file' | 'link' | 'text';
+  content: string; // URL, text content, or file path/name
+  name?: string; // For files or links
+  addedAt: number;
+}
+
+export interface Citation {
+  id: number;
+  sourceId: string;
+  text: string;
+  startIndex: number;
+  endIndex: number;
 }
