@@ -15,7 +15,21 @@ import { test, expect } from '@playwright/test';
 test.describe('Podcast Complete Workflow - End-to-End', () => {
   test.beforeEach(async ({ page }) => {
     // Authentication is handled via storageState
-    await page.goto('/podcast');
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Click Podcast Copilot card to enter podcast view
+    const podcastCard = page
+      .locator('text=Podcast Copilot')
+      .or(page.locator('text=Studio'))
+      .locator('..')
+      .first();
+    await podcastCard.click();
+
+    // Wait for podcast view to load
+    await expect(page.getByText('Podcast Copilot')
+      .or(page.getByText('Sal na Veia'))
+    ).toBeVisible({ timeout: 10000 });
 
     // Wait for podcast page to load
     await expect(page.getByText('Podcast Copilot')

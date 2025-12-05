@@ -16,9 +16,23 @@ import { test, expect } from '@playwright/test';
 test.describe('Podcast Wizard - Guest Identification', () => {
   test.beforeEach(async ({ page }) => {
     // Authentication is handled via storageState in config
-    await page.goto('/podcast');
+    // Note: App uses state-based views, not URL routing
+    // Navigate to home and click Podcast Copilot card
+    await page.goto('/');
 
-    // Wait for podcast page to load
+    // Wait for home page to load
+    await page.waitForLoadState('networkidle');
+
+    // Find and click the Podcast Copilot card to enter podcast view
+    const podcastCard = page
+      .locator('text=Podcast Copilot')
+      .or(page.locator('text=Studio'))
+      .locator('..') // Get parent container (the clickable card)
+      .first();
+
+    await podcastCard.click();
+
+    // Wait for podcast view to load
     await expect(page.getByText('Podcast Copilot')
       .or(page.getByText('Sal na Veia'))
     ).toBeVisible({ timeout: 10000 });
