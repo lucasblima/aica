@@ -17,7 +17,8 @@
       "Bash(claude mcp list:*)",
       "Bash(npm run update-docs:*)",
       "Bash(npm run validate-schema:*)",
-      "mcp__supabase__list_tables"
+      "mcp__supabase__list_tables",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []
