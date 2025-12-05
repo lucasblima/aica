@@ -26,10 +26,15 @@ export async function fetchCalendarEvents(
     options: FetchEventsOptions = {}
 ): Promise<GoogleCalendarEvent[]> {
     try {
+        console.log('[fetchCalendarEvents] 🔍 Iniciando busca de eventos:', { calendarId, options });
+
         const token = await getValidAccessToken();
         if (!token) {
+            console.error('[fetchCalendarEvents] ❌ Token não disponível');
             throw new Error('Token de acesso não disponível. Autorize o Google Calendar primeiro.');
         }
+
+        console.log('[fetchCalendarEvents] ✅ Token obtido com sucesso');
 
         // Montar query parameters
         const params = new URLSearchParams();
@@ -43,6 +48,8 @@ export async function fetchCalendarEvents(
 
         const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
 
+        console.log('[fetchCalendarEvents] 🌐 Fazendo requisição para:', url);
+
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -51,14 +58,25 @@ export async function fetchCalendarEvents(
             }
         });
 
+        console.log('[fetchCalendarEvents] 📡 Resposta recebida:', {
+            status: response.status,
+            ok: response.ok
+        });
+
         if (!response.ok) {
             if (response.status === 401) {
+                console.error('[fetchCalendarEvents] ❌ Token expirado (401)');
                 throw new Error('Token expirado. Reconecte ao Google Calendar.');
             }
+            console.error('[fetchCalendarEvents] ❌ Erro na resposta:', response.statusText);
             throw new Error(`Erro ao buscar eventos: ${response.statusText}`);
         }
 
         const data = await response.json();
+        console.log('[fetchCalendarEvents] ✅ Dados processados:', {
+            itemsCount: data.items?.length || 0
+        });
+
         return data.items || [];
     } catch (error) {
         console.error('Erro ao buscar eventos do Google Calendar:', error);
@@ -75,13 +93,29 @@ export async function fetchTodayEvents(): Promise<GoogleCalendarEvent[]> {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    return fetchCalendarEvents('primary', {
+    console.log('[fetchTodayEvents] 📅 Buscando eventos de hoje:', {
+        timeMin: today.toISOString(),
+        timeMax: tomorrow.toISOString()
+    });
+
+    const events = await fetchCalendarEvents('primary', {
         timeMin: today.toISOString(),
         timeMax: tomorrow.toISOString(),
         singleEvents: true,
         orderBy: 'startTime',
         maxResults: 50,
     });
+
+    console.log('[fetchTodayEvents] ✅ Eventos recebidos:', {
+        count: events.length,
+        events: events.map(e => ({
+            summary: e.summary,
+            start: e.start,
+            end: e.end
+        }))
+    });
+
+    return events;
 }
 
 /**
@@ -173,17 +207,33 @@ export async function fetchAndTransformEvents(
     startDate?: Date,
     endDate?: Date
 ): Promise<TimelineEvent[]> {
+    console.log('[fetchAndTransformEvents] 🔄 Iniciando busca e transformação:', {
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString()
+    });
+
     let events: GoogleCalendarEvent[];
 
     if (startDate && endDate) {
+        console.log('[fetchAndTransformEvents] 📆 Modo: Data range');
         events = await fetchDateRangeEvents(startDate, endDate);
     } else if (startDate) {
+        console.log('[fetchAndTransformEvents] 📆 Modo: Week events');
         events = await fetchWeekEvents(startDate);
     } else {
+        console.log('[fetchAndTransformEvents] 📆 Modo: Today events');
         events = await fetchTodayEvents();
     }
 
-    return events.map(transformGoogleEvent);
+    const transformedEvents = events.map(transformGoogleEvent);
+
+    console.log('[fetchAndTransformEvents] ✅ Transformação concluída:', {
+        originalCount: events.length,
+        transformedCount: transformedEvents.length,
+        transformedEvents
+    });
+
+    return transformedEvents;
 }
 
 /**
