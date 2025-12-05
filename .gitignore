@@ -11,12 +11,6 @@
 *.so
 *.dylib
 
-# Test files
-*.test.js
-*.spec.js
-*.test.ts
-*.spec.ts
-
 # Coverage files
 coverage/
 *.lcov
@@ -51,11 +45,12 @@ dist-ssr
 *.sw?
 scripts
 
-# Test and E2E directories
+# Test and E2E artifacts (test files themselves are tracked)
 test-results/
-tests/e2e/
 playwright-report/
 tests-results/
+tests/e2e/.auth.json
+tests/e2e/test-results/
 
 # Supabase migrations (não enviar para o repo)
 supabase/migrations/
