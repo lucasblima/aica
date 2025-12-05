@@ -19,7 +19,9 @@
       "Bash(npm run validate-schema:*)",
       "mcp__supabase__list_tables",
       "Bash(npm install:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []
