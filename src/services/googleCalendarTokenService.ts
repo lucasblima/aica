@@ -163,11 +163,39 @@ export async function isGoogleCalendarConnected(): Promise<boolean> {
 }
 
 /**
- * Obtém um token de acesso válido, renovando se necessário
+ * Obtém um token de acesso válido da sessão Supabase
+ * O Supabase gerencia automaticamente a renovação dos tokens OAuth
  */
 export async function getValidAccessToken(): Promise<string | null> {
     try {
         console.log('[getValidAccessToken] 🔑 Obtendo token válido...');
+
+        // Primeiro: tentar obter token atualizado da sessão Supabase
+        // O Supabase automaticamente renova tokens expirados
+        console.log('[getValidAccessToken] 📡 Buscando token da sessão Supabase...');
+        const { data: session } = await supabase.auth.getSession();
+
+        if (session?.session?.provider_token) {
+            console.log('[getValidAccessToken] ✅ Token obtido da sessão Supabase');
+
+            // Atualizar token no banco de dados
+            if (session.session.user?.id) {
+                console.log('[getValidAccessToken] 💾 Atualizando token no banco...');
+                await supabase
+                    .from('google_calendar_tokens')
+                    .update({
+                        access_token: session.session.provider_token,
+                        last_sync: new Date().toISOString(),
+                    })
+                    .eq('user_id', session.session.user.id);
+            }
+
+            return session.session.provider_token;
+        }
+
+        console.log('[getValidAccessToken] ⚠️ Sem provider_token na sessão, buscando do banco...');
+
+        // Fallback: buscar do banco de dados
         const tokens = await getGoogleCalendarTokens();
 
         if (!tokens) {
@@ -182,18 +210,6 @@ export async function getValidAccessToken(): Promise<string | null> {
             isConnected: tokens.is_connected
         });
 
-        // Se não temos token_expiry (null), assumir que pode estar expirado
-        // e tentar renovar se temos refresh_token
-        if (!tokens.token_expiry && tokens.refresh_token) {
-            console.log('[getValidAccessToken] ⚠️ token_expiry é null - tentando renovar...');
-            const newToken = await refreshAccessToken(tokens.refresh_token);
-            if (newToken) {
-                console.log('[getValidAccessToken] ✅ Token renovado com sucesso');
-                return newToken;
-            }
-            console.warn('[getValidAccessToken] ⚠️ Falha ao renovar, usando token existente');
-        }
-
         // Verificar se o token expirou
         if (tokens.token_expiry) {
             const expiryTime = new Date(tokens.token_expiry).getTime();
@@ -204,18 +220,14 @@ export async function getValidAccessToken(): Promise<string | null> {
                 timeUntilExpiryMinutes: Math.round(timeUntilExpiry / 60000)
             });
 
-            // Se vai expirar em menos de 5 minutos, renovar agora
-            if (timeUntilExpiry < 5 * 60 * 1000 && tokens.refresh_token) {
-                console.log('[getValidAccessToken] 🔄 Token expirando em breve - renovando...');
-                const newToken = await refreshAccessToken(tokens.refresh_token);
-                if (newToken) {
-                    console.log('[getValidAccessToken] ✅ Token renovado com sucesso');
-                    return newToken;
-                }
+            // Se expirou, pedir para reconectar
+            if (timeUntilExpiry < 0) {
+                console.warn('[getValidAccessToken] ⚠️ Token expirado. Necessário reconectar.');
+                throw new Error('Token expirado. Por favor, desconecte e reconecte o Google Calendar.');
             }
         }
 
-        console.log('[getValidAccessToken] ✅ Retornando access_token existente');
+        console.log('[getValidAccessToken] ✅ Retornando access_token do banco');
         return tokens.access_token;
     } catch (error) {
         console.error('[getValidAccessToken] ❌ Erro ao obter token válido:', error);
