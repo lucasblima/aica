@@ -8,22 +8,14 @@
  * consider moving to a backend service to protect API keys.
  */
 
-import { GoogleGenAI } from '@google/genai';
-
+// Lazy import - only load GoogleGenAI if we have a valid API key
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// Initialize Gemini client only if API key exists
-let genAI: GoogleGenAI | null = null;
+// Check if API key is valid (exists, not empty, not just whitespace)
+const hasValidApiKey = GEMINI_API_KEY && typeof GEMINI_API_KEY === 'string' && GEMINI_API_KEY.trim().length > 10;
 
-try {
-  if (GEMINI_API_KEY && GEMINI_API_KEY.trim().length > 0) {
-    genAI = new GoogleGenAI(GEMINI_API_KEY);
-  } else {
-    console.warn('⚠️  VITE_GEMINI_API_KEY not found - Gemini Deep Research will use mock data');
-  }
-} catch (error) {
-  console.error('Failed to initialize Gemini API:', error);
-  genAI = null;
+if (!hasValidApiKey) {
+  console.warn('⚠️  VITE_GEMINI_API_KEY not configured - Gemini Deep Research will use mock data');
 }
 
 export interface DeepResearchRequest {
@@ -83,15 +75,16 @@ export interface DeepResearchResponse {
 export async function performDeepResearch(
   request: DeepResearchRequest
 ): Promise<DeepResearchResponse> {
-  if (!genAI) {
-    console.error('Gemini API not initialized - missing API key');
-    return {
-      success: false,
-      error: 'Gemini API key not configured. Please set VITE_GEMINI_API_KEY in your .env file.',
-    };
+  // If no valid API key, use mock immediately
+  if (!hasValidApiKey) {
+    console.warn('No valid API key - using mock data');
+    return mockDeepResearch(request.query);
   }
 
   try {
+    // Dynamic import only when we have a valid key
+    const { GoogleGenAI } = await import('@google/genai');
+    const genAI = new GoogleGenAI(GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     // Construct detailed research prompt
