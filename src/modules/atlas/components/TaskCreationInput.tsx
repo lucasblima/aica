@@ -14,20 +14,79 @@ export const TaskCreationInput: React.FC<TaskCreationInputProps> = ({ onAddTask,
         e.preventDefault();
         if (!inputValue.trim()) return;
 
-        // Simple parsing logic (mocked for now, can be enhanced with regex or AI)
-        // Example input: "Buy milk #urgent @todo"
-        const title = inputValue;
-        const priority = 'medium'; // Default
-        const status = 'todo'; // Default
+        // Parse tags from input
+        const parsed = parseTaskInput(inputValue);
 
         await onAddTask({
-            title,
-            priority,
-            status,
-            description: 'Created via Atlas Quick Add'
+            title: parsed.title,
+            priority: parsed.priority,
+            status: parsed.status,
+            description: parsed.description || 'Created via Atlas Quick Add',
+            target_date: parsed.targetDate
         });
 
         setInputValue('');
+    };
+
+    /**
+     * Parses task input to extract tags and metadata
+     * Supports:
+     * - #urgente, #urgent → priority: urgent
+     * - #importante, #important, #high → priority: high
+     * - #baixa, #low → priority: low
+     * - @data:YYYY-MM-DD → target_date
+     * - Everything else → title
+     */
+    const parseTaskInput = (input: string) => {
+        let title = input;
+        let priority: TaskInput['priority'] = 'medium';
+        const status = 'todo';
+        let description: string | undefined;
+        let targetDate: string | undefined;
+
+        // Extract priority tags
+        const priorityMatch = input.match(/#(urgente|urgent|importante|important|high|alta|baixa|low|medio|medium)\b/i);
+        if (priorityMatch) {
+            const tag = priorityMatch[1].toLowerCase();
+            if (['urgente', 'urgent'].includes(tag)) {
+                priority = 'urgent';
+            } else if (['importante', 'important', 'high', 'alta'].includes(tag)) {
+                priority = 'high';
+            } else if (['baixa', 'low'].includes(tag)) {
+                priority = 'low';
+            } else if (['medio', 'medium'].includes(tag)) {
+                priority = 'medium';
+            }
+            // Remove tag from title
+            title = title.replace(priorityMatch[0], '').trim();
+        }
+
+        // Extract date tags (@data:YYYY-MM-DD or @YYYY-MM-DD)
+        const dateMatch = input.match(/@(?:data:)?(\d{4}-\d{2}-\d{2})\b/i);
+        if (dateMatch) {
+            targetDate = dateMatch[1];
+            // Remove tag from title
+            title = title.replace(dateMatch[0], '').trim();
+        }
+
+        // Extract description (text after ||)
+        const descMatch = input.match(/\|\|(.+)$/);
+        if (descMatch) {
+            description = descMatch[1].trim();
+            // Remove description from title
+            title = title.replace(descMatch[0], '').trim();
+        }
+
+        // Clean up title (remove extra spaces)
+        title = title.replace(/\s+/g, ' ').trim();
+
+        return {
+            title,
+            priority,
+            status,
+            description,
+            targetDate
+        };
     };
 
     return (
@@ -44,7 +103,8 @@ export const TaskCreationInput: React.FC<TaskCreationInputProps> = ({ onAddTask,
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Adicionar nova tarefa... (Ex: 'Revisar contrato #urgente')"
+                placeholder="Adicionar nova tarefa... (Ex: 'Revisar contrato #urgente @2025-12-15')"
+                title="Use #urgente, #importante, #baixa para prioridade. Use @YYYY-MM-DD para data. Use || para descrição."
                 className="w-full pl-10 pr-12 py-3 bg-white/50 backdrop-blur-sm border border-ceramic-border rounded-xl shadow-ceramic-input focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-ceramic-text-primary placeholder:text-ceramic-text-tertiary"
                 disabled={isSyncing}
             />

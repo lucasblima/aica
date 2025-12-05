@@ -20,6 +20,27 @@ import {
     Link as LinkIcon,
     FileUp
 } from 'lucide-react';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragOverlay,
+    defaultDropAnimationSideEffects,
+    DragStartEvent,
+    DragOverEvent,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Dossier, Topic, TopicCategory } from '../types';
 import { generateDossier } from '../services/geminiService';
 
@@ -55,6 +76,53 @@ interface PreProductionHubProps {
 // Tabs for the research panel
 type ResearchTab = 'bio' | 'ficha' | 'news';
 
+// Sortable Item Component
+interface SortableTopicItemProps {
+    topic: Topic;
+    onToggle: (id: string) => void;
+}
+
+const SortableTopicItem: React.FC<SortableTopicItemProps> = ({ topic, onToggle }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: topic.id, data: { type: 'Topic', topic } });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#F7F6F4] group transition-colors bg-white border border-transparent hover:border-[#E5E3DC]"
+        >
+            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+                <GripVertical className="w-4 h-4 text-ceramic-text-tertiary opacity-0 group-hover:opacity-100" />
+            </div>
+            <button
+                onClick={() => onToggle(topic.id)}
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${topic.completed
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : 'border-ceramic-text-tertiary hover:border-green-400'
+                    }`}
+            >
+                {topic.completed && <Check className="w-3 h-3" />}
+            </button>
+            <span className={`text-sm flex-1 ${topic.completed ? 'line-through text-ceramic-text-tertiary' : 'text-ceramic-text-primary'}`}>
+                {topic.text}
+            </span>
+        </div>
+    );
+};
+
 export const PreProductionHub: React.FC<PreProductionHubProps> = ({
     guestData,
     projectId,
@@ -70,19 +138,32 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
 
     // Topics State
     const [categories, setCategories] = useState<TopicCategory[]>([
-        { id: 'geral', name: 'Geral', color: '#3B82F6', episode_id: projectId || '' },
         { id: 'quebra-gelo', name: 'Quebra-Gelo', color: '#06B6D4', episode_id: projectId || '' },
+        { id: 'geral', name: 'Geral', color: '#3B82F6', episode_id: projectId || '' },
         { id: 'patrocinador', name: 'Patrocinador', color: '#F59E0B', episode_id: projectId || '' },
     ]);
 
     const [topics, setTopics] = useState<Topic[]>([]);
     const [newTopicText, setNewTopicText] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('geral');
+    const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
     // Chat State
     const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'model'; text: string; sources?: number[] }>>([]);
     const [chatInput, setChatInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
+
+    // DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     // Start Deep Research on mount
     useEffect(() => {
@@ -145,6 +226,76 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
         setNewTopicText('');
     };
 
+    const handleToggleTopic = (id: string) => {
+        setTopics(prev => prev.map(t =>
+            t.id === id ? { ...t, completed: !t.completed } : t
+        ));
+    };
+
+    // DnD Handlers
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveDragId(event.active.id as string);
+    };
+
+    const handleDragOver = (event: DragOverEvent) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeId = active.id as string;
+        const overId = over.id as string;
+
+        // Find the topics
+        const activeTopic = topics.find(t => t.id === activeId);
+        const overTopic = topics.find(t => t.id === overId);
+
+        if (!activeTopic) return;
+
+        // If dragging over a category container (we'll use category IDs as droppable IDs)
+        if (categories.some(c => c.id === overId)) {
+            const categoryId = overId;
+            if (activeTopic.categoryId !== categoryId) {
+                setTopics(prev => {
+                    return prev.map(t =>
+                        t.id === activeId ? { ...t, categoryId } : t
+                    );
+                });
+            }
+            return;
+        }
+
+        // If dragging over another topic
+        if (overTopic && activeTopic.categoryId !== overTopic.categoryId) {
+            setTopics(prev => {
+                return prev.map(t =>
+                    t.id === activeId ? { ...t, categoryId: overTopic.categoryId } : t
+                );
+            });
+        }
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        setActiveDragId(null);
+
+        if (!over) return;
+
+        const activeId = active.id as string;
+        const overId = over.id as string;
+
+        if (activeId !== overId) {
+            setTopics((items) => {
+                const oldIndex = items.findIndex((t) => t.id === activeId);
+                const newIndex = items.findIndex((t) => t.id === overId);
+
+                // Only reorder if in same category (category change handled in DragOver)
+                if (items[oldIndex].categoryId === items[newIndex].categoryId) {
+                    return arrayMove(items, oldIndex, newIndex);
+                }
+                return items;
+            });
+        }
+    };
+
     const handleSendChat = async () => {
         if (!chatInput.trim() || isChatLoading) return;
 
@@ -168,14 +319,15 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
 
     const handleGoToProduction = () => {
         if (dossier && projectId) {
-            onGoToProduction(dossier, projectId);
+            // Pass the ordered topics to production
+            const productionDossier = {
+                ...dossier,
+                suggestedTopics: topics.filter(t => t.categoryId === 'geral').map(t => t.text),
+                iceBreakers: topics.filter(t => t.categoryId === 'quebra-gelo').map(t => t.text)
+            };
+            onGoToProduction(productionDossier, projectId);
         }
     };
-
-    const topicsByCategory = categories.map(cat => ({
-        category: cat,
-        items: topics.filter(t => t.categoryId === cat.id && !t.archived)
-    }));
 
     return (
         <div className="h-screen bg-ceramic-base flex flex-col overflow-hidden">
@@ -227,41 +379,58 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {topicsByCategory.map(({ category, items }) => (
-                            <div key={category.id} className="space-y-2">
-                                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${CATEGORY_COLORS[category.id] || 'bg-gray-100 text-gray-700'}`}>
-                                    {CATEGORY_ICONS[category.id] || <Mic className="w-4 h-4" />}
-                                    <span className="font-bold text-sm">{category.name}</span>
-                                    <span className="text-xs opacity-70">({items.length})</span>
-                                </div>
-
-                                <div className="space-y-1 pl-2">
-                                    {items.map((topic, idx) => (
-                                        <div
-                                            key={topic.id}
-                                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#F7F6F4] group transition-colors"
+                    <div className="flex-1 overflow-y-auto p-4">
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragStart={handleDragStart}
+                            onDragOver={handleDragOver}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <div className="space-y-4">
+                                {categories.map((category) => (
+                                    <div key={category.id} className="space-y-2">
+                                        {/* Category Header (Droppable) */}
+                                        <SortableContext
+                                            id={category.id}
+                                            items={topics.filter(t => t.categoryId === category.id).map(t => t.id)}
+                                            strategy={verticalListSortingStrategy}
                                         >
-                                            <GripVertical className="w-4 h-4 text-ceramic-text-tertiary opacity-0 group-hover:opacity-100 cursor-grab" />
-                                            <button
-                                                onClick={() => setTopics(prev => prev.map(t =>
-                                                    t.id === topic.id ? { ...t, completed: !t.completed } : t
-                                                ))}
-                                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${topic.completed
-                                                        ? 'bg-green-500 border-green-500 text-white'
-                                                        : 'border-ceramic-text-tertiary hover:border-green-400'
-                                                    }`}
-                                            >
-                                                {topic.completed && <Check className="w-3 h-3" />}
-                                            </button>
-                                            <span className={`text-sm flex-1 ${topic.completed ? 'line-through text-ceramic-text-tertiary' : 'text-ceramic-text-primary'}`}>
-                                                {topic.text}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${CATEGORY_COLORS[category.id] || 'bg-gray-100 text-gray-700'}`}>
+                                                {CATEGORY_ICONS[category.id] || <Mic className="w-4 h-4" />}
+                                                <span className="font-bold text-sm">{category.name}</span>
+                                                <span className="text-xs opacity-70">
+                                                    ({topics.filter(t => t.categoryId === category.id).length})
+                                                </span>
+                                            </div>
+
+                                            <div className="space-y-1 pl-2 min-h-[10px]">
+                                                {topics
+                                                    .filter(t => t.categoryId === category.id && !t.archived)
+                                                    .map((topic) => (
+                                                        <SortableTopicItem
+                                                            key={topic.id}
+                                                            topic={topic}
+                                                            onToggle={handleToggleTopic}
+                                                        />
+                                                    ))}
+                                            </div>
+                                        </SortableContext>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+
+                            <DragOverlay>
+                                {activeDragId ? (
+                                    <div className="flex items-center gap-2 p-2 rounded-lg bg-white shadow-xl border border-amber-200 opacity-90 cursor-grabbing">
+                                        <GripVertical className="w-4 h-4 text-ceramic-text-tertiary" />
+                                        <span className="text-sm text-ceramic-text-primary font-bold">
+                                            {topics.find(t => t.id === activeDragId)?.text}
+                                        </span>
+                                    </div>
+                                ) : null}
+                            </DragOverlay>
+                        </DndContext>
                     </div>
 
                     {/* Add Topic */}

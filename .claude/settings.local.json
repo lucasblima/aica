@@ -21,7 +21,9 @@
       "Bash(npm install:*)",
       "Bash(echo:*)",
       "Bash(npx playwright test:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(npx supabase migration:*)"
     ],
     "deny": [],
     "ask": []
