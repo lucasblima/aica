@@ -3,7 +3,7 @@
 Complete documentation for Aica Life OS frontend application.
 
 **Last updated:** 2025-12-05
-**Total files:** 15 organized documentation files
+**Total files:** 16 organized documentation files
 
 ---
 
@@ -13,6 +13,23 @@ Complete documentation for Aica Life OS frontend application.
 - **[PRD.md](./PRD.md)** - Product Requirements Document (main requirements)
 - **[INTEGRATION_TEST_PLAN.md](./INTEGRATION_TEST_PLAN.md)** - 150+ test scenarios for QA
 - **[DATA_PROCESSING_INVENTORY.md](./DATA_PROCESSING_INVENTORY.md)** - GDPR data processing inventory
+
+---
+
+## 🎨 Design & UI/UX
+
+📁 **[design/](./design/)**
+
+| File | Description |
+|------|-------------|
+| [UI_UX_GUIDELINES.md](./design/UI_UX_GUIDELINES.md) | Complete Ceramic design system documentation |
+
+**Use when:**
+- Implementing new UI components
+- Understanding design patterns and standards
+- Ensuring visual consistency
+- Onboarding frontend designers/developers
+- Selecting colors, typography, or spacing
 
 ---
 
@@ -105,14 +122,16 @@ This reorganization ensures:
 ### For New Developers
 1. Start with **[PRD.md](./PRD.md)** - Understand product vision
 2. Read **[architecture/backend_architecture.md](./architecture/backend_architecture.md)** - System overview
-3. Review **[security/PRIVACY_AND_SECURITY.md](./security/PRIVACY_AND_SECURITY.md)** - Privacy principles
-4. Check **[INTEGRATION_TEST_PLAN.md](./INTEGRATION_TEST_PLAN.md)** - Testing approach
+3. Review **[design/UI_UX_GUIDELINES.md](./design/UI_UX_GUIDELINES.md)** - Design system & UI patterns
+4. Check **[security/PRIVACY_AND_SECURITY.md](./security/PRIVACY_AND_SECURITY.md)** - Privacy principles
+5. Review **[INTEGRATION_TEST_PLAN.md](./INTEGRATION_TEST_PLAN.md)** - Testing approach
 
 ### For Feature Development
 1. Check **[features/](./features/)** - Existing feature docs
-2. Review **[architecture/](./architecture/)** - Database schema
-3. Update relevant docs after implementation
-4. Run `documentation-maintainer` agent to sync docs
+2. Review **[design/UI_UX_GUIDELINES.md](./design/UI_UX_GUIDELINES.md)** - UI patterns & components
+3. Review **[architecture/](./architecture/)** - Database schema
+4. Update relevant docs after implementation
+5. Run `documentation-maintainer` agent to sync docs
 
 ### For DevOps/Integration
 1. Review **[workflows/](./workflows/)** - n8n workflows
@@ -153,12 +172,13 @@ When adding new features:
 
 ## 📊 Documentation Structure History
 
-**December 5, 2025 - Major Cleanup**
-- Reduced from 26 to 15 files (42% reduction)
+**December 5, 2025 - Major Cleanup + Design Documentation**
+- Reduced from 26 to 15 files, then added 1 new (16 total, 38% reduction)
 - Deleted 11 obsolete/duplicate files
 - Consolidated 3 files into 1
-- Organized into 4 subdirectories
+- Organized into 5 subdirectories (added design/)
 - Created this README for navigation
+- Added comprehensive UI/UX Guidelines documenting Ceramic design system
 
 **Files Deleted:**
 - PRD.md.backup, PRD_updated.md (duplicates)
