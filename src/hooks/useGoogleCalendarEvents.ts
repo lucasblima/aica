@@ -37,10 +37,12 @@ export function useGoogleCalendarEvents(
     useEffect(() => {
         const checkConnection = async () => {
             try {
+                console.log('[useGoogleCalendarEvents] 🔍 Verificando conexão...');
                 const connected = await isGoogleCalendarConnected();
+                console.log('[useGoogleCalendarEvents] 📡 Status de conexão:', connected);
                 setIsConnected(connected);
             } catch (err) {
-                console.error('Erro ao verificar conexão:', err);
+                console.error('[useGoogleCalendarEvents] ❌ Erro ao verificar conexão:', err);
             }
         };
 
@@ -56,7 +58,16 @@ export function useGoogleCalendarEvents(
         start?: Date,
         end?: Date
     ) => {
+        console.log('[useGoogleCalendarEvents] 🔄 fetchEvents chamado:', {
+            isConnected,
+            start: start?.toISOString(),
+            end: end?.toISOString(),
+            startDate: startDate?.toISOString(),
+            endDate: endDate?.toISOString()
+        });
+
         if (!isConnected) {
+            console.log('[useGoogleCalendarEvents] ⚠️ Não conectado - limpando eventos');
             setEvents([]);
             return;
         }
@@ -65,17 +76,24 @@ export function useGoogleCalendarEvents(
             setIsLoading(true);
             setError(null);
 
+            console.log('[useGoogleCalendarEvents] 📥 Buscando eventos...');
+
             const fetchedEvents = await fetchAndTransformEvents(
                 start || startDate,
                 end || endDate
             );
 
+            console.log('[useGoogleCalendarEvents] ✅ Eventos recebidos:', {
+                count: fetchedEvents.length,
+                events: fetchedEvents
+            });
+
             setEvents(fetchedEvents);
             setLastSyncTime(new Date());
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao sincronizar eventos';
+            console.error('[useGoogleCalendarEvents] ❌ Erro ao buscar eventos:', err);
             setError(errorMessage);
-            console.error('Erro ao buscar eventos:', err);
         } finally {
             setIsLoading(false);
         }
@@ -83,14 +101,28 @@ export function useGoogleCalendarEvents(
 
     // Auto-sync quando conectado
     useEffect(() => {
-        if (!isConnected || !autoSync) return;
+        console.log('[useGoogleCalendarEvents] 🔄 Auto-sync effect:', {
+            isConnected,
+            autoSync,
+            syncInterval
+        });
+
+        if (!isConnected || !autoSync) {
+            console.log('[useGoogleCalendarEvents] ⏸️ Auto-sync desabilitado ou não conectado');
+            return;
+        }
 
         // Sincronizar imediatamente
+        console.log('[useGoogleCalendarEvents] 🚀 Iniciando sincronização imediata...');
         fetchEvents();
 
         // Sincronizar periodicamente
         if (syncInterval > 0) {
+            console.log('[useGoogleCalendarEvents] ⏰ Configurando sincronização periódica:', {
+                intervalSeconds: syncInterval
+            });
             const interval = setInterval(() => {
+                console.log('[useGoogleCalendarEvents] 🔁 Sincronização periódica disparada');
                 fetchEvents();
             }, syncInterval * 1000);
 

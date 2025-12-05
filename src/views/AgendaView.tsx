@@ -21,6 +21,8 @@ import { Task, Quadrant } from '../../types';
 import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
 import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
 import { AtlasTask } from '../modules/atlas/types/plane';
+import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
+import { TimelineEvent } from '../services/googleCalendarService';
 
 interface AgendaViewProps {
     userId: string;
@@ -42,6 +44,17 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     // Atlas Module Integration
     const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
 
+    // Google Calendar Integration
+    const {
+        events: calendarEvents,
+        isConnected: isCalendarConnected,
+        isLoading: isLoadingCalendar,
+        error: calendarError
+    } = useGoogleCalendarEvents({
+        autoSync: true,
+        syncInterval: 300 // 5 minutos
+    });
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -56,6 +69,65 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useEffect(() => {
         loadAllTasks();
     }, [userId]);
+
+    // Log Google Calendar events for debugging
+    useEffect(() => {
+        console.log('[AgendaView] 📅 Google Calendar status:', {
+            isConnected: isCalendarConnected,
+            isLoading: isLoadingCalendar,
+            eventsCount: calendarEvents.length,
+            error: calendarError,
+            events: calendarEvents
+        });
+    }, [calendarEvents, isCalendarConnected, isLoadingCalendar, calendarError]);
+
+    // Transform Google Calendar events to Task format
+    const transformCalendarEventToTask = (event: TimelineEvent): Task => {
+        // Extract time from startTime (format: "HH:MM")
+        const startDate = new Date(event.startTime);
+        const scheduled_time = event.isAllDay
+            ? undefined
+            : `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`;
+
+        return {
+            id: event.id,
+            title: event.title,
+            scheduled_time,
+            estimated_duration: event.duration,
+            due_date: event.startTime.split('T')[0], // Extract date part
+            // Google Calendar events don't have priority quadrant
+            priority_quadrant: undefined,
+        };
+    };
+
+    // Merge Google Calendar events with timeline tasks
+    const mergedTimelineTasks = useMemo(() => {
+        const today = new Date().toISOString().split('T')[0];
+
+        // Filter calendar events for today
+        const todayCalendarEvents = calendarEvents
+            .filter(event => event.startTime.startsWith(today))
+            .map(transformCalendarEventToTask);
+
+        // Merge with Supabase timeline tasks
+        const merged = [...timelineTasks, ...todayCalendarEvents];
+
+        // Sort by scheduled_time
+        merged.sort((a, b) => {
+            if (!a.scheduled_time) return 1;
+            if (!b.scheduled_time) return -1;
+            return a.scheduled_time.localeCompare(b.scheduled_time);
+        });
+
+        console.log('[AgendaView] 🔀 Merged timeline tasks:', {
+            supabaseTasks: timelineTasks.length,
+            calendarEvents: todayCalendarEvents.length,
+            total: merged.length,
+            merged
+        });
+
+        return merged;
+    }, [timelineTasks, calendarEvents]);
 
     // Merge Atlas Tasks with Matrix Tasks
     const mergedMatrixTasks = useMemo(() => {
@@ -149,9 +221,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             if (task) break;
         }
 
-        // Check timeline if not found
+        // Check merged timeline if not found
         if (!task) {
-            task = timelineTasks.find(t => t.id === taskId);
+            task = mergedTimelineTasks.find(t => t.id === taskId);
         }
 
         if (task) {
@@ -309,8 +381,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     <div className="flex-1">
                         <DailyTimeline
                             userId={userId}
-                            tasks={timelineTasks}
-                            isLoading={isLoading}
+                            tasks={mergedTimelineTasks}
+                            isLoading={isLoading || isLoadingCalendar}
                             onRefresh={loadAllTasks}
                         />
                     </div>
