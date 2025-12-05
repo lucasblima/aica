@@ -24,79 +24,83 @@ const TEST_PASSWORD = process.env.TEST_PASSWORD || 'SecureTest123!@#';
 // Store auth data to be used by all tests
 const authFile = 'tests/e2e/.auth.json';
 
-setup('authenticate via Supabase API', async ({ request }) => {
+setup('authenticate via Google OAuth', async ({ page, context }) => {
   /**
-   * IMPORTANT: This setup assumes you have a test user account OR are using
-   * Supabase's Magic Link authentication. For production use:
+   * IMPORTANT: This app uses Google OAuth for authentication.
+   * This setup will:
+   * 1. Navigate to the login page
+   * 2. Click "Entrar com Google"
+   * 3. Use existing Google session if available
+   * 4. Save the authenticated state for reuse in tests
    *
-   * Option 1: Create a dedicated test account with email/password in Supabase
-   * Option 2: Use environment variables for credentials
-   * Option 3: Use Supabase Admin API to create temporary test sessions
+   * If not already logged into Google, you may need to complete the OAuth flow manually once.
    */
 
   try {
     // Create directory if it doesn't exist
     fs.mkdirSync('tests/e2e', { recursive: true });
 
-    // Attempt to authenticate with email/password if configured
-    if (TEST_EMAIL && TEST_PASSWORD && SUPABASE_ANON_KEY) {
-      const response = await request.post(
-        `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-        {
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Content-Type': 'application/json',
-          },
-          data: {
-            email: TEST_EMAIL,
-            password: TEST_PASSWORD,
-          },
-        }
-      );
+    console.log('🔐 Starting Google OAuth authentication flow...');
 
-      if (response.ok()) {
-        const authData = await response.json();
-        // Save auth data for use in tests
-        fs.writeFileSync(
-          authFile,
-          JSON.stringify({
-            session: authData.session,
-            user: authData.user,
-            accessToken: authData.access_token,
-            refreshToken: authData.refresh_token,
-            expiresAt: new Date(Date.now() + authData.expires_in * 1000).toISOString(),
-          }, null, 2)
-        );
-        console.log('✅ Authentication setup successful - API-based auth activated');
-      } else {
-        console.warn('⚠️ Password authentication failed');
-        console.warn('   Creating empty auth file (tests may require manual Google login)');
-        createEmptyAuthFile();
-      }
-    } else {
-      console.warn('⚠️ TEST_EMAIL or TEST_PASSWORD not configured');
-      console.warn('   To enable automatic API-based authentication, set environment variables:');
-      console.warn('   - TEST_EMAIL=your-test-email@example.com');
-      console.warn('   - TEST_PASSWORD=your-secure-password');
-      console.warn('   - VITE_SUPABASE_URL=https://your-project.supabase.co');
-      console.warn('   - VITE_SUPABASE_ANON_KEY=your-anon-key');
-      console.warn('');
-      console.warn('   Alternatively, create a test user in your Supabase project console.');
-      console.warn('   For now, creating minimal auth file to prevent storage state errors...');
-      createEmptyAuthFile();
+    // Navigate to the app
+    await page.goto('http://localhost:3000');
+
+    // Wait for login button to be visible
+    const googleLoginButton = page.locator('button', { hasText: /Entrar com Google/i });
+    await googleLoginButton.waitFor({ state: 'visible', timeout: 10000 });
+
+    console.log('✓ Login page loaded');
+
+    // Click the Google login button
+    await googleLoginButton.click();
+    console.log('✓ Clicked "Entrar com Google"');
+
+    // Wait for either:
+    // 1. Successful redirect back to app (Google session exists)
+    // 2. Google OAuth page to load (need manual login)
+
+    console.log('⏳ Waiting for Google OAuth to complete...');
+    console.log('   👉 Please complete the login in the browser window');
+    console.log('   👉 You have up to 120 seconds');
+
+    try {
+      // Wait for successful authentication - home page should load
+      // Give user plenty of time to complete manual OAuth flow
+      await page.waitForURL('http://localhost:3000', { timeout: 120000 });
+
+      // Wait a bit more for the page to fully load
+      await page.waitForTimeout(2000);
+
+      // Verify we're authenticated by checking for home content
+      await page.waitForSelector('text=Minha Vida', { timeout: 10000 });
+
+      console.log('✅ Google OAuth authentication successful!');
+
+      // Save the authenticated state
+      await context.storageState({ path: authFile });
+      console.log('✅ Authentication state saved to', authFile);
+      console.log('✅ Future tests will reuse this authenticated session');
+
+    } catch (waitError) {
+      console.warn('⚠️  Google OAuth did not complete in time or failed');
+      console.warn('   Please try again and complete the login within 120 seconds');
+      console.warn('   Error:', waitError);
+
+      // Save whatever state we have
+      await context.storageState({ path: authFile });
+      console.log('ℹ️  Partial auth state saved');
+      throw waitError; // Re-throw to mark setup as failed
     }
-  } catch (error) {
-    console.warn('⚠️ Authentication setup failed:', error);
-    console.warn('   Creating minimal auth file as fallback...');
-    createEmptyAuthFile();
-  }
 
-  // Helper function to create empty auth file
-  function createEmptyAuthFile() {
+  } catch (error) {
+    console.error('❌ Authentication setup failed:', error);
+    console.warn('   Creating minimal auth file as fallback...');
+
     fs.writeFileSync(
       authFile,
       JSON.stringify({
         cookies: [],
+        origins: []
       }, null, 2)
     );
     console.log('ℹ️  Created minimal auth file (no session data)');
