@@ -12,10 +12,10 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
 
-  // Global timeout for tests
-  timeout: 30 * 1000,
+  // Global timeout for tests (increased for manual OAuth flow)
+  timeout: 180 * 1000, // 3 minutes for manual login
   expect: {
-    timeout: 5 * 1000,
+    timeout: 10 * 1000,
   },
 
   use: {
