@@ -49,6 +49,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+scripts
 
 # Test and E2E directories
 test-results/

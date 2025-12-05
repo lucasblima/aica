@@ -66,16 +66,18 @@ const NewsMap: React.FC<Props> = ({ dossier, projectId, topics }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="flex flex-col h-full bg-[#F7F6F4] border border-[#D6D3CD]/50 rounded-2xl overflow-hidden shadow-sm">
             {/* Header */}
-            <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
-                <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center">
-                    <Search className="w-4 h-4 mr-2" /> Mapa de Busca Web
+            <div className="p-4 border-b border-[#D6D3CD]/50 flex items-center justify-between bg-white">
+                <h2 className="text-xs font-bold text-[#948D82] uppercase tracking-wider flex items-center gap-2">
+                    <Search className="w-4 h-4" /> Mapa de Busca Web
                 </h2>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setShowArchived(!showArchived)}
-                        className={`p-2 rounded-lg transition-colors ${showArchived ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                        className={`p-2 rounded-xl transition-all shadow-sm ${showArchived
+                            ? 'bg-indigo-100 text-indigo-700 shadow-inner'
+                            : 'bg-[#F0EFE9] text-[#5C554B] hover:bg-white hover:shadow-md'}`}
                         title={showArchived ? "Ver Ativos" : "Ver Arquivados"}
                     >
                         <Archive className="w-4 h-4" />
@@ -83,7 +85,7 @@ const NewsMap: React.FC<Props> = ({ dossier, projectId, topics }) => {
                     <button
                         onClick={fetchNews}
                         disabled={loading}
-                        className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                        className="p-2 bg-[#5C554B] hover:bg-[#4A443C] text-white rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                         title="Atualizar Busca"
                     >
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -92,15 +94,15 @@ const NewsMap: React.FC<Props> = ({ dossier, projectId, topics }) => {
             </div>
 
             {/* Filters */}
-            <div className="px-4 py-3 border-b border-zinc-800 flex gap-2 overflow-x-auto custom-scroll">
+            <div className="px-4 py-3 border-b border-[#D6D3CD]/30 flex gap-2 overflow-x-auto custom-scroll bg-[#F7F6F4]">
                 {(['all', 'positive', 'negative', 'neutral'] as const).map(type => (
                     <button
                         key={type}
                         onClick={() => setFilterSentiment(type)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-all whitespace-nowrap
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm
               ${filterSentiment === type
-                                ? 'bg-zinc-100 text-zinc-900 border-zinc-100'
-                                : 'bg-zinc-900 text-zinc-500 border-zinc-700 hover:border-zinc-500'}`}
+                                ? 'bg-[#5C554B] text-white border-[#5C554B]'
+                                : 'bg-white text-[#948D82] border-[#D6D3CD] hover:border-[#948D82] hover:text-[#5C554B]'}`}
                     >
                         {type === 'all' ? 'Todos' : type.charAt(0).toUpperCase() + type.slice(1)}
                     </button>
@@ -108,41 +110,48 @@ const NewsMap: React.FC<Props> = ({ dossier, projectId, topics }) => {
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll bg-[#F0EFE9]">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center h-32 text-zinc-500 space-y-2">
-                        <RefreshCw className="w-6 h-6 animate-spin" />
-                        <span className="text-xs">Analisando notícias...</span>
+                    <div className="flex flex-col items-center justify-center h-32 text-[#948D82] space-y-3">
+                        <div className="p-3 bg-white rounded-full shadow-sm">
+                            <RefreshCw className="w-6 h-6 animate-spin text-[#5C554B]" />
+                        </div>
+                        <span className="text-xs font-medium">Analisando notícias...</span>
                     </div>
                 ) : filteredArticles.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-32 text-zinc-600 space-y-2">
-                        <Search className="w-8 h-8 opacity-20" />
-                        <span className="text-xs">Nenhuma notícia encontrada.</span>
+                    <div className="flex flex-col items-center justify-center h-32 text-[#948D82] space-y-3">
+                        <div className="p-4 bg-[#E5E3DC] rounded-full shadow-inner">
+                            <Search className="w-8 h-8 opacity-40" />
+                        </div>
+                        <span className="text-xs font-medium">Nenhuma notícia encontrada.</span>
                     </div>
                 ) : (
                     filteredArticles.map((article, idx) => (
                         <div
                             key={idx}
-                            className={`p-3 rounded-lg border ${getSentimentColor(article.sentiment)} transition-all hover:bg-zinc-800 group relative`}
+                            className={`p-4 rounded-xl border transition-all duration-200 group relative bg-white hover:scale-[1.02] shadow-[2px_2px_6px_rgba(163,158,145,0.1)] hover:shadow-[4px_4px_12px_rgba(163,158,145,0.15)]
+                            ${article.sentiment === 'positive' ? 'border-l-4 border-l-green-500' :
+                                    article.sentiment === 'negative' ? 'border-l-4 border-l-red-500' :
+                                        'border-l-4 border-l-[#D6D3CD]'}`}
                         >
                             <div className="flex justify-between items-start gap-3">
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex items-center gap-2 mb-2">
                                         {getSentimentIcon(article.sentiment)}
-                                        <span className="text-[10px] uppercase font-bold text-zinc-500">{article.source}</span>
-                                        <span className="text-[10px] text-zinc-600">• {new Date(article.published_at).toLocaleDateString()}</span>
+                                        <span className="text-[10px] uppercase font-bold text-[#948D82] tracking-wider">{article.source}</span>
+                                        <span className="text-[10px] text-[#B0ADA6]">• {new Date(article.published_at).toLocaleDateString()}</span>
                                     </div>
                                     <a
                                         href={article.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm font-medium text-zinc-200 hover:text-indigo-400 leading-snug block mb-2"
+                                        className="text-sm font-bold text-[#5C554B] hover:text-indigo-600 leading-snug block mb-3 transition-colors"
                                     >
                                         {article.title}
                                     </a>
-                                    <div className="flex flex-wrap gap-1">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {article.topics?.map(t => (
-                                            <span key={t} className="px-1.5 py-0.5 bg-zinc-950/50 rounded text-[10px] text-zinc-400 border border-zinc-800">
+                                            <span key={t} className="px-2 py-0.5 bg-[#F0EFE9] rounded-md text-[10px] font-medium text-[#5C554B] border border-[#D6D3CD]/50">
                                                 {t}
                                             </span>
                                         ))}
@@ -151,18 +160,18 @@ const NewsMap: React.FC<Props> = ({ dossier, projectId, topics }) => {
                                 <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => toggleArchive(article.url)}
-                                        className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700 rounded"
+                                        className="p-2 text-[#948D82] hover:text-[#5C554B] hover:bg-[#F0EFE9] rounded-lg transition-colors"
                                         title={article.archived ? "Desarquivar" : "Arquivar"}
                                     >
-                                        {article.archived ? <RotateCcw className="w-3 h-3" /> : <Archive className="w-3 h-3" />}
+                                        {article.archived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                                     </button>
                                     <a
                                         href={article.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="p-1.5 text-zinc-500 hover:text-indigo-400 hover:bg-zinc-700 rounded"
+                                        className="p-2 text-[#948D82] hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                     >
-                                        <ExternalLink className="w-3 h-3" />
+                                        <ExternalLink className="w-4 h-4" />
                                     </a>
                                 </div>
                             </div>

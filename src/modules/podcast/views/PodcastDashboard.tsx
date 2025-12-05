@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Calendar, User, Clock, Settings, ArrowLeft, Mic2 } from 'lucide-react';
+import { Plus, Calendar, User, Clock, Settings, ChevronLeft, Mic2, Trash2 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
+import { PodcastShow } from '../types';
 
 interface Episode {
     id: string;
@@ -9,13 +10,6 @@ interface Episode {
     status: 'draft' | 'in_production' | 'published' | 'archived';
     scheduled_date?: string;
     created_at: string;
-}
-
-interface PodcastShow {
-    id: string;
-    name: string;
-    description?: string;
-    cover_url?: string;
 }
 
 interface PodcastDashboardProps {
@@ -79,6 +73,38 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
         }
     };
 
+    const handleUpdateTitle = async (newTitle: string) => {
+        if (!show || show.title === newTitle) return;
+        try {
+            const { error } = await supabase
+                .from('podcast_shows')
+                .update({ title: newTitle })
+                .eq('id', show.id);
+
+            if (error) throw error;
+            setShow({ ...show, title: newTitle });
+        } catch (error) {
+            console.error('Error updating title:', error);
+        }
+    };
+
+    const handleDeleteEpisode = async (episodeId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!window.confirm('Tem certeza que deseja excluir este episódio?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('podcast_episodes')
+                .delete()
+                .eq('id', episodeId);
+
+            if (error) throw error;
+            setEpisodes(episodes.filter(ep => ep.id !== episodeId));
+        } catch (error) {
+            console.error('Error deleting episode:', error);
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'published': return 'bg-green-100 text-green-700';
@@ -112,8 +138,8 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                         onClick={onBack}
                         className="mb-4 text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors flex items-center gap-2"
                     >
-                        <ArrowLeft className="w-4 h-4" />
-                        Voltar para biblioteca
+                        <ChevronLeft className="w-4 h-4" />
+                        Voltar
                     </button>
 
                     {/* Cover + Title + Settings */}
@@ -125,7 +151,7 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                             ) : (
                                 <div className="w-32 h-32 bg-gradient-to-br from-amber-100 to-amber-200 rounded-2xl shadow-[4px_4px_12px_rgba(163,158,145,0.2)] overflow-hidden ceramic-card">
                                     {show?.cover_url ? (
-                                        <img src={show.cover_url} alt={show.name} className="w-full h-full object-cover" />
+                                        <img src={show.cover_url} alt={show.title} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
                                             <Mic2 className="w-16 h-16 text-amber-600 opacity-30" />
@@ -144,9 +170,13 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                                 </>
                             ) : (
                                 <>
-                                    <h1 className="text-4xl font-black text-[#5C554B] tracking-tight mb-2">
-                                        {show?.name || fallbackTitle}
-                                    </h1>
+                                    <input
+                                        type="text"
+                                        defaultValue={show?.title || fallbackTitle}
+                                        onBlur={(e) => handleUpdateTitle(e.target.value)}
+                                        className="text-4xl font-black text-[#5C554B] tracking-tight mb-2 bg-transparent border-none focus:outline-none focus:ring-0 w-full p-0 placeholder-[#5C554B]/50"
+                                        placeholder="Nome do Podcast"
+                                    />
                                     {show?.description && (
                                         <p className="text-[#948D82] text-sm leading-relaxed">
                                             {show.description}
@@ -249,10 +279,17 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                         /* Episode List */
                         <div className="space-y-3">
                             {episodes.map(episode => (
-                                <button
+                                <div
                                     key={episode.id}
                                     onClick={() => onSelectEpisode(episode.id)}
-                                    className="w-full bg-[#F7F6F4] hover:bg-white transition-all duration-200 rounded-xl p-5 text-left group shadow-[2px_2px_6px_rgba(163,158,145,0.1)] hover:shadow-[4px_4px_12px_rgba(163,158,145,0.15)]"
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            onSelectEpisode(episode.id);
+                                        }
+                                    }}
+                                    className="w-full bg-[#F7F6F4] hover:bg-white transition-all duration-200 rounded-xl p-5 text-left group shadow-[2px_2px_6px_rgba(163,158,145,0.1)] hover:shadow-[4px_4px_12px_rgba(163,158,145,0.15)] cursor-pointer outline-none focus:ring-2 focus:ring-amber-500/20"
                                 >
                                     <div className="flex items-start justify-between gap-4">
                                         {/* Episode Info */}
@@ -288,8 +325,17 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                                         <div className={`flex-shrink-0 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(episode.status)}`}>
                                             {getStatusLabel(episode.status)}
                                         </div>
+
+                                        {/* Delete Button (Hover) */}
+                                        <button
+                                            onClick={(e) => handleDeleteEpisode(episode.id, e)}
+                                            className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                            title="Excluir episódio"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                </button>
+                                </div>
                             ))}
                         </div>
                     )}

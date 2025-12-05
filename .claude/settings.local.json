@@ -14,7 +14,10 @@
       "mcp__supabase__execute_sql",
       "mcp__supabase__apply_migration",
       "Bash(git rm:*)",
-      "Bash(claude mcp list:*)"
+      "Bash(claude mcp list:*)",
+      "Bash(npm run update-docs:*)",
+      "Bash(npm run validate-schema:*)",
+      "mcp__supabase__list_tables"
     ],
     "deny": [],
     "ask": []

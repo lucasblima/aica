@@ -99,13 +99,13 @@ export const TopicManager: React.FC<TopicManagerProps> = ({
     return (
         <div className="flex flex-col h-full gap-4">
             {/* New Topic Input */}
-            <div className="ceramic-card p-4 rounded-xl">
-                <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+            <div className="bg-white border border-[#D6D3CD]/50 rounded-2xl p-4 shadow-sm">
+                <div className="flex gap-2 mb-3 overflow-x-auto pb-1 custom-scroll">
                     <button
                         onClick={() => setSelectedCategory(null)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${!selectedCategory
-                                ? 'bg-[#5C554B] text-white'
-                                : 'bg-[#E5E3DC] text-[#5C554B] hover:bg-[#DAD8D0]'
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${!selectedCategory
+                            ? 'bg-[#5C554B] text-white shadow-md scale-105'
+                            : 'bg-[#F0EFE9] text-[#948D82] hover:bg-[#E5E3DC] hover:text-[#5C554B]'
                             }`}
                     >
                         Geral
@@ -114,12 +114,12 @@ export const TopicManager: React.FC<TopicManagerProps> = ({
                         <button
                             key={cat.id}
                             onClick={() => setSelectedCategory(cat.id)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${selectedCategory === cat.id
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-[#E5E3DC] text-[#5C554B] hover:bg-[#DAD8D0]'
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shadow-sm ${selectedCategory === cat.id
+                                ? 'bg-indigo-600 text-white shadow-md scale-105'
+                                : 'bg-[#F0EFE9] text-[#948D82] hover:bg-[#E5E3DC] hover:text-[#5C554B]'
                                 }`}
                         >
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                            <span className="w-2 h-2 rounded-full ring-1 ring-white/50" style={{ backgroundColor: cat.color }} />
                             {cat.name}
                         </button>
                     ))}
@@ -132,19 +132,19 @@ export const TopicManager: React.FC<TopicManagerProps> = ({
                         onChange={(e) => setNewTopicText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                         placeholder="Nova pauta..."
-                        className="flex-1 px-4 py-2 rounded-lg bg-[#F0EFE9] border-none shadow-[inset_2px_2px_4px_rgba(163,158,145,0.2),inset_-2px_-2px_4px_rgba(255,255,255,0.8)] focus:outline-none text-[#5C554B] placeholder-[#948D82]"
+                        className="flex-1 px-4 py-2.5 rounded-xl bg-[#F0EFE9] border-none shadow-[inset_2px_2px_5px_rgba(163,158,145,0.15),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] focus:outline-none text-[#5C554B] placeholder-[#948D82] text-sm font-medium transition-all focus:shadow-[inset_2px_2px_5px_rgba(163,158,145,0.2),inset_-2px_-2px_5px_rgba(255,255,255,0.5)]"
                     />
                     <button
                         onClick={handleAdd}
                         disabled={!newTopicText.trim()}
-                        className="p-2 bg-[#5C554B] text-white rounded-lg hover:bg-[#4A443C] disabled:opacity-50 transition-colors"
+                        className="p-2.5 bg-[#5C554B] text-white rounded-xl hover:bg-[#4A443C] disabled:opacity-50 transition-all shadow-md hover:shadow-lg active:scale-95"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
                     <button
                         onClick={onSuggestTopic}
                         disabled={isSuggesting}
-                        className="p-2 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 disabled:opacity-50 transition-colors"
+                        className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl hover:bg-indigo-200 disabled:opacity-50 transition-all shadow-sm hover:shadow-md active:scale-95"
                         title="Sugerir com IA"
                     >
                         {isSuggesting ? <Wand2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
@@ -153,7 +153,7 @@ export const TopicManager: React.FC<TopicManagerProps> = ({
             </div>
 
             {/* Topics List */}
-            <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scroll">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-2.5 custom-scroll">
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                     <SortableContext items={activeTopics.map(t => t.id)} strategy={verticalListSortingStrategy}>
                         {activeTopics.map(topic => (
@@ -170,29 +170,40 @@ export const TopicManager: React.FC<TopicManagerProps> = ({
                 </DndContext>
 
                 {activeTopics.length === 0 && (
-                    <div className="text-center py-8 text-[#948D82] text-sm italic">
-                        Nenhuma pauta ativa. Adicione ou gere com IA.
+                    <div className="flex flex-col items-center justify-center py-12 text-[#948D82] space-y-3 opacity-60">
+                        <div className="p-4 bg-[#E5E3DC] rounded-full">
+                            <Wand2 className="w-8 h-8" />
+                        </div>
+                        <span className="text-sm font-medium italic">Nenhuma pauta ativa. Adicione ou gere com IA.</span>
                     </div>
                 )}
             </div>
 
             {/* Ice Breakers Section */}
-            <div className="ceramic-card rounded-xl overflow-hidden">
+            <div className="bg-white border border-[#D6D3CD]/50 rounded-2xl overflow-hidden shadow-sm transition-all">
                 <button
                     onClick={() => setIsIceBreakersCollapsed(!isIceBreakersCollapsed)}
-                    className="w-full p-3 flex items-center justify-between bg-[#E5E3DC] hover:bg-[#DAD8D0] transition-colors"
+                    className="w-full p-3 flex items-center justify-between bg-[#F0EFE9] hover:bg-[#E5E3DC] transition-colors border-b border-[#D6D3CD]/30"
                 >
-                    <span className="text-xs font-bold text-[#5C554B] uppercase tracking-wider">Quebra-Gelo</span>
-                    {isIceBreakersCollapsed ? <ChevronDown className="w-4 h-4 text-[#5C554B]" /> : <ChevronUp className="w-4 h-4 text-[#5C554B]" />}
+                    <span className="text-xs font-bold text-[#948D82] uppercase tracking-wider flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                        Quebra-Gelo
+                    </span>
+                    {isIceBreakersCollapsed ? <ChevronDown className="w-4 h-4 text-[#948D82]" /> : <ChevronUp className="w-4 h-4 text-[#948D82]" />}
                 </button>
 
                 {!isIceBreakersCollapsed && (
-                    <div className="p-3 bg-[#F0EFE9] max-h-48 overflow-y-auto space-y-2">
+                    <div className="p-3 bg-white max-h-48 overflow-y-auto space-y-2 custom-scroll">
                         {iceBreakers.filter(ib => !ib.archived).map((ib, idx) => (
-                            <div key={idx} className="p-2 bg-white rounded-lg text-sm text-[#5C554B] border border-[#5C554B]/10 shadow-sm">
+                            <div key={idx} className="p-3 bg-[#F7F6F4] rounded-xl text-sm text-[#5C554B] border border-[#E5E3DC] shadow-sm hover:shadow-md transition-all cursor-default">
                                 {ib.text}
                             </div>
                         ))}
+                        {iceBreakers.filter(ib => !ib.archived).length === 0 && (
+                            <div className="text-center text-xs text-[#948D82] italic py-2">
+                                Nenhum quebra-gelo disponível.
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -90,4 +90,186 @@ Este documento descreve **todas as tabelas do Supabase** que o frontend (Aica) u
 
 ---
 
-*Última atualização: 2025‑11‑25*
+*Última atualização: 2025-12-05*
+
+---
+
+## Podcast Module - Frontend-First Development
+
+### Current Status: Frontend Complete, Backend Pending
+
+The Podcast module has been developed using a **frontend-first strategy** to validate the user experience before investing in backend infrastructure. The following components are fully implemented in the UI:
+
+#### New Frontend Components (Phase 5 Expansion)
+
+1. **GuestIdentificationWizard** (`src/modules/podcast/components/GuestIdentificationWizard.tsx`)
+   - 3-step wizard for guest profile identification
+   - AI-powered profile search (mocked, awaits Gemini integration)
+   - Theme selection (auto/manual), scheduling, and location configuration
+
+2. **PreProductionHub** (`src/modules/podcast/views/PreProductionHub.tsx`)
+   - Research panel with Bio/Ficha/News tabs
+   - Pauta (outline) builder with drag-and-drop topics
+   - Topic categories: Geral, Quebra-Gelo, Patrocinador, Polêmicas
+   - AI Chat assistant for guest research
+   - Custom sources upload interface (PDFs, links, text)
+
+3. **ProductionMode** (`src/modules/podcast/views/ProductionMode.tsx`)
+   - Live recording interface with HH:MM:SS timer
+   - Topic checklist with completion tracking
+   - Teleprompter launcher
+   - Co-Host Aica panel (Monitor/Active modes)
+   - AI Chat for real-time assistance
+   - Audio level indicators
+
+4. **TeleprompterWindow** (`src/modules/podcast/components/TeleprompterWindow.tsx`)
+   - Full-screen teleprompter overlay
+   - Auto-scroll for sponsor reads (speed 0-5)
+   - Topic navigation with preview
+   - Category-based visual styling
+
+5. **PostProductionHub** (`src/modules/podcast/views/PostProductionHub.tsx`)
+   - Success screen after recording
+   - Roadmap display for future features:
+     - Automatic transcription
+     - AI-generated cuts for TikTok/Reels/Shorts
+     - SEO-optimized blog posts
+     - Social media auto-publishing
+
+6. **PodcastCopilotView** (`src/views/PodcastCopilotView.tsx`)
+   - Updated routing for new workflow
+   - State management for multi-step process
+   - Legacy mode compatibility (Preparation/Studio)
+
+#### Backend Requirements (Pending Implementation)
+
+Based on the frontend components, the following backend support is needed:
+
+##### Database Schema Extensions
+
+```sql
+-- New columns for podcast_episodes (if not exists)
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS guest_name TEXT;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS guest_reference TEXT;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS guest_profile JSONB;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS episode_theme TEXT;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS theme_mode TEXT CHECK (theme_mode IN ('auto', 'manual'));
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS season INTEGER DEFAULT 1;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS location TEXT;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS scheduled_date DATE;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS scheduled_time TIME;
+ALTER TABLE podcast_episodes ADD COLUMN IF NOT EXISTS recording_duration INTEGER; -- seconds
+
+-- Guest research storage (alternative: store in episode metadata JSONB)
+CREATE TABLE IF NOT EXISTS podcast_guest_research (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    episode_id UUID REFERENCES podcast_episodes(id) ON DELETE CASCADE,
+    biography TEXT,
+    technical_sheet JSONB,
+    controversies JSONB,
+    sources JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Sponsor scripts (for teleprompter)
+ALTER TABLE podcast_topics ADD COLUMN IF NOT EXISTS sponsor_script TEXT;
+```
+
+##### Storage Requirements
+
+```
+/podcast-recordings/
+  /{show_id}/
+    /{episode_id}/
+      /audio.mp3           -- Main recording
+      /transcript.txt      -- Auto-generated transcript
+      /cuts/              -- Social media cuts
+        /short-1.mp4
+        /short-2.mp4
+      /sources/           -- Custom research sources
+        /document-1.pdf
+        /link-archive.html
+```
+
+##### API Integrations Needed
+
+1. **Gemini Deep Research** - Guest profile search
+   - Input: Guest name + reference
+   - Output: Biography, technical sheet, controversies
+   - Endpoint: `/api/podcast/research-guest`
+
+2. **Gemini Pauta Generation** - Topic suggestions
+   - Input: Guest profile + theme
+   - Output: Suggested topics by category
+   - Endpoint: `/api/podcast/generate-pauta`
+
+3. **Post-Production Pipeline** (Future)
+   - Transcription service integration
+   - Video cut generation (Opus Clip-style)
+   - Blog post generation
+   - Social media API connections
+
+##### Service Layer Requirements
+
+Create `src/services/podcastProductionService.ts`:
+```typescript
+// Guest research
+async function searchGuestProfile(name: string, reference: string)
+async function saveGuestResearch(episodeId: string, research: GuestResearch)
+
+// Recording management
+async function startRecording(episodeId: string)
+async function pauseRecording(episodeId: string)
+async function finishRecording(episodeId: string, duration: number)
+
+// Post-production
+async function generateTranscript(episodeId: string)
+async function generateCuts(episodeId: string)
+async function publishToSocial(episodeId: string, platforms: string[])
+```
+
+#### Migration Priority
+
+**High Priority (Core Workflow):**
+1. Guest profile storage (JSONB in episode metadata or separate table)
+2. Recording duration tracking
+3. Sponsor script field for topics
+
+**Medium Priority (Enhanced Features):**
+1. Custom sources storage (Supabase Storage)
+2. Gemini Deep Research integration
+3. Research caching
+
+**Low Priority (Future Roadmap):**
+1. Transcription service
+2. Video cut generation
+3. Blog post generation
+4. Social media publishing
+
+#### Frontend-Backend Integration Checklist
+
+- [ ] Create database migrations for new podcast fields
+- [ ] Implement `podcastProductionService.ts` with Supabase integration
+- [ ] Connect GuestIdentificationWizard to Gemini search API
+- [ ] Wire PreProductionHub to save research data
+- [ ] Implement recording start/stop/duration tracking
+- [ ] Add Supabase Storage for custom sources
+- [ ] Create RLS policies for new podcast tables/columns
+- [ ] Add E2E tests for podcast production workflow
+
+---
+
+
+---
+
+## Validação Automática
+
+**Última verificação:** 2025-12-05
+
+**Status:** Para validação completa do schema, execute:
+```bash
+supabase db diff --schema public
+```
+
+**Tabelas esperadas:** `users`, `associations`, `modules`, `work_items`, `memories`, `daily_reports`, `activity_log`, `contact_network`, `podcast_shows`, `podcast_episodes`, `podcast_topics`, `team_members`
