@@ -132,3 +132,14 @@ export interface TopicCategory {
   color: string;
   episode_id: string;
 }
+
+export interface PodcastShow {
+  id: string;
+  title: string;
+  description?: string;
+  cover_url?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  episodes_count?: number;
+}

@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import PreparationMode from '../modules/podcast/views/PreparationMode';
-import StudioMode from '../modules/podcast/views/StudioMode';
 import PodcastLibrary from '../modules/podcast/views/PodcastLibrary';
 import PodcastDashboard from '../modules/podcast/views/PodcastDashboard';
-import type { Dossier } from '../modules/podcast/types';
+import PreparationMode from '../modules/podcast/views/PreparationMode';
+import StudioMode from '../modules/podcast/views/StudioMode';
+import PreProductionHub from '../modules/podcast/views/PreProductionHub';
+import ProductionMode from '../modules/podcast/views/ProductionMode';
+import PostProductionHub from '../modules/podcast/views/PostProductionHub';
+import GuestIdentificationWizard from '../modules/podcast/components/GuestIdentificationWizard';
+import TeleprompterWindow from '../modules/podcast/components/TeleprompterWindow';
+import type { Dossier, Topic } from '../modules/podcast/types';
 import { StudioLayout } from '../modules/podcast/components/StudioLayout';
 
 interface PodcastCopilotViewProps {
@@ -14,49 +19,111 @@ interface PodcastCopilotViewProps {
     onNavVisibilityChange?: (visible: boolean) => void;
 }
 
-type PodcastView = 'library' | 'dashboard' | 'preparation' | 'studio';
+// Extended view types for new workflow
+type PodcastView =
+    | 'library'
+    | 'dashboard'
+    | 'wizard'           // NEW: Guest identification wizard
+    | 'preproduction'    // NEW: Pre-production hub
+    | 'preparation'      // Legacy (kept for compatibility)
+    | 'production'       // NEW: Production mode
+    | 'studio'           // Legacy (kept for compatibility)
+    | 'postproduction';  // NEW: Post-production hub
+
+interface GuestData {
+    name: string;
+    fullName?: string;
+    title?: string;
+    theme?: string;
+    season?: string;
+    location?: string;
+    scheduledDate?: string;
+    scheduledTime?: string;
+}
 
 export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmail, onLogout, onExit, onNavVisibilityChange }) => {
+    // Navigation State
     const [view, setView] = useState<PodcastView>('library');
     const [currentShowId, setCurrentShowId] = useState<string | null>(null);
     const [currentShowTitle, setCurrentShowTitle] = useState<string>('');
     const [currentEpisodeId, setCurrentEpisodeId] = useState<string | null>(null);
-    const [currentDossier, setCurrentDossier] = useState<Dossier | null>(null);
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+
+    // Data State
+    const [currentDossier, setCurrentDossier] = useState<Dossier | null>(null);
+    const [currentGuestData, setCurrentGuestData] = useState<GuestData | null>(null);
+    const [currentTopics, setCurrentTopics] = useState<Topic[]>([]);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+
+    // Teleprompter State
+    const [showTeleprompter, setShowTeleprompter] = useState(false);
+    const [teleprompterIndex, setTeleprompterIndex] = useState(0);
 
     // Update nav visibility when view changes
     React.useEffect(() => {
         if (onNavVisibilityChange) {
-            onNavVisibilityChange(view === 'library' || view === 'dashboard');
+            const showNav = view === 'library' || view === 'dashboard';
+            onNavVisibilityChange(showNav);
         }
     }, [view, onNavVisibilityChange]);
 
-    // Navigation: Library -> Dashboard
+    // ================== NAVIGATION HANDLERS ==================
+
+    // Library -> Dashboard
     const handleSelectShow = async (showId: string) => {
         setCurrentShowId(showId);
-
-        // Fetch show title
         const { data } = await supabase
             .from('podcast_shows')
-            .select('name')
+            .select('title')
             .eq('id', showId)
             .single();
-
-        setCurrentShowTitle(data?.name || 'Podcast');
+        setCurrentShowTitle(data?.title || 'Podcast');
         setView('dashboard');
     };
 
-    // Navigation: Dashboard -> Preparation (new or existing episode)
-    const handleSelectEpisode = (episodeId: string) => {
+    // Dashboard -> Wizard (NEW FLOW) or Legacy Prep/Studio
+    const handleSelectEpisode = async (episodeId: string) => {
         setCurrentEpisodeId(episodeId);
-        setCurrentProjectId(episodeId); // episode_id is the same as project_id
-        setView('preparation');
+        setCurrentProjectId(episodeId);
+
+        try {
+            const { data: project } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('id', episodeId)
+                .single();
+
+            if (project && project.biography) {
+                // Has dossier - go to production
+                const dossier: Dossier = {
+                    guestName: project.guest_name || 'Convidado',
+                    episodeTheme: project.episode_theme || 'Tema',
+                    biography: project.biography,
+                    controversies: project.controversies || [],
+                    suggestedTopics: [],
+                    iceBreakers: project.ice_breakers || [],
+                    technicalSheet: project.technical_sheet
+                };
+                setCurrentDossier(dossier);
+                setCurrentGuestData({
+                    name: project.guest_name,
+                    theme: project.episode_theme
+                });
+                setView('preproduction');
+            } else {
+                // No dossier - start wizard
+                setView('wizard');
+            }
+        } catch (error) {
+            console.error('Error loading episode:', error);
+            setView('wizard');
+        }
     };
 
+    // Dashboard -> Create New Episode -> Wizard
     const handleCreateEpisode = async () => {
         if (!currentShowId) return;
 
-        // Create a new draft episode
         const { data, error } = await supabase
             .from('podcast_episodes')
             .insert({
@@ -73,10 +140,41 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             return;
         }
 
-        handleSelectEpisode(data.id);
+        setCurrentEpisodeId(data.id);
+        setCurrentProjectId(data.id);
+        setView('wizard');
     };
 
-    // Navigation: Preparation -> Studio
+    // Wizard -> Pre-Production
+    const handleWizardComplete = async (wizardData: any) => {
+        const guestData: GuestData = {
+            name: wizardData.guestName,
+            fullName: wizardData.confirmedProfile?.fullName,
+            title: wizardData.confirmedProfile?.title || wizardData.guestReference,
+            theme: wizardData.themeMode === 'auto' ? undefined : wizardData.theme,
+            season: wizardData.season,
+            location: wizardData.location,
+            scheduledDate: wizardData.scheduledDate,
+            scheduledTime: wizardData.scheduledTime
+        };
+
+        setCurrentGuestData(guestData);
+        setView('preproduction');
+    };
+
+    // Pre-Production -> Production
+    const handleGoToProduction = (dossier: Dossier, projectId: string) => {
+        setCurrentDossier(dossier);
+        setCurrentProjectId(projectId);
+        setView('production');
+    };
+
+    // Production -> Post-Production
+    const handleFinishProduction = () => {
+        setView('postproduction');
+    };
+
+    // Legacy handlers (for compatibility)
     const handleDossierReady = (dossier: Dossier, projectId: string) => {
         setCurrentDossier(dossier);
         setCurrentProjectId(projectId);
@@ -88,18 +186,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         setView('studio');
     };
 
-    // Back navigation
-    const handleBackToPreparation = () => {
-        setView('preparation');
-        setCurrentDossier(null);
-    };
-
-    const handleBackToDashboard = () => {
-        setView('dashboard');
-        setCurrentEpisodeId(null);
-        setCurrentDossier(null);
-        setCurrentProjectId(null);
-    };
+    // ================== BACK NAVIGATION ==================
 
     const handleBackToLibrary = () => {
         setView('library');
@@ -108,28 +195,41 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         setCurrentEpisodeId(null);
         setCurrentDossier(null);
         setCurrentProjectId(null);
+        setCurrentGuestData(null);
     };
 
-    const handleCreateNewShow = () => {
-        // TODO: Implement modal for creating new show
-        alert('Criar novo podcast - implementar modal');
+    const handleBackToDashboard = () => {
+        setView('dashboard');
+        setCurrentEpisodeId(null);
+        setCurrentDossier(null);
+        setCurrentProjectId(null);
+        setCurrentGuestData(null);
     };
 
-    // ================== VIEWS ==================
+    const handleBackToPreProduction = () => {
+        setView('preproduction');
+    };
 
-    // 1. Library View - /podcast
+    const handleBackToPreparation = () => {
+        setView('preparation');
+        setCurrentDossier(null);
+    };
+
+    // ================== VIEW RENDERS ==================
+
+    // 1. Library
     if (view === 'library') {
         return (
             <PodcastLibrary
                 onSelectShow={handleSelectShow}
-                onCreateNew={handleCreateNewShow}
+                onCreateNew={() => alert('Criar novo podcast')}
                 userEmail={userEmail}
                 onLogout={onLogout}
             />
         );
     }
 
-    // 2. Dashboard View - /podcast/:showId
+    // 2. Dashboard
     if (view === 'dashboard' && currentShowId) {
         return (
             <PodcastDashboard
@@ -142,7 +242,67 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         );
     }
 
-    // 3. Preparation View - /podcast/:showId/episode/:episodeId/prep
+    // 3. NEW: Guest Identification Wizard
+    if (view === 'wizard') {
+        return (
+            <GuestIdentificationWizard
+                onComplete={handleWizardComplete}
+                onCancel={handleBackToDashboard}
+            />
+        );
+    }
+
+    // 4. NEW: Pre-Production Hub
+    if (view === 'preproduction' && currentGuestData && currentProjectId) {
+        return (
+            <PreProductionHub
+                guestData={currentGuestData}
+                projectId={currentProjectId}
+                onGoToProduction={handleGoToProduction}
+                onBack={handleBackToDashboard}
+            />
+        );
+    }
+
+    // 5. NEW: Production Mode
+    if (view === 'production' && currentDossier && currentProjectId) {
+        return (
+            <>
+                <ProductionMode
+                    dossier={currentDossier}
+                    projectId={currentProjectId}
+                    topics={currentTopics}
+                    onBack={handleBackToPreProduction}
+                    onOpenTeleprompter={() => setShowTeleprompter(true)}
+                    onFinish={handleFinishProduction}
+                />
+
+                {/* Teleprompter Window */}
+                {showTeleprompter && (
+                    <TeleprompterWindow
+                        topics={currentTopics}
+                        currentIndex={teleprompterIndex}
+                        onIndexChange={setTeleprompterIndex}
+                        onClose={() => setShowTeleprompter(false)}
+                    />
+                )}
+            </>
+        );
+    }
+
+    // 6. NEW: Post-Production Hub
+    if (view === 'postproduction' && currentDossier && currentProjectId) {
+        return (
+            <PostProductionHub
+                dossier={currentDossier}
+                projectId={currentProjectId}
+                recordingDuration={recordingDuration}
+                onBack={handleBackToDashboard}
+            />
+        );
+    }
+
+    // 7. Legacy: Preparation Mode
     if (view === 'preparation' && currentProjectId) {
         return (
             <StudioLayout
@@ -160,13 +320,13 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         );
     }
 
-    // 4. Studio View - /podcast/:showId/episode/:episodeId/studio
+    // 8. Legacy: Studio Mode
     if (view === 'studio' && currentDossier && currentProjectId) {
         return (
             <StudioLayout
                 title={currentDossier.guestName || currentShowTitle || "Episódio"}
                 status="recording"
-                onExit={handleBackToDashboard}
+                onExit={handleBackToPreparation}
                 variant="fixed"
             >
                 <StudioMode

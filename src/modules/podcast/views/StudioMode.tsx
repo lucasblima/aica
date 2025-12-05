@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Dossier } from '../types';
 import { useGeminiLive } from '../hooks/useGeminiLive';
 import { useStudioData } from '../hooks/useStudioData';
-import { StudioHeader } from '../components/studio/StudioHeader';
 import { TopicManager } from '../components/studio/TopicManager';
 import { BioPanel } from '../components/studio/BioPanel';
 import { LiveConsole } from '../components/studio/LiveConsole';
@@ -39,28 +38,16 @@ const StudioMode: React.FC<Props> = ({ dossier, projectId, onBack, className }) 
     realtimeTranscript,
     audioLevel,
     startSession,
-    stopSession
+    stopSession,
+    isLiveDisabled
   } = useGeminiLive({ dossier });
 
   // --- Local State ---
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isSuggestingTopic, setIsSuggestingTopic] = useState(false);
-
-  // --- Effects ---
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    let interval: any;
-    if (isRunning) interval = setInterval(() => setElapsedTime(p => p + 1), 1000);
-    return () => clearInterval(interval);
-  }, [isRunning]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   // --- Handlers ---
   const handleSuggestTopic = async () => {
@@ -90,23 +77,8 @@ const StudioMode: React.FC<Props> = ({ dossier, projectId, onBack, className }) 
   };
 
   return (
-    <div className={`flex flex-col h-full bg-[#F0EFE9] text-[#5C554B] font-sans overflow-hidden ${className || ''}`}>
-      {/* Header */}
-      <StudioHeader
-        dossier={dossier}
-        currentTime={currentTime}
-        isRunning={isRunning}
-        elapsedTime={elapsedTime}
-        connectionStatus={connectionStatus}
-        isEditingProject={isEditingProject}
-        onBack={onBack}
-        onTogglePlay={() => setIsRunning(!isRunning)}
-        onReset={() => { setIsRunning(false); setElapsedTime(0); }}
-        onEditProject={() => setIsEditingProject(true)}
-        onSaveProject={() => setIsEditingProject(false)} // Placeholder for actual save
-      />
-
-      {/* Main Grid */}
+    <div className={`flex flex-col h-full w-full text-[#5C554B] font-sans overflow-hidden ${className || ''}`}>
+      {/* Main Grid - Sem header duplicado, o StudioLayout fornece o header */}
       <div className="flex-1 grid grid-cols-12 gap-6 p-6 overflow-hidden">
 
         {/* Left Column: Topics (3 cols) */}
@@ -143,6 +115,7 @@ const StudioMode: React.FC<Props> = ({ dossier, projectId, onBack, className }) 
             onSendMessage={handleSendMessage}
             chatMessages={chatMessages}
             isChatLoading={isChatLoading}
+            isLiveDisabled={isLiveDisabled}
           />
         </div>
       </div>

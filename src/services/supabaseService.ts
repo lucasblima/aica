@@ -169,6 +169,26 @@ export const getLifeAreas = async () => {
     }
 };
 
+// Get all work items (simplified query to avoid 400 Bad Request)
+export const getWorkItems = async () => {
+    try {
+        // Simplificação: Buscar apenas tarefas não arquivadas e não concluídas.
+        // Removido o filtro .or() complexo que causava erro 400.
+        const { data, error } = await supabase
+            .from('work_items')
+            .select('*, association:associations(name)')
+            .is('completed_at', null)
+            .eq('archived', false)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching work items:', error);
+        return []; // Retorna array vazio para não quebrar a UI
+    }
+};
+
 // Create a new work item
 export const createWorkItem = async (item: {
     title: string;

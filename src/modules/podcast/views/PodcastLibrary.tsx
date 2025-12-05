@@ -48,7 +48,7 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
             const { error } = await supabase
                 .from('podcast_shows')
                 .insert({
-                    name: title,
+                    title: title,
                     description,
                     user_id: user.id
                 });
@@ -109,7 +109,7 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
                                     {show.cover_url ? (
                                         <img
                                             src={show.cover_url}
-                                            alt={show.name}
+                                            alt={show.title}
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
@@ -120,7 +120,7 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
                                 {/* Show Info */}
                                 <div className="flex-1">
                                     <h3 className="text-sm font-bold text-ceramic-text-primary mb-1 group-hover:text-amber-600 transition-colors line-clamp-2">
-                                        {show.name}
+                                        {show.title}
                                     </h3>
                                     {/* Episode Count Badge */}
                                     <div className="flex items-center gap-1.5 mt-2">

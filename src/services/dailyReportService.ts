@@ -65,7 +65,7 @@ export async function generateDailyReport(
     const report = buildReportObject(userId, date, metrics, insights);
 
     // Step 5: Insert into Supabase
-    const savedReport = await insertDailyReport(report);
+    const savedReport = await insertDailyReport(report, userId);
     console.log('✅ Report saved to Supabase');
 
     // Step 6: Send notifications
@@ -232,12 +232,13 @@ export async function getDailyReport(
  * Insert daily report to Supabase
  */
 async function insertDailyReport(
-  report: DailyReportCreateInput
+  report: DailyReportCreateInput,
+  userId: string
 ): Promise<DailyReport> {
   try {
     const { data, error } = await supabase
       .from('daily_reports')
-      .insert([report])
+      .insert([{ ...report, user_id: userId }])
       .select()
       .single();
 

@@ -28,69 +28,68 @@ export const AudioConsole: React.FC<AudioConsoleProps> = ({
     return (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
             {/* Main Console Card */}
-            <div className="px-8 py-6 rounded-[2rem] backdrop-blur-xl bg-white/80 shadow-[8px_8px_20px_rgba(163,158,145,0.2),-8px_-8px_20px_rgba(255,255,255,0.9)] border border-white/40 flex items-center gap-8">
+            <div className="px-8 py-6 rounded-[2.5rem] bg-[#F0EFE9]/95 backdrop-blur-md shadow-[8px_8px_20px_rgba(163,158,145,0.25),-8px_-8px_20px_rgba(255,255,255,0.9)] border border-white/50 flex items-center gap-10">
 
                 {/* REC Button */}
-                <div className="relative">
+                <div className="relative group">
                     <button
                         onClick={onToggleRecording}
                         className={`
               relative w-20 h-20 rounded-full flex items-center justify-center
               transition-all duration-300
               ${isRecording
-                                ? 'bg-gradient-to-br from-rose-500 to-rose-600 shadow-[0_0_20px_rgba(244,63,94,0.5),inset_0_2px_4px_rgba(255,255,255,0.3)]'
-                                : 'shadow-[6px_6px_12px_rgba(163,158,145,0.3),-6px_-6px_12px_rgba(255,255,255,0.9)] hover:shadow-[8px_8px_16px_rgba(163,158,145,0.4),-8px_-8px_16px_rgba(255,255,255,1)]'
+                                ? 'bg-gradient-to-br from-rose-500 to-rose-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] scale-95'
+                                : 'bg-[#E5E3DC] shadow-[6px_6px_12px_rgba(163,158,145,0.3),-6px_-6px_12px_rgba(255,255,255,0.9)] hover:shadow-[8px_8px_16px_rgba(163,158,145,0.4),-8px_-8px_16px_rgba(255,255,255,1)] hover:-translate-y-1'
                             }
-              active:scale-95
             `}
                     >
                         {isRecording ? (
                             <>
-                                <Square className="w-7 h-7 text-white fill-white" />
+                                <Square className="w-8 h-8 text-white fill-white" />
                                 {/* Pulsing ring */}
                                 <span className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-20" />
                             </>
                         ) : (
-                            <Mic className="w-7 h-7 text-[#5C554B]" />
+                            <Mic className="w-8 h-8 text-[#5C554B]" />
                         )}
                     </button>
 
                     {/* "NO AR" Label */}
                     {isRecording && (
-                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-rose-500">
-                                NO AR
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 animate-pulse">
+                                Gravando
                             </span>
                         </div>
                     )}
                 </div>
 
                 {/* Vertical Divider */}
-                <div className="w-px h-12 bg-[#5C554B]/10" />
+                <div className="w-px h-16 bg-gradient-to-b from-transparent via-[#D6D3CD] to-transparent" />
 
                 {/* Timer Display */}
-                <div className="text-center min-w-[120px]">
-                    <div className="font-mono text-3xl font-bold text-[#5C554B] tabular-nums">
+                <div className="text-center min-w-[140px]">
+                    <div className="font-mono text-4xl font-black text-[#5C554B] tabular-nums tracking-tight">
                         {formatDuration(recordingDuration)}
                     </div>
-                    <div className="text-[10px] text-[#948D82] uppercase tracking-wider mt-1">
+                    <div className="text-[10px] font-bold text-[#948D82] uppercase tracking-[0.2em] mt-1">
                         Duração
                     </div>
                 </div>
 
                 {/* Vertical Divider */}
-                <div className="w-px h-12 bg-[#5C554B]/10" />
+                <div className="w-px h-16 bg-gradient-to-b from-transparent via-[#D6D3CD] to-transparent" />
 
                 {/* Guest Connection Status */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     {/* Status Dot */}
                     <div className="relative">
                         <div
                             className={`
-                w-3 h-3 rounded-full transition-all duration-300
+                w-4 h-4 rounded-full transition-all duration-300 border-2 border-[#F0EFE9]
                 ${isGuestConnected
-                                    ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
-                                    : 'bg-gray-300'
+                                    ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]'
+                                    : 'bg-[#D6D3CD]'
                                 }
               `}
                         />
@@ -101,10 +100,10 @@ export const AudioConsole: React.FC<AudioConsoleProps> = ({
 
                     {/* Status Text */}
                     <div className="text-left">
-                        <div className="text-sm font-medium text-[#5C554B]">
+                        <div className="text-sm font-bold text-[#5C554B]">
                             {isGuestConnected ? 'Conectado' : 'Aguardando'}
                         </div>
-                        <div className="text-[10px] text-[#948D82]">
+                        <div className="text-[10px] font-medium text-[#948D82] uppercase tracking-wider">
                             Convidado
                         </div>
                     </div>
