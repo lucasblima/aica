@@ -11,8 +11,19 @@
 // Lazy import - only load GoogleGenAI if we have a valid API key
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
+// DEBUG: Log environment variable details
+console.log('🔍 DEBUG - Gemini API Key Details:');
+console.log('  • Raw value:', GEMINI_API_KEY);
+console.log('  • Type:', typeof GEMINI_API_KEY);
+console.log('  • Length:', GEMINI_API_KEY?.length);
+console.log('  • Trimmed length:', GEMINI_API_KEY?.trim?.().length);
+console.log('  • First 10 chars:', GEMINI_API_KEY?.substring?.(0, 10));
+console.log('  • All VITE_ env vars:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
+
 // Check if API key is valid (exists, not empty, not just whitespace)
 const hasValidApiKey = GEMINI_API_KEY && typeof GEMINI_API_KEY === 'string' && GEMINI_API_KEY.trim().length > 10;
+
+console.log('  • hasValidApiKey:', hasValidApiKey);
 
 if (!hasValidApiKey) {
   console.warn('⚠️  VITE_GEMINI_API_KEY not configured - Gemini Deep Research will use mock data');
