@@ -92,6 +92,144 @@ Este documento descreve **todas as tabelas do Supabase** que o frontend (Aica) u
 
 *Última atualização: 2025-12-05*
 
+
+
+---
+
+## Google Calendar Integration - Secretária Executiva
+
+### Visão Geral
+Integração completa com Google Calendar usando OAuth 2.0 via Supabase Auth. Permite que Aica funcione como secretária executiva, organizando proativamente a agenda do usuário.
+
+### Arquitetura OAuth
+
+#### Fluxo de Autorização
+```
+1. Usuário clica "Autorizar Acesso" (GoogleCalendarConnect.tsx)
+2. Frontend chama connectGoogleCalendar() → Supabase Auth
+3. Supabase redireciona para Google OAuth consent screen
+4. Usuário aceita permissões (calendar.events + userinfo.email)
+5. Google redireciona de volta com authorization code
+6. Supabase troca code por access_token + refresh_token
+7. App.tsx detecta OAuth callback via URL hash
+8. handleOAuthCallback() salva tokens na tabela google_calendar_tokens
+9. UI atualiza para estado "Sincronizado"
+```
+
+#### Escopos Solicitados
+- `https://www.googleapis.com/auth/calendar.events` - Leitura E escrita de eventos
+- `https://www.googleapis.com/auth/userinfo.email` - Email do usuário
+
+### Estrutura da Tabela: google_calendar_tokens
+
+```sql
+CREATE TABLE IF NOT EXISTS google_calendar_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    token_expiry TIMESTAMPTZ,
+    email TEXT,
+    name TEXT,
+    picture_url TEXT,
+    scopes TEXT[],
+    is_connected BOOLEAN DEFAULT TRUE,
+    last_sync TIMESTAMPTZ,
+    last_refresh TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+-- RLS Policies
+ALTER TABLE google_calendar_tokens ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own tokens"
+    ON google_calendar_tokens FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage own tokens"
+    ON google_calendar_tokens FOR ALL
+    USING (auth.uid() = user_id);
+```
+
+### Sincronização Inteligente
+
+#### Estratégias de Auto-Sync
+1. **Polling (5 minutos)** - Hook `useGoogleCalendarEvents` com `syncInterval: 300`
+2. **Visibility API** - Sincroniza quando usuário retorna para a aba
+3. **Manual Trigger** - Botão "Sincronizar" no GoogleCalendarConnect
+
+#### Fluxo de Sincronização
+```
+1. Hook verifica isGoogleCalendarConnected()
+2. Se conectado, chama fetchEvents() automaticamente
+3. fetchAndTransformEvents() busca eventos via Google Calendar API v3
+4. Eventos transformados para formato TimelineEvent
+5. AgendaView.tsx mescla eventos com tasks do Supabase
+6. DailyTimeline renderiza timeline unificada
+7. updateLastSyncTime() atualiza timestamp
+```
+
+### Integração com Timeline (AgendaView.tsx)
+
+```typescript
+const mergedTimelineTasks = useMemo(() => {
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    
+    // Filtrar eventos para data selecionada
+    const selectedDateCalendarEvents = calendarEvents
+        .filter(event => event.startTime.startsWith(dateStr))
+        .map(transformCalendarEventToTask);
+    
+    // Mesclar e ordenar
+    return [...timelineTasks, ...selectedDateCalendarEvents]
+        .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time));
+}, [timelineTasks, calendarEvents, selectedDate]);
+```
+
+### Serviços Implementados
+
+**googleAuthService.ts** (218 linhas)
+- `connectGoogleCalendar()` - Inicia OAuth
+- `handleOAuthCallback()` - Salva tokens
+- `getValidAccessToken()` - Token válido com auto-refresh
+
+**googleCalendarTokenService.ts** (398 linhas)
+- `saveGoogleCalendarTokens()` - CRUD Supabase
+- `refreshAccessToken()` - Renovação manual
+- `updateLastSyncTime()` - Timestamp de sync
+
+**googleCalendarService.ts**
+- `fetchAndTransformEvents()` - API v3 + transformação
+- `transformGoogleEvent()` - Conversão TimelineEvent
+
+**useGoogleCalendarEvents.ts** (156 linhas)
+- Hook React com auto-sync
+- Estado: `events`, `isConnected`, `isLoading`, `error`, `lastSyncTime`
+
+### Seleção de Data (Minha Semana)
+
+DailyTimeline.tsx gera 7 dias (3 antes, dia atual, 3 depois). Ao clicar em data, `onDateChange()` atualiza `selectedDate` e filtra tasks + eventos.
+
+### Arquitetura Multi-Usuário
+
+RLS Isolation: Cada usuário vê APENAS seus tokens via `auth.uid() = user_id`.
+
+### Segurança e Compliance
+
+**Proteções:**
+1. Tokens no banco (AES-256 at rest)
+2. RLS policies (isolamento)
+3. HTTPS/TLS 1.3 obrigatório
+4. Token revocation ao desconectar
+
+**Compliance:** GDPR, LGPD, CCPA compliant
+
+### Documentação Completa
+`docs/features/GOOGLE_CALENDAR_INTEGRATION.md` (697 linhas)
+
+
 ---
 
 ## Podcast Module - Frontend-First Development
@@ -272,4 +410,4 @@ async function publishToSocial(episodeId: string, platforms: string[])
 supabase db diff --schema public
 ```
 
-**Tabelas esperadas:** `users`, `associations`, `modules`, `work_items`, `memories`, `daily_reports`, `activity_log`, `contact_network`, `podcast_shows`, `podcast_episodes`, `podcast_topics`, `team_members`
+**Tabelas esperadas:** `users`, `associations`, `modules`, `work_items`, `memories`, `daily_reports`, `activity_log`, `contact_network`, `podcast_shows`, `podcast_episodes`, `podcast_topics`, `team_members`, `google_calendar_tokens`

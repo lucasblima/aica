@@ -40,6 +40,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const [timelineTasks, setTimelineTasks] = useState<Task[]>([]);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     // Atlas Module Integration
     const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
@@ -71,6 +72,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useEffect(() => {
         loadAllTasks();
     }, [userId]);
+
+    // Reload tasks when selected date changes
+    useEffect(() => {
+        loadAllTasks(selectedDate);
+    }, [selectedDate]);
 
     // Log Google Calendar events for debugging
     useEffect(() => {
@@ -120,15 +126,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Merge Google Calendar events with timeline tasks
     const mergedTimelineTasks = useMemo(() => {
-        const today = new Date().toISOString().split('T')[0];
+        const dateStr = selectedDate.toISOString().split('T')[0];
 
-        // Filter calendar events for today
-        const todayCalendarEvents = calendarEvents
-            .filter(event => event.startTime.startsWith(today))
+        // Filter calendar events for selected date
+        const selectedDateCalendarEvents = calendarEvents
+            .filter(event => event.startTime.startsWith(dateStr))
             .map(transformCalendarEventToTask);
 
         // Merge with Supabase timeline tasks
-        const merged = [...timelineTasks, ...todayCalendarEvents];
+        const merged = [...timelineTasks, ...selectedDateCalendarEvents];
 
         // Sort by scheduled_time
         merged.sort((a, b) => {
@@ -138,14 +144,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         });
 
         console.log('[AgendaView] 🔀 Merged timeline tasks:', {
+            selectedDate: dateStr,
             supabaseTasks: timelineTasks.length,
-            calendarEvents: todayCalendarEvents.length,
+            calendarEvents: selectedDateCalendarEvents.length,
             total: merged.length,
             merged
         });
 
         return merged;
-    }, [timelineTasks, calendarEvents]);
+    }, [timelineTasks, calendarEvents, selectedDate]);
 
     // Merge Atlas Tasks with Matrix Tasks
     const mergedMatrixTasks = useMemo(() => {
@@ -174,10 +181,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         return merged;
     }, [matrixTasks, atlasTasks]);
 
-    const loadAllTasks = async () => {
+    const loadAllTasks = async (forDate?: Date) => {
         try {
             setIsLoading(true);
-            const today = new Date().toISOString().split('T')[0];
+            const targetDate = forDate || selectedDate;
+            const dateStr = targetDate.toISOString().split('T')[0];
+
+            console.log('[AgendaView] 📅 Carregando tasks para:', dateStr);
 
             const { data, error } = await supabase
                 .from('work_items')
@@ -207,8 +217,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             const timeline: Task[] = [];
 
             data?.forEach((task: any) => {
-                // If task has a scheduled time for today, it goes to timeline
-                if (task.scheduled_time && task.due_date === today) {
+                // If task has a scheduled time for selected date, it goes to timeline
+                if (task.scheduled_time && task.due_date === dateStr) {
                     timeline.push(task);
                 } else {
                     // Otherwise it goes to matrix
@@ -406,6 +416,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             tasks={mergedTimelineTasks}
                             isLoading={isLoading || isLoadingCalendar}
                             onRefresh={loadAllTasks}
+                            selectedDate={selectedDate}
+                            onDateChange={setSelectedDate}
                         />
                     </div>
                 </main>

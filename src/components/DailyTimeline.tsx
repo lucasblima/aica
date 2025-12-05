@@ -11,6 +11,8 @@ interface DailyTimelineProps {
     tasks: Task[];
     isLoading: boolean;
     onRefresh: () => void;
+    selectedDate?: Date;
+    onDateChange?: (date: Date) => void;
 }
 
 const TimelineSlot: React.FC<{ time: string; children?: React.ReactNode }> = ({ time, children }) => {
@@ -81,9 +83,19 @@ const DraggableTimelineTask: React.FC<{ task: Task; style: React.CSSProperties; 
     );
 };
 
-export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId, tasks, isLoading, onRefresh }) => {
-    const [selectedDate, setSelectedDate] = useState(new Date());
+export const DailyTimeline: React.FC<DailyTimelineProps> = ({
+    userId,
+    tasks,
+    isLoading,
+    onRefresh,
+    selectedDate: externalSelectedDate,
+    onDateChange
+}) => {
+    const [internalSelectedDate, setInternalSelectedDate] = useState(new Date());
     const [activePomodoroTask, setActivePomodoroTask] = useState<Task | null>(null);
+
+    // Use external selectedDate if provided, otherwise use internal
+    const selectedDate = externalSelectedDate || internalSelectedDate;
 
     // Generate week days centered on selected date
     const getWeekDays = () => {
@@ -165,7 +177,14 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({ userId, tasks, isL
                     {weekDays.map((day, idx) => (
                         <button
                             key={idx}
-                            onClick={() => setSelectedDate(day.date)}
+                            onClick={() => {
+                                if (onDateChange) {
+                                    console.log('[DailyTimeline] 📅 Data selecionada:', day.date.toDateString());
+                                    onDateChange(day.date);
+                                } else {
+                                    setInternalSelectedDate(day.date);
+                                }
+                            }}
                             className={`flex-shrink-0 w-16 h-20 rounded-xl flex flex-col items-center justify-center transition-all ${day.isSelected
                                 ? 'ceramic-inset text-ceramic-text-primary scale-105'
                                 : 'ceramic-card text-ceramic-text-secondary hover:scale-102'
