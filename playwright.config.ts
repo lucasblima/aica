@@ -22,6 +22,12 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // Hide automation to avoid Google OAuth blocking
+    launchOptions: {
+      args: [
+        '--disable-blink-features=AutomationControlled',
+      ],
+    },
   },
 
   webServer: {
