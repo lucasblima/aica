@@ -22,7 +22,7 @@ const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
  * Escopo do Google Calendar para leitura
  */
 const GOOGLE_CALENDAR_SCOPES = [
-    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/userinfo.email',
 ];
 
