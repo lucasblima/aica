@@ -111,6 +111,40 @@
   - Backend integration pending (database tables, storage, processing)
   - Inspiration: Opus Clip-style automated content generation
 
+### 3.6. Google Calendar Integration (Executive Secretary)
+- **OAuth 2.0 Authentication:**
+  - Secure authorization with Google using Supabase Auth
+  - Scopes: `calendar.events` (read/write) and `userinfo.email`
+  - Token storage in `google_calendar_tokens` table per user
+  - Automatic token refresh via Supabase provider_token
+
+- **Intelligent Sync Features:**
+  - **Auto-sync every 5 minutes** - Polling interval for calendar updates
+  - **Visibility API sync** - Auto-sync when returning to tab/window
+  - **Manual sync button** - User-triggered refresh with last sync timestamp
+  - **Week date selection** - "Minha Semana" selector filters timeline by selected date
+
+- **Timeline Integration:**
+  - Google Calendar events merge with Supabase work_items in daily timeline
+  - Events displayed with time slots and duration
+  - Sorted chronologically by scheduled_time
+  - Visual distinction between tasks and calendar events
+
+- **Multi-User Architecture:**
+  - Per-user token storage with Row-Level Security (RLS)
+  - Isolated calendar data per authenticated user
+  - No token sharing between users
+  - Secure token revocation on disconnect
+
+- **Files:**
+  - `src/services/googleAuthService.ts` - OAuth flow management
+  - `src/services/googleCalendarTokenService.ts` - Token CRUD operations
+  - `src/services/googleCalendarService.ts` - Google Calendar API integration
+  - `src/hooks/useGoogleCalendarEvents.ts` - React hook for auto-sync
+  - `src/components/GoogleCalendarConnect.tsx` - Connection UI component
+  - `src/views/AgendaView.tsx` - Timeline integration logic
+  - `src/components/DailyTimeline.tsx` - Week selector with date filtering
+
 ## 4. Technical Architecture
 
 ### 4.1. Source of Truth
@@ -133,6 +167,7 @@
 - **Context:** `memories` (includes embeddings), `daily_reports`.
 - **Network:** `contact_network` (metadata only).
 - **Podcast:** `podcast_shows`, `podcast_episodes`, `podcast_topics`, `podcast_topic_categories`, `team_members`.
+- **Google Calendar:** `google_calendar_tokens`.
 
 ## 5. Roadmap
 
@@ -166,7 +201,7 @@
 - ✅ Contact Network tracking with relationship health scoring.
 - ✅ Contact profile view component with shared associations display.
 
-### Phase 5: AI & Voice (98% Complete)
+### Phase 5: AI & Voice (100% Complete)
 - ✅ Gemini Live API integration for Podcast (real-time guest conversation).
 - ✅ Multi-podcast management with episode lifecycle.
 - ✅ AI-assisted pauta (outline) generation for episode preparation.
@@ -185,6 +220,15 @@
     - NEW TABLE: podcast_guest_research (26 columns with RLS policies)
     - ADDED 15 columns to podcast_episodes (recording + post-production state)
     - ADDED 2 columns to podcast_topics (sponsor_script for teleprompter)
+- ✅ **Google Calendar Integration (Executive Secretary Mode)**
+  - OAuth 2.0 flow with Supabase Auth (calendar.events + userinfo.email scopes)
+  - Multi-user token storage in `google_calendar_tokens` table with RLS policies
+  - Auto-sync every 5 minutes + Visibility API sync on tab focus
+  - Timeline integration: Google Calendar events merge with Supabase tasks
+  - Week date selection: "Minha Semana" selector filters both tasks and events
+  - Services: googleAuthService.ts (218 lines), googleCalendarTokenService.ts (398 lines)
+  - Components: GoogleCalendarConnect.tsx, useGoogleCalendarEvents hook
+  - Documentation: docs/features/GOOGLE_CALENDAR_INTEGRATION.md (697 lines)
 - ⏳ Voice interface & Speech-to-Text (Pending - Task 20).
 - ⏳ Sentiment analysis from communications (Pending).
 - ⏳ Contact network AI insights (Pending).
@@ -232,7 +276,7 @@
 
 ### Overall Progress: 95% Complete (19/20 Tasks)
 
-**Last Updated:** 2025-12-05 | Latest Commit: `8bfb767`
+**Last Updated:** 2025-12-05 | Latest Commit: `c937c13`
 
 ### Recently Completed (Phase 2 Sprint)
 
@@ -366,11 +410,18 @@
 
 **Auto-verified:** 2025-12-05
 
+
 #### ✅ Verified Implementations
 - **TypeScript Type Generation** - 1 files found
 - **Error Boundaries** - 1 files found
 - **Gamification System** - 3 files found
 - **Podcast Copilot** - 3 files found
+- **Google Calendar Integration** - 7 files found (HIGH CONFIDENCE)
+  - `googleAuthService.ts`, `googleCalendarTokenService.ts`, `googleCalendarService.ts`
+  - `useGoogleCalendarEvents.ts` hook with auto-sync
+  - `GoogleCalendarConnect.tsx` UI component
+  - `AgendaView.tsx` timeline integration
+  - `DailyTimeline.tsx` week selector with date filtering
 
 #### ⚠️  Partial Implementations (Frontend-First Development)
 - **Security Definer Pattern** - medium confidence (1 files)
@@ -414,7 +465,8 @@ npx playwright show-report    # Open HTML report in browser
 - `docs/PRIVACY_AND_SECURITY.md` - Privacy policy & data handling procedures
 - `docs/DATABASE_SCHEMA_NEW_TABLES.sql` - Complete database schema with RLS
 - `docs/INTEGRATION_TEST_PLAN.md` - 150+ test scenarios for QA
-- `docs/MIGRATION_GUIDE_NEW_TABLES.md` - Database migration instructions
+- `docs/MIGRATION_GUIDE_NEW_TABLES.md`
+- `docs/features/GOOGLE_CALENDAR_INTEGRATION.md` - Google Calendar OAuth & sync setup - Database migration instructions
 
 ### Key Implementation Files
 - `src/components/EfficiencyScoreCard.tsx` - Efficiency visualization
