@@ -90,6 +90,31 @@ export default function App() {
    const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
    useEffect(() => {
+      // Detecta e limpa URLs com tokens OAuth expirados
+      const cleanExpiredAuthParams = () => {
+         const hashParams = new URLSearchParams(window.location.hash.substring(1));
+         const hasAuthParams = hashParams.has('access_token') ||
+                               hashParams.has('refresh_token') ||
+                               hashParams.has('error');
+
+         if (hasAuthParams) {
+            console.log('[App] 🔍 Detectados parâmetros de autenticação na URL');
+
+            // Aguarda um momento para o Supabase processar, então limpa se houver erro
+            setTimeout(() => {
+               supabase.auth.getSession().then(({ data: { session }, error }) => {
+                  // Se não há sessão válida mas há parâmetros na URL, limpa a URL
+                  if (!session || error) {
+                     console.log('[App] 🧹 Limpando parâmetros de autenticação expirados da URL');
+                     window.history.replaceState(null, '', window.location.pathname);
+                  }
+               });
+            }, 1000);
+         }
+      };
+
+      cleanExpiredAuthParams();
+
       supabase.auth.getSession().then(({ data: { session } }) => {
          setIsAuthenticated(!!session);
          setUserId(session?.user?.id || null);
