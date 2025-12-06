@@ -23,7 +23,9 @@
       "Bash(npx playwright test:*)",
       "Bash(ls:*)",
       "Bash(git rev-parse:*)",
-      "Bash(npx supabase migration:*)"
+      "Bash(npx supabase migration:*)",
+      "Bash(npm ls:*)",
+      "mcp__supabase__get_project"
     ],
     "deny": [],
     "ask": []
