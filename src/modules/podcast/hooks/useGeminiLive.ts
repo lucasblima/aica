@@ -1,22 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { getLiveClient } from '../services/geminiService';
 import { arrayBufferToBase64, floatTo16BitPCM, downsampleBuffer } from '../services/audioUtils';
-import { LiveServerMessage, Modality } from '@google/genai';
+import { Modality } from '@google/genai';
 import { Dossier } from '../types';
-
-// Type definitions for Live API client
-interface LiveClientEventMap {
-    content: (content: LiveServerMessage) => void;
-    [key: string]: (data: any) => void;
-}
-
-interface LiveClient {
-    on<K extends keyof LiveClientEventMap>(event: K, handler: LiveClientEventMap[K]): () => void;
-    off<K extends keyof LiveClientEventMap>(event: K, handler: LiveClientEventMap[K]): void;
-    connect?: () => Promise<void>;
-    send?: (data: any) => void;
-    close?: () => Promise<void>;
-}
 
 export type LiveMode = 'idle' | 'monitor' | 'cohost';
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
@@ -76,29 +62,114 @@ export const useGeminiLive = ({ dossier }: UseGeminiLiveProps) => {
         scheduledSourcesRef.current = [];
     };
 
-    // NOTE: startSession is disabled because the Gemini Live API integration
-    // requires a complete rewrite. This stub function prevents crashes.
     const startSession = async (mode: 'monitor' | 'cohost') => {
-        console.warn('Gemini Live API is not yet implemented. Feature coming soon.');
-        // The Live feature is disabled for now
-        return;
+        if (isConnectedRef.current) {
+            console.warn('Session already active');
+            return;
+        }
 
-        /* TODO: Reimplement when Gemini Live SDK is properly understood
-        const liveClient = getLiveClient();
-        const sessionPromise = liveClient.connect({
-            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-            config: {
-                responseModalities: [Modality.AUDIO, Modality.TEXT],
-                inputAudioTranscription: {},
-                systemInstruction: {
-                    parts: [{
-                        text: `Você é um co-host de podcast experiente...`
-                    }]
+        setConnectionStatus('connecting');
+        setLiveMode(mode);
+
+        try {
+            const liveClient = getLiveClient();
+
+            // Initialize Audio Contexts
+            inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+            outputAudioContextRef.current = new AudioContext({ sampleRate: 24000 });
+
+            // Get user microphone
+            streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // System instruction based on mode
+            const systemInstruction = mode === 'monitor'
+                ? `Você é um assistente de áudio em modo monitor. Transcreva o áudio em tempo real sem interromper.`
+                : `Você é um co-host de podcast experiente. Participe da conversa de forma natural.
+                   Contexto do episódio: ${dossier.guestName} - ${dossier.episodeTheme}.`;
+
+            // Connect to Gemini Live API
+            const session = await liveClient.connect({
+                model: 'gemini-2.5-flash-exp',
+                config: {
+                    responseModalities: [Modality.AUDIO, Modality.TEXT],
+                    inputAudioTranscription: {},
+                    systemInstruction: {
+                        parts: [{ text: systemInstruction }]
+                    }
+                },
+                callbacks: {
+                    onopen: () => {
+                        console.log('[Gemini Live] WebSocket opened');
+                        isConnectedRef.current = true;
+                        setConnectionStatus('connected');
+                    },
+                    onmessage: (message) => {
+                        console.log('[Gemini Live] Message received:', message);
+
+                        // Handle server content
+                        if (message.serverContent) {
+                            // Process text transcript
+                            const textPart = message.serverContent.modelTurn?.parts?.find(p => p.text);
+                            if (textPart?.text) {
+                                setRealtimeTranscript(prev => prev + ' ' + textPart.text);
+                            }
+
+                            // Process audio response
+                            const audioPart = message.serverContent.modelTurn?.parts?.find(p => p.inlineData);
+                            if (audioPart?.inlineData?.data) {
+                                playAudioChunk(audioPart.inlineData.data);
+                            }
+                        }
+
+                        // Handle turn complete
+                        if (message.serverContent?.turnComplete) {
+                            console.log('[Gemini Live] Turn complete');
+                        }
+                    },
+                    onerror: (error) => {
+                        console.error('[Gemini Live] WebSocket error:', error);
+                        setConnectionStatus('disconnected');
+                    },
+                    onclose: (event) => {
+                        console.log('[Gemini Live] WebSocket closed:', event.code, event.reason);
+                        isConnectedRef.current = false;
+                        setConnectionStatus('disconnected');
+                    }
                 }
-            }
-        });
-        ...implementation continues...
-        */
+            });
+
+            sessionRef.current = session;
+
+            // Setup audio processing pipeline
+            const source = inputAudioContextRef.current.createMediaStreamSource(streamRef.current);
+            processorRef.current = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
+
+            processorRef.current.onaudioprocess = (e) => {
+                if (!isConnectedRef.current || !sessionRef.current) return;
+
+                const inputData = e.inputBuffer.getChannelData(0);
+                const downsampledBuffer = downsampleBuffer(inputData, 48000, 16000);
+                const pcm16Buffer = floatTo16BitPCM(downsampledBuffer);
+                const base64Audio = arrayBufferToBase64(pcm16Buffer.buffer);
+
+                // Calculate audio level for UI
+                const sum = inputData.reduce((acc, val) => acc + Math.abs(val), 0);
+                const avgLevel = (sum / inputData.length) * 100;
+                setAudioLevel(avgLevel);
+
+                // Send audio to Gemini
+                session.send({ realtimeInput: { audio: base64Audio } });
+            };
+
+            source.connect(processorRef.current);
+            processorRef.current.connect(inputAudioContextRef.current.destination);
+
+        } catch (error) {
+            console.error('[Gemini Live] Failed to start session:', error);
+            setConnectionStatus('disconnected');
+            setLiveMode('idle');
+            await stopSession();
+        }
     };
 
     const playAudioChunk = async (base64Audio: string) => {
@@ -129,12 +200,12 @@ export const useGeminiLive = ({ dossier }: UseGeminiLiveProps) => {
         }
     };
 
-    // NOTE: The Gemini Live API listener (liveClient.on) was removed because
-    // the @google/genai SDK doesn't expose an EventEmitter-like interface.
-    // This feature requires a complete rewrite to use the correct SDK patterns.
-    // For now, the hook returns stub values to prevent crashes.
-    //
-    // TODO: Implement proper Gemini Live integration when SDK documentation improves.
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            stopSession();
+        };
+    }, []);
 
     return {
         liveMode,
@@ -144,6 +215,6 @@ export const useGeminiLive = ({ dossier }: UseGeminiLiveProps) => {
         startSession,
         stopSession,
         isConnected: isConnectedRef.current,
-        isLiveDisabled: true // Flag to show "Coming Soon" in UI
+        isLiveDisabled: false // Feature now enabled!
     };
 };

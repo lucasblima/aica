@@ -32,6 +32,7 @@ export function useGoogleCalendarEvents(
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+    const [isTokenExpired, setIsTokenExpired] = useState(false);
 
     // Verificar conexão ao montar
     useEffect(() => {
@@ -93,6 +94,14 @@ export function useGoogleCalendarEvents(
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao sincronizar eventos';
             console.error('[useGoogleCalendarEvents] ❌ Erro ao buscar eventos:', err);
+
+            // Detectar token expirado e parar auto-sync
+            if (errorMessage.includes('Token expirado') || errorMessage.includes('401')) {
+                console.warn('[useGoogleCalendarEvents] 🚨 Token expirado detectado - parando auto-sync');
+                setIsTokenExpired(true);
+                setIsConnected(false);
+            }
+
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -104,11 +113,12 @@ export function useGoogleCalendarEvents(
         console.log('[useGoogleCalendarEvents] 🔄 Auto-sync effect:', {
             isConnected,
             autoSync,
-            syncInterval
+            syncInterval,
+            isTokenExpired
         });
 
-        if (!isConnected || !autoSync) {
-            console.log('[useGoogleCalendarEvents] ⏸️ Auto-sync desabilitado ou não conectado');
+        if (!isConnected || !autoSync || isTokenExpired) {
+            console.log('[useGoogleCalendarEvents] ⏸️ Auto-sync desabilitado (não conectado, desabilitado, ou token expirado)');
             return;
         }
 
@@ -128,7 +138,7 @@ export function useGoogleCalendarEvents(
 
             return () => clearInterval(interval);
         }
-    }, [isConnected, autoSync, syncInterval, fetchEvents]);
+    }, [isConnected, autoSync, syncInterval, isTokenExpired, fetchEvents]);
 
     // Sincronizar manualmente
     const sync = useCallback(async () => {
@@ -148,6 +158,7 @@ export function useGoogleCalendarEvents(
         isLoading,
         error,
         lastSyncTime,
+        isTokenExpired,
         sync,
         addLocalEvent,
         fetchEvents,

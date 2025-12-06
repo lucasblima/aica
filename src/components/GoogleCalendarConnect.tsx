@@ -6,12 +6,14 @@ interface GoogleCalendarConnectProps {
     onSync?: () => void | Promise<void>;
     lastSyncTime?: Date | null;
     isSyncing?: boolean;
+    isTokenExpired?: boolean;
 }
 
 export default function GoogleCalendarConnect({
     onSync,
     lastSyncTime,
-    isSyncing = false
+    isSyncing = false,
+    isTokenExpired = false
 }: GoogleCalendarConnectProps) {
     const [connected, setConnected] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -141,7 +143,10 @@ export default function GoogleCalendarConnect({
                     </div>
                 </div>
                 <p className="text-sm text-[#948D82] leading-relaxed">
-                    Importe suas reuniões para a Timeline Líquida
+                    {isTokenExpired
+                        ? 'Sessão expirada. Clique em Reconectar para continuar.'
+                        : 'Importe suas reuniões para a Timeline Líquida'
+                    }
                 </p>
 
                 {/* Indicador de última sincronização */}
@@ -162,8 +167,8 @@ export default function GoogleCalendarConnect({
 
             {/* Seção de Ação */}
             <div className="flex-shrink-0 flex items-center gap-3">
-                {!connected ? (
-                    // Botão de Autorizar
+                {!connected || isTokenExpired ? (
+                    // Botão de Autorizar/Reconectar
                     <button
                         onClick={handleConnect}
                         disabled={loading}
@@ -175,11 +180,11 @@ export default function GoogleCalendarConnect({
                         {loading ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Autorizando...</span>
+                                <span>{isTokenExpired ? 'Reconectando...' : 'Autorizando...'}</span>
                             </>
                         ) : (
                             <>
-                                <span>Autorizar Acesso</span>
+                                <span>{isTokenExpired ? 'Reconectar' : 'Autorizar Acesso'}</span>
                             </>
                         )}
                     </button>
