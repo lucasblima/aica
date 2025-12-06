@@ -43,7 +43,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-scripts
+
 
 # Test and E2E artifacts (test files themselves are tracked)
 test-results/
