@@ -423,9 +423,58 @@ async function publishToSocial(episodeId: string, platforms: string[])
 
 ---
 
+
+
+---
+
+## OAuth Session Security (Producao)
+
+**Ultima atualizacao:** 2025-12-06
+
+Sistema de limpeza preventiva de URLs OAuth expiradas para evitar erros de autenticacao.
+
+### Problema Identificado
+
+**Erros observados:**
+- `@supabase/gotrue-js: Session as retrieved from URL expires in -XXXs`
+- `Session was issued over 120s ago, URL could be stale`
+- `GET /auth/v1/user 403 (Forbidden)`
+
+**Causa raiz:** Usuarios acessando URLs de callback OAuth antigas/salvas com tokens expirados.
+
+### Arquitetura da Solucao (4 Camadas)
+
+**Camada 1: Pre-Validacao (index.tsx)**
+
+
+**Camada 2: Utilitario Central (authUrlCleaner.ts - 106 linhas)**
+- `cleanExpiredOAuthParams()`: Valida expires_at com buffer 60s, limpa URL se expirado
+- `suppressExpiredSessionWarnings()`: Filtra console warnings esperados
+
+**Camada 3: Configuracao Supabase (PKCE Flow)**
+
+
+**Camada 4: Validacao Secundaria (App.tsx)**
+- Detecta auth params apos inicializacao
+- Aguarda 1s para Supabase processar
+- Valida sessao via getSession()
+- Limpa URL se sem sessao valida
+
+### Arquivos Modificados (Commit ed59802)
+1. `src/utils/authUrlCleaner.ts` (NOVO - 106 linhas)
+2. `index.tsx` (+8 linhas)
+3. `App.tsx` (+25 linhas, useEffect linhas 92-116)
+4. `src/services/supabaseClient.ts` (+14 linhas)
+
+### Beneficios
+- Elimina erros 403 de URLs OAuth expiradas
+- PKCE previne interceptacao de codigo de autorizacao
+- Historico do navegador limpo (sem URLs obsoletas)
+- Logs claros para depuracao
+
 ## Validação Automática
 
-**Última verificação:** 2025-12-05
+**Última verificação:** 2025-12-06
 
 **Status:** Para validação completa do schema, execute:
 ```bash
