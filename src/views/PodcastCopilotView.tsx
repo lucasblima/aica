@@ -11,6 +11,7 @@ import GuestIdentificationWizard from '../modules/podcast/components/GuestIdenti
 import TeleprompterWindow from '../modules/podcast/components/TeleprompterWindow';
 import type { Dossier, Topic } from '../modules/podcast/types';
 import { StudioLayout } from '../modules/podcast/components/StudioLayout';
+import { ErrorBoundary, ModuleErrorFallback } from '../components/ErrorBoundary';
 
 interface PodcastCopilotViewProps {
     userEmail?: string;
@@ -81,46 +82,46 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         setView('dashboard');
     };
 
-    // Dashboard -> Wizard (NEW FLOW) or Legacy Prep/Studio
+    // Dashboard -> Preparation Mode (NOT Studio directly)
     const handleSelectEpisode = async (episodeId: string) => {
         setCurrentEpisodeId(episodeId);
         setCurrentProjectId(episodeId);
 
         try {
-            const { data: project } = await supabase
-                .from('projects')
+            const { data: episode } = await supabase
+                .from('podcast_episodes')
                 .select('*')
                 .eq('id', episodeId)
                 .single();
 
-            if (project && project.biography) {
-                // Has dossier - go to production
+            if (episode && episode.biography) {
+                // Has dossier - go to preparation mode
                 const dossier: Dossier = {
-                    guestName: project.guest_name || 'Convidado',
-                    episodeTheme: project.episode_theme || 'Tema',
-                    biography: project.biography,
-                    controversies: project.controversies || [],
+                    guestName: episode.guest_name || 'Convidado',
+                    episodeTheme: episode.episode_theme || 'Tema',
+                    biography: episode.biography,
+                    controversies: episode.controversies || [],
                     suggestedTopics: [],
-                    iceBreakers: project.ice_breakers || [],
-                    technicalSheet: project.technical_sheet
+                    iceBreakers: episode.ice_breakers || [],
+                    technicalSheet: episode.technical_sheet
                 };
                 setCurrentDossier(dossier);
                 setCurrentGuestData({
-                    name: project.guest_name,
-                    theme: project.episode_theme
+                    name: episode.guest_name,
+                    theme: episode.episode_theme
                 });
-                setView('preproduction');
+                setView('preparation'); // Changed: Go to PREP, not Studio
             } else {
-                // No dossier - start wizard
-                setView('wizard');
+                // No dossier - start wizard or go to prep
+                setView('preparation'); // Changed: Always go to prep first
             }
         } catch (error) {
             console.error('Error loading episode:', error);
-            setView('wizard');
+            setView('preparation'); // Changed: Default to prep on error
         }
     };
 
-    // Dashboard -> Create New Episode -> Wizard
+    // Dashboard -> Create New Episode -> Preparation Mode
     const handleCreateEpisode = async () => {
         if (!currentShowId) return;
 
@@ -129,20 +130,21 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             .insert({
                 show_id: currentShowId,
                 title: 'Novo Episódio',
-                status: 'draft'
+                status: 'draft',
+                updated_at: new Date().toISOString() // Fix: Include updated_at
             })
             .select()
             .single();
 
         if (error) {
             console.error('Error creating episode:', error);
-            alert('Erro ao criar episódio');
+            alert(`Erro ao criar episódio: ${error.message}`);
             return;
         }
 
         setCurrentEpisodeId(data.id);
         setCurrentProjectId(data.id);
-        setView('wizard');
+        setView('preparation'); // Changed: Go directly to Prep, NOT wizard
     };
 
     // Wizard -> Pre-Production
@@ -329,12 +331,21 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 onExit={handleBackToPreparation}
                 variant="fixed"
             >
-                <StudioMode
-                    dossier={currentDossier}
-                    projectId={currentProjectId}
-                    onBack={handleBackToPreparation}
-                    className="h-full min-h-0 rounded-t-2xl shadow-2xl"
-                />
+                <ErrorBoundary
+                    fallback={
+                        <ModuleErrorFallback
+                            moduleName="Studio Mode"
+                            onReset={handleBackToPreparation}
+                        />
+                    }
+                >
+                    <StudioMode
+                        dossier={currentDossier}
+                        projectId={currentProjectId}
+                        onBack={handleBackToPreparation}
+                        className="h-full min-h-0 rounded-t-2xl shadow-2xl"
+                    />
+                </ErrorBoundary>
             </StudioLayout>
         );
     }

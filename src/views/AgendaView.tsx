@@ -52,7 +52,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         isLoading: isLoadingCalendar,
         error: calendarError,
         sync: syncCalendar,
-        lastSyncTime
+        lastSyncTime,
+        isTokenExpired
     } = useGoogleCalendarEvents({
         autoSync: true,
         syncInterval: 300 // 5 minutos
@@ -91,10 +92,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Sincronizar ao voltar para a aba (Visibility API)
     useEffect(() => {
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && isCalendarConnected) {
+        const handleVisibilityChange = async () => {
+            if (document.visibilityState === 'visible' && isCalendarConnected && !isTokenExpired) {
                 console.log('[AgendaView] 👁️ Aba visível - sincronizando Google Calendar...');
-                syncCalendar();
+                try {
+                    await syncCalendar();
+                } catch (error) {
+                    console.warn('[AgendaView] ⚠️ Erro ao sincronizar (visibility change):', error);
+                    // Erro já tratado pelo hook, não precisa fazer nada
+                }
             }
         };
 
@@ -103,7 +109,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [isCalendarConnected, syncCalendar]);
+    }, [isCalendarConnected, isTokenExpired, syncCalendar]);
 
     // Transform Google Calendar events to Task format
     const transformCalendarEventToTask = (event: TimelineEvent): Task => {
@@ -396,6 +402,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             onSync={syncCalendar}
                             lastSyncTime={lastSyncTime}
                             isSyncing={isLoadingCalendar}
+                            isTokenExpired={isTokenExpired}
                         />
                     </div>
 

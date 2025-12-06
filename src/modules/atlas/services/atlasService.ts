@@ -85,26 +85,22 @@ export const atlasService = {
                 throw new AuthenticationError('Você precisa estar autenticado para criar tarefas');
             }
 
-            // 2. Map Atlas TaskInput to Supabase work_items schema
+            // 3. Map Atlas TaskInput to Supabase work_items schema
+            // IMPORTANT: Only send fields that exist in work_items table (see backend_architecture.md:14)
+            // Fields: id, title, description, due_date, start_date, priority, status, association_id, assignee_name, archived
             const workItemData = {
                 title: taskInput.title,
                 description: taskInput.description || null,
                 priority: taskInput.priority || 'medium',
-                // Map priority to quadrant (following AgendaView.tsx logic)
-                priority_quadrant: mapPriorityToQuadrant(taskInput.priority),
                 due_date: taskInput.target_date || null,
-                estimated_duration: null, // Can be enhanced later
-                scheduled_time: null,
-                completed_at: null,
-                archived: false,
-                created_by: user.id,
-                // Association & state are optional for quick-add
-                association_id: null,
-                module_id: null,
-                state_id: null
+                start_date: null,
+                status: 'pending',
+                association_id: null, // Optional for quick-add
+                assignee_name: null,
+                archived: false
             };
 
-            // 3. Insert into Supabase
+            // 4. Insert into Supabase
             const { data, error } = await supabase
                 .from('work_items')
                 .insert([workItemData])
@@ -130,7 +126,7 @@ export const atlasService = {
                 throw new DatabaseError('Nenhum dado retornado após criar a tarefa');
             }
 
-            // 4. Map response to AtlasTask format
+            // 5. Map response to AtlasTask format
             const atlasTask: AtlasTask = {
                 id: data.id,
                 title: data.title,
@@ -164,22 +160,3 @@ export const atlasService = {
         }
     }
 };
-
-/**
- * Maps Atlas priority to Eisenhower Matrix quadrant
- * Based on AgendaView.tsx:66-69 logic
- */
-function mapPriorityToQuadrant(priority: TaskInput['priority']): 'urgent-important' | 'important' | 'urgent' | 'low' {
-    switch (priority) {
-        case 'urgent':
-            return 'urgent';
-        case 'high':
-            return 'important';
-        case 'medium':
-            return 'urgent-important';
-        case 'low':
-        case 'none':
-        default:
-            return 'low';
-    }
-}
