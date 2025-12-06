@@ -1,6 +1,9 @@
 # Backend Architecture – Fonte de Verdade
 
 ## Visão Geral
+
+**Última atualização:** 2025-12-06
+
 Este documento descreve **todas as tabelas do Supabase** que o frontend (Aica) utiliza, seus **relacionamentos** e como o **frontend interage** com elas através dos serviços em `src/services/supabaseService.ts`.
 
 ---
@@ -115,6 +118,9 @@ Este documento descreve **todas as tabelas do Supabase** que o frontend (Aica) u
 ## Google Calendar Integration - Secretária Executiva
 
 ### Visão Geral
+
+**Última atualização:** 2025-12-06
+
 Integração completa com Google Calendar usando OAuth 2.0 via Supabase Auth. Permite que Aica funcione como secretária executiva, organizando proativamente a agenda do usuário.
 
 ### Arquitetura OAuth
