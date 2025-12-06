@@ -21,33 +21,66 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       }
     },
+    // Otimizacao de dependencias para evitar problemas de bundling
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'framer-motion',
+        'scheduler',
+        '@dnd-kit/core',
+        '@dnd-kit/sortable',
+        '@dnd-kit/utilities'
+      ]
+    },
     build: {
       rollupOptions: {
         output: {
           manualChunks(id) {
             // Vendor chunks - bibliotecas de terceiros
             if (id.includes('node_modules')) {
-              // React e ReactDOM
-              if (id.includes('react') || id.includes('react-dom')) {
+              // React ecosystem - inclui scheduler para evitar dependencia circular
+              // O scheduler e uma dependencia interna do react-dom e deve estar no mesmo chunk
+              if (
+                id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('scheduler')
+              ) {
                 return 'vendor-react';
+              }
+              // Framer Motion e suas dependencias internas
+              // motion-dom e motion-utils sao dependencias do framer-motion
+              if (
+                id.includes('framer-motion') ||
+                id.includes('motion-dom') ||
+                id.includes('motion-utils')
+              ) {
+                return 'vendor-motion';
+              }
+              // DnD Kit
+              if (id.includes('@dnd-kit')) {
+                return 'vendor-dnd';
               }
               // Supabase
               if (id.includes('@supabase')) {
                 return 'vendor-supabase';
               }
-              // Lucide (ícones)
+              // Lucide (icones)
               if (id.includes('lucide-react')) {
                 return 'vendor-icons';
               }
               // Google Generative AI
-              if (id.includes('@google/generative-ai')) {
+              if (
+                id.includes('@google/genai') ||
+                id.includes('@google/generative-ai')
+              ) {
                 return 'vendor-google';
               }
               // Outras bibliotecas de terceiros
               return 'vendor-other';
             }
 
-            // Module chunks - módulos da aplicação
+            // Module chunks - modulos da aplicacao
             if (id.includes('src/modules/podcast')) {
               return 'module-podcast';
             }
@@ -64,9 +97,9 @@ export default defineConfig(({ mode }) => {
       },
       // Aumentar o limite de warning para chunks grandes
       chunkSizeWarningLimit: 600,
-      // Usar esbuild para minificação (mais rápido que terser)
+      // Usar esbuild para minificacao (mais rapido que terser)
       minify: 'esbuild',
-      // Remover console.log em produção
+      // Remover console.log em producao
       target: 'esnext',
       sourcemap: false
     }
