@@ -112,6 +112,48 @@ A dedicated vertical for content creators.
   - `StudioLayout`: Wrapper for Prep/Studio modes. Handles "Back" navigation logic.
   - Global `BottomNav` MUST be hidden in `/studio` routes.
 
+### 4.1. OAuth Session Error Handling
+**Problem:** Users accessing expired OAuth callback URLs (saved bookmarks, cached links) cause authentication errors:
+- `@supabase/gotrue-js: Session as retrieved from URL expires in -XXXs`
+- `Session was issued over 120s ago, URL could be stale`
+- `GET /auth/v1/user 403 (Forbidden)`
+
+**Solution:** Multi-layer preventive URL cleaning system
+
+**Architecture:**
+1. **Pre-Supabase Layer** (`index.tsx`)
+   - Executes `cleanExpiredOAuthParams()` BEFORE React app initialization
+   - Detects OAuth parameters in URL hash (`access_token`, `refresh_token`, `expires_in`, `error`)
+   - Validates expiration timestamp (`expires_at` + 60s buffer)
+   - Removes expired parameters via `window.history.replaceState()`
+   - Suppresses expected console warnings via `suppressExpiredSessionWarnings()`
+
+2. **Supabase Client Configuration** (`supabaseClient.ts`)
+   - Configures `flowType: 'pkce'` for enhanced OAuth security
+   - Adds `detectSessionInUrl: true` to enable URL parameter detection
+   - Implements `onAuthStateChange` handler:
+     - Logs successful token refresh events
+     - Cleans URL after `SIGNED_OUT` if OAuth params present
+
+3. **Secondary Protection Layer** (`App.tsx`)
+   - Detects auth parameters in URL on component mount
+   - Waits 1 second for Supabase processing
+   - Verifies session validity via `getSession()`
+   - Cleans URL if no valid session or error detected
+
+**Files:**
+- `src/utils/authUrlCleaner.ts` (106 lines) - Core URL cleaning utility
+- `index.tsx` - Pre-initialization cleanup execution
+- `App.tsx` - Secondary validation layer
+- `src/services/supabaseClient.ts` - PKCE configuration + auth state handler
+
+**Benefits:**
+- Prevents 403 errors from expired tokens
+- Cleans browser history of stale OAuth URLs
+- Improves user experience with graceful error handling
+- Reduces console noise from expected warnings
+
+
 ## 5. Critical Technical Constraints
 - **RLS Policies:** Must use `SECURITY DEFINER` functions for recursive checks (e.g., checking association membership) to avoid infinite loops.
 - **Database Schema:** All tables must have `created_at` and `updated_at` timestamps explicitly handled if not auto-generated.
@@ -266,13 +308,41 @@ A dedicated vertical for content creators.
   - Claude Code settings for development workflow
   - Optimized `vite.config.ts` bundling configuration
 
+
+### Phase 9: Production Hardening (✅ 100% Complete)
+- ✅ **OAuth Session Error Handling** - Multi-layer expired token cleanup:
+  - Created `authUrlCleaner.ts` utility (106 lines)
+  - Pre-Supabase validation in `index.tsx` (executes before React initialization)
+  - Secondary protection in `App.tsx` (validates session after OAuth callback)
+  - Enhanced Supabase client with PKCE flow and auth state monitoring
+  - Suppresses expected warnings from expired sessions
+  - **Commit:** ed59802 - "fix: corrigir erro de sessão OAuth expirada em produção"
+  - **Files Modified:** 4 files (153 lines added)
+  - **Impact:** Eliminates 403 errors from stale OAuth URLs, improves UX
+
 ## 6. Current Implementation Status
 
 ### Overall Progress: 95% Complete (19/20 Tasks)
 
-**Last Updated:** 2025-12-06 | Latest Commit: `e12fd45`
+**Last Updated:** 2025-12-06 | Latest Commit: `ed59802`
 
 ### Recently Completed (Phase 2 Sprint)
+
+
+#### Task 21: OAuth Expired Session Fix ✅
+- **Problem Solved:** Users accessing expired OAuth callback URLs causing 403 errors
+- **Root Cause:** Bookmarked/cached Google Calendar OAuth URLs with expired tokens
+- **Implementation:**
+  - **authUrlCleaner.ts** (106 lines):
+    - `cleanExpiredOAuthParams()`: Pre-validation of OAuth tokens before Supabase processing
+    - `suppressExpiredSessionWarnings()`: Console noise reduction
+    - Expiration validation with 60s buffer
+  - **index.tsx**: Pre-initialization cleanup execution
+  - **App.tsx**: Secondary validation layer after Supabase auth
+  - **supabaseClient.ts**: PKCE flow configuration + auth state change handler
+- **Security Enhancement:** PKCE (Proof Key for Code Exchange) OAuth flow
+- **Status:** Fully deployed and tested in production
+
 
 #### Task 15: Efficiency Score Visualization ✅
 - **Components Created:**
@@ -406,6 +476,11 @@ A dedicated vertical for content creators.
 
 
 #### ✅ Verified Implementations
+- **OAuth Session Error Handling** - 4 files (HIGH CONFIDENCE)
+  - `src/utils/authUrlCleaner.ts` (106 lines) - Pre-Supabase URL cleaning utility
+  - `index.tsx` - Pre-initialization cleanup execution
+  - `App.tsx` - Secondary validation layer (lines 92-116)
+  - `src/services/supabaseClient.ts` - PKCE configuration + auth state handler
 - **Agent Architecture System** - 4 documentation files (HIGH CONFIDENCE)
   - `AGENT_PROMPTS.md` (965 lines) - 9 specialized agent prompts
   - `AGENT_IMPLEMENTATION_GUIDE.md` (720 lines) - Setup and deployment guide
@@ -481,6 +556,7 @@ npx playwright show-report    # Open HTML report in browser
 ### Key Implementation Files
 - `src/components/EfficiencyScoreCard.tsx` - Efficiency visualization
 - `src/services/efficiencyService.ts` - Efficiency calculation engine
+- `src/utils/authUrlCleaner.ts` - OAuth session error prevention
 - `tests/e2e/` - Automated test suites (26 tests)
 - `playwright.config.ts` - E2E test configuration
 - `scripts/update-docs.ts` - Documentation maintenance automation
@@ -489,7 +565,7 @@ npx playwright show-report    # Open HTML report in browser
 ### Environment Setup
 - **Frontend:** React 19.2 + Vite 6.2
 - **Database:** Supabase (PostgreSQL 15)
-- **Authentication:** Supabase Auth
+- **Authentication:** Supabase Auth (with PKCE OAuth flow)
 - **AI Services:** Google Gemini API
 - **Testing:** Playwright 1.57
 - **UI Framework:** Tailwind CSS 4.1 + Lucide Icons
