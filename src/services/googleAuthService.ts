@@ -22,14 +22,16 @@ const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
  * Escopos do Google Calendar para funcionamento como secretária executiva
  *
  * Escopos solicitados:
+ * - calendar.readonly: Permite ler eventos do calendário
  * - calendar.events: Permite ler E ESCREVER eventos (criar, editar, deletar)
  *   Necessário para Aica organizar proativamente a agenda do usuário
  * - userinfo.email: Permite obter email do usuário
  *
- * Nota: Usando escopo de escrita (não .readonly) para permitir que Aica
- * funcione como secretária executiva organizando tarefas na agenda
+ * Nota: Usando ambos os escopos (readonly + events) para garantir compatibilidade
+ * e permitir que Aica funcione como secretária executiva organizando tarefas na agenda
  */
 const GOOGLE_CALENDAR_SCOPES = [
+    'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/userinfo.email',
 ];

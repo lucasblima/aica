@@ -87,7 +87,7 @@ export const atlasService = {
 
             // 3. Map Atlas TaskInput to Supabase work_items schema
             // IMPORTANT: Only send fields that exist in work_items table (see backend_architecture.md:14)
-            // Fields: id, title, description, due_date, start_date, priority, status, association_id, assignee_name, archived
+            // Fields: id, title, description, due_date, start_date, priority, status, association_id, created_by, archived
             const workItemData = {
                 title: taskInput.title,
                 description: taskInput.description || null,
@@ -96,7 +96,6 @@ export const atlasService = {
                 start_date: null,
                 status: 'pending',
                 association_id: null, // Optional for quick-add
-                assignee_name: null,
                 archived: false
             };
 
