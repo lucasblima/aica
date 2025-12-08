@@ -11,7 +11,8 @@ import {
   Download,
   ExternalLink,
   Sparkles,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react';
 import type { FormField, BriefingData, GrantResponse } from '../types';
 import { RESPONSE_STATUS_LABELS } from '../types';
@@ -31,6 +32,7 @@ interface ProposalGeneratorViewProps {
   onGenerateField: (fieldId: string) => Promise<string>;
   onSaveResponse: (fieldId: string, content: string, status?: string) => Promise<void>;
   externalSystemUrl?: string;
+  onBack?: () => void;
 }
 
 interface FieldState extends GrantResponse {
@@ -47,7 +49,8 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
   initialResponses = {},
   onGenerateField,
   onSaveResponse,
-  externalSystemUrl
+  externalSystemUrl,
+  onBack
 }) => {
   const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>({});
   const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
@@ -281,18 +284,29 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
   const allApproved = progress.approved === progress.total;
 
   return (
-    <div className="min-h-screen bg-ceramic-base">
+    <div className="h-screen overflow-y-auto bg-ceramic-base">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm text-ceramic-text-secondary mb-1">
-                Gerando Proposta para
-              </p>
-              <h1 className="text-2xl font-bold text-ceramic-text-primary">
-                {opportunityTitle}
-              </h1>
+            <div className="flex items-center gap-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="ceramic-concave p-3 rounded-xl hover:scale-95 transition-transform"
+                  title="Voltar"
+                >
+                  <ArrowLeft className="w-5 h-5 text-ceramic-text-primary" />
+                </button>
+              )}
+              <div>
+                <p className="text-sm text-ceramic-text-secondary mb-1">
+                  Gerando Proposta para
+                </p>
+                <h1 className="text-2xl font-bold text-ceramic-text-primary">
+                  {opportunityTitle}
+                </h1>
+              </div>
             </div>
             <button
               onClick={handleGenerateAll}

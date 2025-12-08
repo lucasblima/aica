@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical } from 'lucide-react';
 import { EditalSetupWizard } from '../components/EditalSetupWizard';
 import { ProjectBriefingView } from '../components/ProjectBriefingView';
 import { ProposalGeneratorView } from '../components/ProposalGeneratorView';
@@ -17,7 +17,10 @@ import {
   getBriefing,
   saveResponse,
   listResponses,
-  updateProjectStatus
+  updateProjectStatus,
+  archiveProject,
+  unarchiveProject,
+  deleteArchivedProject
 } from '../services/grantService';
 import { generateFieldContent } from '../services/grantAIService';
 import type {
@@ -177,11 +180,13 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
 
     try {
       const content = await generateFieldContent({
-        editalText: currentOpportunity.edital_text_content || '',
-        evaluationCriteria: currentOpportunity.evaluation_criteria || [],
-        fieldConfig,
+        field_id: fieldId,
+        edital_text: currentOpportunity.edital_text_content || '',
+        evaluation_criteria: currentOpportunity.evaluation_criteria || [],
+        field_config: fieldConfig,
         briefing: currentBriefing,
-        previousResponses
+        previous_responses: previousResponses,
+        source_document_content: selectedProject.source_document_content || null
       });
 
       return content;
@@ -241,6 +246,53 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   };
 
   /**
+   * Handle archive project
+   */
+  const handleArchiveProject = async (projectId: string) => {
+    if (!confirm('Tem certeza que deseja arquivar este projeto?')) return;
+
+    try {
+      await archiveProject(projectId);
+      await loadProjects(); // Refresh list
+    } catch (error) {
+      console.error('Error archiving project:', error);
+      alert('Erro ao arquivar projeto');
+    }
+  };
+
+  /**
+   * Handle unarchive project
+   */
+  const handleUnarchiveProject = async (projectId: string) => {
+    try {
+      await unarchiveProject(projectId);
+      await loadProjects(); // Refresh list
+    } catch (error) {
+      console.error('Error unarchiving project:', error);
+      alert('Erro ao restaurar projeto');
+    }
+  };
+
+  /**
+   * Handle delete archived project
+   */
+  const handleDeleteProject = async (projectId: string, pdfPath?: string) => {
+    if (!confirm(
+      'ATENÇÃO: Esta ação é PERMANENTE e NÃO pode ser desfeita.\n\n' +
+      'O projeto e o PDF do edital serão deletados permanentemente.\n\n' +
+      'Tem certeza que deseja continuar?'
+    )) return;
+
+    try {
+      await deleteArchivedProject(projectId, pdfPath);
+      await loadProjects(); // Refresh list
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert(error instanceof Error ? error.message : 'Erro ao deletar projeto');
+    }
+  };
+
+  /**
    * Handle back navigation
    */
   const handleBack = () => {
@@ -277,6 +329,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           initialBriefing={currentBriefing}
           onSave={handleSaveBriefing}
           onContinue={handleContinueToGeneration}
+          sourceDocumentPath={selectedProject.source_document_path}
+          sourceDocumentType={selectedProject.source_document_type}
         />
       )}
 
@@ -291,6 +345,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           onGenerateField={handleGenerateField}
           onSaveResponse={handleSaveResponse}
           externalSystemUrl={currentOpportunity.external_system_url}
+          onBack={handleBack}
         />
       )}
 
@@ -328,33 +383,102 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
             {/* Projects List */}
             {projects.length > 0 ? (
               <div className="grid gap-4">
-                {projects.map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => handleSelectProject(project)}
-                    className="ceramic-card p-6 text-left hover:scale-[1.02] transition-transform"
-                  >
-                    <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
-                      {project.project_name}
-                    </h3>
-                    {project.opportunity && (
-                      <p className="text-sm text-ceramic-text-secondary mb-4">
-                        {project.opportunity.title}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 bg-ceramic-tray rounded-full h-2 overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500"
-                          style={{ width: `${project.completion_percentage}%` }}
-                        />
+                {projects.map((project) => {
+                  const isArchived = !!project.archived_at;
+
+                  return (
+                    <div
+                      key={project.id}
+                      className={`ceramic-card p-6 ${isArchived ? 'opacity-60' : ''}`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-bold text-ceramic-text-primary">
+                              {project.project_name}
+                            </h3>
+                            {isArchived && (
+                              <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
+                                Arquivado
+                              </span>
+                            )}
+                          </div>
+                          {project.opportunity && (
+                            <p className="text-sm text-ceramic-text-secondary">
+                              {project.opportunity.title}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2">
+                          {!isArchived ? (
+                            <>
+                              <button
+                                onClick={() => handleSelectProject(project)}
+                                className="ceramic-concave px-4 py-2 text-sm font-bold text-ceramic-accent hover:scale-105 transition-transform"
+                              >
+                                Abrir
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleArchiveProject(project.id);
+                                }}
+                                className="ceramic-concave p-2 hover:scale-110 transition-transform"
+                                title="Arquivar"
+                              >
+                                <Archive className="w-4 h-4 text-ceramic-text-secondary" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleUnarchiveProject(project.id);
+                                }}
+                                className="ceramic-concave px-4 py-2 text-sm font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
+                                title="Restaurar"
+                              >
+                                <ArchiveRestore className="w-4 h-4" />
+                                Restaurar
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteProject(
+                                    project.id,
+                                    project.opportunity?.edital_pdf_path
+                                  );
+                                }}
+                                className="ceramic-concave p-2 hover:scale-110 transition-transform"
+                                title="Deletar Permanentemente"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-sm font-bold text-ceramic-text-secondary">
-                        {Math.round(project.completion_percentage)}%
-                      </span>
+
+                      {/* Progress bar (only for active projects) */}
+                      {!isArchived && (
+                        <div className="flex items-center gap-4 mt-4">
+                          <div className="flex-1 bg-ceramic-tray rounded-full h-2 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500"
+                              style={{ width: `${project.completion_percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-bold text-ceramic-text-secondary">
+                            {Math.round(project.completion_percentage)}%
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="ceramic-card p-12 text-center">
