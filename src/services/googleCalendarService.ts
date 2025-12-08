@@ -23,10 +23,11 @@ export interface FetchEventsOptions {
  */
 export async function fetchCalendarEvents(
     calendarId: string = 'primary',
-    options: FetchEventsOptions = {}
+    options: FetchEventsOptions = {},
+    retryCount: number = 0
 ): Promise<GoogleCalendarEvent[]> {
     try {
-        console.log('[fetchCalendarEvents] 🔍 Iniciando busca de eventos:', { calendarId, options });
+        console.log('[fetchCalendarEvents] 🔍 Iniciando busca de eventos:', { calendarId, options, retryCount });
 
         const token = await getValidAccessToken();
         if (!token) {
@@ -64,8 +65,31 @@ export async function fetchCalendarEvents(
         });
 
         if (!response.ok) {
-            if (response.status === 401) {
-                console.error('[fetchCalendarEvents] ❌ Token expirado (401)');
+            if (response.status === 401 && retryCount === 0) {
+                console.warn('[fetchCalendarEvents] ⚠️ Token expirado (401) - tentando renovar e fazer retry...');
+
+                // Forçar renovação do token e tentar novamente
+                try {
+                    // Importar função de refresh
+                    const { getGoogleCalendarTokens, refreshAccessToken } = await import('./googleCalendarTokenService');
+                    const tokens = await getGoogleCalendarTokens();
+
+                    if (tokens?.refresh_token) {
+                        console.log('[fetchCalendarEvents] 🔄 Renovando token...');
+                        const newToken = await refreshAccessToken(tokens.refresh_token);
+
+                        if (newToken) {
+                            console.log('[fetchCalendarEvents] ✅ Token renovado - retrying...');
+                            // Retry uma vez com o novo token
+                            return await fetchCalendarEvents(calendarId, options, retryCount + 1);
+                        }
+                    }
+                } catch (refreshError) {
+                    console.error('[fetchCalendarEvents] ❌ Erro ao renovar token:', refreshError);
+                }
+
+                // Se chegou aqui, a renovação falhou
+                console.error('[fetchCalendarEvents] ❌ Falha ao renovar token');
                 throw new Error('Token expirado. Reconecte ao Google Calendar.');
             }
             console.error('[fetchCalendarEvents] ❌ Erro na resposta:', response.statusText);

@@ -220,10 +220,24 @@ export async function getValidAccessToken(): Promise<string | null> {
                 timeUntilExpiryMinutes: Math.round(timeUntilExpiry / 60000)
             });
 
-            // Se expirou, pedir para reconectar
+            // Se expirou, tentar renovar automaticamente
             if (timeUntilExpiry < 0) {
-                console.warn('[getValidAccessToken] ⚠️ Token expirado. Necessário reconectar.');
-                throw new Error('Token expirado. Por favor, desconecte e reconecte o Google Calendar.');
+                console.warn('[getValidAccessToken] ⚠️ Token expirado. Tentando renovar...');
+
+                if (tokens.refresh_token) {
+                    console.log('[getValidAccessToken] 🔄 Refresh token disponível, renovando...');
+                    const newAccessToken = await refreshAccessToken(tokens.refresh_token);
+
+                    if (newAccessToken) {
+                        console.log('[getValidAccessToken] ✅ Token renovado com sucesso');
+                        return newAccessToken;
+                    }
+
+                    console.error('[getValidAccessToken] ❌ Falha ao renovar token');
+                }
+
+                console.error('[getValidAccessToken] ❌ Sem refresh token disponível');
+                throw new Error('Token expirado. Reconecte ao Google Calendar.');
             }
         }
 
