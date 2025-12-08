@@ -38,7 +38,7 @@ interface ProductionModeProps {
     topics: ProductionTopic[];
     onBack: () => void;
     onOpenTeleprompter: () => void;
-    onFinish: () => void;
+    onFinish: (recordingDuration: number) => void;
 }
 
 export const ProductionMode: React.FC<ProductionModeProps> = ({
@@ -170,7 +170,7 @@ export const ProductionMode: React.FC<ProductionModeProps> = ({
             </header>
 
             {/* Main Content */}
-            <div className="flex-1 grid grid-cols-3 gap-4 p-4 overflow-hidden">
+            <div className="flex-1 grid grid-cols-3 gap-8 p-4 overflow-hidden">
                 {/* Left: Pauta (Read-only with progress) */}
                 <div className="col-span-2 bg-white rounded-2xl shadow-sm border border-[#E5E3DC] overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-[#E5E3DC] flex items-center justify-between">
@@ -365,7 +365,7 @@ export const ProductionMode: React.FC<ProductionModeProps> = ({
                     </div>
 
                     <button
-                        onClick={onFinish}
+                        onClick={() => onFinish(recordingTime)}
                         className="px-6 py-3 rounded-xl bg-ceramic-text-primary text-white font-bold hover:scale-105 active:scale-95 transition-all"
                     >
                         Finalizar Gravação

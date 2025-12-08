@@ -111,3 +111,21 @@ body {
   color: #5C554B;
   text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.6);
 }
+
+/* Life Progress Bar - Canal fresado */
+.ceramic-life-track {
+  background-color: #F0EFE9;
+  border-radius: 9999px;
+  box-shadow:
+    inset 2px 2px 5px rgba(163, 158, 145, 0.4),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+}
+
+.ceramic-life-fill {
+  background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%);
+  border-radius: 9999px;
+  box-shadow:
+    0 0 8px rgba(217, 119, 6, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}

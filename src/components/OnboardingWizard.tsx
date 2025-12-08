@@ -28,7 +28,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
 
     if (step === 'welcome') {
         return (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
                 <div
                     className="bg-[#F0EFE9] rounded-[40px] p-8 max-w-lg w-full relative"
                     style={{ boxShadow: '20px 20px 60px #bebebe, -20px -20px 60px #ffffff' }}
@@ -85,7 +85,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
 
     // Calendar connection step
     return (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
             <div
                 className="bg-[#F0EFE9] rounded-[40px] p-8 max-w-lg w-full relative"
                 style={{ boxShadow: '20px 20px 60px #bebebe, -20px -20px 60px #ffffff' }}

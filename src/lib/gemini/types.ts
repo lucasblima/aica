@@ -1,0 +1,98 @@
+/**
+ * Tipos TypeScript para integração com Gemini
+ */
+
+import type { GeminiModel } from './models'
+
+/**
+ * Ações disponíveis na API de backend
+ */
+export type GeminiAction =
+  // Podcast
+  | 'suggest_guest'
+  | 'suggest_topic'
+  | 'generate_dossier'
+  | 'analyze_news'
+  | 'suggest_dynamic_topic'
+  | 'generate_ice_breakers'
+  | 'chat_aica'
+  | 'deep_research'
+  | 'intelligent_search'
+
+  // Finance
+  | 'finance_chat'
+  | 'analyze_spending'
+  | 'predict_expenses'
+  | 'suggest_savings'
+  | 'identify_anomalies'
+  | 'parse_statement'
+
+  // Memory
+  | 'extract_insights'
+  | 'generate_embedding'
+  | 'generate_daily_report'
+  | 'extract_contact_context'
+  | 'extract_work_items'
+
+  // Atlas
+  | 'categorize_task'
+  | 'suggest_priority'
+
+  // Analytics
+  | 'weekly_summary'
+  | 'sentiment_analysis'
+
+  // Journey (Minha Jornada)
+  | 'analyze_moment_sentiment'
+  | 'generate_weekly_summary'
+
+  // Grants (Módulo Captação)
+  | 'generate_field_content'
+  | 'analyze_edital_structure'
+  | 'extract_edital_text'
+
+/**
+ * Request base para chamadas ao Gemini
+ */
+export interface GeminiChatRequest {
+  action: GeminiAction
+  payload: Record<string, any>
+  model?: GeminiModel
+  stream?: boolean
+}
+
+/**
+ * Response padrão do Gemini
+ */
+export interface GeminiChatResponse {
+  result: any
+  cached?: boolean
+  tokensUsed?: {
+    input: number
+    output: number
+  }
+  latencyMs?: number
+}
+
+/**
+ * Erro customizado para operações Gemini
+ */
+export class GeminiError extends Error {
+  constructor(
+    message: string,
+    public code: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'SERVER_ERROR' | 'NETWORK_ERROR',
+    public statusCode?: number
+  ) {
+    super(message)
+    this.name = 'GeminiError'
+  }
+}
+
+/**
+ * Opções para chamadas streaming
+ */
+export interface StreamOptions {
+  onChunk: (chunk: string) => void
+  onComplete: () => void
+  onError: (error: Error) => void
+}

@@ -6,22 +6,25 @@ dotenv.config();
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
+  fullyParallel: false, // Sequential para evitar rate limiting da API
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  retries: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 1 : 1, // 1 worker para evitar rate limit
+  reporter: [['html'], ['list']],
 
-  // Global timeout for tests (increased for manual OAuth flow)
-  timeout: 180 * 1000, // 3 minutes for manual login
+  // Global timeout for tests (AI operations podem demorar)
+  timeout: 90 * 1000, // 90s para operações com IA
   expect: {
-    timeout: 10 * 1000,
+    timeout: 15 * 1000,
   },
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.VITE_APP_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    navigationTimeout: 30000,
+    actionTimeout: 15000,
     // Hide automation to avoid Google OAuth blocking
     launchOptions: {
       args: [
@@ -30,10 +33,11 @@ export default defineConfig({
     },
   },
 
-  webServer: {
+  webServer: process.env.CI ? undefined : {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
 
   projects: [

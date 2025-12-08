@@ -1,3 +1,5 @@
+export type TaskCategory = 'Trabalho' | 'Pessoal' | 'Saúde' | 'Educação' | 'Finanças' | 'Outros';
+
 export interface TaskInput {
     title: string;
     description?: string;
@@ -5,6 +7,7 @@ export interface TaskInput {
     status: string; // Ex: "todo", "in_progress", "done"
     start_date?: string;
     target_date?: string;
+    category?: TaskCategory;
 }
 
 export interface AtlasTask extends TaskInput {

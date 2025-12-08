@@ -1,10 +1,10 @@
 # Aica Life OS - Complete Database Schema Documentation
 
-**Last Updated**: December 2, 2025
+**Last Updated**: December 6, 2025
 **Database**: Supabase PostgreSQL
-**Status**: Verified (25 of 31 tables documented)
+**Status**: Verified (27 of 31 tables documented)
 
-> **Note**: User indicated 31 tables exist in the database. Current documentation covers 25 verified tables found through code analysis. Additional 6 tables may exist in backend services, migration files, or undocumented schemas.
+> **Note**: User indicated 31 tables exist in the database. Current documentation covers 27 verified tables found through code analysis. Additional 4 tables may exist in backend services, migration files, or undocumented schemas. Latest additions: Finance Module (finance_statements, finance_transactions).
 
 ---
 
@@ -16,11 +16,12 @@
 4. [Gamification System](#gamification-system)
 5. [Podcast Module](#podcast-module)
 6. [Life Planning](#life-planning)
-7. [Supporting Tables](#supporting-tables)
-8. [Database Architecture](#database-architecture)
-9. [Security & RLS Policies](#security--rls-policies)
-10. [Indexes & Performance](#indexes--performance)
-11. [Migration Guide](#migration-guide)
+7. [Finance Module](#finance-module)
+8. [Supporting Tables](#supporting-tables)
+9. [Database Architecture](#database-architecture)
+10. [Security & RLS Policies](#security--rls-policies)
+11. [Indexes & Performance](#indexes--performance)
+12. [Migration Guide](#migration-guide)
 
 ---
 
@@ -1145,6 +1146,155 @@ CREATE TABLE life_areas (
 - Scorable (0-100)
 - Custom goals per area
 - Color-coded display
+
+---
+
+## Finance Module
+
+### 23. finance_statements
+
+**Type**: Table
+**Purpose**: Store uploaded bank statement PDFs with extracted data and AI analysis
+**Primary Key**: id (UUID)
+
+```sql
+CREATE TABLE finance_statements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+
+  -- File metadata
+  file_name TEXT NOT NULL,
+  file_size_bytes INTEGER,
+  file_hash TEXT NOT NULL,
+  storage_path TEXT,
+  mime_type TEXT DEFAULT 'application/pdf',
+
+  -- Statement metadata
+  bank_name TEXT,
+  account_type TEXT CHECK (account_type IN ('checking', 'savings', 'credit_card', 'investment', 'other')),
+  statement_period_start DATE,
+  statement_period_end DATE,
+  currency TEXT DEFAULT 'BRL' NOT NULL,
+
+  -- Processing status
+  processing_status TEXT DEFAULT 'pending' NOT NULL
+    CHECK (processing_status IN ('pending', 'processing', 'completed', 'failed', 'partial')),
+  processing_error TEXT,
+  processing_started_at TIMESTAMPTZ,
+  processing_completed_at TIMESTAMPTZ,
+
+  -- Financial summary
+  opening_balance NUMERIC(12, 2),
+  closing_balance NUMERIC(12, 2),
+  total_credits NUMERIC(12, 2) DEFAULT 0,
+  total_debits NUMERIC(12, 2) DEFAULT 0,
+  transaction_count INTEGER DEFAULT 0 NOT NULL,
+
+  -- Content extraction
+  markdown_content TEXT,
+  markdown_generated_at TIMESTAMPTZ,
+  raw_text TEXT,
+  tables_json JSONB DEFAULT '[]'::jsonb,
+
+  -- PDF metadata
+  pages_count INTEGER DEFAULT 0,
+  tables_count INTEGER DEFAULT 0,
+  pdf_metadata JSONB DEFAULT '{}'::jsonb,
+
+  -- AI analysis
+  ai_summary TEXT,
+  ai_insights JSONB,
+  ai_analyzed_at TIMESTAMPTZ,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+
+  -- Constraints
+  UNIQUE(user_id, file_hash)
+);
+```
+
+**Key Columns**:
+- `storage_path` - Path to PDF file in Supabase Storage (bucket: finance-statements)
+- `file_hash` - SHA256 hash to prevent duplicate uploads
+- `account_type` - Type of bank account (checking, savings, credit_card, investment, other)
+- `processing_status` - Lifecycle: pending → processing → completed/failed
+- `transaction_count` - Number of transactions extracted from the statement
+- `ai_insights` - JSONB array of AI-generated insights about spending patterns
+
+**Relationships**:
+- Referenced by: finance_transactions (via statement_id FK)
+- Parent: users
+
+**Indexes**:
+- `idx_finance_statements_user_id` - For user queries
+- `idx_finance_statements_file_hash` - For duplicate detection
+- `idx_finance_statements_status` - For processing queue
+- `idx_finance_statements_period` - For date range queries
+
+**RLS Policy**: Users can only access their own statements (SELECT, INSERT, UPDATE, DELETE)
+
+**Storage Integration**: Uses Supabase Storage bucket `finance-statements` with RLS policies to store original PDFs
+
+---
+
+### 24. finance_transactions
+
+**Type**: Table (existing - documented in migration 20251203_finance_module.sql)
+**Purpose**: Individual financial transactions extracted from statements or manually entered
+**Primary Key**: id (UUID)
+
+```sql
+CREATE TABLE finance_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  statement_id UUID REFERENCES finance_statements(id) ON DELETE CASCADE,
+
+  description TEXT NOT NULL,
+  original_description TEXT,
+  normalized_description TEXT,
+  amount NUMERIC(12, 2) NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+  category TEXT NOT NULL,
+  subcategory TEXT,
+
+  merchant_name TEXT,
+  merchant_category TEXT,
+  transaction_date DATE NOT NULL,
+  is_recurring BOOLEAN DEFAULT FALSE,
+  hash_id TEXT NOT NULL UNIQUE,
+
+  tags TEXT[],
+  notes TEXT,
+  ai_categorized BOOLEAN,
+  ai_confidence NUMERIC(3, 2),
+  balance_after NUMERIC(12, 2),
+  reference_number TEXT,
+
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+```
+
+**Key Columns**:
+- `statement_id` - Links to parent finance_statement (NULL if manually entered)
+- `hash_id` - Unique hash (Date + Amount + Description) to prevent duplicate imports
+- `type` - income or expense
+- `ai_categorized` - TRUE if category was assigned by AI, FALSE if manual
+- `ai_confidence` - Confidence score (0.0-1.0) for AI categorization
+
+**Relationships**:
+- Parent: users, finance_statements (optional)
+
+**Indexes**:
+- `idx_finance_transactions_user_id`
+- `idx_finance_transactions_statement_id`
+- `idx_finance_transactions_date` (DESC for recent first)
+- `idx_finance_transactions_category`
+- `idx_finance_transactions_hash`
+
+**RLS Policy**: Users can only access their own transactions
 
 ---
 

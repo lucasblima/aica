@@ -242,7 +242,7 @@ export function ExampleCompleteIntegration() {
                     {/* Estatísticas */}
                     <section className="bg-gray-50 p-6 rounded-lg">
                         <h4 className="font-bold mb-4">Estatísticas</h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-6">
                             <div>
                                 <p className="text-2xl font-bold">{todayEvents.length}</p>
                                 <p className="text-sm text-gray-600">Eventos hoje</p>

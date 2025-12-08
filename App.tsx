@@ -1,28 +1,63 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { LayoutGrid, Calendar, Settings, Plus, ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, Briefcase, Globe, ArrowRight, X, CheckCircle2, Mic } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
 import { handleOAuthCallback } from './src/services/googleAuthService';
 import { BottomNav } from './components/BottomNav';
-import { LifeWeeksGrid } from './src/components/LifeWeeksGrid';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
 import { SettingsMenu } from './src/components/SettingsMenu';
 import { HeaderGlobal } from './src/components/HeaderGlobal';
 import { EfficiencyTrendChart } from './src/components/EfficiencyTrendChart';
 import { EfficiencyMedallion } from './src/components/EfficiencyMedallion';
+import { UnifiedJourneyCard } from './src/components/UnifiedJourneyCard';
+import { ConnectionArchetypes } from './src/components/ConnectionArchetypes';
+import {
+  getJourneyStats,
+  getDailyQuestion,
+  registerMoment,
+  hasAnsweredToday,
+  type JourneyStats
+} from './src/services/journeyService';
 import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
-import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding } from './src/services/supabaseService';
+import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding, getUserProfile } from './src/services/supabaseService';
 import Login from './src/components/Login';
 import { FinanceCard } from './src/modules/finance/components/FinanceCard';
+import { FinanceDashboard } from './src/modules/finance/views/FinanceDashboard';
+import { FinanceAgentView } from './src/modules/finance/views/FinanceAgentView';
+import { GrantsCard } from './src/modules/grants/components/GrantsCard';
+import { GrantsModuleView } from './src/modules/grants/views/GrantsModuleView';
+import { getUpcomingDeadlines } from './src/modules/grants/services/grantService';
 import OnboardingWizard from './src/components/OnboardingWizard';
 import { NotificationContainer } from './src/components/NotificationContainer';
 
 // Types
-type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast';
+type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast' | 'finance' | 'finance_agent' | 'journey' | 'grants';
 type TabState = 'personal' | 'network';
 
+// Animation variants for card entrance choreography
+const cardVariants = {
+   hidden: {
+      opacity: 0,
+      y: 20,
+      rotateX: -5,
+      scale: 0.98
+   },
+   visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      scale: 1,
+      transition: {
+         delay: i * 0.08,
+         duration: 0.5,
+         ease: [0.25, 0.46, 0.45, 0.94]
+      }
+   })
+};
+
 // Reusable Module Card Component
-const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
+const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor, onTasksLoaded }: any) => {
    const [tasks, setTasks] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
 
@@ -30,8 +65,9 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) =>
       getModuleTasks(moduleId).then(data => {
          setTasks(data);
          setLoading(false);
+         onTasksLoaded?.(moduleId, data.length);
       });
-   }, [moduleId]);
+   }, [moduleId, onTasksLoaded]);
 
    return (
       <div className={`ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 group cursor-pointer`}>
@@ -85,9 +121,39 @@ export default function App() {
    const [selectedAssociation, setSelectedAssociation] = useState<any>(null);
    const [associationModules, setAssociationModules] = useState<any[]>([]);
 
+   // Connection Archetype State
+   const [showCreateModal, setShowCreateModal] = useState(false);
+   const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
+
    // Onboarding State
    const [showOnboarding, setShowOnboarding] = useState(false);
    const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
+   // Journey State
+   const [journeyStats, setJourneyStats] = useState<JourneyStats | null>(null);
+   const [dailyQuestion, setDailyQuestion] = useState<string>('');
+   const [hasPendingQuestion, setHasPendingQuestion] = useState(true);
+   const [userBirthDate, setUserBirthDate] = useState<string | null>(null);
+   const [temporalData, setTemporalData] = useState<{
+      currentWeek: number;
+      totalWeeks: number;
+      percentLived: number;
+   } | null>(null);
+
+   // Module status tracking
+   const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
+
+   const handleTasksLoaded = (moduleId: string, taskCount: number) => {
+      setModulesStatus(prev => ({ ...prev, [moduleId]: taskCount }));
+   };
+
+   const secondaryModules = ['health', 'education', 'legal'];
+   const allSecondaryModulesEmpty = secondaryModules.every(
+      moduleId => modulesStatus[moduleId] === 0
+   );
+   const allSecondaryModulesLoaded = secondaryModules.every(
+      moduleId => modulesStatus[moduleId] !== undefined
+   );
 
    useEffect(() => {
       // Detecta e limpa URLs com tokens OAuth expirados
@@ -231,6 +297,95 @@ export default function App() {
       fetchData();
    }, [isAuthenticated]);
 
+   // Calculate temporal data from birthdate
+   const calculateTemporalData = (birthDate: string) => {
+      const LIFE_EXPECTANCY_YEARS = 90;
+      const totalWeeks = Math.ceil(LIFE_EXPECTANCY_YEARS * 52.1429);
+
+      const parts = birthDate.split('-');
+      if (parts.length !== 3) {
+         return { currentWeek: 0, totalWeeks, percentLived: 0 };
+      }
+
+      const [year, month, day] = parts.map(Number);
+      const birth = new Date(year, month - 1, day);
+      const now = new Date();
+      const diffTime = now.getTime() - birth.getTime();
+      const currentWeek = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+      const percentLived = Math.round((currentWeek / totalWeeks) * 100);
+
+      return {
+         currentWeek: Math.max(0, currentWeek),
+         totalWeeks,
+         percentLived: Math.min(100, percentLived)
+      };
+   };
+
+   // Load user profile and journey data
+   useEffect(() => {
+      const loadJourneyData = async () => {
+         if (!userId) return;
+
+         try {
+            // Load user profile to get birthdate
+            const profile = await getUserProfile(userId);
+            if (profile?.birth_date) {
+               setUserBirthDate(profile.birth_date);
+               const temporal = calculateTemporalData(profile.birth_date);
+               setTemporalData(temporal);
+            }
+
+            // Load journey stats
+            const stats = await getJourneyStats(userId);
+            setJourneyStats(stats);
+
+            // Load daily question
+            const question = await getDailyQuestion();
+            setDailyQuestion(question.question);
+
+            // Check if user answered today
+            const answered = await hasAnsweredToday(userId);
+            setHasPendingQuestion(!answered);
+         } catch (error) {
+            console.error('Error loading journey data:', error);
+         }
+      };
+
+      loadJourneyData();
+   }, [userId]);
+
+   // Handle registering a moment
+   const handleRegisterMoment = async (text: string) => {
+      if (!userId || !temporalData) return;
+
+      try {
+         await registerMoment(userId, text, temporalData.currentWeek);
+
+         // Reload stats
+         const stats = await getJourneyStats(userId);
+         setJourneyStats(stats);
+      } catch (error) {
+         console.error('Error registering moment:', error);
+      }
+   };
+
+   // Handle answering daily question
+   const handleAnswerQuestion = async (answer: string) => {
+      if (!userId || !temporalData) return;
+
+      try {
+         const question = await getDailyQuestion();
+         await registerMoment(userId, answer, temporalData.currentWeek, 'question_answer', question.id);
+
+         // Reload stats and mark question as answered
+         const stats = await getJourneyStats(userId);
+         setJourneyStats(stats);
+         setHasPendingQuestion(false);
+      } catch (error) {
+         console.error('Error answering question:', error);
+      }
+   };
+
    const handleOpenAssociation = async (assoc: any) => {
       setSelectedAssociation(assoc);
       setCurrentView('association_detail');
@@ -287,44 +442,188 @@ export default function App() {
                   onTabChange={setActiveTab}
                />
 
-               <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 space-y-4">
-                  {/* Life Weeks Grid */}
-                  {userId && <LifeWeeksGrid userId={userId} />}
+               <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
+                  {/* Unified Journey Card */}
+                  {journeyStats && temporalData && (
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={0}
+                     >
+                        <UnifiedJourneyCard
+                           currentWeek={temporalData.currentWeek}
+                           totalWeeks={temporalData.totalWeeks}
+                           percentLived={temporalData.percentLived}
+                           level={journeyStats.level}
+                           levelName={journeyStats.levelName}
+                           streakDays={journeyStats.streakDays}
+                           totalMoments={journeyStats.totalMoments}
+                           totalQuestions={journeyStats.totalQuestions}
+                           totalReflections={journeyStats.totalReflections}
+                           lastMoment={journeyStats.lastMoment}
+                           dailyQuestion={dailyQuestion}
+                           hasPendingQuestion={hasPendingQuestion}
+                           onRegisterMoment={handleRegisterMoment}
+                           onAnswerQuestion={handleAnswerQuestion}
+                           onExpand={() => setCurrentView('journey')}
+                        />
+                     </motion.div>
+                  )}
 
                   {/* Efficiency Score Card */}
-                  <EfficiencyMedallion score={84} focusTime={245} streak={7} xp={1250} status="excellent" />
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={1}
+                  >
+                     <EfficiencyMedallion score={84} focusTime={245} streak={7} xp={1250} status="excellent" />
+                  </motion.div>
 
                   {/* Efficiency Trend Chart */}
-                  {userId && <EfficiencyTrendChart userId={userId} days={30} />}
+                  {userId && (
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={2}
+                     >
+                        <EfficiencyTrendChart userId={userId} days={30} />
+                     </motion.div>
+                  )}
 
                   {/* Life Modules Grid - Bento Style */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      {/* Finanças */}
                      {userId ? (
-                        <div className="col-span-2 row-span-2">
+                        <motion.div
+                           variants={cardVariants}
+                           initial="hidden"
+                           animate="visible"
+                           custom={3}
+                           className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
+                           onClick={() => setCurrentView('finance')}
+                        >
                            <FinanceCard userId={userId} />
-                        </div>
+                        </motion.div>
                      ) : (
-                        <ModuleCard
-                           moduleId="finance"
-                           title="Finanças"
-                           icon={Wallet}
-                           color="emerald"
-                           accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
-                        />
+                        <motion.div
+                           variants={cardVariants}
+                           initial="hidden"
+                           animate="visible"
+                           custom={3}
+                        >
+                           <ModuleCard
+                              moduleId="finance"
+                              title="Finanças"
+                              icon={Wallet}
+                              color="emerald"
+                              accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
+                           />
+                        </motion.div>
                      )}
 
-                     {/* Saúde & Bem-estar */}
-                     <ModuleCard
-                        moduleId="health"
-                        title="Saúde"
-                        icon={Heart}
-                        color="orange"
-                        accentColor="bg-orange-50 border-orange-100 text-orange-600"
-                     />
+                     {/* Grants Module */}
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={4}
+                        className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
+                        onClick={() => setCurrentView('grants')}
+                     >
+                        <GrantsCard
+                           activeProjects={0}
+                           upcomingDeadlines={[]}
+                           recentProjects={[]}
+                           onOpenModule={() => setCurrentView('grants')}
+                           onCreateProject={() => setCurrentView('grants')}
+                        />
+                     </motion.div>
+
+                     {/* Módulos Secundários - Colapsar quando todos vazios */}
+                     {allSecondaryModulesLoaded && allSecondaryModulesEmpty ? (
+                        <motion.div
+                           variants={cardVariants}
+                           initial="hidden"
+                           animate="visible"
+                           custom={4}
+                           className="ceramic-card p-6 col-span-2"
+                        >
+                           <div className="flex items-center gap-3">
+                              <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                                 <CheckCircle2 className="w-5 h-5 text-ceramic-accent" />
+                              </div>
+                              <div>
+                                 <p className="font-bold text-ceramic-text-primary">Tudo em equilíbrio</p>
+                                 <p className="text-sm text-ceramic-text-secondary">
+                                    Saúde, Educação, Jurídico — sem pendências
+                                 </p>
+                              </div>
+                           </div>
+                        </motion.div>
+                     ) : (
+                        <>
+                           {/* Saúde & Bem-estar */}
+                           <motion.div
+                              variants={cardVariants}
+                              initial="hidden"
+                              animate="visible"
+                              custom={4}
+                           >
+                              <ModuleCard
+                                 moduleId="health"
+                                 title="Saúde"
+                                 icon={Heart}
+                                 color="orange"
+                                 accentColor="bg-orange-50 border-orange-100 text-orange-600"
+                                 onTasksLoaded={handleTasksLoaded}
+                              />
+                           </motion.div>
+
+                           {/* Educação */}
+                           <motion.div
+                              variants={cardVariants}
+                              initial="hidden"
+                              animate="visible"
+                              custom={5}
+                           >
+                              <ModuleCard
+                                 moduleId="education"
+                                 title="Educação"
+                                 icon={BookOpen}
+                                 color="amber"
+                                 accentColor="bg-amber-50 border-amber-100 text-amber-600"
+                                 onTasksLoaded={handleTasksLoaded}
+                              />
+                           </motion.div>
+
+                           {/* Jurídico */}
+                           <motion.div
+                              variants={cardVariants}
+                              initial="hidden"
+                              animate="visible"
+                              custom={6}
+                           >
+                              <ModuleCard
+                                 moduleId="legal"
+                                 title="Jurídico"
+                                 icon={Scale}
+                                 color="slate"
+                                 accentColor="bg-slate-50 border-slate-100 text-slate-600"
+                                 onTasksLoaded={handleTasksLoaded}
+                              />
+                           </motion.div>
+                        </>
+                     )}
 
                      {/* Associações */}
-                     <div
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={7}
                         onClick={() => setActiveTab('network')}
                         className="ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                      >
@@ -344,28 +643,14 @@ export default function App() {
                               <ChevronRight className="w-3 h-3" />
                            </div>
                         </div>
-                     </div>
-
-                     {/* Educação */}
-                     <ModuleCard
-                        moduleId="education"
-                        title="Educação"
-                        icon={BookOpen}
-                        color="amber"
-                        accentColor="bg-amber-50 border-amber-100 text-amber-600"
-                     />
-
-                     {/* Jurídico */}
-                     <ModuleCard
-                        moduleId="legal"
-                        title="Jurídico"
-                        icon={Scale}
-                        color="slate"
-                        accentColor="bg-slate-50 border-slate-100 text-slate-600"
-                     />
+                     </motion.div>
 
                      {/* Podcast Copilot */}
-                     <div
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={8}
                         onClick={() => setCurrentView('podcast')}
                         className="ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                      >
@@ -385,7 +670,7 @@ export default function App() {
                               <ChevronRight className="w-3 h-3" />
                            </div>
                         </div>
-                     </div>
+                     </motion.div>
                   </div>
                </main>
             </div>
@@ -406,35 +691,60 @@ export default function App() {
                   onTabChange={setActiveTab}
                />
 
-               <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
-                  <div className="grid grid-cols-1 gap-4">
-                     {/* Create New Association Button */}
-                     <button className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group">
-                        <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                           <Plus className="w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-sm">Criar ou Entrar em Associação</span>
-                     </button>
-
-                     {networkAssocs.map(assoc => (
-                        <div
-                           key={assoc.id}
-                           onClick={() => handleOpenAssociation(assoc)}
-                           className="ceramic-card p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group"
+               <main className="flex-1 overflow-y-auto pb-40 pt-4">
+                  {networkAssocs.length === 0 ? (
+                     /* Arquétipos de Conexão quando vazio */
+                     <ConnectionArchetypes
+                        onSelectArchetype={(archetypeId) => {
+                           console.log('[App] Arquétipo selecionado:', archetypeId);
+                           setSelectedArchetype(archetypeId);
+                           setShowCreateModal(true);
+                           // TODO: Abrir modal de criação de associação
+                        }}
+                        onCreateCustom={() => {
+                           console.log('[App] Criar espaço personalizado');
+                           setSelectedArchetype(null);
+                           setShowCreateModal(true);
+                           // TODO: Abrir modal de criação de associação
+                        }}
+                     />
+                  ) : (
+                     /* Lista de Associações */
+                     <div className="px-6 space-y-4">
+                        {/* Create New Association Button */}
+                        <button
+                           onClick={() => {
+                              setSelectedArchetype(null);
+                              setShowCreateModal(true);
+                           }}
+                           className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group"
                         >
-                           <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
-                                 <Users className="w-6 h-6 text-ceramic-text-primary" />
-                              </div>
-                              <div>
-                                 <h3 className="font-bold text-lg text-ceramic-text-primary text-etched">{assoc.name}</h3>
-                                 <p className="text-xs text-ceramic-text-secondary font-light">{assoc.description || 'Sem descrição'}</p>
-                              </div>
+                           <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <Plus className="w-5 h-5" />
                            </div>
-                           <ChevronRight className="w-5 h-5 text-ceramic-text-secondary group-hover:translate-x-1 transition-transform" />
-                        </div>
-                     ))}
-                  </div>
+                           <span className="font-bold text-sm">Criar ou Entrar em Associação</span>
+                        </button>
+
+                        {networkAssocs.map(assoc => (
+                           <div
+                              key={assoc.id}
+                              onClick={() => handleOpenAssociation(assoc)}
+                              className="ceramic-card p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group"
+                           >
+                              <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
+                                    <Users className="w-6 h-6 text-ceramic-text-primary" />
+                                 </div>
+                                 <div>
+                                    <h3 className="font-bold text-lg text-ceramic-text-primary text-etched">{assoc.name}</h3>
+                                    <p className="text-xs text-ceramic-text-secondary font-light">{assoc.description || 'Sem descrição'}</p>
+                                 </div>
+                              </div>
+                              <ChevronRight className="w-5 h-5 text-ceramic-text-secondary group-hover:translate-x-1 transition-transform" />
+                           </div>
+                        ))}
+                     </div>
+                  )}
                </main>
             </div>
          );
@@ -523,6 +833,32 @@ export default function App() {
       />
    );
 
+   // ==================== FINANCE VIEW ====================
+   const renderFinance = () => (
+      userId ? (
+         <FinanceDashboard
+            userId={userId}
+            onNavigateToAgent={() => setCurrentView('finance_agent')}
+            onBack={() => setCurrentView('vida')}
+         />
+      ) : null
+   );
+
+   // ==================== FINANCE AGENT VIEW ====================
+   const renderFinanceAgent = () => (
+      userId ? (
+         <FinanceAgentView
+            userId={userId}
+            onBack={() => setCurrentView('finance')}
+         />
+      ) : null
+   );
+
+   // ==================== JOURNEY VIEW ====================
+   const renderJourney = () => (
+      <JourneyFullScreen />
+   );
+
    if (!isAuthenticated) {
       return <Login onLogin={() => setIsAuthenticated(true)} />;
    }
@@ -533,8 +869,14 @@ export default function App() {
          {currentView === 'agenda' && renderAgenda()}
          {currentView === 'association_detail' && renderAssociationDetail()}
          {currentView === 'podcast' && renderPodcast()}
+         {currentView === 'finance' && renderFinance()}
+         {currentView === 'finance_agent' && renderFinanceAgent()}
+         {currentView === 'journey' && renderJourney()}
+         {currentView === 'grants' && (
+            <GrantsModuleView onBack={() => setCurrentView('vida')} />
+         )}
 
-         {currentView !== 'association_detail' && (currentView !== 'podcast' || showPodcastNav) && (
+         {currentView !== 'association_detail' && currentView !== 'finance' && currentView !== 'finance_agent' && currentView !== 'grants' && (currentView !== 'podcast' || showPodcastNav) && (
             <BottomNav
                currentView={currentView}
                onChange={setCurrentView}

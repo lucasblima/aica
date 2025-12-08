@@ -222,11 +222,11 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
       <div className="w-full max-w-2xl space-y-8">
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-4">
-            <div className="h-16 w-16 bg-[#5C554B] rounded-2xl flex items-center justify-center">
-              <Zap className="h-8 w-8 text-[#F0EFE9]" />
+            <div className="h-12 w-12 bg-[#5C554B] rounded-2xl flex items-center justify-center">
+              <Zap className="h-6 w-6 text-[#F0EFE9]" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-[#5C554B]">
+          <h1 className="text-2xl font-black tracking-tight text-ceramic-text-primary text-etched">
             Copiloto Uai, Ana!
           </h1>
           <p className="text-[#5C554B] text-lg">
@@ -234,13 +234,13 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
           </p>
         </div>
 
-        <div className="bg-[#F0EFE9] rounded-2xl p-8 shadow-[5px_5px_15px_rgba(163,158,145,0.15),-5px_-5px_15px_rgba(255,255,255,0.8)] border-none">
+        <section className="ceramic-tray p-8 rounded-[40px] border border-white/40 space-y-6">
           <form onSubmit={handleGenerate} className="space-y-6">
 
             {/* Guest Input */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <label htmlFor="guest" className="block text-sm font-medium text-[#5C554B]">
+                <label htmlFor="guest" className="block text-sm font-medium text-ceramic-text-secondary">
                   Nome do Convidado
                 </label>
                 <span className="text-xs text-[#948D82]">IA Auto-Complete</span>
@@ -277,7 +277,7 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
             {/* Theme Input */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <label htmlFor="theme" className="block text-sm font-medium text-[#5C554B]">
+                <label htmlFor="theme" className="block text-sm font-medium text-ceramic-text-secondary">
                   Tema ou Contexto (Opcional)
                 </label>
                 <span className="text-xs text-[#948D82]">IA Auto-Complete</span>
@@ -313,8 +313,8 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
             {/* Scheduling Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#5C554B] flex items-center">
-                  <Hash className="w-4 h-4 mr-2 text-[#5C554B]" />
+                <label className="block text-sm font-medium text-ceramic-text-secondary flex items-center">
+                  <Hash className="w-4 h-4 mr-2 text-ceramic-text-secondary" />
                   Temporada
                 </label>
                 <input
@@ -327,8 +327,8 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#5C554B] flex items-center">
-                  <MapPin className="w-4 h-4 mr-2 text-[#5C554B]" />
+                <label className="block text-sm font-medium text-ceramic-text-secondary flex items-center">
+                  <MapPin className="w-4 h-4 mr-2 text-ceramic-text-secondary" />
                   Local
                 </label>
                 <select
@@ -353,8 +353,8 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#5C554B] flex items-center">
-                  <Calendar className="w-4 h-4 mr-2 text-[#5C554B]" />
+                <label className="block text-sm font-medium text-ceramic-text-secondary flex items-center">
+                  <Calendar className="w-4 h-4 mr-2 text-ceramic-text-secondary" />
                   Data
                 </label>
                 <input
@@ -366,8 +366,8 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#5C554B] flex items-center">
-                  <Clock className="w-4 h-4 mr-2 text-[#5C554B]" />
+                <label className="block text-sm font-medium text-ceramic-text-secondary flex items-center">
+                  <Clock className="w-4 h-4 mr-2 text-ceramic-text-secondary" />
                   Horário
                 </label>
                 <input
@@ -454,7 +454,7 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
             </div>
           )}
 
-        </div>
+        </section>
 
         <div className="text-center text-xs text-[#5C554B]">
           Powered by Google Gemini 1.5 Pro

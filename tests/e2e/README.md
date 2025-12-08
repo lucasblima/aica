@@ -4,12 +4,15 @@ Comprehensive end-to-end test suite for Aica Life OS using Playwright.
 
 ## Overview
 
-- **26 automated tests** across 4 test suites
-- **Global authentication** via API (no manual login in tests)
+- **80+ automated tests** across 15+ test suites
+- **Global authentication** via Google OAuth (manual once, then cached)
 - **Chromium & Firefox** support
 - **HTML reporting** with screenshots on failure
+- **Comprehensive Gemini integration tests** (58 tests)
 
 ## Test Suites
+
+### Core Functionality
 
 | Suite | Tests | Purpose |
 |-------|-------|---------|
@@ -17,6 +20,30 @@ Comprehensive end-to-end test suite for Aica Life OS using Playwright.
 | `task-management.spec.ts` | 7 | CRUD operations & drag-drop functionality |
 | `gamification.spec.ts` | 5 | XP, leveling, achievements, streaks |
 | `security.spec.ts` | 10 | Security, privacy, GDPR, HTTPS, XSS |
+
+### Podcast Module
+
+| Suite | Tests | Purpose |
+|-------|-------|---------|
+| `podcast.spec.ts` | 5 | Basic podcast workflow |
+| `podcast-wizard.spec.ts` | 6 | Episode creation wizard |
+| `podcast-preproduction.spec.ts` | 8 | Pre-production features |
+| `podcast-production.spec.ts` | 7 | Recording mode |
+| `podcast-postproduction.spec.ts` | 6 | Editing and publishing |
+| `podcast-full-workflow.spec.ts` | 5 | End-to-end workflow |
+| **`podcast-gemini-integration.spec.ts`** | **10** | **AI-powered features** |
+
+### Gemini Integration (NEW)
+
+| Suite | Tests | Purpose |
+|-------|-------|---------|
+| **`podcast-gemini-integration.spec.ts`** | **10** | Guest/theme suggestion, dossier generation, chat |
+| **`finance-gemini-integration.spec.ts`** | **12** | PDF processing, PII sanitization, agent chat |
+| **`memory-gemini-integration.spec.ts`** | **15** | Insights extraction, semantic search, daily reports |
+| **`atlas-categorization.spec.ts`** | **10** | Auto-categorize tasks with AI |
+| **`gemini-security-performance.spec.ts`** | **15** | Security validation, performance benchmarks |
+
+**Total Gemini Tests:** 62 tests covering all AI-powered features
 
 ## Authentication Strategy
 
@@ -277,10 +304,48 @@ When adding new tests:
 4. Ensure all tests pass locally before pushing
 5. Handle both success and failure cases
 
+## Gemini Integration Tests
+
+For detailed information about the Gemini AI integration tests, see:
+
+**[📖 Full Gemini E2E Testing Guide](../../docs/GEMINI_E2E_TESTS.md)**
+
+### Quick Overview
+
+The Gemini integration tests validate that all AI-powered features work correctly after migrating from frontend to secure backend architecture:
+
+- **Security:** API key never exposed, all requests authenticated
+- **Performance:** Edge Functions < 10s, Python server < 60s
+- **Reliability:** Retry mechanisms, error handling, cache
+- **Compliance:** PII detection and sanitization (LGPD)
+
+### Running Gemini Tests Only
+
+```bash
+# All Gemini tests
+npx playwright test podcast-gemini finance-gemini memory-gemini atlas-categorization gemini-security
+
+# Security tests only
+npx playwright test gemini-security-performance --grep "Security"
+
+# Performance tests only
+npx playwright test gemini-security-performance --grep "Performance"
+```
+
+### Test Fixtures
+
+Test data is in `tests/fixtures/`:
+- `mock-whatsapp-messages.json` - Sample messages for Memory tests
+- `test-tasks.json` - Sample tasks for Atlas categorization
+- `bank-statement-with-pii.pdf` - (Create manually) PDF for Finance tests
+
+See [tests/fixtures/README.md](../fixtures/README.md) for details.
+
 ## Support
 
 For issues or questions:
 1. Check test report: `npx playwright show-report`
-2. Review test code and selectors
-3. Use `--debug` mode: `npm run test:e2e:debug`
-4. Check browser DevTools screenshots
+2. Review [Gemini E2E Testing Guide](../../docs/GEMINI_E2E_TESTS.md)
+3. Review test code and selectors
+4. Use `--debug` mode: `npm run test:e2e:debug`
+5. Check browser DevTools screenshots

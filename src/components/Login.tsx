@@ -39,7 +39,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                     >
                         <Sparkles className="w-10 h-10 text-[#5C554B]" />
                     </div>
-                    <h1 className="text-4xl font-black text-[#5C554B] mb-2">Aica Life OS</h1>
+                    <h1 className="text-2xl font-black text-ceramic-text-primary text-etched mb-2">Aica Life OS</h1>
                     <p className="text-sm text-[#948D82]">Sistema operacional para sua vida</p>
                 </div>
 

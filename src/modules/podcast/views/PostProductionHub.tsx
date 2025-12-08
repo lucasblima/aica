@@ -129,7 +129,7 @@ export const PostProductionHub: React.FC<PostProductionHubProps> = ({
                             Funcionalidades em Desenvolvimento
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {COMING_SOON_FEATURES.map((feature, index) => (
                                 <motion.div
                                     key={feature.id}

@@ -1,0 +1,144 @@
+{
+  "title": "TECNOVA III - Apoio à Inovação Tecnológica",
+  "funding_agency": "FAPERJ",
+  "program_name": "Programa de Apoio ao Desenvolvimento Científico e Tecnológico",
+  "edital_number": "32/2025",
+  "min_funding": 375000.00,
+  "max_funding": 600000.00,
+  "counterpart_percentage": 5.00,
+  "submission_start": "2025-01-15",
+  "submission_deadline": "2025-03-31",
+  "result_date": "2025-06-30",
+  "eligible_themes": [
+    "Saúde",
+    "Biotecnologia",
+    "TI/Software",
+    "Energia"
+  ],
+  "eligibility_requirements": {
+    "min_company_age_years": 2,
+    "must_have_cnpj": true,
+    "must_be_headquartered_in_rio": true,
+    "min_employees": 3,
+    "requires_technical_feasibility": true
+  },
+  "evaluation_criteria": [
+    {
+      "id": "innovation",
+      "name": "Grau de Inovação",
+      "description": "Avalia o nível de inovação tecnológica do projeto",
+      "weight": 30,
+      "min_score": 7,
+      "max_score": 10
+    },
+    {
+      "id": "feasibility",
+      "name": "Viabilidade Técnica",
+      "description": "Capacidade de execução e domínio tecnológico",
+      "weight": 25,
+      "min_score": 6,
+      "max_score": 10
+    },
+    {
+      "id": "market",
+      "name": "Potencial de Mercado",
+      "description": "Impacto econômico e social do projeto",
+      "weight": 25,
+      "min_score": 6,
+      "max_score": 10
+    },
+    {
+      "id": "team",
+      "name": "Capacitação da Equipe",
+      "description": "Experiência e qualificação dos profissionais",
+      "weight": 20,
+      "min_score": 6,
+      "max_score": 10
+    }
+  ],
+  "form_fields": [
+    {
+      "id": "company_presentation",
+      "label": "Apresentação da Empresa",
+      "max_chars": 3000,
+      "required": true,
+      "ai_prompt_hint": "Descreva histórico, porte, setor de atuação, principais produtos e realizações.",
+      "placeholder": "Ex: A [Nome] é uma empresa..."
+    },
+    {
+      "id": "project_title",
+      "label": "Título do Projeto",
+      "max_chars": 200,
+      "required": true,
+      "ai_prompt_hint": "Título claro e objetivo que sintetize a proposta.",
+      "placeholder": "Ex: Desenvolvimento de plataforma de IA para..."
+    },
+    {
+      "id": "project_summary",
+      "label": "Resumo do Projeto",
+      "max_chars": 5000,
+      "required": true,
+      "ai_prompt_hint": "Descrição completa: objetivos, metodologia, resultados esperados.",
+      "placeholder": "Ex: O projeto visa desenvolver..."
+    },
+    {
+      "id": "innovation_description",
+      "label": "Descrição da Inovação",
+      "max_chars": 4000,
+      "required": true,
+      "ai_prompt_hint": "Explique o diferencial tecnológico, estado da arte, e o que torna isto inovador.",
+      "placeholder": "Ex: A inovação consiste em..."
+    },
+    {
+      "id": "market_analysis",
+      "label": "Análise de Mercado",
+      "max_chars": 3500,
+      "required": true,
+      "ai_prompt_hint": "Público-alvo, concorrência, tamanho do mercado, estratégia de comercialização.",
+      "placeholder": "Ex: O mercado-alvo é composto por..."
+    },
+    {
+      "id": "team_description",
+      "label": "Equipe do Projeto",
+      "max_chars": 2500,
+      "required": true,
+      "ai_prompt_hint": "Formação acadêmica, experiência profissional, publicações, patentes.",
+      "placeholder": "Ex: A equipe é composta por..."
+    },
+    {
+      "id": "methodology",
+      "label": "Metodologia de Execução",
+      "max_chars": 4000,
+      "required": true,
+      "ai_prompt_hint": "Etapas do projeto, cronograma, marcos, entregáveis.",
+      "placeholder": "Ex: O projeto será executado em 4 fases..."
+    },
+    {
+      "id": "sustainability",
+      "label": "Sustentabilidade Financeira",
+      "max_chars": 2000,
+      "required": true,
+      "ai_prompt_hint": "Modelo de negócio, projeção de receitas, como se sustentará após o financiamento.",
+      "placeholder": "Ex: A sustentabilidade será garantida através de..."
+    },
+    {
+      "id": "expected_results",
+      "label": "Resultados Esperados",
+      "max_chars": 2500,
+      "required": true,
+      "ai_prompt_hint": "Impactos tecnológicos, econômicos, sociais. Metas quantificáveis.",
+      "placeholder": "Ex: Esperamos alcançar..."
+    },
+    {
+      "id": "budget_justification",
+      "label": "Justificativa Orçamentária",
+      "max_chars": 3000,
+      "required": true,
+      "ai_prompt_hint": "Detalhamento de custos, contrapartida, alocação de recursos.",
+      "placeholder": "Ex: O orçamento está distribuído em..."
+    }
+  ],
+  "external_system_url": "https://sisfaperj.faperj.br/",
+  "edital_text_content": "EDITAL FAPERJ Nº 32/2025 - PROGRAMA TECNOVA RIO III\n\nOBJETIVO: Apoiar projetos de pesquisa, desenvolvimento e inovação (PD&I) em empresas sediadas no Estado do Rio de Janeiro, visando o desenvolvimento de produtos, processos ou serviços inovadores com potencial de impacto econômico e social.\n\nVALOR DO FINANCIAMENTO:\n- Mínimo: R$ 375.000,00\n- Máximo: R$ 600.000,00\n- Contrapartida obrigatória da empresa: 5% do valor total do projeto\n\nPRAZO DE EXECUÇÃO: Até 24 meses\n\nCRITÉRIOS DE ELEGIBILIDADE:\n- Empresa com CNPJ ativo há pelo menos 2 anos\n- Sede no Estado do Rio de Janeiro\n- Equipe técnica qualificada (mínimo 3 profissionais)\n- Projeto com viabilidade técnica e mercadológica demonstrada\n\nCRITÉRIOS DE AVALIAÇÃO:\n1. Grau de Inovação (peso 30%): Avalia o nível de inovação tecnológica, diferencial competitivo e estado da arte\n2. Viabilidade Técnica (peso 25%): Capacidade de execução, metodologia, cronograma e recursos necessários\n3. Potencial de Mercado (peso 25%): Impacto econômico, público-alvo, estratégia de comercialização\n4. Capacitação da Equipe (peso 20%): Qualificação técnica, experiência prévia, publicações e patentes\n\nDOCUMENTAÇÃO EXIGIDA:\n- Formulário de inscrição completo (via SISFAPERJ)\n- Comprovante de CNPJ e documentação societária\n- Currículo Lattes dos pesquisadores\n- Carta de anuência da empresa\n- Plano de trabalho detalhado\n- Orçamento discriminado\n\nCRONOGRAMA:\n- Submissão de propostas: 15/01/2025 a 31/03/2025\n- Análise e seleção: Abril a Maio/2025\n- Divulgação dos resultados: 30/06/2025\n- Início da execução: Julho/2025",
+  "status": "open"
+}

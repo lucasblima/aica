@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-**Última atualização:** 2025-12-06
+**Última atualização:** 2025-12-08
 
 Este documento descreve **todas as tabelas do Supabase** que o frontend (Aica) utiliza, seus **relacionamentos** e como o **frontend interage** com elas através dos serviços em `src/services/supabaseService.ts`.
 
@@ -474,7 +474,7 @@ Sistema de limpeza preventiva de URLs OAuth expiradas para evitar erros de auten
 
 ## Validação Automática
 
-**Última verificação:** 2025-12-06
+**Última verificação:** 2025-12-08
 
 **Status:** Para validação completa do schema, execute:
 ```bash

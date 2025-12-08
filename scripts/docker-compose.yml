@@ -1,0 +1,34 @@
+# Docker Compose para desenvolvimento local
+# Para produção, use Easypanel
+
+version: '3.8'
+
+services:
+  aica-llm-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aica-llm-server
+    ports:
+      - "8001:8001"
+    environment:
+      # Estas variáveis devem ser configuradas no Easypanel
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - CORS_ORIGINS=http://localhost:5173,https://aica-life-os.vercel.app
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aica-network
+
+networks:
+  aica-network:
+    driver: bridge
