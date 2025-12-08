@@ -16,7 +16,10 @@ import { supabase } from '../services/supabaseClient';
 import { PriorityMatrix } from '../components/PriorityMatrix';
 import { DailyTimeline } from '../components/DailyTimeline';
 import { HeaderGlobal } from '../components/HeaderGlobal';
-import GoogleCalendarConnect from '../components/GoogleCalendarConnect';
+import { CalendarSyncIndicator } from '../components/CalendarSyncIndicator';
+import { NextEventHero } from '../components/NextEventHero';
+import { AgendaTimeline } from '../components/AgendaTimeline';
+import { WeeklyCalendarView } from '../components/WeeklyCalendarView';
 import { Task, Quadrant } from '../../types';
 import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
 import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
@@ -186,6 +189,97 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
         return merged;
     }, [matrixTasks, atlasTasks]);
+
+    // Identify next event and rest of day
+    const { nextEvent, restOfDay } = useMemo(() => {
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+
+        // Get all calendar events for today
+        const todayEvents = calendarEvents
+            .filter(event => event.startTime.startsWith(dateStr))
+            .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+        // Find next event (either happening now or upcoming)
+        const nextEventData = todayEvents.find(event => {
+            const endTime = new Date(event.endTime);
+            return endTime > now; // Event hasn't ended yet
+        });
+
+        // Rest of events are those after the next event
+        const restEvents = nextEventData
+            ? todayEvents.filter(event => event.id !== nextEventData.id && new Date(event.startTime) > new Date(nextEventData.startTime))
+            : todayEvents;
+
+        // Transform to timeline event format
+        const restTimeline = restEvents.map(event => ({
+            id: event.id,
+            title: event.title,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            type: 'event' as const,
+            location: event.location,
+            color: '#D97706' // Amber
+        }));
+
+        // Add tasks to rest of day
+        const todayTasks = timelineTasks.map(task => ({
+            id: task.id,
+            title: task.title,
+            startTime: `${dateStr}T${task.scheduled_time}:00`,
+            endTime: undefined,
+            type: 'task' as const,
+            isCompleted: !!task.completed_at
+        }));
+
+        const combinedRest = [...restTimeline, ...todayTasks].sort((a, b) =>
+            a.startTime.localeCompare(b.startTime)
+        );
+
+        // Check if next event is happening now
+        const isNow = nextEventData && new Date(nextEventData.startTime) <= now;
+
+        return {
+            nextEvent: nextEventData ? {
+                id: nextEventData.id,
+                title: nextEventData.title,
+                startTime: nextEventData.startTime,
+                endTime: nextEventData.endTime,
+                description: nextEventData.description,
+                location: nextEventData.location,
+                attendees: nextEventData.attendees,
+                organizer: nextEventData.organizer,
+                isNow
+            } : undefined,
+            restOfDay: combinedRest
+        };
+    }, [calendarEvents, timelineTasks]);
+
+    // Prepare week events (next 7 days excluding today)
+    const weekEvents = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        return calendarEvents
+            .filter(event => {
+                const eventDate = new Date(event.startTime);
+                return eventDate >= tomorrow && eventDate < weekEnd;
+            })
+            .map(event => ({
+                id: event.id,
+                title: event.title,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                description: event.description,
+                location: event.location,
+                attendees: event.attendees,
+                organizer: event.organizer
+            }));
+    }, [calendarEvents]);
 
     const loadAllTasks = async (forDate?: Date) => {
         try {
@@ -372,14 +466,45 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             .eq('id', taskId);
     };
 
+    // Handler para conectar Google Calendar
+    const handleConnectCalendar = async () => {
+        console.log('[AgendaView] Conectando Google Calendar...');
+        // Trigger Google OAuth
+        await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                scopes: 'https://www.googleapis.com/auth/calendar.readonly',
+                redirectTo: window.location.origin
+            }
+        });
+    };
+
     return (
         <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-            <HeaderGlobal
-                title="Meu Dia"
-                subtitle="Maestro"
-                userEmail={userEmail}
-                onLogout={onLogout}
-            />
+            {/* Header com Sync Indicator */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-ceramic-text-secondary/10">
+                <div>
+                    <h1 className="text-2xl font-black text-ceramic-text-primary">Meu Dia</h1>
+                    <p className="text-sm text-ceramic-text-secondary">
+                        {new Date().toLocaleDateString('pt-BR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long'
+                        })}
+                    </p>
+                </div>
+
+                {/* Indicadores no canto direito */}
+                <div className="flex items-center gap-2">
+                    <CalendarSyncIndicator
+                        isConnected={isCalendarConnected}
+                        isSyncing={isLoadingCalendar}
+                        lastSyncTime={lastSyncTime ? `há ${Math.round((Date.now() - new Date(lastSyncTime).getTime()) / 60000)}min` : undefined}
+                        onConnect={handleConnectCalendar}
+                        onSync={syncCalendar}
+                    />
+                </div>
+            </div>
 
             <DndContext
                 sensors={sensors}
@@ -387,7 +512,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 space-y-6">
+                <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 space-y-8">
                     {/* Atlas Quick Add */}
                     <div className="flex-none max-w-2xl mx-auto w-full">
                         <TaskCreationInput
@@ -396,35 +521,79 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         />
                     </div>
 
-                    {/* Google Calendar Sync */}
-                    <div className="flex-none max-w-2xl mx-auto w-full">
-                        <GoogleCalendarConnect
-                            onSync={syncCalendar}
-                            lastSyncTime={lastSyncTime}
-                            isSyncing={isLoadingCalendar}
-                            isTokenExpired={isTokenExpired}
+                    {/* HERO: Próximo Evento */}
+                    <section className="max-w-2xl mx-auto w-full">
+                        <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
+                            {nextEvent?.isNow ? 'Acontecendo Agora' : 'Próximo'}
+                        </h2>
+                        <NextEventHero
+                            event={nextEvent}
+                            onEventClick={(eventId) => {
+                                console.log('[AgendaView] Event clicked:', eventId);
+                                // TODO: Open event detail modal
+                            }}
                         />
-                    </div>
+                    </section>
+
+                    {/* TIMELINE: Mais Tarde */}
+                    {restOfDay.length > 0 && (
+                        <section className="max-w-2xl mx-auto w-full">
+                            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
+                                Mais Tarde
+                            </h2>
+                            <AgendaTimeline
+                                events={restOfDay}
+                                onEventClick={(eventId) => {
+                                    console.log('[AgendaView] Event clicked:', eventId);
+                                }}
+                                onTaskToggle={async (taskId) => {
+                                    console.log('[AgendaView] Task toggled:', taskId);
+                                    // TODO: Toggle task completion
+                                    const { error } = await supabase
+                                        .from('work_items')
+                                        .update({ completed_at: new Date().toISOString() })
+                                        .eq('id', taskId);
+
+                                    if (!error) {
+                                        loadAllTasks();
+                                    }
+                                }}
+                            />
+                        </section>
+                    )}
+
+                    {/* WEEKLY VIEW: Próximos 7 Dias */}
+                    {weekEvents.length > 0 && (
+                        <section className="max-w-2xl mx-auto w-full">
+                            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
+                                Próximos Dias
+                            </h2>
+                            <WeeklyCalendarView
+                                events={weekEvents}
+                                onEventClick={(eventId) => {
+                                    console.log('[AgendaView] Week event clicked:', eventId);
+                                    // TODO: Open event detail modal
+                                }}
+                                onDayClick={(date) => {
+                                    console.log('[AgendaView] Day clicked:', date);
+                                    setSelectedDate(date);
+                                    // Scroll to top to show that day's events
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                            />
+                        </section>
+                    )}
 
                     {/* Priority Matrix - Collapsible/Fixed Header feel */}
-                    <div className="flex-none">
+                    <div className="flex-none max-w-4xl mx-auto w-full">
+                        <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
+                            Backlog
+                        </h2>
                         <PriorityMatrix
                             userId={userId}
                             tasks={mergedMatrixTasks}
                             isLoading={isLoading}
                             onRefresh={loadAllTasks}
-                        />
-                    </div>
-
-                    {/* Liquid Timeline */}
-                    <div className="flex-1">
-                        <DailyTimeline
-                            userId={userId}
-                            tasks={mergedTimelineTasks}
-                            isLoading={isLoading || isLoadingCalendar}
-                            onRefresh={loadAllTasks}
-                            selectedDate={selectedDate}
-                            onDateChange={setSelectedDate}
                         />
                     </div>
                 </main>

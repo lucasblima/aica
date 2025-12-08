@@ -86,17 +86,18 @@ export const atlasService = {
             }
 
             // 3. Map Atlas TaskInput to Supabase work_items schema
-            // IMPORTANT: Only send fields that exist in work_items table (see backend_architecture.md:14)
-            // Fields: id, title, description, due_date, start_date, priority, status, association_id, created_by, archived
+            // IMPORTANT: Only send fields that exist in work_items table
+            // Existing columns: id, user_id, title, description, is_completed, is_urgent, life_area_id, life_event_id,
+            //                   due_date, priority_quadrant, archived, completed_at, association_id, estimated_duration,
+            //                   scheduled_time, priority, created_at, updated_at
             const workItemData = {
                 title: taskInput.title,
                 description: taskInput.description || null,
                 priority: taskInput.priority || 'medium',
                 due_date: taskInput.target_date || null,
-                start_date: null,
-                status: 'pending',
                 association_id: null, // Optional for quick-add
-                archived: false
+                archived: false,
+                is_completed: false
             };
 
             // 4. Insert into Supabase

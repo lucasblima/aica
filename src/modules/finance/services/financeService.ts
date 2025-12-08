@@ -11,6 +11,42 @@ import type {
 // =====================================================
 
 /**
+ * Get all-time financial summary (todas as transações disponíveis)
+ */
+export async function getAllTimeSummary(userId: string): Promise<FinanceSummary> {
+    try {
+        // Fetch ALL transactions for user
+        const { data, error } = await supabase
+            .from('finance_transactions')
+            .select('*')
+            .eq('user_id', userId);
+
+        if (error) throw error;
+
+        const transactions = data || [];
+
+        // Calculate summary
+        const totalIncome = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        const totalExpenses = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        return {
+            currentBalance: totalIncome - totalExpenses,
+            totalIncome,
+            totalExpenses,
+            transactionCount: transactions.length
+        };
+    } catch (error) {
+        console.error('Error fetching all-time summary:', error);
+        throw error;
+    }
+}
+
+/**
  * Get current month's financial summary
  */
 export async function getCurrentMonthSummary(userId: string): Promise<FinanceSummary> {
@@ -129,6 +165,54 @@ export async function getBurnRate(userId: string): Promise<BurnRateData> {
         };
     } catch (error) {
         console.error('Error calculating burn rate:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get category breakdown for all time
+ */
+export async function getAllTimeCategoryBreakdown(userId: string): Promise<CategoryBreakdown[]> {
+    try {
+        // Fetch ALL expense transactions
+        const { data, error } = await supabase
+            .from('finance_transactions')
+            .select('category, amount, type')
+            .eq('user_id', userId)
+            .eq('type', 'expense'); // Only expenses for breakdown
+
+        if (error) throw error;
+
+        const transactions = data || [];
+
+        // Group by category
+        const categoryMap: { [key: string]: { amount: number; count: number } } = {};
+        let totalAmount = 0;
+
+        transactions.forEach(t => {
+            const amount = Number(t.amount);
+            if (!categoryMap[t.category]) {
+                categoryMap[t.category] = { amount: 0, count: 0 };
+            }
+            categoryMap[t.category].amount += amount;
+            categoryMap[t.category].count += 1;
+            totalAmount += amount;
+        });
+
+        // Convert to array and calculate percentages
+        const breakdown: CategoryBreakdown[] = Object.entries(categoryMap).map(([category, data]) => ({
+            category,
+            amount: data.amount,
+            percentage: totalAmount > 0 ? (data.amount / totalAmount) * 100 : 0,
+            transactionCount: data.count
+        }));
+
+        // Sort by amount descending
+        breakdown.sort((a, b) => b.amount - a.amount);
+
+        return breakdown;
+    } catch (error) {
+        console.error('Error fetching all-time category breakdown:', error);
         throw error;
     }
 }
