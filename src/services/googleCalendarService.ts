@@ -65,6 +65,7 @@ export async function fetchCalendarEvents(
         });
 
         if (!response.ok) {
+            // 401 = Token expirado
             if (response.status === 401 && retryCount === 0) {
                 console.warn('[fetchCalendarEvents] ⚠️ Token expirado (401) - tentando renovar e fazer retry...');
 
@@ -92,7 +93,22 @@ export async function fetchCalendarEvents(
                 console.error('[fetchCalendarEvents] ❌ Falha ao renovar token');
                 throw new Error('Token expirado. Reconecte ao Google Calendar.');
             }
-            console.error('[fetchCalendarEvents] ❌ Erro na resposta:', response.statusText);
+
+            // 403 = Permissões insuficientes
+            if (response.status === 403) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('[fetchCalendarEvents] ❌ Erro 403 - Permissões insuficientes:', errorData);
+
+                // Verificar se é problema de scopes
+                if (errorData.error?.message?.includes('insufficient') ||
+                    errorData.error?.message?.includes('permission')) {
+                    throw new Error('Permissões insuficientes. Reconecte ao Google Calendar para atualizar permissões.');
+                }
+
+                throw new Error('Acesso negado ao Google Calendar. Verifique suas permissões.');
+            }
+
+            console.error('[fetchCalendarEvents] ❌ Erro na resposta:', response.status, response.statusText);
             throw new Error(`Erro ao buscar eventos: ${response.statusText}`);
         }
 
