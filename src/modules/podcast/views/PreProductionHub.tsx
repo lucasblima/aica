@@ -43,6 +43,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Dossier, Topic, TopicCategory } from '../types';
 import { generateDossier } from '../services/geminiService';
+import { supabase } from '../../../services/supabaseClient';
 
 // Category Icons mapping
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -69,7 +70,7 @@ interface GuestData {
 interface PreProductionHubProps {
     guestData: GuestData;
     projectId?: string;
-    onGoToProduction: (dossier: Dossier, projectId: string) => void;
+    onGoToProduction: (dossier: Dossier, projectId: string, topics: Topic[]) => void;
     onBack: () => void;
 }
 
@@ -165,10 +166,72 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
         })
     );
 
-    // Start Deep Research on mount
+    // Load existing data or start research on mount
     useEffect(() => {
-        handleStartResearch();
-    }, []);
+        if (projectId) {
+            loadExistingData();
+        } else {
+            handleStartResearch();
+        }
+    }, [projectId]);
+
+    const loadExistingData = async () => {
+        if (!projectId) return;
+
+        try {
+            setIsResearching(true);
+
+            // Load existing topics from database
+            const { data: existingTopics, error: topicsError } = await supabase
+                .from('podcast_topics')
+                .select('*')
+                .eq('episode_id', projectId)
+                .order('order', { ascending: true });
+
+            if (topicsError) throw topicsError;
+
+            // Load existing categories
+            const { data: existingCategories, error: categoriesError } = await supabase
+                .from('podcast_topic_categories')
+                .select('*')
+                .eq('episode_id', projectId);
+
+            if (categoriesError) throw categoriesError;
+
+            // If we have existing topics, use them
+            if (existingTopics && existingTopics.length > 0) {
+                const loadedTopics: Topic[] = existingTopics.map(t => ({
+                    id: t.id,
+                    text: t.question_text,
+                    completed: t.completed || false,
+                    order: t.order || 0,
+                    archived: t.archived || false,
+                    categoryId: t.category || 'geral'
+                }));
+                setTopics(loadedTopics);
+
+                // Load categories if they exist
+                if (existingCategories && existingCategories.length > 0) {
+                    const loadedCategories: TopicCategory[] = existingCategories.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        color: c.color,
+                        episode_id: c.episode_id
+                    }));
+                    setCategories(loadedCategories);
+                }
+            } else {
+                // No existing topics - generate new ones from dossier or research
+                await handleStartResearch();
+            }
+        } catch (error) {
+            console.error('Error loading existing data:', error);
+            // Fallback to generating new research
+            await handleStartResearch();
+        } finally {
+            setIsResearching(false);
+        }
+    };
 
     const handleStartResearch = async () => {
         setIsResearching(true);
@@ -317,15 +380,91 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
         setIsChatLoading(false);
     };
 
-    const handleGoToProduction = () => {
-        if (dossier && projectId) {
+    const handleGoToProduction = async () => {
+        if (!dossier || !projectId) return;
+
+        try {
+            // Save dossier to podcast_episodes table
+            const { error } = await supabase
+                .from('podcast_episodes')
+                .update({
+                    biography: dossier.biography,
+                    controversies: dossier.controversies,
+                    ice_breakers: topics.filter(t => t.categoryId === 'quebra-gelo').map(t => t.text),
+                    technical_sheet: dossier.technicalSheet,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', projectId);
+
+            if (error) {
+                console.error('Error saving dossier:', error);
+                alert(`Erro ao salvar pesquisa: ${error.message}`);
+                return;
+            }
+
+            // Save topics to podcast_topics table
+            // First, delete existing topics for this episode
+            await supabase
+                .from('podcast_topics')
+                .delete()
+                .eq('episode_id', projectId);
+
+            // Insert new topics
+            const topicsToSave = topics.map((topic, index) => ({
+                episode_id: projectId,
+                category: topic.categoryId,
+                question_text: topic.text,
+                completed: topic.completed,
+                order: index,
+                archived: topic.archived || false
+            }));
+
+            if (topicsToSave.length > 0) {
+                const { error: topicsError } = await supabase
+                    .from('podcast_topics')
+                    .insert(topicsToSave);
+
+                if (topicsError) {
+                    console.error('Error saving topics:', topicsError);
+                    // Don't block production - just log the error
+                }
+            }
+
+            // Save categories to podcast_topic_categories table
+            await supabase
+                .from('podcast_topic_categories')
+                .delete()
+                .eq('episode_id', projectId);
+
+            const categoriesToSave = categories.map(category => ({
+                episode_id: projectId,
+                name: category.name,
+                color: category.color
+            }));
+
+            if (categoriesToSave.length > 0) {
+                const { error: categoriesError } = await supabase
+                    .from('podcast_topic_categories')
+                    .insert(categoriesToSave);
+
+                if (categoriesError) {
+                    console.error('Error saving categories:', categoriesError);
+                    // Don't block production - just log the error
+                }
+            }
+
             // Pass the ordered topics to production
             const productionDossier = {
                 ...dossier,
                 suggestedTopics: topics.filter(t => t.categoryId === 'geral').map(t => t.text),
                 iceBreakers: topics.filter(t => t.categoryId === 'quebra-gelo').map(t => t.text)
             };
-            onGoToProduction(productionDossier, projectId);
+
+            // Pass dossier, projectId, AND topics to orchestrator
+            onGoToProduction(productionDossier, projectId, topics);
+        } catch (error) {
+            console.error('Error in handleGoToProduction:', error);
+            alert('Erro ao salvar pesquisa. Tente novamente.');
         }
     };
 
@@ -484,7 +623,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 font-bold text-sm transition-colors ${activeTab === tab.id
-                                            ? 'text-amber-600 border-b-2 border-amber-500 bg-amber-50/50'
+                                            ? 'text-amber-600 border-b-2 border-amber-500 bg-ceramic-highlight'
                                             : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-[#F7F6F4]'
                                         }`}
                                 >
@@ -498,8 +637,8 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                         <div className="flex-1 overflow-y-auto p-4">
                             {isResearching ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center">
-                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mb-4 animate-pulse">
-                                        <Sparkles className="w-8 h-8 text-amber-500" />
+                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mb-4 animate-pulse">
+                                        <Sparkles className="w-6 h-6 text-amber-500" />
                                     </div>
                                     <h3 className="font-bold text-ceramic-text-primary mb-2">
                                         Deep Research em andamento...
@@ -663,7 +802,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 bg-black/5 backdrop-blur-[2px] flex items-center justify-center z-50 p-4"
                         onClick={() => setShowSourcesDialog(false)}
                     >
                         <motion.div
@@ -674,11 +813,11 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                             className="w-full max-w-md bg-ceramic-base rounded-2xl shadow-2xl p-6 space-y-4"
                         >
                             {hasLowContext && (
-                                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                                <div className="p-3 rounded-xl bg-white border border-ceramic-accent/20 flex items-start gap-3">
                                     <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="font-bold text-amber-800 text-sm">Poucas informações públicas</p>
-                                        <p className="text-xs text-amber-700">Adicione material para enriquecer a pesquisa</p>
+                                        <p className="font-bold text-ceramic-text-primary text-sm">Poucas informações públicas</p>
+                                        <p className="text-xs text-ceramic-text-secondary">Adicione material para enriquecer a pesquisa</p>
                                     </div>
                                 </div>
                             )}
@@ -686,7 +825,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                             <h3 className="text-lg font-bold text-ceramic-text-primary">Adicionar Fontes</h3>
 
                             <div className="space-y-3">
-                                <button className="w-full p-4 rounded-xl border-2 border-dashed border-[#D6D3CD] hover:border-amber-400 hover:bg-amber-50/50 transition-colors flex items-center gap-3 group">
+                                <button className="w-full p-4 rounded-xl border-2 border-dashed border-[#D6D3CD] hover:border-amber-400 hover:bg-ceramic-highlight transition-colors flex items-center gap-3 group">
                                     <div className="w-10 h-10 rounded-xl bg-[#EBE9E4] group-hover:bg-amber-100 flex items-center justify-center transition-colors">
                                         <FileUp className="w-5 h-5 text-ceramic-text-secondary group-hover:text-amber-600" />
                                     </div>

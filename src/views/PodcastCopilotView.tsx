@@ -82,7 +82,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         setView('dashboard');
     };
 
-    // Dashboard -> Preparation Mode (NOT Studio directly)
+    // Dashboard -> Select Existing Episode (NEW FLOW)
     const handleSelectEpisode = async (episodeId: string) => {
         setCurrentEpisodeId(episodeId);
         setCurrentProjectId(episodeId);
@@ -94,8 +94,15 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 .eq('id', episodeId)
                 .single();
 
-            if (episode && episode.biography) {
-                // Has dossier - go to preparation mode
+            if (!episode) {
+                console.error('Episode not found');
+                return;
+            }
+
+            // Always go to PreProduction for existing episodes
+            // PreProduction will handle loading existing data or generating new research
+            if (episode.biography) {
+                // Has dossier - pass it to PreProduction
                 const dossier: Dossier = {
                     guestName: episode.guest_name || 'Convidado',
                     episodeTheme: episode.episode_theme || 'Tema',
@@ -106,49 +113,39 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                     technicalSheet: episode.technical_sheet
                 };
                 setCurrentDossier(dossier);
-                setCurrentGuestData({
-                    name: episode.guest_name,
-                    theme: episode.episode_theme
-                });
-                setView('preparation'); // Changed: Go to PREP, not Studio
             } else {
-                // No dossier - start wizard or go to prep
-                setView('preparation'); // Changed: Always go to prep first
+                // No dossier yet - PreProduction will generate it
+                setCurrentDossier(null);
             }
+
+            // Set guest data for PreProduction
+            setCurrentGuestData({
+                name: episode.guest_name || 'Convidado',
+                theme: episode.episode_theme || 'Tema',
+                fullName: episode.guest_name || 'Convidado'
+            });
+
+            setView('preproduction');
         } catch (error) {
             console.error('Error loading episode:', error);
-            setView('preparation'); // Changed: Default to prep on error
+            alert('Erro ao carregar episódio. Tente novamente.');
         }
     };
 
-    // Dashboard -> Create New Episode -> Preparation Mode
+    // Dashboard -> Create New Episode -> Wizard (NEW FLOW)
     const handleCreateEpisode = async () => {
         if (!currentShowId) return;
-
-        const { data, error } = await supabase
-            .from('podcast_episodes')
-            .insert({
-                show_id: currentShowId,
-                title: 'Novo Episódio',
-                status: 'draft',
-                updated_at: new Date().toISOString() // Fix: Include updated_at
-            })
-            .select()
-            .single();
-
-        if (error) {
-            console.error('Error creating episode:', error);
-            alert(`Erro ao criar episódio: ${error.message}`);
-            return;
-        }
-
-        setCurrentEpisodeId(data.id);
-        setCurrentProjectId(data.id);
-        setView('preparation'); // Changed: Go directly to Prep, NOT wizard
+        // Don't create episode here - Wizard will do it
+        setView('wizard'); // FIX: Route to wizard instead of legacy preparation
     };
 
     // Wizard -> Pre-Production
-    const handleWizardComplete = async (wizardData: any) => {
+    const handleWizardComplete = async (wizardData: any, episodeId: string) => {
+        // Store episode ID
+        setCurrentEpisodeId(episodeId);
+        setCurrentProjectId(episodeId);
+
+        // Store guest data from wizard
         const guestData: GuestData = {
             name: wizardData.guestName,
             fullName: wizardData.confirmedProfile?.fullName,
@@ -165,14 +162,16 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     };
 
     // Pre-Production -> Production
-    const handleGoToProduction = (dossier: Dossier, projectId: string) => {
+    const handleGoToProduction = (dossier: Dossier, projectId: string, topics: Topic[]) => {
         setCurrentDossier(dossier);
         setCurrentProjectId(projectId);
+        setCurrentTopics(topics); // FIX: Populate topics from PreProduction
         setView('production');
     };
 
     // Production -> Post-Production
-    const handleFinishProduction = () => {
+    const handleFinishProduction = (duration: number) => {
+        setRecordingDuration(duration); // FIX: Store recording duration
         setView('postproduction');
     };
 
@@ -245,9 +244,10 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     }
 
     // 3. NEW: Guest Identification Wizard
-    if (view === 'wizard') {
+    if (view === 'wizard' && currentShowId) {
         return (
             <GuestIdentificationWizard
+                showId={currentShowId}
                 onComplete={handleWizardComplete}
                 onCancel={handleBackToDashboard}
             />
@@ -304,7 +304,19 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         );
     }
 
-    // 7. Legacy: Preparation Mode
+    // ================== DEPRECATED LEGACY VIEWS ==================
+    // These views are deprecated in favor of the new flow:
+    // Wizard → PreProduction → Production → PostProduction
+    //
+    // Legacy flow (DEPRECATED):
+    // - 'preparation' → PreparationMode (replaced by Wizard + PreProductionHub)
+    // - 'studio' → StudioMode (replaced by ProductionMode)
+    //
+    // If these views are accessed, they will fall through to the fallback view below.
+    // Consider removing these commented blocks after verifying the new flow works.
+
+    /*
+    // 7. DEPRECATED - Legacy: Preparation Mode
     if (view === 'preparation' && currentProjectId) {
         return (
             <StudioLayout
@@ -322,7 +334,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         );
     }
 
-    // 8. Legacy: Studio Mode
+    // 8. DEPRECATED - Legacy: Studio Mode
     if (view === 'studio' && currentDossier && currentProjectId) {
         return (
             <StudioLayout
@@ -349,6 +361,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             </StudioLayout>
         );
     }
+    */
 
     // Fallback
     return (
