@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Calendar, Brain, ChevronDown, ChevronUp, X, Sparkles, CheckCircle2, AlertCircle, Wallet, Heart, Users, Building2, Scale } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { updateUserProfile, getLifeEvents, createLifeEvent, getUserProfile } from '../services/supabaseService';
 
 interface LifeWeeksGridProps {
@@ -15,11 +16,11 @@ interface LifeEvent {
 }
 
 const MODULES = [
-    { id: 'finance', label: 'Finanças', icon: Wallet, color: 'bg-emerald-500' },
-    { id: 'health', label: 'Saúde', icon: Heart, color: 'bg-rose-500' },
-    { id: 'community', label: 'Associações', icon: Users, color: 'bg-blue-500' },
-    { id: 'education', label: 'Educação', icon: Building2, color: 'bg-amber-500' },
-    { id: 'legal', label: 'Jurídico', icon: Scale, color: 'bg-slate-500' },
+    { id: 'finance', label: 'Finanças', icon: Wallet, color: 'border-emerald-500' },
+    { id: 'health', label: 'Saúde', icon: Heart, color: 'border-rose-500' },
+    { id: 'community', label: 'Associações', icon: Users, color: 'border-blue-500' },
+    { id: 'education', label: 'Educação', icon: Building2, color: 'border-amber-500' },
+    { id: 'legal', label: 'Jurídico', icon: Scale, color: 'border-slate-500' },
 ];
 
 export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
@@ -432,28 +433,18 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                         </div>
                     </div>
 
-                    {/* Thick Progress Bar - INSET EFFECT */}
-                    <div className="relative h-4">
-                        <div className="absolute inset-0 ceramic-inset rounded-full overflow-hidden" style={{ backgroundColor: '#C8C3B8' }}>
-                            <div
-                                className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000"
-                                style={{ width: `${percentLived}%`, backgroundColor: '#4A453D' }}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
-                            </div>
-                        </div>
-
-                        {/* Current Week Marker - Outside overflow-hidden */}
-                        <div
-                            className="absolute top-0 bottom-0 w-1 bg-[#FFD700] shadow-lg z-10"
-                            style={{ left: `${percentLived}%` }}
-                        >
-                            <div className="absolute -top-1 -left-1 w-3 h-3 bg-[#FFD700] rounded-full shadow-md ring-2 ring-white"></div>
-                        </div>
+                    {/* Life Progress Bar - Canal fresado */}
+                    <div className="ceramic-life-track h-3">
+                        <motion.div
+                            className="ceramic-life-fill h-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percentLived}%` }}
+                            transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+                        />
                     </div>
 
                     <p className="text-xs text-ceramic-text-secondary mt-3 text-center">
-                        {formatter.format(remainingWeeks)} semanas restantes
+                        Momento Atual
                     </p>
                 </div>
 

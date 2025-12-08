@@ -1,6 +1,11 @@
 /**
  * Gemini Memory Service
  *
+ * Refatorado para usar backend seguro via Edge Functions
+ * - Remove API key exposta no frontend
+ * - Usa GeminiClient para chamadas autenticadas
+ * - Adiciona cache, retry e rate limiting automático
+ *
  * Handles AI-powered extraction of insights from messages:
  * 1. Sentiment analysis
  * 2. Trigger identification (psychological/contextual triggers)
@@ -10,10 +15,11 @@
  * 6. Embedding generation for semantic search
  */
 
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { GeminiClient } from '@/lib/gemini';
 import { ExtractedInsight } from '../types/memoryTypes';
 
-const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Initialize Gemini client
+const geminiClient = GeminiClient.getInstance();
 
 // ============================================================================
 // CONSTANTS
@@ -63,57 +69,27 @@ const LIFE_SUBJECTS = [
 /**
  * Extract structured insights from a message using Gemini
  * Returns sentiment, triggers, subjects, summary, and importance score
+ * Uses Edge Function backend for secure processing
  */
 export async function extractMessageInsights(
   messageText: string
 ): Promise<ExtractedInsight> {
   try {
-    const model = client.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-      ],
+    const response = await geminiClient.call({
+      action: 'extract_insights',
+      payload: {
+        messageText,
+        validSentiments: VALID_SENTIMENTS,
+        triggers: COMMON_TRIGGERS,
+        subjects: LIFE_SUBJECTS
+      },
+      model: 'fast' // Fast model sufficient for sentiment analysis
     });
 
-    const systemPrompt = `You are an AI that analyzes WhatsApp messages and extracts structured psychological and contextual insights.
-
-IMPORTANT: Respond ONLY with valid JSON, no markdown, no code blocks, no explanations.
-
-Analyze the following message and extract insights:
-
-Message: "${messageText}"
-
-Respond with EXACTLY this JSON structure:
-{
-  "sentiment": "positive" | "negative" | "neutral" | "mixed",
-  "sentiment_score": <number from -1 to 1>,
-  "triggers": [<array of identified triggers from this list: ${COMMON_TRIGGERS.join(', ')}>],
-  "subjects": [<array of life areas from this list: ${LIFE_SUBJECTS.join(', ')}>],
-  "summary": "<concise summary of message meaning, max 500 chars>",
-  "importance": <number from 0 to 1>,
-  "suggested_memory_tags": [<array of useful tags>]
-}
-
-Guidelines:
-- sentiment_score: -1 (very negative) to 1 (very positive)
-- triggers: Only include triggers that are clearly present in the message
-- subjects: Only include subjects that are clearly mentioned or implied
-- importance: 0=trivial mention, 0.5=moderate relevance, 1=critical/urgent
-- summary: Concise, focus on meaning not quoting, max 500 chars
-- tags: Useful categorization for searching/filtering later`;
-
-    const result = await model.generateContent(systemPrompt);
-    const response = result.response.text();
-
-    // Parse JSON response
-    const insight = parseInsightResponse(response);
+    // Parse and validate the response
+    const insight = parseInsightResponse(
+      typeof response.result === 'string' ? response.result : JSON.stringify(response.result)
+    );
     return insight;
   } catch (error) {
     console.error('Error extracting message insights:', error);
@@ -214,21 +190,23 @@ function validateInsight(data: any): ExtractedInsight {
 /**
  * Generate vector embedding for a text using Gemini Embedding API
  * Used for semantic similarity search in memories
+ * Uses Edge Function backend with latest embedding model (text-embedding-004)
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
-    const model = client.getGenerativeModel({
-      model: 'embedding-001',
+    const response = await geminiClient.call({
+      action: 'generate_embedding',
+      payload: { text },
+      model: 'embedding' // Uses text-embedding-004
     });
 
-    const result = await model.embedContent(text);
-    const embedding = result.embedding;
+    const embedding = response.result;
 
-    if (!embedding || !embedding.values || embedding.values.length === 0) {
-      throw new Error('Empty embedding received from Gemini');
+    if (!Array.isArray(embedding) || embedding.length === 0) {
+      throw new Error('Empty embedding received from backend');
     }
 
-    return embedding.values;
+    return embedding;
   } catch (error) {
     console.error('Error generating embedding:', error);
     throw new Error(
@@ -281,6 +259,7 @@ export interface DailyReportInput {
 
 /**
  * Generate AI insights for a daily report
+ * Uses Edge Function backend for secure processing
  */
 export async function generateDailyReportInsights(input: DailyReportInput): Promise<{
   summary: string;
@@ -290,54 +269,16 @@ export async function generateDailyReportInsights(input: DailyReportInput): Prom
   suggested_focus_areas: string[];
 }> {
   try {
-    const model = client.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+    const response = await geminiClient.call({
+      action: 'generate_daily_report',
+      payload: input,
+      model: 'smart' // Use smarter model for comprehensive analysis
     });
 
-    const memoriesText = input.memories
-      .map(
-        (m) =>
-          `- [${m.sentiment}] ${m.summary} (Triggers: ${m.triggers.join(', ') || 'none'})`
-      )
-      .join('\n');
-
-    const prompt = `Analyze this day's activity and generate insights:
-
-Date: ${input.date}
-Tasks: ${input.tasks_completed}/${input.tasks_total} completed
-Mood: ${input.mood || 'not recorded'}
-Key Interactions: ${input.contacts_interacted.join(', ') || 'none'}
-
-Memories & Interactions:
-${memoriesText}
-
-Generate a JSON response with:
-{
-  "summary": "<1-2 sentence summary of the day>",
-  "key_insights": ["<insight1>", "<insight2>", "<insight3>"],
-  "patterns_detected": ["<pattern1>", "<pattern2>"],
-  "ai_recommendations": ["<recommendation1>", "<recommendation2>"],
-  "suggested_focus_areas": ["<area1>", "<area2>"]
-}
-
-Focus on:
-- Patterns in mood and interactions
-- Productivity trends
-- Relationship dynamics
-- Stress levels
-- Opportunities for improvement`;
-
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
-
-    // Parse JSON response
-    let insights;
-    try {
-      insights = JSON.parse(response);
-    } catch {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      insights = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    }
+    // Parse the response
+    const insights = typeof response.result === 'string'
+      ? JSON.parse(response.result)
+      : response.result;
 
     if (!insights) {
       throw new Error('Failed to parse daily report response');
@@ -370,6 +311,7 @@ Focus on:
 /**
  * Extract context about a contact from their memories
  * Used for intelligent conversation suggestions
+ * Uses Edge Function backend for secure processing
  */
 export async function extractContactContext(
   contactName: string,
@@ -385,37 +327,18 @@ export async function extractContactContext(
   suggested_conversation_starters: string[];
 }> {
   try {
-    const model = client.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+    const response = await geminiClient.call({
+      action: 'extract_contact_context',
+      payload: {
+        contactName,
+        recentMemories
+      },
+      model: 'fast' // Fast model sufficient for context extraction
     });
 
-    const memoriesText = recentMemories
-      .map((m) => `[${m.sentiment}] ${m.summary}`)
-      .join('\n');
-
-    const prompt = `Analyze the interaction history with ${contactName} and provide context:
-
-Recent Interactions:
-${memoriesText}
-
-Generate JSON:
-{
-  "relationship_status": "close|friendly|professional|distant|conflicted",
-  "key_topics": ["topic1", "topic2"],
-  "sentiment_trend": "improving|stable|declining",
-  "suggested_conversation_starters": ["starter1", "starter2"]
-}`;
-
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
-
-    let context;
-    try {
-      context = JSON.parse(response);
-    } catch {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      context = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    }
+    const context = typeof response.result === 'string'
+      ? JSON.parse(response.result)
+      : response.result;
 
     if (!context) {
       return {
@@ -451,6 +374,7 @@ Generate JSON:
 
 /**
  * Extract suggested work items/tasks from a message
+ * Uses Edge Function backend for secure processing
  */
 export async function extractSuggestedWorkItems(
   messageText: string
@@ -462,36 +386,15 @@ export async function extractSuggestedWorkItems(
   }>
 > {
   try {
-    const model = client.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+    const response = await geminiClient.call({
+      action: 'extract_work_items',
+      payload: { messageText },
+      model: 'fast' // Fast model sufficient for task extraction
     });
 
-    const prompt = `Extract any suggested tasks or work items from this message:
-
-"${messageText}"
-
-Respond with JSON array:
-[
-  {
-    "title": "Task title",
-    "description": "Optional details",
-    "priority": "urgent|high|medium|low"
-  }
-]
-
-If no clear tasks, return empty array [].
-Only include explicit or strongly implied action items.`;
-
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
-
-    let items;
-    try {
-      items = JSON.parse(response);
-    } catch {
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
-      items = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-    }
+    const items = Array.isArray(response.result)
+      ? response.result
+      : (typeof response.result === 'string' ? JSON.parse(response.result) : []);
 
     if (!Array.isArray(items)) {
       return [];

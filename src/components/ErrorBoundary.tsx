@@ -121,7 +121,7 @@ export const ModuleErrorFallback: React.FC<{ moduleName: string; onReset?: () =>
 }) => (
   <div className="flex flex-col items-center justify-center min-h-[300px] p-8">
     <div className="text-center max-w-md">
-      <div className="text-6xl mb-4">⚠️</div>
+      <div className="text-4xl mb-4">⚠️</div>
       <h3 className="text-lg font-semibold text-gray-800 mb-2">
         Erro ao carregar {moduleName}
       </h3>
@@ -141,15 +141,15 @@ export const ModuleErrorFallback: React.FC<{ moduleName: string; onReset?: () =>
 );
 
 export const DataFetchErrorFallback: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => (
-  <div className="flex flex-col items-center justify-center p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+  <div className="flex flex-col items-center justify-center p-6 ceramic-tray border border-ceramic-accent/20 rounded-lg">
     <div className="text-center">
-      <p className="text-yellow-800 mb-3">
+      <p className="text-ceramic-text-primary font-bold mb-3">
         ⚠️ Erro ao carregar dados
       </p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
+          className="ceramic-card px-4 py-2 text-ceramic-text-primary rounded hover:shadow-lg transition"
         >
           Tentar novamente
         </button>

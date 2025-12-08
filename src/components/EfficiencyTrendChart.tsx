@@ -179,11 +179,10 @@ export const EfficiencyTrendChart: React.FC<EfficiencyTrendChartProps> = ({
 
   if (trends.length === 0) {
     return (
-      <div className="efficiency-trend-chart">
-        <div className="chart-empty">
-          <Calendar className="w-8 h-8 text-ceramic-text-secondary/30" />
-          <p>Sem dados de eficiência disponíveis</p>
-        </div>
+      <div className="h-48 flex items-center justify-center">
+        <p className="text-sm text-ceramic-text-secondary italic opacity-50">
+          A mente está silenciosa hoje.
+        </p>
       </div>
     );
   }

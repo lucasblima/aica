@@ -135,7 +135,7 @@ export const TeleprompterWindow: React.FC<TeleprompterWindowProps> = ({
                         <button
                             onClick={toggleAutoScroll}
                             className={`px-4 py-2 rounded-lg font-bold transition-colors flex items-center gap-2 ${isAutoScrolling
-                                    ? 'bg-amber-500 text-black'
+                                    ? 'bg-amber-100 border-2 border-amber-500 text-ceramic-text-primary'
                                     : 'bg-white/10 hover:bg-white/20'
                                 }`}
                         >

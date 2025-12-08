@@ -1,0 +1,110 @@
+[
+  {
+    "description": "Preparar apresentação para reunião de vendas Q4",
+    "expected_category": "Trabalho",
+    "priority": "high",
+    "estimated_time": "2 hours"
+  },
+  {
+    "description": "Marcar consulta com dentista para canal",
+    "expected_category": "Saúde",
+    "priority": "medium",
+    "estimated_time": "30 minutes"
+  },
+  {
+    "description": "Pagar conta de luz e água do mês",
+    "expected_category": "Finanças",
+    "priority": "high",
+    "estimated_time": "15 minutes"
+  },
+  {
+    "description": "Estudar para certificação AWS Solutions Architect",
+    "expected_category": "Educação",
+    "priority": "medium",
+    "estimated_time": "3 hours"
+  },
+  {
+    "description": "Comprar presente de aniversário para mãe",
+    "expected_category": "Pessoal",
+    "priority": "medium",
+    "estimated_time": "1 hour"
+  },
+  {
+    "description": "Organizar gaveta da cozinha",
+    "expected_category": "Outros",
+    "priority": "low",
+    "estimated_time": "45 minutes"
+  },
+  {
+    "description": "Revisar pull requests do time antes das 17h",
+    "expected_category": "Trabalho",
+    "priority": "urgent",
+    "estimated_time": "1.5 hours"
+  },
+  {
+    "description": "Agendar exame de sangue de rotina",
+    "expected_category": "Saúde",
+    "priority": "medium",
+    "estimated_time": "20 minutes"
+  },
+  {
+    "description": "Declarar imposto de renda 2024",
+    "expected_category": "Finanças",
+    "priority": "high",
+    "estimated_time": "4 hours"
+  },
+  {
+    "description": "Fazer curso de TypeScript avançado no Udemy",
+    "expected_category": "Educação",
+    "priority": "low",
+    "estimated_time": "10 hours"
+  },
+  {
+    "description": "Ligar para a família no fim de semana",
+    "expected_category": "Pessoal",
+    "priority": "medium",
+    "estimated_time": "30 minutes"
+  },
+  {
+    "description": "Arrumar prateleira que quebrou",
+    "expected_category": "Outros",
+    "priority": "low",
+    "estimated_time": "1 hour"
+  },
+  {
+    "description": "Enviar proposta comercial para novo cliente",
+    "expected_category": "Trabalho",
+    "priority": "urgent",
+    "estimated_time": "2 hours"
+  },
+  {
+    "description": "Renovar receita médica de medicamento contínuo",
+    "expected_category": "Saúde",
+    "priority": "high",
+    "estimated_time": "30 minutes"
+  },
+  {
+    "description": "Investir R$ 1000 em Tesouro Direto",
+    "expected_category": "Finanças",
+    "priority": "medium",
+    "estimated_time": "20 minutes"
+  },
+  {
+    "description": "Ler livro 'Clean Code' - Capítulos 5-8",
+    "expected_category": "Educação",
+    "priority": "low",
+    "estimated_time": "2 hours"
+  },
+  {
+    "description": "Planejar viagem de férias em julho",
+    "expected_category": "Pessoal",
+    "priority": "low",
+    "estimated_time": "1.5 hours"
+  },
+  {
+    "description": "Trocar lâmpada queimada da sala",
+    "expected_category": "Outros",
+    "priority": "medium",
+    "estimated_time": "10 minutes"
+  }
+]

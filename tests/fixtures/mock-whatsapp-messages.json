@@ -1,0 +1,102 @@
+[
+  {
+    "sender": "João Silva",
+    "message": "Reunião com o cliente foi muito estressante hoje. Eles querem tudo pronto até sexta-feira. Vou precisar fazer hora extra de novo.",
+    "timestamp": "2024-01-15T14:30:00Z",
+    "expected_sentiment": "negative",
+    "expected_sentiment_score": -0.6,
+    "expected_triggers": ["work_deadline", "personal_stress"],
+    "expected_subjects": ["work"],
+    "expected_importance": 0.8
+  },
+  {
+    "sender": "Maria Santos",
+    "message": "Parabéns pela promoção! Você merece muito, sempre foi dedicado e competente. Vamos comemorar!",
+    "timestamp": "2024-01-15T16:45:00Z",
+    "expected_sentiment": "positive",
+    "expected_sentiment_score": 0.9,
+    "expected_triggers": ["achievement", "celebration"],
+    "expected_subjects": ["work", "relationships"],
+    "expected_importance": 0.7
+  },
+  {
+    "sender": "Pedro Costa",
+    "message": "Preciso marcar aquela consulta médica que estava adiando. Dores de cabeça estão frequentes ultimamente.",
+    "timestamp": "2024-01-16T09:20:00Z",
+    "expected_sentiment": "neutral",
+    "expected_sentiment_score": -0.3,
+    "expected_triggers": ["health_concern"],
+    "expected_subjects": ["health"],
+    "expected_importance": 0.75
+  },
+  {
+    "sender": "Ana Paula",
+    "message": "Conta de luz veio R$ 450 esse mês! Muito alta. Preciso revisar os gastos de energia.",
+    "timestamp": "2024-01-16T11:00:00Z",
+    "expected_sentiment": "negative",
+    "expected_sentiment_score": -0.5,
+    "expected_triggers": ["financial_concern"],
+    "expected_subjects": ["finances"],
+    "expected_importance": 0.6
+  },
+  {
+    "sender": "Carlos Mendes",
+    "message": "Comecei o curso de Python ontem! Muito empolgado para aprender programação finalmente.",
+    "timestamp": "2024-01-16T19:30:00Z",
+    "expected_sentiment": "positive",
+    "expected_sentiment_score": 0.8,
+    "expected_triggers": ["learning_opportunity"],
+    "expected_subjects": ["learning", "personal_growth"],
+    "expected_importance": 0.65
+  },
+  {
+    "sender": "Lucia Fernandes",
+    "message": "Discussão com o chefe foi horrível. Ele não entende nada do projeto e fica exigindo coisas impossíveis.",
+    "timestamp": "2024-01-17T10:15:00Z",
+    "expected_sentiment": "negative",
+    "expected_sentiment_score": -0.8,
+    "expected_triggers": ["conflict", "work_stress"],
+    "expected_subjects": ["work", "relationships"],
+    "expected_importance": 0.85
+  },
+  {
+    "sender": "Roberto Alves",
+    "message": "Lembrete: reunião de família domingo às 12h na casa da vó. Não esqueça de levar o vinho!",
+    "timestamp": "2024-01-17T14:20:00Z",
+    "expected_sentiment": "neutral",
+    "expected_sentiment_score": 0.2,
+    "expected_triggers": ["social_interaction"],
+    "expected_subjects": ["family"],
+    "expected_importance": 0.4
+  },
+  {
+    "sender": "Fernanda Lima",
+    "message": "Finalmente consegui aquela vaga de emprego! Começo mês que vem. Estou nas nuvens!",
+    "timestamp": "2024-01-17T16:45:00Z",
+    "expected_sentiment": "positive",
+    "expected_sentiment_score": 1.0,
+    "expected_triggers": ["achievement", "major_decision"],
+    "expected_subjects": ["work", "career"],
+    "expected_importance": 0.95
+  },
+  {
+    "sender": "Marcelo Santos",
+    "message": "Meu cachorro está doente. Veterinário disse que pode ser sério. Muito preocupado.",
+    "timestamp": "2024-01-18T08:30:00Z",
+    "expected_sentiment": "negative",
+    "expected_sentiment_score": -0.7,
+    "expected_triggers": ["health_concern", "loss_or_grief"],
+    "expected_subjects": ["personal_growth", "family"],
+    "expected_importance": 0.8
+  },
+  {
+    "sender": "Juliana Rocha",
+    "message": "Academia estava lotada hoje, mas consegui treinar tudo. Me sentindo bem!",
+    "timestamp": "2024-01-18T19:00:00Z",
+    "expected_sentiment": "positive",
+    "expected_sentiment_score": 0.6,
+    "expected_triggers": [],
+    "expected_subjects": ["health", "wellness"],
+    "expected_importance": 0.3
+  }
+]

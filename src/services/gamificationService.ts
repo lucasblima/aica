@@ -157,6 +157,60 @@ const BADGES_CATALOG: Record<string, Badge> = {
     unlock_condition: 'reach_level_10',
     category: 'milestone',
   },
+  // ============================================================================
+  // FINANCE MODULE BADGES
+  // ============================================================================
+  'first_finance_upload': {
+    id: 'first_finance_upload',
+    name: 'Primeiro Extrato',
+    description: 'Envie seu primeiro extrato bancario',
+    icon: '📄',
+    rarity: 'common',
+    xp_reward: 25,
+    unlock_condition: 'upload_first_statement',
+    category: 'finance',
+  },
+  'budget_master': {
+    id: 'budget_master',
+    name: 'Mestre do Orcamento',
+    description: 'Crie um orcamento mensal completo',
+    icon: '💰',
+    rarity: 'rare',
+    xp_reward: 50,
+    unlock_condition: 'create_full_budget',
+    category: 'finance',
+  },
+  'saver_streak': {
+    id: 'saver_streak',
+    name: 'Sequencia de Economia',
+    description: 'Fique abaixo do orcamento por 3 meses seguidos',
+    icon: '🏆',
+    rarity: 'epic',
+    xp_reward: 100,
+    unlock_condition: 'budget_streak_3_months',
+    category: 'finance',
+  },
+  'financial_analyst': {
+    id: 'financial_analyst',
+    name: 'Analista Financeiro',
+    description: 'Analise 10 extratos com o agente de IA',
+    icon: '📊',
+    rarity: 'rare',
+    xp_reward: 75,
+    unlock_condition: 'analyze_10_statements',
+    category: 'finance',
+  },
+};
+
+// ============================================================================
+// FINANCE XP REWARDS
+// ============================================================================
+export const FINANCE_XP_REWARDS = {
+  upload_statement: 25,
+  categorize_transaction: 5,
+  chat_with_agent: 10,
+  create_budget: 20,
+  achieve_budget_goal: 100,
 };
 
 // ============================================================================

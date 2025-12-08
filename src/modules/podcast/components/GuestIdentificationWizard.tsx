@@ -15,6 +15,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { searchGuestProfile } from '../../../services/podcastProductionService';
+import { supabase } from '../../../services/supabaseClient';
 
 interface GuestProfile {
     name: string;
@@ -37,7 +38,8 @@ interface WizardData {
 }
 
 interface GuestIdentificationWizardProps {
-    onComplete: (data: WizardData) => void;
+    showId: string;
+    onComplete: (data: WizardData, episodeId: string) => void;
     onCancel: () => void;
 }
 
@@ -49,11 +51,13 @@ const LOCATIONS = [
 ];
 
 export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps> = ({
+    showId,
     onComplete,
     onCancel
 }) => {
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [isSearching, setIsSearching] = useState(false);
+    const [isCreatingEpisode, setIsCreatingEpisode] = useState(false);
     const [searchResults, setSearchResults] = useState<GuestProfile[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -138,16 +142,47 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
         setStep(3);
     };
 
-    // Step 3: Complete wizard
-    const handleComplete = () => {
-        onComplete(data);
+    // Step 3: Complete wizard - Create episode in Supabase
+    const handleComplete = async () => {
+        setIsCreatingEpisode(true);
+
+        try {
+            // Create episode with wizard data
+            const { data: episode, error } = await supabase
+                .from('podcast_episodes')
+                .insert({
+                    show_id: showId,
+                    title: `${data.confirmedProfile?.fullName || data.guestName}`,
+                    guest_name: data.confirmedProfile?.fullName || data.guestName,
+                    episode_theme: data.theme || data.confirmedProfile?.title || 'Tema a definir',
+                    status: 'draft',
+                    scheduled_date: data.scheduledDate || null,
+                    updated_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error creating episode:', error);
+                alert(`Erro ao criar episódio: ${error.message}`);
+                return;
+            }
+
+            // Call onComplete with wizard data AND episodeId
+            onComplete(data, episode.id);
+        } catch (error) {
+            console.error('Error in handleComplete:', error);
+            alert('Erro ao criar episódio. Tente novamente.');
+        } finally {
+            setIsCreatingEpisode(false);
+        }
     };
 
     const canProceedStep1 = data.guestName.trim().length > 0;
     const canProceedStep3 = data.confirmedProfile && (data.theme || data.themeMode === 'auto');
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -223,14 +258,14 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                         <motion.div
                                             initial={{ opacity: 0, y: -10 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3"
+                                            className="p-4 rounded-xl bg-white border border-ceramic-accent/20 flex items-start gap-3"
                                         >
                                             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                                             <div>
-                                                <p className="text-sm font-semibold text-amber-900">
+                                                <p className="text-sm font-semibold text-ceramic-text-primary">
                                                     Busca automática falhou
                                                 </p>
-                                                <p className="text-xs text-amber-700 mt-1">
+                                                <p className="text-xs text-ceramic-text-secondary mt-1">
                                                     {searchError}
                                                 </p>
                                                 <p className="text-xs text-amber-600 mt-1">
@@ -454,18 +489,28 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                 <div className="flex gap-3 pt-4">
                                     <button
                                         onClick={() => setStep(2)}
-                                        className="py-4 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all flex items-center gap-2"
+                                        disabled={isCreatingEpisode}
+                                        className="py-4 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all flex items-center gap-2 disabled:opacity-50"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                         Voltar
                                     </button>
                                     <button
                                         onClick={handleComplete}
-                                        disabled={!canProceedStep3}
+                                        disabled={!canProceedStep3 || isCreatingEpisode}
                                         className="flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
                                     >
-                                        <Sparkles className="w-5 h-5" />
-                                        Iniciar Pesquisa
+                                        {isCreatingEpisode ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                Criando Episódio...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Sparkles className="w-5 h-5" />
+                                                Iniciar Pesquisa
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </motion.div>

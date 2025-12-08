@@ -18,6 +18,9 @@ export default {
                 'ceramic-text-secondary': '#948D82',
                 'ceramic-accent': '#D97706', // Glazed Amber
                 'ceramic-highlight': '#E6D5C3',
+                'ceramic-positive': '#6B7B5C',  // Sage moss - para valores positivos
+                'ceramic-negative': '#9B4D3A',  // Terracotta queimado - para valores negativos
+                'ceramic-neutral': '#8B8579',   // Taupe médio - para valores neutros
             },
             animation: {
                 'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',

@@ -3,12 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Dependências do sistema
-RUN pip install --no-cache-dir \
-    fastapi \
-    uvicorn \
-    pymupdf4llm \
-
-    RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
