@@ -90,8 +90,9 @@ export const atlasService = {
                 priority: taskInput.priority || 'medium',
                 due_date: taskInput.target_date || null,
                 archived: false,
-                is_completed: false,
-                status: 'todo'
+                is_completed: false
+                // Note: status column exists in DB but Supabase cache may not be updated
+                // Default value 'todo' will be set by DB
             };
 
             // 4. Insert into Supabase
@@ -379,7 +380,7 @@ export const atlasService = {
     },
 
     /**
-     * Get categories
+     * Get categories - Creates default categories if none exist
      */
     getCategories: async (): Promise<Array<{
         id: string;
@@ -406,6 +407,26 @@ export const atlasService = {
                 throw new DatabaseError('Erro ao buscar categorias', error);
             }
 
+            // If no categories exist, create default ones
+            if (!data || data.length === 0) {
+                console.log('[atlasService] No categories found, creating defaults...');
+                await atlasService.createDefaultCategories();
+
+                // Fetch again after creating
+                const { data: newData, error: newError } = await supabase
+                    .from('task_categories')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('name', { ascending: true });
+
+                if (newError) {
+                    console.error('[atlasService] Failed to fetch categories after creation:', newError);
+                    throw new DatabaseError('Erro ao buscar categorias', newError);
+                }
+
+                return newData || [];
+            }
+
             return data || [];
         } catch (error) {
             if (error instanceof AuthenticationError || error instanceof DatabaseError) {
@@ -413,6 +434,53 @@ export const atlasService = {
             }
             console.error('[atlasService] Unexpected error fetching categories:', error);
             throw new DatabaseError('Erro inesperado ao buscar categorias', error);
+        }
+    },
+
+    /**
+     * Create default categories for current user
+     */
+    createDefaultCategories: async (): Promise<void> => {
+        try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                throw new AuthenticationError('Você precisa estar autenticado');
+            }
+
+            const defaultCategories = [
+                { name: 'Pessoal', color: '#3B82F6', icon: '👤' },
+                { name: 'Trabalho', color: '#10B981', icon: '💼' },
+                { name: 'Saúde', color: '#EF4444', icon: '❤️' },
+                { name: 'Educação', color: '#8B5CF6', icon: '📚' },
+                { name: 'Finanças', color: '#F59E0B', icon: '💰' },
+                { name: 'Casa', color: '#06B6D4', icon: '🏠' }
+            ];
+
+            const categoriesToInsert = defaultCategories.map(cat => ({
+                user_id: user.id,
+                name: cat.name,
+                color: cat.color,
+                icon: cat.icon,
+                is_system: true
+            }));
+
+            const { error } = await supabase
+                .from('task_categories')
+                .insert(categoriesToInsert);
+
+            if (error) {
+                console.error('[atlasService] Failed to create default categories:', error);
+                throw new DatabaseError('Erro ao criar categorias padrão', error);
+            }
+
+            console.log('[atlasService] Default categories created successfully');
+        } catch (error) {
+            if (error instanceof AuthenticationError || error instanceof DatabaseError) {
+                throw error;
+            }
+            console.error('[atlasService] Unexpected error creating default categories:', error);
+            throw new DatabaseError('Erro inesperado ao criar categorias', error);
         }
     }
 };

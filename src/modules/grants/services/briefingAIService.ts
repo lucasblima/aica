@@ -130,6 +130,15 @@ Retorne APENAS o JSON com os 8 campos.`;
       totalChars: JSON.stringify(data).length
     });
 
+    // Log detalhado de cada campo para debug
+    console.log('[Briefing AI] Campos extraídos:');
+    Object.entries(data).forEach(([key, value]) => {
+      const preview = typeof value === 'string'
+        ? value.substring(0, 100) + (value.length > 100 ? '...' : '')
+        : `[TIPO INVÁLIDO: ${typeof value}]`;
+      console.log(`  - ${key}: ${preview}`);
+    });
+
     return data as BriefingData;
   } catch (error) {
     console.error('Erro ao gerar briefing automático:', error);

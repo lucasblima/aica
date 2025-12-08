@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { statementService } from '../services/statementService';
 import { supabase } from '../../../services/supabaseClient';
 import type { FinanceStatement, FinanceTransaction } from '../types';
@@ -54,6 +54,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
   const [statements, setStatements] = useState<FinanceStatement[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
