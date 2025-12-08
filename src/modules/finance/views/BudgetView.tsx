@@ -5,11 +5,11 @@
  * Filosofia: "Simplicity is the ultimate sophistication"
  */
 
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, Lightbulb } from 'lucide-react';
-import { getAllTimeCategoryBreakdown } from '../services/financeService';
+import React, { useEffect, useState, useMemo } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { statementService } from '../services/statementService';
-import type { CategoryBreakdown, FinanceStatement } from '../types';
+import { supabase } from '../../../services/supabaseClient';
+import type { FinanceStatement, FinanceTransaction } from '../types';
 
 // =====================================================
 // Types
@@ -50,33 +50,40 @@ const CATEGORY_CONFIG: Record<string, { icon: string; label: string; defaultBudg
 
 export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
   const [loading, setLoading] = useState(true);
-  const [categoryData, setCategoryData] = useState<CategoryBreakdown[]>([]);
+  const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [statements, setStatements] = useState<FinanceStatement[]>([]);
-  const [currentBalance, setCurrentBalance] = useState(0);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
 
   useEffect(() => {
     loadData();
-  }, [userId]);
+  }, [userId, selectedYear, selectedMonth]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [breakdown, statementsData] = await Promise.all([
-        getAllTimeCategoryBreakdown(userId),
-        statementService.getStatements(userId),
-      ]);
 
-      setCategoryData(breakdown);
+      // Get first and last day of selected month
+      const firstDay = new Date(selectedYear, selectedMonth - 1, 1);
+      const lastDay = new Date(selectedYear, selectedMonth, 0);
+      const firstDayStr = firstDay.toISOString().split('T')[0];
+      const lastDayStr = lastDay.toISOString().split('T')[0];
+
+      // Fetch transactions for the selected month
+      const { data: txData, error: txError } = await supabase
+        .from('finance_transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('transaction_date', firstDayStr)
+        .lte('transaction_date', lastDayStr);
+
+      if (txError) throw txError;
+
+      // Fetch statements
+      const statementsData = await statementService.getStatements(userId);
+
+      setTransactions(txData || []);
       setStatements(statementsData);
-
-      // Get current balance from most recent statement
-      const completedStatements = statementsData
-        .filter(s => s.processing_status === 'completed')
-        .sort((a, b) => (b.statement_period_end || '').localeCompare(a.statement_period_end || ''));
-
-      if (completedStatements.length > 0) {
-        setCurrentBalance(completedStatements[0].closing_balance || 0);
-      }
     } catch (error) {
       console.error('Error loading budget data:', error);
     } finally {
@@ -84,21 +91,63 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
     }
   };
 
-  // Preparar dados de orçamento
-  const budgetCategories: CategoryBudget[] = Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-    const spent = categoryData.find(c => c.category === key)?.amount || 0;
-    return {
-      category: key,
-      icon: config.icon,
-      label: config.label,
-      spent,
-      budget: config.defaultBudget,
-      color: config.color,
-    };
-  });
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(selectedYear - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
+  };
+
+  // Navigate to next month
+  const goToNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(selectedYear + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
+  };
+
+  // Calculate category spending for selected month
+  const budgetCategories: CategoryBudget[] = useMemo(() => {
+    return Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
+      const spent = transactions
+        .filter(t => t.type === 'expense' && t.category === key)
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      return {
+        category: key,
+        icon: config.icon,
+        label: config.label,
+        spent,
+        budget: config.defaultBudget,
+        color: config.color,
+      };
+    });
+  }, [transactions]);
+
+  // Calculate month balance (income - expenses)
+  const monthIncome = transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const monthExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const monthBalance = monthIncome - monthExpenses;
 
   const totalBudget = budgetCategories.reduce((sum, cat) => sum + cat.budget, 0);
   const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
+
+  // Get month name
+  const monthName = new Date(selectedYear, selectedMonth - 1).toLocaleString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
 
   if (loading) {
     return (
@@ -112,7 +161,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-y-auto">
+    <div className="h-screen w-screen bg-white overflow-y-scroll">
       {/* Header */}
       {onBack && (
         <div className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-lg z-10 border-b border-gray-100">
@@ -131,34 +180,63 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       {/* Hero Section - Saldo Grande e Minimalista */}
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center max-w-2xl">
-          {/* Mês */}
-          <p className="text-sm uppercase tracking-[0.3em] text-gray-400 mb-8 font-medium">
-            {new Date().toLocaleString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
-          </p>
+          {/* Month Navigation */}
+          <div className="flex items-center justify-center gap-6 mb-8">
+            <button
+              onClick={goToPreviousMonth}
+              className="w-12 h-12 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+              aria-label="Mês anterior"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-600" />
+            </button>
 
-          {/* Saldo - Tipografia Heroica */}
+            <p className="text-sm uppercase tracking-[0.3em] text-gray-400 font-medium min-w-[200px]">
+              {monthName.toUpperCase()}
+            </p>
+
+            <button
+              onClick={goToNextMonth}
+              className="w-12 h-12 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+              aria-label="Próximo mês"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
+
+          {/* Balance - Typography Hero */}
           <h1 className="text-8xl md:text-9xl font-thin text-gray-900 mb-4 tracking-tight">
             {new Intl.NumberFormat('pt-BR', {
               style: 'currency',
               currency: 'BRL',
               minimumFractionDigits: 2,
-            }).format(currentBalance)}
+            }).format(monthBalance)}
           </h1>
 
-          {/* Subtítulo */}
+          {/* Subtitle - Month Summary */}
           <div className="mb-12">
             <div className="inline-block">
               <div className="h-px w-24 bg-gray-300 mb-6 mx-auto" />
-              <p className="text-lg text-gray-500 font-light">
-                disponível de{' '}
-                <span className="font-medium text-gray-700">
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  }).format(totalBudget)}
-                </span>{' '}
-                planejados
-              </p>
+              <div className="flex items-center justify-center gap-8 text-gray-500">
+                <div>
+                  <p className="text-xs uppercase tracking-wider mb-1">Receitas</p>
+                  <p className="text-lg font-medium text-green-600">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(monthIncome)}
+                  </p>
+                </div>
+                <div className="text-gray-300">|</div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider mb-1">Despesas</p>
+                  <p className="text-lg font-medium text-red-600">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(monthExpenses)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
