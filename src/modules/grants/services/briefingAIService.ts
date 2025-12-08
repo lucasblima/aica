@@ -3,7 +3,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { BriefingData } from '../types';
+import type { BriefingData, FormField } from '../types';
 
 /**
  * Contexto para geracao de briefing
@@ -15,6 +15,8 @@ export interface BriefingGenerationContext {
   editalText?: string;
   /** Conteudo do documento fonte (PDF, MD, TXT, DOCX) - PRINCIPAL FONTE DE DADOS */
   sourceDocumentContent?: string | null;
+  /** Campos dinâmicos do edital para extração */
+  formFields?: FormField[];
 }
 
 /**
@@ -23,11 +25,11 @@ export interface BriefingGenerationContext {
  * IMPORTANTE: Esta funcao EXTRAI informacoes do documento fonte fornecido.
  * NAO inventa dados se o documento nao for fornecido.
  *
- * @param context - Contexto incluindo o documento fonte
- * @returns Briefing extraido do documento
+ * @param context - Contexto incluindo o documento fonte e campos dinâmicos
+ * @returns Briefing extraido do documento (Record<string, string> para campos dinâmicos)
  * @throws Error se documento fonte nao for fornecido ou API falhar
  */
-export async function generateAutoBriefing(context: BriefingGenerationContext): Promise<BriefingData> {
+export async function generateAutoBriefing(context: BriefingGenerationContext): Promise<Record<string, string>> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('VITE_GEMINI_API_KEY não configurada');
@@ -55,6 +57,13 @@ export async function generateAutoBriefing(context: BriefingGenerationContext): 
       },
     });
 
+    // Construir estrutura JSON dinâmica baseada nos campos do edital
+    const formFields = context.formFields || [];
+    const jsonStructure = formFields.map(field => {
+      const hint = field.ai_prompt_hint || field.label;
+      return `  "${field.id}": "Extrair: ${hint}"`;
+    }).join(',\n');
+
     // System prompt focado em EXTRACAO, nao CRIACAO
     const systemPrompt = `Você é um especialista em análise de documentos para editais de fomento no Brasil.
 
@@ -68,23 +77,20 @@ REGRAS CRÍTICAS - SIGA RIGOROSAMENTE:
 5. Mantenha a linguagem original do documento
 6. Se o documento for incompleto, indique claramente o que está faltando
 7. Retorne APENAS o JSON, sem texto adicional
-
+${formFields.length > 0 ? `
 ESTRUTURA DO JSON:
 {
-  "company_context": "Extrair: nome da empresa, área de atuação, histórico, equipe, localização",
-  "project_description": "Extrair: objetivo do projeto, escopo, metodologia, etapas",
-  "technical_innovation": "Extrair: tecnologias utilizadas, diferenciais técnicos, patentes, P&D",
-  "market_differential": "Extrair: mercado-alvo, concorrentes, vantagens competitivas, modelo de negócio",
-  "team_expertise": "Extrair: membros da equipe, formação, experiência, currículo",
-  "expected_results": "Extrair: metas, indicadores, entregas, cronograma",
-  "sustainability": "Extrair: modelo de receita, projeções financeiras, sustentabilidade pós-fomento",
-  "additional_notes": "Extrair: parcerias, prêmios, certificações, informações complementares"
+${jsonStructure}
 }
 
+ATENÇÃO: Respeite os limites de caracteres de cada campo:
+${formFields.map(f => `- ${f.label}: máximo ${f.max_chars} caracteres${f.required ? ' (OBRIGATÓRIO)' : ''}`).join('\n')}
+` : ''}
 Se o campo não tiver informação no documento, retorne:
 "[Campo não encontrado no documento fonte. Por favor, preencha manualmente com informações sobre: <descrição do que é esperado>]"`;
 
     // User prompt com foco no documento fonte
+    const fieldCount = formFields.length;
     const userPrompt = hasSourceDocument
       ? `DOCUMENTO FONTE DO PROJETO:
 ---
@@ -99,7 +105,7 @@ ${context.editalText ? `- Requisitos do edital: ${context.editalText.substring(0
 INSTRUÇÃO: Analise o DOCUMENTO FONTE acima e EXTRAIA as informações para preencher cada campo do briefing.
 NÃO INVENTE nenhuma informação. Se algo não estiver no documento, indique claramente.
 
-Retorne APENAS o JSON com os 8 campos.`
+Retorne APENAS o JSON${fieldCount > 0 ? ` com os ${fieldCount} campos` : ''}.`
       : `INFORMAÇÕES DISPONÍVEIS (sem documento fonte completo):
 ${context.companyName ? `- Nome/contexto da empresa: ${context.companyName}` : ''}
 ${context.projectIdea ? `- Ideia do projeto: ${context.projectIdea}` : ''}
@@ -109,7 +115,7 @@ ATENÇÃO: Documento fonte não foi fornecido.
 Organize as poucas informações disponíveis nos campos apropriados.
 Para campos sem informação, retorne a mensagem padrão indicando preenchimento manual.
 
-Retorne APENAS o JSON com os 8 campos.`;
+Retorne APENAS o JSON${fieldCount > 0 ? ` com os ${fieldCount} campos` : ''}.`;
 
     const result = await model.generateContent([
       { text: systemPrompt },
@@ -139,7 +145,7 @@ Retorne APENAS o JSON com os 8 campos.`;
       console.log(`  - ${key}: ${preview}`);
     });
 
-    return data as BriefingData;
+    return data as Record<string, string>;
   } catch (error) {
     console.error('Erro ao gerar briefing automático:', error);
     throw new Error('Falha ao gerar briefing. Tente preencher manualmente.');

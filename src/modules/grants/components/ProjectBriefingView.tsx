@@ -21,7 +21,7 @@ import {
   FileCheck,
   AlertCircle
 } from 'lucide-react';
-import type { BriefingData } from '../types';
+import type { BriefingData, FormField } from '../types';
 import { generateAutoBriefing } from '../services/briefingAIService';
 import { processSourceDocument, validateDocumentType } from '../services/documentService';
 import { saveSourceDocument, removeSourceDocument } from '../services/grantService';
@@ -36,11 +36,12 @@ interface ProjectBriefingViewProps {
   projectId: string;
   projectName: string;
   opportunityTitle: string;
+  formFields: FormField[]; // Campos dinâmicos do edital
   editalTextContent?: string | null;
-  initialBriefing?: BriefingData;
-  onSave: (briefing: BriefingData) => Promise<void>;
+  initialBriefing?: Record<string, string>; // Agora é dinâmico
+  onSave: (briefing: Record<string, string>) => Promise<void>;
   onContinue: () => void;
-  onBack: () => void; // Função para voltar
+  onBack: () => void;
   sourceDocumentPath?: string | null;
   sourceDocumentType?: string | null;
   sourceDocumentContent?: string | null;
@@ -142,6 +143,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   projectId,
   projectName,
   opportunityTitle,
+  formFields,
   editalTextContent,
   initialBriefing,
   onSave,
@@ -151,21 +153,16 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   sourceDocumentType,
   sourceDocumentContent: initialSourceDocumentContent
 }) => {
-  // Inicializar briefing data com schema fixo
-  const [briefingData, setBriefingData] = useState<BriefingData>(() => {
-    return {
-      company_context: initialBriefing?.company_context || '',
-      project_description: initialBriefing?.project_description || '',
-      technical_innovation: initialBriefing?.technical_innovation || '',
-      market_differential: initialBriefing?.market_differential || '',
-      team_expertise: initialBriefing?.team_expertise || '',
-      expected_results: initialBriefing?.expected_results || '',
-      sustainability: initialBriefing?.sustainability || '',
-      additional_notes: initialBriefing?.additional_notes || ''
-    };
+  // Inicializar briefing data com campos dinâmicos do edital
+  const [briefingData, setBriefingData] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    formFields.forEach(field => {
+      initial[field.id] = initialBriefing?.[field.id] || '';
+    });
+    return initial;
   });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(BRIEFING_SECTIONS.length > 0 ? [BRIEFING_SECTIONS[0].id] : [])
+    new Set(formFields.length > 0 ? [formFields[0].id] : [])
   );
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -253,10 +250,12 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
         editalTitle: opportunityTitle,
         editalText: editalTextContent || undefined,
         // Contexto existente (se usuario ja preencheu algo)
-        companyName: briefingData.company_context || undefined,
-        projectIdea: briefingData.project_description || undefined,
+        companyName: briefingData[formFields[0]?.id] || undefined,
+        projectIdea: briefingData[formFields[1]?.id] || undefined,
         // DOCUMENTO FONTE - principal fonte de dados
-        sourceDocumentContent: sourceDocument.content
+        sourceDocumentContent: sourceDocument.content,
+        // CAMPOS DINÂMICOS do edital
+        formFields: formFields
       };
 
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -273,7 +272,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       setSavePending(true);
 
       // Expand all sections to show generated content
-      setExpandedSections(new Set(BRIEFING_SECTIONS.map(s => s.id)));
+      setExpandedSections(new Set(formFields.map(f => f.id)));
 
       setGenerationProgress('Briefing extraido com sucesso!');
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -386,14 +385,15 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
    * Calculate completion percentage
    */
   const calculateCompletion = (): number => {
-    const totalSections = BRIEFING_SECTIONS.length;
-    const completedSections = BRIEFING_SECTIONS.filter(section => {
-      const content = briefingData[section.id];
-      // Garantir que content é uma string antes de chamar .trim()
+    const requiredFields = formFields.filter(f => f.required);
+    if (requiredFields.length === 0) return 100;
+
+    const completedFields = requiredFields.filter(field => {
+      const content = briefingData[field.id];
       if (typeof content !== 'string') return false;
       return content.trim().length > 0;
     });
-    return Math.round((completedSections.length / totalSections) * 100);
+    return Math.round((completedFields.length / requiredFields.length) * 100);
   };
 
   /**
@@ -583,16 +583,16 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-6 py-8 pb-32 space-y-4">
-        {BRIEFING_SECTIONS.map((section, index) => {
-          const isExpanded = expandedSections.has(section.id);
-          const content = briefingData[section.id] || '';
+        {formFields.map((field, index) => {
+          const isExpanded = expandedSections.has(field.id);
+          const content = briefingData[field.id] || '';
           const charCount = content.length;
-          const meetsRequirement = content.trim().length > 0;
-          const exceedsMax = section.maxChars && charCount > section.maxChars;
+          const meetsRequirement = !field.required || content.trim().length > 0;
+          const exceedsMax = field.max_chars && charCount > field.max_chars;
 
           return (
             <motion.div
-              key={section.id}
+              key={field.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
@@ -600,21 +600,22 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
             >
               {/* Section Header */}
               <button
-                onClick={() => toggleSection(section.id)}
+                onClick={() => toggleSection(field.id)}
                 className="w-full p-6 flex items-center justify-between hover:bg-black/5 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <div className={`ceramic-concave w-12 h-12 flex items-center justify-center ${
                     meetsRequirement && !exceedsMax ? 'text-green-600' : 'text-ceramic-text-secondary'
                   }`}>
-                    {section.icon}
+                    <FileText className="w-5 h-5" />
                   </div>
                   <div className="text-left">
                     <h3 className="text-lg font-bold text-ceramic-text-primary">
-                      {section.title}
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
                     </h3>
                     <p className="text-sm text-ceramic-text-secondary">
-                      {section.help}
+                      {field.ai_prompt_hint || 'Preencha este campo com as informações solicitadas'}
                     </p>
                   </div>
                 </div>
@@ -626,7 +627,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                       }`}
                     >
                       {charCount}
-                      {section.maxChars && ` / ${section.maxChars}`}
+                      {field.max_chars && ` / ${field.max_chars}`}
                     </span>
                   )}
                   {isExpanded ? (
@@ -651,11 +652,11 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                       <div className="ceramic-tray p-4">
                         <textarea
                           value={content}
-                          onChange={e => updateField(section.id, e.target.value)}
-                          placeholder={section.placeholder}
+                          onChange={e => updateField(field.id, e.target.value)}
+                          placeholder={field.placeholder || `Digite aqui o conteúdo para ${field.label}`}
                           rows={8}
                           className="w-full bg-transparent text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none resize-none"
-                          maxLength={section.maxChars}
+                          maxLength={field.max_chars}
                         />
                       </div>
 
@@ -670,13 +671,13 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                         >
                           {meetsRequirement
                             ? 'Campo preenchido ✓'
-                            : 'Campo opcional'}
+                            : field.required ? 'Campo obrigatório' : 'Campo opcional'}
                         </span>
-                        {section.maxChars && charCount > section.maxChars * 0.9 && (
+                        {field.max_chars && charCount > field.max_chars * 0.9 && (
                           <span className={exceedsMax ? 'text-red-600' : 'text-orange-600'}>
                             {exceedsMax
-                              ? `Excedeu em ${charCount - section.maxChars} caracteres!`
-                              : `${section.maxChars - charCount} caracteres restantes`
+                              ? `Excedeu em ${charCount - field.max_chars} caracteres!`
+                              : `${field.max_chars - charCount} caracteres restantes`
                             }
                           </span>
                         )}

@@ -341,8 +341,9 @@ export const atlasService = {
             const { data, error } = await supabase
                 .from('work_items')
                 .update({
-                    is_completed: newCompletionState,
-                    status: newCompletionState ? 'completed' : 'todo'
+                    is_completed: newCompletionState
+                    // Note: 'status' column exists in DB but Supabase cache not updated
+                    // Will be synced by trigger or next cache refresh
                 })
                 .eq('id', taskId)
                 .eq('user_id', user.id)

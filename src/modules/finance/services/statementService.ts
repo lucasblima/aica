@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '../../../services/supabaseClient';
+import { csvParserService } from './csvParserService';
 import type {
   FinanceStatement,
   FinanceTransaction,
@@ -392,6 +393,152 @@ export const statementService = {
         ? { start: dates[0], end: dates[dates.length - 1] }
         : null,
     };
+  },
+
+  /**
+   * Process CSV statement with full validation
+   */
+  async processCSVStatement(
+    userId: string,
+    file: File
+  ): Promise<{ statement: FinanceStatement; transactionCount: number }> {
+    const startTime = Date.now();
+
+    try {
+      // 1. Parse CSV
+      console.log('[CSV] Parsing file:', file.name);
+      const parsed = await csvParserService.parseCSV(file);
+      console.log('[CSV] Parsed:', {
+        bank: parsed.bankName,
+        transactions: parsed.transactions.length,
+        period: `${parsed.periodStart} to ${parsed.periodEnd}`
+      });
+
+      // 2. Calculate file hash for deduplication
+      const fileHash = await this.calculateFileHash(file);
+
+      // 3. Check if statement already exists
+      const { data: existing } = await supabase
+        .from('finance_statements')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('file_hash', fileHash)
+        .single();
+
+      if (existing) {
+        throw new Error('Este extrato já foi importado anteriormente.');
+      }
+
+      // 4. Create statement record
+      const statement = await this.createStatement({
+        user_id: userId,
+        file_name: file.name,
+        file_size_bytes: file.size,
+        file_hash: fileHash,
+        source_type: 'csv',
+        source_bank: this.mapBankName(parsed.bankName),
+        file_format_version: parsed.sourceFormat,
+        bank_name: parsed.bankName,
+        account_type: parsed.accountType,
+        statement_period_start: parsed.periodStart,
+        statement_period_end: parsed.periodEnd,
+        opening_balance: parsed.openingBalance,
+        closing_balance: parsed.closingBalance,
+        currency: parsed.currency,
+        raw_data_snapshot: parsed.rawDataSnapshot,
+        processing_status: 'processing',
+        processing_started_at: new Date().toISOString(),
+        mime_type: 'text/csv'
+      });
+
+      console.log('[CSV] Statement created:', statement.id);
+
+      // 5. Insert transactions
+      const transactionsToInsert = parsed.transactions.map((tx, index) => ({
+        statement_id: statement.id,
+        user_id: userId,
+        transaction_date: tx.date,
+        description: tx.description,
+        raw_description: tx.description,
+        amount: tx.amount,
+        type: tx.type,
+        category: tx.category || 'other',
+        source_line_number: index + 2, // +2 for header + 0-index
+        created_at: new Date().toISOString()
+      }));
+
+      const { error: txError } = await supabase
+        .from('finance_transactions')
+        .insert(transactionsToInsert);
+
+      if (txError) {
+        console.error('[CSV] Transaction insert error:', txError);
+        // Mark statement as failed
+        await this.updateStatement(statement.id, {
+          processing_status: 'failed',
+          processing_error: txError.message
+        });
+        throw new Error('Erro ao inserir transações');
+      }
+
+      console.log('[CSV] Transactions inserted:', transactionsToInsert.length);
+
+      // 6. Calculate totals
+      const totalCredits = parsed.transactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const totalDebits = parsed.transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // 7. Update statement as completed
+      const updatedStatement = await this.updateStatement(statement.id, {
+        processing_status: 'completed',
+        processing_completed_at: new Date().toISOString(),
+        total_credits: totalCredits,
+        total_debits: totalDebits,
+        transaction_count: parsed.transactions.length
+      });
+
+      const duration = Date.now() - startTime;
+      console.log(`[CSV] Processing completed in ${duration}ms`);
+
+      return {
+        statement: updatedStatement,
+        transactionCount: parsed.transactions.length
+      };
+    } catch (error) {
+      console.error('[CSV] Processing error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Calculate file hash for deduplication
+   */
+  async calculateFileHash(file: File): Promise<string> {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  },
+
+  /**
+   * Map bank name to source_bank enum
+   */
+  mapBankName(bankName: string): string {
+    const mapping: Record<string, string> = {
+      'Nubank': 'nubank',
+      'Banco Inter': 'inter',
+      'Itaú': 'itau',
+      'Bradesco': 'bradesco',
+      'Caixa': 'caixa',
+      'Santander': 'santander',
+      'Banco do Brasil': 'banco_brasil'
+    };
+    return mapping[bankName] || 'other';
   },
 };
 
