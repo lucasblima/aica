@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Calendar, User, Clock, Settings, ChevronLeft, Mic2, Trash2 } from 'lucide-react';
+import { Plus, Calendar, User, Clock, Settings, ChevronLeft, Mic2, Trash2, Archive, ArchiveRestore, ArrowUpDown } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { PodcastShow } from '../types';
+
+type SortOption = 'created_desc' | 'created_asc' | 'scheduled_desc' | 'scheduled_asc' | 'season' | 'location';
 
 interface Episode {
     id: string;
@@ -10,6 +12,8 @@ interface Episode {
     status: 'draft' | 'in_production' | 'published' | 'archived';
     scheduled_date?: string;
     created_at: string;
+    season?: string;
+    location?: string;
 }
 
 interface PodcastDashboardProps {
@@ -31,11 +35,13 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
     const [episodes, setEpisodes] = useState<Episode[]>([]);
     const [loading, setLoading] = useState(true);
     const [showLoading, setShowLoading] = useState(true);
+    const [sortBy, setSortBy] = useState<SortOption>('created_desc');
+    const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
         loadShowData();
         loadEpisodes();
-    }, [showId]);
+    }, [showId, sortBy, showArchived]);
 
     const loadShowData = async () => {
         try {
@@ -58,11 +64,40 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
     const loadEpisodes = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
+
+            let query = supabase
                 .from('podcast_episodes')
-                .select('id, title, guest_name, status, scheduled_date, created_at')
-                .eq('show_id', showId)
-                .order('created_at', { ascending: false });
+                .select('id, title, guest_name, status, scheduled_date, created_at, season, location')
+                .eq('show_id', showId);
+
+            // Filter archived episodes
+            if (!showArchived) {
+                query = query.neq('status', 'archived');
+            }
+
+            // Apply sorting
+            switch (sortBy) {
+                case 'created_desc':
+                    query = query.order('created_at', { ascending: false });
+                    break;
+                case 'created_asc':
+                    query = query.order('created_at', { ascending: true });
+                    break;
+                case 'scheduled_desc':
+                    query = query.order('scheduled_date', { ascending: false, nullsFirst: false });
+                    break;
+                case 'scheduled_asc':
+                    query = query.order('scheduled_date', { ascending: true, nullsFirst: false });
+                    break;
+                case 'season':
+                    query = query.order('season', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
+                    break;
+                case 'location':
+                    query = query.order('location', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
+                    break;
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             setEpisodes(data || []);
@@ -88,9 +123,35 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
         }
     };
 
+    const handleArchiveEpisode = async (episodeId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const episode = episodes.find(ep => ep.id === episodeId);
+        if (!episode) return;
+
+        const isArchiving = episode.status !== 'archived';
+        const action = isArchiving ? 'arquivar' : 'desarquivar';
+
+        if (!window.confirm(`Tem certeza que deseja ${action} este episódio?`)) return;
+
+        try {
+            const { error } = await supabase
+                .from('podcast_episodes')
+                .update({
+                    status: isArchiving ? 'archived' : 'draft',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', episodeId);
+
+            if (error) throw error;
+            await loadEpisodes();
+        } catch (error) {
+            console.error('Error archiving episode:', error);
+        }
+    };
+
     const handleDeleteEpisode = async (episodeId: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!window.confirm('Tem certeza que deseja excluir este episódio?')) return;
+        if (!window.confirm('Tem certeza que deseja excluir este episódio permanentemente?')) return;
 
         try {
             const { error } = await supabase
@@ -174,7 +235,7 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                                         type="text"
                                         defaultValue={show?.title || fallbackTitle}
                                         onBlur={(e) => handleUpdateTitle(e.target.value)}
-                                        className="text-4xl font-black text-[#5C554B] tracking-tight mb-2 bg-transparent border-none focus:outline-none focus:ring-0 w-full p-0 placeholder-[#5C554B]/50"
+                                        className="text-2xl font-black text-ceramic-text-primary tracking-tight mb-2 bg-transparent border-none focus:outline-none focus:ring-0 w-full p-0 placeholder-[#5C554B]/50"
                                         placeholder="Nome do Podcast"
                                     />
                                     {show?.description && (
@@ -236,16 +297,51 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
             {/* Episodes List */}
             <div className="flex-1 overflow-y-auto px-6 pb-32">
                 <div className="max-w-6xl mx-auto">
-                    {/* Section Header */}
-                    <div className="flex items-center justify-between mb-4 sticky top-0 bg-ceramic-base py-3 z-10">
-                        <h2 className="text-xl font-bold text-[#5C554B]">Episódios</h2>
-                        <button
-                            onClick={onCreateEpisode}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#F0EFE9] hover:bg-white text-[#5C554B] font-bold text-sm rounded-xl transition-all shadow-[4px_4px_8px_rgba(163,158,145,0.2),-4px_-4px_8px_rgba(255,255,255,0.9)] hover:shadow-[6px_6px_12px_rgba(163,158,145,0.3),-6px_-6px_12px_rgba(255,255,255,1)] hover:scale-105"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Novo Episódio
-                        </button>
+                    {/* Section Header with Controls */}
+                    <div className="sticky top-0 bg-ceramic-base py-3 z-10 mb-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-xl font-bold text-[#5C554B]">Episódios</h2>
+                            <button
+                                onClick={onCreateEpisode}
+                                className="flex items-center gap-2 px-4 py-2 bg-[#F0EFE9] hover:bg-white text-[#5C554B] font-bold text-sm rounded-xl transition-all shadow-[4px_4px_8px_rgba(163,158,145,0.2),-4px_-4px_8px_rgba(255,255,255,0.9)] hover:shadow-[6px_6px_12px_rgba(163,158,145,0.3),-6px_-6px_12px_rgba(255,255,255,1)] hover:scale-105"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Novo Episódio
+                            </button>
+                        </div>
+
+                        {/* Sort and Filter Controls */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                            {/* Sort Dropdown */}
+                            <div className="flex items-center gap-2">
+                                <ArrowUpDown className="w-4 h-4 text-[#948D82]" />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                                    className="text-sm px-3 py-2 rounded-lg bg-[#F7F6F4] text-[#5C554B] font-medium border-none focus:outline-none focus:ring-2 focus:ring-amber-500/20 cursor-pointer shadow-[inset_2px_2px_4px_rgba(163,158,145,0.1)]"
+                                >
+                                    <option value="created_desc">Mais Recentes</option>
+                                    <option value="created_asc">Mais Antigos</option>
+                                    <option value="scheduled_desc">Data Entrevista ↓</option>
+                                    <option value="scheduled_asc">Data Entrevista ↑</option>
+                                    <option value="season">Por Temporada</option>
+                                    <option value="location">Por Estúdio</option>
+                                </select>
+                            </div>
+
+                            {/* Show Archived Toggle */}
+                            <button
+                                onClick={() => setShowArchived(!showArchived)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    showArchived
+                                        ? 'bg-amber-100 text-amber-700 shadow-[inset_2px_2px_4px_rgba(217,119,6,0.2)]'
+                                        : 'bg-[#F7F6F4] text-[#948D82] hover:bg-[#EBE9E4] shadow-[2px_2px_4px_rgba(163,158,145,0.1)]'
+                                }`}
+                            >
+                                {showArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                                {showArchived ? 'Ocultar Arquivados' : 'Mostrar Arquivados'}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Loading State */}
@@ -298,7 +394,7 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                                                 {episode.title || 'Sem título'}
                                             </h3>
 
-                                            <div className="flex items-center gap-4 text-xs text-[#948D82]">
+                                            <div className="flex items-center gap-4 text-xs text-[#948D82] flex-wrap">
                                                 {episode.guest_name && (
                                                     <div className="flex items-center gap-1">
                                                         <User className="w-3.5 h-3.5" />
@@ -315,6 +411,20 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                                                     </div>
                                                 )}
 
+                                                {episode.season && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar className="w-3.5 h-3.5" />
+                                                        <span>T{episode.season}</span>
+                                                    </div>
+                                                )}
+
+                                                {episode.location && (
+                                                    <div className="flex items-center gap-1 text-amber-600">
+                                                        <Mic2 className="w-3.5 h-3.5" />
+                                                        <span>{episode.location}</span>
+                                                    </div>
+                                                )}
+
                                                 <div className="text-[#B0ADA6]">
                                                     Criado {new Date(episode.created_at).toLocaleDateString('pt-BR')}
                                                 </div>
@@ -326,14 +436,34 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                                             {getStatusLabel(episode.status)}
                                         </div>
 
-                                        {/* Delete Button (Hover) */}
-                                        <button
-                                            onClick={(e) => handleDeleteEpisode(episode.id, e)}
-                                            className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                            title="Excluir episódio"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        {/* Action Buttons (Hover) */}
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                            {/* Archive/Unarchive Button */}
+                                            <button
+                                                onClick={(e) => handleArchiveEpisode(episode.id, e)}
+                                                className={`p-2 rounded-lg transition-all ${
+                                                    episode.status === 'archived'
+                                                        ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+                                                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                                title={episode.status === 'archived' ? 'Desarquivar episódio' : 'Arquivar episódio'}
+                                            >
+                                                {episode.status === 'archived' ? (
+                                                    <ArchiveRestore className="w-4 h-4" />
+                                                ) : (
+                                                    <Archive className="w-4 h-4" />
+                                                )}
+                                            </button>
+
+                                            {/* Delete Button */}
+                                            <button
+                                                onClick={(e) => handleDeleteEpisode(episode.id, e)}
+                                                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                title="Excluir episódio permanentemente"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
