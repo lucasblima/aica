@@ -106,7 +106,7 @@ export function useGoogleCalendarEvents(
         } finally {
             setIsLoading(false);
         }
-    }, [isConnected, startDate, endDate]);
+    }, [isConnected, startDate?.getTime(), endDate?.getTime()]);
 
     // Auto-sync quando conectado
     useEffect(() => {
