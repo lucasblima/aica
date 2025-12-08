@@ -19,7 +19,6 @@ import { HeaderGlobal } from '../components/HeaderGlobal';
 import { CalendarSyncIndicator } from '../components/CalendarSyncIndicator';
 import { NextEventHero } from '../components/NextEventHero';
 import { AgendaTimeline } from '../components/AgendaTimeline';
-import { WeeklyCalendarView } from '../components/WeeklyCalendarView';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components/NextTwoDaysView';
 import { Task, Quadrant } from '../../types';
 import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
@@ -267,32 +266,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             restOfDay: combinedRest
         };
     }, [calendarEvents, timelineTasks]);
-
-    // Prepare week events (next 7 days excluding today)
-    const weekEvents = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const weekEnd = new Date(today);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-
-        return calendarEvents
-            .filter(event => {
-                const eventDate = new Date(event.startTime);
-                return eventDate >= tomorrow && eventDate < weekEnd;
-            })
-            .map(event => ({
-                id: event.id,
-                title: event.title,
-                startTime: event.startTime,
-                endTime: event.endTime,
-                description: event.description,
-                location: event.location,
-                attendees: event.attendees,
-                organizer: event.organizer
-            }));
-    }, [calendarEvents]);
 
     // Prepare next 2 days events with categories
     const nextTwoDaysEvents = useMemo(() => {
@@ -674,28 +647,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                     if (!error) {
                                         loadAllTasks();
                                     }
-                                }}
-                            />
-                        </section>
-                    )}
-
-                    {/* WEEKLY VIEW: Próximos 7 Dias */}
-                    {weekEvents.length > 0 && (
-                        <section className="max-w-2xl mx-auto w-full">
-                            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
-                                Próximos Dias
-                            </h2>
-                            <WeeklyCalendarView
-                                events={weekEvents}
-                                onEventClick={(eventId) => {
-                                    console.log('[AgendaView] Week event clicked:', eventId);
-                                    // TODO: Open event detail modal
-                                }}
-                                onDayClick={(date) => {
-                                    console.log('[AgendaView] Day clicked:', date);
-                                    setSelectedDate(date);
-                                    // Scroll to top to show that day's events
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
                             />
                         </section>

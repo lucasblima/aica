@@ -157,12 +157,12 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-ceramic-base rounded-3xl shadow-2xl"
+        className="w-full max-w-4xl my-6 bg-ceramic-base rounded-3xl shadow-2xl flex flex-col max-h-[calc(100vh-3rem)]"
       >
         {/* Header */}
         <div className="sticky top-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 p-6">
@@ -238,7 +238,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
             {currentStep === 'upload' && (
               <motion.div
@@ -484,7 +484,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-ceramic-base border-t border-ceramic-text-secondary/10 p-6 flex items-center justify-between">
+        <div className="flex-shrink-0 bg-ceramic-base border-t border-ceramic-text-secondary/10 p-6 flex items-center justify-between">
           <button
             onClick={currentStep === 'upload' ? onClose : handleBack}
             className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"

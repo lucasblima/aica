@@ -6,10 +6,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical } from 'lucide-react';
 import { EditalSetupWizard } from '../components/EditalSetupWizard';
+import { EditalDetailView } from '../components/EditalDetailView';
 import { ProjectBriefingView } from '../components/ProjectBriefingView';
 import { ProposalGeneratorView } from '../components/ProposalGeneratorView';
 import {
   createOpportunity,
+  listOpportunities,
+  getOpportunity,
   createProject,
   getProject,
   listProjects,
@@ -20,7 +23,11 @@ import {
   updateProjectStatus,
   archiveProject,
   unarchiveProject,
-  deleteArchivedProject
+  deleteArchivedProject,
+  archiveOpportunity,
+  unarchiveOpportunity,
+  deleteArchivedOpportunity,
+  countActiveProjects
 } from '../services/grantService';
 import { generateFieldContent } from '../services/grantAIService';
 import type {
@@ -31,7 +38,12 @@ import type {
   CreateOpportunityPayload
 } from '../types';
 
-type ModuleView = 'dashboard' | 'setup' | 'briefing' | 'generation';
+type ModuleView = 'dashboard' | 'edital-detail' | 'setup' | 'briefing' | 'generation';
+
+// Tipo estendido de oportunidade com contagem de projetos
+type OpportunityWithCount = GrantOpportunity & {
+  projectCount?: number;
+};
 
 interface GrantsModuleViewProps {
   onBack: () => void;
@@ -43,6 +55,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
 
   // Data state
+  const [opportunities, setOpportunities] = useState<OpportunityWithCount[]>([]);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<OpportunityWithCount | null>(null);
   const [projects, setProjects] = useState<GrantProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<GrantProject | null>(null);
   const [currentOpportunity, setCurrentOpportunity] = useState<GrantOpportunity | null>(null);
@@ -56,18 +70,50 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
    * Load projects on mount
    */
   useEffect(() => {
-    loadProjects();
+    loadOpportunitiesData();
   }, []);
 
   /**
-   * Load all projects for the current user
+   * Load all opportunities (editais) with project counts
    */
-  const loadProjects = async () => {
+  const loadOpportunitiesData = async () => {
     try {
-      const data = await listProjects({});
+      setIsLoading(true);
+      const data = await listOpportunities({});
+
+      // Carregar contagem de projetos para cada oportunidade
+      const dataWithCounts: OpportunityWithCount[] = await Promise.all(
+        data.map(async (opp) => {
+          try {
+            const count = await countActiveProjects(opp.id);
+            return { ...opp, projectCount: count };
+          } catch (error) {
+            console.error(`Error counting projects for ${opp.id}:`, error);
+            return { ...opp, projectCount: 0 };
+          }
+        })
+      );
+
+      setOpportunities(dataWithCounts);
+    } catch (error) {
+      console.error('Error loading opportunities:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Load projects for a specific opportunity
+   */
+  const loadProjectsForOpportunity = async (opportunityId: string) => {
+    try {
+      setIsLoading(true);
+      const data = await listProjects({ opportunity_id: opportunityId });
       setProjects(data);
     } catch (error) {
       console.error('Error loading projects:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -120,8 +166,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       setCurrentView('briefing');
       setIsSetupModalOpen(false);
 
-      // Refresh projects list
-      await loadProjects();
+      // Refresh opportunities list
+      await loadOpportunitiesData();
     } catch (error) {
       console.error('Error creating opportunity:', error);
       throw error;
@@ -253,7 +299,9 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
 
     try {
       await archiveProject(projectId);
-      await loadProjects(); // Refresh list
+      if (selectedOpportunity) {
+        await loadProjectsForOpportunity(selectedOpportunity.id); // Refresh list
+      }
     } catch (error) {
       console.error('Error archiving project:', error);
       alert('Erro ao arquivar projeto');
@@ -266,7 +314,9 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const handleUnarchiveProject = async (projectId: string) => {
     try {
       await unarchiveProject(projectId);
-      await loadProjects(); // Refresh list
+      if (selectedOpportunity) {
+        await loadProjectsForOpportunity(selectedOpportunity.id); // Refresh list
+      }
     } catch (error) {
       console.error('Error unarchiving project:', error);
       alert('Erro ao restaurar projeto');
@@ -279,13 +329,15 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const handleDeleteProject = async (projectId: string, pdfPath?: string) => {
     if (!confirm(
       'ATENÇÃO: Esta ação é PERMANENTE e NÃO pode ser desfeita.\n\n' +
-      'O projeto e o PDF do edital serão deletados permanentemente.\n\n' +
+      'O projeto será deletado permanentemente.\n\n' +
       'Tem certeza que deseja continuar?'
     )) return;
 
     try {
       await deleteArchivedProject(projectId, pdfPath);
-      await loadProjects(); // Refresh list
+      if (selectedOpportunity) {
+        await loadProjectsForOpportunity(selectedOpportunity.id); // Refresh list
+      }
     } catch (error) {
       console.error('Error deleting project:', error);
       alert(error instanceof Error ? error.message : 'Erro ao deletar projeto');
@@ -295,14 +347,111 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   /**
    * Handle back navigation
    */
+  /**
+   * Handle navigation back through hierarchy
+   * Dashboard ← Edital Detail ← Briefing ← Generation
+   */
   const handleBack = () => {
     if (currentView === 'generation') {
       setCurrentView('briefing');
     } else if (currentView === 'briefing') {
-      setCurrentView('dashboard');
+      setCurrentView('edital-detail');
       setSelectedProject(null);
+    } else if (currentView === 'edital-detail') {
+      setCurrentView('dashboard');
+      setSelectedOpportunity(null);
+      setProjects([]);
     } else {
       onBack();
+    }
+  };
+
+  /**
+   * Handle selecting an edital from dashboard
+   */
+  const handleSelectOpportunity = async (opportunity: GrantOpportunity) => {
+    setSelectedOpportunity(opportunity);
+    setCurrentOpportunity(opportunity);
+    await loadProjectsForOpportunity(opportunity.id);
+    setCurrentView('edital-detail');
+  };
+
+  /**
+   * Handle creating a new project for the selected edital
+   */
+  const handleCreateProjectForEdital = async () => {
+    if (!selectedOpportunity) return;
+
+    const projectName = prompt('Nome do projeto:');
+    if (!projectName) return;
+
+    try {
+      const newProject = await createProject({
+        opportunity_id: selectedOpportunity.id,
+        project_name: projectName
+      });
+
+      await loadProjectsForOpportunity(selectedOpportunity.id);
+      handleSelectProjectFromEdital(newProject);
+    } catch (error) {
+      console.error('Error creating project:', error);
+      alert('Erro ao criar projeto. Tente novamente.');
+    }
+  };
+
+  /**
+   * Handle selecting a project from edital detail view
+   */
+  const handleSelectProjectFromEdital = async (project: GrantProject) => {
+    setSelectedProject(project);
+    await loadProjectDetails(project.id);
+    setCurrentView('briefing');
+  };
+
+  /**
+   * Handle archive opportunity (edital)
+   */
+  const handleArchiveOpportunity = async (opportunityId: string) => {
+    if (!confirm('Tem certeza que deseja arquivar este edital?')) return;
+
+    try {
+      await archiveOpportunity(opportunityId);
+      await loadOpportunitiesData(); // Refresh list
+    } catch (error) {
+      console.error('Error archiving opportunity:', error);
+      alert('Erro ao arquivar edital');
+    }
+  };
+
+  /**
+   * Handle unarchive opportunity (edital)
+   */
+  const handleUnarchiveOpportunity = async (opportunityId: string) => {
+    try {
+      await unarchiveOpportunity(opportunityId);
+      await loadOpportunitiesData(); // Refresh list
+    } catch (error) {
+      console.error('Error unarchiving opportunity:', error);
+      alert('Erro ao restaurar edital');
+    }
+  };
+
+  /**
+   * Handle delete archived opportunity (edital)
+   */
+  const handleDeleteOpportunity = async (opportunityId: string) => {
+    if (!confirm(
+      'ATENÇÃO: Esta ação é PERMANENTE e NÃO pode ser desfeita.\n\n' +
+      'O edital, seu PDF e TODOS OS PROJETOS relacionados serão deletados permanentemente.\n\n' +
+      'Tem certeza que deseja continuar?'
+    )) return;
+
+    try {
+      await deleteArchivedOpportunity(opportunityId);
+      await loadOpportunitiesData(); // Refresh list
+    } catch (error) {
+      console.error('Error deleting opportunity:', error);
+      alert(error instanceof Error ? error.message : 'Erro ao deletar edital');
     }
   };
 
@@ -321,16 +470,34 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   // Render current view
   return (
     <>
+      {/* Edital Detail View */}
+      {currentView === 'edital-detail' && selectedOpportunity && (
+        <EditalDetailView
+          opportunity={selectedOpportunity}
+          projects={projects}
+          onBack={handleBack}
+          onCreateProject={handleCreateProjectForEdital}
+          onSelectProject={handleSelectProjectFromEdital}
+          onArchiveProject={handleArchiveProject}
+          onUnarchiveProject={handleUnarchiveProject}
+          onDeleteProject={handleDeleteProject}
+        />
+      )}
+
       {/* Briefing View */}
       {currentView === 'briefing' && selectedProject && currentOpportunity && (
         <ProjectBriefingView
           projectId={selectedProject.id}
+          projectName={selectedProject.project_name}
           opportunityTitle={currentOpportunity.title}
+          editalTextContent={currentOpportunity.edital_text_content}
           initialBriefing={currentBriefing}
           onSave={handleSaveBriefing}
           onContinue={handleContinueToGeneration}
+          onBack={handleBack}
           sourceDocumentPath={selectedProject.source_document_path}
           sourceDocumentType={selectedProject.source_document_type}
+          sourceDocumentContent={selectedProject.source_document_content}
         />
       )}
 
@@ -349,7 +516,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         />
       )}
 
-      {/* Dashboard View (placeholder - will be enhanced) */}
+      {/* Dashboard View - List of Editais */}
       {currentView === 'dashboard' && (
         <div className="min-h-screen bg-ceramic-base p-6">
           <div className="max-w-6xl mx-auto">
@@ -380,117 +547,174 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
               </button>
             </div>
 
-            {/* Projects List */}
-            {projects.length > 0 ? (
-              <div className="grid gap-4">
-                {projects.map((project) => {
-                  const isArchived = !!project.archived_at;
+            {/* Active Opportunities List */}
+            {opportunities.filter(o => !o.archived_at).length > 0 ? (
+              <div className="grid gap-4 mb-8">
+                {opportunities
+                  .filter(o => !o.archived_at)
+                  .map((opportunity) => {
+                    const deadline = new Date(opportunity.submission_deadline);
+                    const today = new Date();
+                    const daysRemaining = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    const isExpired = daysRemaining < 0;
 
-                  return (
-                    <div
-                      key={project.id}
-                      className={`ceramic-card p-6 ${isArchived ? 'opacity-60' : ''}`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-bold text-ceramic-text-primary">
-                              {project.project_name}
-                            </h3>
-                            {isArchived && (
-                              <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
-                                Arquivado
-                              </span>
+                    return (
+                      <div
+                        key={opportunity.id}
+                        className="ceramic-card p-6"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div
+                            className="flex-1 cursor-pointer"
+                            onClick={() => handleSelectOpportunity(opportunity)}
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-lg font-bold text-ceramic-text-primary">
+                                {opportunity.title}
+                              </h3>
+                              {isExpired && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">
+                                  Expirado
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-ceramic-text-secondary mb-1">
+                              {opportunity.funding_agency}
+                              {opportunity.program_name && ` • ${opportunity.program_name}`}
+                            </p>
+                            {opportunity.edital_number && (
+                              <p className="text-xs text-ceramic-text-tertiary">
+                                Edital {opportunity.edital_number}
+                              </p>
                             )}
                           </div>
-                          {project.opportunity && (
-                            <p className="text-sm text-ceramic-text-secondary">
-                              {project.opportunity.title}
-                            </p>
-                          )}
+
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleArchiveOpportunity(opportunity.id);
+                              }}
+                              className="ceramic-concave p-2 hover:scale-110 transition-transform"
+                              title="Arquivar"
+                            >
+                              <Archive className="w-4 h-4 text-ceramic-text-secondary" />
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-2">
-                          {!isArchived ? (
-                            <>
-                              <button
-                                onClick={() => handleSelectProject(project)}
-                                className="ceramic-concave px-4 py-2 text-sm font-bold text-ceramic-accent hover:scale-105 transition-transform"
-                              >
-                                Abrir
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleArchiveProject(project.id);
-                                }}
-                                className="ceramic-concave p-2 hover:scale-110 transition-transform"
-                                title="Arquivar"
-                              >
-                                <Archive className="w-4 h-4 text-ceramic-text-secondary" />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleUnarchiveProject(project.id);
-                                }}
-                                className="ceramic-concave px-4 py-2 text-sm font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
-                                title="Restaurar"
-                              >
-                                <ArchiveRestore className="w-4 h-4" />
-                                Restaurar
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteProject(
-                                    project.id,
-                                    project.opportunity?.edital_pdf_path
-                                  );
-                                }}
-                                className="ceramic-concave p-2 hover:scale-110 transition-transform"
-                                title="Deletar Permanentemente"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-600" />
-                              </button>
-                            </>
+                        {/* Deadline, funding and projects info */}
+                        <div className="flex items-center gap-6 mt-4 text-sm flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-ceramic-text-secondary">Prazo:</span>
+                            <span className={`font-bold ${isExpired ? 'text-red-600' : daysRemaining <= 7 ? 'text-orange-600' : 'text-ceramic-text-primary'}`}>
+                              {deadline.toLocaleDateString('pt-BR')}
+                              {!isExpired && ` (${daysRemaining}d)`}
+                            </span>
+                          </div>
+                          {opportunity.max_funding && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-ceramic-text-secondary">Até:</span>
+                              <span className="font-bold text-green-600">
+                                {new Intl.NumberFormat('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                  minimumFractionDigits: 0
+                                }).format(opportunity.max_funding)}
+                              </span>
+                            </div>
                           )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-ceramic-text-secondary">Projetos:</span>
+                            <span className="font-bold text-blue-600">
+                              {opportunity.projectCount || 0}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      {/* Progress bar (only for active projects) */}
-                      {!isArchived && (
-                        <div className="flex items-center gap-4 mt-4">
-                          <div className="flex-1 bg-ceramic-tray rounded-full h-2 overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500"
-                              style={{ width: `${project.completion_percentage}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-bold text-ceramic-text-secondary">
-                            {Math.round(project.completion_percentage)}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             ) : (
-              <div className="ceramic-card p-12 text-center">
+              <div className="ceramic-card p-12 text-center mb-8">
                 <p className="text-ceramic-text-secondary mb-6">
-                  Nenhum projeto criado ainda
+                  Nenhum edital cadastrado ainda
                 </p>
                 <button
                   onClick={() => setIsSetupModalOpen(true)}
                   className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent"
                 >
-                  Criar Primeiro Projeto
+                  Cadastrar Primeiro Edital
                 </button>
+              </div>
+            )}
+
+            {/* Archived Opportunities Section */}
+            {opportunities.filter(o => !!o.archived_at).length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-xl font-bold text-ceramic-text-primary mb-4">
+                  Editais Arquivados
+                </h2>
+                <div className="grid gap-4">
+                  {opportunities
+                    .filter(o => !!o.archived_at)
+                    .map((opportunity) => (
+                      <div
+                        key={opportunity.id}
+                        className="ceramic-card p-6 opacity-60"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-lg font-bold text-ceramic-text-primary">
+                                {opportunity.title}
+                              </h3>
+                              <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
+                                Arquivado
+                              </span>
+                            </div>
+                            <p className="text-sm text-ceramic-text-secondary mb-1">
+                              {opportunity.funding_agency}
+                              {opportunity.program_name && ` • ${opportunity.program_name}`}
+                            </p>
+                          </div>
+
+                          {/* Action buttons for archived */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnarchiveOpportunity(opportunity.id);
+                              }}
+                              className="ceramic-concave px-4 py-2 text-sm font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
+                              title="Restaurar"
+                            >
+                              <ArchiveRestore className="w-4 h-4" />
+                              Restaurar
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteOpportunity(opportunity.id);
+                              }}
+                              className="ceramic-concave p-2 hover:scale-110 transition-transform"
+                              title="Deletar Permanentemente"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-ceramic-text-secondary">Projetos:</span>
+                          <span className="font-bold text-ceramic-text-tertiary">
+                            {opportunity.projectCount || 0}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
           </div>

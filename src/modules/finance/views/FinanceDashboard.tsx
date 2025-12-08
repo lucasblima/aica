@@ -5,10 +5,11 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, LayoutDashboard, Target } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
+import { BudgetView } from './BudgetView';
 import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown } from '../services/financeService';
 import { statementService } from '../services/statementService';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement } from '../types';
@@ -30,6 +31,9 @@ interface MonthData {
   hasData: boolean;
   transactionCount: number;
   statementCount: number;
+  openingBalance: number;
+  closingBalance: number;
+  processingStatus: 'completed' | 'processing' | 'failed' | 'empty';
 }
 
 // =====================================================
@@ -50,6 +54,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   const [showManagement, setShowManagement] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [isValuesVisible, setIsValuesVisible] = useState(false);
+  const [activeView, setActiveView] = useState<'budget' | 'history'>('budget');
 
   useEffect(() => {
     loadData();
@@ -126,14 +132,65 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   };
 
   const formatCurrency = (value: number) => {
+    if (!isValuesVisible) {
+      return 'R$ ••••••';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
   };
 
+  const toggleVisibility = () => {
+    setIsValuesVisible(!isValuesVisible);
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('pt-BR');
+  };
+
+  const formatPeriod = (startDate: string, endDate: string) => {
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
+
+    const startMonth = start.toLocaleDateString('pt-BR', { month: 'short' });
+    const endMonth = end.toLocaleDateString('pt-BR', { month: 'short' });
+    const year = start.getFullYear();
+
+    if (startMonth === endMonth) {
+      return `${startMonth.charAt(0).toUpperCase() + startMonth.slice(1)} ${year}`;
+    }
+
+    return `${startMonth.charAt(0).toUpperCase() + startMonth.slice(1)} - ${endMonth.charAt(0).toUpperCase() + endMonth.slice(1)} ${year}`;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return {
+          text: 'Processado',
+          className: 'bg-green-100 text-green-700 border-green-200',
+          icon: <CheckCircle2 className="w-3 h-3" />
+        };
+      case 'processing':
+        return {
+          text: 'Processando',
+          className: 'bg-blue-100 text-blue-700 border-blue-200',
+          icon: <Loader2 className="w-3 h-3 animate-spin" />
+        };
+      case 'failed':
+        return {
+          text: 'Erro',
+          className: 'bg-red-100 text-red-700 border-red-200',
+          icon: null
+        };
+      default:
+        return {
+          text: 'Pendente',
+          className: 'bg-gray-100 text-gray-700 border-gray-200',
+          icon: null
+        };
+    }
   };
 
   // Process statements into monthly data
@@ -141,8 +198,14 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     const currentYear = new Date().getFullYear();
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-    // Create map of month -> data
-    const monthMap = new Map<string, { transactionCount: number; statementCount: number }>();
+    // Create map of month -> data with balances
+    const monthMap = new Map<string, {
+      transactionCount: number;
+      statementCount: number;
+      openingBalance: number;
+      closingBalance: number;
+      statements: FinanceStatement[];
+    }>();
 
     console.log('[FinanceDashboard] Processing statements for monthly data:', statements?.length || 0);
 
@@ -158,6 +221,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           hasData: false,
           transactionCount: 0,
           statementCount: 0,
+          openingBalance: 0,
+          closingBalance: 0,
+          processingStatus: 'empty',
         });
       }
       return months;
@@ -182,14 +248,40 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
         console.log('[FinanceDashboard] Parsed date:', { dateStr, year, month, key });
 
-        const existing = monthMap.get(key) || { transactionCount: 0, statementCount: 0 };
+        const existing = monthMap.get(key) || {
+          transactionCount: 0,
+          statementCount: 0,
+          openingBalance: 0,
+          closingBalance: 0,
+          statements: []
+        };
+
+        existing.statements.push(statement);
+
         monthMap.set(key, {
           transactionCount: existing.transactionCount + (statement.transaction_count || 0),
           statementCount: existing.statementCount + 1,
+          openingBalance: existing.openingBalance,
+          closingBalance: existing.closingBalance,
+          statements: existing.statements,
         });
       } else {
         console.warn('[FinanceDashboard] Statement missing period_start:', statement.id);
       }
+    });
+
+    // Calculate opening and closing balances for each month
+    monthMap.forEach((data, key) => {
+      // Sort statements by period start to get first statement
+      const sortedStatements = data.statements.sort((a, b) =>
+        (a.statement_period_start || '').localeCompare(b.statement_period_start || '')
+      );
+
+      // Opening balance is from the first statement
+      data.openingBalance = sortedStatements[0]?.opening_balance || 0;
+
+      // Closing balance is from the last statement (or could be calculated from opening + credits - debits)
+      data.closingBalance = sortedStatements[sortedStatements.length - 1]?.closing_balance || 0;
     });
 
     console.log('[FinanceDashboard] Month map:', Array.from(monthMap.entries()));
@@ -200,6 +292,22 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       const key = `${currentYear}-${month}`;
       const data = monthMap.get(key);
 
+      // Determine processing status
+      let processingStatus: 'completed' | 'processing' | 'failed' | 'empty' = 'empty';
+      if (data && data.statements.length > 0) {
+        const hasProcessing = data.statements.some(s => s.processing_status === 'processing');
+        const hasFailed = data.statements.some(s => s.processing_status === 'failed');
+        const hasCompleted = data.statements.some(s => s.processing_status === 'completed');
+
+        if (hasProcessing) {
+          processingStatus = 'processing';
+        } else if (hasFailed) {
+          processingStatus = 'failed';
+        } else if (hasCompleted) {
+          processingStatus = 'completed';
+        }
+      }
+
       months.push({
         month,
         monthName: monthNames[month - 1],
@@ -207,6 +315,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         hasData: !!data,
         transactionCount: data?.transactionCount || 0,
         statementCount: data?.statementCount || 0,
+        openingBalance: data?.openingBalance || 0,
+        closingBalance: data?.closingBalance || 0,
+        processingStatus,
       });
     }
 
@@ -227,6 +338,12 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     );
   }
 
+  // Render Budget View if active
+  if (activeView === 'budget') {
+    return <BudgetView userId={userId} onBack={onBack} />;
+  }
+
+  // Otherwise render History/Dashboard view
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
       {/* Header */}
@@ -253,6 +370,17 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             </h1>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={toggleVisibility}
+              className="ceramic-concave p-3 hover:scale-95 transition-transform"
+              title={isValuesVisible ? 'Ocultar valores' : 'Mostrar valores'}
+            >
+              {isValuesVisible ? (
+                <EyeOff className="w-5 h-5 text-ceramic-text-secondary" />
+              ) : (
+                <Eye className="w-5 h-5 text-ceramic-text-secondary" />
+              )}
+            </button>
             <button
               onClick={() => {
                 console.log('=== DEBUG: All Statements ===');
@@ -334,9 +462,11 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               >
                 {formatCurrency(summary.currentBalance)}
               </p>
-              <p className="text-xs text-ceramic-text-secondary mt-3">
-                {summary.transactionCount} transações processadas
-              </p>
+              {isValuesVisible && (
+                <p className="text-xs text-ceramic-text-secondary mt-3">
+                  {summary.transactionCount} transações processadas
+                </p>
+              )}
             </div>
 
             {/* Income & Expenses */}
@@ -373,7 +503,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         ) : null}
 
         {/* Charts */}
-        {summary && (
+        {summary && isValuesVisible && (
           <>
             <IncomeVsExpense income={summary.totalIncome} expenses={summary.totalExpenses} />
 
@@ -402,7 +532,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               <p className="text-3xl font-black text-ceramic-text-primary text-etched">
                 {formatCurrency(burnRate.averageMonthlyExpense)}
               </p>
-              {burnRate.trend !== 'stable' && (
+              {isValuesVisible && burnRate.trend !== 'stable' && (
                 <div className="flex items-center gap-2">
                   <div
                     className={`ceramic-inset px-3 py-1.5 text-xs font-bold ${
@@ -446,65 +576,136 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
           {/* Monthly Grid */}
           <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-            {monthlyData.map((monthData) => (
-              <button
-                key={monthData.month}
-                onClick={() => !monthData.hasData && setShowUpload(true)}
-                className={`
-                  ceramic-tray p-4 transition-all duration-200
-                  ${monthData.hasData
-                    ? 'bg-gradient-to-br from-green-50 to-transparent hover:scale-105'
-                    : 'hover:scale-105 hover:bg-ceramic-highlight'
-                  }
-                `}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  {/* Month Icon/Status */}
-                  {monthData.hasData ? (
-                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center bg-green-100">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    </div>
-                  ) : (
-                    <div className="ceramic-inset w-10 h-10 flex items-center justify-center opacity-40">
-                      <Upload className="w-5 h-5 text-ceramic-text-secondary" />
-                    </div>
-                  )}
+            {monthlyData.map((monthData) => {
+              const isProcessing = monthData.processingStatus === 'processing';
+              const isCompleted = monthData.processingStatus === 'completed';
+              const isFailed = monthData.processingStatus === 'failed';
+              const isEmpty = monthData.processingStatus === 'empty';
 
-                  {/* Month Name */}
-                  <div className="text-center">
-                    <p className={`text-xs font-bold ${monthData.hasData ? 'text-green-700' : 'text-ceramic-text-secondary'}`}>
-                      {monthData.monthName}
-                    </p>
-                    {monthData.hasData && (
-                      <p className="text-[10px] text-green-600 mt-0.5">
-                        {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transação' : 'transações'}
-                      </p>
+              return (
+                <button
+                  key={monthData.month}
+                  onClick={() => isEmpty && setShowUpload(true)}
+                  className={`
+                    ceramic-tray p-4 transition-all duration-200 relative overflow-hidden
+                    ${isCompleted
+                      ? 'bg-gradient-to-br from-green-50 to-transparent hover:scale-105'
+                      : isProcessing
+                      ? 'bg-gradient-to-br from-blue-50 to-transparent animate-pulse'
+                      : isFailed
+                      ? 'bg-gradient-to-br from-red-50 to-transparent hover:scale-105'
+                      : 'hover:scale-105 hover:bg-ceramic-highlight'
+                    }
+                  `}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    {/* Month Icon/Status */}
+                    {isCompleted && (
+                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-green-100 shadow-lg">
+                        <CheckCircle2 className="w-6 h-6 text-green-600" />
+                      </div>
                     )}
-                    {!monthData.hasData && (
-                      <p className="text-[10px] text-ceramic-text-secondary opacity-60 mt-0.5">
-                        Sem dados
-                      </p>
+                    {isProcessing && (
+                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-blue-100 shadow-lg">
+                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                      </div>
                     )}
+                    {isFailed && (
+                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-red-100 shadow-lg">
+                        <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                    )}
+                    {isEmpty && (
+                      <div className="ceramic-inset w-12 h-12 flex items-center justify-center opacity-40">
+                        <Upload className="w-5 h-5 text-ceramic-text-secondary" />
+                      </div>
+                    )}
+
+                    {/* Month Name */}
+                    <div className="text-center w-full">
+                      <p className={`text-sm font-black mb-1 ${
+                        isCompleted ? 'text-green-700' :
+                        isProcessing ? 'text-blue-700' :
+                        isFailed ? 'text-red-700' :
+                        'text-ceramic-text-secondary'
+                      }`}>
+                        {monthData.monthName}
+                      </p>
+
+                      {/* Status Message */}
+                      {isProcessing && (
+                        <p className="text-[11px] font-bold text-blue-600 mb-2">
+                          Processando...
+                        </p>
+                      )}
+                      {isFailed && (
+                        <p className="text-[11px] font-bold text-red-600 mb-2">
+                          Erro
+                        </p>
+                      )}
+                      {isEmpty && (
+                        <p className="text-[11px] text-ceramic-text-secondary opacity-60">
+                          Sem dados
+                        </p>
+                      )}
+
+                      {/* Transaction Count - Highlighted */}
+                      {isCompleted && (
+                        <div className="ceramic-card px-2 py-1 mb-2 bg-white/80">
+                          <p className="text-[11px] font-black text-green-700">
+                            {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transação' : 'transações'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Balances - Highlighted */}
+                      {isCompleted && (
+                        <div className="space-y-1 mt-2">
+                          <div className="ceramic-inset px-2 py-1 rounded">
+                            <p className="text-[9px] text-ceramic-text-secondary uppercase tracking-wide">Inicial</p>
+                            <p className="text-[11px] font-black text-ceramic-text-primary">
+                              {formatCurrency(monthData.openingBalance)}
+                            </p>
+                          </div>
+                          <div className="ceramic-concave px-2 py-1 rounded bg-green-50">
+                            <p className="text-[9px] text-green-600 uppercase tracking-wide">Final</p>
+                            <p className="text-[11px] font-black text-green-700">
+                              {formatCurrency(monthData.closingBalance)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-ceramic-text-secondary">
-                Progresso anual
-              </p>
+              <div>
+                <p className="text-xs font-medium text-ceramic-text-secondary">
+                  Progresso anual
+                </p>
+                {monthlyData.filter(m => m.processingStatus === 'processing').length > 0 && (
+                  <p className="text-[10px] font-bold text-blue-600 flex items-center gap-1 mt-0.5">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {monthlyData.filter(m => m.processingStatus === 'processing').length} {monthlyData.filter(m => m.processingStatus === 'processing').length === 1 ? 'mês processando' : 'meses processando'}
+                  </p>
+                )}
+              </div>
               <p className="text-xs font-bold text-ceramic-text-primary">
-                {Math.round((monthlyData.filter(m => m.hasData).length / 12) * 100)}%
+                {Math.round((monthlyData.filter(m => m.processingStatus === 'completed').length / 12) * 100)}%
               </p>
             </div>
             <div className="ceramic-trough p-1 rounded-full">
               <div
                 className="h-2 rounded-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500"
-                style={{ width: `${(monthlyData.filter(m => m.hasData).length / 12) * 100}%` }}
+                style={{ width: `${(monthlyData.filter(m => m.processingStatus === 'completed').length / 12) * 100}%` }}
               />
             </div>
           </div>
@@ -612,55 +813,106 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 </button>
 
                 {/* Statements List */}
-                <div className="space-y-2">
-                  {statements.map((statement) => (
-                    <div
-                      key={statement.id}
-                      className="ceramic-tray p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="ceramic-concave w-10 h-10 flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-5 h-5 text-ceramic-accent" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-ceramic-text-primary truncate">
-                            {statement.bank_name || 'Banco'}
-                          </p>
-                          <p className="text-xs text-ceramic-text-secondary">
-                            {statement.statement_period_start && statement.statement_period_end
-                              ? `${formatDate(statement.statement_period_start)} - ${formatDate(statement.statement_period_end)}`
-                              : formatDate(statement.created_at)}
-                          </p>
+                <div className="space-y-3">
+                  {statements.map((statement) => {
+                    const statusBadge = getStatusBadge(statement.processing_status || 'pending');
+
+                    return (
+                      <div
+                        key={statement.id}
+                        className="ceramic-card p-5 hover:scale-[1.01] transition-all duration-200 group"
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Bank Icon */}
+                          <div className="ceramic-concave w-12 h-12 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                            <Building2 className="w-6 h-6 text-ceramic-accent" />
+                          </div>
+
+                          {/* Main Info */}
+                          <div className="flex-1 min-w-0 space-y-2">
+                            {/* Header: Bank Name + Status Badge */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-base font-black text-ceramic-text-primary text-etched">
+                                {statement.bank_name || 'Banco Desconhecido'}
+                              </h4>
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusBadge.className}`}>
+                                {statusBadge.icon}
+                                {statusBadge.text}
+                              </span>
+                            </div>
+
+                            {/* Period */}
+                            {statement.statement_period_start && statement.statement_period_end && (
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                                <span className="text-xs font-medium text-ceramic-text-secondary">
+                                  {formatPeriod(statement.statement_period_start, statement.statement_period_end)}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Metrics Row */}
+                            <div className="flex items-center gap-4 flex-wrap">
+                              {/* Transaction Count */}
+                              <div className="ceramic-inset px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
+                                <FileText className="w-3.5 h-3.5 text-ceramic-accent" />
+                                <span className="text-xs font-bold text-ceramic-text-primary">
+                                  {statement.transaction_count || 0}
+                                </span>
+                                <span className="text-[10px] text-ceramic-text-secondary">
+                                  {statement.transaction_count === 1 ? 'transação' : 'transações'}
+                                </span>
+                              </div>
+
+                              {/* Opening Balance */}
+                              <div className="ceramic-inset px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
+                                <span className="text-[10px] text-ceramic-text-secondary">
+                                  Inicial:
+                                </span>
+                                <span className="text-xs font-bold text-ceramic-text-primary">
+                                  {formatCurrency(statement.opening_balance || 0)}
+                                </span>
+                              </div>
+
+                              {/* Closing Balance */}
+                              <div className="ceramic-inset px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
+                                <span className="text-[10px] text-ceramic-text-secondary">
+                                  Final:
+                                </span>
+                                <span className="text-xs font-bold text-green-600">
+                                  {formatCurrency(statement.closing_balance || 0)}
+                                </span>
+                              </div>
+
+                              {/* File Name (truncated) */}
+                              {statement.file_name && (
+                                <div className="flex items-center gap-1.5">
+                                  <ChevronRight className="w-3 h-3 text-ceramic-text-secondary opacity-50" />
+                                  <span className="text-[10px] text-ceramic-text-secondary truncate max-w-[200px]">
+                                    {statement.file_name}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDelete(statement.id)}
+                            disabled={deletingId === statement.id || deletingAll}
+                            className="ceramic-inset w-9 h-9 flex items-center justify-center hover:scale-110 hover:bg-red-50 transition-all disabled:opacity-50 flex-shrink-0 group"
+                            title="Deletar extrato"
+                          >
+                            {deletingId === statement.id ? (
+                              <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4 text-red-600 group-hover:scale-110 transition-transform" />
+                            )}
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold text-ceramic-text-primary">
-                            {statement.transaction_count || 0}
-                          </p>
-                          <p className="text-xs text-ceramic-text-secondary">
-                            {statement.processing_status === 'completed'
-                              ? 'processado'
-                              : statement.processing_status === 'failed'
-                              ? 'falhou'
-                              : 'processando'}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleDelete(statement.id)}
-                          disabled={deletingId === statement.id || deletingAll}
-                          className="ceramic-inset w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
-                          title="Deletar extrato"
-                        >
-                          {deletingId === statement.id ? (
-                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

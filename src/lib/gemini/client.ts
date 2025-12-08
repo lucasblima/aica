@@ -8,11 +8,11 @@
 import { supabase } from '@/services/supabaseClient'
 import { callWithRetry, type RetryOptions } from './retry'
 import { getModelForUseCase } from './models'
+import { GeminiError } from './types'
 import type {
   GeminiAction,
   GeminiChatRequest,
   GeminiChatResponse,
-  GeminiError,
   StreamOptions
 } from './types'
 
@@ -40,7 +40,7 @@ const PYTHON_ACTIONS: GeminiAction[] = [
 export class GeminiClient {
   private static instance: GeminiClient
 
-  private constructor() {}
+  private constructor() { }
 
   /**
    * Obtém instância única do cliente

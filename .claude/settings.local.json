@@ -41,7 +41,11 @@
       "Bash(git log:*)",
       "Bash(mkdir:*)",
       "Bash(git hash-object:*)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(source .env)",
+      "Bash(pip install:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
