@@ -341,11 +341,239 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                     </p>
                   </div>
                 )}
+
+                {/* Transactions List - Expandable */}
+                {cat.spent > 0 && (
+                  <div className="mt-4">
+                    <button
+                      onClick={() => setExpandedCategory(expandedCategory === cat.category ? null : cat.category)}
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      {expandedCategory === cat.category ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                      <span>
+                        {expandedCategory === cat.category ? 'Ocultar' : 'Ver'} lançamentos (
+                        {transactions.filter(t => t.type === 'expense' && t.category === cat.category).length})
+                      </span>
+                    </button>
+
+                    {expandedCategory === cat.category && (
+                      <div className="mt-4 space-y-2 pl-6 border-l-2 border-gray-100">
+                        {transactions
+                          .filter(t => t.type === 'expense' && t.category === cat.category)
+                          .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+                          .map((tx) => (
+                            <div
+                              key={tx.id}
+                              className="flex items-start justify-between py-2 text-sm hover:bg-gray-50 rounded-lg px-3 transition-colors"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{tx.description}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {new Date(tx.transaction_date).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                  })}
+                                </p>
+                              </div>
+                              <p className="text-sm font-bold text-red-600 ml-4">
+                                -{new Intl.NumberFormat('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                }).format(Number(tx.amount))}
+                              </p>
+                            </div>
+                          ))}
+
+                        {/* Total */}
+                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-200">
+                          <p className="text-sm font-medium text-gray-700">Total da categoria</p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {new Intl.NumberFormat('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            }).format(cat.spent)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Debug Panel - Auditoria de Saldo */}
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        <div className="bg-gradient-to-br from-blue-50 to-transparent p-8 rounded-3xl border border-blue-200">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">🔍 Auditoria de Saldo - {monthName}</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {/* Receitas */}
+            <div className="bg-white p-4 rounded-xl border border-green-200">
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Receitas</p>
+              <p className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                }).format(monthIncome)}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                {transactions.filter(t => t.type === 'income').length} lançamento(s)
+              </p>
+            </div>
+
+            {/* Despesas */}
+            <div className="bg-white p-4 rounded-xl border border-red-200">
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Despesas</p>
+              <p className="text-2xl font-bold text-red-600">
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                }).format(monthExpenses)}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                {transactions.filter(t => t.type === 'expense').length} lançamento(s)
+              </p>
+            </div>
+
+            {/* Saldo Calculado */}
+            <div className="bg-white p-4 rounded-xl border border-blue-200">
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Saldo Calculado</p>
+              <p className={`text-2xl font-bold ${monthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                }).format(monthBalance)}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                Receitas - Despesas
+              </p>
+            </div>
+          </div>
+
+          {/* Fórmula Visual */}
+          <div className="bg-white p-4 rounded-xl border border-gray-200">
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Cálculo:</p>
+            <div className="flex items-center gap-3 text-sm font-mono">
+              <span className="text-green-600 font-bold">
+                R$ {monthIncome.toFixed(2)}
+              </span>
+              <span className="text-gray-400">-</span>
+              <span className="text-red-600 font-bold">
+                R$ {monthExpenses.toFixed(2)}
+              </span>
+              <span className="text-gray-400">=</span>
+              <span className={`font-bold ${monthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                R$ {monthBalance.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {/* Breakdown por Categoria */}
+          <div className="mt-6 bg-white p-4 rounded-xl border border-gray-200">
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Despesas por Categoria:</p>
+            <div className="space-y-2">
+              {budgetCategories
+                .filter(cat => cat.spent > 0)
+                .sort((a, b) => b.spent - a.spent)
+                .map(cat => (
+                  <div key={cat.category} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span>{cat.icon}</span>
+                      <span className="text-gray-700">{cat.label}</span>
+                      <span className="text-gray-400 text-xs">
+                        ({transactions.filter(t => t.type === 'expense' && t.category === cat.category).length})
+                      </span>
+                    </div>
+                    <span className="font-bold text-gray-900">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(cat.spent)}
+                    </span>
+                  </div>
+                ))}
+
+              {/* Total Check */}
+              <div className="flex items-center justify-between text-sm pt-3 mt-3 border-t border-gray-200">
+                <span className="font-medium text-gray-900">Total Categorizado</span>
+                <span className="font-bold text-gray-900">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(budgetCategories.reduce((sum, cat) => sum + cat.spent, 0))}
+                </span>
+              </div>
+
+              {/* Validation */}
+              {Math.abs(monthExpenses - budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)) > 0.01 && (
+                <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                  <p className="text-xs text-red-700 font-medium">
+                    ⚠️ Discrepância: Total de despesas não bate com soma das categorias!
+                  </p>
+                  <p className="text-xs text-red-600 mt-1">
+                    Diferença: R$ {Math.abs(monthExpenses - budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)).toFixed(2)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Income Transactions Section */}
+      {monthIncome > 0 && (
+        <div className="max-w-4xl mx-auto px-6 py-10">
+          <h2 className="text-2xl font-medium text-gray-900 mb-6">Receitas do Mês</h2>
+          <div className="bg-gradient-to-br from-green-50 to-transparent p-8 rounded-3xl border border-green-100">
+            <div className="space-y-2">
+              {transactions
+                .filter(t => t.type === 'income')
+                .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+                .map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-start justify-between py-3 text-sm hover:bg-white/50 rounded-lg px-4 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{tx.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(tx.transaction_date).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold text-green-600 ml-4">
+                      +{new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(Number(tx.amount))}
+                    </p>
+                  </div>
+                ))}
+
+              {/* Total */}
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-green-200">
+                <p className="text-base font-medium text-gray-700">Total de Receitas</p>
+                <p className="text-lg font-bold text-green-700">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(monthIncome)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Insights Section */}
       <div className="max-w-4xl mx-auto px-6 pb-20">

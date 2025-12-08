@@ -215,8 +215,6 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     dayEvents: EventWithCategory[],
     isToday: boolean = false
   ) => {
-    if (dayEvents.length === 0) return null;
-
     return (
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
@@ -226,34 +224,40 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
             {dayLabel}
           </h3>
           <div className="flex-1" />
-          <span className="text-xs text-ceramic-text-tertiary font-medium">
-            {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
-          </span>
+          {dayEvents.length > 0 && (
+            <span className="text-xs text-ceramic-text-tertiary font-medium">
+              {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
+            </span>
+          )}
         </div>
-        <div className="space-y-3">
-          {dayEvents.map(renderEventCard)}
-        </div>
+        {dayEvents.length > 0 ? (
+          <div className="space-y-3">
+            {dayEvents.map(renderEventCard)}
+          </div>
+        ) : (
+          <div className="ceramic-tray p-4 rounded-2xl text-center">
+            <p className="text-xs text-ceramic-text-tertiary italic">
+              Nenhum evento agendado
+            </p>
+          </div>
+        )}
       </div>
     );
   };
 
-  if (events.length === 0) {
-    return (
-      <div className="ceramic-tray p-8 rounded-2xl text-center">
-        <Calendar className="w-12 h-12 mx-auto mb-3 text-ceramic-text-secondary/50" />
-        <p className="text-ceramic-text-secondary">
-          Nenhum evento nos próximos 2 dias
-        </p>
-      </div>
-    );
-  }
+  // Sempre mostrar as seções de dias (framework da página)
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfter = new Date(today);
+  dayAfter.setDate(dayAfter.getDate() + 2);
 
   return (
     <div className="space-y-6">
       {renderDaySection('Hoje', todayEvents, true)}
       {renderDaySection('Amanhã', tomorrowEvents)}
       {renderDaySection(
-        formatDayLabel(false, false, dayAfterEvents[0]?.startTime || ''),
+        dayAfter.toLocaleDateString('pt-BR', { weekday: 'long' }),
         dayAfterEvents
       )}
     </div>
