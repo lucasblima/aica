@@ -91,6 +91,7 @@ export const atlasService = {
             //                   due_date, priority_quadrant, archived, completed_at, association_id, estimated_duration,
             //                   scheduled_time, priority, created_at, updated_at
             const workItemData = {
+                user_id: user.id, // CRITICAL: Must include user_id for RLS policies
                 title: taskInput.title,
                 description: taskInput.description || null,
                 priority: taskInput.priority || 'medium',

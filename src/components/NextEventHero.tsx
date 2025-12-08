@@ -116,36 +116,39 @@ export const NextEventHero: React.FC<NextEventHeroProps> = ({
         event.isNow ? 'ring-4 ring-ceramic-accent/30 border-l-8 border-ceramic-accent' : ''
       }`}
     >
-      {/* Indicador "Agora" ou Countdown */}
-      <div className="flex items-center justify-between mb-4">
-        {event.isNow ? (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-ceramic-accent rounded-full animate-ping" />
-            <span className="text-xs font-bold text-ceramic-accent uppercase tracking-wider">
-              Acontecendo agora
-            </span>
-          </div>
-        ) : timeUntil ? (
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-ceramic-text-secondary" />
+      {/* Indicador "Agora" ou Countdown - DESTAQUE */}
+      {event.isNow ? (
+        <div className="ceramic-tray p-4 rounded-2xl mb-4 flex items-center justify-center gap-3">
+          <div className="w-3 h-3 bg-ceramic-accent rounded-full animate-ping" />
+          <span className="text-lg font-black text-ceramic-accent uppercase tracking-wider text-etched">
+            Acontecendo agora
+          </span>
+        </div>
+      ) : timeUntil ? (
+        <div className="ceramic-tray p-4 rounded-2xl mb-4 text-center bg-gradient-to-r from-blue-50 to-purple-50">
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Clock className="w-5 h-5 text-ceramic-accent animate-pulse" />
             <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              {timeUntil}
+              Próximo
             </span>
           </div>
-        ) : null}
+          <span className="text-2xl font-black text-ceramic-accent text-etched block">
+            {timeUntil}
+          </span>
+        </div>
+      ) : null}
 
-        {/* Organizer */}
-        {event.organizer && (
-          <div className="flex items-center gap-2">
-            <div className="ceramic-concave w-6 h-6 flex items-center justify-center">
-              <User className="w-3 h-3 text-ceramic-text-secondary" />
-            </div>
-            <span className="text-xs text-ceramic-text-secondary truncate max-w-[120px]">
-              {event.organizer.split('@')[0]}
-            </span>
+      {/* Organizer Badge */}
+      {event.organizer && (
+        <div className="flex items-center gap-2 mb-4">
+          <div className="ceramic-concave w-6 h-6 flex items-center justify-center">
+            <User className="w-3 h-3 text-ceramic-text-secondary" />
           </div>
-        )}
-      </div>
+          <span className="text-xs text-ceramic-text-secondary truncate max-w-[200px]">
+            {event.organizer.split('@')[0]}
+          </span>
+        </div>
+      )}
 
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">

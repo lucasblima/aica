@@ -26,19 +26,23 @@ interface WeeklyCalendarViewProps {
   events: WeekEvent[];
   onEventClick?: (eventId: string) => void;
   onDayClick?: (date: Date) => void;
+  daysToShow?: number; // Quantos dias mostrar (padrão: 7)
+  highlightMode?: boolean; // Modo destaque para primeiros 2 dias
 }
 
 export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
   events,
   onEventClick,
-  onDayClick
+  onDayClick,
+  daysToShow = 7,
+  highlightMode = false
 }) => {
-  // Gerar próximos 7 dias
+  // Gerar próximos N dias
   const generateWeekSchedule = (): DaySchedule[] => {
     const today = new Date();
     const schedule: DaySchedule[] = [];
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < daysToShow; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       date.setHours(0, 0, 0, 0);
@@ -50,9 +54,9 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
 
       schedule.push({
         date,
-        dayName: date.toLocaleDateString('pt-BR', { weekday: 'short' }),
+        dayName: date.toLocaleDateString('pt-BR', { weekday: 'long' }), // long for highlight mode
         dayNumber: date.getDate(),
-        month: date.toLocaleDateString('pt-BR', { month: 'short' }),
+        month: date.toLocaleDateString('pt-BR', { month: 'long' }), // long for highlight mode
         isToday: i === 0,
         events: dayEvents
       });
