@@ -607,16 +607,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onDragEnd={handleDragEnd}
             >
                 <main className="flex-1 overflow-y-auto px-6 pb-32 pt-8 space-y-12">
-                    {/* PRÓXIMOS 2 DIAS: Foco Principal */}
-                    {nextTwoDaysEvents.length > 0 && (
-                        <section className="max-w-2xl mx-auto w-full">
-                            <NextTwoDaysView
-                                events={nextTwoDaysEvents}
-                                onSkipEvent={handleSkipEvent}
-                                onUnskipEvent={handleUnskipEvent}
-                            />
-                        </section>
-                    )}
+                    {/* PRÓXIMOS 2 DIAS: Foco Principal - Sempre visível */}
+                    <section className="max-w-2xl mx-auto w-full">
+                        <NextTwoDaysView
+                            events={nextTwoDaysEvents}
+                            onSkipEvent={handleSkipEvent}
+                            onUnskipEvent={handleUnskipEvent}
+                        />
+                    </section>
 
                     {/* Atlas Quick Add - Abaixo do foco principal */}
                     <div className="flex-none max-w-2xl mx-auto w-full">

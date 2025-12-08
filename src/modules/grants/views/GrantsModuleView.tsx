@@ -27,7 +27,8 @@ import {
   archiveOpportunity,
   unarchiveOpportunity,
   deleteArchivedOpportunity,
-  countActiveProjects
+  countActiveProjects,
+  updateOpportunity
 } from '../services/grantService';
 import { generateFieldContent } from '../services/grantAIService';
 import type {
@@ -35,7 +36,8 @@ import type {
   GrantOpportunity,
   BriefingData,
   GrantResponse,
-  CreateOpportunityPayload
+  CreateOpportunityPayload,
+  FormField
 } from '../types';
 
 type ModuleView = 'dashboard' | 'edital-detail' | 'setup' | 'briefing' | 'generation';
@@ -345,6 +347,27 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   };
 
   /**
+   * Handle form fields update
+   */
+  const handleUpdateFormFields = async (opportunityId: string, formFields: FormField[]) => {
+    try {
+      await updateOpportunity(opportunityId, { form_fields: formFields });
+      // Refresh the opportunity data
+      await loadOpportunitiesData();
+      // Update selected opportunity if it's the one being edited
+      if (selectedOpportunity?.id === opportunityId) {
+        const updated = opportunities.find(o => o.id === opportunityId);
+        if (updated) {
+          setSelectedOpportunity(updated);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating form fields:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Handle back navigation
    */
   /**
@@ -481,6 +504,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           onArchiveProject={handleArchiveProject}
           onUnarchiveProject={handleUnarchiveProject}
           onDeleteProject={handleDeleteProject}
+          onUpdateFormFields={handleUpdateFormFields}
         />
       )}
 

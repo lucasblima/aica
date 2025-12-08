@@ -746,6 +746,7 @@ export async function deleteResponse(responseId: string): Promise<void> {
  * @throws Error se arquivamento falhar
  */
 export async function archiveProject(projectId: string): Promise<GrantProject> {
+  // Ensure function is exported for GrantsModuleView
   try {
     const { data, error } = await supabase
       .from('grant_projects')
