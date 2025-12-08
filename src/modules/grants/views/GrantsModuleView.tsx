@@ -514,6 +514,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           projectId={selectedProject.id}
           projectName={selectedProject.project_name}
           opportunityTitle={currentOpportunity.title}
+          formFields={currentOpportunity.form_fields}
           editalTextContent={currentOpportunity.edital_text_content}
           initialBriefing={currentBriefing}
           onSave={handleSaveBriefing}
