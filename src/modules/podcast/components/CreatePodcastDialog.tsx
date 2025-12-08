@@ -33,8 +33,8 @@ export const CreatePodcastDialog: React.FC<CreatePodcastDialogProps> = ({ isOpen
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-fade-in">
-            <div className="bg-ceramic-base w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/10 backdrop-blur-[4px] animate-fade-in">
+            <div className="bg-ceramic-base w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in relative border border-ceramic-text-secondary/10">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 p-2 text-ceramic-text-tertiary hover:text-ceramic-text-primary transition-colors"

@@ -45,21 +45,29 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('No user found');
 
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('podcast_shows')
                 .insert({
-                    title: title,
+                    name: title,        // Primary name field (required)
+                    title: title,       // Secondary title field (for compatibility)
                     description,
                     user_id: user.id
-                });
+                })
+                .select()
+                .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase error details:', error);
+                throw error;
+            }
 
+            console.log('Show created successfully:', data);
             setShowModal(false);
             loadShows();
         } catch (error) {
             console.error('Error creating show:', error);
-            alert('Erro ao criar podcast. Tente novamente.');
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+            alert(`Erro ao criar podcast: ${errorMessage}`);
         } finally {
             setCreating(false);
         }
@@ -79,13 +87,13 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
             <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
                 {/* Shows Grid */}
                 {loading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {[1, 2, 3, 4].map(i => (
                             <div key={i} className="ceramic-card h-48 animate-pulse" />
                         ))}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {/* New Show Card - Inset Style */}
                         <button
                             onClick={() => setShowModal(true)}
@@ -113,7 +121,7 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
-                                        <Mic2 className="w-12 h-12 text-amber-600 opacity-30" />
+                                        <Mic2 className="w-8 h-8 text-amber-600 opacity-30" />
                                     )}
                                 </div>
 
@@ -145,7 +153,7 @@ export const PodcastLibrary: React.FC<PodcastLibraryProps> = ({ onSelectShow, on
                 {!loading && shows.length === 0 && (
                     <div className="text-center py-20">
                         <div className="ceramic-inset inline-flex p-8 rounded-3xl mb-6">
-                            <Mic2 className="w-20 h-20 text-ceramic-text-tertiary" />
+                            <Mic2 className="w-10 h-10 text-ceramic-text-tertiary" />
                         </div>
                         <h2 className="text-2xl font-bold text-ceramic-text-primary mb-3">
                             Nenhum podcast ainda

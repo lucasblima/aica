@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getCurrentMonthSummary, getBurnRate } from '../services/financeService';
+import { getAllTimeSummary, getBurnRate } from '../services/financeService';
 import type { FinanceSummary, BurnRateData } from '../types';
 
 // =====================================================
@@ -25,8 +25,10 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
             setLoading(true);
             setError(null);
 
+            // Use getAllTimeSummary instead of getCurrentMonthSummary
+            // to show data even when current month has no transactions
             const [summaryData, burnRateData] = await Promise.all([
-                getCurrentMonthSummary(userId),
+                getAllTimeSummary(userId),
                 getBurnRate(userId)
             ]);
 
@@ -48,15 +50,9 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
     };
 
     const getBalanceColor = (balance: number): string => {
-        if (balance > 0) return 'text-green-700';
-        if (balance < 0) return 'text-red-700';
-        return 'text-gray-700';
-    };
-
-    const getBalanceGradient = (balance: number): string => {
-        if (balance > 0) return 'from-green-50 to-yellow-50';
-        if (balance < 0) return 'from-red-50 to-orange-50';
-        return 'from-gray-50 to-gray-100';
+        if (balance > 0) return 'text-ceramic-positive';
+        if (balance < 0) return 'text-ceramic-negative';
+        return 'text-ceramic-neutral';
     };
 
     if (loading) {
@@ -97,13 +93,15 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
             </div>
 
             {/* Balance Display - Large and Prominent */}
-            <div className={`bg-gradient-to-br ${getBalanceGradient(summary.currentBalance)} rounded-3xl p-6 text-center`}>
-                <p className="text-sm text-gray-600 mb-2">Saldo do Mês</p>
-                <p className={`text-4xl font-bold ${getBalanceColor(summary.currentBalance)}`}>
+            <div className="ceramic-tray p-6 text-center">
+                <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
+                    Saldo Total
+                </p>
+                <p className={`text-4xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
                     {formatCurrency(summary.currentBalance)}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">
-                    {summary.transactionCount} transações
+                <p className="text-xs text-ceramic-text-secondary mt-2">
+                    {summary.transactionCount} transações (fev-nov 2025)
                 </p>
             </div>
 
@@ -114,8 +112,8 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
                     <div className="flex items-center gap-3">
                         <span className="text-2xl">📈</span>
                         <div>
-                            <p className="text-xs text-gray-600">Entradas</p>
-                            <p className="text-lg font-semibold text-green-700">
+                            <p className="text-xs text-ceramic-text-secondary">Entradas</p>
+                            <p className="text-lg font-semibold text-ceramic-positive">
                                 {formatCurrency(summary.totalIncome)}
                             </p>
                         </div>
@@ -127,8 +125,8 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
                     <div className="flex items-center gap-3">
                         <span className="text-2xl">📉</span>
                         <div>
-                            <p className="text-xs text-gray-600">Saídas</p>
-                            <p className="text-lg font-semibold text-red-700">
+                            <p className="text-xs text-ceramic-text-secondary">Saídas</p>
+                            <p className="text-lg font-semibold text-ceramic-negative">
                                 {formatCurrency(summary.totalExpenses)}
                             </p>
                         </div>
