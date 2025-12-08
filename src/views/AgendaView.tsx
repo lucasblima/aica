@@ -23,6 +23,7 @@ import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../com
 import { Task, Quadrant } from '../../types';
 import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
 import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
+import { TaskList } from '../modules/atlas/components/TaskList';
 import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { TimelineEvent } from '../services/googleCalendarService';
@@ -663,6 +664,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             isLoading={isLoading}
                             onRefresh={loadAllTasks}
                         />
+                    </div>
+
+                    {/* Task List - Complete CRUD */}
+                    <div className="flex-none max-w-2xl mx-auto w-full">
+                        <TaskList onTaskCreated={loadAllTasks} />
                     </div>
                 </main>
 
