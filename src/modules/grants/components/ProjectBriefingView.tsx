@@ -21,10 +21,15 @@ import {
   FileCheck,
   AlertCircle
 } from 'lucide-react';
-import type { BriefingData, FormField } from '../types';
+import type { BriefingData, FormField, ProjectDocument } from '../types';
 import { generateAutoBriefing } from '../services/briefingAIService';
-import { processSourceDocument, validateDocumentType } from '../services/documentService';
-import { saveSourceDocument, removeSourceDocument } from '../services/grantService';
+import { validateDocumentType } from '../services/documentService';
+import {
+  listProjectDocuments,
+  uploadProjectDocument,
+  deleteProjectDocument,
+  getCombinedDocumentsContent
+} from '../services/projectDocumentService';
 
 /**
  * ProjectBriefingView Component
@@ -42,17 +47,10 @@ interface ProjectBriefingViewProps {
   onSave: (briefing: Record<string, string>) => Promise<void>;
   onContinue: () => void;
   onBack: () => void;
+  // Deprecated - mantidos para compatibilidade
   sourceDocumentPath?: string | null;
   sourceDocumentType?: string | null;
   sourceDocumentContent?: string | null;
-}
-
-interface SourceDocumentState {
-  path: string | null;
-  type: string | null;
-  fileName: string | null;
-  content: string | null;
-  isUploading: boolean;
 }
 
 interface BriefingSection {
@@ -170,15 +168,31 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<string>('');
 
-  // Source document state
-  const [sourceDocument, setSourceDocument] = useState<SourceDocumentState>({
-    path: sourceDocumentPath || null,
-    type: sourceDocumentType || null,
-    fileName: sourceDocumentPath ? sourceDocumentPath.split('/').pop() || null : null,
-    content: initialSourceDocumentContent || null,
-    isUploading: false
-  });
+  // Documents state - múltiplos documentos de contexto
+  const [documents, setDocuments] = useState<ProjectDocument[]>([]);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * Load project documents on mount
+   */
+  useEffect(() => {
+    loadDocuments();
+  }, [projectId]);
+
+  const loadDocuments = async () => {
+    try {
+      setIsLoadingDocuments(true);
+      const docs = await listProjectDocuments(projectId);
+      setDocuments(docs);
+      console.log('[ProjectBriefing] Loaded documents:', docs.length);
+    } catch (error) {
+      console.error('[ProjectBriefing] Error loading documents:', error);
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  };
 
   /**
    * Auto-save with debouncing
@@ -217,18 +231,18 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
    * em vez de gerar dados ficticios.
    */
   const handleGenerateBriefing = async () => {
-    // Verificar se tem documento fonte ou contexto minimo
-    const hasSourceDocument = sourceDocument.content && sourceDocument.content.trim().length > 100;
-    const hasMinimalContext = briefingData.company_context || briefingData.project_description;
+    // Verificar se tem documentos ou contexto mínimo
+    const hasDocuments = documents.length > 0;
+    const hasMinimalContext = Object.values(briefingData).some(value => value && value.trim().length > 50);
 
-    if (!hasSourceDocument && !hasMinimalContext) {
+    if (!hasDocuments && !hasMinimalContext) {
       alert(
-        'Documento fonte necessario!\n\n' +
-        'Para usar o preenchimento automatico com IA, voce precisa:\n\n' +
-        '1. Fazer upload de um documento (.pdf, .md, .txt, .docx) com informacoes do seu projeto\n' +
+        'Documento fonte necessário!\n\n' +
+        'Para usar o preenchimento automático com IA, você precisa:\n\n' +
+        '1. Fazer upload de documentos (.pdf, .md, .txt, .docx) com informações do seu projeto\n' +
         'OU\n' +
-        '2. Preencher manualmente pelo menos o "Contexto da Empresa" ou "Descricao do Projeto"\n\n' +
-        'Isso garante que a IA extraia dados REAIS em vez de inventar informacoes.'
+        '2. Preencher manualmente pelo menos um campo com informações básicas do projeto\n\n' +
+        'Isso garante que a IA extraia dados REAIS em vez de inventar informações.'
       );
       return;
     }
@@ -236,24 +250,29 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
     try {
       setIsGeneratingBriefing(true);
 
-      if (hasSourceDocument) {
-        setGenerationProgress('Analisando documento fonte...');
+      if (hasDocuments) {
+        setGenerationProgress(`Analisando ${documents.length} documento(s)...`);
       } else {
         setGenerationProgress('Analisando contexto fornecido...');
       }
 
       await new Promise(resolve => setTimeout(resolve, 500));
-      setGenerationProgress('Extraindo informacoes relevantes...');
+      setGenerationProgress('Extraindo informações relevantes...');
 
-      // Montar contexto completo com documento fonte
+      // Obter conteúdo combinado de todos os documentos
+      const combinedContent = hasDocuments
+        ? await getCombinedDocumentsContent(projectId)
+        : null;
+
+      // Montar contexto completo com documentos
       const context = {
         editalTitle: opportunityTitle,
         editalText: editalTextContent || undefined,
-        // Contexto existente (se usuario ja preencheu algo)
+        // Contexto existente (se usuário já preencheu algo)
         companyName: briefingData[formFields[0]?.id] || undefined,
         projectIdea: briefingData[formFields[1]?.id] || undefined,
-        // DOCUMENTO FONTE - principal fonte de dados
-        sourceDocumentContent: sourceDocument.content,
+        // DOCUMENTOS FONTE - principal fonte de dados
+        sourceDocumentContent: combinedContent,
         // CAMPOS DINÂMICOS do edital
         formFields: formFields
       };
@@ -289,9 +308,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   };
 
   /**
-   * Handle source document upload
+   * Handle document upload
    */
-  const handleSourceDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -303,37 +322,26 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
         return;
       }
 
-      setSourceDocument(prev => ({ ...prev, isUploading: true }));
+      setIsUploadingDocument(true);
 
-      // Process document (upload + extract)
-      const processedDoc = await processSourceDocument(file, projectId);
+      // Upload document (process + save to DB)
+      const newDoc = await uploadProjectDocument(projectId, file);
 
-      // Save to database
-      await saveSourceDocument(projectId, {
-        path: processedDoc.path,
-        type: processedDoc.type,
-        content: processedDoc.content
-      });
+      // Add to local state
+      setDocuments(prev => [...prev, newDoc]);
 
-      // Update local state - INCLUINDO O CONTEUDO EXTRAIDO
-      setSourceDocument({
-        path: processedDoc.path,
-        type: processedDoc.type,
-        fileName: file.name,
-        content: processedDoc.content, // Conteudo extraido para uso na geracao de briefing
-        isUploading: false
-      });
-
-      console.log('[ProjectBriefing] Source document uploaded:', {
-        path: processedDoc.path,
-        type: processedDoc.type,
-        contentLength: processedDoc.content?.length || 0
+      console.log('[ProjectBriefing] Document uploaded:', {
+        id: newDoc.id,
+        file_name: newDoc.file_name,
+        type: newDoc.document_type,
+        contentLength: newDoc.document_content?.length || 0
       });
     } catch (error) {
       console.error('[ProjectBriefing] Upload error:', error);
-      alert('Erro ao fazer upload do documento. Tente novamente.');
-      setSourceDocument(prev => ({ ...prev, isUploading: false }));
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      alert(`Erro ao fazer upload do documento: ${errorMessage}`);
     } finally {
+      setIsUploadingDocument(false);
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -342,24 +350,16 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   };
 
   /**
-   * Handle source document removal
+   * Handle document removal
    */
-  const handleRemoveSourceDocument = async () => {
-    if (!sourceDocument.path) return;
-
-    const confirmed = confirm('Remover documento fonte? Isso não afetará o briefing já preenchido.');
+  const handleRemoveDocument = async (documentId: string, fileName: string) => {
+    const confirmed = confirm(`Remover "${fileName}"? Isso não afetará o briefing já preenchido.`);
     if (!confirmed) return;
 
     try {
-      await removeSourceDocument(projectId);
-      setSourceDocument({
-        path: null,
-        type: null,
-        fileName: null,
-        content: null,
-        isUploading: false
-      });
-      console.log('[ProjectBriefing] Source document removed');
+      await deleteProjectDocument(documentId);
+      setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      console.log('[ProjectBriefing] Document removed:', documentId);
     } catch (error) {
       console.error('[ProjectBriefing] Remove error:', error);
       alert('Erro ao remover documento. Tente novamente.');
@@ -484,82 +484,85 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
             </div>
           </div>
 
-          {/* Source Document Upload */}
+          {/* Project Documents - Múltiplos Documentos */}
           <div className="mb-4">
-            {sourceDocument.path ? (
-              <div className="ceramic-card p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-green-600">
-                    <FileCheck className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-ceramic-text-primary">
-                      Documento Fonte Carregado
-                    </p>
-                    <p className="text-xs text-ceramic-text-secondary">
-                      {sourceDocument.fileName} ({sourceDocument.type?.toUpperCase()})
-                    </p>
-                  </div>
+            <div className="ceramic-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-ceramic-text-primary">
+                    Documentos do Projeto ({documents.length})
+                  </p>
+                  <AlertCircle className="w-4 h-4 text-ceramic-text-tertiary" title="Envie múltiplos documentos com informações do projeto para respostas mais precisas" />
                 </div>
-                <button
-                  onClick={handleRemoveSourceDocument}
-                  className="ceramic-concave w-8 h-8 flex items-center justify-center text-red-600 hover:scale-95 transition-transform"
-                  title="Remover documento"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".md,.pdf,.docx,.doc,.txt"
+                  onChange={handleDocumentUpload}
+                  disabled={isUploadingDocument}
+                  className="hidden"
+                  id="document-upload"
+                />
+                <label htmlFor="document-upload">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingDocument}
+                    className="ceramic-concave px-3 py-2 text-xs font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+                  >
+                    {isUploadingDocument ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3 h-3" />
+                        Adicionar
+                      </>
+                    )}
+                  </button>
+                </label>
               </div>
-            ) : (
-              <div className="ceramic-card p-4">
-                <div className="flex items-start gap-3">
-                  <div className="ceramic-concave w-10 h-10 flex-shrink-0 flex items-center justify-center text-ceramic-accent">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-sm font-bold text-ceramic-text-primary">
-                        Documento Fonte (Opcional)
-                      </p>
-                      <AlertCircle className="w-4 h-4 text-ceramic-text-tertiary" title="Forneça um documento com informações do projeto para respostas mais precisas" />
-                    </div>
-                    <p className="text-xs text-ceramic-text-secondary mb-3">
-                      Upload de .md, .pdf, .docx ou .txt com informações do projeto para gerar respostas mais precisas
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".md,.pdf,.docx,.doc,.txt"
-                        onChange={handleSourceDocumentUpload}
-                        disabled={sourceDocument.isUploading}
-                        className="hidden"
-                        id="source-document-upload"
-                      />
-                      <label htmlFor="source-document-upload">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={sourceDocument.isUploading}
-                          className="ceramic-concave px-4 py-2 text-sm font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
-                        >
-                          {sourceDocument.isUploading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Processando...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4" />
-                              Escolher Arquivo
-                            </>
-                          )}
-                        </button>
-                      </label>
-                    </div>
-                  </div>
+
+              {documents.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-xs text-ceramic-text-secondary">
+                    Nenhum documento enviado. Adicione arquivos .md, .pdf, .txt ou .docx com informações do projeto.
+                  </p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="ceramic-tray p-3 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="ceramic-concave w-8 h-8 flex-shrink-0 flex items-center justify-center text-green-600">
+                          <FileCheck className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-ceramic-text-primary truncate">
+                            {doc.file_name}
+                          </p>
+                          <p className="text-xs text-ceramic-text-tertiary">
+                            {doc.document_type.toUpperCase()} • {doc.document_content ? `${(doc.document_content.length / 1000).toFixed(1)}k chars` : 'Sem conteúdo'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveDocument(doc.id, doc.file_name)}
+                        className="ceramic-concave w-7 h-7 flex-shrink-0 flex items-center justify-center text-red-600 hover:scale-95 transition-transform ml-2"
+                        title="Remover documento"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Progress Bar */}

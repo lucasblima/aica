@@ -17,19 +17,20 @@ export const supabase = createClient(
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true,
-            flowType: 'pkce',
-            // Configura para lidar graciosamente com sessões expiradas
-            onAuthStateChange: (event, session) => {
-                if (event === 'TOKEN_REFRESHED') {
-                    console.log('[Supabase] ✅ Token renovado com sucesso');
-                }
-                if (event === 'SIGNED_OUT' && !session) {
-                    // Limpa a URL de parâmetros OAuth antigos após sign out
-                    if (window.location.hash.includes('access_token')) {
-                        window.history.replaceState(null, '', window.location.pathname);
-                    }
-                }
-            }
+            flowType: 'pkce'
         }
     }
 );
+
+// Configura listener para lidar graciosamente com sessões expiradas
+supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'TOKEN_REFRESHED') {
+        console.log('[Supabase] ✅ Token renovado com sucesso');
+    }
+    if (event === 'SIGNED_OUT' && !session) {
+        // Limpa a URL de parâmetros OAuth antigos após sign out
+        if (window.location.hash.includes('access_token')) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }
+});

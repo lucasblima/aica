@@ -91,7 +91,7 @@ export interface GrantProject {
   submitted_at?: string;
   archived_at?: string | null;
 
-  // Source Document (Fonte de Verdade)
+  // Source Document (Fonte de Verdade) - DEPRECATED: Use documents array
   source_document_path?: string | null;
   source_document_type?: string | null;
   source_document_content?: string | null;
@@ -101,6 +101,25 @@ export interface GrantProject {
   opportunity?: GrantOpportunity;
   briefing?: GrantBriefing;
   responses?: GrantResponse[];
+  documents?: ProjectDocument[]; // Multiple source documents
+}
+
+// ============================================
+// PROJECT DOCUMENT (Documentos de Contexto)
+// ============================================
+
+export interface ProjectDocument {
+  id: string;
+  project_id: string;
+  user_id: string;
+  file_name: string;
+  document_path: string;
+  document_type: 'md' | 'pdf' | 'txt' | 'docx';
+  document_content: string | null;
+  file_size_bytes: number | null;
+  uploaded_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // ============================================
