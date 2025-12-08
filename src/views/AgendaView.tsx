@@ -51,9 +51,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
 
     // Google Calendar Integration - Buscar próximos 7 dias
-    const today = new Date();
-    const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
+    // Usar useMemo para evitar recriar datas a cada render e causar loop
+    const dateRange = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+        return { today, nextWeek };
+    }, []); // Sem dependências - criar apenas uma vez por dia
 
     const {
         events: calendarEvents,
@@ -66,8 +71,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     } = useGoogleCalendarEvents({
         autoSync: true,
         syncInterval: 300, // 5 minutos
-        startDate: today,
-        endDate: nextWeek
+        startDate: dateRange.today,
+        endDate: dateRange.nextWeek
     });
 
     const sensors = useSensors(
