@@ -20,6 +20,7 @@ import { CalendarSyncIndicator } from '../components/CalendarSyncIndicator';
 import { NextEventHero } from '../components/NextEventHero';
 import { AgendaTimeline } from '../components/AgendaTimeline';
 import { WeeklyCalendarView } from '../components/WeeklyCalendarView';
+import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components/NextTwoDaysView';
 import { Task, Quadrant } from '../../types';
 import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
 import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
@@ -44,6 +45,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const [skippedEvents, setSkippedEvents] = useState<Set<string>>(new Set());
 
     // Atlas Module Integration
     const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
@@ -281,6 +283,45 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             }));
     }, [calendarEvents]);
 
+    // Prepare next 2 days events with categories
+    const nextTwoDaysEvents = useMemo(() => {
+        const now = new Date();
+        const today = new Date(now);
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dayAfterTomorrow = new Date(today);
+        dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+        const threeDaysFromNow = new Date(today);
+        threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+
+        return calendarEvents
+            .filter(event => {
+                const eventDate = new Date(event.startTime);
+                return eventDate >= today && eventDate < threeDaysFromNow;
+            })
+            .map(event => {
+                const eventDate = new Date(event.startTime);
+                const isToday = eventDate >= today && eventDate < tomorrow;
+                const isTomorrow = eventDate >= tomorrow && eventDate < dayAfterTomorrow;
+
+                return {
+                    id: event.id,
+                    title: event.title,
+                    startTime: event.startTime,
+                    endTime: event.endTime,
+                    description: event.description,
+                    location: event.location,
+                    category: detectEventCategory(event.title, event.description),
+                    isToday,
+                    isTomorrow,
+                    timeUntil: isToday ? calculateTimeUntil(event.startTime) : undefined,
+                    skipped: skippedEvents.has(event.id)
+                };
+            })
+            .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    }, [calendarEvents, skippedEvents]);
+
     const loadAllTasks = async (forDate?: Date) => {
         try {
             setIsLoading(true);
@@ -448,6 +489,41 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             .eq('id', taskId);
     };
 
+    // Handle skip event
+    const handleSkipEvent = (eventId: string) => {
+        setSkippedEvents(prev => {
+            const newSet = new Set(prev);
+            newSet.add(eventId);
+            // Persist to localStorage
+            localStorage.setItem('skippedEvents', JSON.stringify(Array.from(newSet)));
+            return newSet;
+        });
+    };
+
+    // Handle unskip event
+    const handleUnskipEvent = (eventId: string) => {
+        setSkippedEvents(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(eventId);
+            // Persist to localStorage
+            localStorage.setItem('skippedEvents', JSON.stringify(Array.from(newSet)));
+            return newSet;
+        });
+    };
+
+    // Load skipped events from localStorage on mount
+    useEffect(() => {
+        const stored = localStorage.getItem('skippedEvents');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                setSkippedEvents(new Set(parsed));
+            } catch (e) {
+                console.error('Error parsing skipped events:', e);
+            }
+        }
+    }, []);
+
     const unscheduleTask = async (taskId: string, targetQuadrant: Quadrant) => {
         const task = timelineTasks.find(t => t.id === taskId);
         if (!task) return;
@@ -520,6 +596,20 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             isSyncing={isAtlasSyncing}
                         />
                     </div>
+
+                    {/* PRÓXIMOS 2 DIAS: Eventos Categorizados */}
+                    {nextTwoDaysEvents.length > 0 && (
+                        <section className="max-w-2xl mx-auto w-full">
+                            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
+                                Próximos 2 Dias
+                            </h2>
+                            <NextTwoDaysView
+                                events={nextTwoDaysEvents}
+                                onSkipEvent={handleSkipEvent}
+                                onUnskipEvent={handleUnskipEvent}
+                            />
+                        </section>
+                    )}
 
                     {/* HERO: Próximo Evento */}
                     <section className="max-w-2xl mx-auto w-full">
