@@ -134,71 +134,73 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         key={event.id}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`ceramic-card p-4 rounded-2xl ${event.skipped ? 'opacity-50' : ''}`}
+        className={`ceramic-card p-6 rounded-3xl relative overflow-hidden ${event.skipped ? 'opacity-50' : ''}`}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            {/* Category Badge */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getCategoryColor(event.category)}`}>
-                {event.category}
-              </span>
-              {event.isToday && timeUntil && !event.skipped && (
-                <div className="flex items-center gap-1 text-xs text-ceramic-text-secondary">
-                  <Clock className="w-3 h-3" />
-                  <span className="font-bold">
-                    {isPast ? 'Finalizado' : `Falta ${timeUntil}`}
-                  </span>
-                </div>
-              )}
-            </div>
+        {/* Countdown Badge - Destaque Principal */}
+        {event.isToday && timeUntil && !event.skipped && !isPast && (
+          <div className="ceramic-tray px-4 py-2 rounded-2xl mb-4 inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50">
+            <Clock className="w-4 h-4 text-ceramic-accent animate-pulse" />
+            <span className="text-sm font-black text-ceramic-accent">
+              Falta {timeUntil}
+            </span>
+          </div>
+        )}
 
-            {/* Title */}
-            <h4 className={`text-base font-bold text-ceramic-text-primary mb-1 ${event.skipped ? 'line-through' : ''}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Title - Grande e Bold */}
+            <h4 className={`text-xl font-black text-ceramic-text-primary mb-2 text-etched ${event.skipped ? 'line-through' : ''}`}>
               {event.title}
             </h4>
 
-            {/* Time and Location */}
-            <div className="flex flex-wrap gap-3 text-sm text-ceramic-text-secondary">
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
+            {/* Category + Time - Uma linha só */}
+            <div className="flex items-center gap-3 mb-3">
+              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryColor(event.category)}`}>
+                {event.category}
+              </span>
+              <div className="flex items-center gap-1.5 text-sm text-ceramic-text-secondary font-medium">
+                <Clock className="w-4 h-4" />
                 <span>{formatTime(event.startTime)}</span>
               </div>
-              {event.location && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  <span className="truncate max-w-[150px]">{event.location}</span>
-                </div>
-              )}
             </div>
+
+            {/* Location */}
+            {event.location && (
+              <div className="flex items-center gap-1.5 text-sm text-ceramic-text-secondary">
+                <MapPin className="w-4 h-4" />
+                <span className="truncate">{event.location}</span>
+              </div>
+            )}
 
             {/* Skipped indicator */}
             {event.skipped && (
-              <div className="mt-2 flex items-center gap-1 text-xs text-red-600">
-                <AlertCircle className="w-3 h-3" />
-                <span>Você marcou que não foi</span>
+              <div className="mt-3 flex items-center gap-2 text-sm text-red-600 font-medium">
+                <AlertCircle className="w-4 h-4" />
+                <span>Não foi</span>
               </div>
             )}
           </div>
 
-          {/* Action Button */}
+          {/* Action Button - Mais evidente */}
           {event.isToday && !isPast && (
             <div className="flex-shrink-0">
               {event.skipped ? (
                 <button
                   onClick={() => onUnskipEvent(event.id)}
-                  className="ceramic-card p-2 rounded-lg hover:scale-105 transition-transform"
+                  className="ceramic-card px-4 py-2 rounded-2xl hover:scale-105 transition-transform flex items-center gap-2"
                   title="Desfazer"
                 >
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-sm font-bold text-green-600">Desfazer</span>
                 </button>
               ) : (
                 <button
                   onClick={() => onSkipEvent(event.id)}
-                  className="ceramic-concave p-2 rounded-lg hover:scale-105 transition-transform"
+                  className="ceramic-concave px-4 py-2 rounded-2xl hover:scale-105 transition-transform flex items-center gap-2"
                   title="Não vou"
                 >
-                  <X className="w-4 h-4 text-red-600" />
+                  <X className="w-5 h-5 text-red-600" />
+                  <span className="text-sm font-bold text-red-600">Não vou</span>
                 </button>
               )}
             </div>
@@ -216,20 +218,19 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     if (dayEvents.length === 0) return null;
 
     return (
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
-          <h3 className={`text-sm font-bold uppercase tracking-wider ${
-            isToday ? 'text-ceramic-accent' : 'text-ceramic-text-secondary'
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className={`text-2xl font-black ${
+            isToday ? 'text-ceramic-accent text-etched' : 'text-ceramic-text-primary text-etched'
           }`}>
             {dayLabel}
           </h3>
-          <div className="flex-1 h-px bg-ceramic-border" />
-          <span className="text-xs text-ceramic-text-tertiary">
+          <div className="flex-1" />
+          <span className="text-xs text-ceramic-text-tertiary font-medium">
             {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
           </span>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {dayEvents.map(renderEventCard)}
         </div>
       </div>

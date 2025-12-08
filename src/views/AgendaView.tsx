@@ -588,21 +588,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 space-y-8">
-                    {/* Atlas Quick Add */}
-                    <div className="flex-none max-w-2xl mx-auto w-full">
-                        <TaskCreationInput
-                            onAddTask={addAtlasTask}
-                            isSyncing={isAtlasSyncing}
-                        />
-                    </div>
-
-                    {/* PRÓXIMOS 2 DIAS: Eventos Categorizados */}
+                <main className="flex-1 overflow-y-auto px-6 pb-32 pt-8 space-y-12">
+                    {/* PRÓXIMOS 2 DIAS: Foco Principal */}
                     {nextTwoDaysEvents.length > 0 && (
                         <section className="max-w-2xl mx-auto w-full">
-                            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
-                                Próximos 2 Dias
-                            </h2>
                             <NextTwoDaysView
                                 events={nextTwoDaysEvents}
                                 onSkipEvent={handleSkipEvent}
@@ -611,19 +600,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         </section>
                     )}
 
-                    {/* HERO: Próximo Evento */}
-                    <section className="max-w-2xl mx-auto w-full">
-                        <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
-                            {nextEvent?.isNow ? 'Acontecendo Agora' : 'Próximo'}
-                        </h2>
-                        <NextEventHero
-                            event={nextEvent}
-                            onEventClick={(eventId) => {
-                                console.log('[AgendaView] Event clicked:', eventId);
-                                // TODO: Open event detail modal
-                            }}
+                    {/* Atlas Quick Add - Abaixo do foco principal */}
+                    <div className="flex-none max-w-2xl mx-auto w-full">
+                        <TaskCreationInput
+                            onAddTask={addAtlasTask}
+                            isSyncing={isAtlasSyncing}
                         />
-                    </section>
+                    </div>
 
                     {/* TIMELINE: Mais Tarde */}
                     {restOfDay.length > 0 && (
