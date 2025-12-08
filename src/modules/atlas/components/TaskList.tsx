@@ -38,16 +38,22 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
             setIsLoading(true);
             setError(null);
 
-            const [tasksData, categoriesData] = await Promise.all([
-                atlasService.getTasks({
-                    archived: false,
-                    completed: filter === 'completed' ? true : filter === 'active' ? false : undefined
-                }),
-                atlasService.getCategories()
-            ]);
+            // Load tasks first
+            const tasksData = await atlasService.getTasks({
+                archived: false,
+                completed: filter === 'completed' ? true : filter === 'active' ? false : undefined
+            });
 
             setTasks(tasksData);
-            setCategories(categoriesData);
+
+            // Try to load categories, but don't fail if they can't be loaded
+            try {
+                const categoriesData = await atlasService.getCategories();
+                setCategories(categoriesData);
+            } catch (catError) {
+                console.warn('Could not load categories:', catError);
+                setCategories([]);
+            }
         } catch (err) {
             console.error('Error loading tasks:', err);
             setError(err instanceof Error ? err.message : 'Erro ao carregar tarefas');

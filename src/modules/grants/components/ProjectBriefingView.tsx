@@ -388,7 +388,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   const calculateCompletion = (): number => {
     const totalSections = BRIEFING_SECTIONS.length;
     const completedSections = BRIEFING_SECTIONS.filter(section => {
-      const content = briefingData[section.id] || '';
+      const content = briefingData[section.id];
+      // Garantir que content é uma string antes de chamar .trim()
+      if (typeof content !== 'string') return false;
       return content.trim().length > 0;
     });
     return Math.round((completedSections.length / totalSections) * 100);
