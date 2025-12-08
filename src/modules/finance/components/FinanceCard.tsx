@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { getAllTimeSummary, getBurnRate } from '../services/financeService';
 import type { FinanceSummary, BurnRateData } from '../types';
 
@@ -15,6 +16,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
     const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isValuesVisible, setIsValuesVisible] = useState(false);
 
     useEffect(() => {
         loadFinanceData();
@@ -43,6 +45,9 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
     };
 
     const formatCurrency = (value: number): string => {
+        if (!isValuesVisible) {
+            return 'R$ ••••••';
+        }
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL'
@@ -53,6 +58,10 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
         if (balance > 0) return 'text-ceramic-positive';
         if (balance < 0) return 'text-ceramic-negative';
         return 'text-ceramic-neutral';
+    };
+
+    const toggleVisibility = () => {
+        setIsValuesVisible(!isValuesVisible);
     };
 
     if (loading) {
@@ -85,10 +94,15 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-etched">💰 Finanças</h2>
                 <button
-                    className="ceramic-concave w-10 h-10 flex items-center justify-center text-sm hover:scale-95 transition-transform"
-                    title="Upload de Extratos"
+                    onClick={toggleVisibility}
+                    className="ceramic-concave w-10 h-10 flex items-center justify-center hover:scale-95 transition-transform"
+                    title={isValuesVisible ? 'Ocultar valores' : 'Mostrar valores'}
                 >
-                    📤
+                    {isValuesVisible ? (
+                        <EyeOff className="w-4 h-4 text-ceramic-text-secondary" />
+                    ) : (
+                        <Eye className="w-4 h-4 text-ceramic-text-secondary" />
+                    )}
                 </button>
             </div>
 
@@ -100,9 +114,11 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
                 <p className={`text-4xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
                     {formatCurrency(summary.currentBalance)}
                 </p>
-                <p className="text-xs text-ceramic-text-secondary mt-2">
-                    {summary.transactionCount} transações (fev-nov 2025)
-                </p>
+                {isValuesVisible && (
+                    <p className="text-xs text-ceramic-text-secondary mt-2">
+                        {summary.transactionCount} transações (fev-nov 2025)
+                    </p>
+                )}
             </div>
 
             {/* Income vs Expenses - Inset Pills */}
@@ -151,17 +167,19 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
                     ></div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">
-                        {budgetUsagePercentage.toFixed(0)}% do orçamento médio
-                    </span>
-                    {burnRate.trend !== 'stable' && (
-                        <span className={`font-medium ${burnRate.trend === 'increasing' ? 'text-red-600' : 'text-green-600'
-                            }`}>
-                            {burnRate.trend === 'increasing' ? '↗' : '↘'} {Math.abs(burnRate.percentageChange).toFixed(1)}%
+                {isValuesVisible && (
+                    <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">
+                            {budgetUsagePercentage.toFixed(0)}% do orçamento médio
                         </span>
-                    )}
-                </div>
+                        {burnRate.trend !== 'stable' && (
+                            <span className={`font-medium ${burnRate.trend === 'increasing' ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                {burnRate.trend === 'increasing' ? '↗' : '↘'} {Math.abs(burnRate.percentageChange).toFixed(1)}%
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

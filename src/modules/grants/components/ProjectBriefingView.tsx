@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
@@ -12,12 +12,19 @@ import {
   Leaf,
   MessageSquare,
   ArrowRight,
+  ArrowLeft,
   Save,
   Sparkles,
-  Loader2
+  Loader2,
+  Upload,
+  X,
+  FileCheck,
+  AlertCircle
 } from 'lucide-react';
 import type { BriefingData } from '../types';
 import { generateAutoBriefing } from '../services/briefingAIService';
+import { processSourceDocument, validateDocumentType } from '../services/documentService';
+import { saveSourceDocument, removeSourceDocument } from '../services/grantService';
 
 /**
  * ProjectBriefingView Component
@@ -27,10 +34,24 @@ import { generateAutoBriefing } from '../services/briefingAIService';
 
 interface ProjectBriefingViewProps {
   projectId: string;
+  projectName: string;
   opportunityTitle: string;
+  editalTextContent?: string | null;
   initialBriefing?: BriefingData;
   onSave: (briefing: BriefingData) => Promise<void>;
   onContinue: () => void;
+  onBack: () => void; // Função para voltar
+  sourceDocumentPath?: string | null;
+  sourceDocumentType?: string | null;
+  sourceDocumentContent?: string | null;
+}
+
+interface SourceDocumentState {
+  path: string | null;
+  type: string | null;
+  fileName: string | null;
+  content: string | null;
+  isUploading: boolean;
 }
 
 interface BriefingSection {
@@ -119,21 +140,48 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
 
 export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   projectId,
+  projectName,
   opportunityTitle,
+  editalTextContent,
   initialBriefing,
   onSave,
-  onContinue
+  onContinue,
+  onBack,
+  sourceDocumentPath,
+  sourceDocumentType,
+  sourceDocumentContent: initialSourceDocumentContent
 }) => {
-  const [briefingData, setBriefingData] = useState<BriefingData>(
-    initialBriefing || {}
-  );
-  const [expandedSections, setExpandedSections] = useState<Set<keyof BriefingData>>(
-    new Set(['company_context'])
+  // Inicializar briefing data com schema fixo
+  const [briefingData, setBriefingData] = useState<BriefingData>(() => {
+    return {
+      company_context: initialBriefing?.company_context || '',
+      project_description: initialBriefing?.project_description || '',
+      technical_innovation: initialBriefing?.technical_innovation || '',
+      market_differential: initialBriefing?.market_differential || '',
+      team_expertise: initialBriefing?.team_expertise || '',
+      expected_results: initialBriefing?.expected_results || '',
+      sustainability: initialBriefing?.sustainability || '',
+      additional_notes: initialBriefing?.additional_notes || ''
+    };
+  });
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(BRIEFING_SECTIONS.length > 0 ? [BRIEFING_SECTIONS[0].id] : [])
   );
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [savePending, setSavePending] = useState(false);
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<string>('');
+
+  // Source document state
+  const [sourceDocument, setSourceDocument] = useState<SourceDocumentState>({
+    path: sourceDocumentPath || null,
+    type: sourceDocumentType || null,
+    fileName: sourceDocumentPath ? sourceDocumentPath.split('/').pop() || null : null,
+    content: initialSourceDocumentContent || null,
+    isUploading: false
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
    * Auto-save with debouncing
@@ -160,28 +208,65 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   /**
    * Update briefing field
    */
-  const updateField = useCallback((field: keyof BriefingData, value: string) => {
-    setBriefingData(prev => ({ ...prev, [field]: value }));
+  const updateField = useCallback((fieldId: string, value: string) => {
+    setBriefingData(prev => ({ ...prev, [fieldId]: value }));
     setSavePending(true);
   }, []);
 
   /**
    * Handle auto-generation of briefing with AI
+   *
+   * IMPORTANTE: Esta funcao agora usa o documento fonte para EXTRAIR informacoes,
+   * em vez de gerar dados ficticios.
    */
   const handleGenerateBriefing = async () => {
+    // Verificar se tem documento fonte ou contexto minimo
+    const hasSourceDocument = sourceDocument.content && sourceDocument.content.trim().length > 100;
+    const hasMinimalContext = briefingData.company_context || briefingData.project_description;
+
+    if (!hasSourceDocument && !hasMinimalContext) {
+      alert(
+        'Documento fonte necessario!\n\n' +
+        'Para usar o preenchimento automatico com IA, voce precisa:\n\n' +
+        '1. Fazer upload de um documento (.pdf, .md, .txt, .docx) com informacoes do seu projeto\n' +
+        'OU\n' +
+        '2. Preencher manualmente pelo menos o "Contexto da Empresa" ou "Descricao do Projeto"\n\n' +
+        'Isso garante que a IA extraia dados REAIS em vez de inventar informacoes.'
+      );
+      return;
+    }
+
     try {
       setIsGeneratingBriefing(true);
 
-      // Gather available context
+      if (hasSourceDocument) {
+        setGenerationProgress('Analisando documento fonte...');
+      } else {
+        setGenerationProgress('Analisando contexto fornecido...');
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setGenerationProgress('Extraindo informacoes relevantes...');
+
+      // Montar contexto completo com documento fonte
       const context = {
         editalTitle: opportunityTitle,
-        // Optionally add company name and project idea from existing briefing
-        companyName: briefingData.company_context ? briefingData.company_context.substring(0, 100) : undefined,
-        projectIdea: briefingData.project_description ? briefingData.project_description.substring(0, 100) : undefined
+        editalText: editalTextContent || undefined,
+        // Contexto existente (se usuario ja preencheu algo)
+        companyName: briefingData.company_context || undefined,
+        projectIdea: briefingData.project_description || undefined,
+        // DOCUMENTO FONTE - principal fonte de dados
+        sourceDocumentContent: sourceDocument.content
       };
 
-      // Generate briefing with AI
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setGenerationProgress('Gerando briefing com IA...');
+
+      // Generate briefing with AI - agora extrai do documento
       const generatedBriefing = await generateAutoBriefing(context);
+
+      setGenerationProgress('Preenchendo campos...');
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Update briefing data
       setBriefingData(generatedBriefing);
@@ -189,18 +274,103 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
 
       // Expand all sections to show generated content
       setExpandedSections(new Set(BRIEFING_SECTIONS.map(s => s.id)));
+
+      setGenerationProgress('Briefing extraido com sucesso!');
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error('Error generating briefing:', error);
-      alert('Erro ao gerar briefing automaticamente. Tente novamente.');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setGenerationProgress(`Erro: ${errorMessage}`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert(`Erro ao gerar briefing: ${errorMessage}`);
     } finally {
       setIsGeneratingBriefing(false);
+      setGenerationProgress('');
+    }
+  };
+
+  /**
+   * Handle source document upload
+   */
+  const handleSourceDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Validate file type
+      const validation = validateDocumentType(file);
+      if (!validation.valid) {
+        alert(validation.error || 'Tipo de arquivo inválido');
+        return;
+      }
+
+      setSourceDocument(prev => ({ ...prev, isUploading: true }));
+
+      // Process document (upload + extract)
+      const processedDoc = await processSourceDocument(file, projectId);
+
+      // Save to database
+      await saveSourceDocument(projectId, {
+        path: processedDoc.path,
+        type: processedDoc.type,
+        content: processedDoc.content
+      });
+
+      // Update local state - INCLUINDO O CONTEUDO EXTRAIDO
+      setSourceDocument({
+        path: processedDoc.path,
+        type: processedDoc.type,
+        fileName: file.name,
+        content: processedDoc.content, // Conteudo extraido para uso na geracao de briefing
+        isUploading: false
+      });
+
+      console.log('[ProjectBriefing] Source document uploaded:', {
+        path: processedDoc.path,
+        type: processedDoc.type,
+        contentLength: processedDoc.content?.length || 0
+      });
+    } catch (error) {
+      console.error('[ProjectBriefing] Upload error:', error);
+      alert('Erro ao fazer upload do documento. Tente novamente.');
+      setSourceDocument(prev => ({ ...prev, isUploading: false }));
+    } finally {
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  /**
+   * Handle source document removal
+   */
+  const handleRemoveSourceDocument = async () => {
+    if (!sourceDocument.path) return;
+
+    const confirmed = confirm('Remover documento fonte? Isso não afetará o briefing já preenchido.');
+    if (!confirmed) return;
+
+    try {
+      await removeSourceDocument(projectId);
+      setSourceDocument({
+        path: null,
+        type: null,
+        fileName: null,
+        content: null,
+        isUploading: false
+      });
+      console.log('[ProjectBriefing] Source document removed');
+    } catch (error) {
+      console.error('[ProjectBriefing] Remove error:', error);
+      alert('Erro ao remover documento. Tente novamente.');
     }
   };
 
   /**
    * Toggle section expansion
    */
-  const toggleSection = (sectionId: keyof BriefingData) => {
+  const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
       const next = new Set(prev);
       if (next.has(sectionId)) {
@@ -216,12 +386,12 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
    * Calculate completion percentage
    */
   const calculateCompletion = (): number => {
-    const requiredSections = BRIEFING_SECTIONS.filter(s => s.minChars);
-    const completedSections = requiredSections.filter(section => {
+    const totalSections = BRIEFING_SECTIONS.length;
+    const completedSections = BRIEFING_SECTIONS.filter(section => {
       const content = briefingData[section.id] || '';
-      return content.length >= (section.minChars || 0);
+      return content.trim().length > 0;
     });
-    return Math.round((completedSections.length / requiredSections.length) * 100);
+    return Math.round((completedSections.length / totalSections) * 100);
   };
 
   /**
@@ -247,20 +417,39 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   const completion = calculateCompletion();
 
   return (
-    <div className="min-h-screen bg-ceramic-base">
+    <div className="h-screen bg-ceramic-base flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
+      <div className="flex-shrink-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-6">
+          {/* Back Button */}
+          <button
+            onClick={onBack}
+            className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-text-primary hover:scale-95 active:scale-90 transition-transform mb-4"
+            title="Voltar"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm text-ceramic-text-secondary mb-1">
-                Coletando Contexto para
+                {opportunityTitle}
               </p>
               <h1 className="text-2xl font-bold text-ceramic-text-primary">
-                {opportunityTitle}
+                {projectName}
               </h1>
             </div>
             <div className="flex items-center gap-4">
+              {/* AI Generation Progress Indicator */}
+              {isGeneratingBriefing && (
+                <div className="ceramic-card px-4 py-2 flex items-center gap-3">
+                  <Loader2 className="w-4 h-4 animate-spin text-ceramic-accent" />
+                  <span className="text-sm text-ceramic-text-secondary">
+                    {generationProgress}
+                  </span>
+                </div>
+              )}
+
               <button
                 onClick={handleGenerateBriefing}
                 disabled={isGeneratingBriefing}
@@ -293,6 +482,84 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
             </div>
           </div>
 
+          {/* Source Document Upload */}
+          <div className="mb-4">
+            {sourceDocument.path ? (
+              <div className="ceramic-card p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-green-600">
+                    <FileCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-ceramic-text-primary">
+                      Documento Fonte Carregado
+                    </p>
+                    <p className="text-xs text-ceramic-text-secondary">
+                      {sourceDocument.fileName} ({sourceDocument.type?.toUpperCase()})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleRemoveSourceDocument}
+                  className="ceramic-concave w-8 h-8 flex items-center justify-center text-red-600 hover:scale-95 transition-transform"
+                  title="Remover documento"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="ceramic-card p-4">
+                <div className="flex items-start gap-3">
+                  <div className="ceramic-concave w-10 h-10 flex-shrink-0 flex items-center justify-center text-ceramic-accent">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-sm font-bold text-ceramic-text-primary">
+                        Documento Fonte (Opcional)
+                      </p>
+                      <AlertCircle className="w-4 h-4 text-ceramic-text-tertiary" title="Forneça um documento com informações do projeto para respostas mais precisas" />
+                    </div>
+                    <p className="text-xs text-ceramic-text-secondary mb-3">
+                      Upload de .md, .pdf, .docx ou .txt com informações do projeto para gerar respostas mais precisas
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".md,.pdf,.docx,.doc,.txt"
+                        onChange={handleSourceDocumentUpload}
+                        disabled={sourceDocument.isUploading}
+                        className="hidden"
+                        id="source-document-upload"
+                      />
+                      <label htmlFor="source-document-upload">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={sourceDocument.isUploading}
+                          className="ceramic-concave px-4 py-2 text-sm font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+                        >
+                          {sourceDocument.isUploading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Processando...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4" />
+                              Escolher Arquivo
+                            </>
+                          )}
+                        </button>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -312,12 +579,14 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-4">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-6 py-8 pb-32 space-y-4">
         {BRIEFING_SECTIONS.map((section, index) => {
           const isExpanded = expandedSections.has(section.id);
           const content = briefingData[section.id] || '';
           const charCount = content.length;
-          const meetsMinimum = !section.minChars || charCount >= section.minChars;
+          const meetsRequirement = content.trim().length > 0;
+          const exceedsMax = section.maxChars && charCount > section.maxChars;
 
           return (
             <motion.div
@@ -334,16 +603,13 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
               >
                 <div className="flex items-center gap-4">
                   <div className={`ceramic-concave w-12 h-12 flex items-center justify-center ${
-                    meetsMinimum ? 'text-green-600' : 'text-ceramic-text-secondary'
+                    meetsRequirement && !exceedsMax ? 'text-green-600' : 'text-ceramic-text-secondary'
                   }`}>
                     {section.icon}
                   </div>
                   <div className="text-left">
                     <h3 className="text-lg font-bold text-ceramic-text-primary">
                       {section.title}
-                      {section.minChars && (
-                        <span className="ml-2 text-sm font-normal text-red-600">*</span>
-                      )}
                     </h3>
                     <p className="text-sm text-ceramic-text-secondary">
                       {section.help}
@@ -353,11 +619,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                 <div className="flex items-center gap-3">
                   {charCount > 0 && (
                     <span
-                      className={`text-sm font-medium ${getCharCountColor(
-                        charCount,
-                        section.minChars,
-                        section.maxChars
-                      )}`}
+                      className={`text-sm font-medium ${
+                        exceedsMax ? 'text-red-600' : 'text-ceramic-text-secondary'
+                      }`}
                     >
                       {charCount}
                       {section.maxChars && ` / ${section.maxChars}`}
@@ -395,24 +659,23 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
 
                       {/* Character Count Info */}
                       <div className="flex items-center justify-between mt-3 text-xs">
-                        {section.minChars && (
-                          <span
-                            className={
-                              meetsMinimum
-                                ? 'text-green-600'
-                                : 'text-orange-600'
-                            }
-                          >
-                            {meetsMinimum
-                              ? `Mínimo atingido (${section.minChars} caracteres)`
-                              : `Mínimo: ${section.minChars} caracteres (faltam ${
-                                  section.minChars - charCount
-                                })`}
-                          </span>
-                        )}
+                        <span
+                          className={
+                            meetsRequirement
+                              ? 'text-green-600'
+                              : 'text-ceramic-text-tertiary'
+                          }
+                        >
+                          {meetsRequirement
+                            ? 'Campo preenchido ✓'
+                            : 'Campo opcional'}
+                        </span>
                         {section.maxChars && charCount > section.maxChars * 0.9 && (
-                          <span className="text-orange-600">
-                            {section.maxChars - charCount} caracteres restantes
+                          <span className={exceedsMax ? 'text-red-600' : 'text-orange-600'}>
+                            {exceedsMax
+                              ? `Excedeu em ${charCount - section.maxChars} caracteres!`
+                              : `${section.maxChars - charCount} caracteres restantes`
+                            }
                           </span>
                         )}
                       </div>
@@ -423,10 +686,11 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
             </motion.div>
           );
         })}
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="sticky bottom-0 bg-ceramic-base border-t border-ceramic-text-secondary/10 shadow-lg">
+      <div className="flex-shrink-0 bg-ceramic-base border-t border-ceramic-text-secondary/10 shadow-lg">
         <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>

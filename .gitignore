@@ -54,9 +54,6 @@ tests/e2e/test-results/
 tests/e2e/manual-login.ts
 tests/e2e/manual-login.mjs
 
-# Supabase migrations (não enviar para o repo)
-supabase/migrations/
-
 # Claude Code
 .claude
 

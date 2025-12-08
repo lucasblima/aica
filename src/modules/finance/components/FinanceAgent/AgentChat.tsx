@@ -215,6 +215,12 @@ Como posso ajudar hoje?`,
   };
 
   const formatContent = (content: string) => {
+    // Safety check for non-string content
+    if (typeof content !== 'string') {
+      console.warn('AgentChat: received non-string content:', content);
+      return '';
+    }
+
     // Simple markdown rendering
     return content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -235,10 +241,9 @@ Como posso ajudar hoje?`,
             <div
               className={`
                 max-w-[80%] p-4 rounded-2xl
-                ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-md'
-                    : 'ceramic-card rounded-bl-md'
+                ${message.role === 'user'
+                  ? 'bg-blue-600 text-white rounded-br-md'
+                  : 'ceramic-card rounded-bl-md'
                 }
               `}
             >
@@ -249,15 +254,13 @@ Como posso ajudar hoje?`,
                 </div>
               )}
               <div
-                className={`text-sm leading-relaxed ${
-                  message.role === 'user' ? 'text-white' : 'text-ceramic-text-primary'
-                }`}
+                className={`text-sm leading-relaxed ${message.role === 'user' ? 'text-white' : 'text-ceramic-text-primary'
+                  }`}
                 dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
               />
               <p
-                className={`text-xs mt-2 ${
-                  message.role === 'user' ? 'text-blue-200' : 'text-ceramic-text-secondary'
-                }`}
+                className={`text-xs mt-2 ${message.role === 'user' ? 'text-blue-200' : 'text-ceramic-text-secondary'
+                  }`}
               >
                 {message.timestamp.toLocaleTimeString('pt-BR', {
                   hour: '2-digit',

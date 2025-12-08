@@ -489,7 +489,7 @@ export async function saveBriefing(
       .from('grant_briefings')
       .select('*')
       .eq('project_id', projectId)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       // Atualizar existente (merge com dados anteriores)
@@ -543,9 +543,9 @@ export async function getBriefing(projectId: string): Promise<GrantBriefing | nu
       .from('grant_briefings')
       .select('*')
       .eq('project_id', projectId)
-      .single()
+      .maybeSingle()
 
-    if (error && error.code !== 'PGRST116') throw error // PGRST116 = not found
+    if (error) throw error
     return data as GrantBriefing | null
   } catch (error) {
     console.error('Erro ao buscar briefing:', error)
@@ -731,5 +731,334 @@ export async function deleteResponse(responseId: string): Promise<void> {
   } catch (error) {
     console.error('Erro ao deletar resposta:', error)
     throw new Error(`Falha ao deletar resposta: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+// ============================================
+// ARCHIVE & DELETE
+// ============================================
+
+/**
+ * Arquiva um projeto (marca como arquivado sem deletar)
+ *
+ * @param projectId - ID do projeto
+ * @returns Projeto arquivado
+ * @throws Error se arquivamento falhar
+ */
+export async function archiveProject(projectId: string): Promise<GrantProject> {
+  try {
+    const { data, error } = await supabase
+      .from('grant_projects')
+      .update({
+        archived_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId)
+      .select(`
+        *,
+        opportunity:grant_opportunities(*)
+      `)
+      .single()
+
+    if (error) throw error
+    return data as GrantProject
+  } catch (error) {
+    console.error('Erro ao arquivar projeto:', error)
+    throw new Error(`Falha ao arquivar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Restaura um projeto arquivado
+ *
+ * @param projectId - ID do projeto
+ * @returns Projeto restaurado
+ * @throws Error se restauração falhar
+ */
+export async function unarchiveProject(projectId: string): Promise<GrantProject> {
+  try {
+    const { data, error } = await supabase
+      .from('grant_projects')
+      .update({
+        archived_at: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId)
+      .select(`
+        *,
+        opportunity:grant_opportunities(*)
+      `)
+      .single()
+
+    if (error) throw error
+    return data as GrantProject
+  } catch (error) {
+    console.error('Erro ao restaurar projeto:', error)
+    throw new Error(`Falha ao restaurar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Deleta permanentemente um projeto arquivado e seu PDF associado
+ *
+ * IMPORTANTE: Só deve ser usado em projetos já arquivados
+ *
+ * @param projectId - ID do projeto
+ * @param pdfPath - Caminho do PDF no storage (opcional)
+ * @throws Error se deleção falhar ou projeto não estiver arquivado
+ */
+export async function deleteArchivedProject(
+  projectId: string,
+  pdfPath?: string
+): Promise<void> {
+  try {
+    // 1. Verificar se o projeto está arquivado
+    const { data: project, error: fetchError } = await supabase
+      .from('grant_projects')
+      .select('archived_at, opportunity:grant_opportunities(edital_pdf_path)')
+      .eq('id', projectId)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    if (!project.archived_at) {
+      throw new Error('Projeto precisa estar arquivado antes de ser deletado permanentemente')
+    }
+
+    // 2. Deletar PDF do storage se existir
+    const pdfPathToDelete = pdfPath || (project.opportunity as any)?.edital_pdf_path
+
+    if (pdfPathToDelete) {
+      const { error: storageError } = await supabase.storage
+        .from('editais')
+        .remove([pdfPathToDelete])
+
+      if (storageError) {
+        console.warn('Erro ao deletar PDF (continuando):', storageError)
+        // Não interrompe a deleção do projeto se o PDF falhar
+      }
+    }
+
+    // 3. Deletar projeto (cascata deleta briefing e responses via FK)
+    const { error: deleteError } = await supabase
+      .from('grant_projects')
+      .delete()
+      .eq('id', projectId)
+
+    if (deleteError) throw deleteError
+
+    console.log(`[Grants] Projeto ${projectId} deletado permanentemente`, {
+      pdfDeleted: !!pdfPathToDelete
+    })
+  } catch (error) {
+    console.error('Erro ao deletar projeto:', error)
+    throw new Error(`Falha ao deletar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Arquiva uma oportunidade (edital)
+ *
+ * @param opportunityId - ID da oportunidade
+ * @returns Oportunidade arquivada
+ * @throws Error se arquivamento falhar
+ */
+export async function archiveOpportunity(opportunityId: string): Promise<GrantOpportunity> {
+  try {
+    const { data, error } = await supabase
+      .from('grant_opportunities')
+      .update({
+        archived_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', opportunityId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as GrantOpportunity
+  } catch (error) {
+    console.error('Erro ao arquivar oportunidade:', error)
+    throw new Error(`Falha ao arquivar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Restaura uma oportunidade arquivada
+ *
+ * @param opportunityId - ID da oportunidade
+ * @returns Oportunidade restaurada
+ * @throws Error se restauração falhar
+ */
+export async function unarchiveOpportunity(opportunityId: string): Promise<GrantOpportunity> {
+  try {
+    const { data, error } = await supabase
+      .from('grant_opportunities')
+      .update({
+        archived_at: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', opportunityId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as GrantOpportunity
+  } catch (error) {
+    console.error('Erro ao restaurar oportunidade:', error)
+    throw new Error(`Falha ao restaurar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Deleta permanentemente uma oportunidade arquivada, seu PDF e todos os projetos relacionados
+ *
+ * IMPORTANTE: Só deve ser usado em oportunidades já arquivadas
+ *
+ * @param opportunityId - ID da oportunidade
+ * @throws Error se deleção falhar ou oportunidade não estiver arquivada
+ */
+export async function deleteArchivedOpportunity(opportunityId: string): Promise<void> {
+  try {
+    // 1. Verificar se a oportunidade está arquivada
+    const { data: opportunity, error: fetchError } = await supabase
+      .from('grant_opportunities')
+      .select('archived_at, edital_pdf_path')
+      .eq('id', opportunityId)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    if (!opportunity.archived_at) {
+      throw new Error('Oportunidade precisa estar arquivada antes de ser deletada permanentemente')
+    }
+
+    // 2. Deletar PDF do storage se existir
+    if (opportunity.edital_pdf_path) {
+      const { error: storageError } = await supabase.storage
+        .from('editais')
+        .remove([opportunity.edital_pdf_path])
+
+      if (storageError) {
+        console.warn('Erro ao deletar PDF (continuando):', storageError)
+        // Não interrompe a deleção se o PDF falhar
+      }
+    }
+
+    // 3. Deletar oportunidade (cascata deleta projetos, briefings e responses via FK)
+    const { error: deleteError } = await supabase
+      .from('grant_opportunities')
+      .delete()
+      .eq('id', opportunityId)
+
+    if (deleteError) throw deleteError
+
+    console.log(`[Grants] Oportunidade ${opportunityId} deletada permanentemente`, {
+      pdfDeleted: !!opportunity.edital_pdf_path
+    })
+  } catch (error) {
+    console.error('Erro ao deletar oportunidade:', error)
+    throw new Error(`Falha ao deletar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Conta quantos projetos ativos (não arquivados) existem para uma oportunidade
+ *
+ * @param opportunityId - ID da oportunidade
+ * @returns Número de projetos ativos
+ * @throws Error se a contagem falhar
+ */
+export async function countActiveProjects(opportunityId: string): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('grant_projects')
+      .select('*', { count: 'exact', head: true })
+      .eq('opportunity_id', opportunityId)
+      .is('archived_at', null)
+
+    if (error) throw error
+    return count || 0
+  } catch (error) {
+    console.error('Erro ao contar projetos:', error)
+    throw new Error(`Falha ao contar projetos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+// ============================================
+// SOURCE DOCUMENTS
+// ============================================
+
+/**
+ * Salva informações do documento fonte no projeto
+ *
+ * @param projectId - ID do projeto
+ * @param documentData - Dados do documento processado
+ * @returns Projeto atualizado
+ * @throws Error se salvar falhar
+ */
+export async function saveSourceDocument(
+  projectId: string,
+  documentData: {
+    path: string;
+    type: string;
+    content: string;
+  }
+): Promise<GrantProject> {
+  try {
+    const { data, error } = await supabase
+      .from('grant_projects')
+      .update({
+        source_document_path: documentData.path,
+        source_document_type: documentData.type,
+        source_document_content: documentData.content,
+        source_document_uploaded_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId)
+      .select(`
+        *,
+        opportunity:grant_opportunities(*)
+      `)
+      .single()
+
+    if (error) throw error
+    return data as GrantProject
+  } catch (error) {
+    console.error('Erro ao salvar documento fonte:', error)
+    throw new Error(`Falha ao salvar documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Remove documento fonte do projeto
+ *
+ * @param projectId - ID do projeto
+ * @returns Projeto atualizado
+ * @throws Error se remoção falhar
+ */
+export async function removeSourceDocument(projectId: string): Promise<GrantProject> {
+  try {
+    const { data, error } = await supabase
+      .from('grant_projects')
+      .update({
+        source_document_path: null,
+        source_document_type: null,
+        source_document_content: null,
+        source_document_uploaded_at: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId)
+      .select(`
+        *,
+        opportunity:grant_opportunities(*)
+      `)
+      .single()
+
+    if (error) throw error
+    return data as GrantProject
+  } catch (error) {
+    console.error('Erro ao remover documento fonte:', error)
+    throw new Error(`Falha ao remover documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }

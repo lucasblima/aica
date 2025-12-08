@@ -280,6 +280,14 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
         if (!response.ok) {
             const errorText = await response.text();
             console.error('[refreshAccessToken] ❌ Erro na resposta:', errorText);
+
+            // Se o erro for invalid_grant (token revogado ou expirado), desconectar para evitar loops
+            if (response.status === 400 && errorText.includes('invalid_grant')) {
+                console.warn('[refreshAccessToken] 🚨 Refresh token inválido/revogado. Desconectando Google Calendar...');
+                await disconnectGoogleCalendar();
+                throw new Error('Conexão com Google Calendar expirou. Por favor, reconecte.');
+            }
+
             throw new Error(`Falha ao renovar token de acesso: ${response.status} - ${errorText}`);
         }
 

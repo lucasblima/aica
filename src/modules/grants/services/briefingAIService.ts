@@ -6,17 +6,41 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { BriefingData } from '../types';
 
 /**
- * Gera briefing completo automaticamente com base em contexto mínimo
+ * Contexto para geracao de briefing
  */
-export async function generateAutoBriefing(context: {
+export interface BriefingGenerationContext {
   companyName?: string;
   projectIdea?: string;
   editalTitle?: string;
   editalText?: string;
-}): Promise<BriefingData> {
+  /** Conteudo do documento fonte (PDF, MD, TXT, DOCX) - PRINCIPAL FONTE DE DADOS */
+  sourceDocumentContent?: string | null;
+}
+
+/**
+ * Gera briefing completo automaticamente com base no documento fonte
+ *
+ * IMPORTANTE: Esta funcao EXTRAI informacoes do documento fonte fornecido.
+ * NAO inventa dados se o documento nao for fornecido.
+ *
+ * @param context - Contexto incluindo o documento fonte
+ * @returns Briefing extraido do documento
+ * @throws Error se documento fonte nao for fornecido ou API falhar
+ */
+export async function generateAutoBriefing(context: BriefingGenerationContext): Promise<BriefingData> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('VITE_GEMINI_API_KEY não configurada');
+  }
+
+  // VALIDACAO CRITICA: Exigir documento fonte para evitar alucinacao
+  const hasSourceDocument = context.sourceDocumentContent && context.sourceDocumentContent.trim().length > 100;
+  const hasMinimalContext = context.companyName || context.projectIdea;
+
+  if (!hasSourceDocument && !hasMinimalContext) {
+    throw new Error(
+      'Documento fonte obrigatório. Faça upload de um arquivo (.pdf, .md, .txt, .docx) com informações do seu projeto antes de usar o preenchimento automático.'
+    );
   }
 
   try {
@@ -24,55 +48,68 @@ export async function generateAutoBriefing(context: {
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash-exp',
       generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
+        temperature: 0.3, // Temperatura baixa para ser mais factual e menos criativo
+        topK: 20,
+        topP: 0.8,
         maxOutputTokens: 4000,
       },
     });
 
-    const systemPrompt = `Você é um especialista em planejamento de projetos de inovação para editais de fomento no Brasil.
+    // System prompt focado em EXTRACAO, nao CRIACAO
+    const systemPrompt = `Você é um especialista em análise de documentos para editais de fomento no Brasil.
 
-Sua tarefa é gerar um briefing completo e detalhado para um projeto, que será usado posteriormente para preencher o formulário de inscrição de um edital.
+Sua tarefa é EXTRAIR e ORGANIZAR informações de um documento fonte fornecido pelo usuário para preencher um briefing de projeto.
 
-IMPORTANTE:
-1. Gere conteúdos REALISTAS e ESPECÍFICOS (não use placeholders genéricos)
-2. Use números, datas, valores quando apropriado
-3. Seja detalhado mas objetivo
-4. Foque em inovação tecnológica e impacto de mercado
-5. Retorne APENAS o JSON, sem texto adicional
+REGRAS CRÍTICAS - SIGA RIGOROSAMENTE:
+1. APENAS EXTRAIA informações que estão EXPLICITAMENTE no documento fonte
+2. NUNCA invente dados, números, nomes ou informações não presentes no documento
+3. Se uma informação não estiver no documento, escreva: "[Informação não encontrada no documento - preencher manualmente]"
+4. Use CITAÇÕES DIRETAS do documento quando possível
+5. Mantenha a linguagem original do documento
+6. Se o documento for incompleto, indique claramente o que está faltando
+7. Retorne APENAS o JSON, sem texto adicional
 
 ESTRUTURA DO JSON:
 {
-  "company_context": "Texto de 200-500 palavras sobre a empresa",
-  "project_description": "Texto de 300-600 palavras sobre o projeto",
-  "technical_innovation": "Texto de 200-400 palavras sobre inovação técnica",
-  "market_differential": "Texto de 200-400 palavras sobre diferencial de mercado",
-  "team_expertise": "Texto de 150-300 palavras sobre a equipe",
-  "expected_results": "Texto de 200-400 palavras sobre resultados esperados",
-  "sustainability": "Texto de 150-300 palavras sobre sustentabilidade financeira",
-  "additional_notes": "Texto de 100-200 palavras com informações adicionais"
+  "company_context": "Extrair: nome da empresa, área de atuação, histórico, equipe, localização",
+  "project_description": "Extrair: objetivo do projeto, escopo, metodologia, etapas",
+  "technical_innovation": "Extrair: tecnologias utilizadas, diferenciais técnicos, patentes, P&D",
+  "market_differential": "Extrair: mercado-alvo, concorrentes, vantagens competitivas, modelo de negócio",
+  "team_expertise": "Extrair: membros da equipe, formação, experiência, currículo",
+  "expected_results": "Extrair: metas, indicadores, entregas, cronograma",
+  "sustainability": "Extrair: modelo de receita, projeções financeiras, sustentabilidade pós-fomento",
+  "additional_notes": "Extrair: parcerias, prêmios, certificações, informações complementares"
 }
 
-EXEMPLO DE QUALIDADE ESPERADA:
-{
-  "company_context": "A [Nome] é uma startup de biotecnologia fundada em 2020 no Rio de Janeiro, especializada no desenvolvimento de soluções diagnósticas baseadas em inteligência artificial. A empresa conta atualmente com 15 colaboradores, sendo 8 pesquisadores com formação em biologia molecular, ciência da computação e bioinformática. Desde sua fundação, a empresa já desenvolveu 2 protótipos de sistemas de diagnóstico e estabeleceu parcerias com 3 hospitais de referência para testes clínicos. A empresa possui um laboratório de 200m² equipado com infraestrutura completa para análises moleculares e um data center para processamento de IA..."
-}`;
+Se o campo não tiver informação no documento, retorne:
+"[Campo não encontrado no documento fonte. Por favor, preencha manualmente com informações sobre: <descrição do que é esperado>]"`;
 
-    const userPrompt = `Gere um briefing completo para este projeto:
+    // User prompt com foco no documento fonte
+    const userPrompt = hasSourceDocument
+      ? `DOCUMENTO FONTE DO PROJETO:
+---
+${context.sourceDocumentContent!.substring(0, 30000)}
+${context.sourceDocumentContent!.length > 30000 ? '\n[... documento truncado por limite de tokens ...]' : ''}
+---
 
-INFORMAÇÕES FORNECIDAS:
-${context.companyName ? `- Nome da empresa: ${context.companyName}` : ''}
+CONTEXTO ADICIONAL:
+${context.editalTitle ? `- Edital alvo: ${context.editalTitle}` : ''}
+${context.editalText ? `- Requisitos do edital: ${context.editalText.substring(0, 2000)}` : ''}
+
+INSTRUÇÃO: Analise o DOCUMENTO FONTE acima e EXTRAIA as informações para preencher cada campo do briefing.
+NÃO INVENTE nenhuma informação. Se algo não estiver no documento, indique claramente.
+
+Retorne APENAS o JSON com os 8 campos.`
+      : `INFORMAÇÕES DISPONÍVEIS (sem documento fonte completo):
+${context.companyName ? `- Nome/contexto da empresa: ${context.companyName}` : ''}
 ${context.projectIdea ? `- Ideia do projeto: ${context.projectIdea}` : ''}
 ${context.editalTitle ? `- Edital: ${context.editalTitle}` : ''}
-${context.editalText ? `- Resumo do edital: ${context.editalText.substring(0, 1000)}...` : ''}
 
-${!context.companyName && !context.projectIdea ?
-  'ATENÇÃO: Poucas informações foram fornecidas. Crie um briefing EXEMPLO realista e completo para uma startup brasileira de tecnologia.' :
-  'Com base nas informações acima, gere um briefing detalhado e convincente.'
-}
+ATENÇÃO: Documento fonte não foi fornecido.
+Organize as poucas informações disponíveis nos campos apropriados.
+Para campos sem informação, retorne a mensagem padrão indicando preenchimento manual.
 
-Retorne APENAS o JSON com os 8 campos preenchidos.`;
+Retorne APENAS o JSON com os 8 campos.`;
 
     const result = await model.generateContent([
       { text: systemPrompt },

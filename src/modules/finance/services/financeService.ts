@@ -16,29 +16,46 @@ import type {
 export async function getAllTimeSummary(userId: string): Promise<FinanceSummary> {
     try {
         // Fetch ALL transactions for user
-        const { data, error } = await supabase
+        const { data: transactions, error: txError } = await supabase
             .from('finance_transactions')
             .select('*')
             .eq('user_id', userId);
 
-        if (error) throw error;
+        if (txError) throw txError;
 
-        const transactions = data || [];
+        // Fetch the most recent statement to get the correct closing balance
+        const { data: statements, error: stmtError } = await supabase
+            .from('finance_statements')
+            .select('closing_balance, statement_period_end')
+            .eq('user_id', userId)
+            .eq('processing_status', 'completed')
+            .order('statement_period_end', { ascending: false })
+            .limit(1);
+
+        if (stmtError) throw stmtError;
+
+        const txList = transactions || [];
 
         // Calculate summary
-        const totalIncome = transactions
+        const totalIncome = txList
             .filter(t => t.type === 'income')
             .reduce((sum, t) => sum + Number(t.amount), 0);
 
-        const totalExpenses = transactions
+        const totalExpenses = txList
             .filter(t => t.type === 'expense')
             .reduce((sum, t) => sum + Number(t.amount), 0);
 
+        // Use closing_balance from the most recent statement as the current balance
+        // This is the correct balance that accounts for opening_balance + income - expenses
+        const currentBalance = statements && statements.length > 0
+            ? Number(statements[0].closing_balance)
+            : totalIncome - totalExpenses; // Fallback if no statements exist
+
         return {
-            currentBalance: totalIncome - totalExpenses,
+            currentBalance,
             totalIncome,
             totalExpenses,
-            transactionCount: transactions.length
+            transactionCount: txList.length
         };
     } catch (error) {
         console.error('Error fetching all-time summary:', error);

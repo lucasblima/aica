@@ -154,6 +154,12 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
     const [chatInput, setChatInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
 
+    // Sources Dialog State
+    const [sourceText, setSourceText] = useState('');
+    const [sourceUrl, setSourceUrl] = useState('');
+    const [sourceFile, setSourceFile] = useState<File | null>(null);
+    const [isProcessingSources, setIsProcessingSources] = useState(false);
+
     // DnD Sensors
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -356,6 +362,83 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                 }
                 return items;
             });
+        }
+    };
+
+    const handleAddSources = async () => {
+        if (!sourceText.trim() && !sourceUrl.trim() && !sourceFile) {
+            alert('Por favor, adicione pelo menos uma fonte.');
+            return;
+        }
+
+        setIsProcessingSources(true);
+        try {
+            // Prepare sources content
+            let additionalContext = '';
+
+            if (sourceText.trim()) {
+                additionalContext += `\n\nTexto fornecido:\n${sourceText.trim()}`;
+            }
+
+            if (sourceUrl.trim()) {
+                additionalContext += `\n\nLink fornecido: ${sourceUrl.trim()}`;
+                // TODO: Fetch content from URL using Gemini or web scraping
+            }
+
+            if (sourceFile) {
+                additionalContext += `\n\nArquivo anexado: ${sourceFile.name}`;
+                // TODO: Process file content (PDF, TXT, DOCX)
+            }
+
+            // Re-generate dossier with additional context
+            const enrichedPrompt = `${guestData.name}${additionalContext}`;
+            const result = await generateDossier(enrichedPrompt, guestData.theme || '');
+            setDossier(result);
+
+            // Convert dossier topics to Topic objects
+            const generatedTopics: Topic[] = result.suggestedTopics.map((text, idx) => ({
+                id: `topic-${Date.now()}-${idx}`,
+                text,
+                completed: false,
+                order: idx,
+                archived: false,
+                categoryId: 'geral'
+            }));
+
+            const iceBreakers: Topic[] = result.iceBreakers.map((text, idx) => ({
+                id: `ice-${Date.now()}-${idx}`,
+                text,
+                completed: false,
+                order: idx,
+                archived: false,
+                categoryId: 'quebra-gelo'
+            }));
+
+            setTopics([...generatedTopics, ...iceBreakers]);
+
+            // Reset form
+            setSourceText('');
+            setSourceUrl('');
+            setSourceFile(null);
+            setShowSourcesDialog(false);
+        } catch (error) {
+            console.error('Error processing sources:', error);
+            alert('Erro ao processar fontes. Tente novamente.');
+        } finally {
+            setIsProcessingSources(false);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validate file type
+            const validTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (validTypes.includes(file.type) || file.name.endsWith('.txt') || file.name.endsWith('.pdf') || file.name.endsWith('.docx')) {
+                setSourceFile(file);
+            } else {
+                alert('Tipo de arquivo não suportado. Use PDF, TXT ou DOCX.');
+            }
         }
     };
 
@@ -825,31 +908,61 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                             <h3 className="text-lg font-bold text-ceramic-text-primary">Adicionar Fontes</h3>
 
                             <div className="space-y-3">
-                                <button className="w-full p-4 rounded-xl border-2 border-dashed border-[#D6D3CD] hover:border-amber-400 hover:bg-ceramic-highlight transition-colors flex items-center gap-3 group">
-                                    <div className="w-10 h-10 rounded-xl bg-[#EBE9E4] group-hover:bg-amber-100 flex items-center justify-center transition-colors">
+                                {/* File Upload */}
+                                <label className="w-full p-4 rounded-xl border-2 border-dashed border-[#D6D3CD] hover:border-amber-400 hover:bg-ceramic-highlight transition-colors flex items-center gap-3 group cursor-pointer">
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.txt,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                    <div className="w-10 h-10 rounded-xl bg-[#EBE9E4] group-hover:bg-amber-100 flex items-center justify-center transition-colors flex-shrink-0">
                                         <FileUp className="w-5 h-5 text-ceramic-text-secondary group-hover:text-amber-600" />
                                     </div>
-                                    <div className="text-left">
-                                        <p className="font-bold text-ceramic-text-primary text-sm">Upload de Arquivo</p>
-                                        <p className="text-xs text-ceramic-text-tertiary">PDF, TXT, DOCX</p>
+                                    <div className="text-left flex-1 min-w-0">
+                                        <p className="font-bold text-ceramic-text-primary text-sm">
+                                            {sourceFile ? sourceFile.name : 'Upload de Arquivo'}
+                                        </p>
+                                        <p className="text-xs text-ceramic-text-tertiary truncate">
+                                            {sourceFile ? `${(sourceFile.size / 1024).toFixed(1)} KB` : 'PDF, TXT, DOCX'}
+                                        </p>
                                     </div>
-                                </button>
+                                    {sourceFile && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setSourceFile(null);
+                                            }}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </label>
 
-                                <button className="w-full p-4 rounded-xl border-2 border-dashed border-[#D6D3CD] hover:border-indigo-400 hover:bg-indigo-50/50 transition-colors flex items-center gap-3 group">
-                                    <div className="w-10 h-10 rounded-xl bg-[#EBE9E4] group-hover:bg-indigo-100 flex items-center justify-center transition-colors">
-                                        <LinkIcon className="w-5 h-5 text-ceramic-text-secondary group-hover:text-indigo-600" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-bold text-ceramic-text-primary text-sm">Colar Link</p>
-                                        <p className="text-xs text-ceramic-text-tertiary">YouTube, artigos, redes sociais</p>
-                                    </div>
-                                </button>
+                                {/* URL Input */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider flex items-center gap-2">
+                                        <LinkIcon className="w-3 h-3" />
+                                        Link (YouTube, artigos, etc)
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={sourceUrl}
+                                        onChange={(e) => setSourceUrl(e.target.value)}
+                                        placeholder="https://youtube.com/watch?v=..."
+                                        className="w-full p-3 rounded-xl bg-[#EBE9E4] text-sm text-ceramic-text-primary placeholder-ceramic-text-tertiary border-none focus:ring-2 focus:ring-indigo-400/50 outline-none"
+                                    />
+                                </div>
 
+                                {/* Free Text */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
                                         Texto Livre
                                     </label>
                                     <textarea
+                                        value={sourceText}
+                                        onChange={(e) => setSourceText(e.target.value)}
                                         placeholder="Cole aqui informações relevantes sobre o convidado..."
                                         className="w-full h-24 p-3 rounded-xl bg-[#EBE9E4] text-sm text-ceramic-text-primary placeholder-ceramic-text-tertiary resize-none border-none focus:ring-2 focus:ring-amber-400/50 outline-none"
                                     />
@@ -858,16 +971,30 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
 
                             <div className="flex gap-3 pt-2">
                                 <button
-                                    onClick={() => setShowSourcesDialog(false)}
-                                    className="flex-1 py-3 rounded-xl text-ceramic-text-secondary font-bold hover:bg-[#EBE9E4] transition-colors"
+                                    onClick={() => {
+                                        setShowSourcesDialog(false);
+                                        setSourceText('');
+                                        setSourceUrl('');
+                                        setSourceFile(null);
+                                    }}
+                                    disabled={isProcessingSources}
+                                    className="flex-1 py-3 rounded-xl text-ceramic-text-secondary font-bold hover:bg-[#EBE9E4] transition-colors disabled:opacity-50"
                                 >
                                     Cancelar
                                 </button>
                                 <button
-                                    onClick={() => setShowSourcesDialog(false)}
-                                    className="flex-1 py-3 rounded-xl bg-ceramic-text-primary text-ceramic-base font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                    onClick={handleAddSources}
+                                    disabled={isProcessingSources || (!sourceText.trim() && !sourceUrl.trim() && !sourceFile)}
+                                    className="flex-1 py-3 rounded-xl bg-ceramic-text-primary text-ceramic-base font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
                                 >
-                                    Adicionar
+                                    {isProcessingSources ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Processando...
+                                        </>
+                                    ) : (
+                                        'Adicionar'
+                                    )}
                                 </button>
                             </div>
                         </motion.div>

@@ -5,8 +5,10 @@
 import { supabase } from '../../../services/supabaseClient';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure o worker do PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Configure o worker do PDF.js usando jsDelivr CDN
+// NOTA: CloudFlare CDN (cdnjs) só tem versões até 4.x 
+// jsDelivr suporta todas as versões do pdfjs-dist incluindo 5.x
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 /**
  * Sanitiza nome de arquivo removendo caracteres especiais

@@ -22,6 +22,105 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null
 const MODEL_NAME = 'gemini-2.0-flash-exp'
 
 // ============================================
+// UTILIDADE: SANITIZAÇÃO DE RESPOSTA JSON
+// ============================================
+
+/**
+ * Sanitiza a resposta da IA antes de fazer JSON.parse
+ * 
+ * Trata casos comuns de formatação incorreta:
+ * - Blocos de código markdown (```json ... ```)
+ * - Texto antes ou depois do JSON ("Aqui está: {...}")
+ * - Aspas simples em vez de duplas
+ * - Vírgulas extras no final de arrays/objetos
+ * - Quebras de linha problemáticas dentro de strings
+ * 
+ * @param response - Texto bruto retornado pela IA
+ * @returns JSON limpo e pronto para parse
+ */
+function sanitizeAIJsonResponse(response: string): string {
+  let cleaned = response;
+
+  // 1. Remove blocos de código markdown
+  cleaned = cleaned.replace(/```json\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*/g, '');
+
+  // 2. Remove BOM e caracteres invisíveis do início
+  cleaned = cleaned.replace(/^\uFEFF/, '').trimStart();
+
+  // 3. Encontra o início do JSON (primeiro { ou [)
+  const firstBrace = cleaned.indexOf('{');
+  const firstBracket = cleaned.indexOf('[');
+
+  let startIndex = -1;
+  let endChar = '';
+
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    startIndex = firstBrace;
+    endChar = '}';
+  } else if (firstBracket !== -1) {
+    startIndex = firstBracket;
+    endChar = ']';
+  }
+
+  if (startIndex === -1) {
+    console.error('[AI] Nenhum JSON encontrado na resposta');
+    return cleaned.trim();
+  }
+
+  // 4. Encontra o final do JSON (último } ou ] correspondente)
+  const lastEndChar = cleaned.lastIndexOf(endChar);
+
+  if (lastEndChar > startIndex) {
+    cleaned = cleaned.substring(startIndex, lastEndChar + 1);
+  } else {
+    cleaned = cleaned.substring(startIndex);
+  }
+
+  // 5. Remove vírgulas extras antes de } ou ]
+  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+
+  // 6. Tenta corrigir aspas simples em chaves (caso comum)
+  // Cuidado: não substitui aspas dentro de valores de string
+  // Esta é uma tentativa heurística
+  cleaned = cleaned.replace(/'([^']+)'\s*:/g, '"$1":');
+
+  return cleaned.trim();
+}
+
+/**
+ * Tenta fazer parse de JSON com fallback e logs detalhados
+ */
+function safeJsonParse<T>(jsonString: string, context: string): T {
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    // Log detalhado para debug
+    console.error(`[AI] Erro de JSON em ${context}:`, error);
+    console.error('[AI] Posição aproximada do erro:', (error as SyntaxError).message);
+    console.error('[AI] Primeiros 500 caracteres:', jsonString.substring(0, 500));
+    console.error('[AI] Últimos 500 caracteres:', jsonString.substring(jsonString.length - 500));
+
+    // Tenta uma limpeza mais agressiva
+    const aggressive = jsonString
+      .replace(/[\n\r\t]/g, ' ')  // Remove quebras de linha
+      .replace(/\s+/g, ' ')       // Normaliza espaços
+      .replace(/,\s*([}\]])/g, '$1'); // Remove vírgulas extras novamente
+
+    try {
+      console.log('[AI] Tentando parse com limpeza agressiva...');
+      return JSON.parse(aggressive);
+    } catch {
+      throw new Error(
+        `A IA retornou um formato de JSON inválido. ` +
+        `Erro original: ${(error as Error).message}. ` +
+        `Tente novamente.`
+      );
+    }
+  }
+}
+
+// ============================================
 // AI FIELD GENERATION
 // ============================================
 
@@ -33,6 +132,7 @@ const MODEL_NAME = 'gemini-2.0-flash-exp'
  * - Critérios de avaliação e suas ponderações
  * - Configuração do campo (label, limite de caracteres, hints)
  * - Briefing completo do projeto
+ * - Documento fonte do projeto (se disponível)
  * - Respostas anteriores de outros campos (para coesão)
  *
  * @param context - Contexto completo para geração
@@ -57,11 +157,12 @@ export async function generateFieldContent(
       context.evaluation_criteria
     )
 
-    // Construir prompt do usuário
+    // Construir prompt do usuário (agora com documento fonte)
     const userPrompt = buildUserPrompt(
       context.field_config,
       context.briefing,
-      context.previous_responses
+      context.previous_responses,
+      context.source_document_content
     )
 
     // Fazer chamada ao Gemini
@@ -159,12 +260,14 @@ Escreva de forma que o avaliador perceba expertise, viabilidade técnica e poten
  * @param fieldConfig - Configuração do campo
  * @param briefing - Briefing do projeto
  * @param previousResponses - Respostas anteriores de outros campos
+ * @param sourceDocumentContent - Conteúdo extraído do documento fonte (opcional)
  * @returns Prompt do usuário formatado
  */
 function buildUserPrompt(
   fieldConfig: GenerateFieldPayload['field_config'],
   briefing: BriefingData,
-  previousResponses?: Record<string, string>
+  previousResponses?: Record<string, string>,
+  sourceDocumentContent?: string | null
 ): string {
   let prompt = `**CAMPO A SER PREENCHIDO:**
 ${fieldConfig.label}
@@ -178,6 +281,17 @@ ${fieldConfig.label}
 Obrigatório: ${fieldConfig.required ? 'Sim' : 'Não'}
 
 `
+
+  // Adicionar documento fonte se disponível (PRIORIDADE MÁXIMA)
+  if (sourceDocumentContent && sourceDocumentContent.trim().length > 0) {
+    prompt += `**📄 DOCUMENTO FONTE DO PROJETO (Fonte de Verdade - USE COMO REFERÊNCIA PRINCIPAL):**
+
+${sourceDocumentContent.substring(0, 15000)}
+
+⚠️ IMPORTANTE: Este é o documento oficial fornecido pelo usuário. Use as informações acima como base principal para sua resposta. O briefing abaixo é complementar.
+
+`
+  }
 
   // Adicionar briefing
   prompt += `**CONTEXTO DO PROJETO (Briefing fornecido pelo usuário):**
@@ -483,13 +597,14 @@ ${editalText.substring(0, 50000)}`;
     ]);
 
     const response = result.response;
-    let jsonText = response.text();
+    const rawText = response.text();
 
-    // Limpar markdown code blocks se existirem
-    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    // Sanitizar resposta da IA
+    const jsonText = sanitizeAIJsonResponse(rawText);
+    console.log('[AI] Resposta sanitizada, tamanho:', jsonText.length);
 
-    // Parse JSON
-    const data = JSON.parse(jsonText);
+    // Parse JSON com tratamento de erro robusto
+    const data = safeJsonParse(jsonText, 'analyzeEditalStructure');
 
     console.log('[AI] Análise do edital concluída:', {
       title: data.title,
@@ -591,13 +706,14 @@ ${pastedText}`;
     ]);
 
     const response = result.response;
-    let jsonText = response.text();
+    const rawText = response.text();
 
-    // Limpar markdown code blocks se existirem
-    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    // Sanitizar resposta da IA
+    const jsonText = sanitizeAIJsonResponse(rawText);
+    console.log('[AI] Resposta sanitizada, tamanho:', jsonText.length);
 
-    // Parse JSON
-    const fields = JSON.parse(jsonText);
+    // Parse JSON com tratamento de erro robusto
+    const fields = safeJsonParse(jsonText, 'parseFormFieldsFromText');
 
     console.log('[AI] Campos do formulário parseados:', {
       count: fields.length,

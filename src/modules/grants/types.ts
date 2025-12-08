@@ -44,6 +44,11 @@ export interface GrantOpportunity {
   status: 'draft' | 'open' | 'closed' | 'archived';
   created_at: string;
   updated_at: string;
+  archived_at?: string | null;
+
+  // PDF do edital
+  edital_pdf_path?: string;
+  edital_text_content?: string;
 }
 
 export interface EvaluationCriterion {
@@ -84,6 +89,13 @@ export interface GrantProject {
   created_at: string;
   updated_at: string;
   submitted_at?: string;
+  archived_at?: string | null;
+
+  // Source Document (Fonte de Verdade)
+  source_document_path?: string | null;
+  source_document_type?: string | null;
+  source_document_content?: string | null;
+  source_document_uploaded_at?: string | null;
 
   // Relações (carregadas via join)
   opportunity?: GrantOpportunity;
@@ -256,6 +268,7 @@ export interface GenerateFieldPayload {
   field_config: FormField;
   briefing: BriefingData;
   previous_responses?: Record<string, string>;
+  source_document_content?: string | null; // Conteúdo do documento fonte (PDF, MD, DOCX, TXT)
 }
 
 // ============================================

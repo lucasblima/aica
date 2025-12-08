@@ -876,14 +876,14 @@ export default function App() {
             <GrantsModuleView onBack={() => setCurrentView('vida')} />
          )}
 
-         {currentView !== 'association_detail' && currentView !== 'finance' && currentView !== 'finance_agent' && currentView !== 'grants' && (currentView !== 'podcast' || showPodcastNav) && (
+         {currentView !== 'association_detail' && currentView !== 'finance' && currentView !== 'finance_agent' && currentView !== 'grants' && (currentView !== 'podcast' || showPodcastNav) &&
             <BottomNav
                currentView={currentView}
                onChange={setCurrentView}
                onMicClick={() => alert('Voice AI Coming Soon')}
                isListening={false}
             />
-         )}
+         }
 
          {/* Onboarding Wizard */}
          {!checkingOnboarding && showOnboarding && (

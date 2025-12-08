@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Sparkles, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Sparkles, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { AgentChat } from '../components/FinanceAgent/AgentChat';
 import { financeAgentService } from '../services/financeAgentService';
 import type { AgentContext } from '../types';
@@ -28,6 +28,7 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [isValuesVisible, setIsValuesVisible] = useState(false);
 
   useEffect(() => {
     loadContext();
@@ -52,12 +53,19 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
   };
 
   const formatCurrency = (value: number) => {
+    if (!isValuesVisible) {
+      return 'R$ ••••••';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const toggleVisibility = () => {
+    setIsValuesVisible(!isValuesVisible);
   };
 
   return (
@@ -82,13 +90,26 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
               </div>
             </div>
           </div>
-          <button
-            onClick={startNewSession}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            title="Nova conversa"
-          >
-            <RefreshCw className="w-5 h-5 text-ceramic-text-secondary" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={toggleVisibility}
+              className="ceramic-concave w-10 h-10 flex items-center justify-center hover:scale-95 transition-transform"
+              title={isValuesVisible ? 'Ocultar valores' : 'Mostrar valores'}
+            >
+              {isValuesVisible ? (
+                <EyeOff className="w-4 h-4 text-ceramic-text-secondary" />
+              ) : (
+                <Eye className="w-4 h-4 text-ceramic-text-secondary" />
+              )}
+            </button>
+            <button
+              onClick={startNewSession}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Nova conversa"
+            >
+              <RefreshCw className="w-5 h-5 text-ceramic-text-secondary" />
+            </button>
+          </div>
         </div>
 
         {/* Context Summary */}
@@ -106,12 +127,14 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
                 {formatCurrency(context.summary.totalExpenses)}
               </span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-ceramic-text-secondary">Transacoes:</span>
-              <span className="font-medium text-ceramic-text-primary">
-                {context.summary.transactionCount}
-              </span>
-            </div>
+            {isValuesVisible && (
+              <div className="flex items-center gap-1">
+                <span className="text-ceramic-text-secondary">Transacoes:</span>
+                <span className="font-medium text-ceramic-text-primary">
+                  {context.summary.transactionCount}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
