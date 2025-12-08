@@ -584,10 +584,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         </section>
                     )}
 
-                    {/* Priority Matrix - Collapsible/Fixed Header feel */}
+                    {/* Priority Matrix */}
                     <div className="flex-none max-w-4xl mx-auto w-full">
                         <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
-                            Backlog
+                            Matriz de Prioridades
                         </h2>
                         <PriorityMatrix
                             userId={userId}
