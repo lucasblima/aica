@@ -50,7 +50,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     // Atlas Module Integration
     const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
 
-    // Google Calendar Integration
+    // Google Calendar Integration - Buscar próximos 7 dias
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
     const {
         events: calendarEvents,
         isConnected: isCalendarConnected,
@@ -61,7 +65,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         isTokenExpired
     } = useGoogleCalendarEvents({
         autoSync: true,
-        syncInterval: 300 // 5 minutos
+        syncInterval: 300, // 5 minutos
+        startDate: today,
+        endDate: nextWeek
     });
 
     const sensors = useSensors(
@@ -295,15 +301,39 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const threeDaysFromNow = new Date(today);
         threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
-        return calendarEvents
+        console.log('[AgendaView] 📅 Filtrando eventos dos próximos 2 dias:', {
+            today: today.toISOString(),
+            tomorrow: tomorrow.toISOString(),
+            dayAfterTomorrow: dayAfterTomorrow.toISOString(),
+            threeDaysFromNow: threeDaysFromNow.toISOString(),
+            totalEvents: calendarEvents.length,
+            events: calendarEvents.map(e => ({
+                title: e.title,
+                startTime: e.startTime,
+                date: new Date(e.startTime).toLocaleDateString('pt-BR')
+            }))
+        });
+
+        const filtered = calendarEvents
             .filter(event => {
                 const eventDate = new Date(event.startTime);
-                return eventDate >= today && eventDate < threeDaysFromNow;
+                const isInRange = eventDate >= today && eventDate < threeDaysFromNow;
+                console.log('[AgendaView] Evento:', event.title, {
+                    eventDate: eventDate.toISOString(),
+                    isInRange
+                });
+                return isInRange;
             })
             .map(event => {
                 const eventDate = new Date(event.startTime);
                 const isToday = eventDate >= today && eventDate < tomorrow;
                 const isTomorrow = eventDate >= tomorrow && eventDate < dayAfterTomorrow;
+
+                console.log('[AgendaView] Classificando evento:', event.title, {
+                    isToday,
+                    isTomorrow,
+                    eventDate: eventDate.toISOString()
+                });
 
                 return {
                     id: event.id,
@@ -320,6 +350,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 };
             })
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+        console.log('[AgendaView] ✅ Eventos filtrados:', {
+            total: filtered.length,
+            hoje: filtered.filter(e => e.isToday).length,
+            amanha: filtered.filter(e => e.isTomorrow).length,
+            depoisDeAmanha: filtered.filter(e => !e.isToday && !e.isTomorrow).length
+        });
+
+        return filtered;
     }, [calendarEvents, skippedEvents]);
 
     const loadAllTasks = async (forDate?: Date) => {
