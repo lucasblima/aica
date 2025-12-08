@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutGrid, Calendar, Settings, Plus, ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, Briefcase, Globe, ArrowRight, X, CheckCircle2, Mic } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
@@ -12,12 +12,13 @@ import { EfficiencyMedallion } from './src/components/EfficiencyMedallion';
 import { UnifiedJourneyCard } from './src/components/UnifiedJourneyCard';
 import { ConnectionArchetypes } from './src/components/ConnectionArchetypes';
 import {
-  getJourneyStats,
-  getDailyQuestion,
-  registerMoment,
-  hasAnsweredToday,
-  type JourneyStats
+   getJourneyStats,
+   getDailyQuestion,
+   registerMoment,
+   hasAnsweredToday,
+   type JourneyStats
 } from './src/services/journeyService';
+import { JourneyFullScreen } from './src/modules/journey/views/JourneyFullScreen';
 import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding, getUserProfile } from './src/services/supabaseService';
@@ -30,9 +31,9 @@ import { GrantsModuleView } from './src/modules/grants/views/GrantsModuleView';
 import { getUpcomingDeadlines } from './src/modules/grants/services/grantService';
 import OnboardingWizard from './src/components/OnboardingWizard';
 import { NotificationContainer } from './src/components/NotificationContainer';
+import { ViewState } from './types';
 
 // Types
-type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast' | 'finance' | 'finance_agent' | 'journey' | 'grants';
 type TabState = 'personal' | 'network';
 
 // Animation variants for card entrance choreography
@@ -51,7 +52,7 @@ const cardVariants = {
       transition: {
          delay: i * 0.08,
          duration: 0.5,
-         ease: [0.25, 0.46, 0.45, 0.94]
+         ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number]
       }
    })
 };
@@ -67,7 +68,7 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor, onTasksLo
          setLoading(false);
          onTasksLoaded?.(moduleId, data.length);
       });
-   }, [moduleId, onTasksLoaded]);
+   }, [moduleId]); // ✅ Removido onTasksLoaded para evitar loop infinito
 
    return (
       <div className={`ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 group cursor-pointer`}>
@@ -143,9 +144,10 @@ export default function App() {
    // Module status tracking
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
 
-   const handleTasksLoaded = (moduleId: string, taskCount: number) => {
+   // ✅ useCallback para estabilizar a referência da função
+   const handleTasksLoaded = useCallback((moduleId: string, taskCount: number) => {
       setModulesStatus(prev => ({ ...prev, [moduleId]: taskCount }));
-   };
+   }, []);
 
    const secondaryModules = ['health', 'education', 'legal'];
    const allSecondaryModulesEmpty = secondaryModules.every(
@@ -160,8 +162,8 @@ export default function App() {
       const cleanExpiredAuthParams = () => {
          const hashParams = new URLSearchParams(window.location.hash.substring(1));
          const hasAuthParams = hashParams.has('access_token') ||
-                               hashParams.has('refresh_token') ||
-                               hashParams.has('error');
+            hashParams.has('refresh_token') ||
+            hashParams.has('error');
 
          if (hasAuthParams) {
             console.log('[App] 🔍 Detectados parâmetros de autenticação na URL');

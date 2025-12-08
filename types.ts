@@ -79,7 +79,7 @@ export interface SystemHealth {
   activeWebhooks: number;
 }
 
-export type ViewState = 'vida' | 'agenda' | 'association_detail';
+export type ViewState = 'vida' | 'agenda' | 'association_detail' | 'podcast' | 'finance' | 'finance_agent' | 'journey' | 'grants';
 
 export type Quadrant = 'urgent-important' | 'important' | 'urgent' | 'low';
 
