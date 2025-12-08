@@ -59,3 +59,9 @@ supabase/migrations/
 
 # Claude Code
 .claude
+
+# Backup files (Git is the source of truth)
+*.backup_*
+*.bak
+*.backup
+*~
