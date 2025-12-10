@@ -49,6 +49,7 @@ import { supabase } from '../../../services/supabaseClient';
 import { PautaGeneratorPanel } from '../components/PautaGeneratorPanel';
 import { Wand2 } from 'lucide-react';
 import { useSavedPauta } from '../hooks/useSavedPauta';
+import { fetchUrlContent, processFileContent } from '../services/contentExtractionService';
 
 // Category Icons mapping
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -398,13 +399,27 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
             }
 
             if (sourceUrl.trim()) {
-                additionalContext += `\n\nLink fornecido: ${sourceUrl.trim()}`;
-                // TODO: Fetch content from URL using Gemini or web scraping
+                try {
+                    console.log('[handleAddSources] Fetching URL content:', sourceUrl);
+                    const urlContent = await fetchUrlContent(sourceUrl.trim());
+                    additionalContext += `\n\nConteúdo extraído do link (${urlContent.source}):\n${urlContent.summary}\n\nPontos relevantes:\n${urlContent.relevantPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}`;
+                } catch (error) {
+                    console.error('[handleAddSources] Error fetching URL:', error);
+                    alert(error instanceof Error ? error.message : 'Erro ao buscar conteúdo da URL');
+                    additionalContext += `\n\nLink fornecido: ${sourceUrl.trim()}`;
+                }
             }
 
             if (sourceFile) {
-                additionalContext += `\n\nArquivo anexado: ${sourceFile.name}`;
-                // TODO: Process file content (PDF, TXT, DOCX)
+                try {
+                    console.log('[handleAddSources] Processing file:', sourceFile.name);
+                    const fileContent = await processFileContent(sourceFile);
+                    additionalContext += `\n\nConteúdo extraído do arquivo (${fileContent.source}):\n${fileContent.summary}\n\nPontos relevantes:\n${fileContent.relevantPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}`;
+                } catch (error) {
+                    console.error('[handleAddSources] Error processing file:', error);
+                    alert(error instanceof Error ? error.message : 'Erro ao processar arquivo');
+                    additionalContext += `\n\nArquivo anexado: ${sourceFile.name}`;
+                }
             }
 
             // Re-generate dossier with additional context
