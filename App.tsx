@@ -28,9 +28,12 @@ import { FinanceDashboard } from './src/modules/finance/views/FinanceDashboard';
 import { FinanceAgentView } from './src/modules/finance/views/FinanceAgentView';
 import { GrantsCard } from './src/modules/grants/components/GrantsCard';
 import { GrantsModuleView } from './src/modules/grants/views/GrantsModuleView';
-import { getUpcomingDeadlines } from './src/modules/grants/services/grantService';
+import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from './src/modules/grants/services/grantService';
+import type { GrantDeadline, GrantProject } from './src/modules/grants/types';
 import OnboardingWizard from './src/components/OnboardingWizard';
 import { NotificationContainer } from './src/components/NotificationContainer';
+import { AICostDashboard } from './src/components/aiCost/AICostDashboard';
+import { FileSearchAnalyticsView } from './src/components/fileSearch/FileSearchAnalyticsView';
 import { ViewState } from './types';
 
 // Types
@@ -143,6 +146,11 @@ export default function App() {
 
    // Module status tracking
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
+
+   // Grants Card State
+   const [grantsActiveProjects, setGrantsActiveProjects] = useState<number>(0);
+   const [grantsUpcomingDeadlines, setGrantsUpcomingDeadlines] = useState<GrantDeadline[]>([]);
+   const [grantsRecentProjects, setGrantsRecentProjects] = useState<GrantProject[]>([]);
 
    // ✅ useCallback para estabilizar a referência da função
    const handleTasksLoaded = useCallback((moduleId: string, taskCount: number) => {
@@ -356,6 +364,33 @@ export default function App() {
       loadJourneyData();
    }, [userId]);
 
+   // Load Grants Card data
+   useEffect(() => {
+      const loadGrantsData = async () => {
+         if (!isAuthenticated) return;
+
+         try {
+            // Load active projects count
+            const activeCount = await countAllActiveProjects();
+            setGrantsActiveProjects(activeCount);
+
+            // Load upcoming deadlines (next 30 days)
+            const deadlines = await getUpcomingDeadlines(30);
+            setGrantsUpcomingDeadlines(deadlines);
+
+            // Load recent projects (last 2)
+            const recent = await getRecentProjects(2);
+            setGrantsRecentProjects(recent);
+
+            console.log('[App] Grants data loaded:', { activeCount, deadlines: deadlines.length, recent: recent.length });
+         } catch (error) {
+            console.error('Error loading grants data:', error);
+         }
+      };
+
+      loadGrantsData();
+   }, [isAuthenticated]);
+
    // Handle registering a moment
    const handleRegisterMoment = async (text: string) => {
       if (!userId || !temporalData) return;
@@ -439,6 +474,8 @@ export default function App() {
                   subtitle="LIFE OS"
                   userEmail={userEmail || undefined}
                   onLogout={() => setIsAuthenticated(false)}
+                  onNavigateToAICost={() => setCurrentView('ai-cost')}
+                  onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
                   showTabs={true}
                   activeTab={activeTab}
                   onTabChange={setActiveTab}
@@ -536,9 +573,9 @@ export default function App() {
                         onClick={() => setCurrentView('grants')}
                      >
                         <GrantsCard
-                           activeProjects={0}
-                           upcomingDeadlines={[]}
-                           recentProjects={[]}
+                           activeProjects={grantsActiveProjects}
+                           upcomingDeadlines={grantsUpcomingDeadlines}
+                           recentProjects={grantsRecentProjects}
                            onOpenModule={() => setCurrentView('grants')}
                            onCreateProject={() => setCurrentView('grants')}
                         />
@@ -688,6 +725,8 @@ export default function App() {
                   subtitle="LIFE OS"
                   userEmail={userEmail || undefined}
                   onLogout={() => setIsAuthenticated(false)}
+                  onNavigateToAICost={() => setCurrentView('ai-cost')}
+                  onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
                   showTabs={true}
                   activeTab={activeTab}
                   onTabChange={setActiveTab}
@@ -877,8 +916,18 @@ export default function App() {
          {currentView === 'grants' && (
             <GrantsModuleView onBack={() => setCurrentView('vida')} />
          )}
+         {currentView === 'ai-cost' && userId && (
+            <AICostDashboard userId={userId} onBack={() => setCurrentView('vida')} />
+         )}
+         {currentView === 'file-search-analytics' && userId && (
+            <FileSearchAnalyticsView
+               userId={userId}
+               onBack={() => setCurrentView('vida')}
+               mode="fullpage"
+            />
+         )}
 
-         {currentView !== 'association_detail' && currentView !== 'finance' && currentView !== 'finance_agent' && currentView !== 'grants' && (currentView !== 'podcast' || showPodcastNav) &&
+         {currentView !== 'association_detail' && currentView !== 'finance' && currentView !== 'finance_agent' && currentView !== 'grants' && currentView !== 'ai-cost' && currentView !== 'file-search-analytics' && (currentView !== 'podcast' || showPodcastNav) &&
             <BottomNav
                currentView={currentView}
                onChange={setCurrentView}

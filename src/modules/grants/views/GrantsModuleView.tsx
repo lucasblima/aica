@@ -21,6 +21,7 @@ import {
   saveResponse,
   listResponses,
   updateProjectStatus,
+  updateProjectName,
   archiveProject,
   unarchiveProject,
   deleteArchivedProject,
@@ -28,13 +29,14 @@ import {
   unarchiveOpportunity,
   deleteArchivedOpportunity,
   countActiveProjects,
-  updateOpportunity
+  updateOpportunity,
+  calculateCompletion,
+  checkAllResponsesApproved
 } from '../services/grantService';
 import { generateFieldContent } from '../services/grantAIService';
 import type {
   GrantProject,
   GrantOpportunity,
-  BriefingData,
   GrantResponse,
   CreateOpportunityPayload,
   FormField
@@ -62,11 +64,19 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const [projects, setProjects] = useState<GrantProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<GrantProject | null>(null);
   const [currentOpportunity, setCurrentOpportunity] = useState<GrantOpportunity | null>(null);
-  const [currentBriefing, setCurrentBriefing] = useState<BriefingData>({});
+  const [currentBriefing, setCurrentBriefing] = useState<Record<string, string>>({});
   const [currentResponses, setCurrentResponses] = useState<Record<string, GrantResponse>>({});
 
   // Loading state
   const [isLoading, setIsLoading] = useState(false);
+
+  // Transfer progress state for briefing → generation
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferProgress, setTransferProgress] = useState<{
+    current: number;
+    total: number;
+    currentField: string;
+  }>({ current: 0, total: 0, currentField: '' });
 
   /**
    * Load projects on mount
@@ -179,7 +189,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   /**
    * Handle briefing save
    */
-  const handleSaveBriefing = async (briefing: BriefingData) => {
+  const handleSaveBriefing = async (briefing: Record<string, string>) => {
     if (!selectedProject) return;
 
     try {
@@ -193,17 +203,72 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
 
   /**
    * Handle continue from briefing to generation
+   * Automatically transfers filled briefing fields to grant_responses
    */
   const handleContinueToGeneration = async () => {
-    if (!selectedProject) return;
+    if (!selectedProject || !currentOpportunity) return;
 
     try {
+      // 1. Identify fields to transfer from briefing
+      const fieldsToTransfer = currentOpportunity.form_fields.filter(field => {
+        const content = currentBriefing[field.id];
+        return content && content.trim().length > 0;
+      });
+
+      console.log(`[Grants] Transferring ${fieldsToTransfer.length} fields from briefing to responses`);
+
+      // Start loading state
+      setIsTransferring(true);
+      setTransferProgress({ current: 0, total: fieldsToTransfer.length, currentField: '' });
+
+      // 2. For each filled field in briefing, create a grant_response
+      for (let i = 0; i < fieldsToTransfer.length; i++) {
+        const field = fieldsToTransfer[i];
+        const content = currentBriefing[field.id];
+
+        // Update progress
+        setTransferProgress({
+          current: i + 1,
+          total: fieldsToTransfer.length,
+          currentField: field.label
+        });
+
+        // Check if a response already exists for this field
+        const existingResponse = currentResponses[field.id];
+
+        // Only create if doesn't exist or existing is empty
+        if (!existingResponse || !existingResponse.content || existingResponse.content.trim().length === 0) {
+          await saveResponse(
+            selectedProject.id,
+            field.id,
+            content,
+            'generated' // Status 'generated' indicates it came from briefing
+          );
+        }
+
+        // Small delay for visual feedback
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // 3. Reload responses to get the newly created ones
+      const responses = await listResponses(selectedProject.id);
+      const responsesMap: Record<string, GrantResponse> = {};
+      responses.forEach(r => {
+        responsesMap[r.field_id] = r;
+      });
+      setCurrentResponses(responsesMap);
+
+      // 4. Update project status and navigate to generation view
       await updateProjectStatus(selectedProject.id, 'generating');
+      setIsTransferring(false);
       setCurrentView('generation');
     } catch (error) {
-      console.error('Error updating project status:', error);
+      console.error('Error transferring briefing to generation:', error);
+      setIsTransferring(false);
+      alert('Erro ao transferir campos do briefing. Tente novamente.');
     }
   };
+
 
   /**
    * Handle field generation
@@ -234,7 +299,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         field_config: fieldConfig,
         briefing: currentBriefing,
         previous_responses: previousResponses,
-        source_document_content: selectedProject.source_document_content || null
+        source_document_content: selectedProject.source_document_content || null,
+        edital_text_content: currentOpportunity.edital_text_content || null
       });
 
       return content;
@@ -352,15 +418,18 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const handleUpdateFormFields = async (opportunityId: string, formFields: FormField[]) => {
     try {
       await updateOpportunity(opportunityId, { form_fields: formFields });
-      // Refresh the opportunity data
-      await loadOpportunitiesData();
-      // Update selected opportunity if it's the one being edited
+
+      // Update selected opportunity immediately with the new form fields
+      // This avoids race condition with loadOpportunitiesData()
       if (selectedOpportunity?.id === opportunityId) {
-        const updated = opportunities.find(o => o.id === opportunityId);
-        if (updated) {
-          setSelectedOpportunity(updated);
-        }
+        setSelectedOpportunity({
+          ...selectedOpportunity,
+          form_fields: formFields
+        });
       }
+
+      // Refresh the opportunities list in background
+      loadOpportunitiesData();
     } catch (error) {
       console.error('Error updating form fields:', error);
       throw error;
@@ -386,6 +455,65 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       setProjects([]);
     } else {
       onBack();
+    }
+  };
+
+  /**
+   * Handle back to edital from completed proposal
+   * Goes directly to edital-detail view (skips briefing)
+   */
+  const handleBackToEdital = () => {
+    setCurrentView('edital-detail');
+    setSelectedProject(null);
+  };
+
+  /**
+   * Handle proposal completion - update project status to 'submitted'
+   * Called automatically when all fields are approved
+   */
+  const handleProposalComplete = async () => {
+    if (!selectedProject) return;
+
+    try {
+      // Verify that all responses are really approved
+      const { allApproved, totalFields, approvedFields } = await checkAllResponsesApproved(selectedProject.id);
+
+      if (!allApproved) {
+        console.warn('[GrantsModule] Attempted to complete project without all approvals', {
+          totalFields,
+          approvedFields
+        });
+        return;
+      }
+
+      // Update status to SUBMITTED (not review)
+      await updateProjectStatus(selectedProject.id, 'submitted');
+
+      // Recalculate completion percentage (should be 100%)
+      const completionPercentage = await calculateCompletion(selectedProject.id);
+
+      // Update local state
+      setSelectedProject({
+        ...selectedProject,
+        status: 'submitted',
+        completion_percentage: completionPercentage,
+        submitted_at: new Date().toISOString()
+      });
+
+      // Reload projects to update the card
+      if (selectedOpportunity) {
+        const projectsData = await listProjects({ opportunity_id: selectedOpportunity.id });
+        setProjects(projectsData);
+      }
+
+      console.log('[GrantsModule] Project submitted:', {
+        status: 'submitted',
+        completion: completionPercentage,
+        totalFields,
+        approvedFields
+      });
+    } catch (error) {
+      console.error('Error updating project status to submitted:', error);
     }
   };
 
@@ -505,6 +633,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           onUnarchiveProject={handleUnarchiveProject}
           onDeleteProject={handleDeleteProject}
           onUpdateFormFields={handleUpdateFormFields}
+          onUpdateOpportunity={setSelectedOpportunity}
         />
       )}
 
@@ -523,6 +652,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           sourceDocumentPath={selectedProject.source_document_path}
           sourceDocumentType={selectedProject.source_document_type}
           sourceDocumentContent={selectedProject.source_document_content}
+          isTransferring={isTransferring}
+          transferProgress={transferProgress}
         />
       )}
 
@@ -536,8 +667,12 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           initialResponses={currentResponses}
           onGenerateField={handleGenerateField}
           onSaveResponse={handleSaveResponse}
+          onProposalComplete={handleProposalComplete}
           externalSystemUrl={currentOpportunity.external_system_url}
           onBack={handleBack}
+          onBackToEdital={handleBackToEdital}
+          editalPdfContent={currentOpportunity.edital_text_content}
+          projectDocumentsContent={selectedProject.source_document_content}
         />
       )}
 

@@ -12,10 +12,18 @@ import {
   ExternalLink,
   Sparkles,
   FileText,
-  ArrowLeft
+  ArrowLeft,
+  Send,
+  AlertCircle,
+  CheckCircle2,
+  X,
+  Lightbulb,
+  ArrowRight
 } from 'lucide-react';
-import type { FormField, BriefingData, GrantResponse } from '../types';
+import type { FormField, GrantResponse } from '../types';
 import { RESPONSE_STATUS_LABELS } from '../types';
+import { ContextSourcesIndicator } from './ContextSourcesIndicator';
+import { GRANTS_GRADIENTS, GRANTS_SHADOWS } from '../constants/gradients';
 
 /**
  * ProposalGeneratorView Component
@@ -27,12 +35,17 @@ interface ProposalGeneratorViewProps {
   projectId: string;
   opportunityTitle: string;
   formFields: FormField[];
-  briefing: BriefingData;
+  briefing: Record<string, string>; // Campos dinâmicos do briefing
   initialResponses?: Record<string, GrantResponse>;
   onGenerateField: (fieldId: string) => Promise<string>;
   onSaveResponse: (fieldId: string, content: string, status?: string) => Promise<void>;
+  onProposalComplete?: () => Promise<void>; // Called when all fields are approved
   externalSystemUrl?: string;
   onBack?: () => void;
+  onBackToEdital?: () => void; // Navigate directly to edital (for completed proposals)
+  // Context sources for indicator
+  editalPdfContent?: string | null;
+  projectDocumentsContent?: string | null;
 }
 
 interface FieldState extends GrantResponse {
@@ -49,12 +62,21 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
   initialResponses = {},
   onGenerateField,
   onSaveResponse,
+  onProposalComplete,
   externalSystemUrl,
-  onBack
+  onBack,
+  onBackToEdital,
+  editalPdfContent,
+  projectDocumentsContent
 }) => {
   const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>({});
   const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [hasCalledComplete, setHasCalledComplete] = useState(false);
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
+  const [submissionPhase, setSubmissionPhase] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [tooltipMessage, setTooltipMessage] = useState<string>('');
 
   /**
    * Initialize field states from initial responses
@@ -72,6 +94,71 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
     });
     setFieldStates(initialStates);
   }, [formFields, initialResponses]);
+
+  /**
+   * Detect when all fields are approved and show confirmation modal
+   */
+  useEffect(() => {
+    const progress = calculateProgress();
+    const allApproved = progress.approved === progress.total && progress.total > 0;
+
+    if (allApproved && !hasCalledComplete && !showSubmitConfirmation) {
+      // Show confirmation modal instead of auto-submitting
+      setShowSubmitConfirmation(true);
+    }
+  }, [fieldStates, formFields, hasCalledComplete, showSubmitConfirmation]);
+
+  /**
+   * Auto-collapse fields when they are approved
+   */
+  useEffect(() => {
+    Object.entries(fieldStates).forEach(([fieldId, state]) => {
+      if (state.status === 'approved' && expandedFields.has(fieldId)) {
+        // Wait 800ms then auto-collapse
+        setTimeout(() => {
+          setExpandedFields(prev => {
+            const next = new Set(prev);
+            next.delete(fieldId);
+            return next;
+          });
+        }, 800);
+      }
+    });
+  }, [fieldStates, expandedFields]);
+
+  /**
+   * Handle submission confirmation
+   */
+  const handleConfirmSubmit = async () => {
+    if (!onProposalComplete) return;
+
+    setSubmissionPhase('submitting');
+
+    try {
+      await onProposalComplete();
+      setHasCalledComplete(true);
+      setSubmissionPhase('success');
+
+      // Auto-close modal after showing success for 3 seconds
+      setTimeout(() => {
+        setShowSubmitConfirmation(false);
+        setSubmissionPhase('idle');
+      }, 3000);
+    } catch (error) {
+      console.error('Error submitting proposal:', error);
+      setSubmissionPhase('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Erro ao submeter proposta');
+    }
+  };
+
+  /**
+   * Handle cancel submission
+   */
+  const handleCancelSubmit = () => {
+    setShowSubmitConfirmation(false);
+    setSubmissionPhase('idle');
+    setErrorMessage('');
+  };
 
   /**
    * Calculate approval progress
@@ -280,71 +367,172 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
     return 'text-ceramic-text-secondary';
   };
 
+  /**
+   * Check if a field can be collapsed based on its status
+   * Only approved fields can be collapsed to save space
+   */
+  const canCollapseField = (fieldId: string): boolean => {
+    const state = fieldStates[fieldId];
+    if (!state?.content) return false; // No content = can't collapse
+    return state.status === 'approved';
+  };
+
+  /**
+   * Get visual state indicators for a field based on its status
+   */
+  const getFieldVisualState = (fieldId: string) => {
+    const state = fieldStates[fieldId];
+    const hasContent = !!state?.content;
+
+    switch (state?.status) {
+      case 'approved':
+        return {
+          canCollapse: true,
+          icon: <CheckCircle2 className="w-4 h-4" />,
+          color: 'text-green-600',
+          message: 'Aprovado - pode colapsar para economizar espaço'
+        };
+      case 'generated':
+      case 'editing':
+        return {
+          canCollapse: false,
+          icon: <AlertCircle className="w-4 h-4" />,
+          color: 'text-orange-600',
+          message: 'Aprove o campo antes de colapsar'
+        };
+      default:
+        return {
+          canCollapse: false,
+          icon: null,
+          color: 'text-ceramic-text-tertiary',
+          message: hasContent ? 'Campo pendente' : 'Sem conteúdo'
+        };
+    }
+  };
+
+  /**
+   * Export proposal to markdown file
+   */
+  const handleExport = () => {
+    try {
+      // Build markdown content
+      let markdown = `# Proposta: ${opportunityTitle}\n\n`;
+      markdown += `**Gerado em:** ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}\n\n`;
+      markdown += `---\n\n`;
+
+      formFields.forEach((field, index) => {
+        const state = fieldStates[field.id];
+        if (state?.content) {
+          markdown += `## ${index + 1}. ${field.label}\n\n`;
+          if (field.placeholder) {
+            markdown += `*${field.placeholder}*\n\n`;
+          }
+          markdown += `${state.content}\n\n`;
+          markdown += `**Caracteres:** ${state.char_count} / ${field.max_chars}\n\n`;
+          markdown += `---\n\n`;
+        }
+      });
+
+      // Create blob and download
+      const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `proposta_${opportunityTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log('Proposal exported successfully');
+    } catch (error) {
+      console.error('Error exporting proposal:', error);
+      alert('Erro ao exportar proposta. Tente novamente.');
+    }
+  };
+
   const progress = calculateProgress();
   const allApproved = progress.approved === progress.total;
 
   return (
     <div className="h-screen overflow-y-auto bg-ceramic-base">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+      {/* Compact Header - Optimized for space */}
+      <div className="sticky top-0 z-10 bg-ceramic-base/95 backdrop-blur-sm border-b border-ceramic-text-secondary/10 shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          {/* Single row with all info */}
+          <div className="flex items-center justify-between gap-4 mb-3">
+            {/* Left: Back button + Title */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               {onBack && (
                 <button
                   onClick={onBack}
-                  className="ceramic-concave p-3 rounded-xl hover:scale-95 transition-transform"
+                  className="ceramic-concave w-9 h-9 flex items-center justify-center hover:scale-95 transition-transform flex-shrink-0"
                   title="Voltar"
                 >
-                  <ArrowLeft className="w-5 h-5 text-ceramic-text-primary" />
+                  <ArrowLeft className="w-4 h-4 text-ceramic-text-primary" />
                 </button>
               )}
-              <div>
-                <p className="text-sm text-ceramic-text-secondary mb-1">
-                  Gerando Proposta para
-                </p>
-                <h1 className="text-2xl font-bold text-ceramic-text-primary">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-bold text-ceramic-text-primary truncate">
                   {opportunityTitle}
                 </h1>
+                <div className="flex items-center gap-4 text-xs text-ceramic-text-secondary">
+                  <span className="font-medium">
+                    {progress.approved} / {progress.total} aprovados ({progress.percentage}%)
+                  </span>
+                  {/* Compact Context Indicators */}
+                  <div className="flex items-center gap-2">
+                    {editalPdfContent && editalPdfContent.length > 0 && (
+                      <span className="flex items-center gap-1 text-purple-600">
+                        <FileText className="w-3 h-3" />
+                        PDF
+                      </span>
+                    )}
+                    {projectDocumentsContent && projectDocumentsContent.length > 0 && (
+                      <span className="flex items-center gap-1 text-blue-600">
+                        <FileText className="w-3 h-3" />
+                        Docs
+                      </span>
+                    )}
+                    {Object.keys(briefing).length > 0 && (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <Lightbulb className="w-3 h-3" />
+                        Briefing
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Right: Generate button */}
             <button
               onClick={handleGenerateAll}
               disabled={isGeneratingAll || allApproved}
-              className="ceramic-concave px-6 py-3 font-bold text-ceramic-text-primary hover:scale-[0.98] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+              className="ceramic-concave px-5 py-2 font-bold text-sm text-ceramic-text-primary hover:scale-[0.98] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2 flex-shrink-0"
             >
               {isGeneratingAll ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Gerando...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" />
-                  Gerar Todos os Campos
+                  <Sparkles className="w-4 h-4" />
+                  Gerar Todos
                 </>
               )}
             </button>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ceramic-text-secondary">
-                Campos Aprovados
-              </span>
-              <span className="font-bold text-ceramic-text-primary">
-                {progress.approved} / {progress.total}
-              </span>
-            </div>
-            <div className="ceramic-trough p-2">
-              <motion.div
-                className="h-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress.percentage}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
+          {/* Compact Progress Bar */}
+          <div className="ceramic-trough p-1">
+            <motion.div
+              className={`h-1.5 rounded-full ${GRANTS_GRADIENTS.progress.bar}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${progress.percentage}%` }}
+              transition={{ duration: 0.3 }}
+            />
           </div>
         </div>
       </div>
@@ -372,7 +560,16 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
               <div className="p-6">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <button
-                    onClick={() => toggleField(field.id)}
+                    onClick={() => {
+                      const canCollapse = canCollapseField(field.id);
+                      if (!canCollapse && !isExpanded) {
+                        // Trying to collapse but not approved
+                        setTooltipMessage('Aprove o campo antes de colapsar');
+                        setTimeout(() => setTooltipMessage(''), 2000);
+                        return;
+                      }
+                      toggleField(field.id);
+                    }}
                     className="flex-1 text-left flex items-start gap-3 hover:opacity-80 transition-opacity"
                   >
                     <div className="ceramic-concave w-10 h-10 flex items-center justify-center flex-shrink-0">
@@ -391,10 +588,17 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                         </p>
                       )}
                     </div>
-                    {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
+                    {/* Conditional chevron - only show if field can collapse */}
+                    {hasContent && canCollapseField(field.id) && (
+                      isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
+                      )
+                    )}
+                    {/* Empty space if can't collapse */}
+                    {hasContent && !canCollapseField(field.id) && (
+                      <div className="w-5 h-5 flex-shrink-0" />
                     )}
                   </button>
                 </div>
@@ -440,9 +644,65 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                     </div>
                   )}
                 </div>
+
+                {/* Warning indicator for non-collapsible fields */}
+                {hasContent && !canCollapseField(field.id) && !isGenerating && (
+                  <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                    <p className="text-xs text-orange-800">
+                      <strong>Dica:</strong> Aprove este campo para poder colapsá-lo e economizar espaço na tela
+                    </p>
+                  </div>
+                )}
+
+                {/* Tooltip message (temporary) */}
+                <AnimatePresence>
+                  {tooltipMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mt-3 px-4 py-2 bg-orange-100 border border-orange-300 rounded-lg"
+                    >
+                      <p className="text-sm text-orange-900 font-medium">{tooltipMessage}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Skeleton Loading (when generating) */}
+                {isGenerating && (
+                  <div className="px-6 pb-6">
+                    <div className="ceramic-tray p-4 space-y-3">
+                      {[1, 2, 3, 4, 5].map((line) => (
+                        <motion.div
+                          key={line}
+                          className="h-3 bg-gradient-to-r from-ceramic-text-tertiary/20 to-ceramic-text-tertiary/5 rounded"
+                          animate={{ opacity: [0.4, 0.8, 0.4] }}
+                          transition={{ duration: 1.5, repeat: Infinity, delay: line * 0.1 }}
+                          style={{ width: `${Math.random() * 40 + 60}%` }}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-3 flex items-center justify-center gap-2 text-sm text-blue-600">
+                      <Sparkles className="w-4 h-4 animate-pulse" />
+                      <span>IA está gerando conteúdo para "{field.label}"...</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Content Preview (when collapsed and has content) */}
+                {!isExpanded && hasContent && (
+                  <div className="px-6 pb-4">
+                    <div className="ceramic-tray p-3 rounded-lg">
+                      <p className="text-sm text-ceramic-text-secondary line-clamp-2">
+                        {content}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Field Content */}
+              {/* Field Content (expanded) */}
               <AnimatePresence>
                 {isExpanded && hasContent && (
                   <motion.div
@@ -549,45 +809,365 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="sticky bottom-0 bg-gradient-to-r from-green-50 to-emerald-50 border-t border-green-200 shadow-lg"
+          className={`sticky bottom-0 ${GRANTS_GRADIENTS.background.footer} border-t border-green-200 shadow-lg`}
         >
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-green-900 mb-1">
-                  Proposta Completa!
-                </h3>
-                <p className="text-sm text-green-700">
-                  Todos os campos foram aprovados. Pronto para exportar ou submeter.
-                </p>
+              <div className="flex items-center gap-4">
+                {onBackToEdital && (
+                  <button
+                    onClick={onBackToEdital}
+                    className="ceramic-concave px-4 py-2 font-medium text-sm text-ceramic-text-primary hover:scale-95 active:scale-90 transition-all flex items-center gap-2"
+                    title="Voltar ao Edital"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Voltar ao Edital
+                  </button>
+                )}
+                <div>
+                  <h3 className="text-lg font-bold text-green-900 mb-1">
+                    Proposta Completa!
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    Todos os campos foram aprovados. Pronto para exportar ou submeter.
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => {
-                    // Export functionality would go here
-                    console.log('Exporting proposal...');
-                  }}
+                  onClick={handleExport}
                   className="ceramic-concave px-6 py-3 font-bold text-ceramic-text-primary hover:scale-[0.98] active:scale-95 transition-all flex items-center gap-2"
                 >
                   <Download className="w-5 h-5" />
                   Exportar
                 </button>
-                {externalSystemUrl && (
-                  <a
-                    href={externalSystemUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ceramic-concave px-6 py-3 font-bold text-ceramic-text-primary hover:scale-[0.98] active:scale-95 transition-all flex items-center gap-2"
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                    Abrir Sistema Externo
-                  </a>
-                )}
+                <a
+                  href="https://sisfaperj.faperj.br/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ceramic-concave px-6 py-3 font-bold text-ceramic-text-primary hover:scale-[0.98] active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <ExternalLink className="w-5 h-5" />
+                  Abrir Sistema Externo
+                </a>
               </div>
             </div>
           </div>
         </motion.div>
       )}
+
+      {/* Submission Modal with Inline States */}
+      <AnimatePresence>
+        {showSubmitConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={submissionPhase === 'idle' ? handleCancelSubmit : undefined}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', duration: 0.3 }}
+              className="ceramic-card max-w-md w-full overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* IDLE STATE - Confirmation */}
+              {submissionPhase === 'idle' && (
+                <>
+                  {/* Modal Header */}
+                  <div className={`${GRANTS_GRADIENTS.background.header} p-6`}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="ceramic-convex w-12 h-12 flex items-center justify-center bg-white/20">
+                        <CheckCircle2 className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-white">
+                          Proposta Completa!
+                        </h2>
+                        <p className="text-sm text-white/90">
+                          Todos os {formFields.length} campos foram aprovados
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modal Content */}
+                  <div className="p-6 space-y-4">
+                    <div className="ceramic-tray p-4 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-ceramic-text-secondary">
+                          <p className="font-medium mb-2">Você está prestes a submeter a proposta:</p>
+                          <ul className="list-disc list-inside space-y-1 text-xs">
+                            <li>Todos os campos serão marcados como finalizados</li>
+                            <li>O status mudará para "Submetido"</li>
+                            <li>Você ainda poderá exportar e acessar o sistema externo</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-xs text-blue-800">
+                        <strong>Dica:</strong> Você pode clicar em "Continuar Revisando" para fazer ajustes finais antes de submeter.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Modal Actions */}
+                  <div className="flex items-center justify-end gap-3 p-6 border-t border-ceramic-text-secondary/10 bg-ceramic-base">
+                    <button
+                      onClick={handleCancelSubmit}
+                      className="ceramic-concave px-4 py-2 font-medium text-sm text-ceramic-text-primary hover:scale-95 active:scale-90 transition-all"
+                    >
+                      Continuar Revisando
+                    </button>
+                    <button
+                      onClick={handleConfirmSubmit}
+                      className={`ceramic-convex px-7 py-3 rounded-xl font-bold text-sm ${GRANTS_GRADIENTS.button.primary} text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2`}
+                      style={{
+                        boxShadow: GRANTS_SHADOWS.button
+                      }}
+                    >
+                      <Send className="w-5 h-5" />
+                      Submeter Proposta
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* SUBMITTING STATE - Loading with circular progress */}
+              {submissionPhase === 'submitting' && (
+                <div className="p-12 flex flex-col items-center justify-center">
+                  <div className="relative">
+                    <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
+                    <svg className="absolute inset-0 w-20 h-20 -m-4" viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="36"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        className="text-green-200"
+                      />
+                      <motion.circle
+                        cx="50"
+                        cy="50"
+                        r="36"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        className="text-green-600"
+                        strokeDasharray="226"
+                        initial={{ strokeDashoffset: 226 }}
+                        animate={{ strokeDashoffset: 0 }}
+                        transition={{ duration: 2, ease: 'easeInOut' }}
+                      />
+                    </svg>
+                  </div>
+                  <motion.h3
+                    className="mt-6 text-lg font-bold text-ceramic-text-primary"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    Submetendo proposta...
+                  </motion.h3>
+                  <p className="text-sm text-ceramic-text-secondary mt-2">
+                    Atualizando status e salvando dados
+                  </p>
+                </div>
+              )}
+
+              {/* SUCCESS STATE - Confetti and next steps */}
+              {submissionPhase === 'success' && (
+                <>
+                  {/* Confetti Animation */}
+                  {[...Array(20)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-2 h-2 rounded-full"
+                      style={{
+                        background: ['#10b981', '#059669', '#34d399', '#6ee7b7', '#fbbf24', '#f59e0b'][i % 6],
+                        left: '50%',
+                        top: '50%'
+                      }}
+                      initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                      animate={{
+                        opacity: [1, 1, 0],
+                        x: (Math.random() - 0.5) * 400,
+                        y: (Math.random() - 0.5) * 400,
+                        scale: [1, 1.5, 0],
+                        rotate: Math.random() * 720
+                      }}
+                      transition={{ duration: 1.5, ease: 'easeOut' }}
+                    />
+                  ))}
+
+                  <div className="p-8 flex flex-col items-center">
+                    {/* Success Icon */}
+                    <motion.div
+                      className={`ceramic-convex w-24 h-24 rounded-full ${GRANTS_GRADIENTS.background.badge} flex items-center justify-center mb-6`}
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                    >
+                      <CheckCircle2 className="w-12 h-12 text-white" />
+                    </motion.div>
+
+                    {/* Success Message */}
+                    <motion.h2
+                      className="text-2xl font-bold text-ceramic-text-primary mb-2"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      Proposta Submetida! 🎉
+                    </motion.h2>
+                    <motion.p
+                      className="text-sm text-ceramic-text-secondary mb-6 text-center"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      Sua proposta para <strong>{opportunityTitle}</strong> foi marcada como submetida.
+                    </motion.p>
+
+                    {/* Next Steps Cards */}
+                    <div className="w-full space-y-3">
+                      <motion.button
+                        onClick={handleExport}
+                        className="ceramic-card w-full p-4 hover:scale-[1.02] transition-transform text-left"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                              <Download className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-ceramic-text-primary text-sm">
+                                Exportar Proposta
+                              </p>
+                              <p className="text-xs text-ceramic-text-tertiary">
+                                Baixar em formato Markdown
+                              </p>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-5 h-5 text-ceramic-text-tertiary" />
+                        </div>
+                      </motion.button>
+
+                      <motion.a
+                        href="https://sisfaperj.faperj.br/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ceramic-card w-full p-4 hover:scale-[1.02] transition-transform text-left block"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                              <ExternalLink className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-ceramic-text-primary text-sm">
+                                Abrir Sistema Externo
+                              </p>
+                              <p className="text-xs text-ceramic-text-tertiary">
+                                SisFAPERJ - Submeter oficialmente
+                              </p>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-5 h-5 text-ceramic-text-tertiary" />
+                        </div>
+                      </motion.a>
+
+                      {onBackToEdital && (
+                        <motion.button
+                          onClick={() => {
+                            onBackToEdital();
+                            setShowSubmitConfirmation(false);
+                          }}
+                          className="ceramic-card w-full p-4 hover:scale-[1.02] transition-transform text-left"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.6 }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                                <FileText className="w-5 h-5 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-ceramic-text-primary text-sm">
+                                  Ver Detalhes do Edital
+                                </p>
+                                <p className="text-xs text-ceramic-text-tertiary">
+                                  Revisar requisitos e prazos
+                                </p>
+                              </div>
+                            </div>
+                            <ArrowRight className="w-5 h-5 text-ceramic-text-tertiary" />
+                          </div>
+                        </motion.button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ERROR STATE */}
+              {submissionPhase === 'error' && (
+                <div className="p-8">
+                  <div className="flex flex-col items-center">
+                    <motion.div
+                      className="ceramic-concave w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-4"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 200 }}
+                    >
+                      <AlertCircle className="w-10 h-10 text-red-600" />
+                    </motion.div>
+                    <h3 className="text-xl font-bold text-red-900 mb-2">
+                      Erro ao Submeter
+                    </h3>
+                    <p className="text-sm text-ceramic-text-secondary text-center mb-6">
+                      {errorMessage || 'Ocorreu um erro ao processar sua solicitação'}
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleCancelSubmit}
+                        className="ceramic-concave px-4 py-2 font-medium text-sm text-ceramic-text-primary hover:scale-95 transition-all"
+                      >
+                        Fechar
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSubmissionPhase('idle');
+                          setErrorMessage('');
+                        }}
+                        className={`ceramic-convex px-6 py-2 font-bold text-sm ${GRANTS_GRADIENTS.button.primary} text-white hover:scale-95 transition-all`}
+                      >
+                        Tentar Novamente
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

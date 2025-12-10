@@ -204,7 +204,7 @@ export async function getUpcomingDeadlines(
       .from('grant_opportunities')
       .select('id, title, submission_deadline')
       .eq('user_id', user.id)
-      .eq('status', 'open')
+      .not('status', 'in', '("closed","archived")')
       .gte('submission_deadline', today.toISOString())
       .lte('submission_deadline', futureDate.toISOString())
       .order('submission_deadline', { ascending: true })
@@ -357,6 +357,41 @@ export async function listProjects(
 }
 
 /**
+ * Atualiza o nome de um projeto
+ *
+ * @param id - ID do projeto
+ * @param project_name - Novo nome do projeto
+ * @returns Projeto atualizado
+ * @throws Error se a atualização falhar
+ */
+export async function updateProjectName(
+  id: string,
+  project_name: string
+): Promise<GrantProject> {
+  try {
+    if (!project_name || project_name.trim().length === 0) {
+      throw new Error('Nome do projeto não pode ser vazio')
+    }
+
+    const { data, error } = await supabase
+      .from('grant_projects')
+      .update({
+        project_name: project_name.trim(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as GrantProject
+  } catch (error) {
+    console.error('Erro ao atualizar nome do projeto:', error)
+    throw new Error(`Falha ao atualizar nome: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
  * Atualiza o status de um projeto
  *
  * @param id - ID do projeto
@@ -411,6 +446,59 @@ export async function deleteProject(id: string): Promise<void> {
   } catch (error) {
     console.error('Erro ao deletar projeto:', error)
     throw new Error(`Falha ao deletar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Verifica se todas as respostas de um projeto estão aprovadas
+ *
+ * @param projectId - ID do projeto
+ * @returns Objeto com informações sobre aprovações
+ * @throws Error se a verificação falhar
+ */
+export async function checkAllResponsesApproved(projectId: string): Promise<{
+  allApproved: boolean;
+  totalFields: number;
+  approvedFields: number;
+}> {
+  try {
+    // Buscar projeto com oportunidade
+    const { data: project, error: projError } = await supabase
+      .from('grant_projects')
+      .select(`
+        *,
+        opportunity:grant_opportunities(form_fields)
+      `)
+      .eq('id', projectId)
+      .single()
+
+    if (projError) throw projError
+    if (!project) throw new Error('Projeto não encontrado')
+
+    const opportunity = project.opportunity as any
+    const formFields = opportunity?.form_fields || []
+    const totalFields = formFields.length
+
+    if (totalFields === 0) {
+      return { allApproved: true, totalFields: 0, approvedFields: 0 }
+    }
+
+    // Buscar respostas aprovadas
+    const { data: responses, error: respError } = await supabase
+      .from('grant_responses')
+      .select('field_id, status')
+      .eq('project_id', projectId)
+      .eq('status', 'approved')
+
+    if (respError) throw respError
+
+    const approvedFields = responses?.length || 0
+    const allApproved = approvedFields >= totalFields
+
+    return { allApproved, totalFields, approvedFields }
+  } catch (error) {
+    console.error('Erro ao verificar aprovações:', error)
+    throw new Error(`Falha ao verificar aprovações: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
 
@@ -580,7 +668,7 @@ export async function saveResponse(
       .select('*')
       .eq('project_id', projectId)
       .eq('field_id', fieldId)
-      .single()
+      .maybeSingle()
 
     const charCount = content.length
     const newVersion = {
@@ -607,6 +695,10 @@ export async function saveResponse(
         .single()
 
       if (error) throw error
+
+      // Recalcular completion percentage
+      await calculateCompletion(projectId);
+
       return data as GrantResponse
     } else {
       // Criar novo
@@ -624,6 +716,10 @@ export async function saveResponse(
         .single()
 
       if (error) throw error
+
+      // Recalcular completion percentage
+      await calculateCompletion(projectId);
+
       return data as GrantResponse
     }
   } catch (error) {
@@ -986,6 +1082,62 @@ export async function countActiveProjects(opportunityId: string): Promise<number
   }
 }
 
+/**
+ * Conta todos os projetos ativos do usuário (não arquivados)
+ *
+ * @returns Número total de projetos ativos
+ * @throws Error se a contagem falhar
+ */
+export async function countAllActiveProjects(): Promise<number> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Usuário não autenticado')
+
+    const { count, error } = await supabase
+      .from('grant_projects')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .is('archived_at', null)
+
+    if (error) throw error
+    return count || 0
+  } catch (error) {
+    console.error('Erro ao contar todos os projetos ativos:', error)
+    throw new Error(`Falha ao contar projetos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+/**
+ * Lista projetos recentes do usuário (ordenados por data de atualização)
+ *
+ * @param limit - Número máximo de projetos a retornar
+ * @returns Lista de projetos recentes
+ * @throws Error se a busca falhar
+ */
+export async function getRecentProjects(limit: number = 5): Promise<GrantProject[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Usuário não autenticado')
+
+    const { data, error } = await supabase
+      .from('grant_projects')
+      .select(`
+        *,
+        opportunity:grant_opportunities(*)
+      `)
+      .eq('user_id', user.id)
+      .is('archived_at', null)
+      .order('updated_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data as GrantProject[]
+  } catch (error) {
+    console.error('Erro ao buscar projetos recentes:', error)
+    throw new Error(`Falha ao buscar projetos recentes: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
 // ============================================
 // SOURCE DOCUMENTS
 // ============================================
@@ -1061,5 +1213,110 @@ export async function removeSourceDocument(projectId: string): Promise<GrantProj
   } catch (error) {
     console.error('Erro ao remover documento fonte:', error)
     throw new Error(`Falha ao remover documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+}
+
+// ============================================
+// EDITAL PDF MANAGEMENT
+// ============================================
+
+/**
+ * Faz upload do PDF do edital e extrai o conteúdo de texto
+ *
+ * @param opportunityId - ID da oportunidade
+ * @param file - Arquivo PDF
+ * @returns Oportunidade atualizada
+ * @throws Error se o upload falhar
+ */
+export async function uploadEditalPDF(
+  opportunityId: string,
+  file: File
+): Promise<GrantOpportunity> {
+  try {
+    // Import dynamically to avoid initial bundle size
+    const { processSourceDocument } = await import('./documentService');
+
+    // 1. Process document (upload to storage + extract content)
+    const processed = await processSourceDocument(file, opportunityId, 'editais');
+
+    // 2. Update opportunity with PDF path and extracted content
+    const { data, error } = await supabase
+      .from('grant_opportunities')
+      .update({
+        edital_pdf_path: processed.path,
+        edital_text_content: processed.content,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', opportunityId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log('[GrantService] Edital PDF uploaded:', {
+      opportunityId,
+      path: processed.path,
+      contentLength: processed.content.length
+    });
+
+    return data as GrantOpportunity;
+  } catch (error) {
+    console.error('Erro ao fazer upload do PDF do edital:', error);
+    throw new Error(`Falha ao fazer upload do PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+  }
+}
+
+/**
+ * Remove o PDF do edital
+ *
+ * @param opportunityId - ID da oportunidade
+ * @returns Oportunidade atualizada
+ * @throws Error se a remoção falhar
+ */
+export async function deleteEditalPDF(
+  opportunityId: string
+): Promise<GrantOpportunity> {
+  try {
+    // 1. Get current opportunity to find the PDF path
+    const { data: opportunity, error: fetchError } = await supabase
+      .from('grant_opportunities')
+      .select('edital_pdf_path')
+      .eq('id', opportunityId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // 2. Delete file from storage if it exists
+    if (opportunity?.edital_pdf_path) {
+      const { error: storageError } = await supabase.storage
+        .from('editais')
+        .remove([opportunity.edital_pdf_path]);
+
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+        // Continue even if storage deletion fails
+      }
+    }
+
+    // 3. Update opportunity to remove PDF references
+    const { data, error } = await supabase
+      .from('grant_opportunities')
+      .update({
+        edital_pdf_path: null,
+        edital_text_content: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', opportunityId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log('[GrantService] Edital PDF deleted:', { opportunityId });
+
+    return data as GrantOpportunity;
+  } catch (error) {
+    console.error('Erro ao deletar PDF do edital:', error);
+    throw new Error(`Falha ao deletar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }

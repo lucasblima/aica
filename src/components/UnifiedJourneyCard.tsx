@@ -304,26 +304,42 @@ export const UnifiedJourneyCard: React.FC<UnifiedJourneyCardProps> = ({
               </div>
 
               {/* Footer com Stats */}
-              <div className="px-6 py-4 border-t border-ceramic-text-secondary/10 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="ceramic-concave w-8 h-8 flex items-center justify-center">
-                    <span className="text-sm font-black text-ceramic-accent">{level}</span>
+              <div className="px-6 py-4 border-t border-ceramic-text-secondary/10">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="ceramic-concave w-8 h-8 flex items-center justify-center">
+                      <span className="text-sm font-black text-ceramic-accent">{level}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-ceramic-text-primary">{levelName}</p>
+                      <p className="text-[10px] text-ceramic-text-secondary flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-orange-500" />
+                        {streakDays} dias de sequência
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-ceramic-text-primary">{levelName}</p>
-                    <p className="text-[10px] text-ceramic-text-secondary flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-orange-500" />
-                      {streakDays} dias de sequência
+
+                  <div className="text-right">
+                    <p className="text-xl font-black text-ceramic-text-primary">{percentLived}%</p>
+                    <p className="text-[10px] text-ceramic-text-secondary">
+                      Semana {currentWeek.toLocaleString()}
                     </p>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <p className="text-xl font-black text-ceramic-text-primary">{percentLived}%</p>
-                  <p className="text-[10px] text-ceramic-text-secondary">
-                    Semana {currentWeek.toLocaleString()}
-                  </p>
-                </div>
+                {/* Botão para ver jornada completa */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(false);
+                    onExpand();
+                  }}
+                  className="w-full ceramic-card px-4 py-3 rounded-full font-bold text-sm text-ceramic-accent hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Ver Jornada Completa (Nova Experiência ✨)
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </motion.div>
           )}

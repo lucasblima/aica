@@ -72,11 +72,10 @@ Sua tarefa é EXTRAIR e ORGANIZAR informações de um documento fonte fornecido 
 REGRAS CRÍTICAS - SIGA RIGOROSAMENTE:
 1. APENAS EXTRAIA informações que estão EXPLICITAMENTE no documento fonte
 2. NUNCA invente dados, números, nomes ou informações não presentes no documento
-3. Se uma informação não estiver no documento, escreva: "[Informação não encontrada no documento - preencher manualmente]"
+3. Se uma informação não estiver no documento, RETORNE UMA STRING VAZIA "" para o campo. NÃO escreva mensagens como "não encontrado".
 4. Use CITAÇÕES DIRETAS do documento quando possível
 5. Mantenha a linguagem original do documento
-6. Se o documento for incompleto, indique claramente o que está faltando
-7. Retorne APENAS o JSON, sem texto adicional
+6. Retorne APENAS o JSON, sem texto adicional
 ${formFields.length > 0 ? `
 ESTRUTURA DO JSON:
 {
@@ -86,8 +85,7 @@ ${jsonStructure}
 ATENÇÃO: Respeite os limites de caracteres de cada campo:
 ${formFields.map(f => `- ${f.label}: máximo ${f.max_chars} caracteres${f.required ? ' (OBRIGATÓRIO)' : ''}`).join('\n')}
 ` : ''}
-Se o campo não tiver informação no documento, retorne:
-"[Campo não encontrado no documento fonte. Por favor, preencha manualmente com informações sobre: <descrição do que é esperado>]"`;
+Se o campo não tiver informação no documento, retorne "".`;
 
     // User prompt com foco no documento fonte
     const fieldCount = formFields.length;
@@ -113,7 +111,7 @@ ${context.editalTitle ? `- Edital: ${context.editalTitle}` : ''}
 
 ATENÇÃO: Documento fonte não foi fornecido.
 Organize as poucas informações disponíveis nos campos apropriados.
-Para campos sem informação, retorne a mensagem padrão indicando preenchimento manual.
+Para campos sem informação, deixe vazio "".
 
 Retorne APENAS o JSON${fieldCount > 0 ? ` com os ${fieldCount} campos` : ''}.`;
 
@@ -190,7 +188,7 @@ export async function improveBriefingField(
 
     const prompt = `Você é um especialista em redação de projetos para editais de inovação.
 
-TAREFA: Melhore e expanda o seguinte texto do campo "${fieldLabels[fieldId]}":
+TAREFA: Melhore e expanda o seguinte texto do campo "${fieldLabels[fieldId] || fieldId}":
 
 TEXTO ATUAL:
 ${currentContent}

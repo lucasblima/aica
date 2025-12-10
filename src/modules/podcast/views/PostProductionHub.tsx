@@ -7,9 +7,12 @@ import {
     Newspaper,
     Share2,
     Sparkles,
-    Clock
+    Clock,
+    Search
 } from 'lucide-react';
 import { Dossier } from '../types';
+import { TranscriptSearchPanel } from '../components/TranscriptSearchPanel';
+import { usePodcastFileSearch } from '../hooks/usePodcastFileSearch';
 
 interface PostProductionHubProps {
     dossier: Dossier;
@@ -69,6 +72,20 @@ export const PostProductionHub: React.FC<PostProductionHubProps> = ({
         if (hrs > 0) return `${hrs}h ${mins}min`;
         return `${mins} minutos`;
     };
+
+    // File Search integration
+    const {
+        searchInEpisode,
+        findTopicMoments,
+        findQuotes,
+        findMomentsBySentiment,
+        searchResults,
+        isSearching,
+        documents,
+        clearSearchResults,
+    } = usePodcastFileSearch({ episodeId: projectId, autoLoad: true });
+
+    const hasIndexedTranscripts = documents.length > 0;
 
     return (
         <div className="h-screen bg-ceramic-base flex flex-col overflow-hidden">
@@ -163,6 +180,44 @@ export const PostProductionHub: React.FC<PostProductionHubProps> = ({
                             ))}
                         </div>
                     </div>
+
+                    {/* File Search Integration - Only show if transcripts are indexed */}
+                    {hasIndexedTranscripts && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="mt-12"
+                        >
+                            <h3 className="text-lg font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+                                <Search className="w-5 h-5 text-blue-600" />
+                                Buscar na Transcrição
+                            </h3>
+                            <div className="bg-white rounded-2xl shadow-sm border border-[#E5E3DC] p-6">
+                                <TranscriptSearchPanel
+                                    onSearch={async (query) => {
+                                        const results = await searchInEpisode(query, 10);
+                                        return results;
+                                    }}
+                                    onSearchTopic={async (topic) => {
+                                        const results = await findTopicMoments(topic, 10);
+                                        return results;
+                                    }}
+                                    onSearchQuote={async (quote) => {
+                                        const results = await findQuotes(quote, 10);
+                                        return results;
+                                    }}
+                                    onSearchSentiment={async (sentiment) => {
+                                        const results = await findMomentsBySentiment(sentiment, 10);
+                                        return results;
+                                    }}
+                                    results={searchResults}
+                                    isSearching={isSearching}
+                                    hasTranscriptions={hasIndexedTranscripts}
+                                />
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* Inspirational Note */}
                     <motion.div

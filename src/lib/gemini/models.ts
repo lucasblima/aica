@@ -33,6 +33,12 @@ export const USE_CASE_TO_MODEL: Record<string, GeminiModel> = {
   'chat_aica': 'fast',
   'deep_research': 'smart',
 
+  // Pauta Generation (NotebookLM-style)
+  'generate_pauta_outline': 'smart',
+  'generate_pauta_questions': 'smart',
+  'enrich_pauta_with_sources': 'smart',
+  'refine_pauta_section': 'fast',
+
   // Finance
   'finance_chat': 'fast',
   'analyze_spending': 'smart',

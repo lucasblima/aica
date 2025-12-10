@@ -22,9 +22,13 @@ import {
   Edit,
   Save,
   X,
-  Loader2
+  Loader2,
+  ArrowRight
 } from 'lucide-react';
 import type { GrantOpportunity, GrantProject, FormField } from '../types';
+import { FormFieldsEditorModal } from './FormFieldsEditorModal';
+import { EditalDocumentSection } from './EditalDocumentSection';
+import { uploadEditalPDF, deleteEditalPDF, updateProjectName } from '../services/grantService';
 
 interface EditalDetailViewProps {
   opportunity: GrantOpportunity;
@@ -36,6 +40,7 @@ interface EditalDetailViewProps {
   onUnarchiveProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
   onUpdateFormFields: (opportunityId: string, formFields: FormField[]) => Promise<void>;
+  onUpdateOpportunity: (updatedOpportunity: GrantOpportunity) => void;
 }
 
 export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
@@ -47,13 +52,14 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
-  onUpdateFormFields
+  onUpdateFormFields,
+  onUpdateOpportunity
 }) => {
   const [activeProjects, setActiveProjects] = useState<GrantProject[]>([]);
   const [archivedProjects, setArchivedProjects] = useState<GrantProject[]>([]);
   const [isEditingFields, setIsEditingFields] = useState(false);
-  const [editedFields, setEditedFields] = useState<FormField[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingProjectName, setEditingProjectName] = useState<string>('');
 
   useEffect(() => {
     const active = projects.filter(p => !p.archived_at);
@@ -61,6 +67,32 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
     setActiveProjects(active);
     setArchivedProjects(archived);
   }, [projects]);
+
+  /**
+   * Handle edital PDF upload
+   */
+  const handleUploadEditalPDF = async (file: File) => {
+    try {
+      const updatedOpportunity = await uploadEditalPDF(opportunity.id, file);
+      onUpdateOpportunity(updatedOpportunity);
+    } catch (error) {
+      console.error('Error uploading edital PDF:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Handle edital PDF deletion
+   */
+  const handleDeleteEditalPDF = async () => {
+    try {
+      const updatedOpportunity = await deleteEditalPDF(opportunity.id);
+      onUpdateOpportunity(updatedOpportunity);
+    } catch (error) {
+      console.error('Error deleting edital PDF:', error);
+      throw error;
+    }
+  };
 
   const getStatusColor = (status: GrantProject['status']) => {
     const colors = {
@@ -101,6 +133,67 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
     return labels[status] || status;
   };
 
+  /**
+   * Get next action hint based on project status
+   * Provides clear guidance on what the user should do next
+   */
+  const getNextActionHint = (project: GrantProject): { text: string; icon: React.ReactNode } => {
+    switch (project.status) {
+      case 'draft':
+        return {
+          text: 'Clique para começar o briefing',
+          icon: <ArrowRight className="w-4 h-4" />
+        };
+      case 'briefing':
+        return {
+          text: 'Complete o briefing do projeto',
+          icon: <Edit className="w-4 h-4" />
+        };
+      case 'generating':
+        if (project.completion_percentage === 0) {
+          return {
+            text: 'Inicie a geração dos campos',
+            icon: <ArrowRight className="w-4 h-4" />
+          };
+        } else if (project.completion_percentage < 100) {
+          return {
+            text: `Aprove os campos restantes (${project.completion_percentage}% completo)`,
+            icon: <CheckCircle2 className="w-4 h-4" />
+          };
+        } else {
+          return {
+            text: 'Finalize a submissão',
+            icon: <CheckCircle2 className="w-4 h-4" />
+          };
+        }
+      case 'review':
+        return {
+          text: 'Revise e aprove os campos',
+          icon: <AlertCircle className="w-4 h-4" />
+        };
+      case 'submitted':
+        return {
+          text: 'Proposta submetida! Exporte ou veja detalhes',
+          icon: <CheckCircle2 className="w-4 h-4" />
+        };
+      case 'approved':
+        return {
+          text: 'Projeto aprovado',
+          icon: <CheckCircle2 className="w-4 h-4" />
+        };
+      case 'rejected':
+        return {
+          text: 'Projeto rejeitado',
+          icon: <X className="w-4 h-4" />
+        };
+      default:
+        return {
+          text: 'Clique para continuar',
+          icon: <ArrowRight className="w-4 h-4" />
+        };
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -118,49 +211,52 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
     }).format(value);
   };
 
-  const handleOpenEditFields = () => {
-    setEditedFields(JSON.parse(JSON.stringify(opportunity.form_fields))); // Deep copy
-    setIsEditingFields(true);
+  /**
+   * Handle form fields update from modal
+   */
+  const handleSaveFormFields = async (updatedFields: FormField[]) => {
+    await onUpdateFormFields(opportunity.id, updatedFields);
   };
 
-  const handleCancelEditFields = () => {
-    setIsEditingFields(false);
-    setEditedFields([]);
+  /**
+   * Start editing project name
+   */
+  const startEditingProjectName = (project: GrantProject) => {
+    setEditingProjectId(project.id);
+    setEditingProjectName(project.project_name);
   };
 
-  const handleSaveFormFields = async () => {
+  /**
+   * Save edited project name
+   */
+  const saveProjectName = async (projectId: string) => {
+    if (!editingProjectName.trim()) {
+      alert('O nome do projeto não pode estar vazio');
+      return;
+    }
+
     try {
-      setIsSaving(true);
-      await onUpdateFormFields(opportunity.id, editedFields);
-      setIsEditingFields(false);
+      await updateProjectName(projectId, editingProjectName);
+
+      // Update local state
+      setActiveProjects(prev =>
+        prev.map(p => p.id === projectId ? { ...p, project_name: editingProjectName.trim() } : p)
+      );
+
+      setEditingProjectId(null);
+      setEditingProjectName('');
     } catch (error) {
-      console.error('Error updating form fields:', error);
-      alert('Erro ao salvar campos do formulário');
-    } finally {
-      setIsSaving(false);
+      console.error('Error updating project name:', error);
+      alert('Erro ao atualizar nome do projeto. Tente novamente.');
     }
   };
 
-  const handleUpdateField = (index: number, field: Partial<FormField>) => {
-    const updated = [...editedFields];
-    updated[index] = { ...updated[index], ...field };
-    setEditedFields(updated);
-  };
-
-  const handleAddField = () => {
-    const newField: FormField = {
-      id: `field_${Date.now()}`,
-      label: 'Novo Campo',
-      max_chars: 3000,
-      required: false,
-      ai_prompt_hint: '',
-      placeholder: ''
-    };
-    setEditedFields([...editedFields, newField]);
-  };
-
-  const handleRemoveField = (index: number) => {
-    setEditedFields(editedFields.filter((_, i) => i !== index));
+  /**
+   * Cancel editing project name
+   */
+  const cancelEditingProjectName = () => {
+    setEditingProjectId(null);
+    setEditingProjectName('');
   };
 
   return (
@@ -187,8 +283,23 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                 {opportunity.funding_agency} • {opportunity.program_name}
               </p>
 
-              {/* Edital Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+              {/* Edital Stats - 5 cards in single row */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
+                {/* PDF Status Card */}
+                <div className="ceramic-card p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`ceramic-concave w-10 h-10 flex items-center justify-center ${opportunity.edital_pdf_path ? 'text-green-600' : 'text-orange-600'}`}>
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-ceramic-text-secondary">PDF do Edital</p>
+                      <p className="text-sm font-bold text-ceramic-text-primary">
+                        {opportunity.edital_pdf_path ? 'Enviado' : 'Pendente'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="ceramic-card p-4">
                   <div className="flex items-center gap-3">
                     <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-green-600">
@@ -250,7 +361,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
               <button
-                onClick={handleOpenEditFields}
+                onClick={() => setIsEditingFields(true)}
                 className="ceramic-concave px-4 py-3 font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 transition-transform flex items-center gap-2"
                 title="Editar campos do formulário"
               >
@@ -271,6 +382,16 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Edital PDF Section */}
+        <EditalDocumentSection
+          opportunityId={opportunity.id}
+          opportunityTitle={opportunity.title}
+          editalPdfPath={opportunity.edital_pdf_path}
+          editalTextContent={opportunity.edital_text_content}
+          onUpload={handleUploadEditalPDF}
+          onDelete={handleDeleteEditalPDF}
+        />
+
         {/* Active Projects */}
         {activeProjects.length > 0 && (
           <div className="mb-8">
@@ -287,14 +408,61 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                   className="ceramic-card p-6 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div
-                      className="flex-1 cursor-pointer"
-                      onClick={() => onSelectProject(project)}
-                    >
-                      <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">
-                        {project.project_name}
-                      </h3>
-                      <div className={`flex items-center gap-2 ${getStatusColor(project.status)}`}>
+                    <div className="flex-1">
+                      {/* Editable Project Name */}
+                      {editingProjectId === project.id ? (
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={editingProjectName}
+                            onChange={(e) => setEditingProjectName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveProjectName(project.id);
+                              if (e.key === 'Escape') cancelEditingProjectName();
+                            }}
+                            className="flex-1 px-3 py-1.5 text-lg font-bold text-ceramic-text-primary bg-ceramic-base border-2 border-ceramic-accent rounded-lg focus:outline-none"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => saveProjectName(project.id)}
+                            className="ceramic-concave w-8 h-8 flex items-center justify-center text-green-600 hover:scale-95 transition-transform"
+                            title="Salvar"
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={cancelEditingProjectName}
+                            className="ceramic-concave w-8 h-8 flex items-center justify-center text-red-600 hover:scale-95 transition-transform"
+                            title="Cancelar"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 mb-1 group">
+                          <h3
+                            className="text-lg font-bold text-ceramic-text-primary cursor-pointer flex-1"
+                            onClick={() => onSelectProject(project)}
+                          >
+                            {project.project_name}
+                          </h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditingProjectName(project);
+                            }}
+                            className="ceramic-concave w-7 h-7 flex items-center justify-center text-ceramic-text-tertiary opacity-0 group-hover:opacity-100 hover:scale-95 transition-all"
+                            title="Editar nome"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      <div
+                        className={`flex items-center gap-2 ${getStatusColor(project.status)} cursor-pointer`}
+                        onClick={() => onSelectProject(project)}
+                      >
                         {getStatusIcon(project.status)}
                         <span className="text-sm font-medium">
                           {getStatusLabel(project.status)}
@@ -303,17 +471,40 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                     </div>
 
                     {/* Archive Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onArchiveProject(project.id);
-                      }}
-                      className="ceramic-concave w-8 h-8 flex items-center justify-center text-ceramic-text-secondary hover:scale-95 transition-transform"
-                      title="Arquivar projeto"
-                    >
-                      <Archive className="w-4 h-4" />
-                    </button>
+                    {editingProjectId !== project.id && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onArchiveProject(project.id);
+                        }}
+                        className="ceramic-concave w-8 h-8 flex items-center justify-center text-ceramic-text-secondary hover:scale-95 transition-transform"
+                        title="Arquivar projeto"
+                      >
+                        <Archive className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
+
+                  {/* Next Action Hint - Shows what user should do next */}
+                  {(() => {
+                    const nextAction = getNextActionHint(project);
+                    return (
+                      <div
+                        onClick={() => onSelectProject(project)}
+                        className="mb-4 ceramic-tray p-3 rounded-lg cursor-pointer hover:scale-[1.01] transition-transform"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="text-blue-600">
+                            {nextAction.icon}
+                          </div>
+                          <p className="text-xs font-medium text-ceramic-text-secondary">
+                            <span className="font-bold text-blue-600">Próximo passo:</span>{' '}
+                            {nextAction.text}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Progress Bar */}
                   <div className="mb-4">
@@ -426,163 +617,13 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
       </div>
 
       {/* Form Fields Editor Modal */}
-      <AnimatePresence>
-        {isEditingFields && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-6"
-            onClick={handleCancelEditFields}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="ceramic-card w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
-                <h2 className="text-2xl font-bold text-ceramic-text-primary">
-                  Editar Campos do Formulário
-                </h2>
-                <button
-                  onClick={handleCancelEditFields}
-                  className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-text-secondary hover:scale-95 transition-transform"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {editedFields.map((field, index) => (
-                  <div key={field.id} className="ceramic-card p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-ceramic-text-secondary">
-                        Campo {index + 1}
-                      </span>
-                      <button
-                        onClick={() => handleRemoveField(index)}
-                        className="ceramic-concave px-3 py-1 text-red-600 hover:scale-95 transition-transform text-sm"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Label */}
-                      <div>
-                        <label className="text-xs font-bold text-ceramic-text-secondary block mb-1">
-                          Nome do Campo *
-                        </label>
-                        <input
-                          type="text"
-                          value={field.label}
-                          onChange={(e) => handleUpdateField(index, { label: e.target.value })}
-                          className="w-full ceramic-tray px-3 py-2 text-sm text-ceramic-text-primary focus:outline-none"
-                          placeholder="Ex: Descrição do Projeto"
-                        />
-                      </div>
-
-                      {/* Max Chars */}
-                      <div>
-                        <label className="text-xs font-bold text-ceramic-text-secondary block mb-1">
-                          Máximo de Caracteres
-                        </label>
-                        <input
-                          type="number"
-                          value={field.max_chars}
-                          onChange={(e) => handleUpdateField(index, { max_chars: parseInt(e.target.value) || 0 })}
-                          className="w-full ceramic-tray px-3 py-2 text-sm text-ceramic-text-primary focus:outline-none"
-                          placeholder="3000"
-                        />
-                      </div>
-                    </div>
-
-                    {/* AI Prompt Hint */}
-                    <div>
-                      <label className="text-xs font-bold text-ceramic-text-secondary block mb-1">
-                        Dica para IA (opcional)
-                      </label>
-                      <input
-                        type="text"
-                        value={field.ai_prompt_hint || ''}
-                        onChange={(e) => handleUpdateField(index, { ai_prompt_hint: e.target.value })}
-                        className="w-full ceramic-tray px-3 py-2 text-sm text-ceramic-text-primary focus:outline-none"
-                        placeholder="Ex: Descreva objetivos, metodologia e resultados esperados"
-                      />
-                    </div>
-
-                    {/* Placeholder */}
-                    <div>
-                      <label className="text-xs font-bold text-ceramic-text-secondary block mb-1">
-                        Placeholder (opcional)
-                      </label>
-                      <input
-                        type="text"
-                        value={field.placeholder || ''}
-                        onChange={(e) => handleUpdateField(index, { placeholder: e.target.value })}
-                        className="w-full ceramic-tray px-3 py-2 text-sm text-ceramic-text-primary focus:outline-none"
-                        placeholder="Ex: Desenvolveremos uma plataforma de..."
-                      />
-                    </div>
-
-                    {/* Required */}
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={field.required}
-                        onChange={(e) => handleUpdateField(index, { required: e.target.checked })}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm text-ceramic-text-primary">Campo obrigatório</span>
-                    </label>
-                  </div>
-                ))}
-
-                {/* Add Field Button */}
-                <button
-                  onClick={handleAddField}
-                  className="w-full ceramic-concave px-4 py-3 font-bold text-ceramic-accent hover:scale-95 transition-transform flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Adicionar Campo
-                </button>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-ceramic-text-secondary/10">
-                <button
-                  onClick={handleCancelEditFields}
-                  className="ceramic-concave px-6 py-3 font-bold text-ceramic-text-secondary hover:scale-95 transition-transform"
-                  disabled={isSaving}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveFormFields}
-                  className="ceramic-concave px-6 py-3 font-bold text-ceramic-accent hover:scale-95 transition-transform flex items-center gap-2"
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      Salvar Alterações
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <FormFieldsEditorModal
+        isOpen={isEditingFields}
+        opportunityTitle={opportunity.title}
+        initialFields={opportunity.form_fields}
+        onSave={handleSaveFormFields}
+        onClose={() => setIsEditingFields(false)}
+      />
     </div>
   );
 };

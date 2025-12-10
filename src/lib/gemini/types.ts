@@ -18,6 +18,11 @@ export type GeminiAction =
   | 'chat_aica'
   | 'deep_research'
   | 'intelligent_search'
+  // Pauta Generation (NotebookLM-style)
+  | 'generate_pauta_outline'
+  | 'generate_pauta_questions'
+  | 'enrich_pauta_with_sources'
+  | 'refine_pauta_section'
 
   // Finance
   | 'finance_chat'
@@ -45,6 +50,9 @@ export type GeminiAction =
   // Journey (Minha Jornada)
   | 'analyze_moment_sentiment'
   | 'generate_weekly_summary'
+  | 'analyze_content_realtime'
+  | 'generate_post_capture_insight'
+  | 'cluster_moments_by_theme'
 
   // Grants (Módulo Captação)
   | 'generate_field_content'
