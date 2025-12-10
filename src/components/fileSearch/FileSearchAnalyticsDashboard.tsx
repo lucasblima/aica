@@ -136,7 +136,7 @@ const ModuleBar: React.FC<{
       {/* Barra de progresso */}
       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
         <motion.div
-          className={config.bgColor}
+          className={`${config.bgColor} h-full`}
           style={{
             width: `${percentage}%`,
             background: `linear-gradient(90deg, ${config.bgColor} 0%, ${config.color.replace('text-', 'bg-')} 100%)`,
@@ -144,7 +144,6 @@ const ModuleBar: React.FC<{
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.8, delay: index * 0.1 }}
-          className="h-full"
         />
       </div>
 

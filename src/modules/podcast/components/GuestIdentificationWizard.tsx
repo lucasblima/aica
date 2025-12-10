@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search,
@@ -44,6 +44,7 @@ interface WizardData {
 
 interface GuestIdentificationWizardProps {
     showId: string;
+    userId: string;
     onComplete: (data: WizardData, episodeId: string) => void;
     onCancel: () => void;
 }
@@ -57,6 +58,7 @@ const LOCATIONS = [
 
 export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps> = ({
     showId,
+    userId,
     onComplete,
     onCancel
 }) => {
@@ -65,6 +67,9 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     const [isCreatingEpisode, setIsCreatingEpisode] = useState(false);
     const [searchResults, setSearchResults] = useState<GuestProfile[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
+
+    // Ref for modal container (focus trap)
+    const modalRef = useRef<HTMLDivElement>(null);
 
     const [data, setData] = useState<WizardData>({
         guestCategory: null,
@@ -184,8 +189,11 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                 .from('podcast_episodes')
                 .insert({
                     show_id: showId,
+                    user_id: userId,
                     title: `${data.confirmedProfile?.fullName || data.guestName}`,
                     guest_name: data.confirmedProfile?.fullName || data.guestName,
+                    guest_phone: data.phone || null,
+                    guest_email: data.email || null,
                     episode_theme: data.theme || data.confirmedProfile?.title || 'Tema a definir',
                     status: 'draft',
                     scheduled_date: data.scheduledDate || null,
@@ -213,17 +221,79 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     const canProceedStep1 = data.guestName.trim().length > 0;
     const canProceedStep3 = data.confirmedProfile && (data.theme || data.themeMode === 'auto');
 
+    // Handle ESC key to close modal
+    useEffect(() => {
+        const handleEscKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onCancel();
+            }
+        };
+
+        document.addEventListener('keydown', handleEscKey);
+        return () => {
+            document.removeEventListener('keydown', handleEscKey);
+        };
+    }, [onCancel]);
+
+    // Focus trap: Keep focus within modal
+    useEffect(() => {
+        const handleFocusTrap = (event: KeyboardEvent) => {
+            if (event.key !== 'Tab' || !modalRef.current) return;
+
+            const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+                'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            );
+
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (event.shiftKey && document.activeElement === firstElement) {
+                // Shift+Tab on first element: move to last
+                event.preventDefault();
+                lastElement?.focus();
+            } else if (!event.shiftKey && document.activeElement === lastElement) {
+                // Tab on last element: move to first
+                event.preventDefault();
+                firstElement?.focus();
+            }
+        };
+
+        document.addEventListener('keydown', handleFocusTrap);
+        return () => {
+            document.removeEventListener('keydown', handleFocusTrap);
+        };
+    }, []);
+
+    // Set initial focus when modal opens
+    useEffect(() => {
+        if (modalRef.current) {
+            const firstFocusable = modalRef.current.querySelector<HTMLElement>(
+                'button:not([disabled]), input:not([disabled])'
+            );
+            firstFocusable?.focus();
+        }
+    }, []);
+
     return (
         <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] flex items-center justify-center z-50 p-4" data-testid="guest-wizard">
             <motion.div
+                ref={modalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="wizard-title"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-lg bg-ceramic-base rounded-3xl shadow-2xl overflow-hidden"
             >
-                {/* Progress Bar */}
+                {/* Progress Bar with ARIA attributes */}
                 <div className="h-1 bg-[#E5E3DC]">
                     <motion.div
+                        role="progressbar"
+                        aria-valuenow={(step / 3) * 100}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`Passo ${step + 1} de 4`}
                         className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
                         initial={{ width: '0%' }}
                         animate={{ width: `${(step / 3) * 100}%` }}
@@ -271,7 +341,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mx-auto mb-4 shadow-lg">
                                         <User className="w-8 h-8 text-amber-600" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-ceramic-text-primary">
+                                    <h2 id="wizard-title" className="text-2xl font-bold text-ceramic-text-primary">
                                         Quem será entrevistado?
                                     </h2>
                                     <p className="text-ceramic-text-secondary text-sm mt-2">
