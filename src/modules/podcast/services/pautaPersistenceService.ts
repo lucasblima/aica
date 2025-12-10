@@ -24,7 +24,8 @@ import type { GeneratedPauta, PautaQuestion, OutlineSection, SourceCitation, Con
 
 export interface SavedPauta {
   id: string
-  project_id: string
+  episode_id: string
+  user_id: string
   guest_name: string
   theme: string
   version: number
@@ -120,7 +121,8 @@ class PautaPersistenceService {
    * O versionamento e automatico via trigger.
    */
   async savePauta(
-    projectId: string,
+    episodeId: string,
+    userId: string,
     pauta: GeneratedPauta,
     guestName: string,
     theme: string,
@@ -130,7 +132,8 @@ class PautaPersistenceService {
     focusAreas?: string[]
   ): Promise<{ success: boolean; pautaId?: string; error?: string }> {
     console.log('[savePauta] Iniciando salvamento de pauta:', {
-      projectId,
+      episodeId,
+      userId,
       guestName,
       theme,
       hasOutline: !!pauta.outline,
@@ -145,7 +148,8 @@ class PautaPersistenceService {
         .from('podcast_generated_pautas')
         .insert([
           {
-            project_id: projectId,
+            episode_id: episodeId,
+            user_id: userId,
             guest_name: guestName,
             theme: theme,
             is_active: true, // Nova pauta sempre e ativa
@@ -240,15 +244,15 @@ class PautaPersistenceService {
   }
 
   /**
-   * Busca a pauta ativa para um projeto
+   * Busca a pauta ativa para um episódio
    */
-  async getActivePauta(projectId: string): Promise<CompleteSavedPauta | null> {
+  async getActivePauta(episodeId: string): Promise<CompleteSavedPauta | null> {
     try {
       // Busca pauta ativa
       const { data: pauta, error: pautaError } = await supabase
         .from('podcast_generated_pautas')
         .select('*')
-        .eq('project_id', projectId)
+        .eq('episode_id', episodeId)
         .eq('is_active', true)
         .maybeSingle()
 
@@ -351,14 +355,14 @@ class PautaPersistenceService {
   }
 
   /**
-   * Lista todas as versoes de pautas para um projeto
+   * Lista todas as versoes de pautas para um episódio
    */
-  async listPautaVersions(projectId: string): Promise<PautaVersion[]> {
+  async listPautaVersions(episodeId: string): Promise<PautaVersion[]> {
     try {
       const { data, error } = await supabase
         .from('podcast_generated_pautas')
         .select('id, version, is_active, confidence_score, created_at')
-        .eq('project_id', projectId)
+        .eq('episode_id', episodeId)
         .order('version', { ascending: false })
 
       if (error) {
@@ -376,13 +380,13 @@ class PautaPersistenceService {
   /**
    * Define uma pauta especifica como ativa
    */
-  async setActivePauta(pautaId: string, projectId: string): Promise<boolean> {
+  async setActivePauta(pautaId: string, episodeId: string): Promise<boolean> {
     try {
-      // Desativa todas as pautas do projeto
+      // Desativa todas as pautas do episódio
       const { error: deactivateError } = await supabase
         .from('podcast_generated_pautas')
         .update({ is_active: false })
-        .eq('project_id', projectId)
+        .eq('episode_id', episodeId)
 
       if (deactivateError) {
         console.error('Error deactivating pautas:', deactivateError)

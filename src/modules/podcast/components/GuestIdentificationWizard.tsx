@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { searchGuestProfile } from '../../../services/podcastProductionService';
 import { supabase } from '../../../services/supabaseClient';
+import { GuestTypeSelector, type GuestCategory } from './GuestTypeSelector';
+import { GuestManualForm, type GuestManualData } from './GuestManualForm';
 
 interface GuestProfile {
     name: string;
@@ -26,8 +28,11 @@ interface GuestProfile {
 }
 
 interface WizardData {
+    guestCategory: GuestCategory | null;
     guestName: string;
     guestReference: string;
+    phone: string;
+    email: string;
     confirmedProfile: GuestProfile | null;
     theme: string;
     themeMode: 'auto' | 'manual';
@@ -55,15 +60,18 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     onComplete,
     onCancel
 }) => {
-    const [step, setStep] = useState<1 | 2 | 3>(1);
+    const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
     const [isSearching, setIsSearching] = useState(false);
     const [isCreatingEpisode, setIsCreatingEpisode] = useState(false);
     const [searchResults, setSearchResults] = useState<GuestProfile[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
 
     const [data, setData] = useState<WizardData>({
+        guestCategory: null,
         guestName: '',
         guestReference: '',
+        phone: '',
+        email: '',
         confirmedProfile: null,
         theme: '',
         themeMode: 'auto',
@@ -73,7 +81,31 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
         scheduledTime: ''
     });
 
-    // Step 1: Search for guest profile using Gemini Deep Research
+    // Step 0: Handle guest type selection
+    const handleGuestTypeSelect = (category: GuestCategory) => {
+        setData(prev => ({ ...prev, guestCategory: category }));
+        setStep(1);
+    };
+
+    // Step 1b: Handle manual form submission (common people)
+    const handleManualFormSubmit = (manualData: GuestManualData) => {
+        setData(prev => ({
+            ...prev,
+            guestName: manualData.name,
+            phone: manualData.phone,
+            email: manualData.email,
+            confirmedProfile: {
+                name: manualData.name,
+                fullName: manualData.name,
+                title: 'Convidado',
+                summary: 'Perfil criado manualmente'
+            }
+        }));
+        // Skip Step 2 (confirmation) for manual entries, go directly to Step 3
+        setStep(3);
+    };
+
+    // Step 1a: Search for guest profile using Gemini Deep Research (public figures)
     const handleSearchProfile = async () => {
         if (!data.guestName.trim()) return;
 
@@ -193,7 +225,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                 <div className="h-1 bg-[#E5E3DC]">
                     <motion.div
                         className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
-                        initial={{ width: '33%' }}
+                        initial={{ width: '0%' }}
                         animate={{ width: `${(step / 3) * 100}%` }}
                         transition={{ duration: 0.3 }}
                     />
@@ -201,8 +233,32 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
                 <div className="p-8">
                     <AnimatePresence mode="wait">
-                        {/* STEP 1: Name + Reference */}
-                        {step === 1 && (
+                        {/* STEP 0: Guest Type Selection */}
+                        {step === 0 && (
+                            <motion.div
+                                key="step0"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                            >
+                                <GuestTypeSelector
+                                    selectedType={data.guestCategory}
+                                    onSelect={handleGuestTypeSelect}
+                                />
+
+                                <div className="flex justify-center mt-6">
+                                    <button
+                                        onClick={onCancel}
+                                        className="px-6 py-3 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* STEP 1: Name + Reference OR Manual Form */}
+                        {step === 1 && data.guestCategory === 'public_figure' && (
                             <motion.div
                                 key="step1"
                                 initial={{ opacity: 0, x: 20 }}
@@ -278,10 +334,10 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
                                 <div className="flex gap-3 pt-4">
                                     <button
-                                        onClick={onCancel}
+                                        onClick={() => setStep(0)}
                                         className="flex-1 py-4 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all"
                                     >
-                                        Cancelar
+                                        Voltar
                                     </button>
                                     <button
                                         onClick={handleSearchProfile}
@@ -301,6 +357,21 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                         )}
                                     </button>
                                 </div>
+                            </motion.div>
+                        )}
+
+                        {/* STEP 1 (Common Person): Manual Form */}
+                        {step === 1 && data.guestCategory === 'common_person' && (
+                            <motion.div
+                                key="step1-manual"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                            >
+                                <GuestManualForm
+                                    onSubmit={handleManualFormSubmit}
+                                    onBack={() => setStep(0)}
+                                />
                             </motion.div>
                         )}
 
