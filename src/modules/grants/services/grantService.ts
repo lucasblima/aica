@@ -746,9 +746,9 @@ export async function getResponse(
       .select('*')
       .eq('project_id', projectId)
       .eq('field_id', fieldId)
-      .single()
+      .maybeSingle()
 
-    if (error && error.code !== 'PGRST116') throw error
+    if (error) throw error
     return data as GrantResponse | null
   } catch (error) {
     console.error('Erro ao buscar resposta:', error)

@@ -4,11 +4,12 @@ Comprehensive end-to-end test suite for Aica Life OS using Playwright.
 
 ## Overview
 
-- **80+ automated tests** across 15+ test suites
+- **100+ automated tests** across 17+ test suites
 - **Global authentication** via Google OAuth (manual once, then cached)
 - **Chromium & Firefox** support
 - **HTML reporting** with screenshots on failure
-- **Comprehensive Gemini integration tests** (58 tests)
+- **Comprehensive Gemini integration tests** (62 tests)
+- **Complete Journey & Grants coverage** (25 tests)
 
 ## Test Suites
 
@@ -20,6 +21,12 @@ Comprehensive end-to-end test suite for Aica Life OS using Playwright.
 | `task-management.spec.ts` | 7 | CRUD operations & drag-drop functionality |
 | `gamification.spec.ts` | 5 | XP, leveling, achievements, streaks |
 | `security.spec.ts` | 10 | Security, privacy, GDPR, HTTPS, XSS |
+
+### Journey Module (NEW)
+
+| Suite | Tests | Purpose |
+|-------|-------|---------|
+| **`journey-moment-capture.spec.ts`** | **12** | **Moment capture, AI analysis, CP system, timeline** |
 
 ### Podcast Module
 
@@ -33,7 +40,13 @@ Comprehensive end-to-end test suite for Aica Life OS using Playwright.
 | `podcast-full-workflow.spec.ts` | 5 | End-to-end workflow |
 | **`podcast-gemini-integration.spec.ts`** | **10** | **AI-powered features** |
 
-### Gemini Integration (NEW)
+### Grants Module (NEW)
+
+| Suite | Tests | Purpose |
+|-------|-------|---------|
+| **`grants-full-workflow.spec.ts`** | **13** | **Edital wizard, project management, briefing, AI generation** |
+
+### Gemini Integration
 
 | Suite | Tests | Purpose |
 |-------|-------|---------|
@@ -44,6 +57,7 @@ Comprehensive end-to-end test suite for Aica Life OS using Playwright.
 | **`gemini-security-performance.spec.ts`** | **15** | Security validation, performance benchmarks |
 
 **Total Gemini Tests:** 62 tests covering all AI-powered features
+**Total Journey + Grants Tests:** 25 tests covering critical user workflows
 
 ## Authentication Strategy
 
@@ -341,11 +355,25 @@ Test data is in `tests/fixtures/`:
 
 See [tests/fixtures/README.md](../fixtures/README.md) for details.
 
+## New Tests Documentation
+
+For detailed information about the newly implemented Journey and Grants tests, see:
+
+**[📖 New Tests Guide - Journey & Grants](./NEW_TESTS_GUIDE.md)**
+
+This guide includes:
+- Complete test descriptions and coverage
+- Execution commands for specific test suites
+- Selector strategies and resilience patterns
+- Recommendations for adding data-testid attributes
+- Troubleshooting specific to Journey and Grants modules
+
 ## Support
 
 For issues or questions:
 1. Check test report: `npx playwright show-report`
-2. Review [Gemini E2E Testing Guide](../../docs/GEMINI_E2E_TESTS.md)
-3. Review test code and selectors
-4. Use `--debug` mode: `npm run test:e2e:debug`
-5. Check browser DevTools screenshots
+2. Review [New Tests Guide](./NEW_TESTS_GUIDE.md) for Journey/Grants tests
+3. Review [Gemini E2E Testing Guide](../../docs/GEMINI_E2E_TESTS.md)
+4. Review test code and selectors
+5. Use `--debug` mode: `npm run test:e2e:debug`
+6. Check browser DevTools screenshots
