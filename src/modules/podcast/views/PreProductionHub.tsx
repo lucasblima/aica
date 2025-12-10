@@ -47,6 +47,7 @@ import { Dossier, Topic, TopicCategory } from '../types';
 import { generateDossier } from '../services/geminiService';
 import { supabase } from '../../../services/supabaseClient';
 import { PautaGeneratorPanel } from '../components/PautaGeneratorPanel';
+import { GuestApprovalLinkDialog } from '../components/GuestApprovalLinkDialog';
 import { Wand2 } from 'lucide-react';
 import { useSavedPauta } from '../hooks/useSavedPauta';
 import { fetchUrlContent, processFileContent } from '../services/contentExtractionService';
@@ -71,6 +72,8 @@ interface GuestData {
     fullName?: string;
     title?: string;
     theme?: string;
+    email?: string;
+    phone?: string;
 }
 
 interface PreProductionHubProps {
@@ -144,6 +147,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
     const [hasLowContext, setHasLowContext] = useState(false);
     const [showPautaGenerator, setShowPautaGenerator] = useState(false);
     const [showPautaVersions, setShowPautaVersions] = useState(false);
+    const [showApprovalDialog, setShowApprovalDialog] = useState(false);
 
     // Hook para gerenciar pautas salvas
     const {
@@ -621,14 +625,25 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleGoToProduction}
-                        disabled={!dossier || isResearching}
-                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
-                    >
-                        Ir para Gravação
-                        <ArrowRight className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowApprovalDialog(true)}
+                            disabled={!dossier || isResearching}
+                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+                            title="Gerar link de aprovação para o convidado"
+                        >
+                            <LinkIcon className="w-5 h-5" />
+                            Enviar Aprovação
+                        </button>
+                        <button
+                            onClick={handleGoToProduction}
+                            disabled={!dossier || isResearching}
+                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+                        >
+                            Ir para Gravação
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -1103,6 +1118,16 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Guest Approval Link Dialog */}
+            <GuestApprovalLinkDialog
+                isOpen={showApprovalDialog}
+                onClose={() => setShowApprovalDialog(false)}
+                episodeId={projectId || ''}
+                guestName={guestData.name}
+                guestEmail={guestData.email}
+                guestPhone={guestData.phone}
+            />
         </div>
     );
 };
