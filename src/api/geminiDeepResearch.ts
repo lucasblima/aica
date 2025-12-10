@@ -84,7 +84,16 @@ export async function performDeepResearch(
   try {
     // Dynamic import only when we have a valid key
     const { GoogleGenAI } = await import('@google/genai');
-    const genAI = new GoogleGenAI(GEMINI_API_KEY!);
+
+    // Ensure API key is provided explicitly for browser environment
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.trim().length === 0) {
+      throw new Error(
+        '❌ VITE_GEMINI_API_KEY environment variable is not configured. ' +
+        'Please add it to your .env file or set it as an environment variable.'
+      );
+    }
+
+    const genAI = new GoogleGenAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     // Construct detailed research prompt
