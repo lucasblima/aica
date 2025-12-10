@@ -748,6 +748,82 @@ Quando mostrar valores monetarios, use o formato brasileiro (R$ 1.234,56).`
 }
 
 // ============================================================================
+// JOURNEY MODULE HANDLERS
+// ============================================================================
+
+/**
+ * Handle real-time content analysis for Journey moments
+ */
+async function handleAnalyzeContentRealtime(
+  genAI: GoogleGenerativeAI,
+  payload: any
+): Promise<{ text: string }> {
+  const { prompt, temperature, maxOutputTokens } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: temperature || 0.8,
+      maxOutputTokens: maxOutputTokens || 150,
+    }
+  })
+
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text = response.text()
+
+  return { text }
+}
+
+/**
+ * Handle post-capture insight generation
+ */
+async function handleGeneratePostCaptureInsight(
+  genAI: GoogleGenerativeAI,
+  payload: any
+): Promise<{ text: string }> {
+  const { prompt, temperature, maxOutputTokens } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: temperature || 0.7,
+      maxOutputTokens: maxOutputTokens || 200,
+    }
+  })
+
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text = response.text()
+
+  return { text }
+}
+
+/**
+ * Handle moment clustering by theme
+ */
+async function handleClusterMomentsByTheme(
+  genAI: GoogleGenerativeAI,
+  payload: any
+): Promise<{ text: string }> {
+  const { prompt, temperature, maxOutputTokens } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: temperature || 0.6,
+      maxOutputTokens: maxOutputTokens || 500,
+    }
+  })
+
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text = response.text()
+
+  return { text }
+}
+
+// ============================================================================
 // MAIN SERVER
 // ============================================================================
 
@@ -813,6 +889,18 @@ serve(async (req) => {
             systemPrompt: payload?.systemPrompt,
           })
           result = chatResult
+          break
+
+        case 'analyze_content_realtime':
+          result = await handleAnalyzeContentRealtime(genAI, payload)
+          break
+
+        case 'generate_post_capture_insight':
+          result = await handleGeneratePostCaptureInsight(genAI, payload)
+          break
+
+        case 'cluster_moments_by_theme':
+          result = await handleClusterMomentsByTheme(genAI, payload)
           break
 
         default:

@@ -49,12 +49,10 @@ export async function generateWeeklySummary(
       endDate: end,
     })
 
-    if (moments.length === 0) {
-      throw new Error('No moments found for this week')
-    }
-
-    // Generate summary using Gemini
-    const summaryData = await generateSummaryWithAI(moments)
+    // Generate summary using Gemini (handles empty case gracefully)
+    const summaryData = moments.length === 0
+      ? generateEmptyWeekSummary()
+      : await generateSummaryWithAI(moments)
 
     // Insert or update summary
     const { data, error } = await supabase
@@ -289,5 +287,21 @@ function generateFallbackSummary(moments: Moment[]): WeeklySummaryData {
     keyMoments,
     insights: ['Você registrou ' + moments.length + ' momentos esta semana.'],
     suggestedFocus: 'Continue registrando seus momentos para insights mais profundos.',
+  }
+}
+
+/**
+ * Generate empty week summary (when no moments captured)
+ */
+function generateEmptyWeekSummary(): WeeklySummaryData {
+  return {
+    emotionalTrend: 'neutral',
+    dominantEmotions: [],
+    keyMoments: [],
+    insights: [
+      'Nenhum momento foi capturado esta semana.',
+      'Comece a registrar suas experiências para receber insights personalizados.',
+    ],
+    suggestedFocus: 'Capture pelo menos um momento por dia para construir autoconsciência.',
   }
 }
