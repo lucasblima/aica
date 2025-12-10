@@ -36,13 +36,20 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+      {/* Accessibility: Fieldset with legend for grouped radio buttons */}
+      <fieldset className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <legend className="sr-only">Tipo de convidado</legend>
+
         {/* Public Figure Option */}
         <motion.button
           onClick={() => onSelect('public_figure')}
           data-testid="guest-type-public-figure"
+          role="radio"
+          aria-checked={selectedType === 'public_figure'}
+          aria-label="Figura Pública - Pessoas conhecidas publicamente com busca automática via Wikipedia, notícias e redes sociais"
           className={`
             relative p-6 rounded-xl border-2 transition-all
+            focus:outline-none focus:ring-4 focus:ring-blue-500/50
             ${
               selectedType === 'public_figure'
                 ? 'border-blue-500 bg-blue-50 shadow-lg'
@@ -106,8 +113,12 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
         <motion.button
           onClick={() => onSelect('common_person')}
           data-testid="guest-type-common-person"
+          role="radio"
+          aria-checked={selectedType === 'common_person'}
+          aria-label="Pessoa Comum - Pessoas sem presença pública ampla com cadastro manual de nome, telefone e email"
           className={`
             relative p-6 rounded-xl border-2 transition-all
+            focus:outline-none focus:ring-4 focus:ring-green-500/50
             ${
               selectedType === 'common_person'
                 ? 'border-green-500 bg-green-50 shadow-lg'
@@ -166,7 +177,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
             </div>
           </div>
         </motion.button>
-      </div>
+      </fieldset>
 
       {/* Help text */}
       <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">

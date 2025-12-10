@@ -55,10 +55,22 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     const [currentGuestData, setCurrentGuestData] = useState<GuestData | null>(null);
     const [currentTopics, setCurrentTopics] = useState<Topic[]>([]);
     const [recordingDuration, setRecordingDuration] = useState(0);
+    const [userId, setUserId] = useState<string | null>(null);
 
     // Teleprompter State
     const [showTeleprompter, setShowTeleprompter] = useState(false);
     const [teleprompterIndex, setTeleprompterIndex] = useState(0);
+
+    // Get current user ID on mount
+    React.useEffect(() => {
+        const getCurrentUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+            }
+        };
+        getCurrentUser();
+    }, []);
 
     // Update nav visibility when view changes
     React.useEffect(() => {
@@ -244,10 +256,11 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     }
 
     // 3. NEW: Guest Identification Wizard
-    if (view === 'wizard' && currentShowId) {
+    if (view === 'wizard' && currentShowId && userId) {
         return (
             <GuestIdentificationWizard
                 showId={currentShowId}
+                userId={userId}
                 onComplete={handleWizardComplete}
                 onCancel={handleBackToDashboard}
             />

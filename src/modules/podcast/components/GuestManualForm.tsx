@@ -145,18 +145,22 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="guest-name-input" className="block text-sm font-medium text-gray-700 mb-1">
             Nome Completo <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
+              id="guest-name-input"
               type="text"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
               onBlur={() => handleBlur('name')}
               placeholder="Ex: João Silva"
               data-testid="guest-manual-name"
+              autoComplete="name"
+              aria-invalid={!!(errors.name && touched.name)}
+              aria-describedby={errors.name && touched.name ? 'guest-name-error' : undefined}
               className={`
                 w-full pl-10 pr-4 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -165,7 +169,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             />
           </div>
           {errors.name && touched.name && (
-            <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
+            <div id="guest-name-error" role="alert" className="flex items-center gap-1 mt-1 text-xs text-red-600">
               <AlertCircle className="w-3 h-3" />
               <span>{errors.name}</span>
             </div>
@@ -174,18 +178,22 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
 
         {/* Phone Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="guest-phone-input" className="block text-sm font-medium text-gray-700 mb-1">
             Telefone/WhatsApp <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
+              id="guest-phone-input"
               type="tel"
               value={formData.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
               onBlur={() => handleBlur('phone')}
               placeholder="(11) 99999-9999"
               data-testid="guest-manual-phone"
+              autoComplete="tel"
+              aria-invalid={!!(errors.phone && touched.phone)}
+              aria-describedby={errors.phone && touched.phone ? 'guest-phone-error' : undefined}
               className={`
                 w-full pl-10 pr-4 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -194,7 +202,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             />
           </div>
           {errors.phone && touched.phone && (
-            <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
+            <div id="guest-phone-error" role="alert" className="flex items-center gap-1 mt-1 text-xs text-red-600">
               <AlertCircle className="w-3 h-3" />
               <span>{errors.phone}</span>
             </div>
@@ -203,18 +211,22 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
 
         {/* Email Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="guest-email-input" className="block text-sm font-medium text-gray-700 mb-1">
             Email <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
+              id="guest-email-input"
               type="email"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
               onBlur={() => handleBlur('email')}
               placeholder="joao@exemplo.com"
               data-testid="guest-manual-email"
+              autoComplete="email"
+              aria-invalid={!!(errors.email && touched.email)}
+              aria-describedby={errors.email && touched.email ? 'guest-email-error' : undefined}
               className={`
                 w-full pl-10 pr-4 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -223,7 +235,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             />
           </div>
           {errors.email && touched.email && (
-            <div className="flex items-center gap-1 mt-1 text-xs text-red-600">
+            <div id="guest-email-error" role="alert" className="flex items-center gap-1 mt-1 text-xs text-red-600">
               <AlertCircle className="w-3 h-3" />
               <span>{errors.email}</span>
             </div>
