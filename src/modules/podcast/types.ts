@@ -93,6 +93,7 @@ export interface Project {
   scheduled_date?: string;
   location?: string;
   duration_minutes?: number;
+  user_id?: string; // Owner of the episode
   // Recording data
   recording_duration?: number; // Duration in seconds
   recording_started_at?: string;
@@ -111,11 +112,12 @@ export interface Project {
 
 export interface TopicDB {
   id: string;
-  project_id: string;
+  episode_id: string; // Foreign key to podcast_episodes.id (previously project_id)
   text: string;
   order: number;
   completed: boolean;
   archived: boolean;
+  category_id?: string; // Optional category for topic grouping
   created_at: string;
   updated_at: string;
 }
@@ -144,9 +146,12 @@ export interface TopicCategory {
   id: string;
   name: string;
   color: string;
-  episode_id: string;
+  episode_id: string; // Foreign key to podcast_episodes.id (previously project_id)
+  description?: string; // Optional description for the category
   icon?: string;
   order?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PodcastShow {

@@ -5,6 +5,10 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 // Types
 // =====================================================
 
+/**
+ * Represents a podcast episode (formerly called "Project")
+ * Database table: podcast_episodes
+ */
 export interface Project {
     id: string;
     title: string;
@@ -18,25 +22,36 @@ export interface Project {
     scheduled_date?: string;
     location?: string;
     duration_minutes?: number;
+    user_id?: string; // Owner of the episode (added for multi-user support)
     created_at: string;
     updated_at: string;
 }
 
+/**
+ * Represents a topic/talking point for a podcast episode
+ * Database table: podcast_topics
+ * Note: Uses episode_id (not project_id) to match database schema
+ */
 export interface TopicDB {
     id: string;
-    project_id: string;
+    episode_id: string; // Foreign key to podcast_episodes.id (previously project_id)
     text: string;
     order: number;
     completed: boolean;
     archived: boolean;
-    category_id?: string;
+    category_id?: string; // Optional category for topic grouping
     created_at: string;
     updated_at: string;
 }
 
+/**
+ * Represents a category for organizing topics
+ * Database table: podcast_topic_categories
+ * Note: Uses episode_id (not project_id) to match database schema
+ */
 export interface TopicCategory {
     id: string;
-    project_id: string;
+    episode_id: string; // Foreign key to podcast_episodes.id (previously project_id)
     name: string;
     description?: string;
     color?: string; // Hex color code for category badge
@@ -45,9 +60,14 @@ export interface TopicCategory {
 }
 
 // =====================================================
-// Projects CRUD
+// Episodes CRUD (formerly "Projects")
 // =====================================================
 
+/**
+ * Creates a new podcast episode
+ * @param project - Episode data (Project is the legacy name for Episode)
+ * @returns The created episode
+ */
 export async function createProject(project: Partial<Project>): Promise<Project> {
     const { data, error } = await supabase
         .from('podcast_episodes')
@@ -55,10 +75,15 @@ export async function createProject(project: Partial<Project>): Promise<Project>
         .select()
         .single();
 
-    if (error) throw new Error(`Failed to create project: ${error.message}`);
+    if (error) throw new Error(`Failed to create episode: ${error.message}`);
     return data;
 }
 
+/**
+ * Retrieves a single podcast episode by ID
+ * @param id - Episode ID
+ * @returns The episode or null if not found
+ */
 export async function getProject(id: string): Promise<Project | null> {
     const { data, error } = await supabase
         .from('podcast_episodes')
@@ -67,12 +92,18 @@ export async function getProject(id: string): Promise<Project | null> {
         .single();
 
     if (error) {
-        console.error('Failed to get project:', error);
+        console.error('Failed to get episode:', error);
         return null;
     }
     return data;
 }
 
+/**
+ * Updates an existing podcast episode
+ * @param id - Episode ID
+ * @param updates - Partial episode data to update
+ * @returns The updated episode
+ */
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
     const { data, error } = await supabase
         .from('podcast_episodes')
@@ -81,10 +112,15 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
         .select()
         .single();
 
-    if (error) throw new Error(`Failed to update project: ${error.message}`);
+    if (error) throw new Error(`Failed to update episode: ${error.message}`);
     return data;
 }
 
+/**
+ * Lists all podcast episodes
+ * @param limit - Maximum number of episodes to return
+ * @returns Array of episodes ordered by creation date (newest first)
+ */
 export async function listProjects(limit = 50): Promise<Project[]> {
     const { data, error } = await supabase
         .from('podcast_episodes')
@@ -92,10 +128,16 @@ export async function listProjects(limit = 50): Promise<Project[]> {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-    if (error) throw new Error(`Failed to list projects: ${error.message}`);
+    if (error) throw new Error(`Failed to list episodes: ${error.message}`);
     return data || [];
 }
 
+/**
+ * Lists podcast episodes for a specific season
+ * @param season - Season identifier
+ * @param limit - Maximum number of episodes to return
+ * @returns Array of episodes ordered by scheduled date
+ */
 export async function listProjectsBySeason(season: string, limit = 50): Promise<Project[]> {
     const { data, error } = await supabase
         .from('podcast_episodes')
@@ -104,10 +146,16 @@ export async function listProjectsBySeason(season: string, limit = 50): Promise<
         .order('scheduled_date', { ascending: true })
         .limit(limit);
 
-    if (error) throw new Error(`Failed to list projects by season: ${error.message}`);
+    if (error) throw new Error(`Failed to list episodes by season: ${error.message}`);
     return data || [];
 }
 
+/**
+ * Lists podcast episodes for a specific recording location/studio
+ * @param studio - Studio/location name
+ * @param limit - Maximum number of episodes to return
+ * @returns Array of episodes ordered by scheduled date
+ */
 export async function listProjectsByStudio(studio: string, limit = 50): Promise<Project[]> {
     const { data, error } = await supabase
         .from('podcast_episodes')
@@ -116,23 +164,33 @@ export async function listProjectsByStudio(studio: string, limit = 50): Promise<
         .order('scheduled_date', { ascending: true })
         .limit(limit);
 
-    if (error) throw new Error(`Failed to list projects by studio: ${error.message}`);
+    if (error) throw new Error(`Failed to list episodes by studio: ${error.message}`);
     return data || [];
 }
 
+/**
+ * Deletes a podcast episode and all related data (cascading)
+ * @param id - Episode ID
+ */
 export async function deleteProject(id: string): Promise<void> {
     const { error } = await supabase
         .from('podcast_episodes')
         .delete()
         .eq('id', id);
 
-    if (error) throw new Error(`Failed to delete project: ${error.message}`);
+    if (error) throw new Error(`Failed to delete episode: ${error.message}`);
 }
 
 // =====================================================
 // Topics CRUD
 // =====================================================
 
+/**
+ * Creates a new topic for a podcast episode
+ * @param projectId - Episode ID (parameter name kept for backward compatibility, but represents episode_id)
+ * @param topic - Topic data
+ * @returns The created topic
+ */
 export async function createTopic(projectId: string, topic: Partial<TopicDB>): Promise<TopicDB> {
     const { data, error } = await supabase
         .from('podcast_topics')
@@ -144,6 +202,11 @@ export async function createTopic(projectId: string, topic: Partial<TopicDB>): P
     return data;
 }
 
+/**
+ * Retrieves all topics for a podcast episode
+ * @param projectId - Episode ID (parameter name kept for backward compatibility, but represents episode_id)
+ * @returns Array of topics ordered by their order field
+ */
 export async function getTopics(projectId: string): Promise<TopicDB[]> {
     const { data, error } = await supabase
         .from('podcast_topics')
@@ -155,6 +218,12 @@ export async function getTopics(projectId: string): Promise<TopicDB[]> {
     return data || [];
 }
 
+/**
+ * Updates an existing topic
+ * @param id - Topic ID
+ * @param updates - Partial topic data to update
+ * @returns The updated topic
+ */
 export async function updateTopic(id: string, updates: Partial<TopicDB>): Promise<TopicDB> {
     const { data, error } = await supabase
         .from('podcast_topics')
@@ -167,6 +236,10 @@ export async function updateTopic(id: string, updates: Partial<TopicDB>): Promis
     return data;
 }
 
+/**
+ * Deletes a topic
+ * @param id - Topic ID
+ */
 export async function deleteTopic(id: string): Promise<void> {
     const { error } = await supabase
         .from('podcast_topics')
@@ -176,6 +249,12 @@ export async function deleteTopic(id: string): Promise<void> {
     if (error) throw new Error(`Failed to delete topic: ${error.message}`);
 }
 
+/**
+ * Updates multiple topics in bulk
+ * Note: Supabase doesn't support atomic bulk updates with different values,
+ * so this performs individual updates in parallel
+ * @param topics - Array of partial topic data with IDs
+ */
 export async function bulkUpdateTopics(topics: Partial<TopicDB>[]): Promise<void> {
     // Update topics one by one (Supabase doesn't support bulk update with different values)
     const promises = topics.map(topic => {
@@ -190,6 +269,12 @@ export async function bulkUpdateTopics(topics: Partial<TopicDB>[]): Promise<void
 // Realtime Subscription
 // =====================================================
 
+/**
+ * Subscribes to real-time changes for topics of a specific episode
+ * @param projectId - Episode ID (parameter name kept for backward compatibility, but represents episode_id)
+ * @param callback - Function called when topics change
+ * @returns Realtime channel (call unsubscribe() to stop listening)
+ */
 export function subscribeToTopics(
     projectId: string,
     callback: (topics: TopicDB[]) => void
@@ -215,6 +300,11 @@ export function subscribeToTopics(
     return channel;
 }
 
+/**
+ * Subscribes to real-time changes for all podcast episodes
+ * @param callback - Function called when episodes change
+ * @returns Realtime channel (call unsubscribe() to stop listening)
+ */
 export function subscribeToProjects(
     callback: (projects: Project[]) => void
 ): RealtimeChannel {
@@ -241,6 +331,12 @@ export function subscribeToProjects(
 // Topic Categories CRUD
 // =====================================================
 
+/**
+ * Creates a new topic category for an episode
+ * @param projectId - Episode ID (parameter name kept for backward compatibility, but represents episode_id)
+ * @param category - Category data (name, description, color)
+ * @returns The created category
+ */
 export async function createCategory(projectId: string, category: { name: string; description?: string; color?: string }): Promise<TopicCategory> {
     // Temporarily exclude color to test
     const { color, ...categoryWithoutColor } = category;
@@ -268,6 +364,11 @@ export async function createCategory(projectId: string, category: { name: string
     return data;
 }
 
+/**
+ * Retrieves all categories for a podcast episode
+ * @param projectId - Episode ID (parameter name kept for backward compatibility, but represents episode_id)
+ * @returns Array of categories ordered by creation date
+ */
 export async function getCategories(projectId: string): Promise<TopicCategory[]> {
     const { data, error } = await supabase
         .from('podcast_topic_categories')
@@ -279,6 +380,12 @@ export async function getCategories(projectId: string): Promise<TopicCategory[]>
     return data || [];
 }
 
+/**
+ * Updates an existing category
+ * @param id - Category ID
+ * @param updates - Partial category data to update
+ * @returns The updated category
+ */
 export async function updateCategory(id: string, updates: { name?: string; description?: string; color?: string }): Promise<TopicCategory> {
     const { data, error } = await supabase
         .from('podcast_topic_categories')
@@ -291,6 +398,11 @@ export async function updateCategory(id: string, updates: { name?: string; descr
     return data;
 }
 
+/**
+ * Deletes a category
+ * Note: Topics in this category will have their category_id set to null
+ * @param id - Category ID
+ */
 export async function deleteCategory(id: string): Promise<void> {
     const { error } = await supabase
         .from('podcast_topic_categories')

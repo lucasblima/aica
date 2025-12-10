@@ -26,7 +26,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-4 ${className}`} data-testid="guest-type-selector">
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-semibold text-gray-900">
           Quem é seu convidado?
@@ -40,6 +40,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
         {/* Public Figure Option */}
         <motion.button
           onClick={() => onSelect('public_figure')}
+          data-testid="guest-type-public-figure"
           className={`
             relative p-6 rounded-xl border-2 transition-all
             ${
@@ -104,6 +105,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
         {/* Common Person Option */}
         <motion.button
           onClick={() => onSelect('common_person')}
+          data-testid="guest-type-common-person"
           className={`
             relative p-6 rounded-xl border-2 transition-all
             ${

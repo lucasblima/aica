@@ -214,7 +214,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     const canProceedStep3 = data.confirmedProfile && (data.theme || data.themeMode === 'auto');
 
     return (
-        <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] flex items-center justify-center z-50 p-4" data-testid="guest-wizard">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -249,6 +249,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                 <div className="flex justify-center mt-6">
                                     <button
                                         onClick={onCancel}
+                                        data-testid="guest-wizard-cancel"
                                         className="px-6 py-3 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all"
                                     >
                                         Cancelar
@@ -288,6 +289,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                             value={data.guestName}
                                             onChange={(e) => setData(prev => ({ ...prev, guestName: e.target.value }))}
                                             placeholder="Ex: Eduardo Paes"
+                                            data-testid="guest-wizard-name"
                                             className="w-full px-4 py-4 rounded-xl bg-[#EBE9E4] text-ceramic-text-primary placeholder-ceramic-text-tertiary border-none focus:ring-2 focus:ring-amber-400/50 outline-none transition-all shadow-inner"
                                             autoFocus
                                         />
@@ -302,6 +304,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                             value={data.guestReference}
                                             onChange={(e) => setData(prev => ({ ...prev, guestReference: e.target.value }))}
                                             placeholder="Ex: Prefeito do Rio de Janeiro"
+                                            data-testid="guest-wizard-reference"
                                             className="w-full px-4 py-4 rounded-xl bg-[#EBE9E4] text-ceramic-text-primary placeholder-ceramic-text-tertiary border-none focus:ring-2 focus:ring-amber-400/50 outline-none transition-all shadow-inner"
                                         />
                                         <p className="text-xs text-ceramic-text-tertiary mt-2 ml-1">
@@ -335,6 +338,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                 <div className="flex gap-3 pt-4">
                                     <button
                                         onClick={() => setStep(0)}
+                                        data-testid="guest-wizard-back-step1"
                                         className="flex-1 py-4 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all"
                                     >
                                         Voltar
@@ -342,6 +346,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                     <button
                                         onClick={handleSearchProfile}
                                         disabled={!canProceedStep1 || isSearching}
+                                        data-testid="guest-wizard-search"
                                         className="flex-1 py-4 px-6 rounded-xl bg-ceramic-text-primary text-ceramic-base font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
                                     >
                                         {isSearching ? (
@@ -431,6 +436,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
                                 <button
                                     onClick={() => setStep(1)}
+                                    data-testid="guest-wizard-search-again"
                                     className="w-full py-3 text-ceramic-text-secondary font-medium hover:text-ceramic-text-primary transition-colors flex items-center justify-center gap-2"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
@@ -561,6 +567,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                     <button
                                         onClick={() => setStep(2)}
                                         disabled={isCreatingEpisode}
+                                        data-testid="guest-wizard-back-step3"
                                         className="py-4 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all flex items-center gap-2 disabled:opacity-50"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
@@ -569,6 +576,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                     <button
                                         onClick={handleComplete}
                                         disabled={!canProceedStep3 || isCreatingEpisode}
+                                        data-testid="guest-wizard-complete"
                                         className="flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
                                     >
                                         {isCreatingEpisode ? (
