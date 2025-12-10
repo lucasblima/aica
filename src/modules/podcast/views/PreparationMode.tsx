@@ -35,7 +35,8 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
   useEffect(() => {
     loadScheduledProjects();
     const saved = localStorage.getItem('aica_latest_dossier');
-    const savedPid = localStorage.getItem('aica_latest_project_id');
+    // Support both new (episode_id) and legacy (project_id) localStorage keys
+    const savedEpisodeId = localStorage.getItem('aica_latest_episode_id') || localStorage.getItem('aica_latest_project_id');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -43,7 +44,7 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
           setSavedDossier({
             guest: parsed.guestName,
             theme: parsed.episodeTheme || 'Geral',
-            projectId: savedPid || undefined
+            projectId: savedEpisodeId || undefined
           });
         }
       } catch (e) {
@@ -180,10 +181,12 @@ const PreparationMode: React.FC<Props> = ({ onDossierReady, onGoToStudio, curren
         await Promise.all(topicPromises);
       }
 
-      // 4. Save to localStorage
+      // 4. Save to localStorage (using new episode_id key)
       try {
-        localStorage.setItem('aica_latest_project_id', projectId!);
+        localStorage.setItem('aica_latest_episode_id', projectId!);
         localStorage.setItem('aica_latest_dossier', JSON.stringify(pauta));
+        // Clean up legacy key if it exists
+        localStorage.removeItem('aica_latest_project_id');
       } catch (e) {
         console.error("Could not save to local storage", e);
       }

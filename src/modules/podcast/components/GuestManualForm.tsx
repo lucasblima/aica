@@ -131,6 +131,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={`max-w-md mx-auto ${className}`}
+      data-testid="guest-manual-form"
     >
       <div className="text-center space-y-2 mb-6">
         <h2 className="text-2xl font-semibold text-gray-900">
@@ -155,6 +156,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
               onChange={(e) => handleChange('name', e.target.value)}
               onBlur={() => handleBlur('name')}
               placeholder="Ex: João Silva"
+              data-testid="guest-manual-name"
               className={`
                 w-full pl-10 pr-4 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -183,6 +185,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
               onChange={(e) => handleChange('phone', e.target.value)}
               onBlur={() => handleBlur('phone')}
               placeholder="(11) 99999-9999"
+              data-testid="guest-manual-phone"
               className={`
                 w-full pl-10 pr-4 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -211,6 +214,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
               onChange={(e) => handleChange('email', e.target.value)}
               onBlur={() => handleBlur('email')}
               placeholder="joao@exemplo.com"
+              data-testid="guest-manual-email"
               className={`
                 w-full pl-10 pr-4 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
@@ -242,6 +246,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             <button
               type="button"
               onClick={onBack}
+              data-testid="guest-manual-back"
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Voltar
@@ -249,6 +254,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
           )}
           <button
             type="submit"
+            data-testid="guest-manual-submit"
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             Continuar
