@@ -185,9 +185,18 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
     if (!generatedPauta || !projectId) return
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        setError('Usuário não autenticado')
+        return
+      }
+
       // Save pauta to database
       const saveResult = await pautaPersistenceService.savePauta(
         projectId,
+        user.id,
         generatedPauta,
         guestName,
         theme || generatedPauta.outline.title,
