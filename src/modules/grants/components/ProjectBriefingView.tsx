@@ -19,7 +19,9 @@ import {
   Upload,
   X,
   FileCheck,
-  AlertCircle
+  AlertCircle,
+  FolderOpen,
+  Clock
 } from 'lucide-react';
 import type { BriefingData, FormField, ProjectDocument } from '../types';
 import { generateAutoBriefing } from '../services/briefingAIService';
@@ -51,6 +53,13 @@ interface ProjectBriefingViewProps {
   sourceDocumentPath?: string | null;
   sourceDocumentType?: string | null;
   sourceDocumentContent?: string | null;
+  // Loading overlay props
+  isTransferring?: boolean;
+  transferProgress?: {
+    current: number;
+    total: number;
+    currentField: string;
+  };
 }
 
 interface BriefingSection {
@@ -69,7 +78,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Contexto da Empresa',
     icon: <Building2 className="w-5 h-5" />,
     help: 'Descreva sua empresa, área de atuação, histórico e principais conquistas',
-    placeholder: 'Ex: Somos uma startup de biotecnologia fundada em 2020...',
+    placeholder: 'Descreva a empresa',
     minChars: 100,
     maxChars: 2000
   },
@@ -78,7 +87,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Descrição do Projeto',
     icon: <FileText className="w-5 h-5" />,
     help: 'Explique o projeto que você deseja submeter ao edital',
-    placeholder: 'Ex: Desenvolvimento de uma plataforma de diagnóstico...',
+    placeholder: 'Descreva o projeto',
     minChars: 150,
     maxChars: 3000
   },
@@ -87,7 +96,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Inovação Técnica',
     icon: <Lightbulb className="w-5 h-5" />,
     help: 'Destaque os aspectos inovadores e tecnológicos do projeto',
-    placeholder: 'Ex: Utilizamos machine learning para...',
+    placeholder: 'Descreva a inovação técnica',
     minChars: 100,
     maxChars: 2000
   },
@@ -96,7 +105,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Diferencial de Mercado',
     icon: <TrendingUp className="w-5 h-5" />,
     help: 'Explique como seu projeto se diferencia da concorrência',
-    placeholder: 'Ex: Nossa solução é a única no mercado brasileiro que...',
+    placeholder: 'Descreva o diferencial de mercado',
     minChars: 100,
     maxChars: 1500
   },
@@ -105,7 +114,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Expertise da Equipe',
     icon: <Users className="w-5 h-5" />,
     help: 'Descreva a formação e experiência da equipe envolvida',
-    placeholder: 'Ex: Nossa equipe conta com PhDs em biologia molecular...',
+    placeholder: 'Descreva a expertise da equipe',
     minChars: 100,
     maxChars: 1500
   },
@@ -114,7 +123,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Resultados Esperados',
     icon: <Target className="w-5 h-5" />,
     help: 'Liste os resultados e impactos esperados do projeto',
-    placeholder: 'Ex: Esperamos desenvolver um protótipo funcional em 12 meses...',
+    placeholder: 'Descreva os resultados esperados',
     minChars: 100,
     maxChars: 2000
   },
@@ -123,7 +132,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Sustentabilidade',
     icon: <Leaf className="w-5 h-5" />,
     help: 'Explique como o projeto será sustentável após o financiamento',
-    placeholder: 'Ex: Planejamos gerar receita através de licenciamento...',
+    placeholder: 'Descreva a sustentabilidade do projeto',
     minChars: 100,
     maxChars: 1500
   },
@@ -132,7 +141,7 @@ const BRIEFING_SECTIONS: BriefingSection[] = [
     title: 'Notas Adicionais',
     icon: <MessageSquare className="w-5 h-5" />,
     help: 'Informações complementares que podem ajudar na geração da proposta',
-    placeholder: 'Ex: Já possuímos parcerias com universidades...',
+    placeholder: 'Adicione informações extras relevantes',
     maxChars: 2000
   }
 ];
@@ -149,7 +158,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   onBack,
   sourceDocumentPath,
   sourceDocumentType,
-  sourceDocumentContent: initialSourceDocumentContent
+  sourceDocumentContent: initialSourceDocumentContent,
+  isTransferring,
+  transferProgress
 }) => {
   // Inicializar briefing data com campos dinâmicos do edital
   const [briefingData, setBriefingData] = useState<Record<string, string>>(() => {
@@ -167,6 +178,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   const [savePending, setSavePending] = useState(false);
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<string>('');
+  const [showEditalModal, setShowEditalModal] = useState(false);
+  const [showEditalContext, setShowEditalContext] = useState(false); // Collapsed by default for more workspace
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false); // Modal for managing documents
 
   // Documents state - múltiplos documentos de contexto
   const [documents, setDocuments] = useState<ProjectDocument[]>([]);
@@ -420,6 +434,60 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
 
   return (
     <div className="h-screen bg-ceramic-base flex flex-col overflow-hidden">
+      {/* Loading Overlay for Field Transfer */}
+      <AnimatePresence>
+        {isTransferring && transferProgress && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="ceramic-card p-8 max-w-md w-full mx-4"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <Loader2 className="w-8 h-8 text-ceramic-accent animate-spin flex-shrink-0" />
+                <div>
+                  <h3 className="text-lg font-bold text-ceramic-text-primary">Preparando Geração</h3>
+                  <p className="text-sm text-ceramic-text-secondary">Transferindo campos preenchidos...</p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-ceramic-text-secondary truncate max-w-[60%]">
+                    {transferProgress.currentField}
+                  </span>
+                  <span className="font-bold text-ceramic-text-primary">
+                    {transferProgress.current} / {transferProgress.total}
+                  </span>
+                </div>
+                <div className="ceramic-trough p-2">
+                  <motion.div
+                    className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${(transferProgress.current / transferProgress.total) * 100}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-ceramic-text-tertiary">
+                <Clock className="w-3 h-3" />
+                <span>
+                  Tempo estimado: {Math.ceil((transferProgress.total - transferProgress.current) * 0.2)}s
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex-shrink-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-6">
@@ -484,82 +552,124 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
             </div>
           </div>
 
-          {/* Project Documents - Múltiplos Documentos */}
-          <div className="mb-4">
-            <div className="ceramic-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-ceramic-text-primary">
-                    Documentos do Projeto ({documents.length})
-                  </p>
-                  <AlertCircle className="w-4 h-4 text-ceramic-text-tertiary" title="Envie múltiplos documentos com informações do projeto para respostas mais precisas" />
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".md,.pdf,.docx,.doc,.txt"
-                  onChange={handleDocumentUpload}
-                  disabled={isUploadingDocument}
-                  className="hidden"
-                  id="document-upload"
-                />
-                <label htmlFor="document-upload">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingDocument}
-                    className="ceramic-concave px-3 py-2 text-xs font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
-                  >
-                    {isUploadingDocument ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-3 h-3" />
-                        Adicionar
-                      </>
+          {/* Edital Context - Collapsible (Collapsed by default) */}
+          {editalTextContent && editalTextContent.length > 0 && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowEditalContext(!showEditalContext)}
+                className="ceramic-card w-full p-3 hover:scale-[0.99] transition-transform text-left border-2 border-purple-500/20 bg-purple-500/5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <FileText className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-ceramic-text-primary">
+                        📋 Contexto do Edital (PDF)
+                      </p>
+                    </div>
+                    <div className="ceramic-concave px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                        P1 - Fonte de Verdade
+                      </span>
+                    </div>
+                    {editalTextContent && (
+                      <span className="text-xs text-green-600 font-medium flex-shrink-0">
+                        ✓ Disponível para IA
+                      </span>
                     )}
+                    {showEditalContext ? (
+                      <ChevronUp className="w-4 h-4 text-ceramic-text-tertiary flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-ceramic-text-tertiary flex-shrink-0" />
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              {/* Expanded Content */}
+              <AnimatePresence>
+                {showEditalContext && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="ceramic-card mt-2 p-4 border-2 border-purple-500/20 bg-purple-500/5">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs text-ceramic-text-tertiary">
+                          {Math.round(editalTextContent.length / 1000)}k caracteres • Somente leitura
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowEditalModal(true);
+                          }}
+                          className="ceramic-concave px-3 py-2 text-xs font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 transition-all flex items-center gap-2"
+                        >
+                          <FileText className="w-3 h-3" />
+                          Ver Completo
+                        </button>
+                      </div>
+                      <div className="ceramic-tray rounded-lg p-3 max-h-32 overflow-y-auto">
+                        <p className="text-xs text-ceramic-text-tertiary">
+                          {editalTextContent.substring(0, 500)}...
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Project Documents - Compact View */}
+          <div className="mb-4">
+            <div className="ceramic-card p-3 border-2 border-blue-500/20 bg-blue-500/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <FolderOpen className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-ceramic-text-primary">
+                      📄 Documentos do Projeto ({documents.length})
+                    </p>
+                  </div>
+                  <div className="ceramic-concave px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                      P2 - Contexto Extra
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowDocumentsModal(true)}
+                    className="ceramic-concave px-3 py-1.5 text-xs font-bold text-ceramic-text-primary hover:scale-95 transition-transform flex-shrink-0"
+                  >
+                    Gerenciar
                   </button>
-                </label>
+                </div>
               </div>
 
-              {documents.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-xs text-ceramic-text-secondary">
-                    Nenhum documento enviado. Adicione arquivos .md, .pdf, .txt ou .docx com informações do projeto.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {documents.map((doc) => (
+              {/* Show first 3 documents as chips */}
+              {documents.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {documents.slice(0, 3).map((doc) => (
                     <div
                       key={doc.id}
-                      className="ceramic-tray p-3 flex items-center justify-between"
+                      className="ceramic-tray px-2 py-1 flex items-center gap-1.5"
                     >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="ceramic-concave w-8 h-8 flex-shrink-0 flex items-center justify-center text-green-600">
-                          <FileCheck className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-ceramic-text-primary truncate">
-                            {doc.file_name}
-                          </p>
-                          <p className="text-xs text-ceramic-text-tertiary">
-                            {doc.document_type.toUpperCase()} • {doc.document_content ? `${(doc.document_content.length / 1000).toFixed(1)}k chars` : 'Sem conteúdo'}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveDocument(doc.id, doc.file_name)}
-                        className="ceramic-concave w-7 h-7 flex-shrink-0 flex items-center justify-center text-red-600 hover:scale-95 transition-transform ml-2"
-                        title="Remover documento"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      <FileCheck className="w-3 h-3 text-green-600 flex-shrink-0" />
+                      <span className="text-xs text-ceramic-text-primary truncate max-w-[120px]">
+                        {doc.file_name}
+                      </span>
                     </div>
                   ))}
+                  {documents.length > 3 && (
+                    <div className="ceramic-tray px-2 py-1">
+                      <span className="text-xs text-ceramic-text-tertiary">
+                        +{documents.length - 3} mais
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -585,113 +695,111 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8 pb-32 space-y-4">
-        {formFields.map((field, index) => {
-          const isExpanded = expandedSections.has(field.id);
-          const content = briefingData[field.id] || '';
-          const charCount = content.length;
-          const meetsRequirement = !field.required || content.trim().length > 0;
-          const exceedsMax = field.max_chars && charCount > field.max_chars;
+        <div className="max-w-5xl mx-auto px-6 py-8 pb-32 space-y-4 min-h-[75vh]">
+          {formFields.map((field, index) => {
+            const isExpanded = expandedSections.has(field.id);
+            const content = briefingData[field.id] || '';
+            const charCount = content.length;
+            const meetsRequirement = !field.required || content.trim().length > 0;
+            const exceedsMax = field.max_chars && charCount > field.max_chars;
 
-          return (
-            <motion.div
-              key={field.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="ceramic-card overflow-hidden"
-            >
-              {/* Section Header */}
-              <button
-                onClick={() => toggleSection(field.id)}
-                className="w-full p-6 flex items-center justify-between hover:bg-black/5 transition-colors"
+            return (
+              <motion.div
+                key={field.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="ceramic-card overflow-hidden"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`ceramic-concave w-12 h-12 flex items-center justify-center ${
-                    meetsRequirement && !exceedsMax ? 'text-green-600' : 'text-ceramic-text-secondary'
-                  }`}>
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-bold text-ceramic-text-primary">
-                      {field.label}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
-                    </h3>
-                    <p className="text-sm text-ceramic-text-secondary">
-                      {field.ai_prompt_hint || 'Preencha este campo com as informações solicitadas'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {charCount > 0 && (
-                    <span
-                      className={`text-sm font-medium ${
-                        exceedsMax ? 'text-red-600' : 'text-ceramic-text-secondary'
-                      }`}
-                    >
-                      {charCount}
-                      {field.max_chars && ` / ${field.max_chars}`}
-                    </span>
-                  )}
-                  {isExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-ceramic-text-tertiary" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-ceramic-text-tertiary" />
-                  )}
-                </div>
-              </button>
-
-              {/* Section Content */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-6 pb-6">
-                      <div className="ceramic-tray p-4">
-                        <textarea
-                          value={content}
-                          onChange={e => updateField(field.id, e.target.value)}
-                          placeholder={field.placeholder || `Digite aqui o conteúdo para ${field.label}`}
-                          rows={8}
-                          className="w-full bg-transparent text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none resize-none"
-                          maxLength={field.max_chars}
-                        />
-                      </div>
-
-                      {/* Character Count Info */}
-                      <div className="flex items-center justify-between mt-3 text-xs">
-                        <span
-                          className={
-                            meetsRequirement
-                              ? 'text-green-600'
-                              : 'text-ceramic-text-tertiary'
-                          }
-                        >
-                          {meetsRequirement
-                            ? 'Campo preenchido ✓'
-                            : field.required ? 'Campo obrigatório' : 'Campo opcional'}
-                        </span>
-                        {field.max_chars && charCount > field.max_chars * 0.9 && (
-                          <span className={exceedsMax ? 'text-red-600' : 'text-orange-600'}>
-                            {exceedsMax
-                              ? `Excedeu em ${charCount - field.max_chars} caracteres!`
-                              : `${field.max_chars - charCount} caracteres restantes`
-                            }
-                          </span>
-                        )}
-                      </div>
+                {/* Section Header */}
+                <button
+                  onClick={() => toggleSection(field.id)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-black/5 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`ceramic-concave w-12 h-12 flex items-center justify-center ${meetsRequirement && !exceedsMax ? 'text-green-600' : 'text-ceramic-text-secondary'
+                      }`}>
+                      <FileText className="w-5 h-5" />
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          );
-        })}
+                    <div className="text-left">
+                      <h3 className="text-lg font-bold text-ceramic-text-primary">
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </h3>
+                      <p className="text-sm text-ceramic-text-secondary">
+                        {field.ai_prompt_hint || 'Preencha este campo com as informações solicitadas'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {charCount > 0 && (
+                      <span
+                        className={`text-sm font-medium ${exceedsMax ? 'text-red-600' : 'text-ceramic-text-secondary'
+                          }`}
+                      >
+                        {charCount}
+                        {field.max_chars && ` / ${field.max_chars}`}
+                      </span>
+                    )}
+                    {isExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-ceramic-text-tertiary" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-ceramic-text-tertiary" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Section Content */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6">
+                        <div className="ceramic-tray p-4">
+                          <textarea
+                            value={content}
+                            onChange={e => updateField(field.id, e.target.value)}
+                            placeholder={field.placeholder || `Digite aqui o conteúdo para ${field.label}`}
+                            rows={8}
+                            className="w-full bg-transparent text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none resize-none"
+                            maxLength={field.max_chars}
+                          />
+                        </div>
+
+                        {/* Character Count Info */}
+                        <div className="flex items-center justify-between mt-3 text-xs">
+                          <span
+                            className={
+                              meetsRequirement
+                                ? 'text-green-600'
+                                : 'text-ceramic-text-tertiary'
+                            }
+                          >
+                            {meetsRequirement
+                              ? 'Campo preenchido ✓'
+                              : field.required ? 'Campo obrigatório' : 'Campo opcional'}
+                          </span>
+                          {field.max_chars && charCount > field.max_chars * 0.9 && (
+                            <span className={exceedsMax ? 'text-red-600' : 'text-orange-600'}>
+                              {exceedsMax
+                                ? `Excedeu em ${charCount - field.max_chars} caracteres!`
+                                : `${field.max_chars - charCount} caracteres restantes`
+                              }
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 
@@ -702,7 +810,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
             <div>
               <p className="text-sm text-ceramic-text-secondary">
                 {canContinue()
-                  ? 'Contexto completo! Pronto para gerar a proposta.'
+                  ? 'Campos preenchidos serão automaticamente transferidos para geração.'
                   : `Complete pelo menos 80% para continuar (${completion}% completo)`}
               </p>
             </div>
@@ -717,6 +825,208 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Edital Content Modal */}
+      <AnimatePresence>
+        {showEditalModal && editalTextContent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowEditalModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', duration: 0.3 }}
+              className="ceramic-card max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
+                <div className="flex items-center gap-3">
+                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-ceramic-text-primary">
+                      Conteúdo Completo do Edital
+                    </h2>
+                    <p className="text-xs text-ceramic-text-tertiary">
+                      {Math.round(editalTextContent.length / 1000)}k caracteres extraídos do PDF
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowEditalModal(false)}
+                  className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-text-primary hover:scale-95 active:scale-90 transition-transform"
+                  title="Fechar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="ceramic-tray p-6 rounded-lg">
+                  <pre className="text-xs text-ceramic-text-secondary whitespace-pre-wrap font-mono leading-relaxed">
+                    {editalTextContent}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-ceramic-text-secondary/10">
+                <button
+                  onClick={() => setShowEditalModal(false)}
+                  className="ceramic-concave px-6 py-2 font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 transition-all"
+                >
+                  Fechar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Documents Management Modal */}
+      <AnimatePresence>
+        {showDocumentsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDocumentsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', duration: 0.3 }}
+              className="ceramic-card max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
+                <div className="flex items-center gap-3">
+                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                    <FolderOpen className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-ceramic-text-primary">
+                      Gerenciar Documentos
+                    </h2>
+                    <p className="text-xs text-ceramic-text-tertiary">
+                      {documents.length} {documents.length === 1 ? 'documento' : 'documentos'} no projeto
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".md,.pdf,.docx,.doc,.txt"
+                    onChange={handleDocumentUpload}
+                    disabled={isUploadingDocument}
+                    className="hidden"
+                    id="document-upload-modal"
+                  />
+                  <label htmlFor="document-upload-modal">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingDocument}
+                      className="ceramic-convex px-4 py-2 text-xs font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:scale-95 disabled:opacity-50 transition-all flex items-center gap-2"
+                    >
+                      {isUploadingDocument ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Adicionar
+                        </>
+                      )}
+                    </button>
+                  </label>
+                  <button
+                    onClick={() => setShowDocumentsModal(false)}
+                    className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-text-primary hover:scale-95 transition-transform"
+                    title="Fechar"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {documents.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="ceramic-concave w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FolderOpen className="w-8 h-8 text-ceramic-text-tertiary" />
+                    </div>
+                    <p className="text-sm text-ceramic-text-secondary mb-2">
+                      Nenhum documento adicionado
+                    </p>
+                    <p className="text-xs text-ceramic-text-tertiary">
+                      Adicione arquivos .md, .pdf, .txt ou .docx com informações do projeto
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="ceramic-tray p-4 flex items-center justify-between hover:scale-[1.01] transition-transform"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="ceramic-concave w-10 h-10 flex-shrink-0 flex items-center justify-center text-green-600">
+                            <FileCheck className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-ceramic-text-primary truncate">
+                              {doc.file_name}
+                            </p>
+                            <p className="text-xs text-ceramic-text-tertiary">
+                              {doc.document_type.toUpperCase()} • {doc.document_content ? `${(doc.document_content.length / 1000).toFixed(1)}k chars` : 'Sem conteúdo'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveDocument(doc.id, doc.file_name)}
+                          className="ceramic-concave w-9 h-9 flex-shrink-0 flex items-center justify-center text-red-600 hover:scale-95 transition-transform ml-3"
+                          title="Remover documento"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between p-6 border-t border-ceramic-text-secondary/10">
+                <p className="text-xs text-ceramic-text-tertiary">
+                  Formatos aceitos: .md, .pdf, .docx, .doc, .txt
+                </p>
+                <button
+                  onClick={() => setShowDocumentsModal(false)}
+                  className="ceramic-concave px-6 py-2 font-bold text-ceramic-text-primary hover:scale-95 transition-all"
+                >
+                  Concluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

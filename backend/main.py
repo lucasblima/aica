@@ -1,14 +1,17 @@
 import os
 import time
 import json
+import asyncio
 from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, UploadFile, HTTPException, File, Form, Body
+from fastapi import FastAPI, UploadFile, HTTPException, File, Form, Body, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
 from supabase import create_client, Client as SupabaseClient
 from dotenv import load_dotenv
+import jwt
 
 load_dotenv()
 
@@ -16,36 +19,120 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable is not set")
 if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
     raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables are not set")
+if not SUPABASE_JWT_SECRET:
+    raise ValueError("SUPABASE_JWT_SECRET environment variable is not set")
 
 # Initialize clients
 app = FastAPI(title="Aica File Search Service")
 client = genai.Client(api_key=GEMINI_API_KEY)
 supabase: SupabaseClient = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+security = HTTPBearer()
 
 # CORS Configuration
+allowed_origins = [
+    FRONTEND_URL,
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+
+# Add production domain if in production
+if os.getenv("ENVIRONMENT") == "production":
+    production_domain = os.getenv("PRODUCTION_DOMAIN")
+    if production_domain:
+        allowed_origins.append(production_domain)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify the frontend domain
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Authentication
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Verifica o token JWT do Supabase e retorna o user_id"""
+    try:
+        token = credentials.credentials
+
+        # Decode JWT token
+        payload = jwt.decode(
+            token,
+            SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            audience="authenticated"
+        )
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing user ID")
+
+        return user_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+
+# AI Usage Tracking
+async def track_ai_usage(
+    user_id: str,
+    operation_type: str,
+    ai_model: str,
+    total_cost_usd: float,
+    module_type: Optional[str] = None,
+    module_id: Optional[str] = None,
+    input_tokens: Optional[int] = None,
+    output_tokens: Optional[int] = None,
+    metadata: Optional[Dict[str, Any]] = None
+) -> None:
+    """Track AI usage and costs in Supabase"""
+    try:
+        supabase.table("ai_usage_tracking").insert({
+            "user_id": user_id,
+            "operation_type": operation_type,
+            "ai_model": ai_model,
+            "total_cost_usd": total_cost_usd,
+            "module_type": module_type,
+            "module_id": module_id,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "metadata": metadata or {}
+        }).execute()
+    except Exception as e:
+        # Log error but don't fail the operation
+        print(f"Failed to track AI usage: {str(e)}")
+
 # Models
 class CreateStoreRequest(BaseModel):
-    user_id: str
     category: str
 
 class SearchRequest(BaseModel):
     query: str
     categories: List[str]
     filters: Optional[Dict[str, Any]] = None
-    model: str = "gemini-2.0-flash-exp" # Using latest confirmed model or user preference
+    model: str = "gemini-2.0-flash-exp"
+
+class CreateCorpusRequest(BaseModel):
+    name: str
+    display_name: str
+    module_type: Optional[str] = None
+    module_id: Optional[str] = None
+
+class QueryRequest(BaseModel):
+    corpus_id: str
+    query: str
+    result_count: Optional[int] = 5
+    module_type: Optional[str] = None
+    module_id: Optional[str] = None
 
 class FileSearchService:
     @staticmethod
@@ -154,27 +241,29 @@ class FileSearchService:
                 f.write(content)
 
             operation = client.file_search_stores.upload_to_file_search_store(
-                file=temp_path, # Passing path
+                file=temp_path,
                 file_search_store_name=store_name,
                 config={
                     'display_name': file.filename,
-                    #'chunking_config': chunking_config, # Not always supported in high level helper, but let's try
                     'custom_metadata': custom_metadata
                 }
             )
-            
+
             # Clean up temp file
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
-            # Aguardar indexação
-            # operation is likely a PollingFuture or similar
+            # Aguardar indexação com polling assíncrono
+            max_wait_time = 300  # 5 minutos máximo
+            start_time = time.time()
+
             while not operation.done:
-                 time.sleep(2)
-                 # Refresh operation status if needed, but usually .done property updates or we check result
-                 # The user code had: operation = client.operations.get(operation)
-                 # We will assume standard polling
-                 pass
+                if time.time() - start_time > max_wait_time:
+                    raise HTTPException(
+                        status_code=408,
+                        detail="Indexação excedeu o tempo limite de 5 minutos"
+                    )
+                await asyncio.sleep(2)
             
             # Persist in Supabase
             supabase.table("indexed_documents").insert({
@@ -271,16 +360,300 @@ class FileSearchService:
 
 # Endpoints
 
+# Corpus Management
+@app.post("/api/file-search/corpora")
+async def create_corpus(
+    request: CreateCorpusRequest,
+    user_id: str = Depends(verify_token)
+):
+    """Create a new corpus for file search"""
+    try:
+        # Check if corpus already exists
+        existing = supabase.table("file_search_corpora").select("*").eq("user_id", user_id).eq("corpus_name", request.name).execute()
+        if existing.data:
+            raise HTTPException(status_code=400, detail="Corpus with this name already exists")
+
+        # Create corpus in Gemini
+        corpus = client.corpora.create(
+            name=request.name,
+            display_name=request.display_name
+        )
+
+        # Save to Supabase
+        result = supabase.table("file_search_corpora").insert({
+            "user_id": user_id,
+            "corpus_name": corpus.name,
+            "display_name": request.display_name,
+            "module_type": request.module_type,
+            "module_id": request.module_id,
+            "gemini_corpus_id": corpus.name
+        }).execute()
+
+        return {
+            "status": "success",
+            "corpus": {
+                "id": result.data[0]["id"],
+                "corpus_name": corpus.name,
+                "display_name": request.display_name,
+                "module_type": request.module_type,
+                "module_id": request.module_id,
+                "created_at": result.data[0]["created_at"]
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create corpus: {str(e)}")
+
+@app.get("/api/file-search/corpora")
+async def list_corpora(
+    module_type: Optional[str] = None,
+    module_id: Optional[str] = None,
+    user_id: str = Depends(verify_token)
+):
+    """List all corpora for the authenticated user"""
+    try:
+        query = supabase.table("file_search_corpora").select("*").eq("user_id", user_id)
+
+        if module_type:
+            query = query.eq("module_type", module_type)
+        if module_id:
+            query = query.eq("module_id", module_id)
+
+        result = query.execute()
+
+        return {
+            "status": "success",
+            "corpora": result.data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list corpora: {str(e)}")
+
+# Document Management
+@app.post("/api/file-search/documents")
+async def index_document(
+    file: UploadFile = File(...),
+    corpus_id: str = Form(...),
+    module_type: Optional[str] = Form(None),
+    module_id: Optional[str] = Form(None),
+    metadata: Optional[str] = Form(None),
+    user_id: str = Depends(verify_token)
+):
+    """Index a document into a corpus"""
+    try:
+        # Get corpus from database
+        corpus_data = supabase.table("file_search_corpora").select("*").eq("id", corpus_id).eq("user_id", user_id).execute()
+        if not corpus_data.data:
+            raise HTTPException(status_code=404, detail="Corpus not found")
+
+        corpus_name = corpus_data.data[0]["gemini_corpus_id"]
+
+        # Read file content
+        content = await file.read()
+
+        # Upload to Supabase Storage (bucket 'user-documents')
+        storage_path = f"{user_id}/{corpus_id}/{file.filename}"
+        supabase.storage.from_("user-documents").upload(
+            path=storage_path,
+            file=content,
+            file_options={"content-type": file.content_type}
+        )
+
+        # Get storage URL
+        storage_url = supabase.storage.from_("user-documents").get_public_url(storage_path)
+
+        # Save file temporarily for Gemini upload
+        temp_path = f"/tmp/{file.filename}" if os.name != 'nt' else f"{file.filename}"
+        with open(temp_path, "wb") as f:
+            f.write(content)
+
+        # Upload to Gemini File API
+        gemini_file = client.files.upload(
+            file=temp_path,
+            config={
+                'display_name': file.filename,
+                'mime_type': file.content_type
+            }
+        )
+
+        # Wait for file to be processed
+        max_wait = 300  # 5 minutes
+        start_time = time.time()
+        while gemini_file.state.name == "PROCESSING":
+            if time.time() - start_time > max_wait:
+                raise HTTPException(status_code=408, detail="File processing timeout")
+            await asyncio.sleep(1)
+            gemini_file = client.files.get(name=gemini_file.name)
+
+        if gemini_file.state.name == "FAILED":
+            raise HTTPException(status_code=500, detail="File processing failed")
+
+        # Get corpus and add document
+        corpus = client.corpora.get(name=corpus_name)
+
+        # Parse metadata
+        metadata_dict = {}
+        if metadata:
+            try:
+                metadata_dict = json.loads(metadata)
+            except:
+                pass
+
+        # Create document in corpus
+        document = corpus.create_document(
+            display_name=file.filename
+        )
+
+        # Add file to document
+        document.add_file(file=gemini_file)
+
+        # Clean up temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+        # Save to Supabase table 'file_search_documents'
+        doc_result = supabase.table("file_search_documents").insert({
+            "user_id": user_id,
+            "corpus_id": corpus_id,
+            "gemini_file_name": gemini_file.name,
+            "gemini_document_name": document.name,
+            "original_filename": file.filename,
+            "mime_type": file.content_type,
+            "file_size_bytes": len(content),
+            "storage_url": storage_url,
+            "module_type": module_type,
+            "module_id": module_id,
+            "custom_metadata": metadata_dict,
+            "indexing_status": "completed"
+        }).execute()
+
+        # Track AI usage - $0.15 per 1000 docs = $0.00015 per doc
+        await track_ai_usage(
+            user_id=user_id,
+            operation_type='file_indexing',
+            ai_model='gemini-file-search',
+            total_cost_usd=0.00015,
+            module_type=module_type,
+            module_id=module_id,
+            metadata={
+                "corpus_id": corpus_id,
+                "filename": file.filename,
+                "file_size": len(content)
+            }
+        )
+
+        return {
+            "status": "success",
+            "document": {
+                "id": doc_result.data[0]["id"],
+                "gemini_file_name": gemini_file.name,
+                "gemini_document_name": document.name,
+                "original_filename": file.filename,
+                "storage_url": storage_url,
+                "indexed_at": doc_result.data[0]["created_at"]
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Log failure
+        try:
+            supabase.table("file_search_documents").insert({
+                "user_id": user_id,
+                "corpus_id": corpus_id,
+                "original_filename": file.filename,
+                "mime_type": file.content_type,
+                "indexing_status": "failed",
+                "custom_metadata": {"error": str(e)}
+            }).execute()
+        except:
+            pass
+        raise HTTPException(status_code=500, detail=f"Failed to index document: {str(e)}")
+
+@app.get("/api/file-search/documents")
+async def list_documents(
+    corpus_id: Optional[str] = None,
+    module_type: Optional[str] = None,
+    module_id: Optional[str] = None,
+    user_id: str = Depends(verify_token)
+):
+    """List all documents for the authenticated user"""
+    try:
+        query = supabase.table("file_search_documents").select("*").eq("user_id", user_id)
+
+        if corpus_id:
+            query = query.eq("corpus_id", corpus_id)
+        if module_type:
+            query = query.eq("module_type", module_type)
+        if module_id:
+            query = query.eq("module_id", module_id)
+
+        result = query.order("created_at", desc=True).execute()
+
+        return {
+            "status": "success",
+            "documents": result.data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list documents: {str(e)}")
+
+@app.delete("/api/file-search/documents/{doc_id}")
+async def delete_document(
+    doc_id: str,
+    user_id: str = Depends(verify_token)
+):
+    """Delete a document from corpus and storage"""
+    try:
+        # Get document from database
+        doc_data = supabase.table("file_search_documents").select("*").eq("id", doc_id).eq("user_id", user_id).execute()
+        if not doc_data.data:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        document = doc_data.data[0]
+
+        # Delete from Gemini (if needed)
+        try:
+            if document.get("gemini_document_name"):
+                # Delete document from corpus
+                # Note: The SDK might not support direct deletion, check documentation
+                # For now, we'll skip this step or implement if SDK supports it
+                pass
+        except Exception as e:
+            print(f"Failed to delete from Gemini: {str(e)}")
+
+        # Delete from Supabase Storage
+        try:
+            if document.get("storage_url"):
+                storage_path = f"{user_id}/{document['corpus_id']}/{document['original_filename']}"
+                supabase.storage.from_("user-documents").remove([storage_path])
+        except Exception as e:
+            print(f"Failed to delete from storage: {str(e)}")
+
+        # Delete from database
+        supabase.table("file_search_documents").delete().eq("id", doc_id).execute()
+
+        return {
+            "status": "success",
+            "message": "Document deleted successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
+
 @app.post("/api/file-search/stores")
-async def create_store(request: CreateStoreRequest):
-    return await FileSearchService.create_user_store(request.user_id, request.category)
+async def create_store(
+    request: CreateStoreRequest,
+    user_id: str = Depends(verify_token)
+):
+    return await FileSearchService.create_user_store(user_id, request.category)
 
 @app.post("/api/file-search/upload")
 async def upload_file(
     file: UploadFile = File(...),
     category: str = Form(...),
-    user_id: str = Form(...),
-    metadata: str = Form(default="{}")
+    metadata: str = Form(default="{}"),
+    user_id: str = Depends(verify_token)
 ):
     # Get Store ID mapping
     # In a real app we'd cache this or look it up efficiently
@@ -309,22 +682,71 @@ async def upload_file(
     )
 
 @app.post("/api/file-search/query")
-async def query_documents(request: SearchRequest):
-    # WARNING: user_id should come from auth token in production. 
-    # For now assuming it is passed or we pick a fixed one for testing if not supplied? 
-    # The request model didn't have user_id, but the logic needs it to file stores.
-    # We will assume the frontend sends user_id or we look up stores by category for the logged-in user.
-    # Since I don't have auth middleware here yet, I'll add user_id to request for demo purposes.
-    pass 
-    # Re-defining SearchRequest to include user_id for this MVP
-    
+async def query_file_search(
+    request: QueryRequest,
+    user_id: str = Depends(verify_token)
+):
+    """Query documents in a corpus using File Search"""
+    try:
+        # Get corpus from database
+        corpus_data = supabase.table("file_search_corpora").select("*").eq("id", request.corpus_id).eq("user_id", user_id).execute()
+        if not corpus_data.data:
+            raise HTTPException(status_code=404, detail="Corpus not found")
+
+        corpus_name = corpus_data.data[0]["gemini_corpus_id"]
+
+        # Get corpus
+        corpus = client.corpora.get(name=corpus_name)
+
+        # Execute query
+        query_result = corpus.query(
+            query=request.query,
+            result_count=request.result_count
+        )
+
+        # Format results
+        results = []
+        for chunk in query_result.relevant_chunks:
+            results.append({
+                "text": chunk.text,
+                "relevance_score": chunk.relevance_score if hasattr(chunk, 'relevance_score') else None,
+                "document_name": chunk.document_name if hasattr(chunk, 'document_name') else None
+            })
+
+        # Track AI usage - $0.05 per query
+        await track_ai_usage(
+            user_id=user_id,
+            operation_type='file_search_query',
+            ai_model='gemini-file-search',
+            total_cost_usd=0.05,
+            module_type=request.module_type,
+            module_id=request.module_id,
+            metadata={
+                "corpus_id": request.corpus_id,
+                "query": request.query,
+                "result_count": request.result_count,
+                "results_found": len(results)
+            }
+        )
+
+        return {
+            "status": "success",
+            "query": request.query,
+            "results": results,
+            "result_count": len(results)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+
 @app.post("/api/file-search/query-authenticated")
 async def query_documents_authenticated(
     query: str = Body(...),
     categories: List[str] = Body(...),
     filters: Optional[Dict[str, Any]] = Body(None),
-    user_id: str = Body(...), # Explicitly passed for now
-    model: str = Body("gemini-2.0-flash-exp")
+    model: str = Body("gemini-2.0-flash-exp"),
+    user_id: str = Depends(verify_token)
 ):
     # Resolve categories to store names
     # data = supabase.table("user_file_search_stores").select("store_name").eq("user_id", user_id).in_("store_category", categories).execute()

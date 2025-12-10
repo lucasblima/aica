@@ -9,6 +9,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { GenerateFieldPayload, BriefingData } from '../types'
+import { trackAIUsage, extractGeminiUsageMetadata } from '../../../services/aiUsageTrackingService'
 
 // Inicializar cliente Gemini
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY
@@ -157,12 +158,13 @@ export async function generateFieldContent(
       context.evaluation_criteria
     )
 
-    // Construir prompt do usuário (agora com documento fonte)
+    // Construir prompt do usuário (com edital PDF + documentos do projeto)
     const userPrompt = buildUserPrompt(
       context.field_config,
       context.briefing,
       context.previous_responses,
-      context.source_document_content
+      context.source_document_content,
+      context.edital_text_content
     )
 
     // Fazer chamada ao Gemini
@@ -188,6 +190,32 @@ export async function generateFieldContent(
 
     const response = await result.response
     let generatedText = response.text()
+
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usage = extractGeminiUsageMetadata(response)
+    if (usage) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: MODEL_NAME,
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
+        total_tokens: usage.total_tokens,
+        module_type: 'grants',
+        module_id: context.project_id,
+        request_metadata: {
+          action: 'generate_field_content',
+          field_id: context.field_config.id,
+          field_label: context.field_config.label,
+          max_chars: context.field_config.max_chars,
+        }
+      }).catch(err => {
+        // Tracking não deve interromper fluxo principal
+        console.warn('[Grants] Falha no tracking de IA:', err)
+      })
+    }
+    // ========================================
 
     // Truncar inteligentemente se exceder limite
     generatedText = truncateToCharLimit(
@@ -257,17 +285,25 @@ Escreva de forma que o avaliador perceba expertise, viabilidade técnica e poten
 /**
  * Constrói o prompt do usuário com contexto específico do campo
  *
+ * HIERARQUIA DE CONTEXTO (do mais importante para o menos):
+ * 1. Edital PDF (texto extraído do PDF oficial do edital)
+ * 2. Documentos do Projeto (arquivos enviados pelo usuário específicos do projeto)
+ * 3. Briefing (respostas manuais do usuário)
+ * 4. Respostas Anteriores (para coesão)
+ *
  * @param fieldConfig - Configuração do campo
  * @param briefing - Briefing do projeto
  * @param previousResponses - Respostas anteriores de outros campos
- * @param sourceDocumentContent - Conteúdo extraído do documento fonte (opcional)
+ * @param sourceDocumentContent - Conteúdo extraído dos documentos do projeto (opcional)
+ * @param editalTextContent - Conteúdo extraído do PDF do edital (opcional)
  * @returns Prompt do usuário formatado
  */
 function buildUserPrompt(
   fieldConfig: GenerateFieldPayload['field_config'],
-  briefing: BriefingData,
+  briefing: Record<string, string>,
   previousResponses?: Record<string, string>,
-  sourceDocumentContent?: string | null
+  sourceDocumentContent?: string | null,
+  editalTextContent?: string | null
 ): string {
   let prompt = `**CAMPO A SER PREENCHIDO:**
 ${fieldConfig.label}
@@ -282,77 +318,48 @@ Obrigatório: ${fieldConfig.required ? 'Sim' : 'Não'}
 
 `
 
-  // Adicionar documento fonte se disponível (PRIORIDADE MÁXIMA)
-  if (sourceDocumentContent && sourceDocumentContent.trim().length > 0) {
-    prompt += `**📄 DOCUMENTO FONTE DO PROJETO (Fonte de Verdade - USE COMO REFERÊNCIA PRINCIPAL):**
+  // 1. PRIORIDADE MÁXIMA: Edital PDF (contexto compartilhado para todos os projetos)
+  if (editalTextContent && editalTextContent.trim().length > 0) {
+    prompt += `**📋 EDITAL OFICIAL (PRIORIDADE MÁXIMA - Requisitos e Critérios do Edital):**
 
-${sourceDocumentContent.substring(0, 15000)}
+${editalTextContent.substring(0, 20000)}
 
-⚠️ IMPORTANTE: Este é o documento oficial fornecido pelo usuário. Use as informações acima como base principal para sua resposta. O briefing abaixo é complementar.
+⚠️ CRÍTICO: Este é o texto extraído do PDF oficial do edital. Use as informações acima para garantir que sua resposta está ALINHADA com os requisitos, critérios de avaliação, e diretrizes do edital.
 
 `
   }
 
-  // Adicionar briefing
+  // 2. PRIORIDADE ALTA: Documentos do Projeto (informações específicas deste projeto)
+  if (sourceDocumentContent && sourceDocumentContent.trim().length > 0) {
+    prompt += `**📄 DOCUMENTOS DO PROJETO (Fonte de Verdade sobre este Projeto Específico):**
+
+${sourceDocumentContent.substring(0, 15000)}
+
+⚠️ IMPORTANTE: Estes são documentos oficiais fornecidos pelo usuário sobre ESTE projeto específico. Use as informações acima como base principal para personalizar sua resposta. O briefing abaixo é complementar.
+
+`
+  }
+
+  // Adicionar briefing (DINÂMICO - itera sobre todos os campos)
   prompt += `**CONTEXTO DO PROJETO (Briefing fornecido pelo usuário):**
 
 `
 
-  if (briefing.company_context) {
-    prompt += `**Contexto da Empresa:**
-${briefing.company_context}
+  // Iterar sobre TODOS os campos do briefing dinamicamente
+  Object.entries(briefing).forEach(([fieldId, content]) => {
+    if (content && content.trim().length > 0) {
+      // Converter field_id para título legível
+      const fieldLabel = fieldId
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      prompt += `**${fieldLabel}:**
+${content}
 
 `
-  }
-
-  if (briefing.project_description) {
-    prompt += `**Descrição do Projeto:**
-${briefing.project_description}
-
-`
-  }
-
-  if (briefing.technical_innovation) {
-    prompt += `**Inovação Técnica:**
-${briefing.technical_innovation}
-
-`
-  }
-
-  if (briefing.market_differential) {
-    prompt += `**Diferencial de Mercado:**
-${briefing.market_differential}
-
-`
-  }
-
-  if (briefing.team_expertise) {
-    prompt += `**Expertise da Equipe:**
-${briefing.team_expertise}
-
-`
-  }
-
-  if (briefing.expected_results) {
-    prompt += `**Resultados Esperados:**
-${briefing.expected_results}
-
-`
-  }
-
-  if (briefing.sustainability) {
-    prompt += `**Sustentabilidade:**
-${briefing.sustainability}
-
-`
-  }
-
-  if (briefing.additional_notes) {
-    prompt += `**Informações Adicionais:**
-${briefing.additional_notes}
-
-`
-  }
+    }
+  });
 
   // Adicionar respostas anteriores para coesão
   if (previousResponses && Object.keys(previousResponses).length > 0) {
@@ -567,7 +574,7 @@ ESTRUTURA DO JSON:
       "max_chars": 3000,
       "required": true,
       "ai_prompt_hint": "Descreva histórico, porte, setor de atuação",
-      "placeholder": "Ex: A empresa..."
+      "placeholder": "Descreva a empresa..."
     }
   ],
   "external_system_url": "https://sistema.gov.br"
@@ -599,12 +606,66 @@ ${editalText.substring(0, 50000)}`;
     const response = result.response;
     const rawText = response.text();
 
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usage = extractGeminiUsageMetadata(response)
+    if (usage) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: MODEL_NAME,
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
+        total_tokens: usage.total_tokens,
+        module_type: 'grants',
+        request_metadata: {
+          action: 'analyze_edital_structure',
+          edital_length: editalText.length,
+        }
+      }).catch(err => {
+        console.warn('[Grants] Falha no tracking de IA:', err)
+      })
+    }
+    // ========================================
+
     // Sanitizar resposta da IA
     const jsonText = sanitizeAIJsonResponse(rawText);
     console.log('[AI] Resposta sanitizada, tamanho:', jsonText.length);
 
     // Parse JSON com tratamento de erro robusto
-    const data = safeJsonParse(jsonText, 'analyzeEditalStructure');
+    type EditalStructure = {
+      title: string;
+      funding_agency: string;
+      program_name: string;
+      edital_number: string;
+      min_funding: number | null;
+      max_funding: number | null;
+      counterpart_percentage: number | null;
+      submission_start: string | null;
+      submission_deadline: string;
+      result_date: string | null;
+      eligible_themes: string[];
+      eligibility_requirements: Record<string, any>;
+      evaluation_criteria: Array<{
+        id: string;
+        name: string;
+        description: string;
+        weight: number;
+        min_score: number;
+        max_score: number;
+      }>;
+      form_fields: Array<{
+        id: string;
+        label: string;
+        max_chars: number;
+        required: boolean;
+        ai_prompt_hint: string;
+        placeholder: string;
+      }>;
+      external_system_url: string | null;
+    };
+
+    const data = safeJsonParse<EditalStructure>(jsonText, 'analyzeEditalStructure');
 
     console.log('[AI] Análise do edital concluída:', {
       title: data.title,
@@ -684,7 +745,7 @@ FORMATO DE SAÍDA:
     "max_chars": 3000,
     "required": true,
     "ai_prompt_hint": "Descreva histórico, porte, setor de atuação e principais conquistas da empresa",
-    "placeholder": "Ex: A empresa foi fundada em..."
+    "placeholder": "Descreva o histórico da empresa..."
   }
 ]
 
@@ -708,16 +769,47 @@ ${pastedText}`;
     const response = result.response;
     const rawText = response.text();
 
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usage = extractGeminiUsageMetadata(response)
+    if (usage) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: MODEL_NAME,
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
+        total_tokens: usage.total_tokens,
+        module_type: 'grants',
+        request_metadata: {
+          action: 'parse_form_fields_from_text',
+          input_length: pastedText.length,
+        }
+      }).catch(err => {
+        console.warn('[Grants] Falha no tracking de IA:', err)
+      })
+    }
+    // ========================================
+
     // Sanitizar resposta da IA
     const jsonText = sanitizeAIJsonResponse(rawText);
     console.log('[AI] Resposta sanitizada, tamanho:', jsonText.length);
 
     // Parse JSON com tratamento de erro robusto
-    const fields = safeJsonParse(jsonText, 'parseFormFieldsFromText');
+    type ParsedFormField = {
+      id: string;
+      label: string;
+      max_chars: number;
+      required: boolean;
+      ai_prompt_hint: string;
+      placeholder: string;
+    };
+
+    const fields = safeJsonParse<ParsedFormField[]>(jsonText, 'parseFormFieldsFromText');
 
     console.log('[AI] Campos do formulário parseados:', {
       count: fields.length,
-      fields: fields.map((f: any) => ({ label: f.label, max_chars: f.max_chars }))
+      fields: fields.map((f) => ({ label: f.label, max_chars: f.max_chars }))
     });
 
     return fields;

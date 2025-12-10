@@ -18,7 +18,9 @@ import {
     AlertCircle,
     Upload,
     Link as LinkIcon,
-    FileUp
+    FileUp,
+    History,
+    Save
 } from 'lucide-react';
 import {
     DndContext,
@@ -44,6 +46,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { Dossier, Topic, TopicCategory } from '../types';
 import { generateDossier } from '../services/geminiService';
 import { supabase } from '../../../services/supabaseClient';
+import { PautaGeneratorPanel } from '../components/PautaGeneratorPanel';
+import { Wand2 } from 'lucide-react';
+import { useSavedPauta } from '../hooks/useSavedPauta';
 
 // Category Icons mapping
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -136,6 +141,18 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
     const [activeTab, setActiveTab] = useState<ResearchTab>('bio');
     const [showSourcesDialog, setShowSourcesDialog] = useState(false);
     const [hasLowContext, setHasLowContext] = useState(false);
+    const [showPautaGenerator, setShowPautaGenerator] = useState(false);
+    const [showPautaVersions, setShowPautaVersions] = useState(false);
+
+    // Hook para gerenciar pautas salvas
+    const {
+        activePauta,
+        activePautaAsGenerated,
+        versions,
+        isLoading: isLoadingPauta,
+        setActiveVersion,
+        refresh: refreshPautas
+    } = useSavedPauta(projectId);
 
     // Topics State
     const [categories, setCategories] = useState<TopicCategory[]>([
@@ -463,6 +480,22 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
         setIsChatLoading(false);
     };
 
+    // Handler para quando a pauta e gerada pelo PautaGeneratorPanel
+    const handlePautaGenerated = async (
+        newDossier: Dossier,
+        newTopics: Topic[],
+        newCategories: TopicCategory[]
+    ) => {
+        setDossier(newDossier);
+        setTopics(newTopics);
+        setCategories(newCategories);
+        setShowPautaGenerator(false);
+        setIsResearching(false);
+
+        // Refresh pautas salvas para mostrar nova versao
+        await refreshPautas();
+    };
+
     const handleGoToProduction = async () => {
         if (!dossier || !projectId) return;
 
@@ -593,12 +626,37 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                             <FileText className="w-5 h-5 text-amber-500" />
                             Pauta
                         </h2>
-                        {isResearching && (
-                            <span className="text-xs text-amber-600 flex items-center gap-1">
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                                Gerando...
-                            </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {isResearching && (
+                                <span className="text-xs text-amber-600 flex items-center gap-1">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Gerando...
+                                </span>
+                            )}
+                            {activePauta && !isLoadingPauta && (
+                                <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-lg border border-green-200">
+                                    <Save className="w-3 h-3" />
+                                    <span>v{activePauta.pauta.version} salva</span>
+                                    {versions.length > 1 && (
+                                        <button
+                                            onClick={() => setShowPautaVersions(!showPautaVersions)}
+                                            className="ml-1 p-0.5 hover:bg-green-100 rounded"
+                                            title="Ver versões anteriores"
+                                        >
+                                            <History className="w-3 h-3" />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                            <button
+                                onClick={() => setShowPautaGenerator(true)}
+                                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium flex items-center gap-1.5 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                title="Gerar Pauta com IA (estilo NotebookLM)"
+                            >
+                                <Wand2 className="w-4 h-4" />
+                                {activePauta ? 'Regenerar' : 'IA'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4">
@@ -997,6 +1055,35 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                                     )}
                                 </button>
                             </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Pauta Generator Modal */}
+            <AnimatePresence>
+                {showPautaGenerator && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={() => setShowPautaGenerator(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-xl max-h-[90vh] overflow-y-auto"
+                        >
+                            <PautaGeneratorPanel
+                                guestName={guestData.name}
+                                initialTheme={guestData.theme || ''}
+                                projectId={projectId}
+                                onPautaGenerated={handlePautaGenerated}
+                                onClose={() => setShowPautaGenerator(false)}
+                            />
                         </motion.div>
                     </motion.div>
                 )}

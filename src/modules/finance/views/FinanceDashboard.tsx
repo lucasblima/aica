@@ -5,13 +5,16 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, LayoutDashboard, Target } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, LayoutDashboard, Target, FileSpreadsheet } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
+import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
 import { BudgetView } from './BudgetView';
+import { FinanceSearchPanel } from '../components/FinanceSearchPanel';
 import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown } from '../services/financeService';
 import { statementService } from '../services/statementService';
+import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement } from '../types';
 
 // =====================================================
@@ -51,11 +54,27 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   const [statements, setStatements] = useState<FinanceStatement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [showCSVUpload, setShowCSVUpload] = useState(false);
   const [showManagement, setShowManagement] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
   const [isValuesVisible, setIsValuesVisible] = useState(false);
-  const [activeView, setActiveView] = useState<'budget' | 'history'>('budget');
+  const [activeView, setActiveView] = useState<'budget' | 'history'>('history');
+
+  // File Search integration
+  const {
+    searchInStatements,
+    findByCategory,
+    findByMerchant,
+    findAnomalies,
+    findExpensePatterns,
+    searchResults,
+    isSearching,
+    documents,
+    clearSearchResults,
+  } = useFinanceFileSearch({ userId, autoLoad: true });
+
+  const hasIndexedStatements = documents.length > 0;
 
   useEffect(() => {
     loadData();
@@ -340,7 +359,46 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
   // Render Budget View if active
   if (activeView === 'budget') {
-    return <BudgetView userId={userId} onBack={onBack} />;
+    return (
+      <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+        {/* Navigation Header */}
+        <div className="pt-8 px-6 pb-4 flex-shrink-0">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+            >
+              <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
+                <ArrowLeft className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
+            </button>
+          )}
+
+          {/* View Toggle */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setActiveView('history')}
+              className="ceramic-tray px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2 opacity-60 hover:opacity-100"
+            >
+              <Calendar className="w-4 h-4 text-ceramic-text-primary" />
+              <span className="text-sm font-bold text-ceramic-text-primary">Calendário & Extratos</span>
+            </button>
+            <button
+              className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-blue-50 to-transparent"
+            >
+              <Target className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-bold text-blue-600">Orçamento</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Budget View Content */}
+        <div className="flex-1 overflow-hidden">
+          <BudgetView userId={userId} onBack={onBack} />
+        </div>
+      </div>
+    );
   }
 
   // Otherwise render History/Dashboard view
@@ -359,6 +417,23 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
           </button>
         )}
+
+        {/* View Toggle */}
+        <div className="flex gap-2 mb-4">
+          <button
+            className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-blue-50 to-transparent"
+          >
+            <Calendar className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-bold text-blue-600">Calendário & Extratos</span>
+          </button>
+          <button
+            onClick={() => setActiveView('budget')}
+            className="ceramic-tray px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2 opacity-60 hover:opacity-100"
+          >
+            <Target className="w-4 h-4 text-ceramic-text-primary" />
+            <span className="text-sm font-bold text-ceramic-text-primary">Orçamento</span>
+          </button>
+        </div>
 
         <div className="flex items-center justify-between">
           <div>
@@ -430,6 +505,15 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               onError={(error) => console.error(error)}
             />
           </div>
+        )}
+
+        {/* CSV Upload Modal */}
+        {showCSVUpload && (
+          <CSVUpload
+            userId={userId}
+            onSuccess={handleUploadComplete}
+            onClose={() => setShowCSVUpload(false)}
+          />
         )}
 
         {/* Summary Section */}
@@ -566,12 +650,24 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setShowUpload(true)}
-              className="ceramic-card px-4 py-2 hover:scale-105 transition-transform"
-            >
-              <span className="text-xs font-bold text-ceramic-accent">+ Upload</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowUpload(true)}
+                className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
+                title="Upload PDF"
+              >
+                <FileText className="w-3.5 h-3.5 text-ceramic-accent" />
+                <span className="text-xs font-bold text-ceramic-accent">PDF</span>
+              </button>
+              <button
+                onClick={() => setShowCSVUpload(true)}
+                className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
+                title="Upload CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-xs font-bold text-green-600">CSV</span>
+              </button>
+            </div>
           </div>
 
           {/* Monthly Grid */}
@@ -916,6 +1012,37 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* File Search Integration - Only show if statements are indexed */}
+        {hasIndexedStatements && statements.length > 0 && (
+          <div className="ceramic-card p-6">
+            <FinanceSearchPanel
+              onSearch={async (query) => {
+                const results = await searchInStatements(query, 10);
+                return results;
+              }}
+              onSearchCategory={async (category) => {
+                const results = await findByCategory(category, 10);
+                return results;
+              }}
+              onSearchMerchant={async (merchant) => {
+                const results = await findByMerchant(merchant, 10);
+                return results;
+              }}
+              onSearchAnomalies={async () => {
+                const results = await findAnomalies(10);
+                return results;
+              }}
+              onSearchPatterns={async (pattern) => {
+                const results = await findExpensePatterns(pattern, 10);
+                return results;
+              }}
+              results={searchResults}
+              isSearching={isSearching}
+              hasDocuments={hasIndexedStatements}
+            />
           </div>
         )}
 

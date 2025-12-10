@@ -4,39 +4,84 @@
  */
 
 import React, { useState } from 'react'
-import { MomentCapture } from '../components/capture/MomentCapture'
+import { AnimatePresence } from 'framer-motion'
+import { QuickCapture } from '../components/capture/QuickCapture'
 import { MomentCard } from '../components/timeline/MomentCard'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { ConsciousnessScore } from '../components/gamification/ConsciousnessScore'
+import { JourneySearchPanel } from '../components/JourneySearchPanel'
+import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
 import { useMoments } from '../hooks/useMoments'
 import { useCurrentWeeklySummary } from '../hooks/useWeeklySummary'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
 import { useConsciousnessPoints, useCPAnimation } from '../hooks/useConsciousnessPoints'
+import { useJourneyFileSearch } from '../hooks/useJourneyFileSearch'
+import { generatePostCaptureInsight } from '../services/aiAnalysisService'
 import {
   PlusIcon,
   XMarkIcon,
   SparklesIcon,
   ClockIcon,
   ChartBarIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/solid'
 import { CreateMomentInput } from '../types/moment'
 import confetti from 'canvas-confetti'
+import { useAuth } from '../../../hooks/useAuth'
 
 export function JourneyFullScreen() {
   const [showCapture, setShowCapture] = useState(false)
-  const [activeTab, setActiveTab] = useState<'timeline' | 'insights'>('timeline')
+  const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search'>('timeline')
+  const [showInsight, setShowInsight] = useState(false)
+  const [currentInsight, setCurrentInsight] = useState<{
+    message: string;
+    relatedMoments: number;
+    theme?: string;
+    action?: 'view_similar' | 'view_patterns';
+  } | null>(null)
 
+  const { user } = useAuth()
   const { moments, create: createMoment, delete: deleteMoment, loadMore, hasMore, isLoading } = useMoments()
   const { summary, addReflection } = useCurrentWeeklySummary()
   const { question, answer: answerQuestion, skip: skipQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, triggerAnimation } = useCPAnimation()
 
+  // File Search integration
+  const {
+    searchInMoments,
+    findByEmotion,
+    findByTag,
+    findGrowthMoments,
+    findInsights,
+    searchResults,
+    isSearching,
+    documents,
+    clearSearchResults,
+  } = useJourneyFileSearch({ userId: user?.id, autoLoad: true })
+
+  const hasIndexedMoments = documents.length > 0
+
   // Handle moment creation
   const handleCreateMoment = async (input: CreateMomentInput) => {
     try {
       const result = await createMoment(input)
+
+      // Generate post-capture insight
+      const recentMoments = moments.slice(0, 7).map(m => ({
+        content: m.content || '',
+        tags: m.tags || [],
+        created_at: m.created_at
+      }))
+
+      const insight = await generatePostCaptureInsight(
+        input.content || '',
+        recentMoments
+      )
+
+      setCurrentInsight(insight)
+      setShowInsight(true)
 
       // Trigger CP animation
       triggerAnimation(
@@ -154,7 +199,7 @@ export function JourneyFullScreen() {
           <div className="lg:col-span-1">
             <div className="sticky top-6">
               {showCapture ? (
-                <MomentCapture
+                <QuickCapture
                   onSubmit={handleCreateMoment}
                   onCancel={() => setShowCapture(false)}
                 />
@@ -204,6 +249,18 @@ export function JourneyFullScreen() {
               >
                 <ChartBarIcon className="h-5 w-5" />
                 <span>Insights & Patterns</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors ${
+                  activeTab === 'search'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <MagnifyingGlassIcon className="h-5 w-5" />
+                <span>Busca</span>
               </button>
             </div>
 
@@ -267,6 +324,38 @@ export function JourneyFullScreen() {
                 )}
               </div>
             )}
+
+            {/* Search Tab */}
+            {activeTab === 'search' && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <JourneySearchPanel
+                  onSearch={async (query) => {
+                    const results = await searchInMoments(query, 10);
+                    return results;
+                  }}
+                  onSearchEmotion={async (emotion) => {
+                    const results = await findByEmotion(emotion, 10);
+                    return results;
+                  }}
+                  onSearchTag={async (tag) => {
+                    const results = await findByTag(tag, 10);
+                    return results;
+                  }}
+                  onSearchGrowth={async () => {
+                    const results = await findGrowthMoments(10);
+                    return results;
+                  }}
+                  onSearchInsights={async (question) => {
+                    const results = await findInsights(question, 10);
+                    return results;
+                  }}
+                  results={searchResults}
+                  isSearching={isSearching}
+                  hasMoments={hasIndexedMoments}
+                  onClear={clearSearchResults}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -287,6 +376,31 @@ export function JourneyFullScreen() {
           </div>
         </div>
       )}
+
+      {/* Post-Capture Insight Modal */}
+      <AnimatePresence>
+        {showInsight && currentInsight && (
+          <PostCaptureInsight
+            insight={currentInsight}
+            pointsEarned={5}
+            onViewSimilar={
+              currentInsight.theme
+                ? () => {
+                    setActiveTab('search')
+                    findByTag(currentInsight.theme!, 10)
+                  }
+                : undefined
+            }
+            onViewPatterns={() => {
+              setActiveTab('insights')
+            }}
+            onClose={() => {
+              setShowInsight(false)
+              setCurrentInsight(null)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

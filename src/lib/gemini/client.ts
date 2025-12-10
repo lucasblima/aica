@@ -23,16 +23,12 @@ const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-chat`
   : 'http://localhost:54321/functions/v1/gemini-chat'
 
-const PYTHON_SERVER_URL = import.meta.env.VITE_LLM_API_URL || 'http://localhost:8001'
-
 /**
- * Ações que devem ir para o servidor Python (operações pesadas)
+ * Ações que possuem Edge Functions dedicadas (não vão para gemini-chat)
  */
-const PYTHON_ACTIONS: GeminiAction[] = [
-  'deep_research',
-  'parse_statement',
-  'intelligent_search'
-]
+const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
+  'deep_research': 'deep-research'
+}
 
 /**
  * Cliente Gemini singleton
@@ -68,9 +64,16 @@ export class GeminiClient {
     request: GeminiChatRequest,
     options?: RetryOptions
   ): Promise<GeminiChatResponse> {
-    // Determinar backend apropriado
-    const usePython = PYTHON_ACTIONS.includes(request.action)
-    const endpoint = usePython ? PYTHON_SERVER_URL : EDGE_FUNCTION_URL
+    // Determinar endpoint apropriado
+    let endpoint = EDGE_FUNCTION_URL
+
+    // Se a ação tem Edge Function dedicada, usar ela
+    if (DEDICATED_EDGE_FUNCTIONS[request.action]) {
+      const functionName = DEDICATED_EDGE_FUNCTIONS[request.action]
+      endpoint = import.meta.env.VITE_SUPABASE_URL
+        ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}`
+        : `http://localhost:54321/functions/v1/${functionName}`
+    }
 
     // Auto-selecionar modelo se não especificado
     if (!request.model) {
@@ -103,10 +106,16 @@ export class GeminiClient {
     request: GeminiChatRequest,
     streamOptions: StreamOptions
   ): Promise<void> {
-    const usePython = PYTHON_ACTIONS.includes(request.action)
-    const endpoint = usePython
-      ? `${PYTHON_SERVER_URL}/${request.action}`
-      : EDGE_FUNCTION_URL
+    // Determinar endpoint apropriado
+    let endpoint = EDGE_FUNCTION_URL
+
+    // Se a ação tem Edge Function dedicada, usar ela
+    if (DEDICATED_EDGE_FUNCTIONS[request.action]) {
+      const functionName = DEDICATED_EDGE_FUNCTIONS[request.action]
+      endpoint = import.meta.env.VITE_SUPABASE_URL
+        ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}`
+        : `http://localhost:54321/functions/v1/${functionName}`
+    }
 
     if (!request.model) {
       request.model = getModelForUseCase(request.action)

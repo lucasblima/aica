@@ -1,94 +1,291 @@
-import { useState } from 'react';
-import { supabase } from '../services/supabaseClient';
-import { SearchResult } from '../types/fileSearch';
+import { useState, useCallback } from 'react';
+import {
+  listCorpora,
+  createCorpus,
+  indexDocument,
+  queryFileSearch,
+  listDocuments,
+  deleteDocument,
+} from '../services/fileSearchApiClient';
+import type {
+  FileSearchCorpus,
+  FileSearchDocument,
+  FileSearchQuery,
+  FileSearchResult,
+  IndexDocumentRequest,
+} from '../types/fileSearch';
 
-// Use environment variable for API URL or default to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
+/**
+ * Hook genérico para File Search com gerenciamento de estado
+ *
+ * Fornece interface completa para:
+ * - Criar e listar corpora
+ * - Indexar e gerenciar documentos
+ * - Realizar buscas semânticas
+ *
+ * @example
+ * ```tsx
+ * const {
+ *   corpora,
+ *   createNewCorpus,
+ *   uploadDocument,
+ *   search,
+ *   isLoading
+ * } = useFileSearch();
+ *
+ * // Criar corpus
+ * await createNewCorpus('grants-edital-001', 'Edital de Pesquisa 2024');
+ *
+ * // Indexar documento
+ * await uploadDocument({
+ *   file: pdfFile,
+ *   corpus_id: 'corpus-123',
+ *   module_type: 'grants',
+ *   module_id: 'project-456'
+ * });
+ *
+ * // Buscar
+ * const results = await search({
+ *   corpus_id: 'corpus-123',
+ *   query: 'Como fazer orçamento?',
+ *   result_count: 10
+ * });
+ * ```
+ */
 export function useFileSearch() {
-    const [isSearching, setIsSearching] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [corpora, setCorpora] = useState<FileSearchCorpus[]>([]);
+  const [documents, setDocuments] = useState<FileSearchDocument[]>([]);
+  const [searchResults, setSearchResults] = useState<FileSearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const uploadDocument = async (
-        file: File,
-        category: string,
-        metadata?: Record<string, any>
-    ) => {
-        setIsUploading(true);
-        setError(null);
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("User not authenticated");
+  /**
+   * Carrega lista de corpora do usuário
+   * @param filters - Filtros opcionais (module_type, module_id)
+   */
+  const loadCorpora = useCallback(async (filters?: { module_type?: string; module_id?: string }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const result = await listCorpora(filters?.module_type, filters?.module_id);
+      setCorpora(result);
+      return result;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load corpora';
+      setError(errorMsg);
+      console.error('[useFileSearch] loadCorpora error:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('category', category);
-            formData.append('user_id', user.id);
-            if (metadata) {
-                formData.append('metadata', JSON.stringify(metadata));
-            }
+  /**
+   * Cria um novo corpus
+   * @param name - Nome interno do corpus (slug)
+   * @param displayName - Nome para exibição
+   * @param module_type - Tipo do módulo (opcional)
+   * @param module_id - ID da entidade no módulo (opcional)
+   */
+  const createNewCorpus = useCallback(async (
+    name: string,
+    displayName: string,
+    module_type?: string,
+    module_id?: string
+  ) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const newCorpus = await createCorpus(name, displayName, module_type, module_id);
+      setCorpora((prev) => [...prev, newCorpus]);
+      return newCorpus;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create corpus';
+      setError(errorMsg);
+      console.error('[useFileSearch] createNewCorpus error:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-            const response = await fetch(`${API_URL}/api/file-search/upload`, {
-                method: 'POST',
-                body: formData
-            });
+  /**
+   * Indexa um documento em um corpus
+   * @param request - Dados para indexação (file, corpus_id, metadata, etc.)
+   */
+  const uploadDocument = useCallback(async (request: IndexDocumentRequest) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const newDocument = await indexDocument(request);
+      setDocuments((prev) => [newDocument, ...prev]);
+      return newDocument;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to upload document';
+      setError(errorMsg);
+      console.error('[useFileSearch] uploadDocument error:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Upload failed');
-            }
+  /**
+   * Realiza busca semântica em um corpus
+   * @param query - Parâmetros da busca
+   */
+  const search = useCallback(async (query: FileSearchQuery) => {
+    try {
+      setIsSearching(true);
+      setError(null);
+      const results = await queryFileSearch(query);
+      setSearchResults(results);
+      return results;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Search failed';
+      setError(errorMsg);
+      console.error('[useFileSearch] search error:', err);
+      throw err;
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
 
-            return await response.json();
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsUploading(false);
-        }
-    };
+  /**
+   * Carrega lista de documentos indexados
+   * @param filters - Filtros opcionais (corpus_id, module_type, module_id)
+   */
+  const loadDocuments = useCallback(async (filters?: {
+    corpus_id?: string;
+    module_type?: string;
+    module_id?: string;
+  }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const result = await listDocuments(
+        filters?.corpus_id,
+        filters?.module_type,
+        filters?.module_id
+      );
+      setDocuments(result);
+      return result;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load documents';
+      setError(errorMsg);
+      console.error('[useFileSearch] loadDocuments error:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-    const searchDocuments = async (
-        query: string,
-        categories: string[] = ['financial', 'documents'],
-        filters?: Record<string, any>
-    ): Promise<SearchResult> => {
-        setIsSearching(true);
-        setError(null);
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("User not authenticated");
+  /**
+   * Remove um documento do corpus
+   * @param documentId - ID do documento a ser removido
+   */
+  const removeDocument = useCallback(async (documentId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await deleteDocument(documentId);
+      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete document';
+      setError(errorMsg);
+      console.error('[useFileSearch] removeDocument error:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-            const response = await fetch(`${API_URL}/api/file-search/query-authenticated`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query,
-                    categories,
-                    filters,
-                    user_id: user.id
-                })
-            });
+  /**
+   * Limpa os resultados de busca
+   */
+  const clearSearchResults = useCallback(() => {
+    setSearchResults([]);
+  }, []);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Search failed');
-            }
+  /**
+   * Limpa o erro atual
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
-            return await response.json();
-        } catch (err: any) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setIsSearching(false);
-        }
-    };
+  return {
+    // Estados
+    corpora,
+    documents,
+    searchResults,
+    isLoading,
+    isSearching,
+    error,
 
-    return {
-        uploadDocument,
-        searchDocuments,
-        isUploading,
-        isSearching,
-        error
-    };
+    // Ações
+    loadCorpora,
+    createNewCorpus,
+    uploadDocument,
+    search,
+    loadDocuments,
+    removeDocument,
+    clearSearchResults,
+    clearError,
+  };
+}
+
+/**
+ * Hook especializado para busca em módulos específicos
+ *
+ * Wrapper do useFileSearch com filtros pré-configurados
+ *
+ * @param module_type - Tipo do módulo (grants, podcast, finance, etc.)
+ * @param module_id - ID opcional da entidade específica
+ *
+ * @example
+ * ```tsx
+ * // Hook para Grants module
+ * const grantsSearch = useModuleFileSearch('grants', projectId);
+ *
+ * // Automaticamente filtra apenas documentos do módulo Grants
+ * await grantsSearch.loadDocuments();
+ * ```
+ */
+export function useModuleFileSearch(module_type: string, module_id?: string) {
+  const baseHook = useFileSearch();
+
+  const loadCorporaFiltered = useCallback(
+    () => baseHook.loadCorpora({ module_type, module_id }),
+    [baseHook, module_type, module_id]
+  );
+
+  const loadDocumentsFiltered = useCallback(
+    (corpus_id?: string) =>
+      baseHook.loadDocuments({ corpus_id, module_type, module_id }),
+    [baseHook, module_type, module_id]
+  );
+
+  const searchWithModuleContext = useCallback(
+    (query: Omit<FileSearchQuery, 'module_type' | 'module_id'>) =>
+      baseHook.search({ ...query, module_type, module_id }),
+    [baseHook, module_type, module_id]
+  );
+
+  const createCorpusForModule = useCallback(
+    (name: string, displayName: string) =>
+      baseHook.createNewCorpus(name, displayName, module_type, module_id),
+    [baseHook, module_type, module_id]
+  );
+
+  return {
+    ...baseHook,
+    loadCorpora: loadCorporaFiltered,
+    loadDocuments: loadDocumentsFiltered,
+    search: searchWithModuleContext,
+    createNewCorpus: createCorpusForModule,
+    module_type,
+    module_id,
+  };
 }

@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, LogOut, User } from 'lucide-react';
+import { Settings, LogOut, User, DollarSign, FileSearch } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 interface SettingsMenuProps {
     userEmail?: string;
     onLogout?: () => void;
+    onNavigateToAICost?: () => void;
+    onNavigateToFileSearch?: () => void;
 }
 
-export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout }) => {
+export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout, onNavigateToAICost, onNavigateToFileSearch }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +113,42 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout 
 
                     {/* Menu Items */}
                     <div className="p-2">
+                        {/* AI Cost Dashboard Button */}
+                        {onNavigateToAICost && (
+                            <button
+                                onClick={() => {
+                                    onNavigateToAICost();
+                                    setIsOpen(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                            >
+                                <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <DollarSign className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-accent" />
+                                </div>
+                                <span className="font-bold text-sm transition-colors">
+                                    Custos de IA
+                                </span>
+                            </button>
+                        )}
+
+                        {/* File Search Analytics Button */}
+                        {onNavigateToFileSearch && (
+                            <button
+                                onClick={() => {
+                                    onNavigateToFileSearch();
+                                    setIsOpen(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                            >
+                                <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <FileSearch className="w-4 h-4 text-ceramic-text-secondary group-hover:text-blue-600" />
+                                </div>
+                                <span className="font-bold text-sm transition-colors">
+                                    File Search Analytics
+                                </span>
+                            </button>
+                        )}
+
                         {/* Logout Button */}
                         <button
                             onClick={handleLogout}

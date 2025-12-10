@@ -6,6 +6,9 @@
 
 import { supabase } from '../../../services/supabaseClient';
 import * as pdfjsLib from 'pdfjs-dist';
+import mammoth from 'mammoth';
+import { indexDocument } from '../../../services/fileSearchApiClient';
+import type { FileSearchDocument } from '../../../types/fileSearch';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -90,7 +93,11 @@ export function validateDocumentType(file: File): { valid: boolean; type: Docume
 /**
  * Faz upload de documento para Supabase Storage
  */
-export async function uploadSourceDocument(file: File, projectId: string): Promise<string> {
+export async function uploadSourceDocument(
+  file: File,
+  projectId: string,
+  bucket: string = 'project_sources'
+): Promise<string> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Usuário não autenticado');
@@ -99,10 +106,10 @@ export async function uploadSourceDocument(file: File, projectId: string): Promi
     const timestamp = Date.now();
     const fileName = `${user.id}/${projectId}/${timestamp}_${sanitizedName}`;
 
-    console.log('[Document] Uploading:', fileName);
+    console.log('[Document] Uploading:', fileName, 'to bucket:', bucket);
 
     const { data, error } = await supabase.storage
-      .from('project_sources')
+      .from(bucket)
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false
@@ -166,26 +173,22 @@ async function extractTextFromPDF(file: File): Promise<string> {
 }
 
 /**
- * Extrai texto de arquivo .docx
- *
- * NOTA: Para extração completa de DOCX, seria necessário usar uma biblioteca
- * como 'mammoth' ou 'docx-preview'. Por enquanto, retorna mensagem de aviso.
- *
- * TODO: Implementar extração real de DOCX
+ * Extrai texto de arquivo .docx usando mammoth
  */
 async function extractTextFromDocx(file: File): Promise<string> {
-  // Por enquanto, apenas avisar que DOCX não é totalmente suportado
-  return `[AVISO] Extração automática de arquivos .docx ainda não implementada.
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
 
-Por favor, use um destes formatos alternativos:
-- .txt (texto puro)
-- .md (Markdown)
-- .pdf (PDF)
+    if (result.messages && result.messages.length > 0) {
+      console.warn('[Document] DOCX extraction warnings:', result.messages);
+    }
 
-Ou cole o conteúdo manualmente no briefing.
-
-Nome do arquivo: ${file.name}
-Tamanho: ${(file.size / 1024).toFixed(2)} KB`;
+    return result.value.trim();
+  } catch (error) {
+    console.error('[Document] DOCX extraction error:', error);
+    throw new Error('Falha ao processar arquivo DOCX');
+  }
 }
 
 /**
@@ -224,7 +227,8 @@ export async function getDocumentUrl(path: string): Promise<string> {
  */
 export async function processSourceDocument(
   file: File,
-  projectId: string
+  projectId: string,
+  bucket: string = 'project_sources'
 ): Promise<ProcessedDocument> {
   try {
     // 1. Validar tipo
@@ -235,7 +239,7 @@ export async function processSourceDocument(
 
     // 2. Fazer upload
     console.log('[Document] Uploading to storage...');
-    const path = await uploadSourceDocument(file, projectId);
+    const path = await uploadSourceDocument(file, projectId, bucket);
 
     // 3. Extrair texto
     console.log('[Document] Extracting text...');
@@ -258,6 +262,73 @@ export async function processSourceDocument(
     };
   } catch (error) {
     console.error('[Document] Processing failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload e indexação automática de PDF de edital
+ *
+ * Combina upload para Supabase Storage + indexação no File Search (Gemini)
+ * para permitir busca semântica no conteúdo do edital.
+ *
+ * @param file - Arquivo PDF do edital
+ * @param projectId - ID do projeto de grant
+ * @param corpusId - ID do corpus no File Search
+ * @param displayName - Nome para exibição (ex: "Edital FAPESP 2024")
+ * @param metadata - Metadados adicionais (opcional)
+ * @returns Documento processado + documento indexado no File Search
+ */
+export async function uploadAndIndexEditalPDF(
+  file: File,
+  projectId: string,
+  corpusId: string,
+  displayName: string,
+  metadata?: Record<string, any>
+): Promise<{
+  processed: ProcessedDocument;
+  indexed: FileSearchDocument;
+}> {
+  try {
+    console.log('[Document] Starting upload and indexing for:', file.name);
+
+    // Validar que é PDF
+    if (file.type !== 'application/pdf') {
+      throw new Error('Apenas arquivos PDF são suportados para indexação');
+    }
+
+    // 1. Upload e processamento padrão (Supabase Storage + extração de texto)
+    console.log('[Document] Step 1: Upload to Supabase Storage...');
+    const processed = await processSourceDocument(file, projectId);
+
+    // 2. Indexação no File Search (Gemini)
+    console.log('[Document] Step 2: Indexing in File Search...');
+    const indexed = await indexDocument({
+      file,
+      corpus_id: corpusId,
+      display_name: displayName,
+      module_type: 'grants',
+      module_id: projectId,
+      custom_metadata: {
+        document_type: 'edital_pdf',
+        project_id: projectId,
+        storage_path: processed.path,
+        storage_url: processed.url,
+        ...metadata,
+      },
+    });
+
+    console.log('[Document] Upload and indexing complete!', {
+      storagePath: processed.path,
+      fileSearchDocId: indexed.id,
+    });
+
+    return {
+      processed,
+      indexed,
+    };
+  } catch (error) {
+    console.error('[Document] Upload and indexing failed:', error);
     throw error;
   }
 }

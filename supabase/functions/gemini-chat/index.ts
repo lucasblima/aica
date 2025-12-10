@@ -73,13 +73,104 @@ interface WeeklySummaryResult {
   suggestedFocus: string
 }
 
+// Dossier Generation Types
+interface GenerateDossierPayload {
+  guestName: string
+  theme?: string
+}
+
+interface TechnicalSheet {
+  name: string
+  profession: string
+  socialMedia: {
+    platform: string
+    handle: string
+  }[]
+  keyFacts?: string[]
+}
+
+interface DossierResult {
+  biography: string
+  controversies: string[]
+  suggestedTopics: string[]
+  iceBreakers: string[]
+  technicalSheet?: TechnicalSheet
+  derivedTheme?: string
+}
+
+// Ice Breakers Generation Types
+interface IceBreakerPayload {
+  guestName: string
+  keyFacts?: string[]
+  occupation?: string
+}
+
+interface IceBreakerResult {
+  iceBreakers: Array<{
+    question: string
+    rationale: string
+  }>
+}
+
+// Pauta Questions Generation Types
+interface PautaQuestionsPayload {
+  guestName: string
+  outline: {
+    title: string
+    mainSections: Array<{ title: string; keyPoints: string[] }>
+  }
+  keyFacts?: string[]
+  controversies?: string[]
+  additionalContext?: string
+}
+
+interface PautaQuestionsResult {
+  questions: Array<{
+    id: string
+    text: string
+    category: 'abertura' | 'desenvolvimento' | 'aprofundamento' | 'fechamento'
+    followUps: string[]
+    context?: string
+    priority: 'high' | 'medium' | 'low'
+  }>
+}
+
+// Pauta Outline Generation Types
+interface PautaOutlinePayload {
+  guestName: string
+  theme: string
+  biography?: string
+  keyFacts?: string[]
+  controversies?: string[]
+  duration?: number
+  style?: {
+    tone: 'formal' | 'casual' | 'investigativo' | 'humano'
+    depth: 'shallow' | 'medium' | 'deep'
+  }
+}
+
+interface OutlineSection {
+  title: string
+  description: string
+  duration: number
+  keyPoints: string[]
+  suggestedTransition?: string
+}
+
+interface PautaOutlineResult {
+  title: string
+  introduction: OutlineSection
+  mainSections: OutlineSection[]
+  conclusion: OutlineSection
+}
+
 // ============================================================================
 // MODEL CONFIGURATION
 // ============================================================================
 
 const MODELS = {
-  fast: 'gemini-2.0-flash',
-  smart: 'gemini-1.5-flash', // Using 1.5-flash as fallback for smart model
+  fast: 'gemini-2.0-flash-exp',
+  smart: 'gemini-2.0-flash-exp', // Using 2.0 flash - stable and capable
 } as const
 
 // Actions that require the smart model
@@ -87,6 +178,9 @@ const SMART_MODEL_ACTIONS = [
   'generate_weekly_summary',
   'generate_dossier',
   'deep_research',
+  'generate_ice_breakers',
+  'generate_pauta_questions',
+  'generate_pauta_outline',
 ]
 
 // ============================================================================
@@ -145,6 +239,149 @@ Crie um resumo semanal profundo e empatico retornando um JSON com:
 
 Seja profundo, empatico, e construtivo. Use linguagem acolhedora. Retorne APENAS o JSON.`
   },
+
+  generate_dossier: (guestName: string, theme?: string) => `Voce e um pesquisador especializado em preparacao de entrevistas para podcasts.
+
+Crie um dossie completo sobre ${guestName}${theme ? ` com foco no tema "${theme}"` : ''}.
+
+Retorne um JSON estruturado com:
+
+{
+  "biography": "Biografia completa e bem escrita (3-5 paragrafos)",
+  "controversies": ["Lista de controversias, polemicas ou pontos de debate (se houver)"],
+  "suggestedTopics": ["5-10 topicos interessantes para abordar na entrevista"],
+  "iceBreakers": ["3-5 perguntas criativas para quebrar o gelo"],
+  "technicalSheet": {
+    "name": "Nome completo",
+    "profession": "Profissao/Cargo principal",
+    "socialMedia": [
+      {"platform": "Instagram", "handle": "@usuario"},
+      {"platform": "Twitter", "handle": "@usuario"}
+    ],
+    "keyFacts": ["Fato chave 1", "Fato chave 2", "Fato chave 3"]
+  }${!theme ? ',\n  "derivedTheme": "Tema principal sugerido para o episodio baseado na pesquisa"' : ''}
+}
+
+IMPORTANTE:
+- Biography deve ser informativa, bem escrita e envolvente
+- Controversies: apenas se houver informacoes relevantes e verificaveis
+- SuggestedTopics devem ser especificos e interessantes
+- IceBreakers devem ser criativos, nao obvios
+- TechnicalSheet com informacoes precisas
+- Retorne APENAS o JSON valido, sem markdown ou formatacao extra`,
+
+  generate_ice_breakers: (guestName: string, keyFacts: string[] = [], occupation?: string) => `Voce e um produtor criativo especializado em criar momentos de conexao em entrevistas de podcast.
+
+Crie 5 perguntas quebra-gelo personalizadas para ${guestName}.
+${occupation ? `Ocupacao: ${occupation}` : ''}
+
+Informacoes disponiveis:
+${keyFacts.length > 0 ? keyFacts.slice(0, 5).map(f => `- ${f}`).join('\n') : '- Nenhuma informacao adicional'}
+
+Diretrizes:
+- Perguntas inesperadas mas respeitosas
+- Tom leve e descontraido
+- Foco em curiosidades e preferencias pessoais
+- Evitar cliches como "qual seu hobby?"
+- Buscar humanizar o entrevistado
+
+Retorne um JSON:
+{
+  "iceBreakers": [
+    {
+      "question": "Pergunta criativa aqui?",
+      "rationale": "Por que essa pergunta funciona"
+    }
+  ]
+}
+
+Retorne APENAS JSON valido.`,
+
+  generate_pauta_questions: (payload: PautaQuestionsPayload) => `Voce e um jornalista investigativo experiente que cria perguntas para entrevistas de podcast.
+
+Gere perguntas para entrevista com ${payload.guestName}.
+
+Estrutura da pauta:
+${payload.outline.mainSections.map(s => `- ${s.title}: ${s.keyPoints.join(', ')}`).join('\n')}
+
+Contexto da pesquisa:
+${payload.keyFacts?.slice(0, 5).map(f => `- ${f}`).join('\n') || '- Nenhum fato disponivel'}
+${payload.controversies?.length ? `\nControversias a explorar:\n${payload.controversies.map(c => `- ${c}`).join('\n')}` : ''}
+${payload.additionalContext ? `\nContexto adicional: ${payload.additionalContext}` : ''}
+
+Gere 15-20 perguntas distribuidas nas categorias:
+- abertura (2-3 perguntas leves para iniciar)
+- desenvolvimento (8-10 perguntas principais do tema)
+- aprofundamento (3-4 perguntas investigativas/provocativas)
+- fechamento (2-3 perguntas de conclusao/reflexao)
+
+Retorne JSON:
+{
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Pergunta completa aqui?",
+      "category": "abertura|desenvolvimento|aprofundamento|fechamento",
+      "followUps": ["Follow-up 1?", "Follow-up 2?"],
+      "context": "Por que essa pergunta e relevante",
+      "priority": "high|medium|low"
+    }
+  ]
+}
+
+IMPORTANTE:
+- Perguntas abertas que estimulem respostas ricas
+- Evitar perguntas sim/nao
+- Usar "como" e "por que" frequentemente
+- Incluir contexto quando necessario
+- Retorne APENAS JSON valido.`,
+
+  generate_pauta_outline: (payload: PautaOutlinePayload) => `Voce e um produtor de podcast experiente especializado em criar pautas para entrevistas de alta qualidade.
+
+Crie uma pauta estruturada para entrevista com:
+- Convidado: ${payload.guestName}
+- Tema: ${payload.theme}
+- Duracao total: ${payload.duration || 60} minutos
+- Tom: ${payload.style?.tone || 'casual'}
+- Profundidade: ${payload.style?.depth || 'medium'}
+
+Contexto da pesquisa:
+${payload.biography ? `Biografia: ${payload.biography.substring(0, 500)}...` : ''}
+${payload.keyFacts?.length ? `\nFatos-chave: ${payload.keyFacts.join('; ')}` : ''}
+${payload.controversies?.length ? `\nControversias: ${payload.controversies.join('; ')}` : '\nNenhuma controversia identificada'}
+
+Retorne um JSON:
+{
+  "title": "Titulo atraente para o episodio",
+  "introduction": {
+    "title": "Abertura",
+    "description": "Como iniciar a entrevista de forma envolvente",
+    "duration": 5,
+    "keyPoints": ["Ponto 1", "Ponto 2"],
+    "suggestedTransition": "Transicao para proximo bloco"
+  },
+  "mainSections": [
+    {
+      "title": "Nome da secao",
+      "description": "O que abordar nesta secao",
+      "duration": 15,
+      "keyPoints": ["Ponto 1", "Ponto 2", "Ponto 3"],
+      "suggestedTransition": "Transicao para proximo bloco"
+    }
+  ],
+  "conclusion": {
+    "title": "Fechamento",
+    "description": "Como encerrar de forma memoravel",
+    "duration": 5,
+    "keyPoints": ["Ponto final 1", "Ponto final 2"]
+  }
+}
+
+IMPORTANTE:
+- Total de duracoes deve somar aproximadamente ${payload.duration || 60} minutos
+- Estrutura clara com fluxo narrativo
+- Transicoes suaves entre blocos
+- Retorne APENAS JSON valido.`,
 }
 
 // ============================================================================
@@ -276,6 +513,180 @@ async function handleGenerateWeeklySummary(
   return parsed
 }
 
+async function handleGenerateDossier(
+  genAI: GoogleGenerativeAI,
+  payload: GenerateDossierPayload
+): Promise<DossierResult> {
+  if (!payload.guestName || typeof payload.guestName !== 'string') {
+    throw new Error('Campo "guestName" e obrigatorio e deve ser uma string')
+  }
+
+  if (payload.guestName.trim().length < 2) {
+    throw new Error('Nome do convidado muito curto')
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.smart,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 40,
+      maxOutputTokens: 4096,
+    }
+  })
+
+  const prompt = PROMPTS.generate_dossier(payload.guestName, payload.theme)
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text = response.text()
+
+  // Parse JSON response
+  let parsed: DossierResult
+  try {
+    const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
+    parsed = JSON.parse(jsonStr)
+  } catch {
+    console.error('[generate_dossier] Failed to parse JSON:', text)
+    throw new Error('Falha ao processar resposta do modelo')
+  }
+
+  // Validate and normalize response
+  parsed.biography = parsed.biography || 'Não foi possível gerar biografia'
+  parsed.controversies = Array.isArray(parsed.controversies) ? parsed.controversies : []
+  parsed.suggestedTopics = Array.isArray(parsed.suggestedTopics) ? parsed.suggestedTopics.slice(0, 10) : []
+  parsed.iceBreakers = Array.isArray(parsed.iceBreakers) ? parsed.iceBreakers.slice(0, 5) : []
+
+  return parsed
+}
+
+async function handleGenerateIceBreakers(
+  genAI: GoogleGenerativeAI,
+  payload: IceBreakerPayload
+): Promise<IceBreakerResult> {
+  if (!payload.guestName || typeof payload.guestName !== 'string') {
+    throw new Error('Campo "guestName" e obrigatorio e deve ser uma string')
+  }
+
+  if (payload.guestName.trim().length < 2) {
+    throw new Error('Nome do convidado muito curto')
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.smart,
+    generationConfig: {
+      temperature: 0.8,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 2048,
+    }
+  })
+
+  const prompt = PROMPTS.generate_ice_breakers(
+    payload.guestName,
+    payload.keyFacts || [],
+    payload.occupation
+  )
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text = response.text()
+
+  let parsed: IceBreakerResult
+  try {
+    const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
+    parsed = JSON.parse(jsonStr)
+  } catch {
+    console.error('[generate_ice_breakers] Failed to parse JSON:', text)
+    throw new Error('Falha ao processar resposta do modelo')
+  }
+
+  parsed.iceBreakers = Array.isArray(parsed.iceBreakers) ? parsed.iceBreakers.slice(0, 5) : []
+
+  return parsed
+}
+
+async function handleGeneratePautaQuestions(
+  genAI: GoogleGenerativeAI,
+  payload: PautaQuestionsPayload
+): Promise<PautaQuestionsResult> {
+  if (!payload.guestName || typeof payload.guestName !== 'string') {
+    throw new Error('Campo "guestName" e obrigatorio e deve ser uma string')
+  }
+
+  if (!payload.outline || !Array.isArray(payload.outline.mainSections)) {
+    throw new Error('Campo "outline" com "mainSections" e obrigatorio')
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.smart,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 40,
+      maxOutputTokens: 4096,
+    }
+  })
+
+  const prompt = PROMPTS.generate_pauta_questions(payload)
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text = response.text()
+
+  let parsed: PautaQuestionsResult
+  try {
+    const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
+    parsed = JSON.parse(jsonStr)
+  } catch {
+    console.error('[generate_pauta_questions] Failed to parse JSON:', text)
+    throw new Error('Falha ao processar resposta do modelo')
+  }
+
+  parsed.questions = Array.isArray(parsed.questions) ? parsed.questions.slice(0, 20) : []
+
+  return parsed
+}
+
+async function handleGeneratePautaOutline(
+  genAI: GoogleGenerativeAI,
+  payload: PautaOutlinePayload
+): Promise<PautaOutlineResult> {
+  if (!payload.guestName || typeof payload.guestName !== 'string') {
+    throw new Error('Campo "guestName" e obrigatorio e deve ser uma string')
+  }
+
+  if (!payload.theme || typeof payload.theme !== 'string') {
+    throw new Error('Campo "theme" e obrigatorio e deve ser uma string')
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.smart,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 40,
+      maxOutputTokens: 4096,
+    }
+  })
+
+  const prompt = PROMPTS.generate_pauta_outline(payload)
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text = response.text()
+
+  let parsed: PautaOutlineResult
+  try {
+    const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim()
+    parsed = JSON.parse(jsonStr)
+  } catch {
+    console.error('[generate_pauta_outline] Failed to parse JSON:', text)
+    throw new Error('Falha ao processar resposta do modelo')
+  }
+
+  parsed.title = parsed.title || 'Entrevista sem titulo'
+  parsed.mainSections = Array.isArray(parsed.mainSections) ? parsed.mainSections : []
+
+  return parsed
+}
+
 // Legacy chat handler (backward compatibility)
 async function handleLegacyChat(
   genAI: GoogleGenerativeAI,
@@ -375,6 +786,22 @@ serve(async (req) => {
 
         case 'generate_weekly_summary':
           result = await handleGenerateWeeklySummary(genAI, payload as WeeklySummaryPayload)
+          break
+
+        case 'generate_dossier':
+          result = await handleGenerateDossier(genAI, payload as GenerateDossierPayload)
+          break
+
+        case 'generate_ice_breakers':
+          result = await handleGenerateIceBreakers(genAI, payload as IceBreakerPayload)
+          break
+
+        case 'generate_pauta_questions':
+          result = await handleGeneratePautaQuestions(genAI, payload as PautaQuestionsPayload)
+          break
+
+        case 'generate_pauta_outline':
+          result = await handleGeneratePautaOutline(genAI, payload as PautaOutlinePayload)
           break
 
         case 'finance_chat':

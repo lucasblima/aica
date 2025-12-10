@@ -134,6 +134,13 @@ export interface GrantBriefing {
   updated_at: string;
 }
 
+/**
+ * @deprecated Use Record<string, string> para briefing dinâmico
+ * Mantido apenas para compatibilidade durante migração
+ *
+ * Os campos abaixo são exemplos do sistema antigo (8 campos fixos).
+ * O novo sistema usa campos dinâmicos definidos em form_fields do edital.
+ */
 export interface BriefingData {
   company_context?: string;
   project_description?: string;
@@ -143,6 +150,8 @@ export interface BriefingData {
   expected_results?: string;
   sustainability?: string;
   additional_notes?: string;
+  // Permite campos dinâmicos para compatibilidade
+  [key: string]: string | undefined;
 }
 
 import {
@@ -163,63 +172,63 @@ export const BRIEFING_SECTIONS: Array<{
   help: string;
   placeholder: string;
 }> = [
-  {
-    id: 'company_context',
-    title: 'Contexto da Empresa',
-    icon: Building2,
-    help: 'Descreva sua empresa: porte, setor, histórico, principais produtos/serviços.',
-    placeholder: 'Ex: Somos uma startup de biotecnologia fundada em 2020, focada em...'
-  },
-  {
-    id: 'project_description',
-    title: 'Descrição do Projeto',
-    icon: Lightbulb,
-    help: 'Explique o que você pretende desenvolver com este financiamento.',
-    placeholder: 'Ex: Desenvolveremos uma plataforma de IA para diagnóstico precoce de...'
-  },
-  {
-    id: 'technical_innovation',
-    title: 'Inovação Técnica',
-    icon: Rocket,
-    help: 'Qual é o diferencial tecnológico? O que torna este projeto inovador?',
-    placeholder: 'Ex: Nossa solução utiliza machine learning com algoritmos proprietários que...'
-  },
-  {
-    id: 'market_differential',
-    title: 'Diferencial de Mercado',
-    icon: TrendingUp,
-    help: 'Por que este projeto tem potencial de mercado? Quem são os clientes?',
-    placeholder: 'Ex: O mercado brasileiro de diagnósticos movimenta R$ X bilhões, e nossa solução...'
-  },
-  {
-    id: 'team_expertise',
-    title: 'Expertise da Equipe',
-    icon: Users,
-    help: 'Quem são as pessoas-chave do projeto? Formação, experiência, realizações.',
-    placeholder: 'Ex: Nossa equipe conta com 3 PhDs em bioinformática, com publicações em...'
-  },
-  {
-    id: 'expected_results',
-    title: 'Resultados Esperados',
-    icon: Target,
-    help: 'O que você pretende alcançar ao final do projeto? Metas quantificáveis.',
-    placeholder: 'Ex: Esperamos desenvolver um MVP funcional, validar com 100 pacientes, e atingir...'
-  },
-  {
-    id: 'sustainability',
-    title: 'Sustentabilidade',
-    icon: Leaf,
-    help: 'Como o projeto se sustentará financeiramente após o fomento?',
-    placeholder: 'Ex: Nosso modelo de receita prevê assinatura mensal de hospitais, com projeção de...'
-  },
-  {
-    id: 'additional_notes',
-    title: 'Informações Adicionais',
-    icon: FileText,
-    help: 'Qualquer outra informação relevante que não se encaixou nos campos acima.',
-    placeholder: 'Ex: Já temos parcerias firmadas com..., prêmios recebidos...'
-  }
-];
+    {
+      id: 'company_context',
+      title: 'Contexto da Empresa',
+      icon: Building2,
+      help: 'Descreva sua empresa: porte, setor, histórico, principais produtos/serviços.',
+      placeholder: 'Descreva a empresa'
+    },
+    {
+      id: 'project_description',
+      title: 'Descrição do Projeto',
+      icon: Lightbulb,
+      help: 'Explique o que você pretende desenvolver com este financiamento.',
+      placeholder: 'Descreva o projeto'
+    },
+    {
+      id: 'technical_innovation',
+      title: 'Inovação Técnica',
+      icon: Rocket,
+      help: 'Qual é o diferencial tecnológico? O que torna este projeto inovador?',
+      placeholder: 'Descreva a inovação técnica'
+    },
+    {
+      id: 'market_differential',
+      title: 'Diferencial de Mercado',
+      icon: TrendingUp,
+      help: 'Por que este projeto tem potencial de mercado? Quem são os clientes?',
+      placeholder: 'Descreva o diferencial de mercado'
+    },
+    {
+      id: 'team_expertise',
+      title: 'Expertise da Equipe',
+      icon: Users,
+      help: 'Quem são as pessoas-chave do projeto? Formação, experiência, realizações.',
+      placeholder: 'Descreva a expertise da equipe'
+    },
+    {
+      id: 'expected_results',
+      title: 'Resultados Esperados',
+      icon: Target,
+      help: 'O que você pretende alcançar ao final do projeto? Metas quantificáveis.',
+      placeholder: 'Descreva os resultados esperados'
+    },
+    {
+      id: 'sustainability',
+      title: 'Sustentabilidade',
+      icon: Leaf,
+      help: 'Como o projeto se sustentará financeiramente após o fomento?',
+      placeholder: 'Descreva a sustentabilidade do projeto'
+    },
+    {
+      id: 'additional_notes',
+      title: 'Informações Adicionais',
+      icon: FileText,
+      help: 'Qualquer outra informação relevante que não se encaixou nos campos acima.',
+      placeholder: 'Adicione informações extras relevantes'
+    }
+  ];
 
 // ============================================
 // GRANT RESPONSE (Resposta Gerada)
@@ -285,9 +294,10 @@ export interface GenerateFieldPayload {
   edital_text: string;
   evaluation_criteria: EvaluationCriterion[];
   field_config: FormField;
-  briefing: BriefingData;
+  briefing: Record<string, string>; // Campos dinâmicos do briefing
   previous_responses?: Record<string, string>;
-  source_document_content?: string | null; // Conteúdo do documento fonte (PDF, MD, DOCX, TXT)
+  source_document_content?: string | null; // Conteúdo dos documentos do projeto (PDF, MD, DOCX, TXT)
+  edital_text_content?: string | null; // Conteúdo do PDF do edital (contexto compartilhado)
 }
 
 // ============================================

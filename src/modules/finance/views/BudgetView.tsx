@@ -152,7 +152,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
   if (loading) {
     return (
-      <div className="h-screen bg-white flex items-center justify-center">
+      <div className="h-screen bg-ceramic-base flex items-center justify-center">
         <div className="animate-pulse space-y-4">
           <div className="h-24 w-64 bg-gray-100 rounded" />
           <div className="h-12 w-48 bg-gray-100 rounded mx-auto" />
@@ -162,14 +162,14 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
   }
 
   return (
-    <div className="h-screen w-screen bg-white overflow-y-scroll">
+    <div className="h-screen w-screen bg-ceramic-base overflow-y-scroll">
       {/* Header */}
       {onBack && (
-        <div className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-lg z-10 border-b border-gray-100">
+        <div className="fixed top-0 left-0 right-0 bg-ceramic-base/80 backdrop-blur-lg z-10 border-b border-ceramic-text-secondary/10">
           <div className="max-w-4xl mx-auto px-6 py-4">
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm font-medium">Voltar</span>
@@ -205,7 +205,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           </div>
 
           {/* Balance - Typography Hero */}
-          <h1 className="text-8xl md:text-9xl font-thin text-gray-900 mb-4 tracking-tight">
+          <h1 className="text-8xl md:text-9xl font-thin text-ceramic-text-primary mb-4 tracking-tight text-etched">
             {new Intl.NumberFormat('pt-BR', {
               style: 'currency',
               currency: 'BRL',
@@ -216,8 +216,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           {/* Subtitle - Month Summary */}
           <div className="mb-12">
             <div className="inline-block">
-              <div className="h-px w-24 bg-gray-300 mb-6 mx-auto" />
-              <div className="flex items-center justify-center gap-8 text-gray-500">
+              <div className="h-px w-24 bg-ceramic-text-secondary/30 mb-6 mx-auto" />
+              <div className="flex items-center justify-center gap-8 text-ceramic-text-secondary">
                 <div>
                   <p className="text-xs uppercase tracking-wider mb-1">Receitas</p>
                   <p className="text-lg font-medium text-green-600">
@@ -275,16 +275,16 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             return (
               <div
                 key={cat.category}
-                className="group hover:bg-gray-50 transition-all duration-300 p-8 rounded-3xl"
+                className="group ceramic-card transition-all duration-300 p-8"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-4">
                     <span className="text-4xl">{cat.icon}</span>
-                    <h3 className="text-xl font-medium text-gray-900">{cat.label}</h3>
+                    <h3 className="text-xl font-medium text-ceramic-text-primary">{cat.label}</h3>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-gray-900">
+                    <p className="text-3xl font-bold text-ceramic-text-primary">
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
@@ -410,56 +410,56 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
       {/* Debug Panel - Auditoria de Saldo */}
       <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="bg-gradient-to-br from-blue-50 to-transparent p-8 rounded-3xl border border-blue-200">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">🔍 Auditoria de Saldo - {monthName}</h2>
+        <div className="ceramic-card p-8">
+          <h2 className="text-xl font-bold text-ceramic-text-primary mb-4">🔍 Auditoria de Saldo - {monthName}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* Receitas */}
-            <div className="bg-white p-4 rounded-xl border border-green-200">
-              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Receitas</p>
+            <div className="ceramic-tray p-4">
+              <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-2">Receitas</p>
               <p className="text-2xl font-bold text-green-600">
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
                 }).format(monthIncome)}
               </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-ceramic-text-secondary mt-1">
                 {transactions.filter(t => t.type === 'income').length} lançamento(s)
               </p>
             </div>
 
             {/* Despesas */}
-            <div className="bg-white p-4 rounded-xl border border-red-200">
-              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Despesas</p>
+            <div className="ceramic-tray p-4">
+              <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-2">Despesas</p>
               <p className="text-2xl font-bold text-red-600">
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
                 }).format(monthExpenses)}
               </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-ceramic-text-secondary mt-1">
                 {transactions.filter(t => t.type === 'expense').length} lançamento(s)
               </p>
             </div>
 
             {/* Saldo Calculado */}
-            <div className="bg-white p-4 rounded-xl border border-blue-200">
-              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Saldo Calculado</p>
+            <div className="ceramic-tray p-4">
+              <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-2">Saldo Calculado</p>
               <p className={`text-2xl font-bold ${monthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
                 }).format(monthBalance)}
               </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-ceramic-text-secondary mt-1">
                 Receitas - Despesas
               </p>
             </div>
           </div>
 
           {/* Fórmula Visual */}
-          <div className="bg-white p-4 rounded-xl border border-gray-200">
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Cálculo:</p>
+          <div className="ceramic-tray p-4">
+            <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-3">Cálculo:</p>
             <div className="flex items-center gap-3 text-sm font-mono">
               <span className="text-green-600 font-bold">
                 R$ {monthIncome.toFixed(2)}
@@ -476,8 +476,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           </div>
 
           {/* Breakdown por Categoria */}
-          <div className="mt-6 bg-white p-4 rounded-xl border border-gray-200">
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Despesas por Categoria:</p>
+          <div className="mt-6 ceramic-tray p-4">
+            <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-3">Despesas por Categoria:</p>
             <div className="space-y-2">
               {budgetCategories
                 .filter(cat => cat.spent > 0)
@@ -486,12 +486,12 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                   <div key={cat.category} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <span>{cat.icon}</span>
-                      <span className="text-gray-700">{cat.label}</span>
-                      <span className="text-gray-400 text-xs">
+                      <span className="text-ceramic-text-primary">{cat.label}</span>
+                      <span className="text-ceramic-text-secondary text-xs">
                         ({transactions.filter(t => t.type === 'expense' && t.category === cat.category).length})
                       </span>
                     </div>
-                    <span className="font-bold text-gray-900">
+                    <span className="font-bold text-ceramic-text-primary">
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
@@ -501,9 +501,9 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 ))}
 
               {/* Total Check */}
-              <div className="flex items-center justify-between text-sm pt-3 mt-3 border-t border-gray-200">
-                <span className="font-medium text-gray-900">Total Categorizado</span>
-                <span className="font-bold text-gray-900">
+              <div className="flex items-center justify-between text-sm pt-3 mt-3 border-t border-ceramic-text-secondary/20">
+                <span className="font-medium text-ceramic-text-primary">Total Categorizado</span>
+                <span className="font-bold text-ceramic-text-primary">
                   {new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL',
@@ -530,8 +530,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       {/* Income Transactions Section */}
       {monthIncome > 0 && (
         <div className="max-w-4xl mx-auto px-6 py-10">
-          <h2 className="text-2xl font-medium text-gray-900 mb-6">Receitas do Mês</h2>
-          <div className="bg-gradient-to-br from-green-50 to-transparent p-8 rounded-3xl border border-green-100">
+          <h2 className="text-2xl font-medium text-ceramic-text-primary mb-6">Receitas do Mês</h2>
+          <div className="ceramic-card p-8">
             <div className="space-y-2">
               {transactions
                 .filter(t => t.type === 'income')
@@ -539,11 +539,11 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 .map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex items-start justify-between py-3 text-sm hover:bg-white/50 rounded-lg px-4 transition-colors"
+                    className="flex items-start justify-between py-3 text-sm hover:bg-ceramic-highlight rounded-lg px-4 transition-colors"
                   >
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{tx.description}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="font-medium text-ceramic-text-primary">{tx.description}</p>
+                      <p className="text-xs text-ceramic-text-secondary mt-1">
                         {new Date(tx.transaction_date).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: 'long',

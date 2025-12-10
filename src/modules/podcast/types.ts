@@ -93,6 +93,18 @@ export interface Project {
   scheduled_date?: string;
   location?: string;
   duration_minutes?: number;
+  // Recording data
+  recording_duration?: number; // Duration in seconds
+  recording_started_at?: string;
+  recording_finished_at?: string;
+  recording_status?: 'idle' | 'recording' | 'paused' | 'finished';
+  recording_file_path?: string;
+  recording_file_size?: number;
+  // Post-production data
+  transcript?: string; // Auto-generated transcript
+  transcript_generated_at?: string;
+  cuts_generated?: boolean;
+  cuts_metadata?: any[];
   created_at: string;
   updated_at: string;
 }
