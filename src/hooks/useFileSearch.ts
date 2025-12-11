@@ -75,7 +75,8 @@ export function useFileSearch() {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load corpora';
       setError(errorMsg);
       console.error('[useFileSearch] loadCorpora error:', err);
-      throw err;
+      // Return empty array instead of throwing to prevent UI crashes
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +176,8 @@ export function useFileSearch() {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load documents';
       setError(errorMsg);
       console.error('[useFileSearch] loadDocuments error:', err);
-      throw err;
+      // Return empty array instead of throwing to prevent UI crashes
+      return [];
     } finally {
       setIsLoading(false);
     }
