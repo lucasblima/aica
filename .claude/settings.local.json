@@ -56,7 +56,9 @@
       "Bash(pkill:*)",
       "Bash(tee:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(wc:*)",
+      "mcp__supabase__generate_typescript_types"
     ],
     "deny": [],
     "ask": []
