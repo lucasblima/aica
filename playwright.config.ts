@@ -19,7 +19,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: process.env.VITE_APP_URL || 'http://localhost:5173',
+    baseURL: process.env.VITE_APP_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -35,9 +35,13 @@ export default defineConfig({
 
   webServer: process.env.CI ? undefined : {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    url: 'http://localhost:3000',
+    reuseExistingServer: true,
     timeout: 120000,
+    // Wait for server to be ready by checking if we get a response
+    // stdout: 'pipe' helps detect when Vite is ready
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 
   projects: [

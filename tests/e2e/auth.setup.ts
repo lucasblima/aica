@@ -44,13 +44,14 @@ setup('authenticate via email/password', async ({ page, context }) => {
     console.log('🔐 Starting email/password authentication...');
     console.log('   Email:', TEST_EMAIL);
 
-    // Navigate to the app
-    await page.goto('http://localhost:3000');
-    console.log('✓ Login page loaded');
+    // Navigate to the app (use port 3000 for Vite dev server)
+    const BASE_URL = process.env.VITE_APP_URL || 'http://localhost:3000';
+    await page.goto(BASE_URL);
+    console.log('✓ Login page loaded at', BASE_URL);
 
     // Check if already authenticated (redirects to home)
     try {
-      await page.waitForURL('http://localhost:3000', { timeout: 2000 });
+      await page.waitForURL(`${BASE_URL}/**`, { timeout: 2000 });
       // If we get here, we're already authenticated
       console.log('✓ Already authenticated, reusing session');
     } catch {
@@ -75,7 +76,7 @@ setup('authenticate via email/password', async ({ page, context }) => {
         console.log('✓ Clicked login button');
 
         // Wait for successful authentication - should redirect to home or main page
-        await page.waitForURL('http://localhost:3000/**', { timeout: 15000 });
+        await page.waitForURL(`${BASE_URL}/**`, { timeout: 15000 });
         console.log('✓ Successfully authenticated');
 
         // Wait for page to fully load
@@ -92,7 +93,7 @@ setup('authenticate via email/password', async ({ page, context }) => {
           await googleLoginButton.click();
           console.log('✓ Clicked "Entrar com Google"');
           console.log('⏳ Please complete Google OAuth in browser (120 seconds)...');
-          await page.waitForURL('http://localhost:3000', { timeout: 120000 });
+          await page.waitForURL(`${BASE_URL}/**`, { timeout: 120000 });
         } else {
           throw new Error('Neither email/password form nor Google OAuth button found');
         }

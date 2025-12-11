@@ -352,7 +352,9 @@ REJEITAR opção C (mailto):
 
 Conclusão: B é superior, setup de 15 minutos vale a pena.
 ```
-
+USUÁRIO:
+Criei a API na resend RESEND_API_KEY:re_NFZkpZb9_MC9mLzEVgsEQ2nYnSkVR8U6L
+Preciso de ajuda para configurar o domínio na Resend.
 ---
 
 ## SEÇÃO 4: Priorização de Funcionalidades
