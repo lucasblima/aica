@@ -202,7 +202,7 @@ TAB: CONEXÕES
 **Pontos Positivos:**
 1. Integração de múltiplas fontes (tarefas locais + calendar)
 2. Padrão de matrix bem conhecido (Eisenhower)
-3. Drag-drop é responsivo
+3. Drag-drop é responsivo # drag and drop não está funcionando
 4. Indicador de sincronização é claro
 
 **Oportunidades:**

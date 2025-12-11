@@ -1047,7 +1047,7 @@ npm run build
 
 ---
 
-## PASSO 11: ANALYTICS (Optional)
+## PASSO 11: ANALYTICS (Necessário)
 
 Adicionar evento de conclusão de onboarding:
 
