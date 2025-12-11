@@ -40,10 +40,44 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
   const [errors, setErrors] = useState<Partial<Record<keyof GuestManualData, string>>>({})
   const [touched, setTouched] = useState<Partial<Record<keyof GuestManualData, boolean>>>({})
 
+  // Check if field is valid (for positive feedback)
+  const isFieldValid = (field: keyof GuestManualData): boolean => {
+    const value = formData[field]
+    if (!value || !touched[field]) return false
+
+    switch (field) {
+      case 'name':
+        return value.trim().length >= 3
+      case 'email':
+        return validateEmail(value)
+      case 'phone':
+        return validatePhone(value)
+      default:
+        return false
+    }
+  }
+
   // Validate email format
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
+  }
+
+  // Format phone number with Brazilian mask
+  const formatPhone = (value: string): string => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '')
+
+    // Apply mask based on length
+    if (digits.length <= 2) {
+      return digits
+    } else if (digits.length <= 6) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+    } else if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+    } else {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`
+    }
   }
 
   // Validate phone format (Brazilian format)
@@ -56,7 +90,13 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
 
   // Handle field change
   const handleChange = (field: keyof GuestManualData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    // Apply phone mask automatically
+    if (field === 'phone') {
+      const formatted = formatPhone(value)
+      setFormData(prev => ({ ...prev, [field]: formatted }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }))
+    }
 
     // Clear error when user starts typing
     if (errors[field]) {
@@ -86,14 +126,14 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
         if (!value.trim()) {
           error = 'Email é obrigatório'
         } else if (!validateEmail(value)) {
-          error = 'Email inválido'
+          error = 'Digite um email válido (ex: nome@exemplo.com)'
         }
         break
       case 'phone':
         if (!value.trim()) {
           error = 'Telefone é obrigatório'
         } else if (!validatePhone(value)) {
-          error = 'Telefone inválido (mín. 10 dígitos)'
+          error = 'Digite um telefone válido com DDD'
         }
         break
     }
@@ -149,7 +189,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             Nome Completo <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
             <input
               id="guest-name-input"
               type="text"
@@ -162,49 +202,19 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
               aria-invalid={!!(errors.name && touched.name)}
               aria-describedby={errors.name && touched.name ? 'guest-name-error' : undefined}
               className={`
-                w-full pl-10 pr-4 py-2 border rounded-lg
+                w-full pl-10 pr-10 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                ${errors.name && touched.name ? 'border-red-500' : 'border-gray-300'}
+                ${errors.name && touched.name ? 'border-red-500' : isFieldValid('name') ? 'border-green-500' : 'border-gray-300'}
               `}
             />
+            {isFieldValid('name') && (
+              <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" aria-hidden="true" />
+            )}
           </div>
           {errors.name && touched.name && (
             <div id="guest-name-error" role="alert" className="flex items-center gap-1 mt-1 text-xs text-red-600">
-              <AlertCircle className="w-3 h-3" />
+              <AlertCircle className="w-3 h-3" aria-hidden="true" />
               <span>{errors.name}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Phone Field */}
-        <div>
-          <label htmlFor="guest-phone-input" className="block text-sm font-medium text-gray-700 mb-1">
-            Telefone/WhatsApp <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              id="guest-phone-input"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-              onBlur={() => handleBlur('phone')}
-              placeholder="(11) 99999-9999"
-              data-testid="guest-manual-phone"
-              autoComplete="tel"
-              aria-invalid={!!(errors.phone && touched.phone)}
-              aria-describedby={errors.phone && touched.phone ? 'guest-phone-error' : undefined}
-              className={`
-                w-full pl-10 pr-4 py-2 border rounded-lg
-                focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                ${errors.phone && touched.phone ? 'border-red-500' : 'border-gray-300'}
-              `}
-            />
-          </div>
-          {errors.phone && touched.phone && (
-            <div id="guest-phone-error" role="alert" className="flex items-center gap-1 mt-1 text-xs text-red-600">
-              <AlertCircle className="w-3 h-3" />
-              <span>{errors.phone}</span>
             </div>
           )}
         </div>
@@ -215,7 +225,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             Email <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
             <input
               id="guest-email-input"
               type="email"
@@ -228,16 +238,55 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
               aria-invalid={!!(errors.email && touched.email)}
               aria-describedby={errors.email && touched.email ? 'guest-email-error' : undefined}
               className={`
-                w-full pl-10 pr-4 py-2 border rounded-lg
+                w-full pl-10 pr-10 py-2 border rounded-lg
                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                ${errors.email && touched.email ? 'border-red-500' : 'border-gray-300'}
+                ${errors.email && touched.email ? 'border-red-500' : isFieldValid('email') ? 'border-green-500' : 'border-gray-300'}
               `}
             />
+            {isFieldValid('email') && (
+              <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" aria-hidden="true" />
+            )}
           </div>
           {errors.email && touched.email && (
             <div id="guest-email-error" role="alert" className="flex items-center gap-1 mt-1 text-xs text-red-600">
-              <AlertCircle className="w-3 h-3" />
+              <AlertCircle className="w-3 h-3" aria-hidden="true" />
               <span>{errors.email}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Phone Field */}
+        <div>
+          <label htmlFor="guest-phone-input" className="block text-sm font-medium text-gray-700 mb-1">
+            Telefone/WhatsApp <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
+            <input
+              id="guest-phone-input"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              onBlur={() => handleBlur('phone')}
+              placeholder="(11) 99999-9999"
+              data-testid="guest-manual-phone"
+              autoComplete="tel"
+              aria-invalid={!!(errors.phone && touched.phone)}
+              aria-describedby={errors.phone && touched.phone ? 'guest-phone-error' : undefined}
+              className={`
+                w-full pl-10 pr-10 py-2 border rounded-lg
+                focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                ${errors.phone && touched.phone ? 'border-red-500' : isFieldValid('phone') ? 'border-green-500' : 'border-gray-300'}
+              `}
+            />
+            {isFieldValid('phone') && (
+              <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" aria-hidden="true" />
+            )}
+          </div>
+          {errors.phone && touched.phone && (
+            <div id="guest-phone-error" role="alert" className="flex items-center gap-1 mt-1 text-xs text-red-600">
+              <AlertCircle className="w-3 h-3" aria-hidden="true" />
+              <span>{errors.phone}</span>
             </div>
           )}
         </div>
@@ -245,7 +294,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
         {/* Info Box */}
         <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-start gap-2">
-            <Check className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <Check className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
             <p className="text-xs text-blue-800">
               Essas informações serão usadas para enviar a pauta e lembretes da entrevista.
             </p>

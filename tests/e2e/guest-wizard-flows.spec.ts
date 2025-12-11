@@ -5,12 +5,12 @@
  *
  * STEP 0: Guest Type Selection (GuestTypeSelector)
  *   - Public Figure: Goes to Step 1a (name + reference + search)
- *   - Common Person: Goes to Step 1b (manual form)
+ *   - Direct Contact: Goes to Step 1b (manual form)
  *
  * WORKFLOW A - Public Figure:
  *   Step 0 -> Step 1a (Name/Reference) -> Step 2 (Confirm) -> Step 3 (Details)
  *
- * WORKFLOW B - Common Person:
+ * WORKFLOW B - Direct Contact:
  *   Step 0 -> Step 1b (Manual Form) -> Step 3 (Details) [Skips Step 2]
  *
  * Components:
@@ -41,7 +41,7 @@ test.describe('Guest Identification Wizard - Two Workflows', () => {
       // Assert
       await wizardPage.expectStep0Visible();
       await expect(page.getByText('Figura Pública')).toBeVisible();
-      await expect(page.getByText('Pessoa Comum')).toBeVisible();
+      await expect(page.getByText('Contato Direto')).toBeVisible();
       await expect(page.getByText(/Dica:/i)).toBeVisible();
     });
 
@@ -191,10 +191,10 @@ test.describe('Guest Identification Wizard - Two Workflows', () => {
   });
 
   // =========================================================================
-  // SECTION 2: COMMON PERSON WORKFLOW (Skip Profile Confirmation)
+  // SECTION 2: DIRECT CONTACT WORKFLOW (Skip Profile Confirmation)
   // =========================================================================
-  test.describe('2. Common Person Workflow', () => {
-    test('2.1: Should navigate to manual form after selecting Common Person', async ({ page }) => {
+  test.describe('2. Direct Contact Workflow', () => {
+    test('2.1: Should navigate to manual form after selecting Direct Contact', async ({ page }) => {
       // Arrange
       await wizardPage.openWizard();
 
@@ -328,7 +328,7 @@ test.describe('Guest Identification Wizard - Two Workflows', () => {
       await expect(page.getByText('Tema da Conversa')).toBeVisible();
     });
 
-    test('2.11: Should complete full common person workflow', async ({ page }) => {
+    test('2.11: Should complete full direct contact workflow', async ({ page }) => {
       // Arrange
       await wizardPage.openWizard();
       await wizardPage.selectCommonPerson();
@@ -388,7 +388,7 @@ test.describe('Guest Identification Wizard - Two Workflows', () => {
       await expect(wizardPage.publicFigureOption).toBeVisible();
     });
 
-    test('3.2: Should show visual selection state for Common Person', async ({ page }) => {
+    test('3.2: Should show visual selection state for Direct Contact', async ({ page }) => {
       // Arrange
       await wizardPage.openWizard();
 

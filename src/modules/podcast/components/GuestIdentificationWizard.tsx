@@ -67,6 +67,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     const [isCreatingEpisode, setIsCreatingEpisode] = useState(false);
     const [searchResults, setSearchResults] = useState<GuestProfile[]>([]);
     const [searchError, setSearchError] = useState<string | null>(null);
+    const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
     // Ref for modal container (focus trap)
     const modalRef = useRef<HTMLDivElement>(null);
@@ -221,11 +222,36 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     const canProceedStep1 = data.guestName.trim().length > 0;
     const canProceedStep3 = data.confirmedProfile && (data.theme || data.themeMode === 'auto');
 
+    // Check if user has entered data (for cancel confirmation)
+    const hasEnteredData = (): boolean => {
+        return !!(
+            data.guestName.trim() ||
+            data.guestReference.trim() ||
+            data.phone.trim() ||
+            data.email.trim() ||
+            data.theme.trim()
+        );
+    };
+
+    // Handle cancel with confirmation if data is entered
+    const handleCancel = () => {
+        if (hasEnteredData()) {
+            setShowCancelConfirmation(true);
+        } else {
+            onCancel();
+        }
+    };
+
+    const confirmCancel = () => {
+        setShowCancelConfirmation(false);
+        onCancel();
+    };
+
     // Handle ESC key to close modal
     useEffect(() => {
         const handleEscKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                onCancel();
+                handleCancel();
             }
         };
 
@@ -233,7 +259,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
         return () => {
             document.removeEventListener('keydown', handleEscKey);
         };
-    }, [onCancel]);
+    }, [onCancel, data]);
 
     // Focus trap: Keep focus within modal
     useEffect(() => {
@@ -286,8 +312,8 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-lg bg-ceramic-base rounded-3xl shadow-2xl overflow-hidden"
             >
-                {/* Progress Bar with ARIA attributes */}
-                <div className="h-1 bg-[#E5E3DC]">
+                {/* Progress Bar with ARIA attributes and step indicators */}
+                <div className="h-1 bg-[#E5E3DC] relative">
                     <motion.div
                         role="progressbar"
                         aria-valuenow={(step / 3) * 100}
@@ -299,6 +325,22 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                         animate={{ width: `${(step / 3) * 100}%` }}
                         transition={{ duration: 0.3 }}
                     />
+                </div>
+                {/* Step indicators */}
+                <div className="flex justify-center items-center gap-2 py-3">
+                    {[0, 1, 2, 3].map((stepIndex) => (
+                        <div
+                            key={stepIndex}
+                            className={`w-2 h-2 rounded-full transition-all ${
+                                stepIndex === step
+                                    ? 'bg-amber-500 w-8'
+                                    : stepIndex < step
+                                    ? 'bg-amber-300'
+                                    : 'bg-gray-300'
+                            }`}
+                            aria-hidden="true"
+                        />
+                    ))}
                 </div>
 
                 <div className="p-8">
@@ -318,7 +360,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
                                 <div className="flex justify-center mt-6">
                                     <button
-                                        onClick={onCancel}
+                                        onClick={handleCancel}
                                         data-testid="guest-wizard-cancel"
                                         className="px-6 py-3 rounded-xl text-ceramic-text-secondary font-bold hover:bg-white/50 transition-all"
                                     >
@@ -464,7 +506,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                         Confirme o convidado
                                     </h2>
                                     <p className="text-ceramic-text-secondary text-sm mt-2">
-                                        Este é o perfil correto?
+                                        Clique no perfil correto para continuar
                                     </p>
                                 </div>
 
@@ -549,8 +591,9 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                                     ? 'bg-amber-100 text-amber-700 shadow-sm'
                                                     : 'bg-[#EBE9E4] text-ceramic-text-secondary hover:bg-white'
                                                 }`}
+                                            title="A IA sugerirá temas baseados no perfil do convidado"
                                         >
-                                            <Sparkles className="w-4 h-4" />
+                                            <Sparkles className="w-4 h-4" aria-hidden="true" />
                                             Aica Auto
                                         </button>
                                         <button
@@ -563,6 +606,17 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                                             Manual
                                         </button>
                                     </div>
+
+                                    {data.themeMode === 'auto' && (
+                                        <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                            <div className="flex items-start gap-2">
+                                                <Sparkles className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                                                <p className="text-xs text-amber-800">
+                                                    A IA analisará o perfil do convidado e sugerirá temas relevantes para a conversa
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {data.themeMode === 'manual' && (
                                         <motion.input
@@ -667,6 +721,55 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
                     </AnimatePresence>
                 </div>
             </motion.div>
+
+            {/* Cancel Confirmation Modal */}
+            <AnimatePresence>
+                {showCancelConfirmation && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]"
+                        onClick={() => setShowCancelConfirmation(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-2xl"
+                        >
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                    <AlertCircle className="w-6 h-6 text-amber-600" aria-hidden="true" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">
+                                        Cancelar cadastro?
+                                    </h3>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        Você perderá todas as informações preenchidas até agora.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowCancelConfirmation(false)}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
+                                >
+                                    Continuar editando
+                                </button>
+                                <button
+                                    onClick={confirmCancel}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors"
+                                >
+                                    Sim, cancelar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

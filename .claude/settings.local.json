@@ -50,7 +50,11 @@
       "WebSearch",
       "WebFetch(domain:ai.google.dev)",
       "mcp__supabase__get_logs",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(rm:*)",
+      "Bash(CI=true npx playwright test:*)",
+      "Bash(pkill:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []
