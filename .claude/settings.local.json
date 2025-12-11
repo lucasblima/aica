@@ -54,7 +54,9 @@
       "Bash(rm:*)",
       "Bash(CI=true npx playwright test:*)",
       "Bash(pkill:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
