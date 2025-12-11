@@ -30,6 +30,7 @@ interface ChatRequest {
 // Sentiment Analysis Types
 interface SentimentAnalysisPayload {
   content: string
+  context?: string // Optional context from webhook
 }
 
 interface SentimentAnalysisResult {
@@ -39,6 +40,19 @@ interface SentimentAnalysisResult {
   emotions: string[]
   triggers: string[]
   energyLevel: number
+}
+
+// WhatsApp Message Sentiment Analysis (Webhook)
+interface WhatsAppSentimentPayload {
+  text: string
+  instance?: string
+}
+
+interface WhatsAppSentimentResult {
+  sentiment: 'positive' | 'neutral' | 'negative'
+  sentimentScore: number
+  triggers: string[]
+  summary: string
 }
 
 // Weekly Summary Types
@@ -687,6 +701,73 @@ async function handleGeneratePautaOutline(
   return parsed
 }
 
+// WhatsApp Message Sentiment Analysis Handler (for webhook)
+async function handleWhatsAppSentiment(
+  genAI: GoogleGenerativeAI,
+  payload: WhatsAppSentimentPayload
+): Promise<WhatsAppSentimentResult> {
+  const { text } = payload
+
+  if (!text || typeof text !== 'string') {
+    throw new Error('Campo "text" e obrigatorio e deve ser uma string')
+  }
+
+  if (text.trim().length < 2) {
+    throw new Error('Texto muito curto para analise')
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.3,
+      topP: 0.8,
+      topK: 40,
+      maxOutputTokens: 256,
+    }
+  })
+
+  const prompt = `Analise o sentimento da seguinte mensagem de WhatsApp:
+
+"${text}"
+
+Retorne APENAS um JSON com:
+- sentiment: 'positive', 'neutral', ou 'negative'
+- sentimentScore: numero de -1 (negativo) a 1 (positivo)
+- triggers: lista de ate 3 gatilhos (work, health, relationship, finance, personal_growth, family, leisure, etc)
+- summary: resumo em 1 frase (max 100 caracteres)
+
+Responda APENAS com JSON valido, sem explicacoes.`
+
+  const result = await model.generateContent(prompt)
+  const response = await result.response
+  const text_response = response.text()
+
+  // Parse JSON response
+  let parsed: Omit<WhatsAppSentimentResult, 'timestamp'>
+  try {
+    const jsonStr = text_response.replace(/```json\n?|\n?```/g, '').trim()
+    parsed = JSON.parse(jsonStr)
+  } catch {
+    console.error('[whatsapp_sentiment] Failed to parse JSON:', text_response)
+    throw new Error('Falha ao processar resposta do modelo')
+  }
+
+  // Validate and normalize response
+  const validSentiments = ['positive', 'neutral', 'negative']
+  if (!validSentiments.includes(parsed.sentiment)) {
+    parsed.sentiment = 'neutral'
+  }
+
+  // Clamp sentimentScore to [-1, 1]
+  parsed.sentimentScore = Math.max(-1, Math.min(1, parsed.sentimentScore || 0))
+
+  // Ensure array
+  parsed.triggers = Array.isArray(parsed.triggers) ? parsed.triggers.slice(0, 3) : []
+  parsed.summary = parsed.summary || ''
+
+  return parsed as WhatsAppSentimentResult
+}
+
 // Legacy chat handler (backward compatibility)
 async function handleLegacyChat(
   genAI: GoogleGenerativeAI,
@@ -901,6 +982,12 @@ serve(async (req) => {
 
         case 'cluster_moments_by_theme':
           result = await handleClusterMomentsByTheme(genAI, payload)
+          break
+
+        case 'whatsapp_sentiment':
+        case 'sentiment_analysis':
+          // Webhook handler for WhatsApp message sentiment analysis
+          result = await handleWhatsAppSentiment(genAI, payload as WhatsAppSentimentPayload)
           break
 
         default:

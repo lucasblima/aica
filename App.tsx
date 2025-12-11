@@ -35,6 +35,7 @@ import { NotificationContainer } from './src/components/NotificationContainer';
 import { AICostDashboard } from './src/components/aiCost/AICostDashboard';
 import { FileSearchAnalyticsView } from './src/components/fileSearch/FileSearchAnalyticsView';
 import { ViewState } from './types';
+import { LandingPage, OnboardingFlow } from './src/modules/onboarding';
 
 // Types
 type TabState = 'personal' | 'network';
@@ -901,7 +902,8 @@ export default function App() {
    );
 
    if (!isAuthenticated) {
-      return <Login onLogin={() => setIsAuthenticated(true)} />;
+      // Show landing page for unauthenticated users
+      return <LandingPage />;
    }
 
    return (
@@ -936,11 +938,15 @@ export default function App() {
             />
          }
 
-         {/* Onboarding Wizard */}
-         {!checkingOnboarding && showOnboarding && (
-            <OnboardingWizard
-               onComplete={handleOnboardingComplete}
-               onSkip={handleOnboardingSkip}
+         {/* New Onboarding Flow */}
+         {!checkingOnboarding && showOnboarding && userId && (
+            <OnboardingFlow
+               userId={userId}
+               onComplete={() => handleOnboardingComplete(false)}
+               onError={(error) => {
+                  console.error('Onboarding error:', error);
+                  // In production, show error notification
+               }}
             />
          )}
 

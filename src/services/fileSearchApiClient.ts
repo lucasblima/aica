@@ -7,19 +7,73 @@ import type {
 } from '../types/fileSearch';
 import { trackAIUsage } from './aiUsageTrackingService';
 import { fileSearchCache } from './fileSearchCacheService';
+import { supabase } from './supabaseClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// Flag to use Supabase directly instead of Python backend
+const USE_SUPABASE_DIRECT = true;
+
 /**
  * Service layer for File Search API interactions
- * All requests communicate with the Python backend
+ * Can use either Python backend or Supabase directly
  */
 
 /**
  * Lists all corpora for the current user
+ * @param moduleType - Optional filter by module type
+ * @param moduleId - Optional filter by module ID
  * @returns Array of FileSearchCorpus objects
  */
-export async function listCorpora(): Promise<FileSearchCorpus[]> {
+export async function listCorpora(
+  moduleType?: string,
+  moduleId?: string
+): Promise<FileSearchCorpus[]> {
+  // Use Supabase directly if configured
+  if (USE_SUPABASE_DIRECT) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('[fileSearchApiClient] No authenticated user');
+        return [];
+      }
+
+      let query = supabase
+        .from('file_search_corpora')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (moduleType) {
+        query = query.eq('module_type', moduleType);
+      }
+      if (moduleId) {
+        query = query.eq('module_id', moduleId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[fileSearchApiClient] Supabase error:', error);
+        return [];
+      }
+
+      return (data || []).map(row => ({
+        id: row.id,
+        name: row.corpus_name,
+        displayName: row.display_name || row.corpus_name,
+        documentCount: row.document_count || 0,
+        createdAt: row.created_at,
+        moduleType: row.module_type,
+        moduleId: row.module_id,
+      }));
+    } catch (error) {
+      console.error('[fileSearchApiClient] Error listing corpora from Supabase:', error);
+      return [];
+    }
+  }
+
+  // Fallback to Python API
   try {
     const response = await fetch(`${API_BASE_URL}/api/file-search/corpora`, {
       method: 'GET',
@@ -44,15 +98,104 @@ export async function listCorpora(): Promise<FileSearchCorpus[]> {
 }
 
 /**
- * Creates a new corpus
+ * Creates a new corpus or returns existing one if duplicate
  * @param name - Unique identifier for the corpus
  * @param displayName - Human-readable name for the corpus
- * @returns The created FileSearchCorpus
+ * @param moduleType - Optional module type
+ * @param moduleId - Optional module ID
+ * @returns The created or existing FileSearchCorpus
  */
 export async function createCorpus(
   name: string,
-  displayName: string
+  displayName: string,
+  moduleType?: string,
+  moduleId?: string
 ): Promise<FileSearchCorpus> {
+  // Use Supabase directly if configured
+  if (USE_SUPABASE_DIRECT) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+
+      // First, check if corpus already exists (prevent 409 conflict)
+      const { data: existingCorpus } = await supabase
+        .from('file_search_corpora')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('corpus_name', name)
+        .single();
+
+      if (existingCorpus) {
+        console.log('[fileSearchApiClient] Corpus already exists, returning existing:', name);
+        return {
+          id: existingCorpus.id,
+          name: existingCorpus.corpus_name,
+          displayName: existingCorpus.display_name || existingCorpus.corpus_name,
+          documentCount: existingCorpus.document_count || 0,
+          createdAt: existingCorpus.created_at,
+          moduleType: existingCorpus.module_type,
+          moduleId: existingCorpus.module_id,
+        };
+      }
+
+      // Create new corpus
+      const { data, error } = await supabase
+        .from('file_search_corpora')
+        .insert({
+          user_id: user.id,
+          corpus_name: name,
+          display_name: displayName,
+          module_type: moduleType || null,
+          module_id: moduleId || null,
+          document_count: 0,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        // Handle race condition - if duplicate key error, fetch existing
+        if (error.code === '23505' || error.message.includes('duplicate key')) {
+          console.log('[fileSearchApiClient] Duplicate detected, fetching existing corpus');
+          const { data: existing } = await supabase
+            .from('file_search_corpora')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('corpus_name', name)
+            .single();
+
+          if (existing) {
+            return {
+              id: existing.id,
+              name: existing.corpus_name,
+              displayName: existing.display_name || existing.corpus_name,
+              documentCount: existing.document_count || 0,
+              createdAt: existing.created_at,
+              moduleType: existing.module_type,
+              moduleId: existing.module_id,
+            };
+          }
+        }
+        throw new Error(`Failed to create corpus: ${error.message}`);
+      }
+
+      return {
+        id: data.id,
+        name: data.corpus_name,
+        displayName: data.display_name || data.corpus_name,
+        documentCount: 0,
+        createdAt: data.created_at,
+        moduleType: data.module_type,
+        moduleId: data.module_id,
+      };
+    } catch (error) {
+      console.error('[fileSearchApiClient] Error creating corpus in Supabase:', error);
+      throw error;
+    }
+  }
+
+  // Fallback to Python API
   try {
     const response = await fetch(`${API_BASE_URL}/api/file-search/corpora`, {
       method: 'POST',
@@ -63,6 +206,8 @@ export async function createCorpus(
       body: JSON.stringify({
         name,
         display_name: displayName,
+        module_type: moduleType,
+        module_id: moduleId,
       }),
     });
 
@@ -212,29 +357,73 @@ export async function queryFileSearch(
 
 /**
  * Lists documents in a corpus with optional filters
- * @param corpusId - ID of the corpus to list documents from
- * @param filters - Optional filters for module_type and module_id
+ * @param corpusId - ID of the corpus to list documents from (optional when using Supabase)
+ * @param moduleType - Optional filter by module type
+ * @param moduleId - Optional filter by module ID
  * @returns Array of FileSearchDocument objects
  */
 export async function listDocuments(
-  corpusId: string,
-  filters?: {
-    moduleType?: string;
-    moduleId?: string;
-  }
+  corpusId?: string,
+  moduleType?: string,
+  moduleId?: string
 ): Promise<FileSearchDocument[]> {
+  // Use Supabase directly if configured
+  if (USE_SUPABASE_DIRECT) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('[fileSearchApiClient] No authenticated user');
+        return [];
+      }
+
+      let query = supabase
+        .from('file_search_documents')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (corpusId) {
+        query = query.eq('corpus_id', corpusId);
+      }
+      if (moduleType) {
+        query = query.eq('module_type', moduleType);
+      }
+      if (moduleId) {
+        query = query.eq('module_id', moduleId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[fileSearchApiClient] Supabase error:', error);
+        return [];
+      }
+
+      return (data || []).map(row => ({
+        id: row.id,
+        name: row.gemini_file_name || row.original_filename,
+        displayName: row.custom_metadata?.display_name || row.original_filename,
+        corpusId: row.corpus_id,
+        mimeType: row.mime_type,
+        sizeBytes: row.file_size_bytes,
+        status: row.indexing_status || 'pending',
+        createdAt: row.created_at,
+        moduleType: row.module_type,
+        moduleId: row.module_id,
+        metadata: row.custom_metadata,
+      }));
+    } catch (error) {
+      console.error('[fileSearchApiClient] Error listing documents from Supabase:', error);
+      return [];
+    }
+  }
+
+  // Fallback to Python API
   try {
-    const params = new URLSearchParams({
-      corpus_id: corpusId,
-    });
-
-    if (filters?.moduleType) {
-      params.append('module_type', filters.moduleType);
-    }
-
-    if (filters?.moduleId) {
-      params.append('module_id', filters.moduleId);
-    }
+    const params = new URLSearchParams();
+    if (corpusId) params.append('corpus_id', corpusId);
+    if (moduleType) params.append('module_type', moduleType);
+    if (moduleId) params.append('module_id', moduleId);
 
     const response = await fetch(
       `${API_BASE_URL}/api/file-search/documents?${params.toString()}`,

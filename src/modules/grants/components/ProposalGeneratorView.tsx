@@ -76,7 +76,6 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
   const [submissionPhase, setSubmissionPhase] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [tooltipMessage, setTooltipMessage] = useState<string>('');
 
   /**
    * Initialize field states from initial responses
@@ -378,39 +377,6 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
   };
 
   /**
-   * Get visual state indicators for a field based on its status
-   */
-  const getFieldVisualState = (fieldId: string) => {
-    const state = fieldStates[fieldId];
-    const hasContent = !!state?.content;
-
-    switch (state?.status) {
-      case 'approved':
-        return {
-          canCollapse: true,
-          icon: <CheckCircle2 className="w-4 h-4" />,
-          color: 'text-green-600',
-          message: 'Aprovado - pode colapsar para economizar espaço'
-        };
-      case 'generated':
-      case 'editing':
-        return {
-          canCollapse: false,
-          icon: <AlertCircle className="w-4 h-4" />,
-          color: 'text-orange-600',
-          message: 'Aprove o campo antes de colapsar'
-        };
-      default:
-        return {
-          canCollapse: false,
-          icon: null,
-          color: 'text-ceramic-text-tertiary',
-          message: hasContent ? 'Campo pendente' : 'Sem conteúdo'
-        };
-    }
-  };
-
-  /**
    * Export proposal to markdown file
    */
   const handleExport = () => {
@@ -560,16 +526,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
               <div className="p-6">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <button
-                    onClick={() => {
-                      const canCollapse = canCollapseField(field.id);
-                      if (!canCollapse && !isExpanded) {
-                        // Trying to collapse but not approved
-                        setTooltipMessage('Aprove o campo antes de colapsar');
-                        setTimeout(() => setTooltipMessage(''), 2000);
-                        return;
-                      }
-                      toggleField(field.id);
-                    }}
+                    onClick={() => toggleField(field.id)}
                     className="flex-1 text-left flex items-start gap-3 hover:opacity-80 transition-opacity"
                   >
                     <div className="ceramic-concave w-10 h-10 flex items-center justify-center flex-shrink-0">
@@ -588,17 +545,13 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                         </p>
                       )}
                     </div>
-                    {/* Conditional chevron - only show if field can collapse */}
-                    {hasContent && canCollapseField(field.id) && (
+                    {/* Chevron - show when has content */}
+                    {hasContent && (
                       isExpanded ? (
                         <ChevronUp className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
                       ) : (
                         <ChevronDown className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
                       )
-                    )}
-                    {/* Empty space if can't collapse */}
-                    {hasContent && !canCollapseField(field.id) && (
-                      <div className="w-5 h-5 flex-shrink-0" />
                     )}
                   </button>
                 </div>
@@ -627,47 +580,37 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                     )}
                   </div>
 
-                  {!hasContent && !isGenerating && (
-                    <button
-                      onClick={() => handleGenerateField(field.id)}
-                      className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      Gerar
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Approve button - always visible when content exists and not approved */}
+                    {hasContent && state?.status !== 'approved' && !isEditing && !isGenerating && (
+                      <button
+                        onClick={() => approveField(field.id)}
+                        className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-green-50 text-green-700"
+                        title="Aprovar"
+                      >
+                        <Check className="w-4 h-4" />
+                        Aprovar
+                      </button>
+                    )}
 
-                  {isGenerating && (
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm font-medium">Gerando...</span>
-                    </div>
-                  )}
-                </div>
+                    {!hasContent && !isGenerating && (
+                      <button
+                        onClick={() => handleGenerateField(field.id)}
+                        className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        Gerar
+                      </button>
+                    )}
 
-                {/* Warning indicator for non-collapsible fields */}
-                {hasContent && !canCollapseField(field.id) && !isGenerating && (
-                  <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                    <p className="text-xs text-orange-800">
-                      <strong>Dica:</strong> Aprove este campo para poder colapsá-lo e economizar espaço na tela
-                    </p>
+                    {isGenerating && (
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm font-medium">Gerando...</span>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {/* Tooltip message (temporary) */}
-                <AnimatePresence>
-                  {tooltipMessage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="mt-3 px-4 py-2 bg-orange-100 border border-orange-300 rounded-lg"
-                    >
-                      <p className="text-sm text-orange-900 font-medium">{tooltipMessage}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                </div>
 
                 {/* Skeleton Loading (when generating) */}
                 {isGenerating && (
