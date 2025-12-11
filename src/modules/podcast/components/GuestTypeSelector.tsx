@@ -5,7 +5,7 @@
  * Based on Jony Ive design principles: simplicity, clarity, focus.
  *
  * Public Figure: People with Wikipedia presence, public recognition
- * Common Person: Regular people without broad public recognition
+ * Direct Contact: Regular people without broad public recognition
  */
 
 import React from 'react'
@@ -66,7 +66,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
               animate={{ scale: 1 }}
               className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg"
             >
-              <Sparkles className="w-4 h-4 text-white" />
+              <Sparkles className="w-4 h-4 text-white" aria-hidden="true" />
             </motion.div>
           )}
 
@@ -87,6 +87,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
                     ? 'text-white'
                     : 'text-gray-600'
                 }`}
+                aria-hidden="true"
               />
             </div>
 
@@ -99,9 +100,9 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
               </p>
             </div>
 
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="text-xs text-gray-600 space-y-1">
               <div className="flex items-center justify-center gap-1">
-                <Sparkles className="w-3 h-3" />
+                <Sparkles className="w-3 h-3" aria-hidden="true" />
                 <span>Busca automática</span>
               </div>
               <div>Wikipedia, notícias, redes sociais</div>
@@ -115,7 +116,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
           data-testid="guest-type-common-person"
           role="radio"
           aria-checked={selectedType === 'common_person'}
-          aria-label="Pessoa Comum - Pessoas sem presença pública ampla com cadastro manual de nome, telefone e email"
+          aria-label="Contato Direto - Pessoas sem presença pública ampla com cadastro manual de nome, telefone e email"
           className={`
             relative p-6 rounded-xl border-2 transition-all
             focus:outline-none focus:ring-4 focus:ring-green-500/50
@@ -135,7 +136,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
               animate={{ scale: 1 }}
               className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg"
             >
-              <Sparkles className="w-4 h-4 text-white" />
+              <Sparkles className="w-4 h-4 text-white" aria-hidden="true" />
             </motion.div>
           )}
 
@@ -156,21 +157,22 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
                     ? 'text-white'
                     : 'text-gray-600'
                 }`}
+                aria-hidden="true"
               />
             </div>
 
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Pessoa Comum
+                Contato Direto
               </h3>
               <p className="text-sm text-gray-600 mt-1">
                 Pessoas sem presença pública ampla
               </p>
             </div>
 
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="text-xs text-gray-600 space-y-1">
               <div className="flex items-center justify-center gap-1">
-                <Phone className="w-3 h-3" />
+                <Phone className="w-3 h-3" aria-hidden="true" />
                 <span>Cadastro manual</span>
               </div>
               <div>Nome, telefone e email</div>
@@ -184,7 +186,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
         <p className="text-xs text-gray-600 text-center">
           <strong>Dica:</strong> Se o convidado tem Wikipedia ou é conhecido
           publicamente, escolha "Figura Pública". Caso contrário, escolha
-          "Pessoa Comum".
+          "Contato Direto".
         </p>
       </div>
     </div>

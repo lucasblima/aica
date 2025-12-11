@@ -21,6 +21,22 @@ View your app in AI Studio: https://ai.studio/apps/drive/1YI00vl3LP8v5uAFBNtEGJi
 
 ---
 
+## Features
+
+### Guest Identification Wizard
+A comprehensive podcast episode creation workflow with dual-path support:
+
+- **Public Figure Detection**: Automatic profile search using Gemini Deep Research for Wikipedia-present guests
+- **Manual Entry**: Structured contact collection for common people (phone, email)
+- **Contact Management**: Captures guest information for episode coordination and pauta approval
+- **Smart Episode Creation**: Automatic database entry with proper ownership tracking (user_id)
+- **WCAG 2.1 AA Compliant**: Full accessibility with keyboard navigation, screen readers, and focus management
+- **Error Resilience**: Graceful fallback when AI search fails, allowing manual data entry
+
+Learn more: [Guest Identification Workflow Documentation](./docs/features/GUEST_IDENTIFICATION_WORKFLOW.md)
+
+---
+
 ## Journey Redesign Deployment
 
 The Journey Redesign feature is ready for deployment. This includes database migrations, Edge Functions, and storage setup.

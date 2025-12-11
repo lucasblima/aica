@@ -26,11 +26,160 @@ Este documento descreve **todas as tabelas do Supabase** que o frontend (Aica) u
 
 ## Módulo Podcast (Namespace: `podcast_`)
 
-| Tabela | Função | Campos Obrigatórios (Schema Fix) |
-|--------|--------|----------------------------------|
-| **podcast_shows** | O Programa | `id`, `title` (not name), `description`, `cover_url`, `owner_id` |
-| **podcast_episodes** | O Episódio | `id`, `show_id`, `title`, `status`, `scheduled_date`, `created_at`, `updated_at` |
-| **podcast_team_members**| Participantes | `id`, `episode_id`, `name`, `role`, `whatsapp` |
+### Core Tables
+
+| Tabela | Função | Relacionamento |
+|--------|--------|----------------|
+| **podcast_shows** | O Programa | 1-N → podcast_episodes |
+| **podcast_episodes** | O Episódio | N-1 → podcast_shows, N-1 → users |
+| **podcast_guest_research** | Pesquisa de Convidado | N-1 → podcast_episodes |
+| **podcast_topics** | Tópicos da Pauta | N-1 → podcast_episodes |
+| **podcast_team_members** | Participantes | N-1 → podcast_episodes |
+
+### podcast_episodes Table Schema
+
+**Purpose**: Stores podcast episode metadata including guest information, scheduling, and production status.
+
+**Key Fields** (Migration: `20251210_add_guest_contact_to_episodes.sql`):
+
+```sql
+-- Core Identification
+id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+show_id UUID REFERENCES podcast_shows(id) ON DELETE CASCADE
+user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
+title TEXT
+status TEXT CHECK (status IN ('draft', 'pre_production', 'recording', 'post_production', 'published'))
+
+-- Guest Information (from GuestIdentificationWizard)
+guest_name TEXT                     -- Full name from profile or manual entry
+guest_phone TEXT                    -- Contact phone/WhatsApp (optional)
+guest_email TEXT                    -- Contact email for pauta approval (optional)
+guest_reference TEXT                -- Reference provided by user (Wikipedia, LinkedIn, etc.)
+
+-- Episode Details
+episode_theme TEXT                  -- Main topic/theme of episode
+theme_mode TEXT CHECK (theme_mode IN ('auto', 'manual'))  -- How theme was selected
+
+-- Scheduling
+scheduled_date DATE                 -- When episode is scheduled to record
+scheduled_time TIME                 -- Time of recording
+season INTEGER DEFAULT 1            -- Season number
+location TEXT                       -- Recording location
+
+-- Production Tracking (from ProductionMode)
+recording_duration INTEGER          -- Total duration in seconds
+recording_started_at TIMESTAMPTZ    -- When recording began
+recording_finished_at TIMESTAMPTZ   -- When recording ended
+recording_status TEXT CHECK (recording_status IN ('idle', 'recording', 'paused', 'finished'))
+recording_file_path TEXT            -- Path in Supabase Storage
+recording_file_size BIGINT          -- Size in bytes
+
+-- Post-Production
+transcript TEXT                     -- Auto-generated transcript
+transcript_generated_at TIMESTAMPTZ
+cuts_generated BOOLEAN DEFAULT FALSE
+cuts_metadata JSONB DEFAULT '[]'::jsonb
+blog_post_generated BOOLEAN DEFAULT FALSE
+blog_post_url TEXT
+published_to_social JSONB DEFAULT '{}'::jsonb
+
+-- Timestamps
+created_at TIMESTAMPTZ DEFAULT NOW()
+updated_at TIMESTAMPTZ DEFAULT NOW()
+
+-- Constraints
+CHECK (guest_email IS NULL OR guest_email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$')
+
+-- Indexes
+INDEX idx_podcast_episodes_user_id ON user_id
+INDEX idx_podcast_episodes_show_id ON show_id
+INDEX idx_podcast_episodes_guest_email ON guest_email WHERE guest_email IS NOT NULL
+INDEX idx_podcast_episodes_scheduled_date ON scheduled_date WHERE scheduled_date IS NOT NULL
+INDEX idx_podcast_episodes_status ON status
+```
+
+**RLS Policies**:
+- Users can only SELECT/INSERT/UPDATE/DELETE their own episodes (user_id = auth.uid())
+- Ensures data isolation in multi-user environment
+
+### podcast_guest_research Table Schema
+
+**Purpose**: Stores detailed research about podcast guests (biography, controversies, sources).
+
+**Key Fields** (Migration: `20251205_podcast_production_workflow.sql`):
+
+```sql
+id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+episode_id UUID REFERENCES podcast_episodes(id) ON DELETE CASCADE
+
+-- Guest Identification
+guest_name TEXT NOT NULL
+guest_reference TEXT                -- URL or reference provided by user
+
+-- Profile Search Metadata
+profile_search_completed BOOLEAN DEFAULT FALSE
+profile_search_at TIMESTAMPTZ
+profile_confidence_score INTEGER CHECK (profile_confidence_score >= 0 AND profile_confidence_score <= 100)
+
+-- Biography Data
+biography TEXT                      -- Full biography text
+bio_summary TEXT                    -- AI-generated summary (shorter version)
+bio_sources JSONB DEFAULT '[]'::jsonb  -- [{url, title, date}]
+
+-- Technical Sheet (Ficha Técnica)
+full_name TEXT
+birth_date DATE
+birth_place TEXT
+nationality TEXT
+occupation TEXT
+known_for TEXT
+education TEXT
+awards JSONB DEFAULT '[]'::jsonb
+social_media JSONB DEFAULT '{}'::jsonb  -- {twitter, instagram, linkedin, etc.}
+
+-- Controversies and News
+controversies JSONB DEFAULT '[]'::jsonb  -- [{title, summary, source, sentiment, date}]
+recent_news JSONB DEFAULT '[]'::jsonb
+
+-- Custom Sources (uploaded by user)
+custom_sources JSONB DEFAULT '[]'::jsonb  -- [{type: 'pdf'|'link'|'text', content, name}]
+
+-- AI Chat History (research assistant)
+chat_history JSONB DEFAULT '[]'::jsonb  -- [{role: 'user'|'assistant', content, timestamp}]
+
+-- Metadata
+low_context_warning BOOLEAN DEFAULT FALSE
+research_quality_score INTEGER CHECK (research_quality_score >= 0 AND research_quality_score <= 100)
+
+created_at TIMESTAMPTZ DEFAULT NOW()
+updated_at TIMESTAMPTZ DEFAULT NOW()
+
+-- Indexes
+INDEX idx_podcast_guest_research_episode_id ON episode_id
+```
+
+**RLS Policies**:
+- Users can only access research for episodes they own (joins with podcast_episodes to verify user_id)
+
+### Ownership and Access Control
+
+**Key Principle**: `user_id` is the single source of truth for episode ownership.
+
+1. **Episode Creation**:
+   - GuestIdentificationWizard MUST provide userId from auth context
+   - Database enforces NOT NULL constraint on user_id
+
+2. **Data Isolation**:
+   - RLS policies filter all queries by `auth.uid() = user_id`
+   - Prevents cross-user data leakage
+
+3. **Related Data Access**:
+   - podcast_guest_research verifies ownership through episode_id join
+   - podcast_topics verifies ownership through episode_id join
+
+4. **API Security**:
+   - Frontend calls use Supabase client with user session
+   - Supabase Auth automatically injects auth.uid() into RLS checks
 
 ## Correções de Segurança (RLS Fixes)
 > **CRÍTICO:** A tabela `associations` e `association_members` NÃO podem ter políticas RLS que se referenciam mutuamente de forma direta.
