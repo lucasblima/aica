@@ -8,16 +8,8 @@ import { PomodoroTimer } from './src/components/PomodoroTimer';
 import { SettingsMenu } from './src/components/SettingsMenu';
 import { HeaderGlobal } from './src/components/HeaderGlobal';
 import { EfficiencyTrendChart } from './src/components/EfficiencyTrendChart';
-import { EfficiencyMedallion } from './src/components/EfficiencyMedallion';
-import { UnifiedJourneyCard } from './src/components/UnifiedJourneyCard';
+import { JourneyCardCollapsed } from './src/modules/journey/views/JourneyCardCollapsed';
 import { ConnectionArchetypes } from './src/components/ConnectionArchetypes';
-import {
-   getJourneyStats,
-   getDailyQuestion,
-   registerMoment,
-   hasAnsweredToday,
-   type JourneyStats
-} from './src/services/journeyService';
 import { JourneyFullScreen } from './src/modules/journey/views/JourneyFullScreen';
 import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
@@ -147,6 +139,9 @@ export default function App() {
 
    // Module status tracking
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
+
+   // Consciousness Points State
+   const { stats: consciousnessStats, isLoading: cpLoading, error: cpError } = useConsciousnessPoints();
 
    // Grants Card State
    const [grantsActiveProjects, setGrantsActiveProjects] = useState<number>(0);
@@ -483,43 +478,27 @@ export default function App() {
                />
 
                <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
-                  {/* Unified Journey Card */}
-                  {journeyStats && temporalData && (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={0}
-                     >
-                        <UnifiedJourneyCard
-                           currentWeek={temporalData.currentWeek}
-                           totalWeeks={temporalData.totalWeeks}
-                           percentLived={temporalData.percentLived}
-                           level={journeyStats.level}
-                           levelName={journeyStats.levelName}
-                           streakDays={journeyStats.streakDays}
-                           totalMoments={journeyStats.totalMoments}
-                           totalQuestions={journeyStats.totalQuestions}
-                           totalReflections={journeyStats.totalReflections}
-                           lastMoment={journeyStats.lastMoment}
-                           dailyQuestion={dailyQuestion}
-                           hasPendingQuestion={hasPendingQuestion}
-                           onRegisterMoment={handleRegisterMoment}
-                           onAnswerQuestion={handleAnswerQuestion}
-                           onExpand={() => setCurrentView('journey')}
-                        />
-                     </motion.div>
-                  )}
-
-                  {/* Efficiency Score Card */}
+                  {/* Journey Card */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={1}
+                     custom={0}
                   >
-                     <EfficiencyMedallion score={84} focusTime={245} streak={7} xp={1250} status="excellent" />
+                     <JourneyCardCollapsed onClick={() => setCurrentView('journey')} />
                   </motion.div>
+
+                  {/* Consciousness Score Card */}
+                  {consciousnessStats && !cpLoading && (
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={1}
+                     >
+                        <ConsciousnessScore stats={consciousnessStats} size="md" showDetails={true} />
+                     </motion.div>
+                  )}
 
                   {/* Efficiency Trend Chart */}
                   {userId && (
