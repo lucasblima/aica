@@ -162,11 +162,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-ceramic-base z-50 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-gradient-to-br from-[#FAF9F7] to-[#F0EFE9] z-50 overflow-hidden flex flex-col">
       {/* Progress Bar */}
-      <div className="h-1 bg-ceramic-inset">
+      <div className="h-1 bg-[#E8E6E0]">
         <motion.div
-          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+          className="h-full bg-gradient-to-r from-[#6B9EFF] via-[#845EF7] to-[#FF922B]"
           initial={{ width: '0%' }}
           animate={{ width: `${getProgressPercentage()}%` }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
@@ -174,7 +174,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+      <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           {/* Error Display */}
           {state.error && (
@@ -206,7 +206,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="w-full max-w-2xl px-4"
+              className="w-full h-full"
             >
               <WelcomeTour onComplete={handleWelcomeTourComplete} />
             </motion.div>
@@ -256,14 +256,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="w-full max-w-4xl px-4"
+              className="w-full max-w-4xl mx-auto px-4 py-8"
             >
               <div className="space-y-6">
                 <div className="text-center">
-                  <h2 className="text-3xl font-black text-ceramic-text-primary mb-2">
+                  <h2 className="text-3xl font-black text-[#2B1B17] mb-2">
                     Módulos Recomendados
                   </h2>
-                  <p className="text-ceramic-text-secondary">
+                  <p className="text-[#5C554B]">
                     Com base nas suas respostas, preparamos recomendações personalizadas
                   </p>
                 </div>
@@ -284,13 +284,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex gap-3 justify-center pt-6">
                   <button
                     onClick={handleGoBack}
-                    className="px-8 py-3 ceramic-inset rounded-lg font-semibold text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+                    className="px-8 py-3 bg-white border border-[#E8E6E0] rounded-lg font-semibold text-[#5C554B] hover:bg-[#F8F7F5] transition-colors"
                   >
                     Voltar
                   </button>
                   <button
                     onClick={handleOnboardingComplete}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                    className="px-8 py-3 bg-gradient-to-r from-[#6B9EFF] to-[#845EF7] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
                   >
                     Começar
                   </button>
@@ -306,7 +306,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="text-center space-y-4"
+              className="text-center space-y-4 p-8"
             >
               <motion.div
                 initial={{ scale: 0 }}
@@ -318,10 +318,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </motion.div>
-              <h2 className="text-2xl font-black text-ceramic-text-primary">
+              <h2 className="text-2xl font-black text-[#2B1B17]">
                 Bem-vindo à Aica!
               </h2>
-              <p className="text-ceramic-text-secondary max-w-sm">
+              <p className="text-[#5C554B] max-w-sm mx-auto">
                 Seu onboarding foi concluído com sucesso. Agora você está pronto para começar sua jornada.
               </p>
             </motion.div>

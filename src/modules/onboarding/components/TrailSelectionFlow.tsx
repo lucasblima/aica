@@ -17,7 +17,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, CheckCircle, AlertCircle, SkipForward } from 'lucide-react';
 import { CONTEXTUAL_TRAILS, ALL_TRAILS } from '../../../data/contextualTrails';
 import {
   ContextualTrail,
@@ -458,7 +458,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
                   disabled={state.loading}
                   className="px-6 py-2 text-[#6B9EFF] font-semibold hover:bg-blue-50 rounded-lg transition-all flex items-center gap-2"
                 >
-                  <Skip size={18} />
+                  <SkipForward size={18} />
                   Pular Trilha
                 </button>
 
