@@ -267,13 +267,7 @@ const MomentCaptureFlow: React.FC<MomentCaptureFlowProps> = ({
         );
 
       case 4:
-        return (
-          <ValueIndicator
-            weeklyMomentCount={1234}
-            patternDiscoveryRate={48}
-            avgInsightsPerUser={3.2}
-          />
-        );
+        return <ValueIndicator />;
 
       case 5:
         return (
