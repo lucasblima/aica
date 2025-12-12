@@ -96,8 +96,8 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
 
   // Start answering trail questions
   const startAnsweringTrails = useCallback(() => {
-    if (state.selectedTrails.length === 0) {
-      setState(prev => ({ ...prev, error: 'Selecione pelo menos uma trilha' }));
+    if (state.selectedTrails.length < minTrailsRequired) {
+      setState(prev => ({ ...prev, error: `Selecione pelo menos ${minTrailsRequired} trilhas para continuar` }));
       return;
     }
     setState(prev => ({
@@ -331,9 +331,23 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
               <h2 className="text-2xl font-bold text-[#2B1B17] mb-2">
                 Quais áreas são mais importantes para você?
               </h2>
-              <p className="text-[#5C554B] mb-6">
-                Selecione de 1 a {maxTrails} trilhas que deseja explorar
+              <p className="text-[#5C554B] mb-2">
+                Selecione pelo menos {minTrailsRequired} trilhas que deseja explorar
               </p>
+
+              {/* Selection counter */}
+              <div className="flex items-center gap-2 mb-6">
+                <span
+                  className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                    state.selectedTrails.length >= minTrailsRequired
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}
+                >
+                  {state.selectedTrails.length} de {minTrailsRequired} selecionadas
+                  {state.selectedTrails.length >= minTrailsRequired && ' ✓'}
+                </span>
+              </div>
 
               {/* Trail Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -367,15 +381,20 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-4 justify-center pt-4">
+            <div className="flex flex-col items-center gap-3 pt-4">
               <button
                 onClick={startAnsweringTrails}
-                disabled={state.selectedTrails.length === 0 || state.loading}
-                className="px-8 py-3 bg-[#6B9EFF] text-white font-bold rounded-lg hover:bg-[#5A8FEF] disabled:opacity-50 transition-all flex items-center gap-2"
+                disabled={state.selectedTrails.length < minTrailsRequired || state.loading}
+                className="px-8 py-3 bg-[#6B9EFF] text-white font-bold rounded-lg hover:bg-[#5A8FEF] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
               >
                 Continuar
                 <ChevronRight size={20} />
               </button>
+              {state.selectedTrails.length < minTrailsRequired && (
+                <p className="text-sm text-[#948D82]">
+                  Selecione mais {minTrailsRequired - state.selectedTrails.length} trilha{minTrailsRequired - state.selectedTrails.length > 1 ? 's' : ''} para continuar
+                </p>
+              )}
             </div>
           </motion.div>
         )}
