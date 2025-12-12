@@ -1,61 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { LayoutGrid, Calendar, Settings, Plus, ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, Briefcase, Globe, ArrowRight, X, CheckCircle2, Mic } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
 import { handleOAuthCallback } from './src/services/googleAuthService';
 import { BottomNav } from './components/BottomNav';
-import { PomodoroTimer } from './src/components/PomodoroTimer';
-import { SettingsMenu } from './src/components/SettingsMenu';
-import { HeaderGlobal } from './src/components/HeaderGlobal';
-import { JourneyCardCollapsed } from './src/modules/journey/views/JourneyCardCollapsed';
-import { ConnectionArchetypes } from './src/components/ConnectionArchetypes';
-import { ConsciousnessScore } from './src/modules/journey/components/gamification/ConsciousnessScore';
-import { useConsciousnessPoints } from './src/modules/journey/hooks/useConsciousnessPoints';
 import { JourneyFullScreen } from './src/modules/journey/views/JourneyFullScreen';
 import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
-import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding, getUserProfile } from './src/services/supabaseService';
-import Login from './src/components/Login';
-import { FinanceCard } from './src/modules/finance/components/FinanceCard';
+import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding } from './src/services/supabaseService';
+import { generateMissingDailyReports } from './src/services/dailyReportService';
 import { FinanceDashboard } from './src/modules/finance/views/FinanceDashboard';
 import { FinanceAgentView } from './src/modules/finance/views/FinanceAgentView';
-import { GrantsCard } from './src/modules/grants/components/GrantsCard';
 import { GrantsModuleView } from './src/modules/grants/views/GrantsModuleView';
-import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from './src/modules/grants/services/grantService';
-import type { GrantDeadline, GrantProject } from './src/modules/grants/types';
-import OnboardingWizard from './src/components/OnboardingWizard';
 import { NotificationContainer } from './src/components/NotificationContainer';
 import { AICostDashboard } from './src/components/aiCost/AICostDashboard';
 import { FileSearchAnalyticsView } from './src/components/fileSearch/FileSearchAnalyticsView';
 import { ViewState } from './types';
 import { LandingPage, OnboardingFlow } from './src/modules/onboarding';
+import Home from './src/pages/Home';
 
-// Types
-type TabState = 'personal' | 'network';
-
-// Animation variants for card entrance choreography
-const cardVariants = {
-   hidden: {
-      opacity: 0,
-      y: 20,
-      rotateX: -5,
-      scale: 0.98
-   },
-   visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      rotateX: 0,
-      scale: 1,
-      transition: {
-         delay: i * 0.08,
-         duration: 0.5,
-         ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number]
-      }
-   })
-};
-
-// Reusable Module Card Component
-const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor, onTasksLoaded }: any) => {
+// Reusable Module Card Component (for association detail view)
+const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
    const [tasks, setTasks] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
 
@@ -63,9 +27,8 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor, onTasksLo
       getModuleTasks(moduleId).then(data => {
          setTasks(data);
          setLoading(false);
-         onTasksLoaded?.(moduleId, data.length);
       });
-   }, [moduleId]); // ✅ Removido onTasksLoaded para evitar loop infinito
+   }, [moduleId]);
 
    return (
       <div className={`ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 group cursor-pointer`}>
@@ -107,7 +70,6 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor, onTasksLo
 
 export default function App() {
    const [currentView, setCurrentView] = useState<ViewState>('vida');
-   const [activeTab, setActiveTab] = useState<TabState>('personal');
    const [isAuthenticated, setIsAuthenticated] = useState(false);
    const [userId, setUserId] = useState<string | null>(null);
    const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -127,29 +89,8 @@ export default function App() {
    const [showOnboarding, setShowOnboarding] = useState(false);
    const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
-   // Module status tracking
-   const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
-
-   // Consciousness Points State
-   const { stats: consciousnessStats, isLoading: cpLoading, error: cpError } = useConsciousnessPoints();
-
-   // Grants Card State
-   const [grantsActiveProjects, setGrantsActiveProjects] = useState<number>(0);
-   const [grantsUpcomingDeadlines, setGrantsUpcomingDeadlines] = useState<GrantDeadline[]>([]);
-   const [grantsRecentProjects, setGrantsRecentProjects] = useState<GrantProject[]>([]);
-
-   // ✅ useCallback para estabilizar a referência da função
-   const handleTasksLoaded = useCallback((moduleId: string, taskCount: number) => {
-      setModulesStatus(prev => ({ ...prev, [moduleId]: taskCount }));
-   }, []);
-
-   const secondaryModules = ['health', 'education', 'legal'];
-   const allSecondaryModulesEmpty = secondaryModules.every(
-      moduleId => modulesStatus[moduleId] === 0
-   );
-   const allSecondaryModulesLoaded = secondaryModules.every(
-      moduleId => modulesStatus[moduleId] !== undefined
-   );
+   // Podcast Nav State
+   const [showPodcastNav, setShowPodcastNav] = useState(true);
 
    useEffect(() => {
       // Detecta e limpa URLs com tokens OAuth expirados
@@ -234,6 +175,20 @@ export default function App() {
       processGoogleOAuth();
    }, [isAuthenticated]);
 
+   /**
+    * Gera relatórios diários faltantes após autenticação
+    * Fire-and-forget para não bloquear a UI
+    */
+   useEffect(() => {
+      if (!userId) return;
+
+      // Fire-and-forget: executa em background sem bloquear a UI
+      generateMissingDailyReports(userId).catch((error) => {
+         // Tratamento de erro silencioso - apenas log no console
+         console.error('[App] Erro ao gerar relatórios diários:', error);
+      });
+   }, [userId]);
+
    // Check onboarding status after authentication
    useEffect(() => {
       const checkOnboarding = async () => {
@@ -293,32 +248,6 @@ export default function App() {
       fetchData();
    }, [isAuthenticated]);
 
-   // Load Grants Card data
-   useEffect(() => {
-      const loadGrantsData = async () => {
-         if (!isAuthenticated) return;
-
-         try {
-            // Load active projects count
-            const activeCount = await countAllActiveProjects();
-            setGrantsActiveProjects(activeCount);
-
-            // Load upcoming deadlines (next 30 days)
-            const deadlines = await getUpcomingDeadlines(30);
-            setGrantsUpcomingDeadlines(deadlines);
-
-            // Load recent projects (last 2)
-            const recent = await getRecentProjects(2);
-            setGrantsRecentProjects(recent);
-
-            console.log('[App] Grants data loaded:', { activeCount, deadlines: deadlines.length, recent: recent.length });
-         } catch (error) {
-            console.error('Error loading grants data:', error);
-         }
-      };
-
-      loadGrantsData();
-   }, [isAuthenticated]);
 
    const handleOpenAssociation = async (assoc: any) => {
       setSelectedAssociation(assoc);
@@ -326,6 +255,18 @@ export default function App() {
       // Filter modules for this association
       const modules = lifeAreas.filter(area => area.association_id === assoc.id);
       setAssociationModules(modules);
+   };
+
+   const handleSelectArchetype = (archetypeId: string | null) => {
+      console.log('[App] Arquétipo selecionado:', archetypeId);
+      setSelectedArchetype(archetypeId);
+      setShowCreateModal(true);
+   };
+
+   const handleCreateAssociation = () => {
+      console.log('[App] Criar espaço personalizado');
+      setSelectedArchetype(null);
+      setShowCreateModal(true);
    };
 
    // Handle onboarding completion
@@ -338,23 +279,6 @@ export default function App() {
             console.error('Error completing onboarding:', error);
          }
       }
-   };
-
-   // Handle onboarding skip
-   const handleOnboardingSkip = async () => {
-      if (userId) {
-         try {
-            await completeOnboarding(userId, false);
-            setShowOnboarding(false);
-         } catch (error) {
-            console.error('Error skipping onboarding:', error);
-         }
-      }
-   };
-
-   // Helper to find module/area by name (case insensitive partial match)
-   const findArea = (name: string) => {
-      return lifeAreas.find(area => area.name.toLowerCase().includes(name.toLowerCase()));
    };
 
    // ==================== MINHA VIDA VIEW ====================
@@ -729,9 +653,6 @@ export default function App() {
    };
 
 
-
-
-   const [showPodcastNav, setShowPodcastNav] = useState(true);
 
    // ==================== PODCAST VIEW ====================
    const renderPodcast = () => (

@@ -17,6 +17,7 @@ import {
   getProductivityColor,
   EfficiencyTrend,
 } from '../services/efficiencyService';
+import EmptyState from './EmptyState';
 import './EfficiencyTrendChart.css';
 
 interface EfficiencyTrendChartProps {
@@ -179,11 +180,15 @@ export const EfficiencyTrendChart: React.FC<EfficiencyTrendChartProps> = ({
 
   if (trends.length === 0) {
     return (
-      <div className="h-48 flex items-center justify-center">
-        <p className="text-sm text-ceramic-text-secondary italic opacity-50">
-          A mente está silenciosa hoje.
-        </p>
-      </div>
+      <EmptyState
+        type="insufficient_data"
+        customTitle="Dados de Produtividade em Preparação"
+        customMessage="Seus dados de produtividade aparecerão aqui após alguns dias de uso. Continue registrando seus momentos e tarefas para visualizar tendências e insights sobre seu desempenho."
+        onPrimaryAction={() => {
+          // Add navigation to moment registration if needed
+          console.log('Navigate to register moment');
+        }}
+      />
     );
   }
 

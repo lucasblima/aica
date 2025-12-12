@@ -499,3 +499,72 @@ export async function deleteReport(userId: string, date: string): Promise<void> 
     throw error;
   }
 }
+
+/**
+ * Generate missing daily reports for past days
+ * Checks the last 7 days and generates reports for any missing dates
+ */
+export async function generateMissingDailyReports(userId: string): Promise<void> {
+  try {
+    console.log(`🔄 Checking for missing daily reports for user ${userId}`);
+
+    // Get the last report date
+    const lastReport = await getLastReport(userId);
+
+    // Determine start date (last report date + 1 day, or 7 days ago if no reports exist)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let startDate: Date;
+    if (lastReport) {
+      startDate = new Date(lastReport.report_date);
+      startDate.setDate(startDate.getDate() + 1); // Start from day after last report
+    } else {
+      // No reports exist, start from 7 days ago
+      startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 7);
+    }
+
+    // Don't generate reports for future dates or today (today's report is generated at end of day)
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Generate reports for each missing day
+    const reportsGenerated: string[] = [];
+    const reportsFailed: string[] = [];
+
+    for (let d = new Date(startDate); d <= yesterday; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+
+      try {
+        // Check if report already exists
+        const exists = await reportExists(userId, dateStr);
+        if (!exists) {
+          console.log(`📝 Generating missing report for ${dateStr}`);
+          await generateDailyReport(userId, dateStr);
+          reportsGenerated.push(dateStr);
+
+          // Rate limiting: wait 500ms between reports
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error(`❌ Failed to generate report for ${dateStr}:`, error);
+        reportsFailed.push(dateStr);
+        // Continue with next date even if this one fails
+      }
+    }
+
+    if (reportsGenerated.length > 0) {
+      console.log(`✅ Generated ${reportsGenerated.length} missing daily reports:`, reportsGenerated);
+    } else {
+      console.log(`✅ No missing daily reports to generate`);
+    }
+
+    if (reportsFailed.length > 0) {
+      console.warn(`⚠️  Failed to generate ${reportsFailed.length} reports:`, reportsFailed);
+    }
+  } catch (error) {
+    console.error('❌ Error in generateMissingDailyReports:', error);
+    // Don't throw - this is a background operation that shouldn't block user flow
+  }
+}
