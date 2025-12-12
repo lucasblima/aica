@@ -911,12 +911,23 @@ export const createLifeEvent = async (event: {
 // ONBOARDING SERVICES
 // ============================================
 
-// Check if user has completed onboarding
+/**
+ * Current onboarding version - increment this when adding new onboarding features
+ * that should be shown to existing users.
+ *
+ * Version history:
+ * - 0: No onboarding completed
+ * - 1: Legacy onboarding (basic wizard)
+ * - 2: New onboarding with Welcome Tour, Trails, and Moment Capture
+ */
+export const CURRENT_ONBOARDING_VERSION = 2;
+
+// Check if user has completed the CURRENT onboarding version
 export const hasCompletedOnboarding = async (userId: string): Promise<boolean> => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('onboarding_completed')
+            .select('onboarding_completed, onboarding_version')
             .eq('id', userId)
             .single();
 
@@ -925,20 +936,31 @@ export const hasCompletedOnboarding = async (userId: string): Promise<boolean> =
             return false;
         }
 
-        return data?.onboarding_completed ?? false;
+        // User must have completed onboarding AND be on the current version
+        const userVersion = data?.onboarding_version ?? 0;
+        const hasCompleted = data?.onboarding_completed ?? false;
+
+        // If user's version is less than current, they need to see new onboarding
+        if (userVersion < CURRENT_ONBOARDING_VERSION) {
+            console.log(`[Onboarding] User ${userId} has version ${userVersion}, current is ${CURRENT_ONBOARDING_VERSION}. Showing onboarding.`);
+            return false;
+        }
+
+        return hasCompleted;
     } catch (error) {
         console.error('Error checking onboarding status:', error);
         return false;
     }
 };
 
-// Mark onboarding as completed
+// Mark onboarding as completed with current version
 export const completeOnboarding = async (userId: string, connectedCalendar: boolean = false): Promise<void> => {
     try {
         const { error } = await supabase
             .from('users')
             .update({
                 onboarding_completed: true,
+                onboarding_version: CURRENT_ONBOARDING_VERSION,
                 onboarding_completed_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
@@ -958,6 +980,7 @@ export const completeOnboarding = async (userId: string, connectedCalendar: bool
                     name: name,
                     active: true,
                     onboarding_completed: true,
+                    onboarding_version: CURRENT_ONBOARDING_VERSION,
                     onboarding_completed_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 }]);
@@ -966,7 +989,7 @@ export const completeOnboarding = async (userId: string, connectedCalendar: bool
         }
 
         // Log onboarding completion
-        console.log(`[Onboarding] User ${userId} completed onboarding. Calendar connected: ${connectedCalendar}`);
+        console.log(`[Onboarding] User ${userId} completed onboarding v${CURRENT_ONBOARDING_VERSION}. Calendar connected: ${connectedCalendar}`);
     } catch (error) {
         console.error('Error completing onboarding:', error);
         throw error;
