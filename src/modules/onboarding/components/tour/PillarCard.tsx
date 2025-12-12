@@ -175,13 +175,13 @@ export const PillarCard: React.FC<PillarCardProps> = ({
             {/* Example Section */}
             <motion.div
               variants={contentVariants}
-              className="bg-white bg-opacity-15 rounded-xl p-4 md:p-6 backdrop-blur-sm"
+              className="bg-black bg-opacity-25 rounded-xl p-4 md:p-6 backdrop-blur-sm border border-white border-opacity-20"
             >
-              <p className="text-sm text-white text-opacity-75 font-semibold mb-2">
+              <p className="text-sm text-white font-semibold mb-2 tracking-wide">
                 EXEMPLO PRÁTICO
               </p>
-              <p className="font-bold text-white mb-2">{pillar.example}</p>
-              <p className="text-white text-opacity-80 text-sm">
+              <p className="font-bold text-white mb-2 text-lg">{pillar.example}</p>
+              <p className="text-white text-opacity-90 text-sm leading-relaxed">
                 {pillar.exampleDescription}
               </p>
             </motion.div>

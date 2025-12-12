@@ -80,6 +80,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     }));
   }, []);
 
+  // Handle welcome tour skip (same as complete - advances to next step)
+  const handleWelcomeTourSkip = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      currentStep: 'trail-selection',
+      error: null,
+    }));
+  }, []);
+
   // Handle trail selection completion
   const handleTrailSelectionComplete = useCallback((result: CaptureTrailResponse) => {
     setState(prev => ({
@@ -208,7 +217,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               transition={{ duration: 0.3 }}
               className="w-full h-full"
             >
-              <WelcomeTour onComplete={handleWelcomeTourComplete} />
+              <WelcomeTour
+                onComplete={handleWelcomeTourComplete}
+                onSkip={handleWelcomeTourSkip}
+              />
             </motion.div>
           )}
 
