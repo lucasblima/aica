@@ -23,17 +23,52 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, Loader } from 'lucide-react';
+import { AlertCircle, Loader, CheckSquare, Heart, Mic, TrendingUp, Check } from 'lucide-react';
 import { WelcomeTour } from './WelcomeTour';
 import TrailSelectionFlow from './TrailSelectionFlow';
 import MomentCaptureFlow from './MomentCaptureFlow';
-import RecommendationCard from './RecommendationCard';
 import FeedbackModal from './FeedbackModal';
 import { CaptureTrailResponse } from '../../../types/onboardingTypes';
 import {
   MomentCaptureData,
   AudioRecording
 } from './MomentCaptureFlow';
+
+// Real Aica modules with proper data
+const AICA_MODULES = [
+  {
+    id: 'atlas',
+    name: 'Atlas',
+    description: 'Organize suas tarefas diárias com a matriz de Eisenhower',
+    icon: CheckSquare,
+    color: '#6B9EFF',
+    enabled: true, // Always enabled by default
+  },
+  {
+    id: 'jornada',
+    name: 'Jornada',
+    description: 'Registre momentos e acompanhe seu crescimento pessoal',
+    icon: Heart,
+    color: '#845EF7',
+    enabled: true,
+  },
+  {
+    id: 'podcast',
+    name: 'Podcast Studio',
+    description: 'Crie e produza conteúdo de áudio com IA',
+    icon: Mic,
+    color: '#FF922B',
+    enabled: false, // Optional
+  },
+  {
+    id: 'financeiro',
+    name: 'Financeiro',
+    description: 'Gerencie suas finanças e alcance seus objetivos',
+    icon: TrendingUp,
+    color: '#51CF66',
+    enabled: false, // Optional
+  },
+];
 
 interface OnboardingFlowProps {
   userId: string;
@@ -268,32 +303,87 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="w-full max-w-4xl mx-auto px-4 py-8"
+              className="w-full max-w-2xl mx-auto px-4 py-8"
             >
               <div className="space-y-6">
+                {/* Header */}
                 <div className="text-center">
                   <h2 className="text-3xl font-black text-[#2B1B17] mb-2">
-                    Módulos Recomendados
+                    Seus Módulos
                   </h2>
                   <p className="text-[#5C554B]">
-                    Com base nas suas respostas, preparamos recomendações personalizadas
+                    Estes são os módulos disponíveis para você explorar
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Placeholder recommendations - in production, fetch from API */}
-                  {[1, 2, 3].map(i => (
-                    <RecommendationCard
-                      key={i}
-                      title={`Módulo ${i}`}
-                      description={`Recomendação personalizada ${i}`}
-                      icon="📚"
-                      score={85 - i * 5}
-                    />
-                  ))}
+                {/* Module Cards */}
+                <div className="space-y-3">
+                  {AICA_MODULES.map((module, index) => {
+                    const Icon = module.icon;
+                    return (
+                      <motion.div
+                        key={module.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-white rounded-xl p-5 border border-[#E8E6E0] shadow-sm flex items-center gap-4"
+                      >
+                        {/* Icon */}
+                        <div
+                          className="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: `${module.color}15` }}
+                        >
+                          <Icon
+                            className="w-7 h-7"
+                            style={{ color: module.color }}
+                          />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-[#2B1B17]">
+                              {module.name}
+                            </h3>
+                            {module.enabled && (
+                              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                Ativo
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-[#5C554B] mt-1">
+                            {module.description}
+                          </p>
+                        </div>
+
+                        {/* Check indicator for enabled modules */}
+                        {module.enabled && (
+                          <div
+                            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: module.color }}
+                          >
+                            <Check className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
-                <div className="flex gap-3 justify-center pt-6">
+                {/* Info note */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="bg-[#F8F7F5] rounded-lg p-4 text-center border border-[#E8E6E0]"
+                >
+                  <p className="text-sm text-[#5C554B]">
+                    Você pode habilitar ou desabilitar módulos a qualquer momento nas configurações
+                  </p>
+                </motion.div>
+
+                {/* Action buttons */}
+                <div className="flex gap-3 justify-center pt-4">
                   <button
                     onClick={handleGoBack}
                     className="px-8 py-3 bg-white border border-[#E8E6E0] rounded-lg font-semibold text-[#5C554B] hover:bg-[#F8F7F5] transition-colors"
@@ -304,7 +394,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     onClick={handleOnboardingComplete}
                     className="px-8 py-3 bg-gradient-to-r from-[#6B9EFF] to-[#845EF7] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
                   >
-                    Começar
+                    Começar a Usar
                   </button>
                 </div>
               </div>

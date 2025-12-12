@@ -1,119 +1,100 @@
 /**
  * Value Indicator Component
- * Step 2.4 - Social proof showing value of platform
+ * Step 2.4 - Motivational message about the value of self-reflection
  *
- * Displays:
- * - Weekly moment count
- * - Pattern discovery rate
- * - Average insights per user
+ * Shows encouraging content about the benefits of capturing moments
+ * without using fake/mockup statistics
  *
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Sparkles, Brain, TrendingUp, Heart } from 'lucide-react';
 
-interface ValueIndicatorProps {
-  weeklyMomentCount?: number;
-  patternDiscoveryRate?: number;
-  avgInsightsPerUser?: number;
-}
-
-const ValueIndicator: React.FC<ValueIndicatorProps> = ({
-  weeklyMomentCount = 1234,
-  patternDiscoveryRate = 48,
-  avgInsightsPerUser = 3.2,
-}) => {
-  const stats = [
+const ValueIndicator: React.FC = () => {
+  const benefits = [
     {
-      value: weeklyMomentCount.toLocaleString(),
-      label: 'Momentos compartilhados',
-      sublabel: 'essa semana',
+      icon: Brain,
+      title: 'Autoconhecimento',
+      description: 'Entenda melhor seus padrões de comportamento e emoções',
       color: '#6B9EFF',
-      icon: '📝',
     },
     {
-      value: `${patternDiscoveryRate}%`,
-      label: 'Dos usuários encontram',
-      sublabel: 'padrões nos primeiros 3 momentos',
+      icon: TrendingUp,
+      title: 'Evolução Contínua',
+      description: 'Acompanhe seu crescimento pessoal ao longo do tempo',
       color: '#845EF7',
-      icon: '🎯',
     },
     {
-      value: avgInsightsPerUser.toFixed(1),
-      label: 'Insights gerados em média',
-      sublabel: 'por semana',
+      icon: Heart,
+      title: 'Bem-estar',
+      description: 'Cultive uma relação mais saudável consigo mesmo',
       color: '#FF922B',
-      icon: '💡',
     },
   ];
 
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div>
+      <div className="text-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', delay: 0.1 }}
+          className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#6B9EFF] to-[#845EF7] rounded-full mb-4"
+        >
+          <Sparkles className="w-8 h-8 text-white" />
+        </motion.div>
         <h2 className="text-2xl font-bold text-[#2B1B17] mb-2">
-          Veja como outros usam Aica
+          Por que registrar momentos?
         </h2>
         <p className="text-[#5C554B]">
-          Você não está sozinho nessa jornada
+          Cada momento registrado é um passo em direção ao autoconhecimento
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-gradient-to-br from-[#F8F7F5] to-[#F0EEED] rounded-lg p-6 border border-[#E8E6E0]"
-            style={{
-              borderLeftWidth: '4px',
-              borderLeftColor: stat.color,
-            }}
-          >
-            <div className="text-center">
-              <div className="text-3xl mb-2">{stat.icon}</div>
-              <p
-                className="text-3xl font-bold mb-1"
-                style={{ color: stat.color }}
+      {/* Benefits Grid */}
+      <div className="grid grid-cols-1 gap-4">
+        {benefits.map((benefit, index) => {
+          const Icon = benefit.icon;
+          return (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.15 }}
+              className="flex items-start gap-4 bg-white rounded-xl p-5 border border-[#E8E6E0] shadow-sm"
+            >
+              <div
+                className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: `${benefit.color}15` }}
               >
-                {stat.value}
-              </p>
-              <p className="text-sm text-[#5C554B] mb-1 font-medium">
-                {stat.label}
-              </p>
-              <p className="text-xs text-[#948D82]">
-                {stat.sublabel}
-              </p>
-            </div>
-          </motion.div>
-        ))}
+                <Icon className="w-6 h-6" style={{ color: benefit.color }} />
+              </div>
+              <div>
+                <h3 className="font-bold text-[#2B1B17] mb-1">{benefit.title}</h3>
+                <p className="text-sm text-[#5C554B]">{benefit.description}</p>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Additional context */}
+      {/* Encouragement */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="bg-blue-50 border border-[#6B9EFF] rounded-lg p-6 text-center"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="bg-gradient-to-r from-[#6B9EFF]/10 to-[#845EF7]/10 rounded-xl p-5 text-center border border-[#6B9EFF]/20"
       >
-        <p className="text-sm text-[#5C554B] mb-2">
-          <strong>Dados agregados e anônimos</strong> de usuários ativos
+        <p className="text-[#2B1B17] font-medium">
+          Não existe momento "certo" ou "errado" para registrar.
         </p>
-        <p className="text-xs text-[#948D82] italic">
-          Todos compartilham voluntariamente para ajudar outros a crescer
+        <p className="text-sm text-[#5C554B] mt-1">
+          O importante é começar. Vamos criar seu primeiro registro juntos?
         </p>
       </motion.div>
-
-      {/* CTA */}
-      <div className="bg-[#F8F7F5] rounded-lg p-4 text-center border border-[#E8E6E0]">
-        <p className="text-sm text-[#5C554B]">
-          Seus momentos também ajudam a comunidade a se conectar e crescer
-        </p>
-      </div>
     </div>
   );
 };
