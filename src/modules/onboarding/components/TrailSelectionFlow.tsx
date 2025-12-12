@@ -40,7 +40,7 @@ interface TrailSelectionFlowProps {
 }
 
 interface FlowState {
-  phase: 'trail-selection' | 'answering-questions' | 'results' | 'complete';
+  phase: 'trail-selection' | 'answering-questions' | 'complete';
   selectedTrails: string[];
   currentTrailIndex: number;
   currentQuestionIndex: number;
@@ -143,22 +143,14 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
       return;
     }
 
-    setState(prev => {
-      if (prev.currentQuestionIndex < currentTrail.questions.length - 1) {
-        return {
-          ...prev,
-          currentQuestionIndex: prev.currentQuestionIndex + 1,
-          error: null,
-        };
-      } else {
-        // End of trail, prepare to submit
-        return {
-          ...prev,
-          phase: 'results',
-          error: null,
-        };
-      }
-    });
+    if (state.currentQuestionIndex < currentTrail.questions.length - 1) {
+      setState(prev => ({
+        ...prev,
+        currentQuestionIndex: prev.currentQuestionIndex + 1,
+        error: null,
+      }));
+    }
+    // Note: Last question submission is handled by the "Salvar Trilha" button
   }, [currentTrail, state.currentQuestionIndex, state.responses]);
 
   // Move to previous question
