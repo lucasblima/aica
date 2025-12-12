@@ -7,9 +7,10 @@ import { BottomNav } from './components/BottomNav';
 import { PomodoroTimer } from './src/components/PomodoroTimer';
 import { SettingsMenu } from './src/components/SettingsMenu';
 import { HeaderGlobal } from './src/components/HeaderGlobal';
-import { EfficiencyTrendChart } from './src/components/EfficiencyTrendChart';
 import { JourneyCardCollapsed } from './src/modules/journey/views/JourneyCardCollapsed';
 import { ConnectionArchetypes } from './src/components/ConnectionArchetypes';
+import { ConsciousnessScore } from './src/modules/journey/components/gamification/ConsciousnessScore';
+import { useConsciousnessPoints } from './src/modules/journey/hooks/useConsciousnessPoints';
 import { JourneyFullScreen } from './src/modules/journey/views/JourneyFullScreen';
 import { AgendaView } from './src/views/AgendaView';
 import { PodcastCopilotView } from './src/views/PodcastCopilotView';
@@ -125,17 +126,6 @@ export default function App() {
    // Onboarding State
    const [showOnboarding, setShowOnboarding] = useState(false);
    const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-
-   // Journey State
-   const [journeyStats, setJourneyStats] = useState<JourneyStats | null>(null);
-   const [dailyQuestion, setDailyQuestion] = useState<string>('');
-   const [hasPendingQuestion, setHasPendingQuestion] = useState(true);
-   const [userBirthDate, setUserBirthDate] = useState<string | null>(null);
-   const [temporalData, setTemporalData] = useState<{
-      currentWeek: number;
-      totalWeeks: number;
-      percentLived: number;
-   } | null>(null);
 
    // Module status tracking
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
@@ -303,63 +293,6 @@ export default function App() {
       fetchData();
    }, [isAuthenticated]);
 
-   // Calculate temporal data from birthdate
-   const calculateTemporalData = (birthDate: string) => {
-      const LIFE_EXPECTANCY_YEARS = 90;
-      const totalWeeks = Math.ceil(LIFE_EXPECTANCY_YEARS * 52.1429);
-
-      const parts = birthDate.split('-');
-      if (parts.length !== 3) {
-         return { currentWeek: 0, totalWeeks, percentLived: 0 };
-      }
-
-      const [year, month, day] = parts.map(Number);
-      const birth = new Date(year, month - 1, day);
-      const now = new Date();
-      const diffTime = now.getTime() - birth.getTime();
-      const currentWeek = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
-      const percentLived = Math.round((currentWeek / totalWeeks) * 100);
-
-      return {
-         currentWeek: Math.max(0, currentWeek),
-         totalWeeks,
-         percentLived: Math.min(100, percentLived)
-      };
-   };
-
-   // Load user profile and journey data
-   useEffect(() => {
-      const loadJourneyData = async () => {
-         if (!userId) return;
-
-         try {
-            // Load user profile to get birthdate
-            const profile = await getUserProfile(userId);
-            if (profile?.birth_date) {
-               setUserBirthDate(profile.birth_date);
-               const temporal = calculateTemporalData(profile.birth_date);
-               setTemporalData(temporal);
-            }
-
-            // Load journey stats
-            const stats = await getJourneyStats(userId);
-            setJourneyStats(stats);
-
-            // Load daily question
-            const question = await getDailyQuestion();
-            setDailyQuestion(question.question);
-
-            // Check if user answered today
-            const answered = await hasAnsweredToday(userId);
-            setHasPendingQuestion(!answered);
-         } catch (error) {
-            console.error('Error loading journey data:', error);
-         }
-      };
-
-      loadJourneyData();
-   }, [userId]);
-
    // Load Grants Card data
    useEffect(() => {
       const loadGrantsData = async () => {
@@ -386,38 +319,6 @@ export default function App() {
 
       loadGrantsData();
    }, [isAuthenticated]);
-
-   // Handle registering a moment
-   const handleRegisterMoment = async (text: string) => {
-      if (!userId || !temporalData) return;
-
-      try {
-         await registerMoment(userId, text, temporalData.currentWeek);
-
-         // Reload stats
-         const stats = await getJourneyStats(userId);
-         setJourneyStats(stats);
-      } catch (error) {
-         console.error('Error registering moment:', error);
-      }
-   };
-
-   // Handle answering daily question
-   const handleAnswerQuestion = async (answer: string) => {
-      if (!userId || !temporalData) return;
-
-      try {
-         const question = await getDailyQuestion();
-         await registerMoment(userId, answer, temporalData.currentWeek, 'question_answer', question.id);
-
-         // Reload stats and mark question as answered
-         const stats = await getJourneyStats(userId);
-         setJourneyStats(stats);
-         setHasPendingQuestion(false);
-      } catch (error) {
-         console.error('Error answering question:', error);
-      }
-   };
 
    const handleOpenAssociation = async (assoc: any) => {
       setSelectedAssociation(assoc);
@@ -500,18 +401,6 @@ export default function App() {
                      </motion.div>
                   )}
 
-                  {/* Efficiency Trend Chart */}
-                  {userId && (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={2}
-                     >
-                        <EfficiencyTrendChart userId={userId} days={30} />
-                     </motion.div>
-                  )}
-
                   {/* Life Modules Grid - Bento Style */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      {/* Finanças */}
@@ -520,7 +409,7 @@ export default function App() {
                            variants={cardVariants}
                            initial="hidden"
                            animate="visible"
-                           custom={3}
+                           custom={2}
                            className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
                            onClick={() => setCurrentView('finance')}
                         >
@@ -531,7 +420,7 @@ export default function App() {
                            variants={cardVariants}
                            initial="hidden"
                            animate="visible"
-                           custom={3}
+                           custom={2}
                         >
                            <ModuleCard
                               moduleId="finance"
@@ -548,7 +437,7 @@ export default function App() {
                         variants={cardVariants}
                         initial="hidden"
                         animate="visible"
-                        custom={4}
+                        custom={3}
                         className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
                         onClick={() => setCurrentView('grants')}
                      >
