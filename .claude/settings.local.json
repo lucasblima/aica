@@ -58,7 +58,10 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(wc:*)",
-      "mcp__supabase__generate_typescript_types"
+      "mcp__supabase__generate_typescript_types",
+      "Bash(timeout 10 npm run dev:*)",
+      "mcp__supabase__list_edge_functions",
+      "mcp__supabase__deploy_edge_function"
     ],
     "deny": [],
     "ask": []
