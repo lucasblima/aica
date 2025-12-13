@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ArrowRight, Users, Briefcase, ChevronRight, Plus, Wallet, Heart, BookOpen, Scale, Building2, Mic, CheckCircle2 } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
 import { handleOAuthCallback } from './src/services/googleAuthService';
 import { BottomNav } from './components/BottomNav';
@@ -17,6 +19,14 @@ import { FileSearchAnalyticsView } from './src/components/fileSearch/FileSearchA
 import { ViewState } from './types';
 import { LandingPage, OnboardingFlow } from './src/modules/onboarding';
 import Home from './src/pages/Home';
+import { GuestApprovalPage } from './src/modules/podcast/views/GuestApprovalPage';
+import { HeaderGlobal } from './src/components/HeaderGlobal';
+import { JourneyCardCollapsed } from './src/modules/journey/views/JourneyCardCollapsed';
+import { ConsciousnessScore } from './src/modules/journey/components/gamification/ConsciousnessScore';
+import { FinanceCard } from './src/modules/finance/components/FinanceCard';
+import { GrantsCard } from './src/modules/grants/components/GrantsCard';
+import { ConnectionArchetypes } from './src/components/ConnectionArchetypes';
+import { useConsciousnessPoints } from './src/modules/journey/hooks/useConsciousnessPoints';
 
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
@@ -71,6 +81,7 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) =>
 export default function App() {
    const [currentView, setCurrentView] = useState<ViewState>('vida');
    const [isAuthenticated, setIsAuthenticated] = useState(false);
+   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
    const [userId, setUserId] = useState<string | null>(null);
    const [userEmail, setUserEmail] = useState<string | null>(null);
    const [associations, setAssociations] = useState<any[]>([]);
@@ -92,41 +103,105 @@ export default function App() {
    // Podcast Nav State
    const [showPodcastNav, setShowPodcastNav] = useState(true);
 
+   // Tab State for Vida view (personal vs network)
+   const [activeTab, setActiveTab] = useState<'personal' | 'network'>('personal');
+
+   // Secondary modules loading state
+   const [secondaryModulesStatus, setSecondaryModulesStatus] = useState<Record<string, { loaded: boolean; empty: boolean }>>({});
+
+   // Consciousness Points Hook
+   const { stats: consciousnessStats, isLoading: cpLoading } = useConsciousnessPoints();
+
+   // Grants Stats (default values - can be replaced with a hook later)
+   const grantsActiveProjects = 0;
+   const grantsUpcomingDeadlines = 0;
+   const grantsRecentProjects: any[] = [];
+
+   // Animation variants for cards
+   const cardVariants = {
+      hidden: { opacity: 0, y: 20 },
+      visible: (i: number) => ({
+         opacity: 1,
+         y: 0,
+         transition: {
+            delay: i * 0.1,
+            duration: 0.4,
+            ease: 'easeOut'
+         }
+      })
+   };
+
+   // Handle secondary module tasks loaded
+   const handleTasksLoaded = (moduleId: string, tasks: any[]) => {
+      setSecondaryModulesStatus(prev => ({
+         ...prev,
+         [moduleId]: { loaded: true, empty: tasks.length === 0 }
+      }));
+   };
+
+   // Check if all secondary modules are loaded and empty
+   const secondaryModuleIds = ['health', 'education', 'legal'];
+   const allSecondaryModulesLoaded = secondaryModuleIds.every(id => secondaryModulesStatus[id]?.loaded);
+   const allSecondaryModulesEmpty = secondaryModuleIds.every(id => secondaryModulesStatus[id]?.empty);
+
    useEffect(() => {
-      // Detecta e limpa URLs com tokens OAuth expirados
-      const cleanExpiredAuthParams = () => {
-         const hashParams = new URLSearchParams(window.location.hash.substring(1));
-         const hasAuthParams = hashParams.has('access_token') ||
-            hashParams.has('refresh_token') ||
-            hashParams.has('error');
+      const initAuth = async () => {
+         try {
+            setIsCheckingAuth(true);
+            console.log('[App] 🔐 Verificando sessão de autenticação...');
 
-         if (hasAuthParams) {
-            console.log('[App] 🔍 Detectados parâmetros de autenticação na URL');
+            // Detecta e limpa URLs com tokens OAuth expirados
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const hasAuthParams = hashParams.has('access_token') ||
+               hashParams.has('refresh_token') ||
+               hashParams.has('error');
 
-            // Aguarda um momento para o Supabase processar, então limpa se houver erro
-            setTimeout(() => {
-               supabase.auth.getSession().then(({ data: { session }, error }) => {
-                  // Se não há sessão válida mas há parâmetros na URL, limpa a URL
-                  if (!session || error) {
-                     console.log('[App] 🧹 Limpando parâmetros de autenticação expirados da URL');
-                     window.history.replaceState(null, '', window.location.pathname);
-                  }
-               });
-            }, 1000);
+            if (hasAuthParams) {
+               console.log('[App] 🔍 Detectados parâmetros de autenticação na URL');
+            }
+
+            // CRITICAL: Wait for session check BEFORE rendering routes
+            const { data: { session }, error } = await supabase.auth.getSession();
+
+            if (error) {
+               console.error('[App] ❌ Erro ao verificar sessão:', error);
+            }
+
+            if (session) {
+               console.log('[App] ✅ Sessão válida encontrada');
+               setIsAuthenticated(true);
+               setUserId(session.user.id);
+               setUserEmail(session.user.email || null);
+            } else {
+               console.log('[App] ⚠️ Nenhuma sessão válida encontrada');
+               setIsAuthenticated(false);
+               setUserId(null);
+               setUserEmail(null);
+
+               // Limpa parâmetros OAuth expirados da URL
+               if (hasAuthParams) {
+                  console.log('[App] 🧹 Limpando parâmetros de autenticação expirados da URL');
+                  window.history.replaceState(null, '', window.location.pathname);
+               }
+            }
+         } catch (error) {
+            console.error('[App] ❌ Erro crítico ao verificar autenticação:', error);
+            setIsAuthenticated(false);
+            setUserId(null);
+            setUserEmail(null);
+         } finally {
+            setIsCheckingAuth(false);
+            console.log('[App] 🏁 Verificação de autenticação concluída');
          }
       };
 
-      cleanExpiredAuthParams();
+      initAuth();
 
-      supabase.auth.getSession().then(({ data: { session } }) => {
-         setIsAuthenticated(!!session);
-         setUserId(session?.user?.id || null);
-         setUserEmail(session?.user?.email || null);
-      });
-
+      // Listen for auth state changes
       const {
          data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, session) => {
+         console.log('[App] 🔄 Auth state changed:', _event);
          setIsAuthenticated(!!session);
          setUserId(session?.user?.id || null);
          setUserEmail(session?.user?.email || null);
@@ -304,14 +379,16 @@ export default function App() {
 
                <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
                   {/* Journey Card */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={0}
-                  >
-                     <JourneyCardCollapsed onClick={() => setCurrentView('journey')} />
-                  </motion.div>
+                  {userId && (
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={0}
+                     >
+                        <JourneyCardCollapsed onClick={() => setCurrentView('journey')} />
+                     </motion.div>
+                  )}
 
                   {/* Consciousness Score Card */}
                   {consciousnessStats && !cpLoading && (
@@ -690,12 +767,8 @@ export default function App() {
       <JourneyFullScreen />
    );
 
-   if (!isAuthenticated) {
-      // Show landing page for unauthenticated users
-      return <LandingPage />;
-   }
-
-   return (
+   // Main App Content (authenticated state)
+   const renderMainApp = () => (
       <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
          {currentView === 'vida' && renderVida()}
          {currentView === 'agenda' && renderAgenda()}
@@ -742,6 +815,43 @@ export default function App() {
          {/* Notification Toast Container */}
          <NotificationContainer />
       </div>
+   );
+
+   // Show loading screen while checking authentication
+   if (isCheckingAuth) {
+      return (
+         <div className="h-screen w-full bg-ceramic-base flex items-center justify-center">
+            <div className="text-center space-y-4">
+               <div className="w-16 h-16 mx-auto ceramic-concave rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-ceramic-accent border-t-transparent rounded-full animate-spin"></div>
+               </div>
+               <p className="text-ceramic-text-secondary text-sm font-medium">Verificando autenticação...</p>
+            </div>
+         </div>
+      );
+   }
+
+   // Use React Router Routes to ensure proper Router context for all components
+   return (
+      <Routes>
+         {/* Guest Approval Page - Public route for podcast guests */}
+         <Route
+            path="/guest-approval/:episodeId/:approvalToken"
+            element={<GuestApprovalPage />}
+         />
+
+         {/* Landing Page - Unauthenticated users */}
+         <Route
+            path="/landing"
+            element={<LandingPage />}
+         />
+
+         {/* Main App - Authenticated users */}
+         <Route
+            path="/*"
+            element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
+         />
+      </Routes>
    );
 }
 

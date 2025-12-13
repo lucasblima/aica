@@ -23,6 +23,10 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
   onOpenModule,
   onCreateProject
 }) => {
+  // Guard clauses - ensure arrays are valid to prevent .slice() errors
+  const deadlines = Array.isArray(upcomingDeadlines) ? upcomingDeadlines : [];
+  const projects = Array.isArray(recentProjects) ? recentProjects : [];
+  const projectCount = typeof activeProjects === 'number' ? activeProjects : 0;
   /**
    * Format date to relative time (e.g., "5 dias")
    */
@@ -62,7 +66,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
           <div>
             <h2 className="text-xl font-semibold text-etched">Captação</h2>
             <p className="text-xs text-ceramic-text-secondary">
-              {activeProjects} {activeProjects === 1 ? 'projeto ativo' : 'projetos ativos'}
+              {projectCount} {projectCount === 1 ? 'projeto ativo' : 'projetos ativos'}
             </p>
           </div>
         </div>
@@ -84,7 +88,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
           </p>
         </div>
         <p className="text-4xl font-black text-etched">
-          {activeProjects}
+          {projectCount}
         </p>
       </div>
 
@@ -97,7 +101,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
           </p>
         </div>
 
-        {upcomingDeadlines.length === 0 ? (
+        {deadlines.length === 0 ? (
           <div className="ceramic-inset px-4 py-3 text-center">
             <p className="text-sm text-ceramic-text-tertiary">
               Nenhum prazo próximo
@@ -105,7 +109,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            {upcomingDeadlines.slice(0, 3).map((deadline) => (
+            {deadlines.slice(0, 3).map((deadline) => (
               <motion.div
                 key={deadline.opportunity_id}
                 initial={{ opacity: 0, y: 10 }}
@@ -137,13 +141,13 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
       </div>
 
       {/* Recent Projects */}
-      {recentProjects.length > 0 && (
+      {projects.length > 0 && (
         <div className="space-y-3">
           <p className="text-sm font-bold text-ceramic-text-secondary">
             Atualizados Recentemente
           </p>
           <div className="space-y-2">
-            {recentProjects.slice(0, 2).map((project) => (
+            {projects.slice(0, 2).map((project) => (
               <div
                 key={project.id}
                 className="ceramic-groove rounded-2xl p-3"

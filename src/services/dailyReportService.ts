@@ -183,8 +183,22 @@ function buildReportObject(
   metrics: DailyReportMetrics,
   insights: Awaited<ReturnType<typeof generateDailyReportInsights>>
 ): DailyReportCreateInput {
+  // Build report_content from metrics summary
+  const completionRate = metrics.tasksTotal > 0
+    ? Math.round((metrics.tasksCompleted / metrics.tasksTotal) * 100)
+    : 0;
+
+  const reportContent = `Relatório do dia ${date}:\n` +
+    `- Tarefas concluídas: ${metrics.tasksCompleted} de ${metrics.tasksTotal} (${completionRate}%)\n` +
+    `- Score de produtividade: ${metrics.productivityScore}%\n` +
+    `- Memórias registradas: ${metrics.memoryCount}\n` +
+    `- Contatos interagidos: ${metrics.contactCount}\n` +
+    (metrics.topSubjects.length > 0 ? `- Temas principais: ${metrics.topSubjects.join(', ')}\n` : '') +
+    (insights?.summary ? `\nResumo: ${insights.summary}` : '');
+
   return {
     report_date: date,
+    report_content: reportContent,
     tasks_completed: metrics.tasksCompleted,
     tasks_total: metrics.tasksTotal,
     productivity_score: metrics.productivityScore,
@@ -193,6 +207,9 @@ function buildReportObject(
     energy_level: undefined, // User sets this via UI
     stress_level: undefined, // User sets this via UI
     active_modules: metrics.topSubjects,
+    summary: insights?.summary,
+    key_insights: insights?.insights || [],
+    recommendations: insights?.recommendations || [],
     notes: undefined,
     location: undefined,
     weather_notes: undefined,
@@ -216,9 +233,8 @@ export async function getDailyReport(
       .select('*')
       .eq('user_id', userId)
       .eq('report_date', date)
-      .single();
+      .maybeSingle();
 
-    if (error?.code === 'PGRST116') return null; // Not found
     if (error) throw error;
 
     return data;
@@ -238,7 +254,7 @@ async function insertDailyReport(
   try {
     const { data, error } = await supabase
       .from('daily_reports')
-      .insert([{ ...report, user_id: userId }])
+      .insert([{ ...report, user_id: userId, report_type: 'daily_summary' }])
       .select()
       .single();
 
@@ -470,9 +486,8 @@ export async function getLastReport(userId: string): Promise<DailyReport | null>
       .eq('user_id', userId)
       .order('report_date', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error?.code === 'PGRST116') return null;
     if (error) throw error;
 
     return data;

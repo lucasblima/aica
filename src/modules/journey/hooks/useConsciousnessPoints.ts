@@ -31,7 +31,14 @@ export function useConsciousnessPoints() {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchStats = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      // Reset to safe defaults when user is null/undefined
+      setStats(null)
+      setProgress(null)
+      setError(null)
+      setIsLoading(false)
+      return
+    }
 
     try {
       setIsLoading(true)
@@ -41,9 +48,14 @@ export function useConsciousnessPoints() {
       setStats(data.stats)
       setProgress(data.progress)
     } catch (err) {
-      setError(err as Error)
-      console.error('Error fetching CP stats:', err)
+      const error = err as Error
+      setError(error)
+      // Reset to safe defaults on error
+      setStats(null)
+      setProgress(null)
+      console.error('Error fetching CP stats:', error)
     } finally {
+      // ALWAYS set loading to false
       setIsLoading(false)
     }
   }, [user?.id])
@@ -74,7 +86,13 @@ export function useCPLog(limit: number = 50) {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchLog = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      // Reset to safe defaults when user is null/undefined
+      setLog([])
+      setError(null)
+      setIsLoading(false)
+      return
+    }
 
     try {
       setIsLoading(true)
@@ -83,9 +101,13 @@ export function useCPLog(limit: number = 50) {
       const fetchedLog = await getCPLog(user.id, limit)
       setLog(fetchedLog)
     } catch (err) {
-      setError(err as Error)
-      console.error('Error fetching CP log:', err)
+      const error = err as Error
+      setError(error)
+      // Reset to safe defaults on error
+      setLog([])
+      console.error('Error fetching CP log:', error)
     } finally {
+      // ALWAYS set loading to false
       setIsLoading(false)
     }
   }, [user?.id, limit])
@@ -118,7 +140,13 @@ export function useAchievements() {
   const [error, setError] = useState<Error | null>(null)
 
   const fetchAchievements = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      // Reset to safe defaults when user is null/undefined
+      setAchievements({ level_ups: [], streaks: [] })
+      setError(null)
+      setIsLoading(false)
+      return
+    }
 
     try {
       setIsLoading(true)
@@ -127,9 +155,13 @@ export function useAchievements() {
       const fetchedAchievements = await getRecentAchievements(user.id)
       setAchievements(fetchedAchievements)
     } catch (err) {
-      setError(err as Error)
-      console.error('Error fetching achievements:', err)
+      const error = err as Error
+      setError(error)
+      // Reset to safe defaults on error
+      setAchievements({ level_ups: [], streaks: [] })
+      console.error('Error fetching achievements:', error)
     } finally {
+      // ALWAYS set loading to false
       setIsLoading(false)
     }
   }, [user?.id])

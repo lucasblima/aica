@@ -247,13 +247,18 @@ export interface DailyReport {
 
 export interface DailyReportCreateInput {
   report_date: string; // ISO date
+  report_content?: string; // NOT NULL in DB - auto-generated summary
   tasks_completed: number;
   tasks_total: number;
+  productivity_score?: number;
   mood?: DailyReport['mood'];
   mood_score?: number;
   energy_level?: number;
   stress_level?: number;
   active_modules?: string[];
+  summary?: string;
+  key_insights?: string[];
+  recommendations?: string[];
   notes?: string;
   location?: string;
   weather_notes?: string;
