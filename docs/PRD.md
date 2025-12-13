@@ -324,10 +324,27 @@ A dedicated vertical for content creators.
 
 ### Overall Progress: 95% Complete (19/20 Tasks)
 
-**Last Updated:** 2025-12-08 | Latest Commit: `af4fcbc`
+**Last Updated:** 2025-12-13 | Latest Commit: `f990ce2`
 
-### Recently Completed (Phase 2 Sprint)
+### Recently Completed (Current Sprint)
 
+
+#### Task 23: EfficiencyTrendChart Refactor ✅
+- **Problem Solved:** EfficiencyTrendChart was removed without replacement
+- **Implementation:**
+  - **EfficiencyTrendChart.tsx** (320 lines) - Re-added with improved empty state
+  - **App.tsx** - Home page refactoring
+- **Commits:** `f990ce2`, `bb94537`
+- **Status:** Fully integrated in Life Dashboard
+
+#### Task 22: Onboarding Refinements ✅
+- **Problem Solved:** Multiple onboarding flow issues
+- **Issues Fixed:**
+  1. Minimum 3 trails requirement enforced
+  2. Mockup data replaced with real content
+  3. Onboarding versioning for existing users
+- **Commits:** `779f1c4`, `2e1114f`, `ccde14d`, `3053b10`, `f4b6085`
+- **Status:** Onboarding flow stabilized
 
 #### Task 21: OAuth Expired Session Fix ✅
 - **Problem Solved:** Users accessing expired OAuth callback URLs causing 403 errors
@@ -503,6 +520,9 @@ Settings (⚙️) → Custos de IA
 **Purpose:** Unified semantic search infrastructure across all modules using Gemini Corpora API
 
 **Features Implemented:**
+- ✅ Dual-mode operation (Supabase direct + Python backend fallback)
+- ✅ Multi-layer query caching (memory + localStorage)
+- ✅ Duplicate document handling (409 Conflict / 23505 error recovery)
 - ✅ Module-aware architecture with isolated corpora per module
 - ✅ Semantic search with vector embeddings (Gemini AI)
 - ✅ Specialized hooks for each module (Grants, Podcast, Finance, Journey)
@@ -662,9 +682,9 @@ const results = await searchInStatements('Quanto gastei com alimentação em dez
 **Status:** ✅ Implementado e testado (compilação OK, 4 módulos integrados)
 
 **Next Steps:**
-1. Apply migrations to Supabase production:
-   - `20251209170000_create_file_search_corpora_tables.sql`
-   - `20251209180000_file_search_module_aware.sql`
+1. ✅ Migrations applied to Supabase production:
+   - ✅ `20251209170000_create_file_search_corpora_tables.sql` - Applied (RLS policies active)
+   - ⏳ `20251209180000_file_search_module_aware.sql` - Pending verification
 2. Integrate File Search in Atlas module (tasks) following integration guide
 3. Add E2E tests for cross-module search
 4. Validate RLS policies with multiple users
@@ -835,6 +855,7 @@ npx playwright show-report    # Open HTML report in browser
 - `scripts/README.md` - Utility scripts documentation
 
 ### Key Implementation Files
+- `src/pages/Home.tsx` - Main dashboard page component
 - `src/components/EfficiencyScoreCard.tsx` - Efficiency visualization
 - `src/services/efficiencyService.ts` - Efficiency calculation engine
 - `src/utils/authUrlCleaner.ts` - OAuth session error prevention
@@ -842,6 +863,15 @@ npx playwright show-report    # Open HTML report in browser
 - `playwright.config.ts` - E2E test configuration
 - `scripts/update-docs.ts` - Documentation maintenance automation
 - `scripts/validate-supabase-schema.ts` - Database validation tool
+
+### Recently Modified Files (December 2025)
+- `App.tsx` - Route reorganization, Home extraction
+- `src/hooks/useFileSearch.ts` - Enhanced duplicate handling
+- `src/modules/grants/components/GrantsCard.tsx` - Array guard clauses
+- `src/modules/journey/hooks/useConsciousnessPoints.ts` - Safe defaults
+- `src/services/dailyReportService.ts` - Report generation improvements
+- `src/services/fileSearchApiClient.ts` - Dual-mode Supabase/API
+- `supabase/functions/gemini-chat/index.ts` - Journey module handlers
 
 ### Environment Setup
 - **Frontend:** React 19.2 + Vite 6.2
