@@ -83,7 +83,7 @@ export function useFileSearch() {
   }, []);
 
   /**
-   * Cria um novo corpus
+   * Cria um novo corpus ou retorna existente se já houver
    * @param name - Nome interno do corpus (slug)
    * @param displayName - Nome para exibição
    * @param module_type - Tipo do módulo (opcional)
@@ -99,10 +99,42 @@ export function useFileSearch() {
       setIsLoading(true);
       setError(null);
       const newCorpus = await createCorpus(name, displayName, module_type, module_id);
-      setCorpora((prev) => [...prev, newCorpus]);
+      // Update state - avoid duplicates
+      setCorpora((prev) => {
+        const exists = prev.some(c => c.id === newCorpus.id || c.name === newCorpus.name);
+        if (exists) {
+          return prev.map(c => c.name === newCorpus.name ? newCorpus : c);
+        }
+        return [...prev, newCorpus];
+      });
       return newCorpus;
     } catch (err) {
+      // Handle 409 Conflict or duplicate key error - try to fetch existing corpus
       const errorMsg = err instanceof Error ? err.message : 'Failed to create corpus';
+      const isDuplicateError = errorMsg.includes('duplicate') ||
+                               errorMsg.includes('409') ||
+                               errorMsg.includes('already exists') ||
+                               errorMsg.includes('23505');
+
+      if (isDuplicateError) {
+        console.log('[useFileSearch] Corpus already exists, fetching existing...');
+        try {
+          // Fetch existing corpus instead of failing
+          const existingCorpora = await listCorpora(module_type, module_id);
+          const existingCorpus = existingCorpora.find(c => c.name === name);
+          if (existingCorpus) {
+            console.log('[useFileSearch] Found existing corpus:', existingCorpus.name);
+            setCorpora((prev) => {
+              const exists = prev.some(c => c.id === existingCorpus.id);
+              return exists ? prev : [...prev, existingCorpus];
+            });
+            return existingCorpus;
+          }
+        } catch (listErr) {
+          console.error('[useFileSearch] Failed to list corpora after duplicate error:', listErr);
+        }
+      }
+
       setError(errorMsg);
       console.error('[useFileSearch] createNewCorpus error:', err);
       throw err;

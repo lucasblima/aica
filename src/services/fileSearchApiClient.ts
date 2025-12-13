@@ -15,6 +15,37 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const USE_SUPABASE_DIRECT = true;
 
 /**
+ * Get the JWT token from Supabase session for backend API calls
+ * @returns JWT token or null if no session
+ */
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch (error) {
+    console.error('[fileSearchApiClient] Error getting auth token:', error);
+    return null;
+  }
+}
+
+/**
+ * Helper function to create authenticated fetch headers
+ * @returns Headers with Authorization token if available
+ */
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const token = await getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+/**
  * Service layer for File Search API interactions
  * Can use either Python backend or Supabase directly
  */
@@ -75,12 +106,10 @@ export async function listCorpora(
 
   // Fallback to Python API
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/api/file-search/corpora`, {
       method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -197,12 +226,10 @@ export async function createCorpus(
 
   // Fallback to Python API
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/api/file-search/corpora`, {
       method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         name,
         display_name: displayName,
@@ -246,9 +273,15 @@ export async function indexDocument(
       formData.append('metadata', JSON.stringify(request.metadata));
     }
 
+    const token = await getAuthToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/file-search/documents`, {
       method: 'POST',
-      credentials: 'include',
+      headers,
       body: formData,
     });
 
@@ -309,12 +342,10 @@ export async function queryFileSearch(
   }
 
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/api/file-search/query`, {
       method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(query),
     });
 
@@ -425,14 +456,12 @@ export async function listDocuments(
     if (moduleType) params.append('module_type', moduleType);
     if (moduleId) params.append('module_id', moduleId);
 
+    const headers = await getAuthHeaders();
     const response = await fetch(
       `${API_BASE_URL}/api/file-search/documents?${params.toString()}`,
       {
         method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       }
     );
 
@@ -462,14 +491,12 @@ export async function deleteDocument(
   moduleId?: string
 ): Promise<void> {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(
       `${API_BASE_URL}/api/file-search/documents/${documentId}`,
       {
         method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       }
     );
 
