@@ -1,0 +1,404 @@
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Users, Sparkles, TrendingUp } from 'lucide-react';
+import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
+import { SpaceCard } from '../components/SpaceCard';
+import { CeramicTabSelector } from '../../../components/CeramicTabSelector';
+import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';
+import type { Archetype } from '../types';
+import { ARCHETYPE_CONFIG } from '../types';
+
+interface ConnectionsViewProps {
+  userId: string;
+  onNavigateToSpace?: (spaceId: string) => void;
+  onCreateSpace?: () => void;
+}
+
+type FilterTab = 'all' | Archetype;
+
+/**
+ * ConnectionsView - Main container for displaying and managing Connection Spaces
+ *
+ * This is the primary view for the Connections module, displaying all connection spaces
+ * organized by archetype with filtering, favorites, and quick actions.
+ *
+ * Features:
+ * - Archetype filtering (All, Habitat, Ventures, Academia, Tribo)
+ * - Favorites section for quick access
+ * - Quick stats showing total spaces, active collaborations, pending invitations
+ * - Responsive grid layout (1/2/3 columns)
+ * - Empty state with archetype suggestions
+ * - Pull-to-refresh support
+ * - Loading skeletons
+ *
+ * @example
+ * ```tsx
+ * <ConnectionsView
+ *   userId={user.id}
+ *   onNavigateToSpace={(id) => navigate(`/spaces/${id}`)}
+ *   onCreateSpace={() => setShowCreateModal(true)}
+ * />
+ * ```
+ */
+export function ConnectionsView({
+  userId,
+  onNavigateToSpace,
+  onCreateSpace,
+}: ConnectionsViewProps) {
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch connection spaces
+  const {
+    spaces,
+    isLoading,
+    error,
+    refresh,
+    toggleFavorite,
+    favorites,
+    byArchetype,
+    totalCount,
+  } = useConnectionSpaces({ autoFetch: true });
+
+  // Filter tabs
+  const filterTabs = [
+    { id: 'all', label: 'Todos' },
+    { id: 'habitat', label: 'Habitat' },
+    { id: 'ventures', label: 'Ventures' },
+    { id: 'academia', label: 'Academia' },
+    { id: 'tribo', label: 'Tribo' },
+  ];
+
+  // Filtered spaces based on active tab
+  const filteredSpaces = useMemo(() => {
+    if (activeFilter === 'all') return spaces;
+    return byArchetype[activeFilter as Archetype] || [];
+  }, [activeFilter, spaces, byArchetype]);
+
+  // Quick stats
+  const stats = useMemo(() => {
+    // TODO: Integrate with actual member/invitation data when available
+    const activeCollaborations = spaces.filter(s => s.is_active).length;
+    const pendingInvitations = 0; // Placeholder for future feature
+
+    return {
+      totalSpaces: totalCount,
+      activeCollaborations,
+      pendingInvitations,
+    };
+  }, [spaces, totalCount]);
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refresh();
+    } catch (err) {
+      console.error('[ConnectionsView] Refresh error:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Handle favorite toggle
+  const handleToggleFavorite = async (spaceId: string, isFavorite: boolean) => {
+    try {
+      await toggleFavorite(spaceId, !isFavorite);
+    } catch (err) {
+      console.error('[ConnectionsView] Toggle favorite error:', err);
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+        {/* Header skeleton */}
+        <div className="px-6 pt-6 pb-4">
+          <div className="ceramic-card h-12 mb-4 animate-pulse" />
+          <div className="ceramic-card h-10 animate-pulse" />
+        </div>
+
+        {/* Grid skeleton */}
+        <div className="flex-1 overflow-y-auto px-6 pb-40 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="ceramic-card h-48 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="h-screen w-full bg-ceramic-base flex items-center justify-center">
+        <div className="ceramic-card p-8 max-w-md text-center">
+          <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-red-50">
+            <Sparkles className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
+            Erro ao carregar espaços
+          </h3>
+          <p className="text-sm text-ceramic-text-secondary mb-4">
+            {error.message}
+          </p>
+          <button
+            onClick={handleRefresh}
+            className="ceramic-card px-6 py-2 text-sm font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (spaces.length === 0) {
+    return (
+      <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="px-6 pt-6 pb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-black text-ceramic-text-primary text-etched">
+                Minhas Conexões
+              </h1>
+              <p className="text-sm text-ceramic-text-secondary mt-1">
+                Seus espaços de colaboração
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {/* Empty state with archetype suggestions */}
+        <div className="flex-1 overflow-y-auto px-6 pb-40">
+          <motion.div
+            className="ceramic-tray p-8 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="ceramic-inset w-20 h-20 flex items-center justify-center mx-auto mb-6 bg-ceramic-cool">
+              <Sparkles className="w-10 h-10 text-ceramic-accent" />
+            </div>
+
+            <h2 className="text-xl font-bold text-ceramic-text-primary mb-2">
+              Comece sua primeira conexão
+            </h2>
+            <p className="text-sm text-ceramic-text-secondary max-w-md mx-auto mb-8">
+              Escolha um arquétipo para criar seu primeiro espaço de colaboração
+            </p>
+
+            {/* Archetype suggestions grid */}
+            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
+              {Object.entries(ARCHETYPE_CONFIG).map(([key, config]) => (
+                <motion.button
+                  key={key}
+                  onClick={onCreateSpace}
+                  className="ceramic-card p-4 text-left hover:scale-[1.02] transition-transform"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="text-3xl mb-2">{config.icon}</div>
+                  <h3 className="font-bold text-sm text-ceramic-text-primary mb-1">
+                    {config.label}
+                  </h3>
+                  <p className="text-xs text-ceramic-text-secondary line-clamp-2">
+                    {config.subtitle}
+                  </p>
+                </motion.button>
+              ))}
+            </div>
+
+            <button
+              onClick={onCreateSpace}
+              className="ceramic-card px-6 py-3 text-sm font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Criar primeiro espaço
+            </button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main view with spaces
+  return (
+    <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+      {/* Header Section */}
+      <header className="px-6 pt-6 pb-4 space-y-4">
+        {/* Title and Create Button */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-ceramic-text-primary text-etched">
+              Minhas Conexões
+            </h1>
+            <p className="text-sm text-ceramic-text-secondary mt-1">
+              {totalCount} {totalCount === 1 ? 'espaço' : 'espaços'}
+            </p>
+          </div>
+
+          <button
+            onClick={onCreateSpace}
+            className="ceramic-card w-10 h-10 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+            aria-label="Criar novo espaço"
+          >
+            <Plus className="w-5 h-5 text-ceramic-accent" />
+          </button>
+        </div>
+
+        {/* Filter Tabs */}
+        <CeramicTabSelector
+          tabs={filterTabs}
+          activeTab={activeFilter}
+          onChange={(tabId) => setActiveFilter(tabId as FilterTab)}
+        />
+
+        {/* Quick Stats Row */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="ceramic-inset-shallow p-3 text-center">
+            <div className="text-xl font-black text-ceramic-accent">
+              {stats.totalSpaces}
+            </div>
+            <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
+              Espaços
+            </div>
+          </div>
+
+          <div className="ceramic-inset-shallow p-3 text-center">
+            <div className="text-xl font-black text-ceramic-accent">
+              {stats.activeCollaborations}
+            </div>
+            <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
+              Ativos
+            </div>
+          </div>
+
+          <div className="ceramic-inset-shallow p-3 text-center">
+            <div className="text-xl font-black text-ceramic-accent">
+              {stats.pendingInvitations}
+            </div>
+            <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
+              Convites
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto px-6 pb-40 space-y-6">
+        {/* Favorites Section */}
+        {favorites.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4 text-ceramic-accent" />
+              <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Favoritos
+              </h2>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-thin scrollbar-thumb-ceramic-text-secondary/20">
+              {favorites.map(space => (
+                <div key={space.id} className="min-w-[280px]">
+                  <SpaceCard
+                    space={space}
+                    variant="compact"
+                    showFavorite
+                    onClick={() => onNavigateToSpace?.(space.id)}
+                    onToggleFavorite={() => handleToggleFavorite(space.id, space.is_favorite)}
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* Main Grid */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="w-4 h-4 text-ceramic-accent" />
+            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+              {activeFilter === 'all' ? 'Todos os espaços' : ARCHETYPE_CONFIG[activeFilter as Archetype]?.label}
+            </h2>
+            <span className="text-xs text-ceramic-text-secondary/60">
+              ({filteredSpaces.length})
+            </span>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {filteredSpaces.length === 0 ? (
+              <motion.div
+                key="empty-filter"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="ceramic-tray p-8 text-center"
+              >
+                <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-ceramic-cool">
+                  <Sparkles className="w-8 h-8 text-ceramic-text-secondary" />
+                </div>
+                <p className="text-sm text-ceramic-text-secondary">
+                  Nenhum espaço encontrado nesta categoria
+                </p>
+                <button
+                  onClick={onCreateSpace}
+                  className="mt-4 ceramic-card px-4 py-2 text-xs font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform inline-flex items-center gap-2"
+                >
+                  <Plus className="w-3 h-3" />
+                  Criar espaço
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="grid"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              >
+                {filteredSpaces.map(space => (
+                  <motion.div key={space.id} variants={staggerItem}>
+                    <SpaceCard
+                      space={space}
+                      variant="full"
+                      showFavorite
+                      memberCount={0} // TODO: Add member count when available
+                      onClick={() => onNavigateToSpace?.(space.id)}
+                      onToggleFavorite={() => handleToggleFavorite(space.id, space.is_favorite)}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+      </main>
+
+      {/* Floating Action Button */}
+      {onCreateSpace && (
+        <motion.button
+          onClick={onCreateSpace}
+          className="fixed bottom-6 right-6 w-14 h-14 ceramic-card bg-ceramic-warm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50 shadow-lg"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+          whileHover={{ y: -2 }}
+          aria-label="Criar novo espaço"
+        >
+          <Plus className="w-6 h-6 text-ceramic-accent" />
+        </motion.button>
+      )}
+    </div>
+  );
+}
+
+export default ConnectionsView;

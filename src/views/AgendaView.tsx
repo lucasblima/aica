@@ -16,7 +16,7 @@ import { supabase } from '../services/supabaseClient';
 import { PriorityMatrix } from '../components/PriorityMatrix';
 import { DailyTimeline } from '../components/DailyTimeline';
 import { HeaderGlobal } from '../components/HeaderGlobal';
-import { CalendarSyncIndicator } from '../components/CalendarSyncIndicator';
+import { CalendarStatusDot } from '../components/CalendarStatusDot';
 import { NextEventHero } from '../components/NextEventHero';
 import { AgendaTimeline } from '../components/AgendaTimeline';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components/NextTwoDaysView';
@@ -27,6 +27,7 @@ import { TaskList } from '../modules/atlas/components/TaskList';
 import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { TimelineEvent } from '../services/googleCalendarService';
+import { disconnectGoogleCalendar } from '../services/googleAuthService';
 
 interface AgendaViewProps {
     userId: string;
@@ -563,14 +564,38 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     // Handler para conectar Google Calendar
     const handleConnectCalendar = async () => {
         console.log('[AgendaView] Conectando Google Calendar...');
-        // Trigger Google OAuth
+        // Escopos completos para funcionamento como secretária executiva
+        const googleCalendarScopes = [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/calendar.readonly',
+            'https://www.googleapis.com/auth/userinfo.email',
+        ].join(' ');
+
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                scopes: 'https://www.googleapis.com/auth/calendar.readonly',
-                redirectTo: window.location.origin
+                scopes: googleCalendarScopes,
+                redirectTo: window.location.origin,
+                queryParams: {
+                    access_type: 'offline', // Garante refresh_token
+                    prompt: 'consent',      // Força tela de consentimento
+                },
             }
         });
+    };
+
+    // Handler para desconectar Google Calendar
+    const handleDisconnectCalendar = async () => {
+        console.log('[AgendaView] Desconectando Google Calendar...');
+        try {
+            await disconnectGoogleCalendar();
+            console.log('[AgendaView] ✅ Google Calendar desconectado com sucesso');
+            // Força reload para atualizar estado de conexão
+            window.location.reload();
+        } catch (error) {
+            console.error('[AgendaView] ❌ Erro ao desconectar:', error);
+        }
     };
 
     return (
@@ -588,16 +613,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     </p>
                 </div>
 
-                {/* Indicadores no canto direito */}
-                <div className="flex items-center gap-2">
-                    <CalendarSyncIndicator
-                        isConnected={isCalendarConnected}
-                        isSyncing={isLoadingCalendar}
-                        lastSyncTime={lastSyncTime ? `há ${Math.round((Date.now() - new Date(lastSyncTime).getTime()) / 60000)}min` : undefined}
-                        onConnect={handleConnectCalendar}
-                        onSync={syncCalendar}
-                    />
-                </div>
+                {/* Status minimalista do Calendar */}
+                <CalendarStatusDot
+                    isConnected={isCalendarConnected}
+                    isSyncing={isLoadingCalendar}
+                    hasError={!!calendarError}
+                    onConnect={handleConnectCalendar}
+                    onSync={syncCalendar}
+                    onDisconnect={handleDisconnectCalendar}
+                />
             </div>
 
             <DndContext

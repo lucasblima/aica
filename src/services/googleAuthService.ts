@@ -31,9 +31,10 @@ const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
  * e permitir que Aica funcione como secretária executiva organizando tarefas na agenda
  */
 const GOOGLE_CALENDAR_SCOPES = [
-    'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/calendar.events',
-    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/calendar',         // Acesso completo ao calendário
+    'https://www.googleapis.com/auth/calendar.events',  // Gerenciamento de eventos
+    'https://www.googleapis.com/auth/calendar.readonly', // Leitura de calendários
+    'https://www.googleapis.com/auth/userinfo.email',   // Email do usuário
 ];
 
 /**

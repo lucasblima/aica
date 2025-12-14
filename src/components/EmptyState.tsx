@@ -42,37 +42,37 @@ const EMPTY_STATE_CONFIG = {
   new_user: {
     icon: Sparkles,
     iconColor: '#667eea',
-    title: 'Comece sua Jornada de Consciência',
-    message: 'Bem-vindo! Registre seu primeiro momento de consciência para começar a acompanhar sua evolução pessoal.',
-    primaryCTA: 'Registrar Primeiro Momento',
-    secondaryCTA: 'Conhecer o Sistema',
+    title: 'Comece sua jornada',
+    message: 'Registre seu primeiro momento e acompanhe sua evolução.',
+    primaryCTA: 'Registrar momento',
+    secondaryCTA: 'Conhecer sistema',
     illustration: '✨',
   },
   no_data_today: {
     icon: Plus,
     iconColor: '#10b981',
-    title: 'Nenhum Momento Registrado Ainda',
-    message: 'Que tal começar seu dia registrando um momento de consciência? Cada registro conta para sua evolução.',
-    primaryCTA: 'Registrar Momento',
-    secondaryCTA: 'Ver Histórico',
+    title: 'Sem registros hoje',
+    message: 'Registre um momento e evolua.',
+    primaryCTA: 'Registrar momento',
+    secondaryCTA: 'Ver histórico',
     illustration: '📝',
   },
   insufficient_data: {
     icon: TrendingUp,
     iconColor: '#f59e0b',
-    title: 'Dados Insuficientes',
-    message: 'Continue registrando seus momentos! Você precisa de pelo menos 2 dias de registros para visualizar tendências e insights.',
-    primaryCTA: 'Registrar Momento',
+    title: 'Poucos dados',
+    message: 'Mínimo 2 dias para ver tendências.',
+    primaryCTA: 'Registrar momento',
     secondaryCTA: null,
     illustration: '📊',
   },
   no_data_period: {
     icon: Calendar,
     iconColor: '#8b5cf6',
-    title: 'Sem Dados no Período',
-    message: 'Não encontramos registros para este período. Tente selecionar um período diferente ou comece a registrar momentos.',
-    primaryCTA: 'Mudar Período',
-    secondaryCTA: 'Registrar Momento',
+    title: 'Sem dados',
+    message: 'Sem registros neste período.',
+    primaryCTA: 'Mudar período',
+    secondaryCTA: 'Registrar momento',
     illustration: '📅',
   },
 };
@@ -94,7 +94,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   // Customize message for no_data_period with selectedDays
   let displayMessage = customMessage || config.message;
   if (type === 'no_data_period' && selectedDays) {
-    displayMessage = `Não encontramos registros para os últimos ${selectedDays} dias. Tente selecionar um período diferente ou comece a registrar momentos.`;
+    displayMessage = `Sem registros nos últimos ${selectedDays} dias.`;
   }
 
   // Animation variants

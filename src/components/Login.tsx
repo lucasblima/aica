@@ -10,10 +10,27 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
         setLoading(true);
         setError(null);
 
+        // Escopos do Google Calendar para funcionamento completo
+        // - calendar: Acesso total ao calendário (leitura e escrita)
+        // - calendar.events: Gerenciamento de eventos
+        // - calendar.readonly: Leitura de calendários
+        // - userinfo.email: Email do usuário
+        const googleCalendarScopes = [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/calendar.readonly',
+            'https://www.googleapis.com/auth/userinfo.email',
+        ].join(' ');
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo: window.location.origin,
+                scopes: googleCalendarScopes,
+                queryParams: {
+                    access_type: 'offline', // Garante refresh_token
+                    prompt: 'consent',      // Força tela de consentimento para novas permissões
+                },
             }
         });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, AlertCircle, Check, RefreshCw, X } from 'lucide-react';
+import { Calendar, AlertCircle, Check, RefreshCw, X, LogOut } from 'lucide-react';
 
 interface CalendarSyncIndicatorProps {
   isConnected: boolean;
@@ -8,6 +8,7 @@ interface CalendarSyncIndicatorProps {
   lastSyncTime?: string;
   onConnect: () => void;
   onSync: () => void;
+  onDisconnect?: () => void;
 }
 
 export const CalendarSyncIndicator: React.FC<CalendarSyncIndicatorProps> = ({
@@ -15,7 +16,8 @@ export const CalendarSyncIndicator: React.FC<CalendarSyncIndicatorProps> = ({
   isSyncing,
   lastSyncTime,
   onConnect,
-  onSync
+  onSync,
+  onDisconnect
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -91,6 +93,17 @@ export const CalendarSyncIndicator: React.FC<CalendarSyncIndicatorProps> = ({
                 >
                   {isSyncing ? 'Sincronizando...' : 'Sincronizar agora'}
                 </button>
+
+                {/* Botão Desconectar */}
+                {onDisconnect && (
+                  <button
+                    onClick={() => { onDisconnect(); setShowTooltip(false); }}
+                    className="w-full mt-2 py-2 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Desconectar
+                  </button>
+                )}
               </>
             ) : (
               <>

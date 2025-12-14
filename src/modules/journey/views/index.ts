@@ -5,3 +5,4 @@
 
 export { JourneyCardCollapsed } from './JourneyCardCollapsed'
 export { JourneyFullScreen } from './JourneyFullScreen'
+export { JourneyMasterCard } from './JourneyMasterCard'

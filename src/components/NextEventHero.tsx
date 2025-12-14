@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, MapPin, Users, ArrowRight, ExternalLink, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Clock, MapPin, Users, ArrowRight, ExternalLink, ChevronDown, ChevronUp, User } from 'lucide-react';
 
 interface NextEventData {
   id: string;
@@ -59,21 +59,11 @@ export const NextEventHero: React.FC<NextEventHeroProps> = ({
   // Se não há evento próximo
   if (!event) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="ceramic-tray p-8 rounded-[32px] text-center"
-      >
-        <div className="ceramic-concave w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-          <Calendar className="w-8 h-8 text-ceramic-text-secondary/50" />
-        </div>
-        <p className="text-lg font-bold text-ceramic-text-primary mb-1">
-          Agenda livre
+      <div className="py-12 text-center">
+        <p className="text-2xl font-light text-ceramic-text-secondary/40 italic">
+          Livre
         </p>
-        <p className="text-sm text-ceramic-text-secondary">
-          Nenhum compromisso nas próximas horas
-        </p>
-      </motion.div>
+      </div>
     );
   }
 

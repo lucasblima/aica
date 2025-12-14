@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, FileText, Plus, TrendingUp } from 'lucide-react';
 import type { GrantProject, GrantDeadline } from '../types';
+import { cardElevationVariants } from '../../../lib/animations/ceramic-motion';
 
 /**
  * GrantsCard Component
@@ -56,7 +57,13 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
   };
 
   return (
-    <div className="ceramic-card p-8 space-y-6">
+    <motion.div
+      className="ceramic-card p-6 space-y-6 h-full min-h-[380px] flex flex-col cursor-pointer"
+      variants={cardElevationVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="pressed"
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -66,7 +73,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
           <div>
             <h2 className="text-xl font-semibold text-etched">Captação</h2>
             <p className="text-xs text-ceramic-text-secondary">
-              {projectCount} {projectCount === 1 ? 'projeto ativo' : 'projetos ativos'}
+              {projectCount} {projectCount === 1 ? 'projeto' : 'projetos'}
             </p>
           </div>
         </div>
@@ -79,32 +86,34 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
         </button>
       </div>
 
-      {/* Active Projects Summary */}
-      <div className="ceramic-tray p-6 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <TrendingUp className="w-5 h-5 text-ceramic-text-secondary" />
-          <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-            Projetos em Andamento
+      {/* Content Area - Flexible */}
+      <div className="flex-1 flex flex-col space-y-4 overflow-y-auto">
+        {/* Active Projects Summary */}
+        <div className="ceramic-tray p-4 text-center flex-shrink-0">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <TrendingUp className="w-5 h-5 text-ceramic-text-secondary" />
+            <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+              Projetos Ativos
+            </p>
+          </div>
+          <p className="text-3xl font-black text-etched">
+            {projectCount}
           </p>
         </div>
-        <p className="text-4xl font-black text-etched">
-          {projectCount}
-        </p>
-      </div>
 
-      {/* Upcoming Deadlines */}
-      <div className="space-y-3">
+        {/* Upcoming Deadlines */}
+        <div className="space-y-3 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-ceramic-text-secondary" />
           <p className="text-sm font-bold text-ceramic-text-secondary">
-            Próximos Prazos
+            Prazos
           </p>
         </div>
 
         {deadlines.length === 0 ? (
           <div className="ceramic-inset px-4 py-3 text-center">
             <p className="text-sm text-ceramic-text-tertiary">
-              Nenhum prazo próximo
+              Sem prazos
             </p>
           </div>
         ) : (
@@ -140,48 +149,49 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
         )}
       </div>
 
-      {/* Recent Projects */}
-      {projects.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-sm font-bold text-ceramic-text-secondary">
-            Atualizados Recentemente
-          </p>
-          <div className="space-y-2">
-            {projects.slice(0, 2).map((project) => (
-              <div
-                key={project.id}
-                className="ceramic-groove rounded-2xl p-3"
-              >
-                <p className="text-sm font-medium text-ceramic-text-primary mb-1">
-                  {truncate(project.project_name, 35)}
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="ceramic-trough p-1">
-                      <div
-                        className="h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-300"
-                        style={{ width: `${project.completion_percentage}%` }}
-                      />
+        {/* Recent Projects */}
+        {projects.length > 0 && (
+          <div className="space-y-3 flex-shrink-0">
+            <p className="text-sm font-bold text-ceramic-text-secondary">
+              Recentes
+            </p>
+            <div className="space-y-2">
+              {projects.slice(0, 2).map((project) => (
+                <div
+                  key={project.id}
+                  className="ceramic-groove rounded-2xl p-3"
+                >
+                  <p className="text-sm font-medium text-ceramic-text-primary mb-1">
+                    {truncate(project.project_name, 35)}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <div className="ceramic-trough p-1">
+                        <div
+                          className="h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-300"
+                          style={{ width: `${project.completion_percentage}%` }}
+                        />
+                      </div>
                     </div>
+                    <span className="text-xs font-bold text-ceramic-text-secondary">
+                      {project.completion_percentage}%
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-ceramic-text-secondary">
-                    {project.completion_percentage}%
-                  </span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Open Module Button */}
+      {/* Open Module Button - Fixed at bottom */}
       <button
         onClick={onOpenModule}
-        className="w-full ceramic-concave py-3 px-6 font-bold text-ceramic-text-primary hover:scale-[0.98] active:scale-95 transition-transform"
+        className="w-full ceramic-concave py-3 px-6 font-bold text-ceramic-text-primary hover:scale-[0.98] active:scale-95 transition-transform flex-shrink-0"
       >
-        Abrir Módulo de Captação
+        Abrir Captação
       </button>
-    </div>
+    </motion.div>
   );
 };
 

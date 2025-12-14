@@ -187,7 +187,7 @@ const HistoryPanel: React.FC<Props> = ({ onClose, onLoadDossier }) => {
                     ) : filteredProjects.length === 0 ? (
                         <div className="text-center py-12">
                             <p className="text-zinc-500">
-                                {searchTerm ? 'Nenhum projeto encontrado' : 'Nenhum projeto salvo ainda'}
+                                {searchTerm ? 'Sem resultados' : 'Sem projetos'}
                             </p>
                         </div>
                     ) : (

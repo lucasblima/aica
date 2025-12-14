@@ -878,7 +878,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                                                 ))
                                             ) : (
                                                 <p className="text-ceramic-text-secondary text-center py-8">
-                                                    Nenhuma notícia ou polêmica encontrada
+                                                    Sem notícias ou polêmicas
                                                 </p>
                                             )}
                                         </motion.div>

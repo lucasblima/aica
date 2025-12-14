@@ -4,7 +4,9 @@
  */
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Star, TrendingUp } from 'lucide-react';
+import { cardElevationVariants } from '../../../lib/animations/ceramic-motion';
 
 interface RecommendationCardProps {
   title: string;
@@ -20,7 +22,13 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
   score,
 }) => {
   return (
-    <div className="ceramic-card p-6 flex flex-col gap-4 hover:scale-[1.02] transition-transform duration-300">
+    <motion.div
+      className="ceramic-card p-6 flex flex-col gap-4 cursor-pointer"
+      variants={cardElevationVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="pressed"
+    >
       {/* Header with Icon */}
       <div className="flex items-start gap-3">
         {icon && (
@@ -67,7 +75,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
       <button className="mt-2 w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity text-sm">
         Habilitar Módulo
       </button>
-    </div>
+    </motion.div>
   );
 };
 

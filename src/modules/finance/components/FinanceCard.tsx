@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { getAllTimeSummary, getBurnRate } from '../services/financeService';
 import type { FinanceSummary, BurnRateData } from '../types';
+import { cardElevationVariants } from '../../../lib/animations/ceramic-motion';
 
 // =====================================================
-// Finance Card Component - Ceramic Design
+// Finance Card Component - Ceramic Design (Simplified)
 // =====================================================
 
 interface FinanceCardProps {
@@ -60,128 +62,115 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
         return 'text-ceramic-neutral';
     };
 
-    const toggleVisibility = () => {
+    const toggleVisibility = (e: React.MouseEvent) => {
+        e.stopPropagation();
         setIsValuesVisible(!isValuesVisible);
+    };
+
+    // Calculate trend based on burn rate
+    const getTrendData = () => {
+        if (!burnRate || burnRate.trend === 'stable') {
+            return { isPositive: true, percentage: 0, showTrend: false };
+        }
+
+        const isPositive = burnRate.trend === 'decreasing'; // decreasing expenses = positive
+        const percentage = Math.abs(burnRate.percentageChange);
+
+        return { isPositive, percentage, showTrend: true };
     };
 
     if (loading) {
         return (
-            <div className="ceramic-card p-8 animate-pulse">
-                <div className="h-8 bg-gray-200 rounded-full w-32 mb-6"></div>
-                <div className="h-16 bg-gray-200 rounded-lg mb-4"></div>
-                <div className="h-12 bg-gray-200 rounded-lg"></div>
+            <div className="ceramic-card p-6 animate-pulse h-full min-h-[380px]">
+                <div className="h-6 bg-gray-200 rounded w-24 mb-4"></div>
+                <div className="h-12 bg-gray-200 rounded w-32 mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
             </div>
         );
     }
 
     if (error || !summary || !burnRate) {
         return (
-            <div className="ceramic-card p-8">
-                <p className="text-red-600 text-center">
-                    {error || 'Dados não disponíveis'}
+            <div className="ceramic-card p-6 h-full min-h-[380px] flex items-center justify-center">
+                <p className="text-ceramic-text-secondary text-sm text-center">
+                    {error || 'Sem dados'}
                 </p>
             </div>
         );
     }
 
-    const budgetUsagePercentage = burnRate.averageMonthlyExpense > 0
-        ? (summary.totalExpenses / burnRate.averageMonthlyExpense) * 100
-        : 0;
+    const { isPositive, percentage, showTrend } = getTrendData();
 
     return (
-        <div className="ceramic-card p-8 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-etched">💰 Finanças</h2>
+        <motion.div
+            className="ceramic-card p-6 h-full min-h-[380px] flex flex-col relative overflow-hidden cursor-pointer"
+            variants={cardElevationVariants}
+            initial="rest"
+            whileHover="hover"
+            whileTap="pressed"
+        >
+            {/* Decorative Background Icon */}
+            <Wallet className="absolute -right-6 -bottom-6 w-40 h-40 text-emerald-200 opacity-10" />
+
+            {/* Header with Module Name and Visibility Toggle */}
+            <div className="flex items-center justify-between mb-4 relative z-10">
+                <div className="flex items-center gap-2">
+                    <div className="ceramic-concave w-8 h-8 flex items-center justify-center">
+                        <Wallet className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <span className="text-xs text-ceramic-text-secondary uppercase tracking-wider font-bold">
+                        Finanças
+                    </span>
+                </div>
+
                 <button
                     onClick={toggleVisibility}
-                    className="ceramic-concave w-10 h-10 flex items-center justify-center hover:scale-95 transition-transform"
-                    title={isValuesVisible ? 'Ocultar valores' : 'Mostrar valores'}
+                    className="ceramic-concave w-8 h-8 flex items-center justify-center hover:scale-95 transition-transform"
+                    title={isValuesVisible ? 'Ocultar' : 'Mostrar'}
                 >
                     {isValuesVisible ? (
-                        <EyeOff className="w-4 h-4 text-ceramic-text-secondary" />
+                        <EyeOff className="w-3 h-3 text-ceramic-text-secondary" />
                     ) : (
-                        <Eye className="w-4 h-4 text-ceramic-text-secondary" />
+                        <Eye className="w-3 h-3 text-ceramic-text-secondary" />
                     )}
                 </button>
             </div>
 
-            {/* Balance Display - Large and Prominent */}
-            <div className="ceramic-tray p-6 text-center">
-                <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
-                    Saldo Total
+            {/* Main Balance - Large and Centered */}
+            <div className="flex-1 flex flex-col justify-center items-center relative z-10">
+                <p className="text-xs text-ceramic-text-secondary mb-2 uppercase tracking-wider">
+                    Saldo Atual
                 </p>
-                <p className={`text-4xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
+                <p className={`text-3xl md:text-4xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
                     {formatCurrency(summary.currentBalance)}
                 </p>
-                {isValuesVisible && (
-                    <p className="text-xs text-ceramic-text-secondary mt-2">
-                        {summary.transactionCount} transações (fev-nov 2025)
-                    </p>
-                )}
             </div>
 
-            {/* Income vs Expenses - Inset Pills */}
-            <div className="ceramic-groove rounded-2xl p-4 space-y-3">
-                {/* Income */}
-                <div className="ceramic-inset px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <span className="text-2xl">📈</span>
-                        <div>
-                            <p className="text-xs text-ceramic-text-secondary">Entradas</p>
-                            <p className="text-lg font-semibold text-ceramic-positive">
-                                {formatCurrency(summary.totalIncome)}
-                            </p>
-                        </div>
-                    </div>
+            {/* Trend Indicator */}
+            {showTrend && (
+                <div className={`flex items-center justify-center gap-2 mt-4 relative z-10 ${
+                    isPositive ? 'text-ceramic-positive' : 'text-ceramic-negative'
+                }`}>
+                    {isPositive ? (
+                        <TrendingUp className="w-5 h-5" />
+                    ) : (
+                        <TrendingDown className="w-5 h-5" />
+                    )}
+                    <span className="text-sm font-bold">
+                        {percentage.toFixed(1)}%
+                    </span>
+                    <span className="text-xs text-ceramic-text-secondary">
+                        vs média
+                    </span>
                 </div>
+            )}
 
-                {/* Expenses */}
-                <div className="ceramic-inset px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <span className="text-2xl">📉</span>
-                        <div>
-                            <p className="text-xs text-ceramic-text-secondary">Saídas</p>
-                            <p className="text-lg font-semibold text-ceramic-negative">
-                                {formatCurrency(summary.totalExpenses)}
-                            </p>
-                        </div>
-                    </div>
+            {!showTrend && (
+                <div className="flex items-center justify-center gap-2 mt-4 relative z-10 text-ceramic-text-secondary">
+                    <span className="text-xs">Estável</span>
                 </div>
-            </div>
-
-            {/* Burn Rate Forecast */}
-            <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">Burn Rate Médio</p>
-                    <p className="text-lg font-semibold text-etched">
-                        {formatCurrency(burnRate.averageMonthlyExpense)}
-                    </p>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="ceramic-trough p-2">
-                    <div
-                        className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
-                        style={{ width: `${Math.min(budgetUsagePercentage, 100)}%` }}
-                    ></div>
-                </div>
-
-                {isValuesVisible && (
-                    <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">
-                            {budgetUsagePercentage.toFixed(0)}% do orçamento médio
-                        </span>
-                        {burnRate.trend !== 'stable' && (
-                            <span className={`font-medium ${burnRate.trend === 'increasing' ? 'text-red-600' : 'text-green-600'
-                                }`}>
-                                {burnRate.trend === 'increasing' ? '↗' : '↘'} {Math.abs(burnRate.percentageChange).toFixed(1)}%
-                            </span>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
+            )}
+        </motion.div>
     );
 };
 

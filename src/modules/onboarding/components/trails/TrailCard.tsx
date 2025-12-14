@@ -15,6 +15,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { ContextualTrail } from '../../../../types/onboardingTypes';
+import { cardElevationVariants } from '../../../../lib/animations/ceramic-motion';
 
 interface TrailCardProps {
   trail: ContextualTrail;
@@ -26,9 +27,11 @@ const TrailCard: React.FC<TrailCardProps> = ({ trail, isSelected, onToggle }) =>
   return (
     <motion.button
       onClick={onToggle}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className={`relative w-full p-6 rounded-xl transition-all duration-200 text-left border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+      variants={cardElevationVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="pressed"
+      className={`relative w-full p-6 rounded-xl transition-all duration-200 text-left border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer ${
         isSelected
           ? 'border-current bg-opacity-10 ring-2 ring-offset-2'
           : 'border-transparent hover:border-[#E8E6E0] bg-white'
