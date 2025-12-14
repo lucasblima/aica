@@ -133,7 +133,7 @@ export function JourneyCardCollapsed({ onClick }: JourneyCardCollapsedProps) {
 
       {/* CTA */}
       <div className="mt-4 text-center text-sm text-blue-600 font-medium">
-        Clique para expandir →
+        Expandir →
       </div>
     </div>
   )

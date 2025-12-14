@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   TrendingUp,
   TrendingDown,
@@ -30,6 +31,7 @@ import {
   EfficiencyMetrics,
   ModuleEfficiency,
 } from '../services/efficiencyService';
+import { cardElevationVariants } from '../lib/animations/ceramic-motion';
 import './EfficiencyScoreCard.css';
 
 interface EfficiencyScoreCardProps {
@@ -92,7 +94,13 @@ export const EfficiencyScoreCard: React.FC<EfficiencyScoreCardProps> = ({
   const weeklyTrendDirection = weeklyChange > 0 ? 'up' : weeklyChange < 0 ? 'down' : 'stable';
 
   return (
-    <div className="efficiency-score-card">
+    <motion.div
+      className="efficiency-score-card cursor-pointer"
+      variants={cardElevationVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="pressed"
+    >
       {/* Header */}
       <div
         className="efficiency-header"
@@ -253,7 +261,7 @@ export const EfficiencyScoreCard: React.FC<EfficiencyScoreCardProps> = ({
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

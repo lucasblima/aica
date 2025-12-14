@@ -139,7 +139,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
     const hasAnswer = state.responses[currentQuestion.id] && state.responses[currentQuestion.id].length > 0;
 
     if (!hasAnswer && currentQuestion.isRequired) {
-      setState(prev => ({ ...prev, error: 'Por favor, responda esta pergunta' }));
+      setState(prev => ({ ...prev, error: 'Responda esta pergunta' }));
       return;
     }
 

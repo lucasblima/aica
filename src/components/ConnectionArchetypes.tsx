@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Briefcase, GraduationCap, Users, Plus } from 'lucide-react';
+import { useCardSelection } from '../hooks/useCardSelection';
 
 interface Archetype {
   id: string;
@@ -15,7 +17,7 @@ const ARCHETYPES: Archetype[] = [
   {
     id: 'habitat',
     name: 'Habitat',
-    description: 'Gerencie seu condomínio e residência',
+    description: 'Condomínio e residência',
     icon: Home,
     action: 'Conectar',
     gradient: 'from-blue-500 to-cyan-500'
@@ -23,7 +25,7 @@ const ARCHETYPES: Archetype[] = [
   {
     id: 'ventures',
     name: 'Ventures',
-    description: 'Seus projetos e empresas',
+    description: 'Projetos e empresas',
     icon: Briefcase,
     action: 'Iniciar',
     gradient: 'from-purple-500 to-pink-500'
@@ -31,7 +33,7 @@ const ARCHETYPES: Archetype[] = [
   {
     id: 'academia',
     name: 'Academia',
-    description: 'Cursos, mentorias e aprendizado',
+    description: 'Cursos e mentorias',
     icon: GraduationCap,
     action: 'Explorar',
     gradient: 'from-amber-500 to-orange-500'
@@ -39,7 +41,7 @@ const ARCHETYPES: Archetype[] = [
   {
     id: 'tribo',
     name: 'Tribo',
-    description: 'Clubes e comunidades',
+    description: 'Clubes e grupos',
     icon: Users,
     action: 'Participar',
     gradient: 'from-green-500 to-emerald-500'
@@ -49,12 +51,50 @@ const ARCHETYPES: Archetype[] = [
 interface ConnectionArchetypesProps {
   onSelectArchetype: (archetypeId: string) => void;
   onCreateCustom: () => void;
+  multiSelect?: boolean;
 }
 
 export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
   onSelectArchetype,
-  onCreateCustom
+  onCreateCustom,
+  multiSelect = true
 }) => {
+  const navigate = useNavigate();
+
+  // Hook de seleção com elevação ceramic
+  const {
+    selectedIds,
+    toggle,
+    isSelected,
+    getCardMotionProps,
+    hasSelection
+  } = useCardSelection({
+    multiple: multiSelect,
+    onChange: (ids) => {
+      // Se não for multi-select e houver seleção, navega para a página do arquétipo
+      if (!multiSelect && ids.length > 0) {
+        const archetypeId = ids[0];
+        console.log('[ConnectionArchetypes] Navegando para:', `/connections/${archetypeId}`);
+        navigate(`/connections/${archetypeId}`);
+        // Também chama o callback para compatibilidade
+        onSelectArchetype(archetypeId);
+      }
+    }
+  });
+
+  // Handler para clique em card - navega diretamente
+  const handleCardClick = (archetypeId: string) => {
+    if (!multiSelect) {
+      // Modo single-select: navega diretamente
+      console.log('[ConnectionArchetypes] Navegando para:', `/connections/${archetypeId}`);
+      navigate(`/connections/${archetypeId}`);
+      onSelectArchetype(archetypeId);
+    } else {
+      // Modo multi-select: usa o toggle
+      toggle(archetypeId);
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -89,10 +129,10 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
         transition={{ duration: 0.5 }}
       >
         <h2 className="text-2xl font-black text-ceramic-text-primary mb-2">
-          Suas Esferas de Influência
+          Suas redes ganham forma
         </h2>
         <p className="text-sm text-ceramic-text-secondary max-w-md mx-auto">
-          Cada área da sua vida pode ter seu próprio espaço. Escolha onde começar.
+          Escolha onde começar
         </p>
       </motion.div>
 
@@ -105,44 +145,60 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
       >
         {ARCHETYPES.map((archetype) => {
           const Icon = archetype.icon;
+          const selected = isSelected(archetype.id);
 
           return (
             <motion.button
               key={archetype.id}
               variants={cardVariants}
-              onClick={() => onSelectArchetype(archetype.id)}
-              className="ceramic-card p-6 text-left hover:scale-[1.03] active:scale-[0.97] transition-transform duration-200 group relative overflow-hidden"
-              whileHover={{ y: -4 }}
+              {...getCardMotionProps(archetype.id)}
+              onClick={() => handleCardClick(archetype.id)}
+              className={`
+                ${selected ? 'ceramic-elevated bg-ceramic-warm' : 'ceramic-inset-deep bg-ceramic-cool'}
+                p-4 text-left rounded-xl
+                transition-all duration-300
+                hover:${selected ? 'bg-ceramic-warm-hover' : 'bg-ceramic-cool-hover'}
+              `}
             >
-              {/* Gradient Background (subtle) */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${archetype.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
-              />
-
-              {/* Content */}
-              <div className="relative z-10">
-                {/* Icon Container */}
-                <div className="ceramic-concave w-14 h-14 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                  <Icon className="w-7 h-7 text-ceramic-text-secondary group-hover:text-ceramic-accent transition-colors" />
-                </div>
+              <div className="flex items-start gap-3">
+                {/* Icon - Engraved Effect */}
+                <Icon className={`flex-shrink-0 transition-all duration-300 ${
+                  selected
+                    ? 'w-7 h-7 text-ceramic-accent opacity-100'
+                    : 'w-8 h-8 icon-engraved'
+                }`} />
 
                 {/* Text */}
-                <h3 className="text-lg font-black text-ceramic-text-primary mb-1">
-                  {archetype.name}
-                </h3>
-                <p className="text-xs text-ceramic-text-secondary mb-4">
-                  {archetype.description}
-                </p>
-
-                {/* CTA */}
-                <span className="text-xs font-bold text-ceramic-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  {archetype.action}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-sm text-ceramic-text-primary mb-0.5">
+                    {archetype.name}
+                  </h4>
+                  <p className="text-xs text-ceramic-text-secondary line-clamp-1">
+                    {archetype.description}
+                  </p>
+                </div>
               </div>
             </motion.button>
           );
         })}
       </motion.div>
+
+      {/* Botão de confirmação (multi-select) */}
+      {multiSelect && hasSelection && (
+        <motion.div
+          className="mt-6 text-center"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+        >
+          <button
+            onClick={() => selectedIds.forEach(id => onSelectArchetype(id))}
+            className="ceramic-card px-6 py-3 text-sm font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform"
+          >
+            Continuar ({selectedIds.length})
+          </button>
+        </motion.div>
+      )}
 
       {/* Opção Custom */}
       <motion.div
@@ -162,7 +218,7 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
           className="inline-flex items-center gap-2 text-sm text-ceramic-text-secondary hover:text-ceramic-accent transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Criar espaço personalizado
+          Criar personalizado
         </button>
       </motion.div>
 
@@ -174,7 +230,7 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
         transition={{ delay: 0.6 }}
       >
         <button className="text-xs text-ceramic-text-secondary/60 hover:text-ceramic-text-secondary transition-colors">
-          Tem um código de convite?
+          Código de convite
         </button>
       </motion.div>
     </div>

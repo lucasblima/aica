@@ -1,7 +1,7 @@
 -- =====================================================
 -- MIGRATION: Create File Search Corpora Tables (Base)
 -- Data: 2025-12-09
--- Descrição: Cria tabelas base para arquitetura Corpora
+-- Descrição: Cria tabelas base para arquitetura Corpora                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 -- =====================================================
 --
 -- Esta migration cria as tabelas necessárias para o

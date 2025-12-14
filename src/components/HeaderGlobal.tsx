@@ -1,5 +1,7 @@
 import React from 'react';
+import { User, Users } from 'lucide-react';
 import { SettingsMenu } from './SettingsMenu';
+import { CeramicTabSelector } from './CeramicTabSelector';
 
 interface HeaderGlobalProps {
     title: string;
@@ -44,28 +46,16 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
                 />
             </div>
 
-            {/* Optional Tabs - Trough Effect */}
+            {/* Optional Tabs - CeramicTabSelector */}
             {showTabs && onTabChange && (
-                <div className="flex p-1 ceramic-trough rounded-full">
-                    <button
-                        onClick={() => onTabChange('personal')}
-                        className={`flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 ${activeTab === 'personal'
-                                ? 'ceramic-card text-ceramic-text-primary shadow-sm scale-[0.98]'
-                                : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
-                            }`}
-                    >
-                        Pessoal
-                    </button>
-                    <button
-                        onClick={() => onTabChange('network')}
-                        className={`flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 ${activeTab === 'network'
-                                ? 'ceramic-card text-ceramic-text-primary shadow-sm scale-[0.98]'
-                                : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
-                            }`}
-                    >
-                        Conexões
-                    </button>
-                </div>
+                <CeramicTabSelector
+                    tabs={[
+                        { id: 'personal', label: 'Pessoal', icon: <User className="h-4 w-4" /> },
+                        { id: 'network', label: 'Conexões', icon: <Users className="h-4 w-4" /> }
+                    ]}
+                    activeTab={activeTab}
+                    onChange={onTabChange}
+                />
             )}
         </header>
     );

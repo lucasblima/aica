@@ -1,7 +1,9 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { DollarSign, TrendingUp, TrendingDown, Calendar, Settings } from 'lucide-react';
 import type { MonthlyCostSummary } from '../../types/aiCost';
 import { formatUSD, formatPercentage } from '../../types/aiCost';
+import { cardElevationVariants } from '../../lib/animations/ceramic-motion';
 
 // =====================================================
 // Monthly Cost Card Component - Ceramic Design
@@ -34,7 +36,13 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
   const isProjectionGood = projected_month_end_cost <= budget;
 
   return (
-    <div className="ceramic-card p-6">
+    <motion.div
+      className="ceramic-card p-6 cursor-pointer"
+      variants={cardElevationVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="pressed"
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -170,6 +178,6 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

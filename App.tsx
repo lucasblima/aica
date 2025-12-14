@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Users, Briefcase, ChevronRight, Plus, Wallet, Heart, BookOpen, Scale, Building2, Mic, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Users, Briefcase, ChevronRight, Plus } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
 import { handleOAuthCallback } from './src/services/googleAuthService';
 import { BottomNav } from './components/BottomNav';
@@ -20,13 +20,10 @@ import { ViewState } from './types';
 import { LandingPage, OnboardingFlow } from './src/modules/onboarding';
 import Home from './src/pages/Home';
 import { GuestApprovalPage } from './src/modules/podcast/views/GuestApprovalPage';
-import { HeaderGlobal } from './src/components/HeaderGlobal';
-import { JourneyCardCollapsed } from './src/modules/journey/views/JourneyCardCollapsed';
-import { ConsciousnessScore } from './src/modules/journey/components/gamification/ConsciousnessScore';
-import { FinanceCard } from './src/modules/finance/components/FinanceCard';
-import { GrantsCard } from './src/modules/grants/components/GrantsCard';
-import { ConnectionArchetypes } from './src/components/ConnectionArchetypes';
-import { useConsciousnessPoints } from './src/modules/journey/hooks/useConsciousnessPoints';
+import { ConnectionsPage } from './src/pages/ConnectionsPage';
+import { ArchetypeListPage } from './src/pages/ArchetypeListPage';
+import { SpaceDetailPage } from './src/pages/SpaceDetailPage';
+import { SpaceSectionPage } from './src/pages/SpaceSectionPage';
 
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
@@ -102,47 +99,6 @@ export default function App() {
 
    // Podcast Nav State
    const [showPodcastNav, setShowPodcastNav] = useState(true);
-
-   // Tab State for Vida view (personal vs network)
-   const [activeTab, setActiveTab] = useState<'personal' | 'network'>('personal');
-
-   // Secondary modules loading state
-   const [secondaryModulesStatus, setSecondaryModulesStatus] = useState<Record<string, { loaded: boolean; empty: boolean }>>({});
-
-   // Consciousness Points Hook
-   const { stats: consciousnessStats, isLoading: cpLoading } = useConsciousnessPoints();
-
-   // Grants Stats (default values - can be replaced with a hook later)
-   const grantsActiveProjects = 0;
-   const grantsUpcomingDeadlines = 0;
-   const grantsRecentProjects: any[] = [];
-
-   // Animation variants for cards
-   const cardVariants = {
-      hidden: { opacity: 0, y: 20 },
-      visible: (i: number) => ({
-         opacity: 1,
-         y: 0,
-         transition: {
-            delay: i * 0.1,
-            duration: 0.4,
-            ease: 'easeOut'
-         }
-      })
-   };
-
-   // Handle secondary module tasks loaded
-   const handleTasksLoaded = (moduleId: string, tasks: any[]) => {
-      setSecondaryModulesStatus(prev => ({
-         ...prev,
-         [moduleId]: { loaded: true, empty: tasks.length === 0 }
-      }));
-   };
-
-   // Check if all secondary modules are loaded and empty
-   const secondaryModuleIds = ['health', 'education', 'legal'];
-   const allSecondaryModulesLoaded = secondaryModuleIds.every(id => secondaryModulesStatus[id]?.loaded);
-   const allSecondaryModulesEmpty = secondaryModuleIds.every(id => secondaryModulesStatus[id]?.empty);
 
    useEffect(() => {
       const initAuth = async () => {
@@ -357,310 +313,24 @@ export default function App() {
    };
 
    // ==================== MINHA VIDA VIEW ====================
-   const renderVida = () => {
-      const personalAssoc = associations.find(a => a.type === 'personal');
-
-      if (activeTab === 'personal') {
-         const personalModules = lifeAreas.filter(m => m.association_id === personalAssoc?.id);
-
-         return (
-            <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-               <HeaderGlobal
-                  title="Minha Vida"
-                  subtitle="LIFE OS"
-                  userEmail={userEmail || undefined}
-                  onLogout={() => setIsAuthenticated(false)}
-                  onNavigateToAICost={() => setCurrentView('ai-cost')}
-                  onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
-                  showTabs={true}
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-               />
-
-               <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
-                  {/* Journey Card */}
-                  {userId && (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={0}
-                     >
-                        <JourneyCardCollapsed onClick={() => setCurrentView('journey')} />
-                     </motion.div>
-                  )}
-
-                  {/* Consciousness Score Card */}
-                  {consciousnessStats && !cpLoading && (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={1}
-                     >
-                        <ConsciousnessScore stats={consciousnessStats} size="md" showDetails={true} />
-                     </motion.div>
-                  )}
-
-                  {/* Life Modules Grid - Bento Style */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                     {/* Finanças */}
-                     {userId ? (
-                        <motion.div
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={2}
-                           className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
-                           onClick={() => setCurrentView('finance')}
-                        >
-                           <FinanceCard userId={userId} />
-                        </motion.div>
-                     ) : (
-                        <motion.div
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={2}
-                        >
-                           <ModuleCard
-                              moduleId="finance"
-                              title="Finanças"
-                              icon={Wallet}
-                              color="emerald"
-                              accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
-                           />
-                        </motion.div>
-                     )}
-
-                     {/* Grants Module */}
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={3}
-                        className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
-                        onClick={() => setCurrentView('grants')}
-                     >
-                        <GrantsCard
-                           activeProjects={grantsActiveProjects}
-                           upcomingDeadlines={grantsUpcomingDeadlines}
-                           recentProjects={grantsRecentProjects}
-                           onOpenModule={() => setCurrentView('grants')}
-                           onCreateProject={() => setCurrentView('grants')}
-                        />
-                     </motion.div>
-
-                     {/* Módulos Secundários - Colapsar quando todos vazios */}
-                     {allSecondaryModulesLoaded && allSecondaryModulesEmpty ? (
-                        <motion.div
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={4}
-                           className="ceramic-card p-6 col-span-2"
-                        >
-                           <div className="flex items-center gap-3">
-                              <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                                 <CheckCircle2 className="w-5 h-5 text-ceramic-accent" />
-                              </div>
-                              <div>
-                                 <p className="font-bold text-ceramic-text-primary">Tudo em equilíbrio</p>
-                                 <p className="text-sm text-ceramic-text-secondary">
-                                    Saúde, Educação, Jurídico — sem pendências
-                                 </p>
-                              </div>
-                           </div>
-                        </motion.div>
-                     ) : (
-                        <>
-                           {/* Saúde & Bem-estar */}
-                           <motion.div
-                              variants={cardVariants}
-                              initial="hidden"
-                              animate="visible"
-                              custom={4}
-                           >
-                              <ModuleCard
-                                 moduleId="health"
-                                 title="Saúde"
-                                 icon={Heart}
-                                 color="orange"
-                                 accentColor="bg-orange-50 border-orange-100 text-orange-600"
-                                 onTasksLoaded={handleTasksLoaded}
-                              />
-                           </motion.div>
-
-                           {/* Educação */}
-                           <motion.div
-                              variants={cardVariants}
-                              initial="hidden"
-                              animate="visible"
-                              custom={5}
-                           >
-                              <ModuleCard
-                                 moduleId="education"
-                                 title="Educação"
-                                 icon={BookOpen}
-                                 color="amber"
-                                 accentColor="bg-amber-50 border-amber-100 text-amber-600"
-                                 onTasksLoaded={handleTasksLoaded}
-                              />
-                           </motion.div>
-
-                           {/* Jurídico */}
-                           <motion.div
-                              variants={cardVariants}
-                              initial="hidden"
-                              animate="visible"
-                              custom={6}
-                           >
-                              <ModuleCard
-                                 moduleId="legal"
-                                 title="Jurídico"
-                                 icon={Scale}
-                                 color="slate"
-                                 accentColor="bg-slate-50 border-slate-100 text-slate-600"
-                                 onTasksLoaded={handleTasksLoaded}
-                              />
-                           </motion.div>
-                        </>
-                     )}
-
-                     {/* Associações */}
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={7}
-                        onClick={() => setActiveTab('network')}
-                        className="ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
-                     >
-                        <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
-                        <div className="relative z-10">
-                           <div className="flex items-center gap-2 mb-3">
-                              <div className="ceramic-inset p-2">
-                                 <Building2 className="w-5 h-5 text-blue-600" />
-                              </div>
-                              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Associações</span>
-                           </div>
-                           <p className="text-sm text-ceramic-text-primary mb-3 font-medium">
-                              {associations.filter(a => a.type !== 'personal').length} Conexões Ativas
-                           </p>
-                           <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium mt-4 group-hover:translate-x-1 transition-transform">
-                              <span>Gerenciar Rede</span>
-                              <ChevronRight className="w-3 h-3" />
-                           </div>
-                        </div>
-                     </motion.div>
-
-                     {/* Podcast Copilot */}
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={8}
-                        onClick={() => setCurrentView('podcast')}
-                        className="ceramic-card relative overflow-hidden p-6 hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
-                     >
-                        <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-purple-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
-                        <div className="relative z-10">
-                           <div className="flex items-center gap-2 mb-3">
-                              <div className="ceramic-inset p-2">
-                                 <Mic className="w-5 h-5 text-purple-600" />
-                              </div>
-                              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Studio</span>
-                           </div>
-                           <p className="text-sm text-ceramic-text-primary mb-3 font-medium">
-                              Podcast Copilot
-                           </p>
-                           <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium mt-4 group-hover:translate-x-1 transition-transform">
-                              <span>Gerar Pauta</span>
-                              <ChevronRight className="w-3 h-3" />
-                           </div>
-                        </div>
-                     </motion.div>
-                  </div>
-               </main>
-            </div>
-         );
-      } else {
-         // NETWORK TAB
-         const networkAssocs = associations.filter(a => a.type !== 'personal');
-
-         return (
-            <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-               <HeaderGlobal
-                  title="Minha Vida"
-                  subtitle="LIFE OS"
-                  userEmail={userEmail || undefined}
-                  onLogout={() => setIsAuthenticated(false)}
-                  onNavigateToAICost={() => setCurrentView('ai-cost')}
-                  onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
-                  showTabs={true}
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-               />
-
-               <main className="flex-1 overflow-y-auto pb-40 pt-4">
-                  {networkAssocs.length === 0 ? (
-                     /* Arquétipos de Conexão quando vazio */
-                     <ConnectionArchetypes
-                        onSelectArchetype={(archetypeId) => {
-                           console.log('[App] Arquétipo selecionado:', archetypeId);
-                           setSelectedArchetype(archetypeId);
-                           setShowCreateModal(true);
-                           // TODO: Abrir modal de criação de associação
-                        }}
-                        onCreateCustom={() => {
-                           console.log('[App] Criar espaço personalizado');
-                           setSelectedArchetype(null);
-                           setShowCreateModal(true);
-                           // TODO: Abrir modal de criação de associação
-                        }}
-                     />
-                  ) : (
-                     /* Lista de Associações */
-                     <div className="px-6 space-y-4">
-                        {/* Create New Association Button */}
-                        <button
-                           onClick={() => {
-                              setSelectedArchetype(null);
-                              setShowCreateModal(true);
-                           }}
-                           className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group"
-                        >
-                           <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                              <Plus className="w-5 h-5" />
-                           </div>
-                           <span className="font-bold text-sm">Criar ou Entrar em Associação</span>
-                        </button>
-
-                        {networkAssocs.map(assoc => (
-                           <div
-                              key={assoc.id}
-                              onClick={() => handleOpenAssociation(assoc)}
-                              className="ceramic-card p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group"
-                           >
-                              <div className="flex items-center gap-4">
-                                 <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
-                                    <Users className="w-6 h-6 text-ceramic-text-primary" />
-                                 </div>
-                                 <div>
-                                    <h3 className="font-bold text-lg text-ceramic-text-primary text-etched">{assoc.name}</h3>
-                                    <p className="text-xs text-ceramic-text-secondary font-light">{assoc.description || 'Sem descrição'}</p>
-                                 </div>
-                              </div>
-                              <ChevronRight className="w-5 h-5 text-ceramic-text-secondary group-hover:translate-x-1 transition-transform" />
-                           </div>
-                        ))}
-                     </div>
-                  )}
-               </main>
-            </div>
-         );
-      }
-   };
+   // Uses the updated Home component from src/pages/Home.tsx with Ceramic Design System
+   const renderVida = () => (
+      userId ? (
+         <Home
+            userId={userId}
+            userEmail={userEmail}
+            associations={associations}
+            lifeAreas={lifeAreas}
+            onLogout={() => supabase.auth.signOut()}
+            onNavigateToView={setCurrentView}
+            onNavigateToAICost={() => setCurrentView('ai-cost')}
+            onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
+            onOpenAssociation={handleOpenAssociation}
+            onSelectArchetype={handleSelectArchetype}
+            onCreateAssociation={handleCreateAssociation}
+         />
+      ) : null
+   );
 
    // ==================== MEU DIA (AGENDA) VIEW ====================
    const renderAgenda = () => (
@@ -845,6 +515,16 @@ export default function App() {
             path="/landing"
             element={<LandingPage />}
          />
+
+         {/* Connections Module Routes - Protected */}
+         {isAuthenticated && (
+            <>
+               <Route path="/connections" element={<ConnectionsPage />} />
+               <Route path="/connections/:archetype" element={<ArchetypeListPage />} />
+               <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
+               <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
+            </>
+         )}
 
          {/* Main App - Authenticated users */}
          <Route

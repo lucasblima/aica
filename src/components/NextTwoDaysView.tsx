@@ -64,6 +64,20 @@ export function calculateTimeUntil(startTime: string): string {
   return `${minutes}min`;
 }
 
+// Variants para animação stagger entre seções
+const sectionVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.15,
+      duration: 0.4,
+      ease: [0.25, 0.1, 0.25, 1]
+    }
+  })
+};
+
 export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   events,
   onSkipEvent,
@@ -103,109 +117,96 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     return eventDate.toLocaleDateString('pt-BR', { weekday: 'long' });
   };
 
+  // Helper para calcular opacidade baseada no dia
+  const getDayOpacity = (dayIndex: number): string => {
+    if (dayIndex === 0) return 'opacity-100';
+    if (dayIndex === 1) return 'opacity-95';
+    return 'opacity-90';
+  };
+
   // Agrupar eventos por dia
   const todayEvents = events.filter(e => e.isToday);
   const tomorrowEvents = events.filter(e => e.isTomorrow);
   const dayAfterEvents = events.filter(e => !e.isToday && !e.isTomorrow);
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Treino':
-        return 'bg-orange-100 text-orange-700 border-orange-300';
-      case 'Reunião':
-        return 'bg-blue-100 text-blue-700 border-blue-300';
-      case 'Saúde':
-        return 'bg-red-100 text-red-700 border-red-300';
-      case 'Refeição':
-        return 'bg-green-100 text-green-700 border-green-300';
-      case 'Educação':
-        return 'bg-purple-100 text-purple-700 border-purple-300';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
-    }
-  };
 
-  const renderEventCard = (event: EventWithCategory) => {
+  const renderEventCard = (event: EventWithCategory, index: number) => {
     const timeUntil = timeUntilMap[event.id] || event.timeUntil;
     const isPast = timeUntil === 'Agora' || new Date(event.endTime) < new Date();
 
     return (
       <motion.div
         key={event.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`ceramic-card p-6 rounded-3xl relative overflow-hidden ${event.skipped ? 'opacity-50' : ''}`}
+        className={`ceramic-tile p-4 ${event.skipped ? 'opacity-50' : ''}`}
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.05 }}
       >
-        {/* Countdown Badge - Destaque Principal */}
+        {/* Countdown Badge - Above main content */}
         {event.isToday && timeUntil && !event.skipped && !isPast && (
-          <div className="ceramic-tray px-4 py-2 rounded-2xl mb-4 inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50">
-            <Clock className="w-4 h-4 text-ceramic-accent animate-pulse" />
-            <span className="text-sm font-black text-ceramic-accent">
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-ceramic-text-secondary/10">
+            <Clock className="w-3.5 h-3.5 text-ceramic-accent animate-pulse" />
+            <span className="text-xs font-black text-ceramic-accent uppercase tracking-wide">
               Falta {timeUntil}
             </span>
           </div>
         )}
 
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            {/* Title - Grande e Bold */}
-            <h4 className={`text-xl font-black text-ceramic-text-primary mb-2 text-etched ${event.skipped ? 'line-through' : ''}`}>
-              {event.title}
-            </h4>
+        {/* Layout horizontal: Horário | Título | Ação */}
+        <div className="flex items-baseline gap-4">
+          {/* Horário - Destaque principal, âncora visual */}
+          <span className="text-lg font-black text-ceramic-text-primary flex-shrink-0 tabular-nums">
+            {formatTime(event.startTime)}
+          </span>
 
-            {/* Category + Time - Uma linha só */}
-            <div className="flex items-center gap-3 mb-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryColor(event.category)}`}>
-                {event.category}
-              </span>
-              <div className="flex items-center gap-1.5 text-sm text-ceramic-text-secondary font-medium">
-                <Clock className="w-4 h-4" />
-                <span>{formatTime(event.startTime)}</span>
-              </div>
-            </div>
+          {/* Título do evento */}
+          <h4 className={`text-base font-medium text-ceramic-text-primary flex-1 truncate ${
+            event.skipped ? 'line-through text-ceramic-text-secondary' : ''
+          }`}>
+            {event.title}
+          </h4>
 
-            {/* Location */}
-            {event.location && (
-              <div className="flex items-center gap-1.5 text-sm text-ceramic-text-secondary">
-                <MapPin className="w-4 h-4" />
-                <span className="truncate">{event.location}</span>
-              </div>
-            )}
-
-            {/* Skipped indicator */}
-            {event.skipped && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-red-600 font-medium">
-                <AlertCircle className="w-4 h-4" />
-                <span>Não foi</span>
-              </div>
-            )}
-          </div>
-
-          {/* Action Button - Mais evidente */}
+          {/* Action Button - Compact */}
           {event.isToday && !isPast && (
             <div className="flex-shrink-0">
               {event.skipped ? (
                 <button
                   onClick={() => onUnskipEvent(event.id)}
-                  className="ceramic-card px-4 py-2 rounded-2xl hover:scale-105 transition-transform flex items-center gap-2"
+                  className="ceramic-card px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
                   title="Desfazer"
                 >
-                  <Check className="w-5 h-5 text-green-600" />
-                  <span className="text-sm font-bold text-green-600">Desfazer</span>
+                  <Check className="w-4 h-4 text-green-600" />
                 </button>
               ) : (
                 <button
                   onClick={() => onSkipEvent(event.id)}
-                  className="ceramic-concave px-4 py-2 rounded-2xl hover:scale-105 transition-transform flex items-center gap-2"
+                  className="ceramic-concave px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
                   title="Não vou"
                 >
-                  <X className="w-5 h-5 text-red-600" />
-                  <span className="text-sm font-bold text-red-600">Não vou</span>
+                  <X className="w-4 h-4 text-red-600" />
                 </button>
               )}
             </div>
           )}
         </div>
+
+        {/* Metadados secundários - Location */}
+        {event.location && (
+          <div className="flex items-center gap-1.5 mt-2 pl-[calc(theme(spacing.4)+4ch)]">
+            <MapPin className="w-3 h-3 text-ceramic-text-secondary/60 flex-shrink-0" />
+            <span className="text-xs text-ceramic-text-secondary truncate">
+              {event.location}
+            </span>
+          </div>
+        )}
+
+        {/* Skipped indicator */}
+        {event.skipped && (
+          <div className="flex items-center gap-1.5 mt-2 pl-[calc(theme(spacing.4)+4ch)]">
+            <AlertCircle className="w-3 h-3 text-red-600/60 flex-shrink-0" />
+            <span className="text-xs text-red-600 font-medium">Não foi</span>
+          </div>
+        )}
       </motion.div>
     );
   };
@@ -216,30 +217,23 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     isToday: boolean = false
   ) => {
     return (
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <h3 className={`text-2xl font-black ${
-            isToday ? 'text-ceramic-accent text-etched' : 'text-ceramic-text-primary text-etched'
-          }`}>
-            {dayLabel}
-          </h3>
-          <div className="flex-1" />
-          {dayEvents.length > 0 && (
-            <span className="text-xs text-ceramic-text-tertiary font-medium">
-              {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
-            </span>
-          )}
-        </div>
+      <div className="ceramic-tray p-5 mb-4">
+        {/* Título "gravado" na borda superior da bandeja */}
+        <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 ${
+          isToday ? 'text-ceramic-accent' : 'text-ceramic-text-secondary/70'
+        }`}>
+          {dayLabel}
+        </h3>
+
+        {/* Conteúdo */}
         {dayEvents.length > 0 ? (
           <div className="space-y-3">
-            {dayEvents.map(renderEventCard)}
+            {dayEvents.map((event, index) => renderEventCard(event, index))}
           </div>
         ) : (
-          <div className="ceramic-tray p-4 rounded-2xl text-center">
-            <p className="text-xs text-ceramic-text-tertiary italic">
-              Nenhum evento agendado
-            </p>
-          </div>
+          <p className="text-sm text-ceramic-text-secondary/50 italic py-2">
+            Livre
+          </p>
         )}
       </div>
     );
@@ -254,12 +248,41 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {renderDaySection('Hoje', todayEvents, true)}
-      {renderDaySection('Amanhã', tomorrowEvents)}
-      {renderDaySection(
-        dayAfter.toLocaleDateString('pt-BR', { weekday: 'long' }),
-        dayAfterEvents
-      )}
+      {/* Seção Hoje - index 0 */}
+      <motion.div
+        custom={0}
+        variants={sectionVariants}
+        initial="hidden"
+        animate="visible"
+        className={getDayOpacity(0)}
+      >
+        {renderDaySection('Hoje', todayEvents, true)}
+      </motion.div>
+
+      {/* Seção Amanhã - index 1 */}
+      <motion.div
+        custom={1}
+        variants={sectionVariants}
+        initial="hidden"
+        animate="visible"
+        className={getDayOpacity(1)}
+      >
+        {renderDaySection('Amanhã', tomorrowEvents)}
+      </motion.div>
+
+      {/* Seção Depois de Amanhã - index 2 */}
+      <motion.div
+        custom={2}
+        variants={sectionVariants}
+        initial="hidden"
+        animate="visible"
+        className={getDayOpacity(2)}
+      >
+        {renderDaySection(
+          dayAfter.toLocaleDateString('pt-BR', { weekday: 'long' }),
+          dayAfterEvents
+        )}
+      </motion.div>
     </div>
   );
 };

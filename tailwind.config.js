@@ -21,6 +21,13 @@ export default {
                 'ceramic-positive': '#6B7B5C',  // Sage moss - para valores positivos
                 'ceramic-negative': '#9B4D3A',  // Terracotta queimado - para valores negativos
                 'ceramic-neutral': '#8B8579',   // Taupe médio - para valores neutros
+
+                // Ceramic Temperature Colors (frio -> quente)
+                'ceramic-cool': '#E8EBE9',      // Tom frio para repouso/inativo
+                'ceramic-cool-hover': '#DDE0DE', // Hover no estado frio
+                'ceramic-warm': '#F5E6D3',      // Tom quente para seleção/ativo
+                'ceramic-warm-hover': '#EFD9C0', // Hover no estado quente
+                'ceramic-warm-active': '#E8CEB0', // Estado ativo intensificado
             },
             animation: {
                 'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
@@ -45,6 +52,10 @@ export default {
                     '0%, 100%': { opacity: '1', transform: 'scale(1)' },
                     '50%': { opacity: '0.9', transform: 'scale(0.95)' },
                 }
+            },
+            boxShadow: {
+                'ceramic-inset': 'inset 3px 3px 6px rgba(163, 158, 145, 0.35), inset -3px -3px 6px rgba(255, 255, 255, 1.0)',
+                'ceramic-elevated': '6px 6px 12px rgba(163, 158, 145, 0.35), -6px -6px 12px rgba(255, 255, 255, 1.0)',
             }
         }
     },
