@@ -27,12 +27,17 @@ import {
 import './EmptyState.css';
 
 export interface EmptyStateProps {
-  type: 'new_user' | 'no_data_today' | 'insufficient_data' | 'no_data_period';
+  type: 'new_user' | 'no_data_today' | 'insufficient_data' | 'no_data_period' | 'custom';
   onPrimaryAction?: () => void;
   onSecondaryAction?: () => void;
   selectedDays?: number;
   customTitle?: string;
   customMessage?: string;
+  primaryCTALabel?: string;
+  secondaryCTALabel?: string;
+  useCeramicInset?: boolean;
+  icon?: React.ReactNode;
+  illustration?: string;
 }
 
 /**
@@ -79,6 +84,19 @@ const EMPTY_STATE_CONFIG = {
 
 /**
  * EmptyState Component
+ *
+ * A flexible component for displaying empty states with calls-to-action.
+ * Integrates with ceramic design system for warm, inviting appearances.
+ *
+ * @example
+ * ```tsx
+ * <EmptyState
+ *   type="no_data_today"
+ *   onPrimaryAction={() => createMoment()}
+ *   onSecondaryAction={() => viewHistory()}
+ *   useCeramicInset={true}
+ * />
+ * ```
  */
 export const EmptyState: React.FC<EmptyStateProps> = ({
   type,
@@ -87,15 +105,36 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   selectedDays,
   customTitle,
   customMessage,
+  primaryCTALabel,
+  secondaryCTALabel,
+  useCeramicInset = true,
+  icon: customIcon,
+  illustration: customIllustration,
 }) => {
-  const config = EMPTY_STATE_CONFIG[type];
-  const Icon = config.icon;
+  // Use custom type config or fallback to defaults
+  const config = type === 'custom'
+    ? {
+        icon: Sparkles,
+        iconColor: '#667eea',
+        title: customTitle || 'Estado Vazio',
+        message: customMessage || 'Comece adicionando conteúdo',
+        primaryCTA: primaryCTALabel || 'Começar',
+        secondaryCTA: secondaryCTALabel || null,
+        illustration: customIllustration || '✨',
+      }
+    : EMPTY_STATE_CONFIG[type];
+
+  const Icon = customIcon ? () => <div>{customIcon}</div> : config.icon;
 
   // Customize message for no_data_period with selectedDays
   let displayMessage = customMessage || config.message;
   if (type === 'no_data_period' && selectedDays) {
     displayMessage = `Sem registros nos últimos ${selectedDays} dias.`;
   }
+
+  // Use custom labels if provided
+  const primaryCTAText = primaryCTALabel || config.primaryCTA;
+  const secondaryCTAText = secondaryCTALabel || config.secondaryCTA;
 
   // Animation variants
   const containerVariants = {
@@ -133,9 +172,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     },
   };
 
+  const containerClass = useCeramicInset
+    ? "ceramic-tray p-8"
+    : "empty-state-container";
+
   return (
     <motion.div
-      className="empty-state-container"
+      className={containerClass}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -187,8 +230,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
       {/* Actions */}
       <motion.div className="empty-state-actions" variants={itemVariants}>
-        {/* Primary Action */}
-        {config.primaryCTA && onPrimaryAction && (
+        {/* Primary Action - REQUIRED */}
+        {primaryCTAText && onPrimaryAction && (
           <button
             onClick={onPrimaryAction}
             className="empty-state-btn empty-state-btn-primary"
@@ -196,15 +239,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               backgroundColor: config.iconColor,
               borderColor: config.iconColor,
             }}
-            aria-label={config.primaryCTA}
+            aria-label={primaryCTAText}
           >
-            <span>{config.primaryCTA}</span>
+            <span>{primaryCTAText}</span>
             <ArrowRight className="empty-state-btn-icon" size={18} />
           </button>
         )}
 
-        {/* Secondary Action */}
-        {config.secondaryCTA && onSecondaryAction && (
+        {/* Secondary Action - OPTIONAL */}
+        {secondaryCTAText && onSecondaryAction && (
           <button
             onClick={onSecondaryAction}
             className="empty-state-btn empty-state-btn-secondary"
@@ -212,9 +255,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               color: config.iconColor,
               borderColor: `${config.iconColor}40`,
             }}
-            aria-label={config.secondaryCTA}
+            aria-label={secondaryCTAText}
           >
-            {config.secondaryCTA}
+            {secondaryCTAText}
           </button>
         )}
       </motion.div>

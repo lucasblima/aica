@@ -16,10 +16,13 @@ interface CeramicTabSelectorProps {
 }
 
 /**
- * CeramicTabSelector - Tabs com materialidade ceramic e física de deslizamento
+ * CeramicTabSelector - Tabs with tactile ceramic materiality
  *
- * O indicador ativo desliza suavemente com spring physics, criando uma
- * sensação tátil de peso e inércia, como deslizar mármore em um trilho.
+ * Active tabs use ceramic-concave to create a "pressed" feeling,
+ * following the Visual Hierarchy directive: "Navigation elements must have
+ * tactile differentiation. The user must feel they have 'pressed' the destination."
+ *
+ * Inactive tabs are elevated (ceramic-card), active tabs are pressed (ceramic-concave).
  *
  * @example
  * ```tsx
@@ -45,59 +48,50 @@ export function CeramicTabSelector({
   return (
     <div
       className={`
-        relative flex items-center
-        ceramic-inset-shallow rounded-full p-1
-        bg-ceramic-cool
+        relative flex items-center gap-1
+        ceramic-tray rounded-full p-1.5
         ${className}
       `}
       role="tablist"
     >
-      {/* Sliding indicator (ceramic-card) */}
-      <motion.div
-        className="
-          absolute top-1 bottom-1
-          ceramic-card rounded-full
-          bg-ceramic-warm
-        "
-        style={{ width: `calc(${tabWidth}% - 4px)` }}
-        animate={{
-          x: `calc(${activeIndex * 100}% + ${activeIndex * 4}px)`,
-        }}
-        transition={springSlide}
-        layoutId="tab-indicator"
-      />
-
-      {/* Tab buttons */}
+      {/* Tab buttons - Tactile states */}
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
 
         return (
-          <button
+          <motion.button
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={`
-              relative z-10 flex-1
+              flex-1
               flex items-center justify-center gap-2
               py-2.5 px-4
               text-sm font-semibold
               rounded-full
-              transition-colors duration-200
+              transition-all duration-200
               ${isActive
-                ? 'text-ceramic-text-primary'
-                : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+                ? 'ceramic-concave text-ceramic-text-primary' // Pressed/inset state
+                : 'ceramic-card text-ceramic-text-secondary hover:text-ceramic-text-primary' // Elevated state
               }
             `}
             role="tab"
             aria-selected={isActive}
             aria-controls={`tabpanel-${tab.id}`}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.15 }}
           >
             {tab.icon && (
-              <span className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
+              <motion.span
+                className="transition-transform duration-200"
+                animate={{ scale: isActive ? 1.1 : 1 }}
+              >
                 {tab.icon}
-              </span>
+              </motion.span>
             )}
-            <span className="tracking-wide uppercase text-xs">{tab.label}</span>
-          </button>
+            <span className="tracking-wide uppercase text-xs font-bold">
+              {tab.label}
+            </span>
+          </motion.button>
         );
       })}
     </div>
