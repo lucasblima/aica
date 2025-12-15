@@ -311,6 +311,46 @@
   }
 }
 
+/* Ceramic Inset Integration - Scoped to EmptyState only */
+.empty-state-container.ceramic-tray {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 300px;
+  overflow: hidden;
+  position: relative;
+}
+
+.empty-state-container.ceramic-tray .empty-state-icon-wrapper {
+  z-index: 2;
+}
+
+.empty-state-container.ceramic-tray .empty-state-content {
+  z-index: 2;
+}
+
+.empty-state-container.ceramic-tray .empty-state-actions {
+  z-index: 2;
+}
+
+/* Ensure CTA buttons are always visible in ceramic-tray */
+.empty-state-container.ceramic-tray .empty-state-btn-primary {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.empty-state-container.ceramic-tray .empty-state-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.empty-state-container.ceramic-tray .empty-state-btn-secondary {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
 /* Dark Mode Support (optional - can be enabled if needed) */
 @media (prefers-color-scheme: dark) {
   .empty-state-container {
