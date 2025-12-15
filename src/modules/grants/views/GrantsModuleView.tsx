@@ -9,6 +9,7 @@ import { EditalSetupWizard } from '../components/EditalSetupWizard';
 import { EditalDetailView } from '../components/EditalDetailView';
 import { ProjectBriefingView } from '../components/ProjectBriefingView';
 import { ProposalGeneratorView } from '../components/ProposalGeneratorView';
+import { EditalProjectWorkspace } from '../components/workspace/EditalProjectWorkspace';
 import {
   createOpportunity,
   listOpportunities,
@@ -42,7 +43,7 @@ import type {
   FormField
 } from '../types';
 
-type ModuleView = 'dashboard' | 'edital-detail' | 'setup' | 'briefing' | 'generation';
+type ModuleView = 'dashboard' | 'edital-detail' | 'setup' | 'briefing' | 'generation' | 'workspace';
 
 // Tipo estendido de oportunidade com contagem de projetos
 type OpportunityWithCount = GrantOpportunity & {
@@ -174,8 +175,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       // Load the new project
       await loadProjectDetails(project.id);
 
-      // Navigate to briefing
-      setCurrentView('briefing');
+      // Navigate to workspace
+      setCurrentView('workspace');
       setIsSetupModalOpen(false);
 
       // Refresh opportunities list
@@ -446,6 +447,10 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const handleBack = () => {
     if (currentView === 'generation') {
       setCurrentView('briefing');
+    } else if (currentView === 'workspace') {
+      // From workspace, go back to edital detail
+      setCurrentView('edital-detail');
+      setSelectedProject(null);
     } else if (currentView === 'briefing') {
       setCurrentView('edital-detail');
       setSelectedProject(null);
@@ -556,7 +561,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const handleSelectProjectFromEdital = async (project: GrantProject) => {
     setSelectedProject(project);
     await loadProjectDetails(project.id);
-    setCurrentView('briefing');
+    setCurrentView('workspace'); // Navigate to unified workspace
   };
 
   /**
@@ -673,6 +678,18 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           onBackToEdital={handleBackToEdital}
           editalPdfContent={currentOpportunity.edital_text_content}
           projectDocumentsContent={selectedProject.source_document_content}
+        />
+      )}
+
+      {/* Unified Workspace View (New Non-Linear Navigation) */}
+      {currentView === 'workspace' && selectedProject && currentOpportunity && (
+        <EditalProjectWorkspace
+          project={selectedProject}
+          opportunity={currentOpportunity}
+          onBack={handleBack}
+          onGenerateField={handleGenerateField}
+          onSaveResponse={handleSaveResponse}
+          onProposalComplete={handleProposalComplete}
         />
       )}
 
