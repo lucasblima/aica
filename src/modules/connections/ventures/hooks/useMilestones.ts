@@ -38,7 +38,11 @@ export function useMilestones(entityId: string | undefined): UseMilestonesReturn
 
   // Fetch milestones
   const fetchMilestones = useCallback(async () => {
-    if (!user?.id || !entityId) return;
+    if (!user?.id || !entityId) {
+      setMilestones([]);
+      setActiveMilestones([]);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -49,11 +53,15 @@ export function useMilestones(entityId: string | undefined): UseMilestonesReturn
         milestoneService.getActiveMilestones(entityId),
       ]);
 
-      setMilestones(all);
-      setActiveMilestones(active);
+      // Ensure we always set arrays, even if API returns null/undefined
+      setMilestones(Array.isArray(all) ? all : []);
+      setActiveMilestones(Array.isArray(active) ? active : []);
     } catch (err) {
       setError(err as Error);
       console.error('Error fetching milestones:', err);
+      // On error, ensure arrays are still valid
+      setMilestones([]);
+      setActiveMilestones([]);
     } finally {
       setLoading(false);
     }

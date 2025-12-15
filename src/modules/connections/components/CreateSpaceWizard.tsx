@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Check, Home, Briefcase, GraduationCap, Users, Mail, Loader2 } from 'lucide-react';
 import { Archetype, ConnectionSpace, ARCHETYPE_CONFIG, CreateSpacePayload } from '../types';
 import { useCardSelection } from '@/hooks/useCardSelection';
+import { spaceService } from '../services/spaceService';
 
 interface CreateSpaceWizardProps {
   /** Whether the wizard is open */
@@ -153,9 +154,6 @@ export function CreateSpaceWizard({
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       // Create payload
       const payload: CreateSpacePayload = {
         archetype: selectedArchetype,
@@ -166,22 +164,8 @@ export function CreateSpaceWizard({
         color_theme: formData.color_theme || currentArchetypeConfig?.color_theme,
       };
 
-      // Mock created space
-      const createdSpace: ConnectionSpace = {
-        id: Date.now().toString(),
-        user_id: 'user-123',
-        archetype: selectedArchetype,
-        name: payload.name,
-        subtitle: payload.subtitle,
-        description: payload.description,
-        icon: payload.icon,
-        color_theme: payload.color_theme || 'earth',
-        is_active: true,
-        is_favorite: false,
-        settings: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      // Call real service to persist in database
+      const createdSpace = await spaceService.createSpace(payload);
 
       // Show success state
       setIsSuccess(true);

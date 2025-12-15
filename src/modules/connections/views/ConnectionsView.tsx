@@ -10,7 +10,7 @@ import { ARCHETYPE_CONFIG } from '../types';
 
 interface ConnectionsViewProps {
   userId: string;
-  onNavigateToSpace?: (spaceId: string) => void;
+  onNavigateToSpace?: (spaceId: string, archetype: Archetype) => void;
   onCreateSpace?: () => void;
 }
 
@@ -174,53 +174,72 @@ export function ConnectionsView({
           </div>
         </header>
 
-        {/* Empty state with archetype suggestions */}
+        {/* Empty state with archetype guidance - warm and inviting */}
         <div className="flex-1 overflow-y-auto px-6 pb-40">
           <motion.div
-            className="ceramic-tray p-8 text-center"
+            className="ceramic-tray p-12 text-center"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="ceramic-inset w-20 h-20 flex items-center justify-center mx-auto mb-6 bg-ceramic-cool">
-              <Sparkles className="w-10 h-10 text-ceramic-accent" />
-            </div>
+            {/* Icon with ceramic inset */}
+            <motion.div
+              className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-8 bg-blue-50"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+            >
+              <Sparkles className="w-12 h-12 text-ceramic-accent" />
+            </motion.div>
 
-            <h2 className="text-xl font-bold text-ceramic-text-primary mb-2">
+            {/* Main headline */}
+            <h2 className="text-2xl font-black text-ceramic-text-primary text-etched mb-3">
               Comece sua primeira conexão
             </h2>
-            <p className="text-sm text-ceramic-text-secondary max-w-md mx-auto mb-8">
-              Escolha um arquétipo para criar seu primeiro espaço de colaboração
+            <p className="text-base text-ceramic-text-secondary max-w-xl mx-auto mb-10 leading-relaxed">
+              Escolha um arquétipo para criar seu primeiro espaço de colaboração e transformar ideias em realidade
             </p>
 
-            {/* Archetype suggestions grid */}
-            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
+            {/* Archetype suggestions - tactile grid */}
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
               {Object.entries(ARCHETYPE_CONFIG).map(([key, config]) => (
                 <motion.button
                   key={key}
                   onClick={onCreateSpace}
-                  className="ceramic-card p-4 text-left hover:scale-[1.02] transition-transform"
-                  whileHover={{ y: -2 }}
+                  className="ceramic-card p-6 text-left hover:scale-[1.02] transition-transform group"
+                  whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.98 }}
+                  aria-label={`Criar ${config.label}`}
                 >
-                  <div className="text-3xl mb-2">{config.icon}</div>
-                  <h3 className="font-bold text-sm text-ceramic-text-primary mb-1">
+                  <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
+                    {config.icon}
+                  </div>
+                  <h3 className="font-bold text-base text-ceramic-text-primary mb-2 group-hover:text-ceramic-accent transition-colors">
                     {config.label}
                   </h3>
-                  <p className="text-xs text-ceramic-text-secondary line-clamp-2">
+                  <p className="text-sm text-ceramic-text-secondary line-clamp-2">
                     {config.subtitle}
                   </p>
                 </motion.button>
               ))}
             </div>
 
-            <button
+            {/* Primary CTA Button - Inevitable action */}
+            <motion.button
               onClick={onCreateSpace}
-              className="ceramic-card px-6 py-3 text-sm font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform inline-flex items-center gap-2"
+              className="ceramic-card px-8 py-4 text-base font-bold text-white bg-ceramic-accent hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-3"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Criar primeiro espaço"
             >
-              <Plus className="w-4 h-4" />
-              Criar primeiro espaço
-            </button>
+              <Plus className="w-5 h-5" />
+              Criar meu primeiro espaço
+            </motion.button>
+
+            {/* Subtle supporting text */}
+            <p className="text-xs text-ceramic-text-secondary mt-6 opacity-75">
+              Cada arquétipo oferece ferramentas específicas para sua jornada colaborativa
+            </p>
           </motion.div>
         </div>
       </div>
@@ -313,7 +332,7 @@ export function ConnectionsView({
                     space={space}
                     variant="compact"
                     showFavorite
-                    onClick={() => onNavigateToSpace?.(space.id)}
+                    onClick={() => onNavigateToSpace?.(space.id, space.archetype)}
                     onToggleFavorite={() => handleToggleFavorite(space.id, space.is_favorite)}
                   />
                 </div>
@@ -338,22 +357,25 @@ export function ConnectionsView({
             {filteredSpaces.length === 0 ? (
               <motion.div
                 key="empty-filter"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 className="ceramic-tray p-8 text-center"
               >
-                <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-ceramic-cool">
-                  <Sparkles className="w-8 h-8 text-ceramic-text-secondary" />
+                <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-blue-50">
+                  <Sparkles className="w-8 h-8 text-ceramic-accent" />
                 </div>
-                <p className="text-sm text-ceramic-text-secondary">
-                  Nenhum espaço encontrado nesta categoria
+                <h3 className="text-base font-bold text-ceramic-text-primary mb-2">
+                  Nenhum espaço nesta categoria
+                </h3>
+                <p className="text-sm text-ceramic-text-secondary mb-6">
+                  Crie o primeiro espaço neste arquétipo
                 </p>
                 <button
                   onClick={onCreateSpace}
-                  className="mt-4 ceramic-card px-4 py-2 text-xs font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform inline-flex items-center gap-2"
+                  className="ceramic-card px-5 py-2.5 text-sm font-bold text-white bg-ceramic-accent hover:scale-105 active:scale-95 transition-transform inline-flex items-center gap-2"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-4 h-4" />
                   Criar espaço
                 </button>
               </motion.div>
@@ -372,7 +394,7 @@ export function ConnectionsView({
                       variant="full"
                       showFavorite
                       memberCount={0} // TODO: Add member count when available
-                      onClick={() => onNavigateToSpace?.(space.id)}
+                      onClick={() => onNavigateToSpace?.(space.id, space.archetype)}
                       onToggleFavorite={() => handleToggleFavorite(space.id, space.is_favorite)}
                     />
                   </motion.div>

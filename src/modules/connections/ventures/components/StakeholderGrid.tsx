@@ -20,13 +20,16 @@ export function StakeholderGrid({
   groupByType = true,
   className = '',
 }: StakeholderGridProps) {
+  // Safe array reference with fallback
+  const safeStakeholders = stakeholders || [];
+
   // Group stakeholders by type
   const groupedStakeholders = React.useMemo(() => {
     if (!groupByType) {
-      return { all: stakeholders };
+      return { all: safeStakeholders };
     }
 
-    return stakeholders.reduce((acc, stakeholder) => {
+    return safeStakeholders.reduce((acc, stakeholder) => {
       const type = stakeholder.stakeholder_type;
       if (!acc[type]) {
         acc[type] = [];
@@ -34,7 +37,7 @@ export function StakeholderGrid({
       acc[type].push(stakeholder);
       return acc;
     }, {} as Record<string, VenturesStakeholder[]>);
-  }, [stakeholders, groupByType]);
+  }, [safeStakeholders, groupByType]);
 
   const typeLabels: Record<string, string> = {
     founder: 'Fundadores',
@@ -203,9 +206,9 @@ export function StakeholderGrid({
       ))}
 
       {/* Empty State */}
-      {stakeholders.length === 0 && (
+      {safeStakeholders.length === 0 && (
         <div className="text-center py-8">
-          <div className="text-4xl mb-2">👥</div>
+          <div className="text-4xl mb-2"></div>
           <p className="text-sm text-neutral-600">Nenhum stakeholder cadastrado</p>
         </div>
       )}

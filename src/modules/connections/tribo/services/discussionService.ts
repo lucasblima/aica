@@ -37,6 +37,30 @@ export const discussionService = {
     return (data || []).map(transformDiscussionFromDB);
   },
 
+  // Get recent discussions for a space (limited)
+  async getRecentDiscussions(spaceId: string, limit: number = 5): Promise<Discussion[]> {
+    const { data, error } = await supabase
+      .from('tribo_discussions')
+      .select(
+        `
+        *,
+        author:auth.users!created_by(
+          id,
+          raw_user_meta_data
+        )
+      `
+      )
+      .eq('space_id', spaceId)
+      .order('is_pinned', { ascending: false })
+      .order('last_reply_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return (data || []).map(transformDiscussionFromDB);
+  },
+
   // Get discussions by category
   async getDiscussionsByCategory(
     spaceId: string,

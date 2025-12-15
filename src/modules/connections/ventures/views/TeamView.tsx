@@ -14,7 +14,10 @@ export function TeamView() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = React.useState<'grid' | 'equity'>('grid');
 
-  const { stakeholders, loading, error } = useStakeholders(entityId || '');
+  const { stakeholders = [], loading, error } = useStakeholders(entityId || '');
+
+  // Safe array reference with fallback
+  const safeStakeholders = stakeholders || [];
 
   const handleStakeholderClick = (stakeholder: any) => {
     navigate(`/connections/ventures/${entityId}/team/${stakeholder.id}`);
@@ -44,7 +47,7 @@ export function TeamView() {
 
   // Calculate summary statistics
   const summary = React.useMemo(() => {
-    const active = stakeholders.filter((s) => s.is_active);
+    const active = safeStakeholders.filter((s) => s.is_active);
     const totalEquity = active.reduce((sum, s) => sum + (s.equity_pct || 0), 0);
     const totalInvestment = active
       .filter((s) => s.investment_amount)
@@ -62,7 +65,7 @@ export function TeamView() {
       totalInvestment,
       byType,
     };
-  }, [stakeholders]);
+  }, [safeStakeholders]);
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -145,13 +148,13 @@ export function TeamView() {
         <div className="bg-white rounded-lg border border-neutral-200 p-6">
           {viewMode === 'grid' ? (
             <StakeholderGrid
-              stakeholders={stakeholders.filter((s) => s.is_active)}
+              stakeholders={safeStakeholders.filter((s) => s.is_active)}
               onStakeholderClick={handleStakeholderClick}
               groupByType={true}
             />
           ) : (
             <EquityTable
-              stakeholders={stakeholders.filter((s) => s.is_active)}
+              stakeholders={safeStakeholders.filter((s) => s.is_active)}
               onStakeholderClick={handleStakeholderClick}
               showVesting={true}
             />

@@ -4,7 +4,9 @@
  * Design: Earthy tones, heavy cards, stable foundation aesthetic
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Home, Wrench, Package, ArrowLeft, Plus } from 'lucide-react';
 import { useProperty } from '../hooks/useProperty';
 import { useMaintenanceSummary } from '../hooks/useMaintenance';
 import { useWarrantyAlerts } from '../hooks/useInventory';
@@ -19,8 +21,11 @@ interface HabitatDashboardProps {
 }
 
 export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) => {
-  const { properties, loading: propertiesLoading } = useProperty(spaceId);
+  const navigate = useNavigate();
+  const { properties, loading: propertiesLoading, createNewProperty } = useProperty(spaceId);
   const primaryProperty = properties[0] || null;
+  const [isCreating, setIsCreating] = useState(false);
+  const [newPropertyName, setNewPropertyName] = useState('');
 
   const { summary: maintenanceSummary, loading: summaryLoading } = useMaintenanceSummary(
     primaryProperty?.id || ''
@@ -42,18 +47,65 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
     );
   }
 
+  // Handler para criar propriedade
+  const handleCreateProperty = async () => {
+    if (!newPropertyName.trim()) return;
+
+    setIsCreating(true);
+    try {
+      await createNewProperty({
+        space_id: spaceId,
+        name: newPropertyName.trim(),
+        property_type: 'apartment',
+      });
+      setNewPropertyName('');
+    } catch (error) {
+      console.error('Erro ao criar propriedade:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   if (!primaryProperty) {
     return (
       <div className="p-6">
+        {/* Navegação */}
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => navigate('/connections/habitat')}
+            className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-stone-600" />
+          </button>
+          <h1 className="text-2xl font-bold text-stone-800">Habitat</h1>
+        </div>
+
         <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-8 text-center">
           <div className="text-6xl mb-4">🏠</div>
           <h3 className="text-xl font-semibold text-stone-800 mb-2">Nenhuma propriedade cadastrada</h3>
           <p className="text-stone-600 mb-6">
             Comece adicionando informações sobre sua residência ou condomínio
           </p>
-          <button className="px-6 py-3 bg-amber-700 text-white font-medium rounded-lg hover:bg-amber-800 transition-colors">
-            Adicionar Propriedade
-          </button>
+
+          {/* Formulário inline para criar propriedade */}
+          <div className="max-w-md mx-auto space-y-4">
+            <input
+              type="text"
+              value={newPropertyName}
+              onChange={(e) => setNewPropertyName(e.target.value)}
+              placeholder="Nome da propriedade (ex: Meu Apartamento)"
+              className="w-full px-4 py-3 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none"
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateProperty()}
+            />
+            <button
+              onClick={handleCreateProperty}
+              disabled={!newPropertyName.trim() || isCreating}
+              className="w-full px-6 py-3 bg-amber-700 text-white font-medium rounded-lg hover:bg-amber-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              {isCreating ? 'Criando...' : 'Adicionar Propriedade'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -61,12 +113,45 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
 
   return (
     <div className="p-6 space-y-6 bg-stone-50 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      {/* Header com navegação */}
+      <div className="flex items-center gap-4 mb-2">
+        <button
+          onClick={() => navigate('/connections/habitat')}
+          className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-stone-600" />
+        </button>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-stone-800">Habitat</h1>
           <p className="text-stone-600 mt-1">Gestão da sua propriedade</p>
         </div>
+      </div>
+
+      {/* Navigation Tabs - Tactile ceramic states */}
+      <div className="ceramic-tray flex gap-1.5 p-1.5 rounded-full inline-flex">
+        <button
+          className="flex items-center gap-2 px-5 py-2.5 ceramic-concave text-ceramic-text-primary rounded-full font-bold text-sm"
+          aria-selected="true"
+        >
+          <Home className="w-4 h-4" />
+          <span className="uppercase tracking-wide text-xs">Dashboard</span>
+        </button>
+        <button
+          onClick={() => navigate(`/connections/habitat/${spaceId}/maintenance`)}
+          className="flex items-center gap-2 px-5 py-2.5 ceramic-card text-ceramic-text-secondary hover:text-ceramic-text-primary rounded-full font-bold text-sm transition-colors"
+          aria-selected="false"
+        >
+          <Wrench className="w-4 h-4" />
+          <span className="uppercase tracking-wide text-xs">Manutenção</span>
+        </button>
+        <button
+          onClick={() => navigate(`/connections/habitat/${spaceId}/inventory`)}
+          className="flex items-center gap-2 px-5 py-2.5 ceramic-card text-ceramic-text-secondary hover:text-ceramic-text-primary rounded-full font-bold text-sm transition-colors"
+          aria-selected="false"
+        >
+          <Package className="w-4 h-4" />
+          <span className="uppercase tracking-wide text-xs">Inventário</span>
+        </button>
       </div>
 
       {/* Property Info Card */}

@@ -131,17 +131,23 @@ export function useEntitiesBySpace(spaceId: string | undefined): UseEntitiesBySp
 
   // Fetch entities
   const fetchEntities = useCallback(async () => {
-    if (!user?.id || !spaceId) return;
+    if (!user?.id || !spaceId) {
+      setEntities([]);
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
 
       const data = await entityService.getEntitiesBySpace(spaceId);
-      setEntities(data);
+      // Ensure we always set an array, even if API returns null/undefined
+      setEntities(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err as Error);
       console.error('Error fetching entities:', err);
+      // On error, ensure entities is still a valid empty array
+      setEntities([]);
     } finally {
       setLoading(false);
     }

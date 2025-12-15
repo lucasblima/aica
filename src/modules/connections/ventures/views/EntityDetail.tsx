@@ -22,12 +22,17 @@ export function EntityDetail() {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
 
-  const { entities, loading, error, updateEntity } = useEntity('');
-  const entity = entities.find((e) => e.id === entityId);
+  // Use correct hook for single entity
+  const { entity, loading, error, updateEntity } = useEntity(entityId);
 
-  const { currentMetrics, metrics: metricsHistory } = useMetrics(entityId || '');
-  const { milestones } = useMilestones(entityId || '');
-  const { stakeholders } = useStakeholders(entityId || '');
+  const { currentMetrics, metrics: metricsHistory = [] } = useMetrics(entityId || '');
+  const { milestones = [] } = useMilestones(entityId || '');
+  const { stakeholders = [] } = useStakeholders(entityId || '');
+
+  // Safe array references with fallbacks
+  const safeMetricsHistory = metricsHistory || [];
+  const safeMilestones = milestones || [];
+  const safeStakeholders = stakeholders || [];
 
   const [formData, setFormData] = useState<Partial<VenturesEntity>>(entity || {});
 
@@ -197,7 +202,7 @@ export function EntityDetail() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <MRRChart metricsHistory={metricsHistory} />
+            <MRRChart metricsHistory={safeMetricsHistory} />
           </motion.div>
         </div>
 
@@ -216,7 +221,7 @@ export function EntityDetail() {
               Equipe
             </h2>
           </div>
-          <StakeholderGrid stakeholders={stakeholders} entityId={entity.id} />
+          <StakeholderGrid stakeholders={safeStakeholders} entityId={entity.id} />
         </motion.div>
 
         {/* Milestones Timeline */}
@@ -234,7 +239,7 @@ export function EntityDetail() {
               Milestones
             </h2>
           </div>
-          <MilestoneTimeline milestones={milestones} entityId={entity.id} />
+          <MilestoneTimeline milestones={safeMilestones} entityId={entity.id} />
         </motion.div>
 
         {/* Entity Details Form (Collapsible) */}

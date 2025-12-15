@@ -26,11 +26,8 @@ export function ConnectionsPage() {
   const { navigateToSpace } = useConnectionNavigation();
   const [showCreateWizard, setShowCreateWizard] = useState(false);
 
-  const handleNavigateToSpace = (spaceId: string) => {
-    // Note: We need to fetch the space to get its archetype
-    // For now, we'll pass a placeholder and rely on the detail page to handle it
-    // In a real implementation, you'd fetch the space data here
-    console.log('[ConnectionsPage] Navigating to space:', spaceId);
+  const handleNavigateToSpace = (spaceId: string, archetype: string) => {
+    navigateToSpace(spaceId, archetype as any);
   };
 
   const handleCreateSpace = () => {
