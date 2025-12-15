@@ -79,12 +79,9 @@ export async function getConnectionSpaceById(spaceId: string): Promise<Connectio
     .from('connection_spaces')
     .select('*')
     .eq('id', spaceId)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
+  if (error) throw error;
   return data;
 }
 

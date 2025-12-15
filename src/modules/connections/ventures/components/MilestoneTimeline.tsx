@@ -17,6 +17,9 @@ export function MilestoneTimeline({
   onMilestoneClick,
   className = '',
 }: MilestoneTimelineProps) {
+  // Safe array reference with fallback
+  const safeMilestones = milestones || [];
+
   const statusConfig: Record<
     MilestoneStatus,
     { color: string; bgColor: string; borderColor: string; label: string }
@@ -62,7 +65,7 @@ export function MilestoneTimeline({
     tecnologia: '⚙️',
   };
 
-  if (milestones.length === 0) {
+  if (safeMilestones.length === 0) {
     return (
       <div className={`bg-neutral-50 rounded-lg border border-neutral-200 p-8 text-center ${className}`}>
         <p className="text-neutral-500 text-sm">Nenhum milestone cadastrado</p>
@@ -81,7 +84,7 @@ export function MilestoneTimeline({
 
         {/* Milestones */}
         <div className="space-y-6">
-          {milestones.map((milestone, index) => {
+          {safeMilestones.map((milestone, index) => {
             const config = statusConfig[milestone.status];
             const categoryIcon = milestone.category
               ? categoryIcons[milestone.category] || '🎯'

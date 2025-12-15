@@ -76,9 +76,9 @@ export const spaceService = {
 
   /**
    * Fetches a single space by ID with its members
-   * Returns space with populated members array
+   * Returns space with populated members array, or null if not found
    */
-  async getSpaceById(id: string): Promise<ConnectionSpace & { members: ConnectionMember[] }> {
+  async getSpaceById(id: string): Promise<(ConnectionSpace & { members: ConnectionMember[] }) | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -86,22 +86,23 @@ export const spaceService = {
         throw new Error('User not authenticated');
       }
 
-      // Fetch space
+      // Fetch space - use maybeSingle to handle non-existent spaces gracefully
       const { data: spaceData, error: spaceError } = await supabase
         .from('connection_spaces')
         .select('*')
         .eq('id', id)
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (spaceError) {
         console.error('Error fetching space:', spaceError);
         throw new Error(`Failed to fetch space: ${spaceError.message}`);
       }
 
+      // Return null gracefully if space not found
       if (!spaceData) {
-        throw new Error('Space not found');
+        return null;
       }
 
       // Fetch members

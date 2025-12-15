@@ -6,7 +6,7 @@
  */
 
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 import type { ArchetypeType } from '../types';
 import { ARCHETYPE_METADATA } from '../types';
 
@@ -106,7 +106,7 @@ export function useConnectionNavigation(): UseConnectionNavigationReturn {
   };
 
   // Generate breadcrumbs based on current route
-  const getBreadcrumbs = useMemo((): BreadcrumbItem[] => {
+  const getBreadcrumbs = useCallback((): BreadcrumbItem[] => {
     const breadcrumbs: BreadcrumbItem[] = [];
 
     // Always start with Connections home

@@ -19,6 +19,14 @@ export function useDiscussions(spaceId: string) {
   });
 }
 
+export function useRecentDiscussions(spaceId: string, limit: number = 5) {
+  return useQuery({
+    queryKey: ['tribo-discussions', spaceId, 'recent', limit],
+    queryFn: () => discussionService.getRecentDiscussions(spaceId, limit),
+    enabled: !!spaceId,
+  });
+}
+
 export function useDiscussionsByCategory(spaceId: string, category: string) {
   return useQuery({
     queryKey: ['tribo-discussions', spaceId, 'category', category],

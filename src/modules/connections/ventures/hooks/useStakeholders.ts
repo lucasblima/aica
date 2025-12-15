@@ -40,7 +40,13 @@ export function useStakeholders(entityId: string | undefined): UseStakeholdersRe
 
   // Fetch stakeholders
   const fetchStakeholders = useCallback(async () => {
-    if (!user?.id || !entityId) return;
+    if (!user?.id || !entityId) {
+      setStakeholders([]);
+      setFounders([]);
+      setInvestors([]);
+      setTeamMembers([]);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -53,13 +59,19 @@ export function useStakeholders(entityId: string | undefined): UseStakeholdersRe
         stakeholderService.getTeamMembers(entityId),
       ]);
 
-      setStakeholders(all);
-      setFounders(foundersData);
-      setInvestors(investorsData);
-      setTeamMembers(teamData);
+      // Ensure we always set arrays, even if API returns null/undefined
+      setStakeholders(Array.isArray(all) ? all : []);
+      setFounders(Array.isArray(foundersData) ? foundersData : []);
+      setInvestors(Array.isArray(investorsData) ? investorsData : []);
+      setTeamMembers(Array.isArray(teamData) ? teamData : []);
     } catch (err) {
       setError(err as Error);
       console.error('Error fetching stakeholders:', err);
+      // On error, ensure arrays are still valid
+      setStakeholders([]);
+      setFounders([]);
+      setInvestors([]);
+      setTeamMembers([]);
     } finally {
       setLoading(false);
     }
