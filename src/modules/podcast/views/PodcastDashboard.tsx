@@ -352,25 +352,30 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                             ))}
                         </div>
                     ) : episodes.length === 0 ? (
-                        /* Empty State */
-                        <div className="text-center py-16">
-                            <div className="bg-[#EBE9E4] inline-flex p-6 rounded-3xl mb-4 shadow-[inset_2px_2px_4px_rgba(163,158,145,0.15)]">
-                                <Calendar className="w-16 h-16 text-[#948D82]" />
+                        /* Empty State with Ceramic Inset CTA */
+                        <motion.div
+                            className="ceramic-tray p-8 text-center"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className="ceramic-inset w-20 h-20 flex items-center justify-center mx-auto mb-6 bg-amber-50">
+                                <Calendar className="w-10 h-10 text-amber-600" />
                             </div>
                             <h3 className="text-xl font-bold text-[#5C554B] mb-2">
                                 Nenhum episódio ainda
                             </h3>
-                            <p className="text-[#948D82] mb-6">
-                                Crie seu primeiro episódio para começar
+                            <p className="text-[#948D82] mb-8 max-w-sm mx-auto">
+                                Crie seu primeiro episódio para começar sua jornada produtiva
                             </p>
                             <button
                                 onClick={onCreateEpisode}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-[#F0EFE9] hover:bg-white text-[#5C554B] font-bold rounded-xl transition-all shadow-[4px_4px_8px_rgba(163,158,145,0.2),-4px_-4px_8px_rgba(255,255,255,0.9)] hover:scale-105"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-all shadow-[4px_4px_8px_rgba(163,158,145,0.2),-4px_-4px_8px_rgba(255,255,255,0.9)] hover:scale-105 active:scale-95"
                             >
                                 <Plus className="w-5 h-5" />
                                 Criar Primeiro Episódio
                             </button>
-                        </div>
+                        </motion.div>
                     ) : (
                         /* Episode List */
                         <div className="space-y-3">
