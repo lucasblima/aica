@@ -1,0 +1,481 @@
+# Mini Project Manager - Visual Guide
+
+## Component Hierarchy
+
+```
+ProjectList (Main Container)
+├── Header
+│   ├── Title: "Meus Projetos"
+│   └── "Novo Projeto" Button
+├── Filters Bar (ceramic-card)
+│   ├── Status Filters (All/Active/On Hold/Completed/Archived)
+│   └── Sort Controls (Date/Progress/Name + Asc/Desc)
+├── Projects Grid
+│   └── ProjectCard (multiple)
+│       ├── Header
+│       │   ├── Icon (colored background)
+│       │   ├── Title + Description
+│       │   └── Status Badge
+│       ├── Progress Bar (with gradient)
+│       ├── Task Count (completed/total)
+│       └── Target Date (with indicators)
+├── Create Project Modal (when clicked)
+│   ├── Icon Picker (12 emojis)
+│   ├── Color Picker (8 colors)
+│   ├── Title Input
+│   ├── Description Textarea
+│   ├── Target Date Picker
+│   ├── Status Selector
+│   └── Create/Cancel Buttons
+└── ProjectDetail Drawer (when card clicked)
+    ├── Header (sticky)
+    │   ├── Icon + Title (editable)
+    │   ├── Status Dropdown
+    │   ├── Edit/Delete Buttons
+    │   └── Close Button
+    ├── Large Progress Bar
+    ├── Description Section (ceramic-card)
+    ├── Metadata Section (ceramic-card)
+    │   ├── Color Picker (edit mode)
+    │   ├── Target Date
+    │   ├── Started Date
+    │   └── Completed Date (if completed)
+    └── Tasks Section (ceramic-card)
+        └── Task List (filtered by project)
+```
+
+## Visual States
+
+### ProjectCard States
+
+```
+┌─────────────────────────────────────┐
+│  📋  Project Title          [Active]│
+│      Short description              │
+│                                     │
+│  Progresso              75%         │
+│  ████████████████░░░░░              │
+│                                     │
+│  ✓ 9/12      📅 15 Dez 2025        │
+│    tarefas      Meta                │
+└─────────────────────────────────────┘
+
+HOVER STATE:
+- Slight scale up (1.02x)
+- Enhanced shadow
+- Smooth transition
+
+OVERDUE STATE:
+- Date icon: Red clock ⏰
+- Date text: Red
+- Label: "Atrasado"
+
+APPROACHING STATE:
+- Date icon: Yellow clock ⏰
+- Date text: Yellow
+- Label: "Próximo"
+```
+
+### Status Badges
+
+```
+[Active]    - Green background, checkmark icon
+[Em Pausa]  - Yellow background, pause icon
+[Concluído] - Blue background, checkmark icon
+[Arquivado] - Gray background, archive icon
+```
+
+### Progress Bar
+
+```
+Normal State:
+┌──────────────────────────────────┐
+│ ████████████░░░░░░░░░░░░░░░░░░░░│  60%
+└──────────────────────────────────┘
+
+With Custom Color (e.g., #10B981 - Green):
+┌──────────────────────────────────┐
+│ ████████████░░░░░░░░░░░░░░░░░░░░│  60%
+└──────────────────────────────────┘
+  ↑ Gradient from #10B98199 to #10B981
+```
+
+## Layout Examples
+
+### Empty State
+
+```
+┌────────────────────────────────────────┐
+│                                        │
+│           ┌─────────┐                  │
+│           │         │                  │
+│           │    +    │  (animated icon) │
+│           │         │                  │
+│           └─────────┘                  │
+│                                        │
+│       Nenhum projeto ainda             │
+│                                        │
+│  Organize suas tarefas criando         │
+│  projetos. Projetos ajudam você a      │
+│  agrupar tarefas relacionadas e        │
+│  acompanhar o progresso.               │
+│                                        │
+│     [+ Criar Primeiro Projeto]         │
+│                                        │
+└────────────────────────────────────────┘
+```
+
+### Grid Layout (Desktop)
+
+```
+┌──────────┐ ┌──────────┐ ┌──────────┐
+│ Project  │ │ Project  │ │ Project  │
+│   1      │ │   2      │ │   3      │
+│          │ │          │ │          │
+│ 75% ████ │ │ 30% ████ │ │100% ████ │
+└──────────┘ └──────────┘ └──────────┘
+
+┌──────────┐ ┌──────────┐ ┌──────────┐
+│ Project  │ │ Project  │ │ Project  │
+│   4      │ │   5      │ │   6      │
+│          │ │          │ │          │
+│ 50% ████ │ │ 90% ████ │ │ 10% ████ │
+└──────────┘ └──────────┘ └──────────┘
+```
+
+### Grid Layout (Tablet)
+
+```
+┌──────────┐ ┌──────────┐
+│ Project  │ │ Project  │
+│   1      │ │   2      │
+│          │ │          │
+│ 75% ████ │ │ 30% ████ │
+└──────────┘ └──────────┘
+
+┌──────────┐ ┌──────────┐
+│ Project  │ │ Project  │
+│   3      │ │   4      │
+│          │ │          │
+│100% ████ │ │ 50% ████ │
+└──────────┘ └──────────┘
+```
+
+### Grid Layout (Mobile)
+
+```
+┌────────────────────┐
+│ Project 1          │
+│                    │
+│ 75% ██████████     │
+└────────────────────┘
+
+┌────────────────────┐
+│ Project 2          │
+│                    │
+│ 30% ████           │
+└────────────────────┘
+
+┌────────────────────┐
+│ Project 3          │
+│                    │
+│100% ██████████████ │
+└────────────────────┘
+```
+
+## ProjectDetail Drawer
+
+### Closed State
+```
+┌────────────────────────────────┐
+│ Main Content                   │
+│                                │
+│ [Project Cards...]             │
+│                                │
+└────────────────────────────────┘
+```
+
+### Opening Animation
+```
+┌────────────────────┬───────────┐
+│ Main Content       │           │ ←← Slides in
+│                    │           │    from right
+│ [Project Cards...] │  Drawer   │
+│                    │           │
+└────────────────────┴───────────┘
+     ↑ Darkened backdrop
+```
+
+### Open State
+```
+┌────────┬───────────────────────────┐
+│ Dark   │ ┌───────────────────────┐ │
+│ Back-  │ │ 🚀 Project Title  [×] │ │ ← Sticky header
+│ drop   │ │ [Active ▼] [Edit] [×] │ │
+│        │ └───────────────────────┘ │
+│        │                           │
+│        │ Progresso Geral      75%  │
+│        │ ████████████████░░░░░░░░  │
+│        │ 9 de 12 tarefas          │
+│        │                           │
+│        │ ┌─────────────────────┐   │
+│        │ │ 📋 Descrição        │   │
+│        │ │ Project description │   │
+│        │ └─────────────────────┘   │
+│        │                           │
+│        │ ┌─────────────────────┐   │
+│        │ │ ⏰ Informações      │   │
+│        │ │ Data Alvo: 15/12/25│   │
+│        │ │ Iniciado: 01/12/25 │   │
+│        │ └─────────────────────┘   │
+│        │                           │
+│        │ ┌─────────────────────┐   │
+│        │ │ ✓ Tarefas           │   │ ← Scrollable
+│        │ │ [Task 1]            │   │   content
+│        │ │ [Task 2]            │   │
+│        │ │ [Task 3]            │   │
+│        │ └─────────────────────┘   │
+│        │                           │
+└────────┴───────────────────────────┘
+```
+
+## Create Project Modal
+
+```
+┌─────────────────────────────────────────┐
+│  Criar Novo Projeto                 [×] │
+├─────────────────────────────────────────┤
+│                                         │
+│  Ícone          Cor                     │
+│  ┌─────┐       ┌──┬──┬──┬──┐           │
+│  │ 🚀 │       │██│██│██│██│           │
+│  └─────┘       └──┴──┴──┴──┘           │
+│  [emoji        [color presets]          │
+│   grid]                                 │
+│                                         │
+│  Título *                               │
+│  ┌───────────────────────────────────┐  │
+│  │ Ex: Lançamento do Produto        │  │
+│  └───────────────────────────────────┘  │
+│                                         │
+│  Descrição                              │
+│  ┌───────────────────────────────────┐  │
+│  │ Descreva o objetivo...           │  │
+│  │                                  │  │
+│  │                                  │  │
+│  └───────────────────────────────────┘  │
+│                                         │
+│  Data Alvo                              │
+│  ┌───────────────────────────────────┐  │
+│  │ [Date Picker]                    │  │
+│  └───────────────────────────────────┘  │
+│                                         │
+│  Status Inicial                         │
+│  ┌──────────┬──────────┐               │
+│  │ ▶ Ativo │ ⏸ Pausa │               │
+│  └──────────┴──────────┘               │
+│  ┌──────────┬──────────┐               │
+│  │ ✓ Concl. │ 📦 Arq. │               │
+│  └──────────┴──────────┘               │
+│                                         │
+├─────────────────────────────────────────┤
+│        [Cancelar]  [Criar Projeto]      │
+└─────────────────────────────────────────┘
+```
+
+## Color Palette
+
+### Project Colors (8 presets)
+```
+#3B82F6  ███  Blue    (default)
+#10B981  ███  Green
+#EF4444  ███  Red
+#F59E0B  ███  Amber
+#8B5CF6  ███  Purple
+#EC4899  ███  Pink
+#06B6D4  ███  Cyan
+#F97316  ███  Orange
+```
+
+### Icon Emojis (12 presets)
+```
+📋 📁 🎯 🚀 💼 🏆
+⭐ 🔥 💡 🎨 📚 🏠
+```
+
+### Status Colors
+```
+Active:    #10B981 (Green)
+On Hold:   #F59E0B (Yellow)
+Completed: #3B82F6 (Blue)
+Archived:  #6B7280 (Gray)
+```
+
+## Animation Timing
+
+```
+Card Hover:      0.2s ease
+Progress Bar:    0.6s ease-out
+Drawer Open:     Spring (damping: 25, stiffness: 200)
+Modal Open:      0.3s ease
+Card Scale:      0.2s spring
+Status Change:   0.3s ease
+```
+
+## Responsive Breakpoints
+
+```
+Mobile:   < 768px   → 1 column grid
+Tablet:   768-1024px → 2 column grid
+Desktop:  > 1024px   → 3 column grid
+
+Drawer:
+Mobile:   100% width
+Tablet:   80% width (max 600px)
+Desktop:  max 768px width
+```
+
+## Interaction Flow
+
+### Creating a Project
+```
+1. Click "Novo Projeto"
+   ↓
+2. Modal slides in with form
+   ↓
+3. Select icon (12 presets)
+   ↓
+4. Select color (8 presets)
+   ↓
+5. Enter title (required)
+   ↓
+6. Enter description (optional)
+   ↓
+7. Select target date (optional)
+   ↓
+8. Choose initial status
+   ↓
+9. Click "Criar Projeto"
+   ↓
+10. Modal closes, card appears in grid
+    ↓
+11. Success notification shows
+```
+
+### Editing a Project
+```
+1. Click on project card
+   ↓
+2. Drawer slides in from right
+   ↓
+3. Click "Edit" button
+   ↓
+4. Fields become editable
+   ↓
+5. Make changes
+   ↓
+6. Click "Salvar"
+   ↓
+7. Changes saved, notification shows
+   ↓
+8. Edit mode exits
+```
+
+### Changing Status
+```
+1. Open project detail
+   ↓
+2. Click status dropdown
+   ↓
+3. Menu appears with 4 options
+   ↓
+4. Select new status
+   ↓
+5. Status updates immediately
+   ↓
+6. Badge color changes
+   ↓
+7. Success notification
+```
+
+## Accessibility Features
+
+```
+Keyboard Navigation:
+- Tab: Navigate between elements
+- Enter/Space: Activate buttons
+- Escape: Close modals/drawers
+- Arrow Keys: Navigate dropdowns
+
+Screen Reader:
+- ARIA labels on all interactive elements
+- Status announcements
+- Progress bar values
+- Role attributes
+
+Focus Management:
+- Modal traps focus
+- Drawer traps focus
+- Clear focus indicators
+- Skip links available
+```
+
+## Loading States
+
+```
+Initial Load:
+┌────────────────────────────────┐
+│  Carregando projetos...        │
+│                                │
+│         [Spinner]              │
+│                                │
+└────────────────────────────────┘
+
+Creating:
+[Criando...]  ← Button disabled
+
+Updating:
+[Salvando...] ← Button disabled
+
+Deleting:
+[Arquivando...] ← Button disabled
+```
+
+## Error States
+
+```
+Validation Error:
+┌────────────────────────────────┐
+│ ⚠️ Erro de validação           │
+│ O título do projeto é          │
+│ obrigatório                    │
+└────────────────────────────────┘
+
+Database Error:
+┌────────────────────────────────┐
+│ ❌ Erro ao salvar              │
+│ Não foi possível criar o       │
+│ projeto. Tente novamente.      │
+└────────────────────────────────┘
+
+Authentication Error:
+┌────────────────────────────────┐
+│ 🔒 Erro de autenticação        │
+│ Você precisa estar autenticado │
+│ para criar projetos            │
+└────────────────────────────────┘
+```
+
+---
+
+**Visual Design Language:** Ceramic (Neomorphism with depth and tactility)
+
+**Animation Library:** Framer Motion
+
+**Icon Library:** Lucide React
+
+**Typography:** System fonts with bold weights
+
+**Spacing:** 4px, 8px, 12px, 16px, 24px, 32px, 48px
+
+**Border Radius:** 8px (sm), 12px (md), 16px (lg), 24px (xl)
