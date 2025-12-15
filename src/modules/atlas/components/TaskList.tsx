@@ -8,7 +8,8 @@ import {
     Calendar,
     Tag,
     MoreVertical,
-    Plus
+    Plus,
+    AlertCircle
 } from 'lucide-react';
 import { atlasService } from '../services/atlasService';
 import { AtlasTask } from '../types/plane';
@@ -17,8 +18,12 @@ interface TaskListProps {
     onTaskCreated?: () => void;
 }
 
+interface TaskWithUIState extends AtlasTask {
+    isToggling?: boolean;
+}
+
 export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
-    const [tasks, setTasks] = useState<AtlasTask[]>([]);
+    const [tasks, setTasks] = useState<TaskWithUIState[]>([]);
     const [categories, setCategories] = useState<Array<{
         id: string;
         name: string;
@@ -31,6 +36,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
     const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('active');
     const [editingTask, setEditingTask] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     // Load tasks and categories
     const loadData = async () => {
@@ -66,14 +72,58 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
         loadData();
     }, [filter]);
 
-    // Handle task completion toggle
+    // Auto-dismiss success message after 2.5 seconds
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => setSuccessMessage(null), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
+
+    // Handle task completion toggle with optimistic update and proper status sync
     const handleToggleComplete = async (taskId: string) => {
         try {
+            // Find the task being toggled
+            const taskBeingToggled = tasks.find(t => t.id === taskId);
+            if (!taskBeingToggled) return;
+
+            // Set UI state to indicate toggling is in progress
+            setTasks(prev => prev.map(t =>
+                t.id === taskId ? { ...t, isToggling: true } : t
+            ));
+
+            // Optimistic update: toggle status immediately
+            const newStatus = taskBeingToggled.status === 'completed' ? 'todo' : 'completed';
+            const optimisticTask = {
+                ...taskBeingToggled,
+                status: newStatus,
+                isToggling: true
+            };
+            setTasks(prev => prev.map(t => t.id === taskId ? optimisticTask : t));
+
+            // Server update: sync with backend (now both is_completed and status are synced)
             const updatedTask = await atlasService.toggleTaskCompletion(taskId);
-            setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
+
+            // Reconcile: replace optimistic update with real server data
+            setTasks(prev => prev.map(t => t.id === taskId ? { ...updatedTask, isToggling: false } : t));
+
+            // Show success feedback
+            const actionMsg = updatedTask.status === 'completed'
+                ? 'Tarefa marcada como concluída!'
+                : 'Tarefa reativada!';
+            setSuccessMessage(actionMsg);
+
+            console.log('[TaskList] Task toggled successfully:', {
+                taskId,
+                status: updatedTask.status,
+                isCompleted: updatedTask.status === 'completed'
+            });
         } catch (err) {
+            // Revert optimistic update on error by reloading
+            await loadData();
             console.error('Error toggling task:', err);
             setError(err instanceof Error ? err.message : 'Erro ao atualizar tarefa');
+            setSuccessMessage(null);
         }
     };
 
@@ -84,6 +134,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
         try {
             await atlasService.deleteTask(taskId);
             setTasks(prev => prev.filter(t => t.id !== taskId));
+            setSuccessMessage('Tarefa deletada com sucesso!');
         } catch (err) {
             console.error('Error deleting task:', err);
             setError(err instanceof Error ? err.message : 'Erro ao deletar tarefa');
@@ -109,6 +160,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
             setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
             setEditingTask(null);
             setEditTitle('');
+            setSuccessMessage('Tarefa atualizada com sucesso!');
         } catch (err) {
             console.error('Error updating task:', err);
             setError(err instanceof Error ? err.message : 'Erro ao atualizar tarefa');
@@ -200,11 +252,35 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
                 </div>
             </div>
 
-            {/* Error message */}
+            {/* Success message with animation */}
+            <AnimatePresence>
+                {successMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="ceramic-card p-4 rounded-2xl bg-green-50 border border-green-200"
+                    >
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                            <p className="text-sm font-medium text-green-800">{successMessage}</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Error message with improved styling */}
             {error && (
-                <div className="ceramic-card p-4 rounded-2xl bg-red-50 border border-red-200">
-                    <p className="text-sm text-red-600">{error}</p>
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="ceramic-card p-4 rounded-2xl bg-red-50 border border-red-200"
+                >
+                    <div className="flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                        <p className="text-sm font-medium text-red-800">{error}</p>
+                    </div>
+                </motion.div>
             )}
 
             {/* Loading state */}
@@ -214,7 +290,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
                 </div>
             )}
 
-            {/* Empty state - Warm and inviting with ceramic inset CTA */}
+            {/* Empty state */}
             {!isLoading && tasks.length === 0 && (
                 <motion.div
                     className="ceramic-tray p-8 rounded-2xl text-center"
@@ -260,22 +336,39 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -100 }}
-                            className={`ceramic-card p-4 rounded-2xl ${
-                                task.status === 'completed' ? 'opacity-60' : ''
-                            }`}
+                            transition={{
+                                layout: { type: 'spring', stiffness: 100, damping: 20 }
+                            }}
+                            className={`ceramic-card p-4 rounded-2xl transition-all ${
+                                task.status === 'completed' ? 'opacity-70 bg-ceramic-text-primary/5' : ''
+                            } ${task.isToggling ? 'scale-95' : 'scale-100'}`}
                         >
                             <div className="flex items-start gap-3">
-                                {/* Checkbox */}
-                                <button
+                                {/* Checkbox with animation */}
+                                <motion.button
                                     onClick={() => handleToggleComplete(task.id)}
-                                    className="flex-shrink-0 mt-1 hover:scale-110 transition-transform"
+                                    disabled={task.isToggling}
+                                    className="flex-shrink-0 mt-1 hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                                    whileTap={{ scale: 0.9 }}
                                 >
-                                    {task.status === 'completed' ? (
-                                        <CheckCircle2 className="w-6 h-6 text-green-600" />
-                                    ) : (
-                                        <Circle className="w-6 h-6 text-ceramic-text-secondary" />
-                                    )}
-                                </button>
+                                    <motion.div
+                                        initial={false}
+                                        animate={task.status === 'completed' ? 'complete' : 'incomplete'}
+                                    >
+                                        {task.status === 'completed' ? (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                exit={{ scale: 0 }}
+                                                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                                            >
+                                                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                                            </motion.div>
+                                        ) : (
+                                            <Circle className="w-6 h-6 text-ceramic-text-secondary" />
+                                        )}
+                                    </motion.div>
+                                </motion.button>
 
                                 {/* Task content */}
                                 <div className="flex-1 min-w-0">
@@ -309,13 +402,17 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
                                         </div>
                                     ) : (
                                         <>
-                                            <h4
-                                                className={`text-base font-bold text-ceramic-text-primary mb-2 ${
-                                                    task.status === 'completed' ? 'line-through' : ''
+                                            <motion.h4
+                                                className={`text-base font-bold text-ceramic-text-primary mb-2 transition-all ${
+                                                    task.status === 'completed' ? 'line-through text-ceramic-text-secondary/60' : ''
                                                 }`}
+                                                animate={{
+                                                    opacity: task.isToggling ? 0.6 : 1,
+                                                    textDecoration: task.status === 'completed' ? 'line-through' : 'none'
+                                                }}
                                             >
                                                 {task.title}
-                                            </h4>
+                                            </motion.h4>
 
                                             {/* Metadata */}
                                             <div className="flex flex-wrap items-center gap-2">
@@ -339,9 +436,18 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
 
                                             {/* Description */}
                                             {task.description && (
-                                                <p className="text-sm text-ceramic-text-secondary mt-2">
+                                                <motion.p
+                                                    className={`text-sm mt-2 ${
+                                                        task.status === 'completed'
+                                                            ? 'text-ceramic-text-secondary/50'
+                                                            : 'text-ceramic-text-secondary'
+                                                    }`}
+                                                    animate={{
+                                                        opacity: task.isToggling ? 0.6 : 1
+                                                    }}
+                                                >
                                                     {task.description}
-                                                </p>
+                                                </motion.p>
                                             )}
                                         </>
                                     )}
@@ -352,14 +458,16 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
                                     <div className="flex-shrink-0 flex gap-2">
                                         <button
                                             onClick={() => handleStartEdit(task)}
-                                            className="p-2 rounded-xl hover:bg-ceramic-text-secondary/10 transition-colors"
+                                            disabled={task.isToggling}
+                                            className="p-2 rounded-xl hover:bg-ceramic-text-secondary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             title="Editar"
                                         >
                                             <Edit3 className="w-4 h-4 text-ceramic-text-secondary" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(task.id)}
-                                            className="p-2 rounded-xl hover:bg-red-50 transition-colors"
+                                            disabled={task.isToggling}
+                                            className="p-2 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             title="Deletar"
                                         >
                                             <Trash2 className="w-4 h-4 text-red-600" />
@@ -372,13 +480,19 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
                 </AnimatePresence>
             </div>
 
-            {/* Task count */}
+            {/* Task count and stats */}
             {!isLoading && tasks.length > 0 && (
-                <div className="text-center">
+                <motion.div
+                    className="text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                >
                     <p className="text-xs text-ceramic-text-tertiary">
                         {tasks.length} {tasks.length === 1 ? 'tarefa' : 'tarefas'}
+                        {filter === 'active' && ` - ${tasks.filter(t => t.status !== 'completed').length} ativa(s)`}
+                        {filter === 'completed' && ` - ${tasks.filter(t => t.status === 'completed').length} concluída(s)`}
                     </p>
-                </div>
+                </motion.div>
             )}
         </div>
     );

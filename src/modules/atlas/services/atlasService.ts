@@ -314,6 +314,8 @@ export const atlasService = {
 
     /**
      * Toggle task completion status
+     * Syncs is_completed flag with status field and sets completed_at timestamp
+     * CRITICAL FIX: Updates BOTH is_completed AND status to maintain data consistency
      */
     toggleTaskCompletion: async (taskId: string): Promise<AtlasTask> => {
         try {
@@ -323,10 +325,10 @@ export const atlasService = {
                 throw new AuthenticationError('Você precisa estar autenticado');
             }
 
-            // First, get current state
+            // First, get current state - SELECT BOTH is_completed and status
             const { data: currentTask, error: fetchError } = await supabase
                 .from('work_items')
-                .select('is_completed')
+                .select('is_completed, status')
                 .eq('id', taskId)
                 .eq('user_id', user.id)
                 .single();
@@ -335,16 +337,28 @@ export const atlasService = {
                 throw new DatabaseError('Tarefa não encontrada', fetchError);
             }
 
-            // Toggle completion
+            // Toggle completion state
             const newCompletionState = !currentTask.is_completed;
+
+            // CRITICAL: Sync status with completion state to fix desincronização
+            const newStatus = newCompletionState ? 'completed' : 'todo';
+
+            // Prepare update payload with BOTH fields synced
+            const updatePayload: any = {
+                is_completed: newCompletionState,
+                status: newStatus // THIS FIX ensures status stays in sync
+            };
+
+            // Set completed_at timestamp when completing
+            if (newCompletionState) {
+                updatePayload.completed_at = new Date().toISOString();
+            } else {
+                updatePayload.completed_at = null;
+            }
 
             const { data, error } = await supabase
                 .from('work_items')
-                .update({
-                    is_completed: newCompletionState
-                    // Note: 'status' column exists in DB but Supabase cache not updated
-                    // Will be synced by trigger or next cache refresh
-                })
+                .update(updatePayload)
                 .eq('id', taskId)
                 .eq('user_id', user.id)
                 .select()
@@ -358,6 +372,13 @@ export const atlasService = {
             if (!data) {
                 throw new DatabaseError('Nenhum dado retornado após atualização');
             }
+
+            console.log('[atlasService] Task completion toggled successfully:', {
+                taskId,
+                isCompleted: data.is_completed,
+                status: data.status,
+                completedAt: data.completed_at
+            });
 
             return {
                 id: data.id,

@@ -8,6 +8,9 @@ export interface TaskInput {
     start_date?: string;
     target_date?: string;
     category?: TaskCategory;
+    // Eisenhower Matrix dimensions
+    is_urgent?: boolean; // X-axis: Time-sensitive or deadline-driven
+    is_important?: boolean; // Y-axis: Impacts long-term goals or strategic objectives
 }
 
 export interface AtlasTask extends TaskInput {
@@ -15,4 +18,6 @@ export interface AtlasTask extends TaskInput {
     isOptimistic?: boolean; // Flag for UI to know if still syncing
     created_at?: string;
     updated_at?: string;
+    // Eisenhower Matrix quadrant (computed from is_urgent + is_important)
+    priority_quadrant?: 'urgent-important' | 'important' | 'urgent' | 'low';
 }

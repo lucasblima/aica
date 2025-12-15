@@ -82,7 +82,7 @@ export function ConnectionsLayout({
 
   return (
     <motion.div
-      className={`min-h-screen bg-ceramic-base ${className} ${depthStyles}`}
+      className={`h-screen bg-ceramic-base flex flex-col overflow-hidden ${className} ${depthStyles}`}
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -95,7 +95,7 @@ export function ConnectionsLayout({
       }}
     >
       {/* Header Section - Spatial Depth Navigation */}
-      <header className="px-6 pt-6 pb-4">
+      <header className="px-6 pt-6 pb-4 shrink-0">
         {/* Title Section with Back Button */}
         {(title || showBackButton || headerActions) && (
           <motion.div
@@ -141,8 +141,8 @@ export function ConnectionsLayout({
         )}
       </header>
 
-      {/* Main Content - Elevated based on depth */}
-      <main className="px-6 pb-40">
+      {/* Main Content - Scrollable with flex-1 */}
+      <main className="flex-1 overflow-y-auto px-6 pb-40 scroll-smooth scrollbar-thin scrollbar-thumb-ceramic-300 scrollbar-track-transparent">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
