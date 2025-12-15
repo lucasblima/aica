@@ -71,7 +71,7 @@ export function MetricsHistory() {
                     px-4 py-2 rounded-lg text-sm font-medium transition-colors
                     ${
                       selectedPeriod === period
-                        ? 'bg-amber-600 text-white'
+                        ? 'bg-amber-700 text-white'
                         : 'bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50'
                     }
                   `}

@@ -253,8 +253,8 @@ SELECT
     -- Task counts
     COUNT(w.id)::integer as total_tasks,
     COUNT(w.id) FILTER (WHERE w.is_completed = true)::integer as completed_tasks,
-    COUNT(w.id) FILTER (WHERE w.is_completed = false AND w.status != 'cancelled')::integer as remaining_tasks,
-    COUNT(w.id) FILTER (WHERE w.status = 'in_progress')::integer as in_progress_tasks,
+    COUNT(w.id) FILTER (WHERE w.is_completed = false)::integer as remaining_tasks,
+    0::integer as in_progress_tasks,
 
     -- Progress percentage
     CASE

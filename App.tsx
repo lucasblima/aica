@@ -26,6 +26,7 @@ import { SpaceDetailPage } from './src/pages/SpaceDetailPage';
 import { SpaceSectionPage } from './src/pages/SpaceSectionPage';
 import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
+import { NavigationProvider, useNavigation } from './src/contexts/NavigationContext';
 
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
@@ -469,11 +470,30 @@ function AppContent() {
 
    // Main App Content (authenticated state)
    const renderMainApp = () => {
+      return <MainAppWithNavigation />;
+   };
+
+   // Main App component with navigation context
+   function MainAppWithNavigation() {
+      const { isFocusedMode } = useNavigation();
+
       // Define focused modes where global nav should be hidden (Contextual Descent)
       const focusedModes: ViewState[] = ['association_detail', 'finance', 'finance_agent', 'grants', 'ai-cost', 'file-search-analytics', 'journey'];
 
-      // Check if we're in a focused mode or if podcast nav is hidden
-      const shouldShowGlobalNav = !focusedModes.includes(currentView) && (currentView !== 'studio' || showPodcastNav);
+      // Determine if we should show BottomNav
+      // Hide when:
+      // 1. In NavigationContext focused mode
+      // 2. In a focused ViewState mode
+      // 3. In studio mode and podcast nav is hidden
+      // 4. On detail/section routes (these are handled by React Router and don't use BottomNav)
+      const isInFocusedViewState = focusedModes.includes(currentView);
+      const isInStudioWithHiddenNav = currentView === 'studio' && !showPodcastNav;
+      const isOnDetailRoute = location.pathname.match(/^\/connections\/[^/]+\/[^/]+/);
+
+      const shouldShowGlobalNav = !isFocusedMode &&
+                                   !isInFocusedViewState &&
+                                   !isInStudioWithHiddenNav &&
+                                   !isOnDetailRoute;
 
       return (
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
@@ -499,7 +519,7 @@ function AppContent() {
                />
             )}
 
-            {/* ANCHOR PRINCIPLE: Global Navigation - Always visible except in focused modes */}
+            {/* ANCHOR PRINCIPLE: Global Navigation - Unified visibility logic via NavigationContext */}
             {shouldShowGlobalNav && (
                <BottomNav
                   currentView={currentView}
@@ -525,7 +545,7 @@ function AppContent() {
             <NotificationContainer />
          </div>
       );
-   };
+   }
 
    // Show loading screen while checking authentication
    if (isCheckingAuth) {
@@ -605,7 +625,11 @@ function AppContent() {
    );
 }
 
-// Export the main App component
+// Export the main App component wrapped with NavigationProvider
 export default function App() {
-   return <AppContent />;
+   return (
+      <NavigationProvider>
+         <AppContent />
+      </NavigationProvider>
+   );
 }

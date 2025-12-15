@@ -11,7 +11,7 @@ import { ARCHETYPE_CONFIG } from '../types';
 interface ConnectionsViewProps {
   userId: string;
   onNavigateToSpace?: (spaceId: string, archetype: Archetype) => void;
-  onCreateSpace?: () => void;
+  onCreateSpace?: (archetype?: Archetype) => void;
 }
 
 type FilterTab = 'all' | Archetype;
@@ -205,7 +205,7 @@ export function ConnectionsView({
               {Object.entries(ARCHETYPE_CONFIG).map(([key, config]) => (
                 <motion.button
                   key={key}
-                  onClick={onCreateSpace}
+                  onClick={() => onCreateSpace?.(key as Archetype)}
                   className="ceramic-card p-6 text-left hover:scale-[1.02] transition-transform group"
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.98 }}
@@ -227,7 +227,7 @@ export function ConnectionsView({
             {/* Primary CTA Button - Inevitable action */}
             <motion.button
               onClick={onCreateSpace}
-              className="ceramic-card px-8 py-4 text-base font-bold text-white bg-ceramic-accent hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-3"
+              className="ceramic-shadow px-8 py-4 text-base font-bold text-white bg-ceramic-accent-dark rounded-full hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-3"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Criar primeiro espaço"
@@ -298,14 +298,32 @@ export function ConnectionsView({
             </div>
           </div>
 
-          <div className="ceramic-inset-shallow p-3 text-center">
-            <div className="text-xl font-black text-ceramic-accent">
-              {stats.pendingInvitations}
+          {/* Invitations stat - actionable when zero */}
+          {stats.pendingInvitations === 0 ? (
+            <motion.button
+              onClick={onCreateSpace}
+              className="ceramic-inset p-3 text-center hover:scale-[1.02] active:scale-[0.98] transition-transform"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              aria-label="Convidar pessoas"
+            >
+              <div className="text-sm font-bold text-ceramic-accent">
+                Convidar
+              </div>
+              <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
+                Iniciar
+              </div>
+            </motion.button>
+          ) : (
+            <div className="ceramic-inset-shallow p-3 text-center">
+              <div className="text-xl font-black text-ceramic-accent">
+                {stats.pendingInvitations}
+              </div>
+              <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
+                Convites
+              </div>
             </div>
-            <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
-              Convites
-            </div>
-          </div>
+          )}
         </div>
       </header>
 
@@ -373,7 +391,7 @@ export function ConnectionsView({
                 </p>
                 <button
                   onClick={onCreateSpace}
-                  className="ceramic-card px-5 py-2.5 text-sm font-bold text-white bg-ceramic-accent hover:scale-105 active:scale-95 transition-transform inline-flex items-center gap-2"
+                  className="ceramic-shadow px-5 py-2.5 text-sm font-bold text-white bg-ceramic-accent-dark rounded-full hover:scale-105 active:scale-95 transition-transform inline-flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   Criar espaço

@@ -69,7 +69,19 @@
       "Bash(timeout 30 npm test -- tests/unit/connections/hooks.test.ts)",
       "Bash(npm run test:unit:*)",
       "Bash(npx vitest:*)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run:*)",
+      "Bash(while read line)",
+      "Bash(do:*)",
+      "Bash(done)",
+      "Bash(psql:*)",
+      "Bash(timeout 30 node:*)",
+      "Bash(timeout 15 node:*)",
+      "Bash(timeout 60 node:*)",
+      "Bash(timeout 15 npm run dev:*)",
+      "Bash(timeout 10 npm run build:*)",
+      "Bash(timeout 60 npm run build)"
     ],
     "deny": [],
     "ask": []

@@ -107,7 +107,7 @@ export const SplitPaymentTracker: React.FC<SplitPaymentTrackerProps> = ({
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   member.paid
                     ? 'bg-green-500 text-white'
-                    : 'bg-amber-500 text-white'
+                    : 'bg-amber-700 text-white'
                 }`}
               >
                 {member.paid ? '✓' : '⏳'}
@@ -125,7 +125,7 @@ export const SplitPaymentTracker: React.FC<SplitPaymentTrackerProps> = ({
               <button
                 onClick={() => handleMarkPaid(member.memberId)}
                 disabled={markAsPaid.isPending}
-                className="px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 bg-amber-700 text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {markAsPaid.isPending ? 'Confirmando...' : 'Confirmar'}
               </button>

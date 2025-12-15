@@ -52,14 +52,14 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#2B1B17] text-white py-16 md:py-20 px-6 md:px-8">
+    <footer className="bg-[#E6D5C3] py-16 md:py-20 px-6 md:px-8">
       <div className="max-w-[1200px] mx-auto">
         {/* Main Footer Content */}
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <h3 className="text-2xl font-bold mb-4">Aica</h3>
-            <p className="text-sm text-[#948D82] leading-relaxed">
+            <h3 className="text-2xl font-bold text-ceramic-text-primary mb-4">Aica</h3>
+            <p className="text-sm text-ceramic-text-secondary leading-relaxed">
               Sua plataforma pessoal para autoconhecimento e crescimento transformacional.
             </p>
           </div>
@@ -67,13 +67,13 @@ export function Footer() {
           {/* Links Columns */}
           {Object.entries(footerLinks).map(([key, section]) => (
             <div key={key} className="lg:col-span-1">
-              <h4 className="font-semibold mb-4 text-white">{section.title}</h4>
+              <h4 className="font-semibold mb-4 text-ceramic-text-primary">{section.title}</h4>
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-sm text-[#948D82] hover:text-[#6B9EFF] transition-colors focus:outline-none focus:ring-2 focus:ring-[#6B9EFF] focus:ring-offset-2 focus:ring-offset-[#2B1B17] rounded px-1"
+                      className="text-sm text-ceramic-text-primary hover:text-ceramic-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-accent focus:ring-offset-2 focus:ring-offset-[#E6D5C3] rounded px-1"
                     >
                       {link.label}
                     </a>
@@ -85,11 +85,11 @@ export function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-white/10 pt-8 mt-8">
+        <div className="border-t border-ceramic-text-secondary/30 pt-8 mt-8">
           {/* Social & Bottom Bar */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             {/* Copyright */}
-            <div className="text-sm text-[#948D82]">
+            <div className="text-sm text-ceramic-text-secondary">
               <p>
                 © {currentYear} Aica. Todos os direitos reservados.
               </p>
@@ -106,7 +106,7 @@ export function Footer() {
                   <a
                     key={social.label}
                     href={social.href}
-                    className="text-[#948D82] hover:text-[#6B9EFF] transition-colors focus:outline-none focus:ring-2 focus:ring-[#6B9EFF] focus:ring-offset-2 focus:ring-offset-[#2B1B17] rounded p-1"
+                    className="text-ceramic-text-primary hover:text-ceramic-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-accent focus:ring-offset-2 focus:ring-offset-[#E6D5C3] rounded p-1"
                     aria-label={social.label}
                     target={social.href !== 'mailto:hello@aica.app' ? '_blank' : undefined}
                     rel={social.href !== 'mailto:hello@aica.app' ? 'noopener noreferrer' : undefined}
@@ -118,15 +118,15 @@ export function Footer() {
             </div>
 
             {/* Status Badge */}
-            <div className="text-xs text-[#948D82] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#51CF66]" aria-hidden="true" />
+            <div className="text-xs text-ceramic-text-secondary flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-ceramic-accent" aria-hidden="true" />
               Todos os sistemas operacionais
             </div>
           </div>
         </div>
 
         {/* Footer Note */}
-        <div className="mt-8 pt-8 border-t border-white/5 text-center text-xs text-[#948D82]">
+        <div className="mt-8 pt-8 border-t border-ceramic-text-secondary/30 text-center text-xs text-ceramic-text-secondary">
           <p>
             Aica é uma plataforma em beta. Estamos sempre evoluindo. Seu feedback é essencial para moldarmos o futuro.
           </p>

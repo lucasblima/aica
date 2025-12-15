@@ -7,7 +7,7 @@
 
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useCallback } from 'react';
-import type { ArchetypeType } from '../types';
+import type { Archetype } from '../types';
 import { ARCHETYPE_METADATA } from '../types';
 
 interface BreadcrumbItem {
@@ -20,15 +20,15 @@ interface UseConnectionNavigationReturn {
   /** Navigate to connections home */
   navigateToConnections: () => void;
   /** Navigate to archetype list */
-  navigateToArchetype: (archetype: ArchetypeType) => void;
+  navigateToArchetype: (archetype: Archetype) => void;
   /** Navigate to space detail */
-  navigateToSpace: (spaceId: string, archetype: ArchetypeType) => void;
+  navigateToSpace: (spaceId: string, archetype: Archetype) => void;
   /** Navigate to space section */
-  navigateToSection: (spaceId: string, archetype: ArchetypeType, section: string) => void;
+  navigateToSection: (spaceId: string, archetype: Archetype, section: string) => void;
   /** Get breadcrumb trail for current route */
   getBreadcrumbs: () => BreadcrumbItem[];
   /** Get current archetype from URL */
-  getCurrentArchetype: () => ArchetypeType | null;
+  getCurrentArchetype: () => Archetype | null;
   /** Get current space ID from URL */
   getCurrentSpaceId: () => string | null;
   /** Get current section from URL */
@@ -69,9 +69,9 @@ export function useConnectionNavigation(): UseConnectionNavigationReturn {
   const location = useLocation();
 
   // Get current archetype from URL
-  const getCurrentArchetype = (): ArchetypeType | null => {
+  const getCurrentArchetype = (): Archetype | null => {
     if (!params.archetype) return null;
-    return params.archetype as ArchetypeType;
+    return params.archetype as Archetype;
   };
 
   // Get current space ID from URL
@@ -89,20 +89,49 @@ export function useConnectionNavigation(): UseConnectionNavigationReturn {
     navigate('/connections');
   };
 
-  const navigateToArchetype = (archetype: ArchetypeType) => {
+  const navigateToArchetype = (archetype: Archetype) => {
     navigate(`/connections/${archetype}`);
   };
 
-  const navigateToSpace = (spaceId: string, archetype: ArchetypeType) => {
+  const navigateToSpace = (spaceId: string, archetype: Archetype) => {
     navigate(`/connections/${archetype}/${spaceId}`);
   };
 
-  const navigateToSection = (spaceId: string, archetype: ArchetypeType, section: string) => {
+  const navigateToSection = (spaceId: string, archetype: Archetype, section: string) => {
     navigate(`/connections/${archetype}/${spaceId}/${section}`);
   };
 
   const goBack = () => {
-    navigate(-1);
+    const parentPath = computeParentPath();
+    navigate(parentPath);
+  };
+
+  /**
+   * Compute the parent path based on current location
+   * This ensures reliable navigation regardless of how user arrived at page
+   */
+  const computeParentPath = (): string => {
+    const archetype = getCurrentArchetype();
+    const spaceId = getCurrentSpaceId();
+    const section = getCurrentSection();
+
+    // From section view → go to space detail
+    if (section && spaceId && archetype) {
+      return `/connections/${archetype}/${spaceId}`;
+    }
+
+    // From space detail → go to archetype list
+    if (spaceId && archetype) {
+      return `/connections/${archetype}`;
+    }
+
+    // From archetype list → go to connections home
+    if (archetype) {
+      return '/connections';
+    }
+
+    // Default fallback to connections home
+    return '/connections';
   };
 
   // Generate breadcrumbs based on current route

@@ -80,11 +80,12 @@ export function CreateSpaceWizard({
   });
 
   // Archetype configuration
+  // Note: Using 'Icon' (capital I) to avoid conflict with emoji 'icon' from ARCHETYPE_CONFIG
   const archetypes = [
-    { id: 'habitat', icon: Home, ...ARCHETYPE_CONFIG.habitat },
-    { id: 'ventures', icon: Briefcase, ...ARCHETYPE_CONFIG.ventures },
-    { id: 'academia', icon: GraduationCap, ...ARCHETYPE_CONFIG.academia },
-    { id: 'tribo', icon: Users, ...ARCHETYPE_CONFIG.tribo },
+    { id: 'habitat', Icon: Home, ...ARCHETYPE_CONFIG.habitat },
+    { id: 'ventures', Icon: Briefcase, ...ARCHETYPE_CONFIG.ventures },
+    { id: 'academia', Icon: GraduationCap, ...ARCHETYPE_CONFIG.academia },
+    { id: 'tribo', Icon: Users, ...ARCHETYPE_CONFIG.tribo },
   ];
 
   // Get current archetype config
@@ -338,7 +339,7 @@ export function CreateSpaceWizard({
               <button
                 onClick={handleNext}
                 disabled={!canProceed() || isLoading}
-                className="ceramic-card px-6 py-2 rounded-xl flex items-center gap-2 bg-ceramic-accent text-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="ceramic-shadow px-6 py-2 rounded-xl flex items-center gap-2 bg-ceramic-accent-dark text-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {isLoading ? (
                   <>
@@ -396,7 +397,7 @@ function ArchetypeStep({
 
       <div className="grid grid-cols-2 gap-4">
         {archetypes.map((archetype) => {
-          const Icon = archetype.icon;
+          const Icon = archetype.Icon;
           const selected = isSelected(archetype.id);
 
           return (
@@ -598,7 +599,7 @@ function InviteStep({
           <button
             onClick={onAddInvite}
             disabled={!emailInput.trim() || !emailInput.includes('@')}
-            className="ceramic-card px-4 py-2 rounded-xl bg-ceramic-accent text-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="ceramic-shadow px-4 py-2 rounded-xl bg-ceramic-accent-dark text-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Mail className="w-4 h-4" />
           </button>

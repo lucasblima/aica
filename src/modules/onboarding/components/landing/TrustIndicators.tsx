@@ -3,22 +3,18 @@ import { Sparkles, Lock, Users } from 'lucide-react';
 
 export function TrustIndicators() {
   return (
-    <section className="bg-white py-16 md:py-24 px-6 md:px-8 border-t border-[#E8E6E0]">
+    <section className="bg-ceramic-base py-16 md:py-24 px-6 md:px-8 border-t border-ceramic-highlight">
       <div className="max-w-[1200px] mx-auto">
         <div className="grid md:grid-cols-3 gap-12">
           {/* Beta Status */}
           <div className="text-center animate-fade-in-up" style={{ animationDelay: '0s' }}>
             <div className="flex justify-center mb-4">
-              <div className="p-3 rounded-full bg-[#FFF3E0]">
-                <Sparkles
-                  size={32}
-                  color="#FF922B"
-                  className="text-[#FF922B]"
-                  aria-hidden="true"
-                />
-              </div>
+              <Sparkles
+                className="text-ceramic-accent w-8 h-8"
+                aria-hidden="true"
+              />
             </div>
-            <h3 className="font-bold text-lg text-[#2B1B17] mb-2">
+            <h3 className="font-bold text-lg text-ceramic-text-primary mb-2">
               Versão Beta
             </h3>
             <p className="text-sm text-[#5C554B] leading-relaxed">
@@ -29,16 +25,12 @@ export function TrustIndicators() {
           {/* Privacy & Security */}
           <div className="text-center animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <div className="flex justify-center mb-4">
-              <div className="p-3 rounded-full bg-[#E8F5E9]">
-                <Lock
-                  size={32}
-                  color="#51CF66"
-                  className="text-[#51CF66]"
-                  aria-hidden="true"
-                />
-              </div>
+              <Lock
+                className="text-ceramic-accent w-8 h-8"
+                aria-hidden="true"
+              />
             </div>
-            <h3 className="font-bold text-lg text-[#2B1B17] mb-2">
+            <h3 className="font-bold text-lg text-ceramic-text-primary mb-2">
               Privacidade em Primeiro Lugar
             </h3>
             <p className="text-sm text-[#5C554B] leading-relaxed">
@@ -49,17 +41,13 @@ export function TrustIndicators() {
           {/* User Stats */}
           <div className="text-center animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <div className="flex justify-center mb-4">
-              <div className="p-3 rounded-full bg-[#E3F2FD]">
-                <Users
-                  size={32}
-                  color="#6B9EFF"
-                  className="text-[#6B9EFF]"
-                  aria-hidden="true"
-                />
-              </div>
+              <Users
+                className="text-ceramic-accent w-8 h-8"
+                aria-hidden="true"
+              />
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-[#6B9EFF] mb-2">
+              <p className="text-3xl md:text-4xl font-bold text-ceramic-accent mb-2">
                 1000+
               </p>
               <p className="text-sm text-[#5C554B]">
@@ -70,8 +58,8 @@ export function TrustIndicators() {
         </div>
 
         {/* Divider with trust quote */}
-        <div className="mt-16 pt-12 border-t border-[#E8E6E0] text-center">
-          <p className="text-[#948D82] italic text-sm">
+        <div className="mt-16 pt-12 border-t border-ceramic-highlight text-center">
+          <p className="text-ceramic-text-secondary italic text-sm">
             "Confiança é construída na transparência. Aqui na Aica, seus dados são sagrados."
           </p>
         </div>

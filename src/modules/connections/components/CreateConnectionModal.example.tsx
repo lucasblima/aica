@@ -291,7 +291,7 @@ export function FABTriggerExample() {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 ceramic-card w-16 h-16 rounded-full bg-ceramic-accent text-white shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center z-50"
+        className="fixed bottom-8 right-8 ceramic-shadow w-16 h-16 rounded-full bg-ceramic-accent-dark text-white shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center z-50"
       >
         <Plus className="w-8 h-8" />
       </button>

@@ -300,8 +300,10 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
         }
     }, []);
 
+    console.log('[GuestWizard] Rendering wizard, step:', step);
+
     return (
-        <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] flex items-center justify-center z-50 p-4" data-testid="guest-wizard">
+        <div className="w-full flex items-center justify-center p-4" data-testid="guest-wizard">
             <motion.div
                 ref={modalRef}
                 role="dialog"

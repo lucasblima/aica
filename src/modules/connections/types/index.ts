@@ -8,7 +8,7 @@ export type SplitType = 'equal' | 'percentage' | 'custom' | 'payer_only';
 // Core interfaces
 export interface ConnectionSpace {
   id: string;
-  user_id: string;
+  owner_id: string;
   archetype: ArchetypeType;
   name: string;
   subtitle?: string;

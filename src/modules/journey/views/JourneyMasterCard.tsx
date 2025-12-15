@@ -196,7 +196,7 @@ export function JourneyMasterCard({
           </p>
         </div>
         {progress.points_to_next > 0 && (
-          <span className="text-xs font-medium px-2 py-1 bg-ceramic-accent text-white rounded-full">
+          <span className="text-xs font-medium px-2 py-1 bg-ceramic-accent-dark text-white rounded-full">
             {progress.points_to_next} CP
           </span>
         )}

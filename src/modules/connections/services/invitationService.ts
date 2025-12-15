@@ -470,7 +470,7 @@ export async function cancelInvitation(invitationId: string): Promise<void> {
     // Fetch invitation to verify ownership
     const { data: invitation, error: fetchError } = await supabase
       .from('connection_invitations')
-      .select('*, connection_spaces!inner(user_id)')
+      .select('*, connection_spaces!inner(owner_id)')
       .eq('id', invitationId)
       .single();
 
@@ -485,7 +485,7 @@ export async function cancelInvitation(invitationId: string): Promise<void> {
 
     // Verify user owns the space
     const space = invitation.connection_spaces as any;
-    if (space.user_id !== user.id) {
+    if (space.owner_id !== user.id) {
       throw new Error('You do not have permission to cancel this invitation');
     }
 
@@ -526,7 +526,7 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
     // Fetch the original invitation
     const { data: originalInvitation, error: fetchError } = await supabase
       .from('connection_invitations')
-      .select('*, connection_spaces!inner(user_id)')
+      .select('*, connection_spaces!inner(owner_id)')
       .eq('id', invitationId)
       .single();
 
@@ -539,7 +539,7 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
 
     // Verify user owns the space
     const space = originalInvitation.connection_spaces as any;
-    if (space.user_id !== user.id) {
+    if (space.owner_id !== user.id) {
       return {
         success: false,
         error: 'You do not have permission to resend this invitation'

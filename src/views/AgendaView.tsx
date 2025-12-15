@@ -3,6 +3,7 @@ import {
     DndContext,
     DragOverlay,
     closestCorners,
+    rectIntersection,
     KeyboardSensor,
     PointerSensor,
     useSensor,
@@ -10,6 +11,7 @@ import {
     DragStartEvent,
     DragEndEvent,
     DragOverEvent,
+    CollisionDetection,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { supabase } from '../services/supabaseClient';
@@ -24,6 +26,7 @@ import { Task, Quadrant } from '../../types';
 import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
 import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
 import { TaskList } from '../modules/atlas/components/TaskList';
+import { ProjectList } from '../modules/atlas/components/ProjectList';
 import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { TimelineEvent } from '../services/googleCalendarService';
@@ -50,6 +53,12 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Atlas Module Integration
     const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
+
+    // B1: Wrapper function to ensure task list synchronization
+    const handleAddTask = async (input: any) => {
+        await addAtlasTask(input);
+        await loadAllTasks(); // Refresh all data to sync TaskList
+    };
 
     // Google Calendar Integration - Buscar próximos 7 dias
     // Usar useMemo para evitar recriar datas a cada render e causar loop
@@ -86,6 +95,30 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
+
+    // Custom collision detection that prioritizes quadrant containers over task cards
+    const customCollisionDetection: CollisionDetection = (args) => {
+        // First, get all collisions using rectIntersection
+        const rectIntersectionCollisions = rectIntersection(args);
+
+        if (!rectIntersectionCollisions || rectIntersectionCollisions.length === 0) {
+            return rectIntersectionCollisions;
+        }
+
+        // Filter for quadrant containers first
+        const quadrantCollisions = rectIntersectionCollisions.filter(collision => {
+            const id = collision.id.toString();
+            return ['urgent-important', 'important', 'urgent', 'low'].includes(id);
+        });
+
+        // If we found quadrant containers, return those
+        if (quadrantCollisions.length > 0) {
+            return quadrantCollisions;
+        }
+
+        // Otherwise, return all collisions (for timeline slots, etc.)
+        return rectIntersectionCollisions;
+    };
 
     useEffect(() => {
         loadAllTasks();
@@ -182,11 +215,18 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const merged = { ...matrixTasks };
 
         atlasTasks.forEach(atlasTask => {
-            // Map Atlas Priority to Quadrant
+            // Use Eisenhower Matrix dimensions (is_urgent, is_important) to determine quadrant
             let quadrant: Quadrant = 'low';
-            if (atlasTask.priority === 'urgent') quadrant = 'urgent';
-            else if (atlasTask.priority === 'high') quadrant = 'important';
-            else if (atlasTask.priority === 'medium') quadrant = 'urgent-important';
+
+            if (atlasTask.is_urgent && atlasTask.is_important) {
+                quadrant = 'urgent-important';
+            } else if (!atlasTask.is_urgent && atlasTask.is_important) {
+                quadrant = 'important';
+            } else if (atlasTask.is_urgent && !atlasTask.is_important) {
+                quadrant = 'urgent';
+            } else {
+                quadrant = 'low';
+            }
 
             // Map AtlasTask to Task
             const task: Task = {
@@ -356,6 +396,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     title,
                     due_date,
                     priority_quadrant,
+                    is_urgent,
+                    is_important,
                     estimated_duration,
                     scheduled_time,
                     completed_at,
@@ -382,7 +424,17 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     timeline.push(task);
                 } else {
                     // Otherwise it goes to matrix
-                    const quadrant = (task.priority_quadrant || 'low') as Quadrant;
+                    // Use is_urgent and is_important to determine quadrant
+                    let quadrant: Quadrant = 'low';
+                    if (task.is_urgent && task.is_important) {
+                        quadrant = 'urgent-important';
+                    } else if (!task.is_urgent && task.is_important) {
+                        quadrant = 'important';
+                    } else if (task.is_urgent && !task.is_important) {
+                        quadrant = 'urgent';
+                    } else {
+                        quadrant = 'low';
+                    }
                     matrix[quadrant].push(task);
                 }
             });
@@ -494,6 +546,30 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
         if (!task || !fromQuadrant || fromQuadrant === newQuadrant) return;
 
+        // Map quadrant to is_urgent and is_important booleans
+        let is_urgent: boolean;
+        let is_important: boolean;
+
+        switch (newQuadrant) {
+            case 'urgent-important':
+                is_urgent = true;
+                is_important = true;
+                break;
+            case 'important':
+                is_urgent = false;
+                is_important = true;
+                break;
+            case 'urgent':
+                is_urgent = true;
+                is_important = false;
+                break;
+            case 'low':
+            default:
+                is_urgent = false;
+                is_important = false;
+                break;
+        }
+
         // Optimistic update
         setMatrixTasks(prev => ({
             ...prev,
@@ -501,10 +577,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             [newQuadrant]: [...prev[newQuadrant], { ...task, priority_quadrant: newQuadrant }]
         }));
 
-        // DB Update
+        // DB Update - use is_urgent and is_important (trigger will update priority_quadrant)
         await supabase
             .from('work_items')
-            .update({ priority_quadrant: newQuadrant })
+            .update({ is_urgent, is_important })
             .eq('id', taskId);
     };
 
@@ -626,7 +702,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
             <DndContext
                 sensors={sensors}
-                collisionDetection={closestCorners}
+                collisionDetection={customCollisionDetection}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
@@ -643,7 +719,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     {/* Atlas Quick Add - Abaixo do foco principal */}
                     <div className="flex-none max-w-2xl mx-auto w-full">
                         <TaskCreationInput
-                            onAddTask={addAtlasTask}
+                            onAddTask={handleAddTask}
                             isSyncing={isAtlasSyncing}
                         />
                     </div>
@@ -690,7 +766,27 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
                     {/* Task List - Complete CRUD */}
                     <div className="flex-none max-w-2xl mx-auto w-full">
-                        <TaskList onTaskCreated={loadAllTasks} />
+                        <TaskList
+                            tasks={Object.values(matrixTasks).flat().map(task => ({
+                                id: task.id,
+                                title: task.title,
+                                description: undefined,
+                                priority: task.priority || 'none',
+                                status: task.completed_at ? 'completed' : 'todo',
+                                target_date: task.due_date,
+                                is_urgent: task.priority_quadrant === 'urgent-important' || task.priority_quadrant === 'urgent',
+                                is_important: task.priority_quadrant === 'urgent-important' || task.priority_quadrant === 'important',
+                                priority_quadrant: task.priority_quadrant,
+                                created_at: undefined,
+                                updated_at: undefined
+                            }))}
+                            onTaskCreated={loadAllTasks}
+                        />
+                    </div>
+
+                    {/* Projects Section */}
+                    <div className="flex-none max-w-4xl mx-auto w-full">
+                        <ProjectList />
                     </div>
                 </main>
 

@@ -24,7 +24,7 @@ export async function getConnectionSpaces(userId: string): Promise<ConnectionSpa
   const { data, error } = await supabase
     .from('connection_spaces')
     .select('*')
-    .eq('user_id', userId)
+    .eq('owner_id', userId)
     .eq('is_active', true)
     .order('last_accessed_at', { ascending: false, nullsFirst: false });
 
@@ -52,7 +52,7 @@ export async function getConnectionSpacesByArchetype(
   const { data, error } = await supabase
     .from('connection_spaces')
     .select('*')
-    .eq('user_id', userId)
+    .eq('owner_id', userId)
     .eq('archetype', archetype)
     .eq('is_active', true)
     .order('name');
@@ -115,7 +115,7 @@ export async function createConnectionSpace(
   const { data, error } = await supabase
     .from('connection_spaces')
     .insert({
-      user_id: userId,
+      owner_id: userId,
       archetype: input.archetype,
       name: input.name,
       subtitle: input.subtitle,

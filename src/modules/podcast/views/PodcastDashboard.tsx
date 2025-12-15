@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Plus, Calendar, User, Clock, Settings, ChevronLeft, Mic2, Trash2, Archive, ArchiveRestore, ArrowUpDown } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { PodcastShow } from '../types';
@@ -370,7 +371,7 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                             </p>
                             <button
                                 onClick={onCreateEpisode}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition-all shadow-[4px_4px_8px_rgba(163,158,145,0.2),-4px_-4px_8px_rgba(255,255,255,0.9)] hover:scale-105 active:scale-95"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-xl transition-all shadow-[4px_4px_8px_rgba(163,158,145,0.2),-4px_-4px_8px_rgba(255,255,255,0.9)] hover:scale-105 active:scale-95"
                             >
                                 <Plus className="w-5 h-5" />
                                 Criar Primeiro Episódio

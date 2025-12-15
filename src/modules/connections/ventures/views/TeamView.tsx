@@ -94,7 +94,7 @@ export function TeamView() {
                   px-4 py-2 rounded-lg text-sm font-medium transition-colors
                   ${
                     viewMode === 'grid'
-                      ? 'bg-amber-600 text-white'
+                      ? 'bg-amber-700 text-white'
                       : 'bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50'
                   }
                 `}
@@ -107,7 +107,7 @@ export function TeamView() {
                   px-4 py-2 rounded-lg text-sm font-medium transition-colors
                   ${
                     viewMode === 'equity'
-                      ? 'bg-amber-600 text-white'
+                      ? 'bg-amber-700 text-white'
                       : 'bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50'
                   }
                 `}
@@ -165,7 +165,7 @@ export function TeamView() {
         <div className="mt-6 flex justify-end">
           <button
             onClick={() => navigate(`/connections/ventures/${entityId}/team/new`)}
-            className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+            className="px-6 py-3 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors font-medium"
           >
             + Adicionar Stakeholder
           </button>
