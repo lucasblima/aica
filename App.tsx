@@ -24,6 +24,8 @@ import { ConnectionsPage } from './src/pages/ConnectionsPage';
 import { ArchetypeListPage } from './src/pages/ArchetypeListPage';
 import { SpaceDetailPage } from './src/pages/SpaceDetailPage';
 import { SpaceSectionPage } from './src/pages/SpaceSectionPage';
+import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
+import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
 
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
@@ -567,6 +569,18 @@ function AppContent() {
          <Route
             path="/landing"
             element={<LandingPage />}
+         />
+
+         {/* Privacy Policy - Public route */}
+         <Route
+            path="/privacy"
+            element={<PrivacyPolicyPage />}
+         />
+
+         {/* Terms of Service - Public route */}
+         <Route
+            path="/terms"
+            element={<TermsOfServicePage />}
          />
 
          {/* Connections Module Routes - Protected */}
