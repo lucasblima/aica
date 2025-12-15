@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { LayoutGrid, Calendar, Mic } from 'lucide-react';
+import { LayoutGrid, Calendar, Mic, Network, Radio } from 'lucide-react';
 
 interface BottomNavProps {
   currentView: ViewState;
@@ -15,7 +15,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
       <div className="pointer-events-auto relative">
 
         {/* Unified Floating Dock - Ceramic Card */}
-        <div className="ceramic-card h-20 px-10 flex items-center gap-16 rounded-full shadow-2xl backdrop-blur-md bg-opacity-95">
+        <div className="ceramic-card h-20 px-8 flex items-center gap-8 rounded-full shadow-2xl backdrop-blur-md bg-opacity-95">
 
           <button
             onClick={() => onChange('vida')}
@@ -23,6 +23,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
           >
             <LayoutGrid className="w-6 h-6" strokeWidth={currentView === 'vida' ? 2.5 : 2} />
             <span className="text-[10px] font-bold tracking-widest uppercase">Vida</span>
+          </button>
+
+          <button
+            onClick={() => onChange('agenda')}
+            className={`flex flex-col items-center gap-1 transition-all duration-300 ${currentView === 'agenda' ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
+          >
+            <Calendar className="w-6 h-6" strokeWidth={currentView === 'agenda' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Agenda</span>
           </button>
 
           {/* Voice Button (Concave) - Floating above */}
@@ -42,11 +50,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
           </div>
 
           <button
-            onClick={() => onChange('agenda')}
-            className={`flex flex-col items-center gap-1 transition-all duration-300 ${currentView === 'agenda' ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
+            onClick={() => onChange('connections')}
+            className={`flex flex-col items-center gap-1 transition-all duration-300 ${currentView === 'connections' ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
           >
-            <Calendar className="w-6 h-6" strokeWidth={currentView === 'agenda' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold tracking-widest uppercase">Agenda</span>
+            <Network className="w-6 h-6" strokeWidth={currentView === 'connections' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Conexões</span>
+          </button>
+
+          <button
+            onClick={() => onChange('studio')}
+            className={`flex flex-col items-center gap-1 transition-all duration-300 ${currentView === 'studio' ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
+          >
+            <Radio className="w-6 h-6" strokeWidth={currentView === 'studio' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Studio</span>
           </button>
 
         </div>

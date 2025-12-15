@@ -214,19 +214,40 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
                 </div>
             )}
 
-            {/* Empty state */}
+            {/* Empty state - Warm and inviting with ceramic inset CTA */}
             {!isLoading && tasks.length === 0 && (
-                <div className="ceramic-tray p-8 rounded-2xl text-center">
-                    <Plus className="w-12 h-12 mx-auto mb-3 text-ceramic-text-secondary/50" />
-                    <p className="text-ceramic-text-secondary">
+                <motion.div
+                    className="ceramic-tray p-8 rounded-2xl text-center"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <motion.div
+                        className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-6 bg-blue-50"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                    >
+                        <Plus className="w-8 h-8 text-ceramic-accent" />
+                    </motion.div>
+
+                    <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
                         {filter === 'active' && 'Nenhuma tarefa ativa'}
                         {filter === 'completed' && 'Nenhuma tarefa concluída'}
                         {filter === 'all' && 'Nenhuma tarefa cadastrada'}
+                    </h3>
+                    <p className="text-sm text-ceramic-text-secondary mb-6">
+                        {filter === 'active' && 'Comece adicionando uma tarefa para organizar seu trabalho'}
+                        {filter === 'completed' && 'Suas tarefas concluídas aparecerão aqui'}
+                        {filter === 'all' && 'Crie sua primeira tarefa para começar a planejar'}
                     </p>
-                    <p className="text-xs text-ceramic-text-tertiary mt-2">
-                        Use o campo acima para adicionar uma nova tarefa
-                    </p>
-                </div>
+
+                    {(filter === 'active' || filter === 'all') && (
+                        <p className="text-xs text-ceramic-text-secondary/70">
+                            Use o campo acima para adicionar uma nova tarefa
+                        </p>
+                    )}
+                </motion.div>
             )}
 
             {/* Task list */}

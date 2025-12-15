@@ -128,8 +128,8 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex gap-2 mt-6 overflow-x-auto pb-2">
+        {/* Tab Navigation - Ceramic tactile differentiation */}
+        <div className="flex gap-1 mt-6 overflow-x-auto pb-2 ceramic-tray p-1 rounded-2xl w-fit">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -139,11 +139,11 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap transition-all
+                  flex items-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all
                   ${
                     isActive
-                      ? 'ceramic-card text-ceramic-text-primary shadow-md'
-                      : 'bg-white/50 text-ceramic-text-secondary hover:bg-white hover:shadow'
+                      ? 'ceramic-concave text-ceramic-text-primary'
+                      : 'ceramic-card text-ceramic-text-secondary hover:text-ceramic-text-primary'
                   }
                 `}
               >

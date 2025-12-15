@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Users, Briefcase, ChevronRight, Plus } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
@@ -75,7 +75,10 @@ const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) =>
    );
 };
 
-export default function App() {
+// Main App Component Wrapper to handle routing
+function AppContent() {
+   const navigate = useNavigate();
+   const location = useLocation();
    const [currentView, setCurrentView] = useState<ViewState>('vida');
    const [isAuthenticated, setIsAuthenticated] = useState(false);
    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -99,6 +102,26 @@ export default function App() {
 
    // Podcast Nav State
    const [showPodcastNav, setShowPodcastNav] = useState(true);
+
+   // Sync view state with URL location
+   useEffect(() => {
+      if (location.pathname.startsWith('/connections')) {
+         setCurrentView('connections');
+      }
+   }, [location.pathname]);
+
+   // Enhanced view change handler that bridges state and router navigation
+   const handleViewChange = (view: ViewState) => {
+      if (view === 'connections') {
+         navigate('/connections');
+      } else {
+         // For non-router views, navigate to root and set state
+         if (location.pathname !== '/') {
+            navigate('/');
+         }
+         setCurrentView(view);
+      }
+   };
 
    useEffect(() => {
       const initAuth = async () => {
@@ -401,14 +424,19 @@ export default function App() {
 
 
 
-   // ==================== PODCAST VIEW ====================
-   const renderPodcast = () => (
+   // ==================== STUDIO VIEW ====================
+   const renderStudio = () => (
       <PodcastCopilotView
          userEmail={userEmail || undefined}
          onLogout={() => setIsAuthenticated(false)}
          onExit={() => setCurrentView('vida')}
          onNavVisibilityChange={setShowPodcastNav}
       />
+   );
+
+   // ==================== CONNECTIONS VIEW ====================
+   const renderConnections = () => (
+      <ConnectionsPage />
    );
 
    // ==================== FINANCE VIEW ====================
@@ -438,54 +466,64 @@ export default function App() {
    );
 
    // Main App Content (authenticated state)
-   const renderMainApp = () => (
-      <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
-         {currentView === 'vida' && renderVida()}
-         {currentView === 'agenda' && renderAgenda()}
-         {currentView === 'association_detail' && renderAssociationDetail()}
-         {currentView === 'podcast' && renderPodcast()}
-         {currentView === 'finance' && renderFinance()}
-         {currentView === 'finance_agent' && renderFinanceAgent()}
-         {currentView === 'journey' && renderJourney()}
-         {currentView === 'grants' && (
-            <GrantsModuleView onBack={() => setCurrentView('vida')} />
-         )}
-         {currentView === 'ai-cost' && userId && (
-            <AICostDashboard userId={userId} onBack={() => setCurrentView('vida')} />
-         )}
-         {currentView === 'file-search-analytics' && userId && (
-            <FileSearchAnalyticsView
-               userId={userId}
-               onBack={() => setCurrentView('vida')}
-               mode="fullpage"
-            />
-         )}
+   const renderMainApp = () => {
+      // Define focused modes where global nav should be hidden (Contextual Descent)
+      const focusedModes: ViewState[] = ['association_detail', 'finance', 'finance_agent', 'grants', 'ai-cost', 'file-search-analytics', 'journey'];
 
-         {currentView !== 'association_detail' && currentView !== 'finance' && currentView !== 'finance_agent' && currentView !== 'grants' && currentView !== 'ai-cost' && currentView !== 'file-search-analytics' && (currentView !== 'podcast' || showPodcastNav) &&
-            <BottomNav
-               currentView={currentView}
-               onChange={setCurrentView}
-               onMicClick={() => alert('Voice AI Coming Soon')}
-               isListening={false}
-            />
-         }
+      // Check if we're in a focused mode or if podcast nav is hidden
+      const shouldShowGlobalNav = !focusedModes.includes(currentView) && (currentView !== 'studio' || showPodcastNav);
 
-         {/* New Onboarding Flow */}
-         {!checkingOnboarding && showOnboarding && userId && (
-            <OnboardingFlow
-               userId={userId}
-               onComplete={() => handleOnboardingComplete(false)}
-               onError={(error) => {
-                  console.error('Onboarding error:', error);
-                  // In production, show error notification
-               }}
-            />
-         )}
+      return (
+         <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
+            {currentView === 'vida' && renderVida()}
+            {currentView === 'agenda' && renderAgenda()}
+            {currentView === 'connections' && renderConnections()}
+            {currentView === 'studio' && renderStudio()}
+            {currentView === 'association_detail' && renderAssociationDetail()}
+            {currentView === 'finance' && renderFinance()}
+            {currentView === 'finance_agent' && renderFinanceAgent()}
+            {currentView === 'journey' && renderJourney()}
+            {currentView === 'grants' && (
+               <GrantsModuleView onBack={() => setCurrentView('vida')} />
+            )}
+            {currentView === 'ai-cost' && userId && (
+               <AICostDashboard userId={userId} onBack={() => setCurrentView('vida')} />
+            )}
+            {currentView === 'file-search-analytics' && userId && (
+               <FileSearchAnalyticsView
+                  userId={userId}
+                  onBack={() => setCurrentView('vida')}
+                  mode="fullpage"
+               />
+            )}
 
-         {/* Notification Toast Container */}
-         <NotificationContainer />
-      </div>
-   );
+            {/* ANCHOR PRINCIPLE: Global Navigation - Always visible except in focused modes */}
+            {shouldShowGlobalNav && (
+               <BottomNav
+                  currentView={currentView}
+                  onChange={handleViewChange}
+                  onMicClick={() => alert('Voice AI Coming Soon')}
+                  isListening={false}
+               />
+            )}
+
+            {/* New Onboarding Flow */}
+            {!checkingOnboarding && showOnboarding && userId && (
+               <OnboardingFlow
+                  userId={userId}
+                  onComplete={() => handleOnboardingComplete(false)}
+                  onError={(error) => {
+                     console.error('Onboarding error:', error);
+                     // In production, show error notification
+                  }}
+               />
+            )}
+
+            {/* Notification Toast Container */}
+            <NotificationContainer />
+         </div>
+      );
+   };
 
    // Show loading screen while checking authentication
    if (isCheckingAuth) {
@@ -500,6 +538,21 @@ export default function App() {
          </div>
       );
    }
+
+   // Layout wrapper for connections routes with bottom nav
+   const ConnectionsLayout = ({ children }: { children: React.ReactNode }) => (
+      <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
+         {children}
+
+         {/* ANCHOR PRINCIPLE: Global Navigation */}
+         <BottomNav
+            currentView={currentView}
+            onChange={handleViewChange}
+            onMicClick={() => alert('Voice AI Coming Soon')}
+            isListening={false}
+         />
+      </div>
+   );
 
    // Use React Router Routes to ensure proper Router context for all components
    return (
@@ -519,8 +572,11 @@ export default function App() {
          {/* Connections Module Routes - Protected */}
          {isAuthenticated && (
             <>
-               <Route path="/connections" element={<ConnectionsPage />} />
-               <Route path="/connections/:archetype" element={<ArchetypeListPage />} />
+               {/* Global navigation visible on main connections views */}
+               <Route path="/connections" element={<ConnectionsLayout><ConnectionsPage /></ConnectionsLayout>} />
+               <Route path="/connections/:archetype" element={<ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout>} />
+
+               {/* Contextual descent: Detail and section views have back button, no bottom nav */}
                <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
                <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
             </>
@@ -535,3 +591,7 @@ export default function App() {
    );
 }
 
+// Export the main App component
+export default function App() {
+   return <AppContent />;
+}
