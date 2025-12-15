@@ -400,7 +400,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                     <button
                       onClick={handleAddUrlSource}
                       disabled={!newSourceUrl.trim()}
-                      className="px-3 py-2 rounded-lg bg-amber-500 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-600 transition-colors"
+                      className="px-3 py-2 rounded-lg bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-800 transition-colors"
                     >
                       <PlusCircle className="w-4 h-4" />
                     </button>

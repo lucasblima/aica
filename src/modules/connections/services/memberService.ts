@@ -371,7 +371,7 @@ export const memberService = {
       // Check if user is the space owner
       const { data: space, error: spaceError } = await supabase
         .from('connection_spaces')
-        .select('user_id')
+        .select('owner_id')
         .eq('id', spaceId)
         .single();
 
@@ -380,7 +380,7 @@ export const memberService = {
         return false;
       }
 
-      if (space && space.user_id === user.id) {
+      if (space && space.owner_id === user.id) {
         return true;
       }
 

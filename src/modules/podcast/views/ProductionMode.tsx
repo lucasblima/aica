@@ -19,6 +19,7 @@ import {
     Volume2
 } from 'lucide-react';
 import { Dossier, Topic } from '../types';
+import { StudioLayout } from '../components/StudioLayout';
 
 // Category config
 const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; color: string; bgColor: string }> = {
@@ -130,47 +131,41 @@ export const ProductionMode: React.FC<ProductionModeProps> = ({
     const CategoryIcon = currentTopic ? CATEGORY_CONFIG[currentTopic.categoryId || 'geral']?.icon || Mic : Mic;
 
     return (
-        <div className="h-screen bg-ceramic-base flex flex-col overflow-hidden">
-            {/* Header */}
-            <header className="flex-none bg-gradient-to-r from-red-600 to-red-500 px-6 py-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={onBack}
-                            className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-white" />
-                        </button>
-                        <div className="flex items-center gap-3">
-                            {isRecording && (
-                                <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
-                            )}
-                            <span className="text-white font-bold">
-                                {isRecording ? 'GRAVANDO' : 'PRODUÇÃO'}
-                            </span>
-                        </div>
-                        <div className="text-white/80">
-                            {dossier.guestName}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <span className="text-white font-mono text-2xl font-bold">
-                            {formatTime(recordingTime)}
+        <StudioLayout
+            title={dossier.guestName || 'Episódio'}
+            status="recording"
+            onExit={onBack}
+            variant="fixed"
+            isStudioMode={true}
+        >
+            {/* Main Content - Reductive Design (only essential controls) */}
+            <div className="h-full flex flex-col overflow-hidden">
+                {/* Floating Timer and Controls - Top Center */}
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-6 px-6 py-3 rounded-2xl backdrop-blur-md bg-white/70 shadow-lg border border-white/20 z-30">
+                    <div className="flex items-center gap-3">
+                        {isRecording && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                        )}
+                        <span className="text-sm font-bold text-ceramic-text-primary">
+                            {isRecording ? 'GRAVANDO' : 'PRODUÇÃO'}
                         </span>
-                        <button
-                            onClick={onOpenTeleprompter}
-                            className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold transition-colors flex items-center gap-2"
-                        >
-                            <Monitor className="w-4 h-4" />
-                            Teleprompter
-                        </button>
                     </div>
+                    <div className="w-px h-4 bg-ceramic-text-secondary/20" />
+                    <span className="font-mono text-lg font-bold text-ceramic-text-primary">
+                        {formatTime(recordingTime)}
+                    </span>
+                    <div className="w-px h-4 bg-ceramic-text-secondary/20" />
+                    <button
+                        onClick={onOpenTeleprompter}
+                        className="px-3 py-1.5 rounded-lg bg-ceramic-text-primary text-white text-sm font-bold hover:scale-105 transition-transform flex items-center gap-1.5"
+                    >
+                        <Monitor className="w-3.5 h-3.5" />
+                        Teleprompter
+                    </button>
                 </div>
-            </header>
 
-            {/* Main Content */}
-            <div className="flex-1 grid grid-cols-3 gap-8 p-4 overflow-hidden">
+            {/* Main Content Grid - 3 Columns */}
+            <div className="flex-1 grid grid-cols-3 gap-8 p-4 overflow-hidden mt-20">
                 {/* Left: Pauta (Read-only with progress) */}
                 <div className="col-span-2 bg-white rounded-2xl shadow-sm border border-[#E5E3DC] overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-[#E5E3DC] flex items-center justify-between">
@@ -372,7 +367,8 @@ export const ProductionMode: React.FC<ProductionModeProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+            </div>
+        </StudioLayout>
     );
 };
 

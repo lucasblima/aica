@@ -48,9 +48,11 @@ import { generateDossier } from '../services/geminiService';
 import { supabase } from '../../../services/supabaseClient';
 import { PautaGeneratorPanel } from '../components/PautaGeneratorPanel';
 import { GuestApprovalLinkDialog } from '../components/GuestApprovalLinkDialog';
+import { StudioLayout } from '../components/StudioLayout';
 import { Wand2 } from 'lucide-react';
 import { useSavedPauta } from '../hooks/useSavedPauta';
 import { fetchUrlContent, processFileContent } from '../services/contentExtractionService';
+import { pautaGeneratorService } from '../services/pautaGeneratorService';
 
 // Category Icons mapping
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -65,6 +67,20 @@ const CATEGORY_COLORS: Record<string, string> = {
     'quebra-gelo': 'bg-cyan-100 text-cyan-700 border-cyan-200',
     'patrocinador': 'bg-amber-100 text-amber-700 border-amber-200',
     'polêmicas': 'bg-red-100 text-red-700 border-red-200',
+};
+
+// Helper function to get category color by ID
+const getCategoryColor = (categoryId: string): string => {
+    const colorMap: Record<string, string> = {
+        'quebra-gelo': '#06B6D4',
+        'geral': '#3B82F6',
+        'patrocinador': '#F59E0B',
+        'polêmicas': '#EF4444',
+        'abertura': '#10B981',
+        'aprofundamento': '#8B5CF6',
+        'fechamento': '#F59E0B',
+    };
+    return colorMap[categoryId] || '#3B82F6';
 };
 
 interface GuestData {
@@ -194,6 +210,106 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
         })
     );
 
+    // Load saved pauta when it becomes available
+    useEffect(() => {
+        if (activePautaAsGenerated && !dossier && !isLoadingPauta) {
+            console.log('[PreProductionHub] Loading saved pauta:', {
+                hasPauta: !!activePautaAsGenerated,
+                hasQuestions: !!activePautaAsGenerated?.questions,
+                count: activePautaAsGenerated?.questions?.length || 0
+            });
+
+            // Convert saved pauta to local format
+            const savedDossier: Dossier = {
+                guestName: activePauta?.pauta.guest_name || guestData?.name || '',
+                episodeTheme: activePauta?.pauta.theme || guestData?.theme || '',
+                biography: activePautaAsGenerated.biography,
+                technicalSheet: activePautaAsGenerated.technicalSheet,
+                controversies: activePautaAsGenerated.controversies?.map(c => c.summary) || [],
+                suggestedTopics: activePautaAsGenerated.questions
+                    ?.filter(q => q.category !== 'quebra-gelo')
+                    .map(q => q.text) || [],
+                iceBreakers: activePautaAsGenerated.iceBreakers
+            };
+            setDossier(savedDossier);
+
+            // Convert questions to topics format
+            const savedTopics: Topic[] = [];
+            const savedCategories: TopicCategory[] = [];
+
+            // Add main topics
+            activePautaAsGenerated.questions?.forEach((q, idx) => {
+                // Ensure category exists
+                const catId = q.category.toLowerCase().replace(/\s+/g, '-');
+                if (!savedCategories.find(c => c.id === catId)) {
+                    savedCategories.push({
+                        id: catId,
+                        name: q.category.charAt(0).toUpperCase() + q.category.slice(1),
+                        color: getCategoryColor(catId),
+                        episode_id: projectId || ''
+                    });
+                }
+
+                // Create main topic
+                savedTopics.push({
+                    id: `saved-${Date.now()}-${idx}`,
+                    text: q.text,
+                    completed: false,
+                    order: idx,
+                    archived: false,
+                    categoryId: catId
+                });
+
+                // Add follow-ups as subtopics
+                q.followUps?.forEach((fu, fuIdx) => {
+                    savedTopics.push({
+                        id: `saved-fu-${Date.now()}-${idx}-${fuIdx}`,
+                        text: fu,
+                        completed: false,
+                        order: idx + 0.1 * (fuIdx + 1),
+                        archived: false,
+                        categoryId: catId
+                    });
+                });
+            });
+
+            // Ensure ice breakers category exists
+            if (!savedCategories.find(c => c.id === 'quebra-gelo')) {
+                savedCategories.unshift({
+                    id: 'quebra-gelo',
+                    name: 'Quebra-Gelo',
+                    color: getCategoryColor('quebra-gelo'),
+                    episode_id: projectId || ''
+                });
+            }
+
+            // Add ice breakers as topics
+            activePautaAsGenerated.iceBreakers?.forEach((ib, idx) => {
+                savedTopics.push({
+                    id: `ice-${Date.now()}-${idx}`,
+                    text: ib,
+                    completed: false,
+                    order: -1 + idx * 0.1,
+                    archived: false,
+                    categoryId: 'quebra-gelo'
+                });
+            });
+
+            setTopics(savedTopics);
+            setCategories(savedCategories);
+
+            console.log('[PreProductionHub] Saved pauta loaded successfully:', {
+                topics: savedTopics.length,
+                categories: savedCategories.length,
+                dossier: {
+                    guest: savedDossier.guestName,
+                    theme: savedDossier.episodeTheme,
+                    bioLength: savedDossier.biography.length
+                }
+            });
+        }
+    }, [activePautaAsGenerated, activePauta, isLoadingPauta, dossier, guestData, projectId]);
+
     // Load existing data or start research on mount
     useEffect(() => {
         if (projectId) {
@@ -208,6 +324,13 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
 
         try {
             setIsResearching(true);
+
+            // Check if saved pauta already exists (will be loaded by useEffect)
+            if (activePautaAsGenerated) {
+                console.log('[loadExistingData] Saved pauta exists, skipping research regeneration');
+                setIsResearching(false);
+                return;
+            }
 
             // Load existing topics from database
             const { data: existingTopics, error: topicsError } = await supabase
@@ -228,6 +351,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
 
             // If we have existing topics, use them
             if (existingTopics && existingTopics.length > 0) {
+                console.log('[loadExistingData] Loading existing topics:', existingTopics.length);
                 const loadedTopics: Topic[] = existingTopics.map(t => ({
                     id: t.id,
                     text: t.question_text,
@@ -250,6 +374,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                 }
             } else {
                 // No existing topics - generate new ones from dossier or research
+                console.log('[loadExistingData] No existing topics, starting research');
                 await handleStartResearch();
             }
         } catch (error) {
@@ -262,8 +387,15 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
     };
 
     const handleStartResearch = async () => {
+        // Don't regenerate if saved pauta already exists
+        if (activePautaAsGenerated) {
+            console.log('[handleStartResearch] Pauta already exists, skipping regeneration');
+            return;
+        }
+
         setIsResearching(true);
         try {
+            console.log('[handleStartResearch] Starting research for:', guestData.name);
             const result = await generateDossier(guestData.name, guestData.theme || '');
             setDossier(result);
 
@@ -604,51 +736,20 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
     };
 
     return (
-        <div className="h-screen bg-ceramic-base flex flex-col overflow-hidden">
-            {/* Header */}
-            <header className="flex-none bg-white/80 backdrop-blur-md border-b border-[#E5E3DC] px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={onBack}
-                            className="p-2 rounded-xl hover:bg-[#EBE9E4] transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
-                        </button>
-                        <div>
-                            <h1 className="text-xl font-bold text-ceramic-text-primary">
-                                {guestData.fullName || guestData.name}
-                            </h1>
-                            <p className="text-sm text-ceramic-text-secondary">
-                                {guestData.title} • {guestData.theme || 'Tema automático'}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setShowApprovalDialog(true)}
-                            disabled={!dossier || isResearching}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
-                            title="Gerar link de aprovação para o convidado"
-                        >
-                            <LinkIcon className="w-5 h-5" />
-                            Enviar Aprovação
-                        </button>
-                        <button
-                            onClick={handleGoToProduction}
-                            disabled={!dossier || isResearching}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
-                        >
-                            Ir para Gravação
-                            <ArrowRight className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-            </header>
+        <StudioLayout
+            title={guestData.fullName || guestData.name}
+            status="draft"
+            onExit={onBack}
+            variant="scrollable"
+            isStudioMode={false}
+        >
+            {/* Subtitle under header (via modal context) */}
+            <div className="text-sm text-ceramic-text-secondary mb-6 px-4">
+                {guestData.title} • {guestData.theme || 'Tema automático'}
+            </div>
 
             {/* Main Content - 2 Columns */}
-            <div className="flex-1 grid grid-cols-2 gap-6 p-6 overflow-hidden">
+            <div className="grid grid-cols-2 gap-6 px-6 pb-6 h-full">
                 {/* Left Column: Pauta (Topics) */}
                 <div className="flex flex-col bg-white rounded-2xl shadow-sm border border-[#E5E3DC] overflow-hidden">
                     <div className="p-4 border-b border-[#E5E3DC] flex items-center justify-between">
@@ -680,7 +781,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                             )}
                             <button
                                 onClick={() => setShowPautaGenerator(true)}
-                                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium flex items-center gap-1.5 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-medium flex items-center gap-1.5 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
                                 title="Gerar Pauta com IA (estilo NotebookLM)"
                             >
                                 <Wand2 className="w-4 h-4" />
@@ -966,6 +1067,27 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                 </div>
             </div>
 
+            {/* Action Buttons - Floating at bottom */}
+            <div className="fixed bottom-6 right-6 flex items-center gap-3 z-40">
+                <button
+                    onClick={() => setShowApprovalDialog(true)}
+                    disabled={!dossier || isResearching}
+                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+                    title="Gerar link de aprovação para o convidado"
+                >
+                    <LinkIcon className="w-5 h-5" />
+                    Enviar Aprovação
+                </button>
+                <button
+                    onClick={handleGoToProduction}
+                    disabled={!dossier || isResearching}
+                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+                >
+                    Ir para Gravação
+                    <ArrowRight className="w-5 h-5" />
+                </button>
+            </div>
+
             {/* Custom Sources Dialog */}
             <AnimatePresence>
                 {showSourcesDialog && (
@@ -1128,7 +1250,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                 guestEmail={guestData.email}
                 guestPhone={guestData.phone}
             />
-        </div>
+        </StudioLayout>
     );
 };
 

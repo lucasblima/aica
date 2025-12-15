@@ -76,11 +76,11 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans text-[#2B1B17]">
+    <div className="min-h-screen bg-ceramic-base font-sans text-[#2B1B17]">
       {/* Meta tags would be handled by Helmet or head config */}
       <meta name="description" content="Aica - Seu companheiro pessoal para autoconhecimento e crescimento. Registre seus momentos, receba insights personalizados, e observe as transformações acontecerem." />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta name="theme-color" content="#6B9EFF" />
+      <meta name="theme-color" content="#F0EFE9" />
 
       {/* Header with sticky navigation */}
       <Header
@@ -126,7 +126,7 @@ export function LandingPage() {
       {/* Login Modal */}
       {showLogin && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative">
+          <div className="ceramic-card shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative">
             <button
               onClick={() => setShowLogin(false)}
               className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"

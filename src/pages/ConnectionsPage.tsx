@@ -10,7 +10,7 @@ import { ConnectionsView } from '../modules/connections/views/ConnectionsView';
 import { CreateSpaceWizard } from '../modules/connections/components/CreateSpaceWizard';
 import { useConnectionNavigation } from '../modules/connections/hooks/useConnectionNavigation';
 import { useAuth } from '../hooks/useAuth';
-import type { ConnectionSpace } from '../modules/connections/types';
+import type { ConnectionSpace, Archetype } from '../modules/connections/types';
 
 /**
  * Main Connections page
@@ -25,13 +25,20 @@ export function ConnectionsPage() {
   const { user } = useAuth();
   const { navigateToSpace } = useConnectionNavigation();
   const [showCreateWizard, setShowCreateWizard] = useState(false);
+  const [selectedArchetype, setSelectedArchetype] = useState<Archetype | undefined>(undefined);
 
   const handleNavigateToSpace = (spaceId: string, archetype: string) => {
     navigateToSpace(spaceId, archetype as any);
   };
 
-  const handleCreateSpace = () => {
+  const handleCreateSpace = (archetype?: Archetype) => {
+    setSelectedArchetype(archetype);
     setShowCreateWizard(true);
+  };
+
+  const handleCloseWizard = () => {
+    setShowCreateWizard(false);
+    setSelectedArchetype(undefined);
   };
 
   const handleSpaceCreated = (space: ConnectionSpace) => {
@@ -66,8 +73,9 @@ export function ConnectionsPage() {
       {/* Create Space Wizard Modal */}
       <CreateSpaceWizard
         isOpen={showCreateWizard}
-        onClose={() => setShowCreateWizard(false)}
+        onClose={handleCloseWizard}
         onComplete={handleSpaceCreated}
+        initialArchetype={selectedArchetype}
       />
     </>
   );

@@ -17,6 +17,7 @@ export default {
                 'ceramic-text-primary': '#5C554B',
                 'ceramic-text-secondary': '#948D82',
                 'ceramic-accent': '#D97706', // Glazed Amber
+                'ceramic-accent-dark': '#B45309',  // Accessible amber - WCAG AA compliant with white text
                 'ceramic-highlight': '#E6D5C3',
                 'ceramic-positive': '#6B7B5C',  // Sage moss - para valores positivos
                 'ceramic-negative': '#9B4D3A',  // Terracotta queimado - para valores negativos

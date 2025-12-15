@@ -8,15 +8,15 @@ interface HeroSectionProps {
 
 export function HeroSection({ onSignUpClick, onLearnMoreClick }: HeroSectionProps) {
   return (
-    <section className="bg-gradient-to-br from-[#F8F7F5] to-[#F0F5FF] py-16 md:py-24 px-6 md:px-8">
+    <section className="bg-ceramic-base py-16 md:py-24 px-6 md:px-8 relative overflow-hidden">
       <div className="max-w-[1200px] mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Content */}
           <div className="space-y-6 animate-fade-in-up">
-            <h1 className="text-4xl md:text-5xl font-bold text-[#2B1B17] leading-tight">
+            <h1 className="text-4xl md:text-5xl font-black text-etched text-ceramic-text-primary leading-tight">
               Conheça a si mesmo.
               <br />
-              <span className="bg-gradient-to-r from-[#6B9EFF] to-[#845EF7] bg-clip-text text-transparent">
+              <span className="text-ceramic-accent">
                 Transforme sua vida.
               </span>
             </h1>
@@ -29,7 +29,7 @@ export function HeroSection({ onSignUpClick, onLearnMoreClick }: HeroSectionProp
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button
                 onClick={onSignUpClick}
-                className="inline-flex items-center justify-center px-8 py-3 bg-[#6B9EFF] text-white font-600 rounded-lg hover:bg-[#5A8FEF] transition-all shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#6B9EFF] focus:ring-offset-2"
+                className="ceramic-shadow bg-ceramic-accent text-[#1F1710] rounded-full px-10 py-4 hover:bg-[#C2850A] transition-all inline-flex items-center justify-center font-semibold focus:outline-none focus:ring-2 focus:ring-ceramic-accent focus:ring-offset-2"
                 aria-label="Start creating your free account"
               >
                 Começar Agora
@@ -38,7 +38,7 @@ export function HeroSection({ onSignUpClick, onLearnMoreClick }: HeroSectionProp
 
               <button
                 onClick={onLearnMoreClick}
-                className="inline-flex items-center justify-center px-8 py-3 border-2 border-[#6B9EFF] text-[#6B9EFF] font-600 rounded-lg hover:bg-[#F0F5FF] transition-all focus:outline-none focus:ring-2 focus:ring-[#6B9EFF] focus:ring-offset-2"
+                className="ceramic-inset text-ceramic-text-primary hover:text-ceramic-accent rounded-full px-10 py-4 inline-flex items-center justify-center font-600 transition-all focus:outline-none focus:ring-2 focus:ring-ceramic-accent focus:ring-offset-2"
                 aria-label="Learn more about Aica"
               >
                 Saber Mais
@@ -46,25 +46,16 @@ export function HeroSection({ onSignUpClick, onLearnMoreClick }: HeroSectionProp
             </div>
 
             {/* Trust Badge */}
-            <p className="text-sm text-[#948D82] pt-4">
-              Versão beta gratuita • Sem cartão de crédito necessário
+            <p className="text-sm text-ceramic-text-secondary pt-4">
+              Comece sua jornada. Sem custo.
             </p>
           </div>
 
-          {/* Illustration */}
-          <div className="hidden md:flex justify-center items-center animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <div className="relative w-96 h-96">
-              {/* Animated gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#6B9EFF]/20 via-[#845EF7]/10 to-[#FF922B]/5 rounded-3xl animate-pulse" />
-
-              {/* Decorative circles */}
-              <div className="absolute top-10 left-10 w-24 h-24 rounded-full bg-[#6B9EFF]/10 blur-2xl" />
-              <div className="absolute bottom-20 right-10 w-32 h-32 rounded-full bg-[#845EF7]/10 blur-3xl" />
-              <div className="absolute top-32 right-5 w-20 h-20 rounded-full bg-[#FF922B]/5 blur-2xl" />
-
-              {/* Center accent */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#6B9EFF] to-[#845EF7] opacity-10 blur-xl" />
+          {/* App Mockup Display */}
+          <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-[500px]">
+            <div className="ceramic-card rounded-3xl p-4 shadow-2xl transform rotate-[-5deg] hover:rotate-0 transition-transform duration-500">
+              <div className="bg-ceramic-base rounded-2xl aspect-[9/16] max-h-[600px] flex items-center justify-center">
+                <span className="text-ceramic-text-secondary text-sm">Meu Dia Preview</span>
               </div>
             </div>
           </div>

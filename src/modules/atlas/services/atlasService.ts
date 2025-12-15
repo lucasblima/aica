@@ -83,17 +83,38 @@ export const atlasService = {
             }
 
             // 3. Map Atlas TaskInput to Supabase work_items schema
-            const workItemData = {
+            const workItemData: any = {
                 user_id: user.id, // CRITICAL: Must include user_id for RLS policies
                 title: taskInput.title,
                 description: taskInput.description || null,
                 priority: taskInput.priority || 'medium',
                 due_date: taskInput.target_date || null,
                 archived: false,
-                is_completed: false
+                is_completed: false,
+                // Eisenhower Matrix dimensions
+                is_urgent: taskInput.is_urgent ?? false,
+                is_important: taskInput.is_important ?? false
                 // Note: status column exists in DB but Supabase cache may not be updated
                 // Default value 'todo' will be set by DB
+                // Note: priority_quadrant is computed automatically by database trigger
             };
+
+            // Add connection references if provided
+            if (taskInput.connection_space_id) {
+                workItemData.connection_space_id = taskInput.connection_space_id;
+            }
+            if (taskInput.habitat_property_id) {
+                workItemData.habitat_property_id = taskInput.habitat_property_id;
+            }
+            if (taskInput.ventures_entity_id) {
+                workItemData.ventures_entity_id = taskInput.ventures_entity_id;
+            }
+            if (taskInput.academia_journey_id) {
+                workItemData.academia_journey_id = taskInput.academia_journey_id;
+            }
+            if (taskInput.tribo_ritual_id) {
+                workItemData.tribo_ritual_id = taskInput.tribo_ritual_id;
+            }
 
             // 4. Insert into Supabase
             const { data, error } = await supabase
@@ -132,6 +153,10 @@ export const atlasService = {
                 target_date: data.due_date || undefined,
                 created_at: data.created_at,
                 updated_at: data.updated_at,
+                // Eisenhower Matrix fields
+                is_urgent: data.is_urgent ?? false,
+                is_important: data.is_important ?? false,
+                priority_quadrant: data.priority_quadrant as AtlasTask['priority_quadrant'],
                 isOptimistic: false
             };
 
@@ -162,6 +187,7 @@ export const atlasService = {
         archived?: boolean;
         completed?: boolean;
         categoryId?: string;
+        connection_space_id?: string; // NEW: Filter by connection space
     }): Promise<AtlasTask[]> => {
         try {
             const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -170,9 +196,14 @@ export const atlasService = {
                 throw new AuthenticationError('Você precisa estar autenticado');
             }
 
+            // Build select clause with optional JOIN for connection space name
+            const selectClause = filters?.connection_space_id
+                ? 'work_items.*, connection_spaces!connection_space_id(name)'
+                : '*';
+
             let query = supabase
                 .from('work_items')
-                .select('*')
+                .select(selectClause)
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
@@ -189,6 +220,10 @@ export const atlasService = {
                 query = query.eq('category_id', filters.categoryId);
             }
 
+            if (filters?.connection_space_id) {
+                query = query.eq('connection_space_id', filters.connection_space_id);
+            }
+
             const { data, error } = await query;
 
             if (error) {
@@ -197,7 +232,7 @@ export const atlasService = {
             }
 
             // Map to AtlasTask format
-            return (data || []).map(item => ({
+            return (data || []).map((item: any) => ({
                 id: item.id,
                 title: item.title,
                 description: item.description || undefined,
@@ -207,6 +242,18 @@ export const atlasService = {
                 target_date: item.due_date || undefined,
                 created_at: item.created_at,
                 updated_at: item.updated_at,
+                // Eisenhower Matrix fields
+                is_urgent: item.is_urgent ?? false,
+                is_important: item.is_important ?? false,
+                priority_quadrant: item.priority_quadrant as AtlasTask['priority_quadrant'],
+                // Connection fields
+                connection_space_id: item.connection_space_id || undefined,
+                habitat_property_id: item.habitat_property_id || undefined,
+                ventures_entity_id: item.ventures_entity_id || undefined,
+                academia_journey_id: item.academia_journey_id || undefined,
+                tribo_ritual_id: item.tribo_ritual_id || undefined,
+                // Connection space name from JOIN (if filtered by connection)
+                connection_space_name: item.connection_spaces?.name || undefined,
                 isOptimistic: false
             }));
         } catch (error) {
@@ -242,6 +289,28 @@ export const atlasService = {
             if (updates.priority !== undefined) updateData.priority = updates.priority;
             if (updates.target_date !== undefined) updateData.due_date = updates.target_date;
 
+            // Eisenhower Matrix dimension updates
+            if (updates.is_urgent !== undefined) updateData.is_urgent = updates.is_urgent;
+            if (updates.is_important !== undefined) updateData.is_important = updates.is_important;
+            // Note: priority_quadrant will be auto-updated by database trigger
+
+            // Add connection reference updates
+            if (updates.connection_space_id !== undefined) {
+                updateData.connection_space_id = updates.connection_space_id;
+            }
+            if (updates.habitat_property_id !== undefined) {
+                updateData.habitat_property_id = updates.habitat_property_id;
+            }
+            if (updates.ventures_entity_id !== undefined) {
+                updateData.ventures_entity_id = updates.ventures_entity_id;
+            }
+            if (updates.academia_journey_id !== undefined) {
+                updateData.academia_journey_id = updates.academia_journey_id;
+            }
+            if (updates.tribo_ritual_id !== undefined) {
+                updateData.tribo_ritual_id = updates.tribo_ritual_id;
+            }
+
             const { data, error } = await supabase
                 .from('work_items')
                 .update(updateData)
@@ -267,6 +336,16 @@ export const atlasService = {
                 status: data.status as AtlasTask['status'],
                 start_date: data.start_date || undefined,
                 target_date: data.due_date || undefined,
+                // Eisenhower Matrix fields
+                is_urgent: data.is_urgent ?? false,
+                is_important: data.is_important ?? false,
+                priority_quadrant: data.priority_quadrant as AtlasTask['priority_quadrant'],
+                // Connection fields
+                connection_space_id: data.connection_space_id || undefined,
+                habitat_property_id: data.habitat_property_id || undefined,
+                ventures_entity_id: data.ventures_entity_id || undefined,
+                academia_journey_id: data.academia_journey_id || undefined,
+                tribo_ritual_id: data.tribo_ritual_id || undefined,
                 created_at: data.created_at,
                 updated_at: data.updated_at,
                 isOptimistic: false
@@ -390,6 +469,10 @@ export const atlasService = {
                 target_date: data.due_date || undefined,
                 created_at: data.created_at,
                 updated_at: data.updated_at,
+                // Eisenhower Matrix fields
+                is_urgent: data.is_urgent ?? false,
+                is_important: data.is_important ?? false,
+                priority_quadrant: data.priority_quadrant as AtlasTask['priority_quadrant'],
                 isOptimistic: false
             };
         } catch (error) {
@@ -398,6 +481,89 @@ export const atlasService = {
             }
             console.error('[atlasService] Unexpected error toggling task:', error);
             throw new DatabaseError('Erro inesperado ao alternar tarefa', error);
+        }
+    },
+
+    /**
+     * Move task to specific Eisenhower Matrix quadrant
+     * Updates is_urgent and is_important based on quadrant
+     * Database trigger will auto-compute priority_quadrant
+     */
+    moveTaskToQuadrant: async (taskId: string, quadrant: 'urgent-important' | 'important' | 'urgent' | 'low'): Promise<AtlasTask> => {
+        try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                throw new AuthenticationError('Você precisa estar autenticado');
+            }
+
+            // Map quadrant to is_urgent and is_important booleans
+            let is_urgent: boolean;
+            let is_important: boolean;
+
+            switch (quadrant) {
+                case 'urgent-important':
+                    is_urgent = true;
+                    is_important = true;
+                    break;
+                case 'important':
+                    is_urgent = false;
+                    is_important = true;
+                    break;
+                case 'urgent':
+                    is_urgent = true;
+                    is_important = false;
+                    break;
+                case 'low':
+                default:
+                    is_urgent = false;
+                    is_important = false;
+                    break;
+            }
+
+            const { data, error } = await supabase
+                .from('work_items')
+                .update({
+                    is_urgent,
+                    is_important
+                    // priority_quadrant will be auto-updated by database trigger
+                })
+                .eq('id', taskId)
+                .eq('user_id', user.id)
+                .select()
+                .single();
+
+            if (error) {
+                console.error('[atlasService] Failed to move task to quadrant:', error);
+                throw new DatabaseError('Erro ao mover tarefa para quadrante', error);
+            }
+
+            if (!data) {
+                throw new DatabaseError('Tarefa não encontrada');
+            }
+
+            return {
+                id: data.id,
+                title: data.title,
+                description: data.description || undefined,
+                priority: data.priority as AtlasTask['priority'],
+                status: data.status as AtlasTask['status'],
+                start_date: data.start_date || undefined,
+                target_date: data.due_date || undefined,
+                // Eisenhower Matrix fields
+                is_urgent: data.is_urgent ?? false,
+                is_important: data.is_important ?? false,
+                priority_quadrant: data.priority_quadrant as AtlasTask['priority_quadrant'],
+                created_at: data.created_at,
+                updated_at: data.updated_at,
+                isOptimistic: false
+            };
+        } catch (error) {
+            if (error instanceof AuthenticationError || error instanceof DatabaseError) {
+                throw error;
+            }
+            console.error('[atlasService] Unexpected error moving task to quadrant:', error);
+            throw new DatabaseError('Erro inesperado ao mover tarefa', error);
         }
     },
 

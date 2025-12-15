@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import type { GrantOpportunity, GrantProject, FormField } from '../types';
 import { FormFieldsEditorModal } from './FormFieldsEditorModal';
-import { EditalDocumentSection } from './EditalDocumentSection';
+import { InteractiveSummaryCard } from './InteractiveSummaryCard';
+import { PdfPreviewModal } from './PdfPreviewModal';
 import { uploadEditalPDF, deleteEditalPDF, updateProjectName } from '../services/grantService';
 
 interface EditalDetailViewProps {
@@ -58,6 +59,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
   const [activeProjects, setActiveProjects] = useState<GrantProject[]>([]);
   const [archivedProjects, setArchivedProjects] = useState<GrantProject[]>([]);
   const [isEditingFields, setIsEditingFields] = useState(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingProjectName, setEditingProjectName] = useState<string>('');
 
@@ -285,20 +287,17 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
               {/* Edital Stats - 5 cards in single row */}
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-6">
-                {/* PDF Status Card */}
-                <div className="ceramic-card p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`ceramic-concave w-10 h-10 flex items-center justify-center ${opportunity.edital_pdf_path ? 'text-green-600' : 'text-orange-600'}`}>
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-ceramic-text-secondary">PDF do Edital</p>
-                      <p className="text-sm font-bold text-ceramic-text-primary">
-                        {opportunity.edital_pdf_path ? 'Enviado' : 'Pendente'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                {/* PDF Status Card - Interactive */}
+                <InteractiveSummaryCard
+                  icon={FileText}
+                  label="PDF do Edital"
+                  value={opportunity.edital_pdf_path ? 'Enviado' : 'Pendente'}
+                  subtext={opportunity.edital_text_content
+                    ? `${Math.round(opportunity.edital_text_content.length / 1000)}k chars extraidos`
+                    : undefined}
+                  variant={opportunity.edital_pdf_path ? 'success' : 'warning'}
+                  onClick={() => setIsPdfModalOpen(true)}
+                />
 
                 <div className="ceramic-card p-4">
                   <div className="flex items-center gap-3">
@@ -382,16 +381,6 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Edital PDF Section */}
-        <EditalDocumentSection
-          opportunityId={opportunity.id}
-          opportunityTitle={opportunity.title}
-          editalPdfPath={opportunity.edital_pdf_path}
-          editalTextContent={opportunity.edital_text_content}
-          onUpload={handleUploadEditalPDF}
-          onDelete={handleDeleteEditalPDF}
-        />
-
         {/* Active Projects */}
         {activeProjects.length > 0 && (
           <div className="mb-8">
@@ -623,6 +612,15 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
         initialFields={opportunity.form_fields}
         onSave={handleSaveFormFields}
         onClose={() => setIsEditingFields(false)}
+      />
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        opportunity={opportunity}
+        onUpload={handleUploadEditalPDF}
+        onDelete={handleDeleteEditalPDF}
       />
     </div>
   );

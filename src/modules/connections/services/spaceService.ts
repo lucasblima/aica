@@ -23,7 +23,7 @@ export const spaceService = {
       const { data, error } = await supabase
         .from('connection_spaces')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .eq('is_active', true)
         .order('is_favorite', { ascending: false })
         .order('last_accessed_at', { ascending: false, nullsFirst: false })
@@ -55,7 +55,7 @@ export const spaceService = {
       const { data, error } = await supabase
         .from('connection_spaces')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .eq('archetype', archetype)
         .eq('is_active', true)
         .order('is_favorite', { ascending: false })
@@ -91,7 +91,7 @@ export const spaceService = {
         .from('connection_spaces')
         .select('*')
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .eq('is_active', true)
         .maybeSingle();
 
@@ -145,7 +145,7 @@ export const spaceService = {
       const archetypeConfig = ARCHETYPE_CONFIG[data.archetype];
 
       const spacePayload = {
-        user_id: user.id,
+        owner_id: user.id,
         archetype: data.archetype,
         name: data.name,
         subtitle: data.subtitle,
@@ -196,7 +196,7 @@ export const spaceService = {
         .from('connection_spaces')
         .update(updatePayload)
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .select()
         .single();
 
@@ -234,7 +234,7 @@ export const spaceService = {
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('owner_id', user.id);
 
       if (error) {
         console.error('Error deleting space:', error);
@@ -262,7 +262,7 @@ export const spaceService = {
         .from('connection_spaces')
         .select('is_favorite')
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .single();
 
       if (fetchError) {
@@ -282,7 +282,7 @@ export const spaceService = {
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .select()
         .single();
 
@@ -317,7 +317,7 @@ export const spaceService = {
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('owner_id', user.id);
 
       if (error) {
         console.error('Error updating last accessed:', error);

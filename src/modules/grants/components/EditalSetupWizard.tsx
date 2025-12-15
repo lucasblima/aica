@@ -192,7 +192,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
               currentStep === 'upload' ? 'text-ceramic-accent' : 'text-green-600'
             }`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                currentStep === 'upload' ? 'bg-ceramic-accent text-white' : 'bg-green-600 text-white'
+                currentStep === 'upload' ? 'bg-ceramic-accent-dark text-white' : 'bg-green-600 text-white'
               }`}>
                 {currentStep !== 'upload' ? <Check className="w-5 h-5" /> : '1'}
               </div>
@@ -210,7 +210,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
               currentStep === 'form_fields' ? 'text-green-600' : 'text-ceramic-text-secondary'
             }`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                currentStep === 'review' ? 'bg-ceramic-accent text-white' :
+                currentStep === 'review' ? 'bg-ceramic-accent-dark text-white' :
                 currentStep === 'form_fields' ? 'bg-green-600 text-white' : 'bg-ceramic-text-secondary/20'
               }`}>
                 {currentStep === 'form_fields' ? <Check className="w-5 h-5" /> : '2'}
@@ -228,7 +228,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
               currentStep === 'form_fields' ? 'text-ceramic-accent' : 'text-ceramic-text-secondary'
             }`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                currentStep === 'form_fields' ? 'bg-ceramic-accent text-white' : 'bg-ceramic-text-secondary/20'
+                currentStep === 'form_fields' ? 'bg-ceramic-accent-dark text-white' : 'bg-ceramic-text-secondary/20'
               }`}>
                 3
               </div>

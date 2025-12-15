@@ -204,11 +204,11 @@ export const eventService = {
       // Verify that the user is either the creator or an admin of the space
       const { data: space } = await supabase
         .from('connection_spaces')
-        .select('user_id')
+        .select('owner_id')
         .eq('id', event.space_id)
         .single();
 
-      const isSpaceOwner = space && space.user_id === user.id;
+      const isSpaceOwner = space && space.owner_id === user.id;
       const isEventCreator = event.created_by === user.id;
 
       if (!isSpaceOwner && !isEventCreator) {
@@ -272,11 +272,11 @@ export const eventService = {
       // Verify that the user is either the creator or an admin of the space
       const { data: space } = await supabase
         .from('connection_spaces')
-        .select('user_id')
+        .select('owner_id')
         .eq('id', event.space_id)
         .single();
 
-      const isSpaceOwner = space && space.user_id === user.id;
+      const isSpaceOwner = space && space.owner_id === user.id;
       const isEventCreator = event.created_by === user.id;
 
       if (!isSpaceOwner && !isEventCreator) {

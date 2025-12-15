@@ -72,6 +72,11 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         getCurrentUser();
     }, []);
 
+    // Debug: Log view state changes
+    React.useEffect(() => {
+        console.log('[PodcastCopilot] View changed to:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
+    }, [view, currentShowId, userId, currentGuestData, currentProjectId]);
+
     // Update nav visibility when view changes
     React.useEffect(() => {
         if (onNavVisibilityChange) {
@@ -96,20 +101,31 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     // Dashboard -> Select Existing Episode (NEW FLOW)
     const handleSelectEpisode = async (episodeId: string) => {
+        console.log('[PodcastCopilot] handleSelectEpisode called', { episodeId, view });
+        alert(`DEBUG: handleSelectEpisode chamado!\nepisodeId: ${episodeId}\nview atual: ${view}`);
         setCurrentEpisodeId(episodeId);
         setCurrentProjectId(episodeId);
 
         try {
-            const { data: episode } = await supabase
+            console.log('[PodcastCopilot] Fetching episode from Supabase...');
+            const { data: episode, error } = await supabase
                 .from('podcast_episodes')
                 .select('*')
                 .eq('id', episodeId)
                 .single();
 
-            if (!episode) {
-                console.error('Episode not found');
+            if (error) {
+                console.error('[PodcastCopilot] Supabase error:', error);
+                alert('Erro ao carregar episódio: ' + error.message);
                 return;
             }
+
+            if (!episode) {
+                console.error('[PodcastCopilot] Episode not found');
+                return;
+            }
+
+            console.log('[PodcastCopilot] Episode loaded:', episode.id, episode.guest_name);
 
             // Always go to PreProduction for existing episodes
             // PreProduction will handle loading existing data or generating new research
@@ -137,18 +153,27 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 fullName: episode.guest_name || 'Convidado'
             });
 
+            console.log('[PodcastCopilot] Setting view to preproduction');
             setView('preproduction');
         } catch (error) {
-            console.error('Error loading episode:', error);
+            console.error('[PodcastCopilot] Error loading episode:', error);
             alert('Erro ao carregar episódio. Tente novamente.');
         }
     };
 
     // Dashboard -> Create New Episode -> Wizard (NEW FLOW)
     const handleCreateEpisode = async () => {
-        if (!currentShowId) return;
+        console.log('[PodcastCopilot] handleCreateEpisode called', { currentShowId, userId, view });
+        alert(`DEBUG: handleCreateEpisode chamado!\ncurrentShowId: ${currentShowId}\nuserId: ${userId}\nview atual: ${view}`);
+        if (!currentShowId) {
+            console.error('[PodcastCopilot] No currentShowId, returning early');
+            alert('ERRO: currentShowId está vazio!');
+            return;
+        }
         // Don't create episode here - Wizard will do it
+        console.log('[PodcastCopilot] Setting view to wizard');
         setView('wizard'); // FIX: Route to wizard instead of legacy preparation
+        console.log('[PodcastCopilot] setView(wizard) foi chamado');
     };
 
     // Wizard -> Pre-Production
@@ -229,9 +254,11 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     };
 
     // ================== VIEW RENDERS ==================
+    console.log('[PodcastCopilot] Rendering, view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
 
     // 1. Library
     if (view === 'library') {
+        console.log('[PodcastCopilot] Rendering Library view');
         return (
             <PodcastLibrary
                 onSelectShow={handleSelectShow}
@@ -244,6 +271,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     // 2. Dashboard
     if (view === 'dashboard' && currentShowId) {
+        console.log('[PodcastCopilot] Rendering Dashboard view');
         return (
             <PodcastDashboard
                 showId={currentShowId}
@@ -256,19 +284,71 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     }
 
     // 3. NEW: Guest Identification Wizard
-    if (view === 'wizard' && currentShowId && userId) {
+    if (view === 'wizard' && currentShowId) {
+        console.log('[PodcastCopilot] Rendering Wizard view, userId:', userId);
+        // Show loading while userId is being fetched
+        if (!userId) {
+            console.log('[PodcastCopilot] Wizard loading - waiting for userId');
+            return (
+                <StudioLayout
+                    title="Novo Episódio"
+                    status="draft"
+                    onExit={handleBackToDashboard}
+                    variant="scrollable"
+                    isStudioMode={false}
+                >
+                    <div className="flex items-center justify-center h-64">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-ceramic-text-secondary text-sm">Carregando...</p>
+                        </div>
+                    </div>
+                </StudioLayout>
+            );
+        }
+
         return (
-            <GuestIdentificationWizard
-                showId={currentShowId}
-                userId={userId}
-                onComplete={handleWizardComplete}
-                onCancel={handleBackToDashboard}
-            />
+            <StudioLayout
+                title="Novo Episódio"
+                status="draft"
+                onExit={handleBackToDashboard}
+                variant="scrollable"
+                isStudioMode={false}
+            >
+                <div className="max-w-4xl mx-auto">
+                    <GuestIdentificationWizard
+                        showId={currentShowId}
+                        userId={userId}
+                        onComplete={handleWizardComplete}
+                        onCancel={handleBackToDashboard}
+                    />
+                </div>
+            </StudioLayout>
         );
     }
 
     // 4. NEW: Pre-Production Hub
-    if (view === 'preproduction' && currentGuestData && currentProjectId) {
+    if (view === 'preproduction') {
+        // Show loading while episode data is being fetched
+        if (!currentGuestData || !currentProjectId) {
+            return (
+                <StudioLayout
+                    title="Carregando..."
+                    status="draft"
+                    onExit={handleBackToDashboard}
+                    variant="scrollable"
+                    isStudioMode={false}
+                >
+                    <div className="flex items-center justify-center h-64">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-ceramic-text-secondary text-sm">Carregando episódio...</p>
+                        </div>
+                    </div>
+                </StudioLayout>
+            );
+        }
+
         return (
             <PreProductionHub
                 guestData={currentGuestData}
@@ -377,6 +457,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     */
 
     // Fallback
+    console.warn('[PodcastCopilot] Falling through to fallback! view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId, currentDossier: !!currentDossier });
     return (
         <div className="flex items-center justify-center h-screen bg-[#F0EFE9]">
             <p className="text-[#5C554B]">Carregando...</p>

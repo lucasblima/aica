@@ -32,6 +32,7 @@ import {
   deleteProjectDocument,
   getCombinedDocumentsContent
 } from '../services/projectDocumentService';
+import { ContextChip } from './ContextChip';
 
 /**
  * ProjectBriefingView Component
@@ -179,7 +180,6 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<string>('');
   const [showEditalModal, setShowEditalModal] = useState(false);
-  const [showEditalContext, setShowEditalContext] = useState(false); // Collapsed by default for more workspace
   const [showDocumentsModal, setShowDocumentsModal] = useState(false); // Modal for managing documents
 
   // Documents state - múltiplos documentos de contexto
@@ -488,207 +488,102 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Header */}
+      {/* Header - Compressed with Context Ribbon */}
       <div className="flex-shrink-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-6">
-          {/* Back Button */}
-          <button
-            onClick={onBack}
-            className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-text-primary hover:scale-95 active:scale-90 transition-transform mb-4"
-            title="Voltar"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm text-ceramic-text-secondary mb-1">
+        <div className="max-w-5xl mx-auto px-6 py-4">
+          {/* Row 1: Navigation & Breadcrumb + Actions */}
+          <div className="flex items-center justify-between gap-4 mb-3">
+            {/* Left: Back + Breadcrumb */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <button
+                onClick={onBack}
+                className="ceramic-concave w-9 h-9 flex items-center justify-center text-ceramic-text-primary hover:scale-95 active:scale-90 transition-transform flex-shrink-0"
+                title="Voltar"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <span className="text-[10px] font-bold text-[#948D82] uppercase tracking-widest truncate">
                 {opportunityTitle}
-              </p>
-              <h1 className="text-2xl font-bold text-ceramic-text-primary">
-                {projectName}
-              </h1>
+              </span>
             </div>
-            <div className="flex items-center gap-4">
-              {/* AI Generation Progress Indicator */}
+
+            {/* Right: AI Generation + Save Status */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* AI Progress (when generating) */}
               {isGeneratingBriefing && (
-                <div className="ceramic-card px-4 py-2 flex items-center gap-3">
-                  <Loader2 className="w-4 h-4 animate-spin text-ceramic-accent" />
-                  <span className="text-sm text-ceramic-text-secondary">
+                <div className="hidden sm:flex items-center gap-2 ceramic-card px-3 py-1.5">
+                  <Loader2 className="w-3 h-3 animate-spin text-ceramic-accent" />
+                  <span className="text-[10px] text-ceramic-text-secondary truncate max-w-[120px]">
                     {generationProgress}
                   </span>
                 </div>
               )}
 
+              {/* Primary Action - Compact */}
               <button
                 onClick={handleGenerateBriefing}
                 disabled={isGeneratingBriefing}
-                className="ceramic-concave px-4 py-2 font-bold text-ceramic-accent hover:scale-[0.98] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+                className="ceramic-concave px-4 py-2 font-bold text-sm text-ceramic-text-primary hover:scale-[0.98] active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2"
               >
                 {isGeneratingBriefing ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Gerando...
+                    <span className="hidden sm:inline">Gerando...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    Preencher com IA
+                    <Sparkles className="w-4 h-4 text-[#D97706]" />
+                    <span className="hidden sm:inline">Preencher com IA</span>
                   </>
                 )}
               </button>
-              <div className="text-right">
-                <div className="flex items-center gap-2 mb-1">
-                  {isSaving ? (
-                    <span className="text-sm text-orange-600">Salvando...</span>
-                  ) : lastSaved ? (
-                    <span className="text-sm text-ceramic-text-tertiary">
-                      Salvo {lastSaved.toLocaleTimeString('pt-BR')}
-                    </span>
-                  ) : null}
-                  <Save className="w-4 h-4 text-ceramic-text-tertiary" />
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Edital Context - Collapsible (Collapsed by default) */}
-          {editalTextContent && editalTextContent.length > 0 && (
-            <div className="mb-4">
-              <button
-                onClick={() => setShowEditalContext(!showEditalContext)}
-                className="ceramic-card w-full p-3 hover:scale-[0.99] transition-transform text-left border-2 border-purple-500/20 bg-purple-500/5"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1">
-                    <FileText className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-ceramic-text-primary">
-                        📋 Contexto do Edital (PDF)
-                      </p>
-                    </div>
-                    <div className="ceramic-concave px-2 py-0.5 rounded-full">
-                      <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">
-                        P1 - Fonte de Verdade
-                      </span>
-                    </div>
-                    {editalTextContent && (
-                      <span className="text-xs text-green-600 font-medium flex-shrink-0">
-                        ✓ Disponível para IA
-                      </span>
-                    )}
-                    {showEditalContext ? (
-                      <ChevronUp className="w-4 h-4 text-ceramic-text-tertiary flex-shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-ceramic-text-tertiary flex-shrink-0" />
-                    )}
-                  </div>
-                </div>
-              </button>
-
-              {/* Expanded Content */}
-              <AnimatePresence>
-                {showEditalContext && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="ceramic-card mt-2 p-4 border-2 border-purple-500/20 bg-purple-500/5">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs text-ceramic-text-tertiary">
-                          {Math.round(editalTextContent.length / 1000)}k caracteres • Somente leitura
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowEditalModal(true);
-                          }}
-                          className="ceramic-concave px-3 py-2 text-xs font-bold text-ceramic-text-primary hover:scale-95 active:scale-90 transition-all flex items-center gap-2"
-                        >
-                          <FileText className="w-3 h-3" />
-                          Ver Completo
-                        </button>
-                      </div>
-                      <div className="ceramic-tray rounded-lg p-3 max-h-32 overflow-y-auto">
-                        <p className="text-xs text-ceramic-text-tertiary">
-                          {editalTextContent.substring(0, 500)}...
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Project Documents - Compact View */}
-          <div className="mb-4">
-            <div className="ceramic-card p-3 border-2 border-blue-500/20 bg-blue-500/5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <FolderOpen className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-ceramic-text-primary">
-                      📄 Documentos do Projeto ({documents.length})
-                    </p>
-                  </div>
-                  <div className="ceramic-concave px-2 py-0.5 rounded-full">
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                      P2 - Contexto Extra
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setShowDocumentsModal(true)}
-                    className="ceramic-concave px-3 py-1.5 text-xs font-bold text-ceramic-text-primary hover:scale-95 transition-transform flex-shrink-0"
-                  >
-                    Gerenciar
-                  </button>
-                </div>
-              </div>
-
-              {/* Show first 3 documents as chips */}
-              {documents.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {documents.slice(0, 3).map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="ceramic-tray px-2 py-1 flex items-center gap-1.5"
-                    >
-                      <FileCheck className="w-3 h-3 text-green-600 flex-shrink-0" />
-                      <span className="text-xs text-ceramic-text-primary truncate max-w-[120px]">
-                        {doc.file_name}
-                      </span>
-                    </div>
-                  ))}
-                  {documents.length > 3 && (
-                    <div className="ceramic-tray px-2 py-1">
-                      <span className="text-xs text-ceramic-text-tertiary">
-                        +{documents.length - 3} mais
-                      </span>
-                    </div>
-                  )}
+              {/* Save Status - Minimal */}
+              {(isSaving || lastSaved) && (
+                <div className="hidden md:flex items-center gap-1 text-[10px] text-ceramic-text-tertiary">
+                  <Save className="w-3 h-3" />
+                  {isSaving ? 'Salvando...' : lastSaved?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-ceramic-text-secondary">Progresso</span>
-              <span className="font-bold text-ceramic-text-primary">{completion}%</span>
-            </div>
-            <div className="ceramic-trough p-2">
-              <motion.div
-                className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${completion}%` }}
-                transition={{ duration: 0.3 }}
+          {/* Row 2: Title & Context Ribbon */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
+            {/* Left: Project Title */}
+            <h1 className="text-2xl sm:text-3xl font-black text-[#5C554B] leading-tight">
+              {projectName}
+            </h1>
+
+            {/* Right: THE CONTEXT RIBBON */}
+            <div className="flex flex-wrap items-center gap-2">
+              {editalTextContent && editalTextContent.length > 0 && (
+                <ContextChip
+                  type="edital"
+                  label="Contexto do Edital"
+                  status="Fonte de Verdade"
+                  charCount={editalTextContent.length}
+                  onClick={() => setShowEditalModal(true)}
+                />
+              )}
+              <ContextChip
+                type="docs"
+                label="Documentos"
+                count={documents.length}
+                isLoading={isLoadingDocuments}
+                onClick={() => setShowDocumentsModal(true)}
               />
             </div>
+          </div>
+
+          {/* Row 3: Progress Bar - Thin */}
+          <div className="ceramic-trough p-1.5">
+            <motion.div
+              className="h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${completion}%` }}
+              transition={{ duration: 0.3 }}
+            />
           </div>
         </div>
       </div>

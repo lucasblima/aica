@@ -30,13 +30,13 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-gradient-to-b from-[#F8F7F5] to-white py-16 md:py-28 px-6 md:px-8">
+    <section className="bg-ceramic-base py-16 md:py-28 px-6 md:px-8">
       <div className="max-w-[1200px] mx-auto">
         <div className="text-center mb-16 animate-fade-in-up">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#2B1B17] mb-4">
+          <h2 className="text-3xl md:text-4xl font-black text-ceramic-text-primary text-etched mb-4">
             Como Funciona
           </h2>
-          <p className="text-lg text-[#5C554B]">
+          <p className="text-lg text-ceramic-text-secondary">
             Um fluxo simples e intuitivo para seu crescimento pessoal
           </p>
         </div>
@@ -44,7 +44,7 @@ export function HowItWorks() {
         {/* Timeline */}
         <div className="relative">
           {/* Desktop Arrow Line */}
-          <div className="hidden md:block absolute top-24 left-0 right-0 h-1 bg-gradient-to-r from-[#E8E6E0] via-[#6B9EFF] to-[#E8E6E0]" />
+          <div className="hidden md:block absolute top-24 left-0 right-0 h-1 bg-ceramic-highlight" />
 
           {/* Steps Grid */}
           <div className="grid md:grid-cols-4 gap-8 relative z-10">
@@ -58,7 +58,7 @@ export function HowItWorks() {
                 >
                   {/* Number Badge */}
                   <div className="mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#6B9EFF] to-[#845EF7] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md hover:shadow-lg transition-shadow">
+                    <div className="w-12 h-12 ceramic-card bg-ceramic-base rounded-full flex items-center justify-center text-ceramic-accent font-black text-lg shadow-md border-2 border-ceramic-accent hover:shadow-lg transition-shadow">
                       {step.number}
                     </div>
                   </div>
@@ -67,25 +67,24 @@ export function HowItWorks() {
                   <div className="mb-4">
                     <Icon
                       size={48}
-                      color="#6B9EFF"
+                      className="text-ceramic-accent hover:scale-110 transition-transform"
                       strokeWidth={1.5}
-                      className="hover:scale-110 transition-transform"
                       aria-hidden="true"
                     />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-lg font-bold text-[#2B1B17] mb-3">
+                  <h3 className="text-lg font-bold text-ceramic-text-primary mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-sm text-[#5C554B] leading-relaxed">
+                  <p className="text-sm text-ceramic-text-secondary leading-relaxed">
                     {step.description}
                   </p>
 
                   {/* Mobile Arrow */}
                   {idx < steps.length - 1 && (
                     <div className="md:hidden w-full flex justify-center mt-6">
-                      <div className="text-[#6B9EFF] text-2xl">↓</div>
+                      <div className="text-ceramic-accent text-2xl">↓</div>
                     </div>
                   )}
                 </div>
@@ -96,12 +95,12 @@ export function HowItWorks() {
 
         {/* Bottom CTA */}
         <div className="text-center mt-16 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <p className="text-[#5C554B] mb-6">
+          <p className="text-ceramic-text-secondary mb-6">
             Tudo pensado para ser simples e natural
           </p>
           <a
             href="#cta"
-            className="inline-flex items-center gap-2 text-[#6B9EFF] font-600 hover:underline focus:outline-none focus:ring-2 focus:ring-[#6B9EFF] focus:ring-offset-2 rounded px-2 py-1"
+            className="inline-flex items-center gap-2 text-ceramic-accent font-600 hover:text-ceramic-text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ceramic-accent focus:ring-offset-2 rounded px-2 py-1 transition-colors"
           >
             Veja como começar
             <span aria-hidden="true">→</span>

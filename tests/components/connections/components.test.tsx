@@ -50,7 +50,7 @@ vi.mock('date-fns/locale', () => ({
 
 const mockHabitatSpace: ConnectionSpace = {
   id: 'space-1',
-  user_id: 'user-1',
+  owner_id: 'user-1',
   archetype: 'habitat',
   name: 'Casa da Família',
   subtitle: 'Nosso lar',
@@ -66,7 +66,7 @@ const mockHabitatSpace: ConnectionSpace = {
 
 const mockVenturesSpace: ConnectionSpace = {
   id: 'space-2',
-  user_id: 'user-1',
+  owner_id: 'user-1',
   archetype: 'ventures',
   name: 'Startup XYZ',
   subtitle: 'Nossa empresa',
@@ -81,7 +81,7 @@ const mockVenturesSpace: ConnectionSpace = {
 
 const mockAcademiaSpace: ConnectionSpace = {
   id: 'space-3',
-  user_id: 'user-1',
+  owner_id: 'user-1',
   archetype: 'academia',
   name: 'Estudos de IA',
   icon: '🎓',
@@ -94,7 +94,7 @@ const mockAcademiaSpace: ConnectionSpace = {
 
 const mockTriboSpace: ConnectionSpace = {
   id: 'space-4',
-  user_id: 'user-1',
+  owner_id: 'user-1',
   archetype: 'tribo',
   name: 'Grupo de Corrida',
   subtitle: 'Corredores da Manhã',

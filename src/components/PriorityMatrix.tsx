@@ -4,6 +4,7 @@ import {
     useSensors,
     PointerSensor,
     KeyboardSensor,
+    useDroppable,
 } from '@dnd-kit/core';
 import {
     SortableContext,
@@ -54,6 +55,65 @@ const QUADRANTS: QuadrantConfig[] = [
         bgClass: 'bg-gradient-to-br from-slate-50 to-gray-50'
     }
 ];
+
+// Droppable Quadrant Container Component
+const DroppableQuadrant: React.FC<{
+    quadrant: QuadrantConfig;
+    tasks: Task[];
+    isLoading: boolean;
+    children?: React.ReactNode;
+}> = ({ quadrant, tasks, isLoading, children }) => {
+    const { setNodeRef, isOver } = useDroppable({
+        id: quadrant.id,
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            data-container-type="quadrant"
+            className={`ceramic-tray p-4 min-h-[200px] rounded-2xl transition-all ${
+                isOver ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''
+            }`}
+            style={{ borderTop: `4px solid ${quadrant.color}` }}
+        >
+            {/* Quadrant Header */}
+            <div className="mb-4">
+                <h3 className="text-sm font-black text-ceramic-text-primary uppercase tracking-wide">
+                    {quadrant.title}
+                </h3>
+                <p className="text-xs text-ceramic-text-secondary">
+                    {quadrant.subtitle} • {tasks.length} tarefas
+                </p>
+            </div>
+
+            {/* Task List */}
+            <SortableContext
+                id={quadrant.id}
+                items={tasks.map(t => t.id)}
+                strategy={verticalListSortingStrategy}
+            >
+                {isLoading ? (
+                    <div className="space-y-2">
+                        {[1, 2].map(i => (
+                            <div key={i} className="ceramic-card p-3 animate-pulse">
+                                <div className="h-4 bg-ceramic-text-secondary/10 rounded w-3/4 mb-2"></div>
+                                <div className="h-3 bg-ceramic-text-secondary/10 rounded w-1/2"></div>
+                            </div>
+                        ))}
+                    </div>
+                ) : tasks.length === 0 ? (
+                    <div className="text-center py-8 text-ceramic-text-secondary text-sm border-2 border-dashed border-gray-200 rounded-lg">
+                        Arraste tarefas para cá
+                    </div>
+                ) : (
+                    tasks.map(task => (
+                        <TaskCard key={task.id} task={task} />
+                    ))
+                )}
+            </SortableContext>
+        </div>
+    );
+};
 
 // Sortable Task Card Component
 const TaskCard: React.FC<{ task: Task; isDragging?: boolean }> = ({ task, isDragging }) => {
@@ -129,38 +189,38 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
             // Simple rule-based logic (can be replaced with AI later)
             const allTasks = Object.values(tasks).flat();
             const now = new Date();
-            const updates: { id: string; quadrant: Quadrant }[] = [];
+            const updates: { id: string; is_urgent: boolean; is_important: boolean }[] = [];
 
             allTasks.forEach(task => {
-                let quadrant: Quadrant = 'low';
+                let is_urgent = false;
+                let is_important = false;
 
                 if (task.due_date) {
                     const dueDate = new Date(task.due_date);
                     const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-                    const isUrgent = daysUntilDue <= 2;
-                    const isImportant = task.estimated_duration && task.estimated_duration > 30;
+                    // Task is urgent if due within 2 days
+                    is_urgent = daysUntilDue <= 2;
 
-                    if (isUrgent && isImportant) {
-                        quadrant = 'urgent-important';
-                    } else if (isImportant) {
-                        quadrant = 'important';
-                    } else if (isUrgent) {
-                        quadrant = 'urgent';
-                    }
+                    // Task is important if estimated duration > 30 minutes (requires significant effort)
+                    is_important = task.estimated_duration ? task.estimated_duration > 30 : false;
                 } else {
-                    // No due date = probably low priority
-                    quadrant = 'low';
+                    // No due date = not urgent, low importance by default
+                    is_urgent = false;
+                    is_important = false;
                 }
 
-                updates.push({ id: task.id, quadrant });
+                updates.push({ id: task.id, is_urgent, is_important });
             });
 
-            // Batch update
+            // Batch update - set is_urgent and is_important (trigger will update priority_quadrant)
             for (const update of updates) {
                 await supabase
                     .from('work_items')
-                    .update({ priority_quadrant: update.quadrant })
+                    .update({
+                        is_urgent: update.is_urgent,
+                        is_important: update.is_important
+                    })
                     .eq('id', update.id);
             }
 
@@ -197,47 +257,12 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
             {/* Matrix Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {QUADRANTS.map(quadrant => (
-                    <SortableContext
+                    <DroppableQuadrant
                         key={quadrant.id}
-                        id={quadrant.id}
-                        items={tasks[quadrant.id].map(t => t.id)}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        <div
-                            className="ceramic-tray p-4 min-h-[200px] rounded-2xl transition-colors hover:bg-opacity-80"
-                            style={{ borderTop: `4px solid ${quadrant.color}` }}
-                        >
-                            {/* Quadrant Header */}
-                            <div className="mb-4">
-                                <h3 className="text-sm font-black text-ceramic-text-primary uppercase tracking-wide">
-                                    {quadrant.title}
-                                </h3>
-                                <p className="text-xs text-ceramic-text-secondary">
-                                    {quadrant.subtitle} • {tasks[quadrant.id].length} tarefas
-                                </p>
-                            </div>
-
-                            {/* Task List */}
-                            {isLoading ? (
-                                <div className="space-y-2">
-                                    {[1, 2].map(i => (
-                                        <div key={i} className="ceramic-card p-3 animate-pulse">
-                                            <div className="h-4 bg-ceramic-text-secondary/10 rounded w-3/4 mb-2"></div>
-                                            <div className="h-3 bg-ceramic-text-secondary/10 rounded w-1/2"></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : tasks[quadrant.id].length === 0 ? (
-                                <div className="text-center py-8 text-ceramic-text-secondary text-sm">
-                                    Arraste tarefas para cá
-                                </div>
-                            ) : (
-                                tasks[quadrant.id].map(task => (
-                                    <TaskCard key={task.id} task={task} />
-                                ))
-                            )}
-                        </div>
-                    </SortableContext>
+                        quadrant={quadrant}
+                        tasks={tasks[quadrant.id]}
+                        isLoading={isLoading}
+                    />
                 ))}
             </div>
         </div>

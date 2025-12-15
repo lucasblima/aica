@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     CheckCircle2,
@@ -9,12 +9,16 @@ import {
     Tag,
     MoreVertical,
     Plus,
-    AlertCircle
+    AlertCircle,
+    Undo2
 } from 'lucide-react';
 import { atlasService } from '../services/atlasService';
 import { AtlasTask } from '../types/plane';
+import { TaskEditModal } from './TaskEditModal';
+import { notificationService } from '../../../services/notificationService';
 
 interface TaskListProps {
+    tasks?: AtlasTask[];
     onTaskCreated?: () => void;
 }
 
@@ -22,7 +26,7 @@ interface TaskWithUIState extends AtlasTask {
     isToggling?: boolean;
 }
 
-export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
+export const TaskList: React.FC<TaskListProps> = ({ tasks: providedTasks, onTaskCreated }) => {
     const [tasks, setTasks] = useState<TaskWithUIState[]>([]);
     const [categories, setCategories] = useState<Array<{
         id: string;
@@ -34,9 +38,9 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('active');
-    const [editingTask, setEditingTask] = useState<string | null>(null);
-    const [editTitle, setEditTitle] = useState('');
+    const [editingTaskModal, setEditingTaskModal] = useState<AtlasTask | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [pendingDeletes, setPendingDeletes] = useState<Map<string, NodeJS.Timeout>>(new Map());
 
     // Load tasks and categories
     const loadData = async () => {
@@ -44,7 +48,14 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
             setIsLoading(true);
             setError(null);
 
-            // Load tasks first
+            // If tasks are provided via props, use them instead of fetching
+            if (providedTasks) {
+                setTasks(providedTasks);
+                setIsLoading(false);
+                return;
+            }
+
+            // Otherwise, load tasks from service
             const tasksData = await atlasService.getTasks({
                 archived: false,
                 completed: filter === 'completed' ? true : filter === 'active' ? false : undefined
@@ -70,7 +81,25 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
 
     useEffect(() => {
         loadData();
-    }, [filter]);
+    }, [filter, providedTasks]);
+
+    // Apply filter to tasks when using providedTasks
+    const filteredTasks = useMemo(() => {
+        if (!providedTasks) {
+            return tasks; // If not using providedTasks, return tasks as-is (already filtered by loadData)
+        }
+
+        // Apply filter logic to providedTasks
+        switch (filter) {
+            case 'completed':
+                return tasks.filter(t => t.status === 'completed');
+            case 'active':
+                return tasks.filter(t => t.status !== 'completed');
+            case 'all':
+            default:
+                return tasks;
+        }
+    }, [tasks, filter, providedTasks]);
 
     // Auto-dismiss success message after 2.5 seconds
     useEffect(() => {
@@ -79,6 +108,13 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
             return () => clearTimeout(timer);
         }
     }, [successMessage]);
+
+    // Cleanup pending deletes on unmount
+    useEffect(() => {
+        return () => {
+            pendingDeletes.forEach(timeoutId => clearTimeout(timeoutId));
+        };
+    }, []);
 
     // Handle task completion toggle with optimistic update and proper status sync
     const handleToggleComplete = async (taskId: string) => {
@@ -127,49 +163,103 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
         }
     };
 
-    // Handle task deletion
+    // Handle task deletion with soft delete and undo
     const handleDelete = async (taskId: string) => {
-        if (!confirm('Tem certeza que deseja deletar esta tarefa?')) return;
-
         try {
-            await atlasService.deleteTask(taskId);
+            // Optimistic update: remove from UI immediately
+            const taskToDelete = tasks.find(t => t.id === taskId);
+            if (!taskToDelete) return;
+
             setTasks(prev => prev.filter(t => t.id !== taskId));
-            setSuccessMessage('Tarefa deletada com sucesso!');
+
+            // Show notification with undo action
+            const notificationId = notificationService.show({
+                type: 'success',
+                title: 'Tarefa excluída',
+                message: 'Você tem 5 segundos para desfazer',
+                icon: '🗑️',
+                action: {
+                    label: 'Desfazer',
+                    callback: () => handleUndoDelete(taskId, taskToDelete)
+                },
+                duration: 5000 // 5 seconds to undo
+            });
+
+            // Schedule permanent deletion after 5 seconds
+            const timeoutId = setTimeout(async () => {
+                try {
+                    await atlasService.deleteTask(taskId);
+                    pendingDeletes.delete(taskId);
+                    setPendingDeletes(new Map(pendingDeletes));
+                    console.log('[TaskList] Task permanently deleted:', taskId);
+                } catch (err) {
+                    console.error('Error permanently deleting task:', err);
+                    // Restore task on error
+                    setTasks(prev => [...prev, taskToDelete]);
+                    setError(err instanceof Error ? err.message : 'Erro ao deletar tarefa');
+                }
+            }, 5000);
+
+            pendingDeletes.set(taskId, timeoutId);
+            setPendingDeletes(new Map(pendingDeletes));
         } catch (err) {
-            console.error('Error deleting task:', err);
+            console.error('Error initiating task deletion:', err);
             setError(err instanceof Error ? err.message : 'Erro ao deletar tarefa');
         }
     };
 
-    // Handle task edit
-    const handleStartEdit = (task: AtlasTask) => {
-        setEditingTask(task.id);
-        setEditTitle(task.title);
-    };
-
-    const handleSaveEdit = async (taskId: string) => {
-        if (editTitle.trim().length === 0) {
-            setError('O título não pode ser vazio');
-            return;
+    // Handle undo delete
+    const handleUndoDelete = (taskId: string, task: AtlasTask) => {
+        // Cancel pending deletion
+        const timeoutId = pendingDeletes.get(taskId);
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            pendingDeletes.delete(taskId);
+            setPendingDeletes(new Map(pendingDeletes));
         }
 
+        // Restore task to list
+        setTasks(prev => [...prev, task].sort((a, b) =>
+            new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        ));
+
+        notificationService.show({
+            type: 'info',
+            title: 'Exclusão cancelada',
+            message: 'A tarefa foi restaurada',
+            icon: '↩️',
+            duration: 3000
+        });
+    };
+
+    // Handle task edit via modal
+    const handleStartEdit = (task: AtlasTask) => {
+        setEditingTaskModal(task);
+    };
+
+    const handleSaveEditModal = async (updatedTask: AtlasTask) => {
         try {
-            const updatedTask = await atlasService.updateTask(taskId, {
-                title: editTitle.trim()
+            const savedTask = await atlasService.updateTask(updatedTask.id, {
+                title: updatedTask.title,
+                description: updatedTask.description,
+                target_date: updatedTask.target_date,
+                category: updatedTask.category,
+                priority: updatedTask.priority
             });
-            setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
-            setEditingTask(null);
-            setEditTitle('');
+            setTasks(prev => prev.map(t => t.id === savedTask.id ? savedTask : t));
             setSuccessMessage('Tarefa atualizada com sucesso!');
+
+            notificationService.show({
+                type: 'success',
+                title: 'Tarefa atualizada',
+                message: 'As alterações foram salvas com sucesso',
+                icon: '✓',
+                duration: 3000
+            });
         } catch (err) {
             console.error('Error updating task:', err);
             setError(err instanceof Error ? err.message : 'Erro ao atualizar tarefa');
         }
-    };
-
-    const handleCancelEdit = () => {
-        setEditingTask(null);
-        setEditTitle('');
     };
 
     // Get priority color
@@ -211,6 +301,17 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
 
     return (
         <div className="space-y-4">
+            {/* Task Edit Modal */}
+            {editingTaskModal && (
+                <TaskEditModal
+                    task={editingTaskModal}
+                    isOpen={!!editingTaskModal}
+                    onClose={() => setEditingTaskModal(null)}
+                    onSave={handleSaveEditModal}
+                    onDelete={handleDelete}
+                />
+            )}
+
             {/* Header with filters */}
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-black text-ceramic-text-primary text-etched">
@@ -291,7 +392,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
             )}
 
             {/* Empty state */}
-            {!isLoading && tasks.length === 0 && (
+            {!isLoading && filteredTasks.length === 0 && (
                 <motion.div
                     className="ceramic-tray p-8 rounded-2xl text-center"
                     initial={{ opacity: 0, y: 10 }}
@@ -329,7 +430,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
             {/* Task list */}
             <div className="space-y-3">
                 <AnimatePresence mode="popLayout">
-                    {tasks.map((task) => (
+                    {filteredTasks.map((task) => (
                         <motion.div
                             key={task.id}
                             layout
@@ -372,108 +473,74 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
 
                                 {/* Task content */}
                                 <div className="flex-1 min-w-0">
-                                    {editingTask === task.id ? (
-                                        <div className="space-y-2">
-                                            <input
-                                                type="text"
-                                                value={editTitle}
-                                                onChange={(e) => setEditTitle(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') handleSaveEdit(task.id);
-                                                    if (e.key === 'Escape') handleCancelEdit();
-                                                }}
-                                                className="w-full px-3 py-2 rounded-xl border border-ceramic-text-secondary/20 focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
-                                                autoFocus
-                                            />
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleSaveEdit(task.id)}
-                                                    className="px-3 py-1 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700"
-                                                >
-                                                    Salvar
-                                                </button>
-                                                <button
-                                                    onClick={handleCancelEdit}
-                                                    className="px-3 py-1 rounded-lg ceramic-tray text-sm font-bold"
-                                                >
-                                                    Cancelar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <motion.h4
-                                                className={`text-base font-bold text-ceramic-text-primary mb-2 transition-all ${
-                                                    task.status === 'completed' ? 'line-through text-ceramic-text-secondary/60' : ''
-                                                }`}
-                                                animate={{
-                                                    opacity: task.isToggling ? 0.6 : 1,
-                                                    textDecoration: task.status === 'completed' ? 'line-through' : 'none'
-                                                }}
-                                            >
-                                                {task.title}
-                                            </motion.h4>
+                                    <motion.h4
+                                        className={`text-base font-bold text-ceramic-text-primary mb-2 transition-all ${
+                                            task.status === 'completed' ? 'line-through text-ceramic-text-secondary/60' : ''
+                                        }`}
+                                        animate={{
+                                            opacity: task.isToggling ? 0.6 : 1,
+                                            textDecoration: task.status === 'completed' ? 'line-through' : 'none'
+                                        }}
+                                    >
+                                        {task.title}
+                                    </motion.h4>
 
-                                            {/* Metadata */}
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                {/* Priority badge */}
-                                                <span
-                                                    className={`px-2 py-1 rounded-lg text-xs font-bold border ${getPriorityColor(
-                                                        task.priority
-                                                    )}`}
-                                                >
-                                                    {getPriorityLabel(task.priority)}
-                                                </span>
+                                    {/* Metadata */}
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {/* Priority badge */}
+                                        <span
+                                            className={`px-2 py-1 rounded-lg text-xs font-bold border ${getPriorityColor(
+                                                task.priority
+                                            )}`}
+                                        >
+                                            {getPriorityLabel(task.priority)}
+                                        </span>
 
-                                                {/* Due date */}
-                                                {task.target_date && (
-                                                    <span className="flex items-center gap-1 text-xs text-ceramic-text-secondary">
-                                                        <Calendar className="w-3 h-3" />
-                                                        {formatDate(task.target_date)}
-                                                    </span>
-                                                )}
-                                            </div>
+                                        {/* Due date */}
+                                        {task.target_date && (
+                                            <span className="flex items-center gap-1 text-xs text-ceramic-text-secondary">
+                                                <Calendar className="w-3 h-3" />
+                                                {formatDate(task.target_date)}
+                                            </span>
+                                        )}
+                                    </div>
 
-                                            {/* Description */}
-                                            {task.description && (
-                                                <motion.p
-                                                    className={`text-sm mt-2 ${
-                                                        task.status === 'completed'
-                                                            ? 'text-ceramic-text-secondary/50'
-                                                            : 'text-ceramic-text-secondary'
-                                                    }`}
-                                                    animate={{
-                                                        opacity: task.isToggling ? 0.6 : 1
-                                                    }}
-                                                >
-                                                    {task.description}
-                                                </motion.p>
-                                            )}
-                                        </>
+                                    {/* Description */}
+                                    {task.description && (
+                                        <motion.p
+                                            className={`text-sm mt-2 ${
+                                                task.status === 'completed'
+                                                    ? 'text-ceramic-text-secondary/50'
+                                                    : 'text-ceramic-text-secondary'
+                                            }`}
+                                            animate={{
+                                                opacity: task.isToggling ? 0.6 : 1
+                                            }}
+                                        >
+                                            {task.description}
+                                        </motion.p>
                                     )}
                                 </div>
 
                                 {/* Actions */}
-                                {editingTask !== task.id && (
-                                    <div className="flex-shrink-0 flex gap-2">
-                                        <button
-                                            onClick={() => handleStartEdit(task)}
-                                            disabled={task.isToggling}
-                                            className="p-2 rounded-xl hover:bg-ceramic-text-secondary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title="Editar"
-                                        >
-                                            <Edit3 className="w-4 h-4 text-ceramic-text-secondary" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(task.id)}
-                                            disabled={task.isToggling}
-                                            className="p-2 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title="Deletar"
-                                        >
-                                            <Trash2 className="w-4 h-4 text-red-600" />
-                                        </button>
-                                    </div>
-                                )}
+                                <div className="flex-shrink-0 flex gap-2">
+                                    <button
+                                        onClick={() => handleStartEdit(task)}
+                                        disabled={task.isToggling}
+                                        className="p-2 rounded-xl hover:bg-ceramic-text-secondary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Editar"
+                                    >
+                                        <Edit3 className="w-4 h-4 text-ceramic-text-secondary" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(task.id)}
+                                        disabled={task.isToggling}
+                                        className="p-2 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Deletar"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     ))}
@@ -481,14 +548,14 @@ export const TaskList: React.FC<TaskListProps> = ({ onTaskCreated }) => {
             </div>
 
             {/* Task count and stats */}
-            {!isLoading && tasks.length > 0 && (
+            {!isLoading && filteredTasks.length > 0 && (
                 <motion.div
                     className="text-center"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                 >
                     <p className="text-xs text-ceramic-text-tertiary">
-                        {tasks.length} {tasks.length === 1 ? 'tarefa' : 'tarefas'}
+                        {filteredTasks.length} {filteredTasks.length === 1 ? 'tarefa' : 'tarefas'}
                         {filter === 'active' && ` - ${tasks.filter(t => t.status !== 'completed').length} ativa(s)`}
                         {filter === 'completed' && ` - ${tasks.filter(t => t.status === 'completed').length} concluída(s)`}
                     </p>
