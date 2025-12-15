@@ -783,8 +783,8 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                 <div className="flex flex-col gap-4 overflow-hidden">
                     {/* Research Panel */}
                     <div className="flex-1 bg-white rounded-2xl shadow-sm border border-[#E5E3DC] overflow-hidden flex flex-col">
-                        {/* Tabs */}
-                        <div className="flex border-b border-[#E5E3DC]">
+                        {/* Tabs - Ceramic tactile differentiation */}
+                        <div className="flex gap-1 p-1 ceramic-tray">
                             {[
                                 { id: 'bio' as ResearchTab, label: 'Bio', icon: User },
                                 { id: 'ficha' as ResearchTab, label: 'Ficha', icon: FileText },
@@ -793,9 +793,9 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 font-bold text-sm transition-colors ${activeTab === tab.id
-                                            ? 'text-amber-600 border-b-2 border-amber-500 bg-ceramic-highlight'
-                                            : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-[#F7F6F4]'
+                                    className={`flex-1 py-2.5 px-4 flex items-center justify-center gap-2 font-bold text-sm rounded-lg transition-all ${activeTab === tab.id
+                                            ? 'ceramic-concave text-ceramic-text-primary'
+                                            : 'ceramic-card text-ceramic-text-secondary hover:text-ceramic-text-primary'
                                         }`}
                                 >
                                     <tab.icon className="w-4 h-4" />
