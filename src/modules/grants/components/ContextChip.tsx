@@ -33,7 +33,7 @@ export const ContextChip: React.FC<ContextChipProps> = ({
       onClick={onClick}
       disabled={isLoading}
       className="
-        group flex items-center gap-2 px-3 py-2 rounded-full
+        group flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full
         bg-white/80 border border-white/60
         shadow-sm hover:shadow-md
         hover:scale-[1.02] active:scale-[0.98]
@@ -43,36 +43,36 @@ export const ContextChip: React.FC<ContextChipProps> = ({
     >
       {/* Icon Well */}
       <div className={`
-        w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0
+        w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0
         ${type === 'edital'
           ? 'bg-purple-100 text-purple-600'
           : 'bg-blue-100 text-blue-600'}
       `}>
         {isLoading ? (
-          <Loader2 size={12} className="animate-spin" />
+          <Loader2 size={10} className="animate-spin sm:w-3 sm:h-3" />
         ) : type === 'edital' ? (
-          <FileText size={12} />
+          <FileText size={10} className="sm:w-3 sm:h-3" />
         ) : (
-          <FolderOpen size={12} />
+          <FolderOpen size={10} className="sm:w-3 sm:h-3" />
         )}
       </div>
 
-      {/* Text Info */}
-      <div className="flex flex-col items-start min-w-0">
-        <span className="text-[11px] font-bold text-[#5C554B] leading-none truncate">
+      {/* Text Info - Hidden on mobile, visible on sm+ */}
+      <div className="hidden sm:flex flex-col items-start min-w-0">
+        <span className="text-[10px] sm:text-[11px] font-bold text-[#5C554B] leading-none truncate">
           {label}
         </span>
-        <span className="text-[10px] text-[#948D82] leading-none mt-0.5">
+        <span className="text-[9px] sm:text-[10px] text-[#948D82] leading-none mt-0.5">
           {type === 'edital'
-            ? (charCount ? `${Math.round(charCount / 1000)}k chars` : 'Nao carregado')
-            : `${count || 0} arquivo${count !== 1 ? 's' : ''}`
+            ? (charCount ? `${Math.round(charCount / 1000)}k` : '-')
+            : `${count || 0}`
           }
         </span>
       </div>
 
       {/* Status Indicator */}
       {isAvailable && (
-        <CheckCircle2 size={12} className="text-green-500 flex-shrink-0" />
+        <CheckCircle2 size={10} className="text-green-500 flex-shrink-0 sm:w-3 sm:h-3" />
       )}
     </button>
   );

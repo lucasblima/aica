@@ -489,20 +489,20 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       </AnimatePresence>
 
       {/* Header - Compressed with Context Ribbon */}
-      <div className="flex-shrink-0 z-10 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+      <div className="flex-shrink-0 sticky top-0 z-20 bg-ceramic-base border-b border-ceramic-text-secondary/10 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           {/* Row 1: Navigation & Breadcrumb + Actions */}
-          <div className="flex items-center justify-between gap-4 mb-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 mb-2 sm:mb-3">
             {/* Left: Back + Breadcrumb */}
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               <button
                 onClick={onBack}
-                className="ceramic-concave w-9 h-9 flex items-center justify-center text-ceramic-text-primary hover:scale-95 active:scale-90 transition-transform flex-shrink-0"
+                className="ceramic-concave w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-ceramic-text-primary hover:scale-95 active:scale-90 transition-transform flex-shrink-0"
                 title="Voltar"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
-              <span className="text-[10px] font-bold text-[#948D82] uppercase tracking-widest truncate">
+              <span className="text-[9px] sm:text-[10px] font-bold text-[#948D82] uppercase tracking-widest truncate">
                 {opportunityTitle}
               </span>
             </div>
@@ -549,18 +549,18 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
           </div>
 
           {/* Row 2: Title & Context Ribbon */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
+          <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
             {/* Left: Project Title */}
-            <h1 className="text-2xl sm:text-3xl font-black text-[#5C554B] leading-tight">
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-[#5C554B] leading-tight truncate flex-1 min-w-0">
               {projectName}
             </h1>
 
-            {/* Right: THE CONTEXT RIBBON */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Right: THE CONTEXT RIBBON - Always horizontal, compact on mobile */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               {editalTextContent && editalTextContent.length > 0 && (
                 <ContextChip
                   type="edital"
-                  label="Contexto do Edital"
+                  label="Edital"
                   status="Fonte de Verdade"
                   charCount={editalTextContent.length}
                   onClick={() => setShowEditalModal(true)}
@@ -568,7 +568,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
               )}
               <ContextChip
                 type="docs"
-                label="Documentos"
+                label="Docs"
                 count={documents.length}
                 isLoading={isLoadingDocuments}
                 onClick={() => setShowDocumentsModal(true)}
