@@ -214,3 +214,232 @@ Texto melhorado:`;
     throw new Error('Falha ao melhorar o texto.');
   }
 }
+
+// ============================================
+// FORM FIELDS EXTRACTION
+// ============================================
+
+export interface ParsedFormField {
+  label: string;
+  maxChars?: number;
+  required?: boolean;
+  hint?: string;
+  placeholder?: string;
+}
+
+/**
+ * Parse form fields from pasted text using AI
+ * Extracts question labels, character limits, and requirements
+ */
+export async function parseFormFieldsFromText(text: string): Promise<ParsedFormField[]> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('VITE_GEMINI_API_KEY nao configurada');
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.2,
+        topK: 20,
+        topP: 0.8,
+        maxOutputTokens: 4000,
+      },
+    });
+
+    const prompt = `Voce e um especialista em analise de editais de fomento brasileiros.
+
+TAREFA: Extraia os campos/perguntas do formulario de inscricao a partir do texto abaixo.
+
+TEXTO DO FORMULARIO:
+---
+${text.substring(0, 15000)}
+---
+
+INSTRUCOES:
+1. Identifique cada pergunta/campo do formulario
+2. Extraia o limite de caracteres se mencionado (ex: "max 3000 caracteres")
+3. Identifique se e obrigatorio
+4. Crie uma dica curta sobre o que responder
+
+Retorne um JSON com array de objetos:
+[
+  {
+    "label": "Nome da pergunta/campo",
+    "maxChars": 3000,
+    "required": true,
+    "hint": "Dica curta sobre o que responder",
+    "placeholder": "Exemplo de inicio de resposta..."
+  }
+]
+
+Retorne APENAS o JSON, sem texto adicional.`;
+
+    const result = await model.generateContent(prompt);
+    let jsonText = result.response.text();
+
+    // Clean markdown if present
+    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const fields = JSON.parse(jsonText) as ParsedFormField[];
+
+    console.log('[BriefingAI] Parsed form fields:', fields.length);
+
+    return fields;
+  } catch (error) {
+    console.error('Erro ao extrair campos do formulario:', error);
+    throw new Error('Falha ao extrair campos. Tente adicionar manualmente.');
+  }
+}
+
+// ============================================
+// REQUIRED DOCUMENTS EXTRACTION
+// ============================================
+
+export interface ExtractedDocument {
+  name: string;
+  description?: string;
+  dueDate?: string;
+}
+
+/**
+ * Extract required documents list from edital PDF content
+ */
+export async function extractRequiredDocuments(pdfContent: string): Promise<ExtractedDocument[]> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('VITE_GEMINI_API_KEY nao configurada');
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.2,
+        topK: 20,
+        topP: 0.8,
+        maxOutputTokens: 4000,
+      },
+    });
+
+    const prompt = `Voce e um especialista em analise de editais de fomento brasileiros.
+
+TAREFA: Extraia a lista de documentos necessarios para habilitacao a partir do edital.
+
+TEXTO DO EDITAL:
+---
+${pdfContent.substring(0, 20000)}
+---
+
+INSTRUCOES:
+1. Identifique TODOS os documentos exigidos para inscricao/habilitacao
+2. Inclua certidoes, declaracoes, comprovantes, etc.
+3. Se houver prazo especifico para algum documento, inclua
+
+Retorne um JSON com array de objetos:
+[
+  {
+    "name": "Nome do documento (ex: Certidao Negativa de Debitos)",
+    "description": "Descricao breve ou requisitos especificos",
+    "dueDate": "Data limite se mencionada (formato ISO)"
+  }
+]
+
+Retorne APENAS o JSON, sem texto adicional.`;
+
+    const result = await model.generateContent(prompt);
+    let jsonText = result.response.text();
+
+    // Clean markdown if present
+    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const docs = JSON.parse(jsonText) as ExtractedDocument[];
+
+    console.log('[BriefingAI] Extracted required documents:', docs.length);
+
+    return docs;
+  } catch (error) {
+    console.error('Erro ao extrair documentos do edital:', error);
+    throw new Error('Falha ao extrair documentos. Adicione manualmente.');
+  }
+}
+
+// ============================================
+// TIMELINE EXTRACTION
+// ============================================
+
+export interface ExtractedPhase {
+  name: string;
+  description?: string;
+  date: string;
+}
+
+/**
+ * Extract timeline phases from edital PDF content
+ */
+export async function extractTimelinePhases(pdfContent: string): Promise<ExtractedPhase[]> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('VITE_GEMINI_API_KEY nao configurada');
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.2,
+        topK: 20,
+        topP: 0.8,
+        maxOutputTokens: 4000,
+      },
+    });
+
+    const prompt = `Voce e um especialista em analise de editais de fomento brasileiros.
+
+TAREFA: Extraia o cronograma/timeline do edital com todas as datas importantes.
+
+TEXTO DO EDITAL:
+---
+${pdfContent.substring(0, 20000)}
+---
+
+INSTRUCOES:
+1. Identifique TODAS as fases/etapas com datas do processo
+2. Inclua: inscricao, avaliacao, resultados, recursos, contratacao, etc.
+3. Use formato de data ISO (YYYY-MM-DD)
+4. Se houver periodo (inicio-fim), use a data final
+
+Retorne um JSON com array de objetos ORDENADOS por data:
+[
+  {
+    "name": "Nome da fase (ex: Submissao de Propostas)",
+    "description": "Descricao breve da fase",
+    "date": "2025-12-15"
+  }
+]
+
+Retorne APENAS o JSON, sem texto adicional.`;
+
+    const result = await model.generateContent(prompt);
+    let jsonText = result.response.text();
+
+    // Clean markdown if present
+    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const phases = JSON.parse(jsonText) as ExtractedPhase[];
+
+    // Sort by date
+    phases.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    console.log('[BriefingAI] Extracted timeline phases:', phases.length);
+
+    return phases;
+  } catch (error) {
+    console.error('Erro ao extrair cronograma do edital:', error);
+    throw new Error('Falha ao extrair cronograma. Adicione manualmente.');
+  }
+}
