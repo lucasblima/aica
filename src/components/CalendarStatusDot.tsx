@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, RefreshCw } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Check, AlertCircle } from 'lucide-react';
 
 interface CalendarStatusDotProps {
   isConnected: boolean;
@@ -21,34 +21,54 @@ export const CalendarStatusDot: React.FC<CalendarStatusDotProps> = ({
 }) => {
   const [showMenu, setShowMenu] = useState(false);
 
-  // Determinar estado visual
-  const getStatusColor = () => {
-    if (hasError || !isConnected) return 'bg-red-500';
-    if (isSyncing) return 'bg-amber-500';
-    return 'bg-transparent'; // Invisível quando OK
+  // Determinar estado visual do badge
+  const getStatusBadge = () => {
+    if (hasError) return { color: 'bg-red-500', icon: AlertCircle };
+    if (!isConnected) return { color: 'bg-ceramic-text-secondary/40', icon: null };
+    if (isSyncing) return { color: 'bg-amber-500', icon: null };
+    return { color: 'bg-emerald-500', icon: Check };
   };
 
-  const isVisible = !isConnected || isSyncing || hasError;
+  const statusBadge = getStatusBadge();
 
   return (
     <div className="relative">
-      {/* Ponto de Status */}
+      {/* Botão com ícone de calendário sempre visível */}
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className="relative p-2 rounded-full hover:bg-ceramic-text-secondary/5 transition-colors"
+        className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all ${
+          isConnected
+            ? 'bg-ceramic-text-secondary/5 hover:bg-ceramic-text-secondary/10'
+            : 'bg-amber-50 hover:bg-amber-100 border border-amber-200'
+        }`}
         aria-label="Status do Google Calendar"
       >
-        <motion.div
-          className={`w-2 h-2 rounded-full ${getStatusColor()} ${
-            isSyncing ? 'animate-pulse' : ''
-          }`}
-          initial={{ scale: 0 }}
-          animate={{
-            scale: isVisible ? 1 : 0,
-            opacity: isVisible ? 1 : 0
-          }}
-          transition={{ duration: 0.2 }}
+        <Calendar
+          className={`w-5 h-5 ${
+            isConnected
+              ? 'text-ceramic-text-secondary'
+              : 'text-amber-600'
+          } ${isSyncing ? 'animate-pulse' : ''}`}
         />
+
+        {/* Badge de status no canto */}
+        <motion.div
+          className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${statusBadge.color} flex items-center justify-center`}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          {statusBadge.icon && (
+            <statusBadge.icon className="w-2.5 h-2.5 text-white" />
+          )}
+          {isSyncing && (
+            <motion.div
+              className="w-2 h-2 bg-white rounded-full"
+              animate={{ scale: [1, 0.5, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+          )}
+        </motion.div>
       </button>
 
       {/* Menu Dropdown Minimalista */}
