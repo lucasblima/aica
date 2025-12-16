@@ -255,3 +255,163 @@ body {
   outline: none;
   box-shadow: 0 0 0 2px #F0EFE9, 0 0 0 4px #B45309;
 }
+
+/* ============================================
+   Digital Ceramic V2 - Dashboard Redesign
+   "The Stratification of Soul" Layer System
+   ============================================ */
+
+/* Identity Passport - Hero Card (Layer 2) */
+.ceramic-passport {
+  background-color: #F0EFE9;
+  border-radius: 32px;
+  box-shadow:
+    6px 6px 16px rgba(163, 158, 145, 0.20),
+    -6px -6px 16px rgba(255, 255, 255, 0.90);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ceramic-passport::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%);
+  opacity: 0.6;
+}
+
+/* Progress Groove - Deep channel for CP bar */
+.ceramic-progress-groove {
+  background-color: #EBE9E4;
+  border-radius: 9999px;
+  box-shadow:
+    inset 2px 2px 5px rgba(163, 158, 145, 0.4),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  height: 12px;
+}
+
+/* Progress Fill - Liquid amber effect */
+.ceramic-progress-fill {
+  background: linear-gradient(90deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%);
+  height: 100%;
+  border-radius: 9999px;
+  box-shadow:
+    0 0 12px rgba(217, 119, 6, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Badge Gold - Level indicator (embossed) */
+.ceramic-badge-gold {
+  background: linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%);
+  color: white;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow:
+    3px 3px 6px rgba(163, 158, 145, 0.3),
+    -1px -1px 2px rgba(255, 255, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Stats Tray - Inset container for vital stats (Layer 1) */
+.ceramic-stats-tray {
+  background-color: #EAE8E2;
+  border-radius: 32px;
+  box-shadow:
+    inset 4px 4px 10px rgba(163, 158, 145, 0.4),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.9);
+  padding: 32px;
+}
+
+/* Device Card - Monitor/Dashboard style (Layer 2) */
+.ceramic-device {
+  background-color: #F0EFE9;
+  border-radius: 32px;
+  box-shadow:
+    8px 8px 20px rgba(163, 158, 145, 0.25),
+    -8px -8px 20px rgba(255, 255, 255, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  padding: 24px;
+  position: relative;
+}
+
+.ceramic-device::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: rgba(163, 158, 145, 0.2);
+  border-radius: 9999px;
+}
+
+/* Danger Zone - Destructive actions area */
+.danger-zone {
+  border: 2px solid #DC2626;
+  border-radius: 16px;
+  padding: 16px;
+  background-color: rgba(220, 38, 38, 0.05);
+}
+
+.danger-zone-title {
+  color: #DC2626;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.danger-zone-btn {
+  background-color: transparent;
+  color: #DC2626;
+  border: 1px solid #DC2626;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.danger-zone-btn:hover {
+  background-color: #DC2626;
+  color: white;
+}
+
+/* Avatar Recessed - Inset circular frame */
+.ceramic-avatar-recessed {
+  border-radius: 9999px;
+  box-shadow:
+    inset 3px 3px 6px rgba(163, 158, 145, 0.35),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  padding: 4px;
+  background-color: #EBE9E4;
+}
+
+/* Stat Counter - Heavy typography for numbers */
+.ceramic-stat-counter {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #5C554B;
+  line-height: 1;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.6);
+}
+
+.ceramic-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8B8178;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 8px;
+}

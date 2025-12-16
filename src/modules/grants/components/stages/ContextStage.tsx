@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   UploadCloud,
   FileText,
@@ -13,16 +13,64 @@ import {
   Trash2,
   Eye,
   AlertCircle,
+  FolderOpen,
+  FileSpreadsheet,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  X,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StageDependencyHint } from '../shared/StageDependencyHint';
+import { uploadProjectDocument } from '../../services/projectDocumentService';
+
+// ============================================
+// CONSTANTS
+// ============================================
+
+const SUPPORTED_PROJECT_DOCS = [
+  { ext: '.pdf', mime: 'application/pdf', label: 'PDF' },
+  { ext: '.doc', mime: 'application/msword', label: 'Word (DOC)' },
+  { ext: '.docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', label: 'Word (DOCX)' },
+  { ext: '.xls', mime: 'application/vnd.ms-excel', label: 'Excel (XLS)' },
+  { ext: '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', label: 'Excel (XLSX)' },
+  { ext: '.txt', mime: 'text/plain', label: 'Texto' },
+];
+
+// ============================================
+// TYPES
+// ============================================
+
+interface ProjectDocFile {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+  status: 'uploading' | 'processing' | 'done' | 'error';
+  error?: string;
+}
+
+// ============================================
+// COMPONENT
+// ============================================
 
 export const ContextStage: React.FC = () => {
-  const { state, dispatch, actions } = useWorkspace();
-  const { pdfUpload } = state;
+  const { state, dispatch } = useWorkspace();
+  const { pdfUpload, projectId } = state;
   const [isDragging, setIsDragging] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Project documents state
+  const [projectDocs, setProjectDocs] = useState<ProjectDocFile[]>([]);
+  const [isProjectDocsExpanded, setIsProjectDocsExpanded] = useState(true);
+  const [isProjectDocsDragging, setIsProjectDocsDragging] = useState(false);
+  const projectDocsInputRef = useRef<HTMLInputElement>(null);
+
+  // ============================================
+  // EDITAL PDF HANDLERS
+  // ============================================
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -101,6 +149,112 @@ export const ContextStage: React.FC = () => {
     }
   };
 
+  // ============================================
+  // PROJECT DOCUMENTS HANDLERS
+  // ============================================
+
+  const handleProjectDocsDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsProjectDocsDragging(true);
+  }, []);
+
+  const handleProjectDocsDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsProjectDocsDragging(false);
+  }, []);
+
+  const handleProjectDocsDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsProjectDocsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleProjectDocsSelected(files);
+  }, []);
+
+  const handleProjectDocsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) {
+      handleProjectDocsSelected(files);
+    }
+  };
+
+  const handleProjectDocsSelected = async (files: File[]) => {
+    // Filter supported files
+    const supportedMimes = SUPPORTED_PROJECT_DOCS.map(d => d.mime);
+    const validFiles = files.filter(file => {
+      const isSupported = supportedMimes.includes(file.type) ||
+        SUPPORTED_PROJECT_DOCS.some(doc => file.name.toLowerCase().endsWith(doc.ext));
+      if (!isSupported) {
+        console.warn(`File ${file.name} is not supported`);
+      }
+      return isSupported;
+    });
+
+    if (validFiles.length === 0) {
+      alert('Nenhum arquivo suportado foi selecionado. Formatos aceitos: PDF, Word, Excel, TXT');
+      return;
+    }
+
+    // Create initial file objects
+    const newDocs: ProjectDocFile[] = validFiles.map(file => ({
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      status: 'uploading',
+    }));
+
+    setProjectDocs(prev => [...prev, ...newDocs]);
+
+    // Upload each file
+    for (const doc of newDocs) {
+      try {
+        setProjectDocs(prev =>
+          prev.map(d => d.id === doc.id ? { ...d, status: 'processing' } : d)
+        );
+
+        await uploadProjectDocument(projectId, doc.file);
+
+        setProjectDocs(prev =>
+          prev.map(d => d.id === doc.id ? { ...d, status: 'done' } : d)
+        );
+      } catch (error) {
+        console.error(`[ContextStage] Error uploading ${doc.name}:`, error);
+        setProjectDocs(prev =>
+          prev.map(d =>
+            d.id === doc.id
+              ? { ...d, status: 'error', error: error instanceof Error ? error.message : 'Erro ao fazer upload' }
+              : d
+          )
+        );
+      }
+    }
+  };
+
+  const handleRemoveProjectDoc = (docId: string) => {
+    setProjectDocs(prev => prev.filter(d => d.id !== docId));
+  };
+
+  // ============================================
+  // HELPERS
+  // ============================================
+
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.toLowerCase().split('.').pop();
+    if (ext === 'xls' || ext === 'xlsx') return FileSpreadsheet;
+    return FileText;
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // ============================================
+  // COMPUTED VALUES
+  // ============================================
+
   const isUploading = pdfUpload.processingStatus === 'uploading';
   const isExtracting = pdfUpload.processingStatus === 'extracting';
   const isProcessing = isUploading || isExtracting;
@@ -109,7 +263,7 @@ export const ContextStage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Upload Zone */}
+      {/* Upload Zone - Edital PDF */}
       <div className="ceramic-card p-6 sm:p-8">
         <h3 className="text-lg font-bold text-[#5C554B] mb-2">
           Upload do Edital (PDF)
@@ -246,6 +400,161 @@ export const ContextStage: React.FC = () => {
             </motion.div>
           )}
         </div>
+      </div>
+
+      {/* Project Documents Section - COLLAPSIBLE */}
+      <div className="ceramic-card p-6 sm:p-8">
+        {/* Header with collapse toggle */}
+        <div
+          className="flex items-center justify-between cursor-pointer mb-4"
+          onClick={() => setIsProjectDocsExpanded(!isProjectDocsExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <FolderOpen className="w-5 h-5 text-[#D97706]" />
+            <div>
+              <h3 className="text-lg font-bold text-[#5C554B]">
+                Documentos do Projeto
+              </h3>
+              <p className="text-xs text-[#948D82]">
+                Cronogramas, planilhas, documentos de apoio
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {projectDocs.length > 0 && (
+              <span className="ceramic-concave px-3 py-1 text-xs font-bold text-[#D97706]">
+                {projectDocs.length} {projectDocs.length === 1 ? 'arquivo' : 'arquivos'}
+              </span>
+            )}
+            {isProjectDocsExpanded ? (
+              <ChevronUp className="w-5 h-5 text-[#948D82]" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-[#948D82]" />
+            )}
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {isProjectDocsExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-4">
+                {/* Dropzone for project documents */}
+                <div
+                  onDragOver={handleProjectDocsDragOver}
+                  onDragLeave={handleProjectDocsDragLeave}
+                  onDrop={handleProjectDocsDrop}
+                  className={`
+                    ceramic-tray p-6 rounded-xl border-2 border-dashed transition-all
+                    flex flex-col items-center justify-center text-center
+                    ${isProjectDocsDragging
+                      ? 'border-[#D97706] bg-[#D97706]/5'
+                      : 'border-[#948D82]/30 hover:border-[#948D82]/50'
+                    }
+                  `}
+                >
+                  <Plus className="w-8 h-8 text-[#948D82] mb-2" />
+                  <p className="text-sm font-bold text-[#5C554B] mb-1">
+                    Adicionar documentos
+                  </p>
+                  <p className="text-xs text-[#948D82] mb-3">
+                    PDF, Word, Excel, TXT
+                  </p>
+                  <input
+                    ref={projectDocsInputRef}
+                    type="file"
+                    multiple
+                    accept={SUPPORTED_PROJECT_DOCS.map(d => d.ext).join(',')}
+                    onChange={handleProjectDocsInputChange}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => projectDocsInputRef.current?.click()}
+                    className="ceramic-concave px-4 py-2 text-xs font-bold text-[#5C554B] hover:scale-95 transition-transform"
+                  >
+                    Selecionar Arquivos
+                  </button>
+                </div>
+
+                {/* File list */}
+                {projectDocs.length > 0 && (
+                  <div className="space-y-2">
+                    <AnimatePresence>
+                      {projectDocs.map(doc => {
+                        const FileIcon = getFileIcon(doc.name);
+                        return (
+                          <motion.div
+                            key={doc.id}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="ceramic-tray p-4 rounded-lg flex items-center justify-between gap-4"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <FileIcon className="w-5 h-5 text-[#D97706] flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-[#5C554B] truncate">
+                                  {doc.name}
+                                </p>
+                                <p className="text-xs text-[#948D82]">
+                                  {formatFileSize(doc.size)}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Status indicator */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {doc.status === 'uploading' && (
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="w-4 h-4 text-[#948D82] animate-spin" />
+                                  <span className="text-xs text-[#948D82]">Enviando...</span>
+                                </div>
+                              )}
+                              {doc.status === 'processing' && (
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="w-4 h-4 text-[#D97706] animate-spin" />
+                                  <span className="text-xs text-[#D97706]">Processando...</span>
+                                </div>
+                              )}
+                              {doc.status === 'done' && (
+                                <div className="flex items-center gap-2">
+                                  <Check className="w-4 h-4 text-green-600" />
+                                  <span className="text-xs text-green-600">Concluido</span>
+                                </div>
+                              )}
+                              {doc.status === 'error' && (
+                                <div className="flex items-center gap-2">
+                                  <AlertCircle className="w-4 h-4 text-red-600" />
+                                  <span className="text-xs text-red-600" title={doc.error}>
+                                    Erro
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Remove button */}
+                              <button
+                                onClick={() => handleRemoveProjectDoc(doc.id)}
+                                className="ceramic-concave p-2 hover:scale-95 transition-transform"
+                                title="Remover arquivo"
+                              >
+                                <X className="w-4 h-4 text-[#948D82]" />
+                              </button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Extracted Text Preview (collapsed) */}

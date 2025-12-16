@@ -1,5 +1,6 @@
 import React from 'react';
 import { Linkedin, Twitter, Instagram, Mail, Github } from 'lucide-react';
+import { Logo } from '../../../../components/ui/Logo';
 
 const footerLinks = {
   company: {
@@ -58,7 +59,7 @@ export function Footer() {
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <h3 className="text-2xl font-bold text-ceramic-text-primary mb-4">Aica</h3>
+            <Logo variant="inverted" width={64} className="rounded-lg mb-4" />
             <p className="text-sm text-ceramic-text-secondary leading-relaxed">
               Sua plataforma pessoal para autoconhecimento e crescimento transformacional.
             </p>

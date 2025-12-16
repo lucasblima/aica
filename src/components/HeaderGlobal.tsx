@@ -2,6 +2,7 @@ import React from 'react';
 import { User, Users } from 'lucide-react';
 import { SettingsMenu } from './SettingsMenu';
 import { CeramicTabSelector } from './CeramicTabSelector';
+import { Logo } from './ui/Logo';
 
 interface HeaderGlobalProps {
     title: string;
@@ -29,13 +30,16 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
     return (
         <header className="flex-none pt-8 px-6 pb-6">
             <div className="flex justify-between items-center mb-4">
-                <div>
-                    <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">
-                        {subtitle}
-                    </p>
-                    <h1 className="text-3xl font-black text-ceramic-text-primary text-etched tracking-tight">
-                        {title}
-                    </h1>
+                <div className="flex items-center gap-4">
+                    <Logo variant="default" width={44} className="rounded-lg" />
+                    <div>
+                        <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5 text-etched">
+                            {subtitle}
+                        </p>
+                        <h1 className="text-3xl font-black text-ceramic-text-primary text-etched tracking-tight">
+                            {title}
+                        </h1>
+                    </div>
                 </div>
                 {/* Settings Menu */}
                 <SettingsMenu

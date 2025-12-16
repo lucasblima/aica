@@ -19,20 +19,24 @@ import {
   CheckSquare,
   Edit3,
   X,
+  FileText,
+  Download,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StageDependencyHint } from '../shared/StageDependencyHint';
 import type { RequiredDocument } from '../../types/workspace';
+import { uploadProjectDocument } from '../../services/projectDocumentService';
 
 // Unique ID generator
 const generateId = () => `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 export const DocsStage: React.FC = () => {
   const { state, dispatch, actions } = useWorkspace();
-  const { documents, pdfUpload } = state;
+  const { documents, pdfUpload, projectId } = state;
   const [isExtracting, setIsExtracting] = useState(false);
   const [newDocName, setNewDocName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [uploadingDocs, setUploadingDocs] = useState<Set<string>>(new Set());
 
   const hasPdfContent = pdfUpload.textContent && pdfUpload.textContent.length > 0;
   const hasDocs = documents.requiredDocs.length > 0;
@@ -117,6 +121,76 @@ export const DocsStage: React.FC = () => {
     });
   };
 
+  /**
+   * Handle document upload
+   */
+  const handleDocumentUpload = async (docId: string, file: File) => {
+    // Add to uploading set
+    setUploadingDocs(prev => new Set(prev).add(docId));
+
+    try {
+      // Upload the document
+      const uploadedDoc = await uploadProjectDocument(projectId, file);
+
+      // Update the required document with uploaded info
+      const updatedDocs = documents.requiredDocs.map(doc =>
+        doc.id === docId
+          ? {
+              ...doc,
+              status: 'uploaded' as const,
+              uploadedPath: uploadedDoc.document_path,
+              uploadedFileName: file.name,
+            }
+          : doc
+      );
+
+      dispatch({
+        type: 'SET_REQUIRED_DOCS',
+        payload: updatedDocs,
+      });
+
+      // Also add to uploaded docs list
+      dispatch({
+        type: 'ADD_UPLOADED_DOC',
+        payload: uploadedDoc,
+      });
+    } catch (error) {
+      console.error('[DocsStage] Upload error:', error);
+      alert('Erro ao fazer upload do documento. Tente novamente.');
+    } finally {
+      // Remove from uploading set
+      setUploadingDocs(prev => {
+        const next = new Set(prev);
+        next.delete(docId);
+        return next;
+      });
+    }
+  };
+
+  /**
+   * Handle removing uploaded file from a document
+   */
+  const handleRemoveUpload = (docId: string) => {
+    const confirmed = confirm('Remover o arquivo enviado?');
+    if (!confirmed) return;
+
+    const updatedDocs = documents.requiredDocs.map(doc =>
+      doc.id === docId
+        ? {
+            ...doc,
+            status: 'required' as const,
+            uploadedPath: undefined,
+            uploadedFileName: undefined,
+          }
+        : doc
+    );
+
+    dispatch({
+      type: 'SET_REQUIRED_DOCS',
+      payload: updatedDocs,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Progress Header */}
@@ -181,6 +255,9 @@ export const DocsStage: React.FC = () => {
                 index={index}
                 onToggle={() => handleToggleDoc(doc.id)}
                 onRemove={() => handleRemoveDoc(doc.id)}
+                onUpload={(file) => handleDocumentUpload(doc.id, file)}
+                onRemoveUpload={() => handleRemoveUpload(doc.id)}
+                isUploading={uploadingDocs.has(doc.id)}
               />
             ))}
           </AnimatePresence>
@@ -293,6 +370,9 @@ interface DocumentChecklistItemProps {
   index: number;
   onToggle: () => void;
   onRemove: () => void;
+  onUpload: (file: File) => void;
+  onRemoveUpload: () => void;
+  isUploading: boolean;
 }
 
 const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
@@ -300,8 +380,24 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
   index,
   onToggle,
   onRemove,
+  onUpload,
+  onRemoveUpload,
+  isUploading,
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isChecked = document.status === 'available' || document.status === 'uploaded';
+  const isUploaded = document.status === 'uploaded';
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUpload(file);
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <motion.div
@@ -309,14 +405,15 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ delay: index * 0.05 }}
-      className={`ceramic-card p-4 flex items-center justify-between transition-colors ${
+      className={`ceramic-card p-4 transition-colors ${
         isChecked ? 'bg-green-50 border-l-4 border-green-400' : ''
       }`}
     >
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="flex items-center gap-3">
+        {/* Checkbox */}
         <button
           onClick={onToggle}
-          className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${
+          className={`w-6 h-6 rounded flex-shrink-0 flex items-center justify-center transition-colors ${
             isChecked
               ? 'bg-green-500 text-white'
               : 'border-2 border-[#948D82] hover:border-[#5C554B]'
@@ -325,6 +422,7 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
           {isChecked && <Check className="w-4 h-4" />}
         </button>
 
+        {/* Document Info */}
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-bold truncate ${
@@ -338,16 +436,64 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
               {document.description}
             </p>
           )}
+          {isUploaded && document.uploadedFileName && (
+            <div className="flex items-center gap-2 mt-1">
+              <FileText className="w-3 h-3 text-green-600" />
+              <p className="text-xs text-green-600 truncate">
+                {document.uploadedFileName}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
 
-      <button
-        onClick={onRemove}
-        className="p-2 text-[#948D82] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-2"
-        title="Remover"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+        {/* Upload/Remove Upload Button */}
+        {!isUploaded ? (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              className="hidden"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="ceramic-concave px-3 py-2 text-xs font-bold text-[#D97706] hover:scale-95 disabled:opacity-50 transition-transform flex items-center gap-1.5"
+              title="Upload documento"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Upload
+                </>
+              )}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={onRemoveUpload}
+            className="p-2 text-[#948D82] hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+            title="Remover arquivo"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Remove Document Button */}
+        <button
+          onClick={onRemove}
+          className="p-2 text-[#948D82] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Remover da lista"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </motion.div>
   );
 };
