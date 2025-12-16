@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
 import PodcastLibrary from '../modules/podcast/views/PodcastLibrary';
 import PodcastDashboard from '../modules/podcast/views/PodcastDashboard';
@@ -42,17 +42,35 @@ interface GuestData {
     scheduledTime?: string;
 }
 
+// Unified episode state to prevent race conditions
+interface EpisodeState {
+    episodeId: string | null;
+    projectId: string | null;
+    dossier: Dossier | null;
+    guestData: GuestData | null;
+}
+
 export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmail, onLogout, onExit, onNavVisibilityChange }) => {
     // Navigation State
     const [view, setView] = useState<PodcastView>('library');
     const [currentShowId, setCurrentShowId] = useState<string | null>(null);
     const [currentShowTitle, setCurrentShowTitle] = useState<string>('');
-    const [currentEpisodeId, setCurrentEpisodeId] = useState<string | null>(null);
-    const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
 
-    // Data State
-    const [currentDossier, setCurrentDossier] = useState<Dossier | null>(null);
-    const [currentGuestData, setCurrentGuestData] = useState<GuestData | null>(null);
+    // Unified Episode State (prevents race conditions)
+    const [episodeState, setEpisodeState] = useState<EpisodeState>({
+        episodeId: null,
+        projectId: null,
+        dossier: null,
+        guestData: null
+    });
+
+    // Derived state for backward compatibility
+    const currentEpisodeId = episodeState.episodeId;
+    const currentProjectId = episodeState.projectId;
+    const currentDossier = episodeState.dossier;
+    const currentGuestData = episodeState.guestData;
+
+    // Additional Data State
     const [currentTopics, setCurrentTopics] = useState<Topic[]>([]);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [userId, setUserId] = useState<string | null>(null);
@@ -65,15 +83,37 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     const [isLoadingEpisode, setIsLoadingEpisode] = useState(false);
     const [loadingEpisodeId, setLoadingEpisodeId] = useState<string | null>(null);
 
-    // Get current user ID on mount
+    // Transition flag to prevent guard effect from firing during state transitions
+    const isTransitioningRef = useRef(false);
+
+    // Loading timeout state
+    const [wizardLoadingTimeout, setWizardLoadingTimeout] = useState(false);
+
+    // Auth State Listener - keeps userId always in sync
     React.useEffect(() => {
+        // Initial fetch
         const getCurrentUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                console.log('[PodcastCopilot] Initial user loaded:', user.id);
                 setUserId(user.id);
             }
         };
         getCurrentUser();
+
+        // Subscribe to auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+                console.log('[PodcastCopilot] Auth state changed:', event, session?.user?.id);
+                if (session?.user) {
+                    setUserId(session.user.id);
+                } else {
+                    setUserId(null);
+                }
+            }
+        );
+
+        return () => subscription.unsubscribe();
     }, []);
 
     // Debug: Log view state changes
@@ -88,6 +128,58 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             onNavVisibilityChange(showNav);
         }
     }, [view, onNavVisibilityChange]);
+
+    // Wizard loading timeout - shows retry button after 5 seconds
+    React.useEffect(() => {
+        if (view === 'wizard' && (!userId || !currentShowId)) {
+            const timeout = setTimeout(() => {
+                console.log('[PodcastCopilot] Wizard loading timeout reached');
+                setWizardLoadingTimeout(true);
+            }, 5000);
+            return () => clearTimeout(timeout);
+        }
+        // Reset timeout flag when conditions are met
+        setWizardLoadingTimeout(false);
+    }, [view, userId, currentShowId]);
+
+    // DEFENSIVE GUARD: Prevent unwanted redirects during wizard/production flows
+    // This protects against race conditions where userId or currentShowId temporarily become null
+    React.useEffect(() => {
+        // PROTECTION 0: If a transition is in progress, skip ALL checks
+        // This prevents the guard from firing during state updates
+        if (isTransitioningRef.current) {
+            console.log('[PodcastCopilot] Guard: Transition in progress, skipping ALL checks');
+            return;
+        }
+
+        // PROTECTION 1: If userId is still loading (null), do nothing yet
+        // The auth state may not be resolved on initial render
+        if (!userId) {
+            console.log('[PodcastCopilot] Guard: userId not ready, skipping redirect check');
+            return;
+        }
+
+        // PROTECTION 2: If we're in 'wizard' mode, don't redirect automatically
+        // The user intentionally navigated here; we should wait for dependencies
+        if (view === 'wizard') {
+            console.log('[PodcastCopilot] Guard: In wizard mode, skipping redirect');
+            return;
+        }
+
+        // PROTECTION 3: If we're in any production flow, don't redirect
+        // These views have their own loading states and should handle missing data gracefully
+        if (view === 'preproduction' || view === 'production' || view === 'postproduction') {
+            console.log('[PodcastCopilot] Guard: In production flow, skipping redirect');
+            return;
+        }
+
+        // Original redirect logic: Only redirect if on dashboard/preparation without required data
+        // This catches edge cases where the user somehow got to a view without proper navigation
+        if (!currentShowId && view !== 'library') {
+            console.log('[PodcastCopilot] Guard: No showId and not in library, redirecting to library');
+            setView('library');
+        }
+    }, [currentShowId, userId, view]);
 
     // ================== NAVIGATION HANDLERS ==================
 
@@ -106,6 +198,9 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     // Dashboard -> Select Existing Episode (NEW FLOW)
     const handleSelectEpisode = async (episodeId: string) => {
         console.log('[PodcastCopilot] handleSelectEpisode called', { episodeId, view });
+
+        // Set transition flag to prevent guard from interfering
+        isTransitioningRef.current = true;
 
         // Set loading state BEFORE async operation
         setIsLoadingEpisode(true);
@@ -153,12 +248,14 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 fullName: episode.guest_name || 'Convidado'
             };
 
-            // Update ALL state at once, THEN change view
-            // This ensures PreProduction guard will have all required data
-            setCurrentEpisodeId(episodeId);
-            setCurrentProjectId(episodeId);
-            setCurrentDossier(dossier);
-            setCurrentGuestData(guestData);
+            // Update ALL episode state atomically using unified state
+            console.log('[PodcastCopilot] Updating episode state atomically');
+            setEpisodeState({
+                episodeId,
+                projectId: episodeId,
+                dossier,
+                guestData
+            });
 
             console.log('[PodcastCopilot] Setting view to preproduction');
             setView('preproduction');
@@ -170,29 +267,63 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             // Clear loading state regardless of success/failure
             setIsLoadingEpisode(false);
             setLoadingEpisodeId(null);
+            // Clear transition flag after a short delay to ensure state is settled
+            setTimeout(() => {
+                isTransitioningRef.current = false;
+                console.log('[PodcastCopilot] Transition complete');
+            }, 100);
         }
     };
 
     // Dashboard -> Create New Episode -> Wizard (NEW FLOW)
     const handleCreateEpisode = async () => {
         console.log('[PodcastCopilot] handleCreateEpisode called', { currentShowId, userId, view });
-        if (!currentShowId) {
-            console.error('[PodcastCopilot] No currentShowId, returning early');
-            return;
+
+        // Set transition flag IMMEDIATELY to prevent guard from interfering during async operations
+        isTransitioningRef.current = true;
+
+        try {
+            // Validate currentShowId
+            if (!currentShowId) {
+                console.error('[PodcastCopilot] No currentShowId, showing error');
+                alert('Erro: Nenhum podcast selecionado. Volte e selecione um podcast.');
+                return;
+            }
+
+            // If userId is null, try to re-fetch it
+            if (!userId) {
+                console.log('[PodcastCopilot] userId is null, attempting to re-fetch...');
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    console.log('[PodcastCopilot] User re-fetched successfully:', user.id);
+                    setUserId(user.id);
+                } else {
+                    console.error('[PodcastCopilot] Failed to get user, showing error');
+                    alert('Sessão expirada. Por favor, faça login novamente.');
+                    return;
+                }
+            }
+
+            // Don't create episode here - Wizard will do it
+            console.log('[PodcastCopilot] Setting view to wizard');
+            setView('wizard');
+        } finally {
+            // Clear transition flag after state is settled
+            setTimeout(() => {
+                isTransitioningRef.current = false;
+                console.log('[PodcastCopilot] Transition to wizard complete');
+            }, 100);
         }
-        // Don't create episode here - Wizard will do it
-        console.log('[PodcastCopilot] Setting view to wizard');
-        setView('wizard'); // FIX: Route to wizard instead of legacy preparation
-        console.log('[PodcastCopilot] setView(wizard) foi chamado');
     };
 
     // Wizard -> Pre-Production
     const handleWizardComplete = async (wizardData: any, episodeId: string) => {
-        // Store episode ID
-        setCurrentEpisodeId(episodeId);
-        setCurrentProjectId(episodeId);
+        console.log('[PodcastCopilot] handleWizardComplete called', { episodeId });
 
-        // Store guest data from wizard
+        // Set transition flag
+        isTransitioningRef.current = true;
+
+        // Prepare guest data from wizard
         const guestData: GuestData = {
             name: wizardData.guestName,
             fullName: wizardData.confirmedProfile?.fullName,
@@ -204,16 +335,43 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             scheduledTime: wizardData.scheduledTime
         };
 
-        setCurrentGuestData(guestData);
+        // Update unified state atomically
+        setEpisodeState({
+            episodeId,
+            projectId: episodeId,
+            dossier: null, // No dossier yet, will be generated in preproduction
+            guestData
+        });
+
         setView('preproduction');
+
+        // Clear transition flag after state is settled
+        setTimeout(() => {
+            isTransitioningRef.current = false;
+            console.log('[PodcastCopilot] Transition to preproduction complete');
+        }, 100);
     };
 
     // Pre-Production -> Production
     const handleGoToProduction = (dossier: Dossier, projectId: string, topics: Topic[]) => {
-        setCurrentDossier(dossier);
-        setCurrentProjectId(projectId);
-        setCurrentTopics(topics); // FIX: Populate topics from PreProduction
+        console.log('[PodcastCopilot] handleGoToProduction called', { projectId });
+
+        // Set transition flag
+        isTransitioningRef.current = true;
+
+        // Update unified state with dossier
+        setEpisodeState(prev => ({
+            ...prev,
+            dossier,
+            projectId
+        }));
+        setCurrentTopics(topics);
         setView('production');
+
+        // Clear transition flag
+        setTimeout(() => {
+            isTransitioningRef.current = false;
+        }, 100);
     };
 
     // Production -> Post-Production
@@ -224,13 +382,19 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     // Legacy handlers (for compatibility)
     const handleDossierReady = (dossier: Dossier, projectId: string) => {
-        setCurrentDossier(dossier);
-        setCurrentProjectId(projectId);
+        setEpisodeState(prev => ({
+            ...prev,
+            dossier,
+            projectId
+        }));
         setView('studio');
     };
 
     const handleGoToStudio = (projectId: string) => {
-        setCurrentProjectId(projectId);
+        setEpisodeState(prev => ({
+            ...prev,
+            projectId
+        }));
         setView('studio');
     };
 
@@ -240,18 +404,24 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         setView('library');
         setCurrentShowId(null);
         setCurrentShowTitle('');
-        setCurrentEpisodeId(null);
-        setCurrentDossier(null);
-        setCurrentProjectId(null);
-        setCurrentGuestData(null);
+        // Reset unified episode state
+        setEpisodeState({
+            episodeId: null,
+            projectId: null,
+            dossier: null,
+            guestData: null
+        });
     };
 
     const handleBackToDashboard = () => {
         setView('dashboard');
-        setCurrentEpisodeId(null);
-        setCurrentDossier(null);
-        setCurrentProjectId(null);
-        setCurrentGuestData(null);
+        // Reset unified episode state
+        setEpisodeState({
+            episodeId: null,
+            projectId: null,
+            dossier: null,
+            guestData: null
+        });
     };
 
     const handleBackToPreProduction = () => {
@@ -260,66 +430,77 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     const handleBackToPreparation = () => {
         setView('preparation');
-        setCurrentDossier(null);
+        setEpisodeState(prev => ({
+            ...prev,
+            dossier: null
+        }));
     };
 
     // ================== VIEW RENDERS ==================
+    // CRITICAL: Priority order matters! Wizard and PreProduction must be checked FIRST
+    // to prevent visual redirect when currentShowId temporarily becomes null
     console.log('[PodcastCopilot] Rendering, view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
 
-    // 1. Library
-    if (view === 'library') {
-        console.log('[PodcastCopilot] Rendering Library view');
-        return (
-            <PodcastLibrary
-                onSelectShow={handleSelectShow}
-                onCreateNew={() => {}} // Handled internally by PodcastLibrary modal
-                userEmail={userEmail}
-                onLogout={onLogout}
-            />
-        );
-    }
-
-    // 2. Dashboard
-    // IMPORTANT: Check view first, then handle missing showId with loading state
-    // This prevents redirect loops when currentShowId is temporarily null
-    if (view === 'dashboard') {
-        console.log('[PodcastCopilot] Rendering Dashboard view', { currentShowId });
-
-        // Show loading while showId is being resolved
-        if (!currentShowId) {
-            console.log('[PodcastCopilot] Dashboard loading - waiting for showId');
-            return (
-                <div className="flex items-center justify-center h-screen bg-ceramic-base">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-ceramic-text-secondary text-sm">Carregando...</p>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <PodcastDashboard
-                showId={currentShowId}
-                showTitle={currentShowTitle}
-                onSelectEpisode={handleSelectEpisode}
-                onCreateEpisode={handleCreateEpisode}
-                onBack={handleBackToLibrary}
-                isLoadingEpisode={isLoadingEpisode}
-                loadingEpisodeId={loadingEpisodeId}
-            />
-        );
-    }
-
-    // 3. NEW: Guest Identification Wizard
-    // IMPORTANT: Check view first, then handle missing dependencies with loading states
-    // This prevents redirect loops when userId or currentShowId are temporarily null
+    // 1. PRIORITY: Guest Identification Wizard (checked FIRST!)
+    // The wizard has absolute priority - if view is 'wizard', render it regardless of other state
     if (view === 'wizard') {
-        console.log('[PodcastCopilot] Rendering Wizard view', { userId, currentShowId });
+        console.log('[PodcastCopilot] Rendering Wizard view', { userId, currentShowId, wizardLoadingTimeout });
 
         // Show loading while dependencies are being resolved
         if (!userId || !currentShowId) {
             console.log('[PodcastCopilot] Wizard loading - waiting for dependencies', { userId: !!userId, currentShowId: !!currentShowId });
+
+            // If timeout reached, show retry option
+            if (wizardLoadingTimeout) {
+                return (
+                    <StudioLayout
+                        title="Novo Episódio"
+                        status="draft"
+                        onExit={handleBackToDashboard}
+                        variant="scrollable"
+                        isStudioMode={false}
+                    >
+                        <div className="flex items-center justify-center h-64">
+                            <div className="flex flex-col items-center gap-4 text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center">
+                                    <span className="text-3xl">⚠️</span>
+                                </div>
+                                <div>
+                                    <p className="text-ceramic-text-primary font-bold mb-1">
+                                        Não foi possível carregar
+                                    </p>
+                                    <p className="text-ceramic-text-secondary text-sm mb-4">
+                                        {!userId ? 'Verificando sessão do usuário...' : 'Aguardando dados do podcast...'}
+                                    </p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={handleBackToDashboard}
+                                        className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-all"
+                                    >
+                                        Voltar
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            setWizardLoadingTimeout(false);
+                                            // Try to re-fetch user
+                                            const { data: { user } } = await supabase.auth.getUser();
+                                            if (user) {
+                                                setUserId(user.id);
+                                            }
+                                        }}
+                                        className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-all"
+                                    >
+                                        Tentar novamente
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </StudioLayout>
+                );
+            }
+
+            // Normal loading state
             return (
                 <StudioLayout
                     title="Novo Episódio"
@@ -358,7 +539,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         );
     }
 
-    // 4. NEW: Pre-Production Hub
+    // 2. PRIORITY: Pre-Production Hub (checked early to prevent redirect)
     if (view === 'preproduction') {
         // Show loading while episode data is being fetched
         if (!currentGuestData || !currentProjectId) {
@@ -390,7 +571,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         );
     }
 
-    // 5. NEW: Production Mode
+    // 3. PRIORITY: Production Mode
     if (view === 'production' && currentDossier && currentProjectId) {
         return (
             <>
@@ -416,7 +597,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         );
     }
 
-    // 6. NEW: Post-Production Hub
+    // 4. PRIORITY: Post-Production Hub
     if (view === 'postproduction' && currentDossier && currentProjectId) {
         return (
             <PostProductionHub
@@ -487,7 +668,52 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     }
     */
 
-    // Fallback
+    // ================== SECONDARY VIEWS (checked AFTER priority views) ==================
+
+    // Dashboard - only render if view is explicitly 'dashboard'
+    if (view === 'dashboard') {
+        console.log('[PodcastCopilot] Rendering Dashboard view', { currentShowId });
+
+        // Show loading while showId is being resolved (but don't redirect!)
+        if (!currentShowId) {
+            console.log('[PodcastCopilot] Dashboard loading - waiting for showId');
+            return (
+                <div className="flex items-center justify-center h-screen bg-ceramic-base">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-ceramic-text-secondary text-sm">Carregando...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <PodcastDashboard
+                showId={currentShowId}
+                showTitle={currentShowTitle}
+                onSelectEpisode={handleSelectEpisode}
+                onCreateEpisode={handleCreateEpisode}
+                onBack={handleBackToLibrary}
+                isLoadingEpisode={isLoadingEpisode}
+                loadingEpisodeId={loadingEpisodeId}
+            />
+        );
+    }
+
+    // Library - default view when no other view matches
+    if (view === 'library') {
+        console.log('[PodcastCopilot] Rendering Library view');
+        return (
+            <PodcastLibrary
+                onSelectShow={handleSelectShow}
+                onCreateNew={() => {}} // Handled internally by PodcastLibrary modal
+                userEmail={userEmail}
+                onLogout={onLogout}
+            />
+        );
+    }
+
+    // Fallback - should rarely be reached
     console.warn('[PodcastCopilot] Falling through to fallback! view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId, currentDossier: !!currentDossier });
     return (
         <div className="flex items-center justify-center h-screen bg-[#F0EFE9]">
