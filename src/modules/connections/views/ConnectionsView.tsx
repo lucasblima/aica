@@ -423,20 +423,6 @@ export function ConnectionsView({
         </section>
       </main>
 
-      {/* Floating Action Button */}
-      {onCreateSpace && (
-        <motion.button
-          onClick={onCreateSpace}
-          className="fixed bottom-6 right-6 w-14 h-14 ceramic-card bg-ceramic-warm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50 shadow-lg"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-          whileHover={{ y: -2 }}
-          aria-label="Criar novo espaço"
-        >
-          <Plus className="w-6 h-6 text-ceramic-accent" />
-        </motion.button>
-      )}
     </div>
   );
 }

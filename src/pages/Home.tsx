@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus } from 'lucide-react';
 import { HeaderGlobal } from '../components/HeaderGlobal';
@@ -67,7 +68,16 @@ export default function Home({
    onSelectArchetype,
    onCreateAssociation
 }: HomeProps) {
+   const navigate = useNavigate();
    const [activeTab, setActiveTab] = useState<TabState>('personal');
+   // Handle tab change - navigate to /connections for network tab
+   const handleTabChange = (tab: TabState) => {
+      if (tab === 'network') {
+         navigate('/connections');
+      } else {
+         setActiveTab(tab);
+      }
+   };
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
 
@@ -139,7 +149,7 @@ export default function Home({
                onNavigateToFileSearch={onNavigateToFileSearch}
                showTabs={true}
                activeTab={activeTab}
-               onTabChange={setActiveTab}
+               onTabChange={handleTabChange}
             />
 
             <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-8">
@@ -390,7 +400,7 @@ export default function Home({
                onNavigateToFileSearch={onNavigateToFileSearch}
                showTabs={true}
                activeTab={activeTab}
-               onTabChange={setActiveTab}
+               onTabChange={handleTabChange}
             />
 
             <main className="flex-1 overflow-y-auto pb-40 pt-4">

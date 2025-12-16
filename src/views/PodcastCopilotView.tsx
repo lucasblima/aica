@@ -61,6 +61,10 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     const [showTeleprompter, setShowTeleprompter] = useState(false);
     const [teleprompterIndex, setTeleprompterIndex] = useState(0);
 
+    // Loading State for episode selection
+    const [isLoadingEpisode, setIsLoadingEpisode] = useState(false);
+    const [loadingEpisodeId, setLoadingEpisodeId] = useState<string | null>(null);
+
     // Get current user ID on mount
     React.useEffect(() => {
         const getCurrentUser = async () => {
@@ -102,8 +106,10 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     // Dashboard -> Select Existing Episode (NEW FLOW)
     const handleSelectEpisode = async (episodeId: string) => {
         console.log('[PodcastCopilot] handleSelectEpisode called', { episodeId, view });
-        setCurrentEpisodeId(episodeId);
-        setCurrentProjectId(episodeId);
+
+        // Set loading state BEFORE async operation
+        setIsLoadingEpisode(true);
+        setLoadingEpisodeId(episodeId);
 
         try {
             console.log('[PodcastCopilot] Fetching episode from Supabase...');
@@ -116,21 +122,21 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             if (error) {
                 console.error('[PodcastCopilot] Supabase error:', error);
                 alert('Erro ao carregar episódio: ' + error.message);
-                return;
+                return; // Stay on dashboard
             }
 
             if (!episode) {
                 console.error('[PodcastCopilot] Episode not found');
-                return;
+                alert('Episódio não encontrado.');
+                return; // Stay on dashboard
             }
 
             console.log('[PodcastCopilot] Episode loaded:', episode.id, episode.guest_name);
 
-            // Always go to PreProduction for existing episodes
-            // PreProduction will handle loading existing data or generating new research
+            // Prepare ALL data BEFORE updating any state
+            let dossier: Dossier | null = null;
             if (episode.biography) {
-                // Has dossier - pass it to PreProduction
-                const dossier: Dossier = {
+                dossier = {
                     guestName: episode.guest_name || 'Convidado',
                     episodeTheme: episode.episode_theme || 'Tema',
                     biography: episode.biography,
@@ -139,24 +145,31 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                     iceBreakers: episode.ice_breakers || [],
                     technicalSheet: episode.technical_sheet
                 };
-                setCurrentDossier(dossier);
-            } else {
-                // No dossier yet - PreProduction will generate it
-                setCurrentDossier(null);
             }
 
-            // Set guest data for PreProduction
-            setCurrentGuestData({
+            const guestData: GuestData = {
                 name: episode.guest_name || 'Convidado',
                 theme: episode.episode_theme || 'Tema',
                 fullName: episode.guest_name || 'Convidado'
-            });
+            };
+
+            // Update ALL state at once, THEN change view
+            // This ensures PreProduction guard will have all required data
+            setCurrentEpisodeId(episodeId);
+            setCurrentProjectId(episodeId);
+            setCurrentDossier(dossier);
+            setCurrentGuestData(guestData);
 
             console.log('[PodcastCopilot] Setting view to preproduction');
             setView('preproduction');
         } catch (error) {
             console.error('[PodcastCopilot] Error loading episode:', error);
             alert('Erro ao carregar episódio. Tente novamente.');
+            // Don't change view - stay on dashboard
+        } finally {
+            // Clear loading state regardless of success/failure
+            setIsLoadingEpisode(false);
+            setLoadingEpisodeId(null);
         }
     };
 
@@ -267,8 +280,24 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     }
 
     // 2. Dashboard
-    if (view === 'dashboard' && currentShowId) {
-        console.log('[PodcastCopilot] Rendering Dashboard view');
+    // IMPORTANT: Check view first, then handle missing showId with loading state
+    // This prevents redirect loops when currentShowId is temporarily null
+    if (view === 'dashboard') {
+        console.log('[PodcastCopilot] Rendering Dashboard view', { currentShowId });
+
+        // Show loading while showId is being resolved
+        if (!currentShowId) {
+            console.log('[PodcastCopilot] Dashboard loading - waiting for showId');
+            return (
+                <div className="flex items-center justify-center h-screen bg-ceramic-base">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-ceramic-text-secondary text-sm">Carregando...</p>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <PodcastDashboard
                 showId={currentShowId}
@@ -276,16 +305,21 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 onSelectEpisode={handleSelectEpisode}
                 onCreateEpisode={handleCreateEpisode}
                 onBack={handleBackToLibrary}
+                isLoadingEpisode={isLoadingEpisode}
+                loadingEpisodeId={loadingEpisodeId}
             />
         );
     }
 
     // 3. NEW: Guest Identification Wizard
-    if (view === 'wizard' && currentShowId) {
-        console.log('[PodcastCopilot] Rendering Wizard view, userId:', userId);
-        // Show loading while userId is being fetched
-        if (!userId) {
-            console.log('[PodcastCopilot] Wizard loading - waiting for userId');
+    // IMPORTANT: Check view first, then handle missing dependencies with loading states
+    // This prevents redirect loops when userId or currentShowId are temporarily null
+    if (view === 'wizard') {
+        console.log('[PodcastCopilot] Rendering Wizard view', { userId, currentShowId });
+
+        // Show loading while dependencies are being resolved
+        if (!userId || !currentShowId) {
+            console.log('[PodcastCopilot] Wizard loading - waiting for dependencies', { userId: !!userId, currentShowId: !!currentShowId });
             return (
                 <StudioLayout
                     title="Novo Episódio"
