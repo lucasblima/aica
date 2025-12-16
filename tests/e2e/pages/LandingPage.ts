@@ -1,11 +1,16 @@
 import { Page, expect } from '@playwright/test';
+import { AuthSheetPage } from './AuthSheetPage';
 
 /**
  * Landing Page Object Model
  * Handles interactions with the landing/home page before authentication
  */
 export class LandingPage {
-  constructor(private page: Page) {}
+  readonly authSheet: AuthSheetPage;
+
+  constructor(private page: Page) {
+    this.authSheet = new AuthSheetPage(page);
+  }
 
   // Selectors
   private readonly selectors = {
@@ -16,6 +21,7 @@ export class LandingPage {
     heroSection: '[data-testid="landing-hero"]',
     pilaresSection: '[data-testid="landing-pilares"]',
     ctaSection: '[data-testid="landing-cta"]',
+    authSheet: '[role="dialog"][aria-modal="true"]',
   };
 
   /**
@@ -59,22 +65,42 @@ export class LandingPage {
 
   /**
    * Click the "Começar" (Sign Up) button
+   * Opens the AuthSheet instead of navigating to a new page
    */
   async clickSignUpCTA() {
     const cta = this.page.locator(this.selectors.signUpCTA)
       .or(this.page.locator(this.selectors.signUpButton));
     await cta.click();
-    await this.page.waitForLoadState('networkidle');
+    // Wait for AuthSheet to open
+    await this.authSheet.waitForSheetOpen();
   }
 
   /**
    * Click the "Entrar" (Login) button
+   * Opens the AuthSheet instead of navigating to a new page
    */
   async clickLoginCTA() {
     const cta = this.page.locator(this.selectors.loginCTA)
       .or(this.page.locator(this.selectors.loginButton));
     await cta.click();
-    await this.page.waitForLoadState('networkidle');
+    // Wait for AuthSheet to open
+    await this.authSheet.waitForSheetOpen();
+  }
+
+  /**
+   * Open AuthSheet and verify it's fully rendered
+   */
+  async openAuthSheet() {
+    await this.clickSignUpCTA();
+    await this.authSheet.expectSheetFullyRendered();
+  }
+
+  /**
+   * Check if AuthSheet is currently open
+   */
+  async isAuthSheetOpen(): Promise<boolean> {
+    const sheet = this.page.locator(this.selectors.authSheet);
+    return await sheet.isVisible().catch(() => false);
   }
 
   /**
