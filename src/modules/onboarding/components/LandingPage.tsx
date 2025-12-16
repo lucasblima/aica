@@ -6,7 +6,7 @@ import { HowItWorks } from './landing/HowItWorks';
 import { TrustIndicators } from './landing/TrustIndicators';
 import { CTASection } from './landing/CTASection';
 import { Footer } from './landing/Footer';
-import Login from '../../../components/Login';
+import { AuthSheet } from '../../../components/AuthSheet';
 
 /**
  * LandingPage Component
@@ -123,23 +123,11 @@ export function LandingPage() {
         Pular para conteúdo principal
       </a>
 
-      {/* Login Modal */}
-      {showLogin && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="ceramic-card shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative">
-            <button
-              onClick={() => setShowLogin(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
-              aria-label="Fechar"
-            >
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <Login onLogin={() => setShowLogin(false)} />
-          </div>
-        </div>
-      )}
+      {/* Auth Sheet - iOS-style bottom sheet */}
+      <AuthSheet
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+      />
     </div>
   );
 }

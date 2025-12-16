@@ -50,7 +50,7 @@ test.describe('PHASE 4.1: Complete Onboarding Flow', () => {
       await landingPage.expectPilaresVisible();
     });
 
-    test('1.3: CTA "Começar" navigates to sign up', async ({ page }) => {
+    test('1.3: CTA "Começar" opens AuthSheet', async ({ page }) => {
       // Arrange
       const landingPage = new LandingPage(page);
 
@@ -58,12 +58,12 @@ test.describe('PHASE 4.1: Complete Onboarding Flow', () => {
       await landingPage.goto();
       await landingPage.clickSignUpCTA();
 
-      // Assert
-      const signUpPage = new SignUpPage(page);
-      await signUpPage.expectFormVisible();
+      // Assert - AuthSheet should be open with Google login button
+      await landingPage.authSheet.expectSheetFullyRendered();
+      await expect(landingPage.authSheet.googleButton).toBeVisible();
     });
 
-    test('1.4: CTA "Entrar" navigates to login', async ({ page }) => {
+    test('1.4: CTA "Entrar" opens AuthSheet', async ({ page }) => {
       // Arrange
       const landingPage = new LandingPage(page);
 
@@ -71,9 +71,9 @@ test.describe('PHASE 4.1: Complete Onboarding Flow', () => {
       await landingPage.goto();
       await landingPage.clickLoginCTA();
 
-      // Assert
-      // Should be redirected to login page
-      await expect(page).toHaveURL(/login|entrar/i);
+      // Assert - AuthSheet should be open (iOS-style bottom sheet)
+      await landingPage.authSheet.expectSheetFullyRendered();
+      await expect(landingPage.authSheet.title).toBeVisible();
     });
 
     test('1.5: Landing page is responsive on mobile', async ({ page }) => {
