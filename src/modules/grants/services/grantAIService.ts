@@ -158,13 +158,14 @@ export async function generateFieldContent(
       context.evaluation_criteria
     )
 
-    // Construir prompt do usuário (com edital PDF + documentos do projeto)
+    // Construir prompt do usuário (com edital PDF + documentos do edital + documentos do projeto)
     const userPrompt = buildUserPrompt(
       context.field_config,
       context.briefing,
       context.previous_responses,
       context.source_document_content,
-      context.edital_text_content
+      context.edital_text_content,
+      context.opportunity_documents_content
     )
 
     // Fazer chamada ao Gemini
@@ -286,16 +287,18 @@ Escreva de forma que o avaliador perceba expertise, viabilidade técnica e poten
  * Constrói o prompt do usuário com contexto específico do campo
  *
  * HIERARQUIA DE CONTEXTO (do mais importante para o menos):
- * 1. Edital PDF (texto extraído do PDF oficial do edital)
- * 2. Documentos do Projeto (arquivos enviados pelo usuário específicos do projeto)
- * 3. Briefing (respostas manuais do usuário)
- * 4. Respostas Anteriores (para coesão)
+ * 1. Edital PDF Principal (texto extraído do PDF oficial do edital)
+ * 2. Documentos Adicionais do Edital (anexos, regulamentos, tabelas - compartilhados entre projetos)
+ * 3. Documentos do Projeto (arquivos enviados pelo usuário específicos deste projeto)
+ * 4. Briefing (respostas manuais do usuário)
+ * 5. Respostas Anteriores (para coesão)
  *
  * @param fieldConfig - Configuração do campo
  * @param briefing - Briefing do projeto
  * @param previousResponses - Respostas anteriores de outros campos
  * @param sourceDocumentContent - Conteúdo extraído dos documentos do projeto (opcional)
- * @param editalTextContent - Conteúdo extraído do PDF do edital (opcional)
+ * @param editalTextContent - Conteúdo extraído do PDF principal do edital (opcional)
+ * @param opportunityDocumentsContent - Conteúdo dos documentos adicionais do edital (opcional)
  * @returns Prompt do usuário formatado
  */
 function buildUserPrompt(
@@ -303,7 +306,8 @@ function buildUserPrompt(
   briefing: Record<string, string>,
   previousResponses?: Record<string, string>,
   sourceDocumentContent?: string | null,
-  editalTextContent?: string | null
+  editalTextContent?: string | null,
+  opportunityDocumentsContent?: string | null
 ): string {
   let prompt = `**CAMPO A SER PREENCHIDO:**
 ${fieldConfig.label}
@@ -318,7 +322,7 @@ Obrigatório: ${fieldConfig.required ? 'Sim' : 'Não'}
 
 `
 
-  // 1. PRIORIDADE MÁXIMA: Edital PDF (contexto compartilhado para todos os projetos)
+  // 1. PRIORIDADE MÁXIMA: Edital PDF Principal (contexto compartilhado para todos os projetos)
   if (editalTextContent && editalTextContent.trim().length > 0) {
     prompt += `**📋 EDITAL OFICIAL (PRIORIDADE MÁXIMA - Requisitos e Critérios do Edital):**
 
@@ -329,7 +333,18 @@ ${editalTextContent.substring(0, 20000)}
 `
   }
 
-  // 2. PRIORIDADE ALTA: Documentos do Projeto (informações específicas deste projeto)
+  // 2. PRIORIDADE ALTA: Documentos Adicionais do Edital (anexos, regulamentos, tabelas de critérios)
+  if (opportunityDocumentsContent && opportunityDocumentsContent.trim().length > 0) {
+    prompt += `**📎 DOCUMENTOS COMPLEMENTARES DO EDITAL (Anexos e Regulamentos Compartilhados):**
+
+${opportunityDocumentsContent.substring(0, 15000)}
+
+⚠️ IMPORTANTE: Estes são documentos adicionais do edital (regulamentos, tabelas de critérios, anexos). Use estas informações para complementar o entendimento do edital principal.
+
+`
+  }
+
+  // 3. PRIORIDADE MÉDIA: Documentos do Projeto (informações específicas deste projeto)
   if (sourceDocumentContent && sourceDocumentContent.trim().length > 0) {
     prompt += `**📄 DOCUMENTOS DO PROJETO (Fonte de Verdade sobre este Projeto Específico):**
 

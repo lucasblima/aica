@@ -49,6 +49,9 @@ export interface GrantOpportunity {
   // PDF do edital
   edital_pdf_path?: string;
   edital_text_content?: string;
+
+  // Relações (carregadas via join)
+  documents?: OpportunityDocument[]; // Documentos adicionais de contexto do edital
 }
 
 export interface EvaluationCriterion {
@@ -114,7 +117,25 @@ export interface ProjectDocument {
   user_id: string;
   file_name: string;
   document_path: string;
-  document_type: 'md' | 'pdf' | 'txt' | 'docx';
+  document_type: 'md' | 'pdf' | 'txt' | 'docx' | 'csv';
+  document_content: string | null;
+  file_size_bytes: number | null;
+  uploaded_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
+// OPPORTUNITY DOCUMENT (Documentos de Contexto do Edital)
+// ============================================
+
+export interface OpportunityDocument {
+  id: string;
+  opportunity_id: string;
+  user_id: string;
+  file_name: string;
+  document_path: string;
+  document_type: 'md' | 'pdf' | 'txt' | 'docx' | 'csv';
   document_content: string | null;
   file_size_bytes: number | null;
   uploaded_at: string;
@@ -296,8 +317,10 @@ export interface GenerateFieldPayload {
   field_config: FormField;
   briefing: Record<string, string>; // Campos dinâmicos do briefing
   previous_responses?: Record<string, string>;
-  source_document_content?: string | null; // Conteúdo dos documentos do projeto (PDF, MD, DOCX, TXT)
-  edital_text_content?: string | null; // Conteúdo do PDF do edital (contexto compartilhado)
+  source_document_content?: string | null; // Conteúdo dos documentos do projeto (PDF, MD, DOCX, TXT, CSV)
+  edital_text_content?: string | null; // Conteúdo do PDF principal do edital
+  opportunity_documents_content?: string | null; // Conteúdo dos documentos adicionais do edital (CSV, PDF, etc.)
+  project_id?: string; // ID do projeto (para tracking)
 }
 
 // ============================================

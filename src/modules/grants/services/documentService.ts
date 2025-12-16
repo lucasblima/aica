@@ -16,7 +16,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dis
 /**
  * Tipos de documentos suportados
  */
-export type DocumentType = 'md' | 'pdf' | 'docx' | 'txt';
+export type DocumentType = 'md' | 'pdf' | 'docx' | 'txt' | 'csv';
 
 /**
  * Resultado do processamento do documento
@@ -45,6 +45,8 @@ function detectDocumentType(fileName: string): DocumentType | null {
       return 'docx';
     case 'txt':
       return 'txt';
+    case 'csv':
+      return 'csv';
     default:
       return null;
   }
@@ -73,7 +75,7 @@ export function validateDocumentType(file: File): { valid: boolean; type: Docume
     return {
       valid: false,
       type: null,
-      error: 'Tipo de arquivo não suportado. Use: .md, .pdf, .docx ou .txt'
+      error: 'Tipo de arquivo não suportado. Use: .md, .pdf, .docx, .txt ou .csv'
     };
   }
 
@@ -192,6 +194,84 @@ async function extractTextFromDocx(file: File): Promise<string> {
 }
 
 /**
+ * Extrai texto de arquivo .csv e formata para leitura pela IA
+ */
+async function extractTextFromCSV(file: File): Promise<string> {
+  try {
+    const text = await file.text();
+    const lines = text.split('\n').filter(line => line.trim());
+
+    if (lines.length === 0) {
+      return '';
+    }
+
+    // Detecta o delimitador (vírgula, ponto-e-vírgula, ou tab)
+    const firstLine = lines[0];
+    let delimiter = ',';
+    if (firstLine.includes(';') && !firstLine.includes(',')) {
+      delimiter = ';';
+    } else if (firstLine.includes('\t') && !firstLine.includes(',') && !firstLine.includes(';')) {
+      delimiter = '\t';
+    }
+
+    // Parse headers
+    const headers = parseCSVLine(firstLine, delimiter);
+
+    // Formata para a IA entender melhor
+    let formatted = `=== TABELA CSV: ${file.name} ===\n`;
+    formatted += `Colunas (${headers.length}): ${headers.join(' | ')}\n`;
+    formatted += `Total de linhas de dados: ${lines.length - 1}\n\n`;
+    formatted += `--- DADOS ---\n`;
+
+    // Formata cada linha como objeto para melhor compreensão
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i], delimiter);
+      const rowData = headers.map((header, idx) => {
+        const value = values[idx] || '';
+        return `${header}: ${value}`;
+      }).join(' | ');
+      formatted += `Linha ${i}: ${rowData}\n`;
+    }
+
+    return formatted.trim();
+  } catch (error) {
+    console.error('[Document] CSV extraction error:', error);
+    throw new Error('Falha ao processar arquivo CSV');
+  }
+}
+
+/**
+ * Parse uma linha CSV respeitando aspas
+ */
+function parseCSVLine(line: string, delimiter: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // Escaped quote
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+/**
  * Extrai texto do documento baseado no tipo
  */
 export async function extractTextFromDocument(file: File, type: DocumentType): Promise<string> {
@@ -206,6 +286,8 @@ export async function extractTextFromDocument(file: File, type: DocumentType): P
       return await extractTextFromPDF(file);
     case 'docx':
       return await extractTextFromDocx(file);
+    case 'csv':
+      return await extractTextFromCSV(file);
     default:
       throw new Error(`Tipo de documento não suportado: ${type}`);
   }
