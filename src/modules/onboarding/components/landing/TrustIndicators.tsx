@@ -48,10 +48,10 @@ export function TrustIndicators() {
             </div>
             <div>
               <p className="text-3xl md:text-4xl font-bold text-ceramic-accent mb-2">
-                1000+
+                Beta
               </p>
               <p className="text-sm text-[#5C554B]">
-                Usuários já transformando suas vidas com Aica
+                Aberto para Beta Users
               </p>
             </div>
           </div>
