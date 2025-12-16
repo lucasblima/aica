@@ -546,11 +546,11 @@ function calculateDraftingCompletion(state: EditalWorkspaceState): StageCompleti
   if (totalFields === 0) return 'none';
 
   const responsesWithContent = Object.values(state.drafting.responses).filter(
-    r => r.content && r.content.trim().length > 0
+    r => r && r.content && r.content.trim().length > 0
   ).length;
 
   const approvedResponses = Object.values(state.drafting.responses).filter(
-    r => r.status === 'approved'
+    r => r && r.status === 'approved'
   ).length;
 
   if (approvedResponses === totalFields) return 'complete';

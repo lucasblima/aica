@@ -102,7 +102,6 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     // Dashboard -> Select Existing Episode (NEW FLOW)
     const handleSelectEpisode = async (episodeId: string) => {
         console.log('[PodcastCopilot] handleSelectEpisode called', { episodeId, view });
-        alert(`DEBUG: handleSelectEpisode chamado!\nepisodeId: ${episodeId}\nview atual: ${view}`);
         setCurrentEpisodeId(episodeId);
         setCurrentProjectId(episodeId);
 
@@ -164,10 +163,8 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     // Dashboard -> Create New Episode -> Wizard (NEW FLOW)
     const handleCreateEpisode = async () => {
         console.log('[PodcastCopilot] handleCreateEpisode called', { currentShowId, userId, view });
-        alert(`DEBUG: handleCreateEpisode chamado!\ncurrentShowId: ${currentShowId}\nuserId: ${userId}\nview atual: ${view}`);
         if (!currentShowId) {
             console.error('[PodcastCopilot] No currentShowId, returning early');
-            alert('ERRO: currentShowId está vazio!');
             return;
         }
         // Don't create episode here - Wizard will do it
@@ -262,7 +259,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         return (
             <PodcastLibrary
                 onSelectShow={handleSelectShow}
-                onCreateNew={() => alert('Criar novo podcast')}
+                onCreateNew={() => {}} // Handled internally by PodcastLibrary modal
                 userEmail={userEmail}
                 onLogout={onLogout}
             />

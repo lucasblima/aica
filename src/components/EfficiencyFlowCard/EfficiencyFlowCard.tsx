@@ -262,6 +262,9 @@ export function EfficiencyFlowCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
+      data-testid="efficiency-flow-card"
+      role="region"
+      aria-label="Gráfico de eficiência"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">

@@ -7,6 +7,7 @@ import React, { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { QuickCapture } from '../components/capture/QuickCapture'
 import { MomentCard } from '../components/timeline/MomentCard'
+import { MicrophoneFAB, LifeWeeksStrip, CeramicMomentCard } from '../components/ceramic'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { ConsciousnessScore } from '../components/gamification/ConsciousnessScore'
@@ -29,9 +30,11 @@ import {
 import { CreateMomentInput } from '../types/moment'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
+import { SettingsMenu } from '../../../components/SettingsMenu'
 
 export function JourneyFullScreen() {
   const [showCapture, setShowCapture] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
   const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search'>('timeline')
   const [showInsight, setShowInsight] = useState(false)
   const [currentInsight, setCurrentInsight] = useState<{
@@ -151,36 +154,41 @@ export function JourneyFullScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+    <div className="min-h-screen bg-[#F0EFE9]">
+      {/* Header - Digital Ceramic System */}
+      <div className="ceramic-card rounded-none p-6 border-b border-[#A39E91]/10">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <SparklesIcon className="h-8 w-8" />
-              <h1 className="text-3xl font-bold">Minha Jornada</h1>
+              <SparklesIcon className="h-8 w-8 text-amber-600" />
+              <h1 className="text-3xl font-bold text-etched">Minha Jornada</h1>
             </div>
 
-            <button
-              onClick={() => setShowCapture(!showCapture)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                showCapture
-                  ? 'bg-white text-blue-600'
-                  : 'bg-blue-700 hover:bg-blue-800'
-              }`}
-            >
-              {showCapture ? (
-                <>
-                  <XMarkIcon className="h-5 w-5" />
-                  <span>Cancelar</span>
-                </>
-              ) : (
-                <>
-                  <PlusIcon className="h-5 w-5" />
-                  <span>Novo Momento</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowCapture(!showCapture)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${
+                  showCapture
+                    ? 'ceramic-pressed text-[#5C554B]'
+                    : 'ceramic-card hover:ceramic-elevated text-[#5C554B]'
+                }`}
+              >
+                {showCapture ? (
+                  <>
+                    <XMarkIcon className="h-5 w-5" />
+                    <span>Cancelar</span>
+                  </>
+                ) : (
+                  <>
+                    <PlusIcon className="h-5 w-5 text-amber-600" />
+                    <span>Novo Momento</span>
+                  </>
+                )}
+              </button>
+
+              {/* Settings Menu - Discrete gear icon */}
+              <SettingsMenu userEmail={user?.email} />
+            </div>
           </div>
 
           {/* CP Score */}
@@ -225,14 +233,14 @@ export function JourneyFullScreen() {
 
           {/* Zone 2 & 3: Timeline + Insights */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Tabs */}
-            <div className="flex gap-2 border-b border-gray-200">
+            {/* Tabs - Ceramic Tray */}
+            <div className="ceramic-tray p-2 flex gap-2">
               <button
                 onClick={() => setActiveTab('timeline')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${
                   activeTab === 'timeline'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'ceramic-card text-amber-700'
+                    : 'text-[#948D82] hover:text-[#5C554B]'
                 }`}
               >
                 <ClockIcon className="h-5 w-5" />
@@ -241,10 +249,10 @@ export function JourneyFullScreen() {
 
               <button
                 onClick={() => setActiveTab('insights')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${
                   activeTab === 'insights'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'ceramic-card text-amber-700'
+                    : 'text-[#948D82] hover:text-[#5C554B]'
                 }`}
               >
                 <ChartBarIcon className="h-5 w-5" />
@@ -253,10 +261,10 @@ export function JourneyFullScreen() {
 
               <button
                 onClick={() => setActiveTab('search')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${
                   activeTab === 'search'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'ceramic-card text-amber-700'
+                    : 'text-[#948D82] hover:text-[#5C554B]'
                 }`}
               >
                 <MagnifyingGlassIcon className="h-5 w-5" />
@@ -267,15 +275,21 @@ export function JourneyFullScreen() {
             {/* Timeline Tab */}
             {activeTab === 'timeline' && (
               <div className="space-y-4">
+                {/* Life Weeks Strip - Memento Mori visualization */}
+                <LifeWeeksStrip
+                  birthDate={new Date(1990, 0, 1)} // TODO: Get from user profile
+                  expectedLifespan={80}
+                />
+
                 {moments.length === 0 && !isLoading && (
                   <div className="text-center py-12">
-                    <SparklesIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 mb-4">
+                    <SparklesIcon className="h-12 w-12 text-[#948D82] mx-auto mb-3" />
+                    <p className="text-[#5C554B] mb-4">
                       Você ainda não registrou nenhum momento.
                     </p>
                     <button
                       onClick={() => setShowCapture(true)}
-                      className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-all"
+                      className="ceramic-btn-primary"
                     >
                       Registrar Primeiro Momento
                     </button>
@@ -283,7 +297,7 @@ export function JourneyFullScreen() {
                 )}
 
                 {moments.map(moment => (
-                  <MomentCard
+                  <CeramicMomentCard
                     key={moment.id}
                     moment={moment}
                     onDelete={deleteMoment}
@@ -294,7 +308,7 @@ export function JourneyFullScreen() {
                   <button
                     onClick={loadMore}
                     disabled={isLoading}
-                    className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 transition-all"
+                    className="w-full px-4 py-3 ceramic-inset text-[#5C554B] font-medium hover:ceramic-pressed disabled:opacity-50 transition-all"
                   >
                     {isLoading ? 'Carregando...' : 'Carregar mais'}
                   </button>
@@ -313,11 +327,11 @@ export function JourneyFullScreen() {
                   />
                 ) : (
                   <div className="text-center py-12">
-                    <ChartBarIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 mb-2">
+                    <ChartBarIcon className="h-12 w-12 text-[#948D82] mx-auto mb-3" />
+                    <p className="text-[#5C554B] mb-2">
                       Sem resumo semanal disponível ainda.
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[#948D82]">
                       Registre alguns momentos durante a semana para gerar insights.
                     </p>
                   </div>
@@ -327,7 +341,7 @@ export function JourneyFullScreen() {
 
             {/* Search Tab */}
             {activeTab === 'search' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="ceramic-card p-6">
                 <JourneySearchPanel
                   onSearch={async (query) => {
                     const results = await searchInMoments(query, 10);
@@ -360,17 +374,32 @@ export function JourneyFullScreen() {
         </div>
       </div>
 
+      {/* Microphone FAB - The Voice Protagonist */}
+      <MicrophoneFAB
+        isRecording={isRecording}
+        onPress={() => {
+          if (isRecording) {
+            setIsRecording(false)
+            // TODO: Stop recording and process audio
+          } else {
+            setIsRecording(true)
+            setShowCapture(true)
+            // TODO: Start recording
+          }
+        }}
+      />
+
       {/* CP Animation */}
       {showAnimation && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 text-center animate-bounce">
-            <SparklesIcon className="h-16 w-16 text-yellow-500 mx-auto mb-3" />
-            <div className="text-4xl font-bold text-gray-900 mb-2">
+          <div className="ceramic-card p-8 text-center animate-bounce">
+            <SparklesIcon className="h-16 w-16 text-amber-500 mx-auto mb-3" />
+            <div className="text-4xl font-bold text-[#5C554B] mb-2">
               +{pointsEarned} CP
             </div>
             {leveledUp && (
-              <div className="text-lg font-medium text-purple-600">
-                Level Up! 🎉
+              <div className="text-lg font-medium text-amber-700">
+                Level Up!
               </div>
             )}
           </div>

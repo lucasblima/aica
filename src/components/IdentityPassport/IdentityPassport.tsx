@@ -73,8 +73,10 @@ export function IdentityPassport({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
+      data-testid="identity-passport"
     >
-      <div className="flex items-center gap-6">
+      {/* Mobile: Stack vertical, Desktop: Horizontal */}
+      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
         {/* Avatar Recessed */}
         <motion.div
           className="ceramic-avatar-recessed flex-shrink-0"
@@ -108,7 +110,7 @@ export function IdentityPassport({
         </motion.div>
 
         {/* Progress Bar */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full sm:w-auto">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-ceramic-text-secondary truncate">
               {displayName}
@@ -117,7 +119,15 @@ export function IdentityPassport({
               {progressPercentage.toFixed(0)}%
             </span>
           </div>
-          <div className="ceramic-progress-groove">
+          <div
+            className="ceramic-progress-groove"
+            role="progressbar"
+            aria-valuenow={progressPercentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progresso para o próximo nível"
+            data-testid="cp-progress-bar"
+          >
             <motion.div
               className="ceramic-progress-fill"
               initial={{ width: 0 }}
@@ -138,9 +148,11 @@ export function IdentityPassport({
         {/* Profile Button */}
         <motion.button
           onClick={onOpenProfile}
-          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors text-ceramic-text-primary font-medium text-sm"
+          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors text-ceramic-text-primary font-medium text-sm min-h-[44px]"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          aria-label="Abrir configurações da conta"
+          data-testid="profile-button"
         >
           <Settings className="w-4 h-4" />
           <span className="hidden sm:inline">Minha Conta</span>
