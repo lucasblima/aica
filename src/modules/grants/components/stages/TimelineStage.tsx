@@ -17,6 +17,8 @@ import {
   Trash2,
   Edit3,
   X,
+  Square,
+  CheckSquare,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StageDependencyHint } from '../shared/StageDependencyHint';
@@ -31,6 +33,8 @@ export const TimelineStage: React.FC = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newPhase, setNewPhase] = useState({ name: '', date: '', description: '' });
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedPhaseIds, setSelectedPhaseIds] = useState<Set<string>>(new Set());
 
   const hasPdfContent = pdfUpload.textContent && pdfUpload.textContent.length > 0;
   const hasPhases = timeline.phases.length > 0;
@@ -109,6 +113,60 @@ export const TimelineStage: React.FC = () => {
     });
   };
 
+  /**
+   * Toggle selection mode
+   */
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedPhaseIds(new Set());
+  };
+
+  /**
+   * Toggle individual phase selection
+   */
+  const handleToggleSelection = (phaseId: string) => {
+    setSelectedPhaseIds(prev => {
+      const next = new Set(prev);
+      if (next.has(phaseId)) {
+        next.delete(phaseId);
+      } else {
+        next.add(phaseId);
+      }
+      return next;
+    });
+  };
+
+  /**
+   * Select all phases
+   */
+  const handleSelectAll = () => {
+    setSelectedPhaseIds(new Set(timeline.phases.map(p => p.id)));
+  };
+
+  /**
+   * Deselect all phases
+   */
+  const handleDeselectAll = () => {
+    setSelectedPhaseIds(new Set());
+  };
+
+  /**
+   * Batch delete selected phases
+   */
+  const handleBatchDelete = () => {
+    if (selectedPhaseIds.size === 0) return;
+    const confirmed = confirm(`Remover ${selectedPhaseIds.size} fase(s) selecionada(s)?`);
+    if (!confirmed) return;
+
+    dispatch({
+      type: 'SET_TIMELINE_PHASES',
+      payload: timeline.phases.filter(p => !selectedPhaseIds.has(p.id)),
+    });
+
+    setSelectedPhaseIds(new Set());
+    setSelectionMode(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -123,25 +181,45 @@ export const TimelineStage: React.FC = () => {
             </p>
           </div>
 
-          {hasPdfContent && !hasPhases && (
-            <button
-              onClick={handleExtractTimeline}
-              disabled={isExtracting}
-              className="ceramic-concave px-6 py-3 font-bold text-[#D97706] hover:scale-[0.98] disabled:opacity-50 transition-all flex items-center gap-2"
-            >
-              {isExtracting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Extraindo...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Extrair do PDF
-                </>
-              )}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {hasPdfContent && !hasPhases && (
+              <button
+                onClick={handleExtractTimeline}
+                disabled={isExtracting}
+                className="ceramic-concave px-6 py-3 font-bold text-[#D97706] hover:scale-[0.98] disabled:opacity-50 transition-all flex items-center gap-2"
+              >
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Extraindo...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Extrair do PDF
+                  </>
+                )}
+              </button>
+            )}
+            {hasPhases && (
+              <button
+                onClick={handleToggleSelectionMode}
+                className="ceramic-concave px-4 py-2 font-bold text-[#5C554B] hover:scale-[0.98] transition-all flex items-center gap-2"
+              >
+                {selectionMode ? (
+                  <>
+                    <X className="w-4 h-4" />
+                    Cancelar Selecao
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="w-4 h-4" />
+                    Selecionar
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -163,6 +241,9 @@ export const TimelineStage: React.FC = () => {
                     isFirst={index === 0}
                     isLast={index === timeline.phases.length - 1}
                     onRemove={() => handleRemovePhase(phase.id)}
+                    selectionMode={selectionMode}
+                    isSelected={selectedPhaseIds.has(phase.id)}
+                    onToggleSelection={() => handleToggleSelection(phase.id)}
                   />
                 ))}
               </AnimatePresence>
@@ -273,26 +354,81 @@ export const TimelineStage: React.FC = () => {
           variant="info"
         />
       )}
+
+      {/* Batch Actions Toolbar */}
+      <AnimatePresence>
+        {selectionMode && hasPhases && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 ceramic-card p-4 flex items-center gap-4 shadow-lg z-50"
+          >
+            <span className="text-sm font-bold text-[#5C554B]">
+              {selectedPhaseIds.size} selecionado(s)
+            </span>
+            <button onClick={handleSelectAll} className="text-xs font-bold text-[#D97706] hover:underline">
+              Selecionar Todos
+            </button>
+            <button onClick={handleDeselectAll} className="text-xs font-bold text-[#948D82] hover:underline">
+              Desmarcar
+            </button>
+            <button
+              onClick={handleBatchDelete}
+              disabled={selectedPhaseIds.size === 0}
+              className="ceramic-concave px-4 py-2 text-xs font-bold text-red-600 disabled:opacity-50 hover:scale-95 transition-transform flex items-center gap-1"
+            >
+              <Trash2 className="w-4 h-4" />
+              Excluir Selecionados
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 /**
+ * Parse date string in multiple formats
+ */
+function parseDate(dateStr: string): Date | null {
+  if (!dateStr) return null;
+
+  // Try ISO format first
+  let date = new Date(dateStr);
+  if (!isNaN(date.getTime())) return date;
+
+  // Try DD/MM/YYYY format (common in Brazil)
+  const brMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (brMatch) {
+    date = new Date(parseInt(brMatch[3]), parseInt(brMatch[2]) - 1, parseInt(brMatch[1]));
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  // Try DD-MM-YYYY format
+  const dashMatch = dateStr.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+  if (dashMatch) {
+    date = new Date(parseInt(dashMatch[3]), parseInt(dashMatch[2]) - 1, parseInt(dashMatch[1]));
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  return null;
+}
+
+/**
  * Determine phase status based on date
  */
 function determinePhaseStatus(dateStr: string): EditalPhase['status'] {
-  try {
-    const phaseDate = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    phaseDate.setHours(0, 0, 0, 0);
+  const phaseDate = parseDate(dateStr);
+  if (!phaseDate) return 'pending'; // Invalid date defaults to pending
 
-    if (phaseDate < today) return 'completed';
-    if (phaseDate.getTime() === today.getTime()) return 'active';
-    return 'pending';
-  } catch {
-    return 'pending';
-  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  phaseDate.setHours(0, 0, 0, 0);
+
+  if (phaseDate < today) return 'completed';
+  if (phaseDate.getTime() === today.getTime()) return 'active';
+  return 'pending';
 }
 
 /**
@@ -304,6 +440,9 @@ interface TimelinePhaseCardProps {
   isFirst: boolean;
   isLast: boolean;
   onRemove: () => void;
+  selectionMode: boolean;
+  isSelected: boolean;
+  onToggleSelection: () => void;
 }
 
 const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
@@ -312,7 +451,14 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
   isFirst,
   isLast,
   onRemove,
+  selectionMode,
+  isSelected,
+  onToggleSelection,
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDate, setEditedDate] = useState(phase.date);
+  const { dispatch, state } = useWorkspace();
+
   const getStatusConfig = () => {
     switch (phase.status) {
       case 'completed':
@@ -344,6 +490,22 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
   const Icon = config.icon;
   const formattedDate = formatDate(phase.date);
   const daysRemaining = calculateDaysRemaining(phase.date);
+  const isInvalidDate = parseDate(phase.date) === null;
+
+  const handleSaveDate = () => {
+    const updatedPhases = state.timeline.phases.map((p) =>
+      p.id === phase.id
+        ? { ...p, date: editedDate, status: determinePhaseStatus(editedDate) }
+        : p
+    );
+    dispatch({ type: 'SET_TIMELINE_PHASES', payload: updatedPhases });
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedDate(phase.date);
+    setIsEditing(false);
+  };
 
   return (
     <motion.div
@@ -353,6 +515,20 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
       transition={{ delay: index * 0.1 }}
       className="relative flex items-start gap-4 pl-2"
     >
+      {/* Selection Checkbox */}
+      {selectionMode && (
+        <button
+          onClick={onToggleSelection}
+          className="mt-2 text-[#5C554B] hover:text-[#D97706] transition-colors"
+        >
+          {isSelected ? (
+            <CheckSquare className="w-5 h-5 text-[#D97706]" />
+          ) : (
+            <Square className="w-5 h-5" />
+          )}
+        </button>
+      )}
+
       {/* Status Indicator */}
       <div
         className={`w-10 h-10 rounded-full flex items-center justify-center z-10 ${config.bgColor}`}
@@ -371,27 +547,75 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
                   HOJE
                 </span>
               )}
-            </div>
-            <p className={`text-xs font-medium ${config.textColor}`}>
-              {formattedDate}
-              {daysRemaining !== null && phase.status === 'pending' && (
-                <span className="ml-2 text-[#948D82]">
-                  ({daysRemaining}d restantes)
+              {isInvalidDate && (
+                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  DATA INVALIDA
                 </span>
               )}
-            </p>
+            </div>
+
+            {/* Date Display/Edit */}
+            {isEditing ? (
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="date"
+                  value={editedDate}
+                  onChange={(e) => setEditedDate(e.target.value)}
+                  className="bg-white border border-[#5C554B]/20 rounded-lg px-2 py-1 text-xs text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveDate}
+                  className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                  title="Salvar"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  title="Cancelar"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <p className={`text-xs font-medium ${isInvalidDate ? 'text-red-600' : config.textColor}`}>
+                  {formattedDate}
+                  {daysRemaining !== null && phase.status === 'pending' && !isInvalidDate && (
+                    <span className="ml-2 text-[#948D82]">
+                      ({daysRemaining}d restantes)
+                    </span>
+                  )}
+                </p>
+                {isInvalidDate && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="p-1 text-[#D97706] hover:bg-[#D97706]/10 rounded transition-colors"
+                    title="Corrigir data"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
+
             {phase.description && (
               <p className="text-xs text-[#948D82] mt-2">{phase.description}</p>
             )}
           </div>
 
-          <button
-            onClick={onRemove}
-            className="p-2 text-[#948D82] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Remover"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {!selectionMode && (
+            <button
+              onClick={onRemove}
+              className="p-2 text-[#948D82] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Remover"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </motion.div>
@@ -402,31 +626,26 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
  * Format date for display
  */
 function formatDate(dateStr: string): string {
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-  } catch {
-    return dateStr;
-  }
+  const date = parseDate(dateStr);
+  if (!date) return dateStr; // Return original if parsing fails
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
 }
 
 /**
  * Calculate days remaining until date
  */
 function calculateDaysRemaining(dateStr: string): number | null {
-  try {
-    const targetDate = new Date(dateStr);
-    const today = new Date();
-    const diffTime = targetDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : null;
-  } catch {
-    return null;
-  }
+  const targetDate = parseDate(dateStr);
+  if (!targetDate) return null;
+
+  const today = new Date();
+  const diffTime = targetDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : null;
 }
 
 export default TimelineStage;

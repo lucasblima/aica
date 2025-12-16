@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Sparkles } from 'lucide-react';
+import { Logo } from './ui/Logo';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
     const [error, setError] = useState<string | null>(null);
@@ -51,10 +51,10 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 {/* Logo/Header */}
                 <div className="text-center mb-10">
                     <div
-                        className="inline-flex items-center justify-center w-20 h-20 bg-[#F0EFE9] rounded-2xl mb-6"
+                        className="inline-flex items-center justify-center bg-[#F0EFE9] rounded-2xl mb-6 overflow-hidden"
                         style={{ boxShadow: '8px 8px 16px #c5c5c5, -8px -8px 16px #ffffff' }}
                     >
-                        <Sparkles className="w-10 h-10 text-[#5C554B]" />
+                        <Logo variant="default" width={80} className="rounded-2xl" />
                     </div>
                     <h1 className="text-2xl font-black text-ceramic-text-primary text-etched mb-2">Aica Life OS</h1>
                     <p className="text-sm text-[#948D82]">Sistema operacional para sua vida</p>

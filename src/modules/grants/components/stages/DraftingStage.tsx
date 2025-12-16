@@ -3,7 +3,7 @@
  * The core feature combining briefing context with AI generation
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -16,6 +16,8 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
+  ChevronsUp,
+  ChevronsDown,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StageDependencyHint } from '../shared/StageDependencyHint';
@@ -24,6 +26,10 @@ import type { FormField, GrantResponse } from '../../types';
 export const DraftingStage: React.FC = () => {
   const { state, dispatch, actions, stageCompletions } = useWorkspace();
   const { formFields, drafting, briefingContext } = state;
+
+  // Collapse/Expand state management
+  const [allCollapsed, setAllCollapsed] = useState(false);
+  const [collapseToggle, setCollapseToggle] = useState(0);
 
   const hasFields = formFields.fields.length > 0;
   const totalFields = formFields.fields.length;
@@ -36,6 +42,16 @@ export const DraftingStage: React.FC = () => {
 
   const progressPercent = totalFields > 0 ? Math.round((approvedCount / totalFields) * 100) : 0;
   const isComplete = approvedCount === totalFields && totalFields > 0;
+
+  const handleCollapseAll = () => {
+    setAllCollapsed(true);
+    setCollapseToggle((prev) => prev + 1);
+  };
+
+  const handleExpandAll = () => {
+    setAllCollapsed(false);
+    setCollapseToggle((prev) => prev + 1);
+  };
 
   return (
     <div className="space-y-6">
@@ -64,23 +80,45 @@ export const DraftingStage: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={actions.generateAllFields}
-            disabled={drafting.isGenerating || !hasFields}
-            className="ceramic-concave px-6 py-3 font-bold text-[#D97706] hover:scale-[0.98] disabled:opacity-50 transition-all flex items-center gap-2"
-          >
-            {drafting.isGenerating ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Gerando...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Gerar Todos
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCollapseAll}
+              disabled={!hasFields}
+              className="ceramic-concave px-4 py-3 font-bold text-[#5C554B] hover:scale-[0.98] disabled:opacity-50 transition-all flex items-center gap-2"
+              title="Colapsar Todos"
+            >
+              <ChevronsUp className="w-5 h-5" />
+              <span className="hidden sm:inline">Colapsar</span>
+            </button>
+
+            <button
+              onClick={handleExpandAll}
+              disabled={!hasFields}
+              className="ceramic-concave px-4 py-3 font-bold text-[#5C554B] hover:scale-[0.98] disabled:opacity-50 transition-all flex items-center gap-2"
+              title="Expandir Todos"
+            >
+              <ChevronsDown className="w-5 h-5" />
+              <span className="hidden sm:inline">Expandir</span>
+            </button>
+
+            <button
+              onClick={actions.generateAllFields}
+              disabled={drafting.isGenerating || !hasFields}
+              className="ceramic-concave px-6 py-3 font-bold text-[#D97706] hover:scale-[0.98] disabled:opacity-50 transition-all flex items-center gap-2"
+            >
+              {drafting.isGenerating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Gerar Todos
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -104,6 +142,8 @@ export const DraftingStage: React.FC = () => {
               onEdit={(content) => actions.editResponse(field.id, content)}
               onCopy={() => actions.copyToClipboard(field.id)}
               onUpdateBriefing={(value) => actions.updateBriefingField(field.id, value)}
+              forceCollapsed={allCollapsed}
+              collapseToggle={collapseToggle}
             />
           ))}
         </div>
@@ -156,6 +196,8 @@ interface DraftingFieldCardProps {
   onEdit: (content: string) => void;
   onCopy: () => void;
   onUpdateBriefing: (value: string) => void;
+  forceCollapsed?: boolean;
+  collapseToggle?: number;
 }
 
 const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
@@ -170,11 +212,20 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
   onEdit,
   onCopy,
   onUpdateBriefing,
+  forceCollapsed,
+  collapseToggle,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // React to collapse/expand toggle
+  useEffect(() => {
+    if (collapseToggle && collapseToggle > 0) {
+      setIsExpanded(!forceCollapsed);
+    }
+  }, [collapseToggle, forceCollapsed]);
 
   const content = response?.content || '';
   const charCount = content.length;

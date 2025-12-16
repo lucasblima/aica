@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { Logo } from '../../../../components/ui/Logo';
 
 interface HeaderProps {
   onLoginClick: () => void;
@@ -15,10 +16,10 @@ export function Header({ onLoginClick, onSignUpClick }: HeaderProps) {
         {/* Logo */}
         <a
           href="/"
-          className="text-[#2B1B17] text-2xl md:text-3xl font-bold hover:opacity-80 transition-opacity"
+          className="hover:opacity-80 transition-opacity flex items-center"
           aria-label="Aica home"
         >
-          Aica
+          <Logo variant="default" width={48} className="rounded-lg" />
         </a>
 
         {/* Desktop Navigation */}

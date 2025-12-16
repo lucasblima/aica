@@ -81,7 +81,9 @@
       "Bash(timeout 60 node:*)",
       "Bash(timeout 15 npm run dev:*)",
       "Bash(timeout 10 npm run build:*)",
-      "Bash(timeout 60 npm run build)"
+      "Bash(timeout 60 npm run build)",
+      "Bash(tasklist:*)",
+      "Bash(timeout 90 npm run build:*)"
     ],
     "deny": [],
     "ask": []

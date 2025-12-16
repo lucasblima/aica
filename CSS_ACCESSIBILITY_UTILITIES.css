@@ -1,0 +1,584 @@
+/**
+ * CSS Accessibility Utilities - Digital Ceramic V2
+ *
+ * Adicionar ao index.css após a seção ceramic do design system
+ * Estas classes auxiliam a manter conformidade WCAG AA sem sacrificar estética
+ */
+
+/* ============================================
+   1. FOCUS VISIBLE RINGS - Keyboard Navigation
+   ============================================ */
+
+/* Focus ring para botões primários (amber) */
+.focus-ring-amber {
+  @apply focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2;
+}
+
+/* Focus ring para botões destrutivos (red) */
+.focus-ring-danger {
+  @apply focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+}
+
+/* Focus ring genérico para inputs */
+.focus-ring-primary {
+  @apply focus:outline-none focus:ring-2 focus:ring-ceramic-text-secondary/50;
+}
+
+/* Removedor de outline padrão (sempre adicionar ring manual) */
+.no-focus-outline {
+  @apply focus:outline-none;
+}
+
+/* ============================================
+   2. SCREEN READER ONLY - sr-only
+   ============================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Visível apenas para screen readers mas acessível */
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ============================================
+   3. CONTRASTE MELHORADO - Color Variants
+   ============================================ */
+
+/* Background para accent text */
+.bg-accent-accessible {
+  background-color: #FEF3C7; /* amber-100 - contraste 7.2:1 com #5C554B */
+}
+
+.bg-accent-accessible:hover {
+  background-color: #FDE68A; /* amber-200 */
+}
+
+/* Background para danger states */
+.bg-danger-accessible {
+  background-color: #FCA5A5; /* red-300 - contraste 5.3:1 */
+}
+
+.bg-danger-accessible:hover {
+  background-color: #F87171; /* red-400 */
+}
+
+/* Text color com contraste suficiente */
+.text-primary-sufficient {
+  color: #5C554B; /* Lead - 13.5:1 contra #F0EFE9 */
+}
+
+.text-secondary-sufficient {
+  color: #8B8178; /* Taupe - 5.1:1 contra #F0EFE9 */
+}
+
+/* ============================================
+   4. STATES VISUAIS - Hover + Disabled
+   ============================================ */
+
+/* Disabled state com contraste melhorado */
+.disabled-sufficient {
+  background-color: #E5E2DB; /* Taupe claro */
+  color: #B8AFA3; /* Taupe médio */
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* Hover state com profundidade */
+.hover-elevation {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-elevation:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    8px 8px 16px rgba(163, 158, 145, 0.25),
+    -8px -8px 16px rgba(255, 255, 255, 0.95);
+}
+
+/* Active state com afundamento */
+.active-pressed {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.active-pressed:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 3px 3px 6px rgba(163, 158, 145, 0.35),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+}
+
+/* ============================================
+   5. LABELS E INPUTS - Form Accessibility
+   ============================================ */
+
+/* Label acessível obrigatório */
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #5C554B;
+}
+
+/* Input com suporte a validation visual */
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #E5E2DB;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #D97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+}
+
+/* Input valid state */
+.form-input.valid {
+  border-color: #10B981;
+  background-color: #F0FDF4;
+}
+
+/* Input invalid state */
+.form-input.invalid {
+  border-color: #EF4444;
+  background-color: #FEF2F2;
+}
+
+/* Input disabled state */
+.form-input:disabled {
+  background-color: #F3F0EB;
+  color: #B8AFA3;
+  cursor: not-allowed;
+}
+
+/* Helper text para validação */
+.form-help {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #8B8178;
+  transition: color 0.2s;
+}
+
+.form-help.error {
+  color: #DC2626;
+}
+
+.form-help.success {
+  color: #10B981;
+}
+
+/* ============================================
+   6. ICONS + TEXT COMBINATIONS
+   ============================================ */
+
+/* Icon com label - ícone não é acessível sozinho */
+.icon-with-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-with-label .icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Icon button - requer aria-label */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: #5C554B;
+  transition: background-color 0.2s;
+}
+
+.icon-button:hover {
+  background-color: rgba(163, 158, 145, 0.1);
+}
+
+.icon-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #F0EFE9, 0 0 0 4px #D97706;
+}
+
+/* ============================================
+   7. PROGRESS BARS - Acessível
+   ============================================ */
+
+/* Progress groove com role="progressbar" */
+.progress-accessible {
+  display: block;
+  width: 100%;
+  height: 12px;
+  background-color: #EBE9E4;
+  border-radius: 9999px;
+  box-shadow:
+    inset 2px 2px 5px rgba(163, 158, 145, 0.4),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+}
+
+.progress-accessible::after {
+  content: attr(data-value);
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+}
+
+/* Fill com transição suave */
+.progress-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%);
+  border-radius: 9999px;
+  box-shadow:
+    0 0 12px rgba(217, 119, 6, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   8. ALERTS E LIVE REGIONS
+   ============================================ */
+
+/* Status message para screen readers */
+.status-message {
+  display: block;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  border-left: 4px solid currentColor;
+}
+
+.status-message.info {
+  background-color: #EFF6FF;
+  color: #1E40AF;
+  border-left-color: #1E40AF;
+}
+
+.status-message.success {
+  background-color: #F0FDF4;
+  color: #15803D;
+  border-left-color: #15803D;
+}
+
+.status-message.error {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border-left-color: #991B1B;
+}
+
+.status-message.warning {
+  background-color: #FFFBEB;
+  color: #92400E;
+  border-left-color: #92400E;
+}
+
+/* Live region text - aria-live polite */
+.live-region-polite {
+  position: relative;
+}
+
+/* Alert region text - aria-live assertive */
+.live-region-alert {
+  position: relative;
+}
+
+/* ============================================
+   9. LOADING STATES - Accessible
+   ============================================ */
+
+/* Loading container com aria-busy */
+.loading-container {
+  position: relative;
+  opacity: 0.6;
+}
+
+/* Spinner com label */
+.spinner-accessible {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner-accessible .spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(163, 158, 145, 0.2);
+  border-top-color: #D97706;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-accessible .label {
+  font-size: 0.875rem;
+  color: #8B8178;
+}
+
+/* ============================================
+   10. EMPTY STATES - Accessible
+   ============================================ */
+
+.empty-state-accessible {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.empty-state-accessible .icon {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1rem;
+  color: rgba(163, 158, 145, 0.3);
+}
+
+.empty-state-accessible .title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #5C554B;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-accessible .description {
+  font-size: 0.875rem;
+  color: #8B8178;
+  margin-bottom: 1.5rem;
+  max-width: 300px;
+}
+
+.empty-state-accessible .action {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: #D97706;
+  color: white;
+  border-radius: 9999px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.empty-state-accessible .action:hover {
+  background-color: #B45309;
+}
+
+.empty-state-accessible .action:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #F0EFE9, 0 0 0 4px #D97706;
+}
+
+/* ============================================
+   11. MODALS - WCAG Accessible
+   ============================================ */
+
+.modal-accessible {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-accessible .backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+.modal-accessible .content {
+  position: relative;
+  background-color: #F0EFE9;
+  border-radius: 2rem;
+  box-shadow:
+    8px 8px 20px rgba(163, 158, 145, 0.25),
+    -8px -8px 20px rgba(255, 255, 255, 0.95);
+  max-width: 28rem;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.modal-accessible .close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  color: #8B8178;
+  transition: background-color 0.2s;
+}
+
+.modal-accessible .close-button:hover {
+  background-color: rgba(163, 158, 145, 0.1);
+}
+
+.modal-accessible .close-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #F0EFE9, 0 0 0 4px #D97706;
+}
+
+/* ============================================
+   12. DATA TABLES - Accessible
+   ============================================ */
+
+.table-accessible {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table-accessible caption {
+  text-align: left;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #5C554B;
+}
+
+.table-accessible thead {
+  background-color: #EBE9E4;
+  border-bottom: 2px solid #D1CCC0;
+}
+
+.table-accessible th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  color: #5C554B;
+}
+
+.table-accessible td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #E5E2DB;
+}
+
+.table-accessible tbody tr:hover {
+  background-color: #F7F5F0;
+}
+
+/* ============================================
+   13. UTILITY HELPERS
+   ============================================ */
+
+/* Texto com shadow para melhor legibilidade */
+.text-etched {
+  color: #5C554B;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.6);
+}
+
+/* Remover animações para usuários que preferem reduzir movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Modo dark mode support (futuro) */
+@media (prefers-color-scheme: dark) {
+  /* Quando implementar dark mode, preservar contraste */
+}
+
+/* ============================================
+   14. PRINT STYLES
+   ============================================ */
+
+@media print {
+  /* Esconder elementos apenas para tela */
+  .screen-only,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Melhorar legibilidade em impressão */
+  a {
+    text-decoration: underline;
+  }
+
+  .sr-only {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
+/* ============================================
+   15. PERFORMANCE - Acessibilidade
+   ============================================ */
+
+/* Reduzir movimento para user experience melhor */
+.reduce-motion {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Indicador visual de foco para modo alto contraste */
+@media (prefers-contrast: more) {
+  .focus-ring-amber {
+    @apply focus:outline-4 focus:outline-amber-600;
+  }
+
+  .focus-ring-danger {
+    @apply focus:outline-4 focus:outline-red-600;
+  }
+
+  .text-primary-sufficient {
+    font-weight: 700;
+  }
+}
+

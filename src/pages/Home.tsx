@@ -2,15 +2,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus } from 'lucide-react';
 import { HeaderGlobal } from '../components/HeaderGlobal';
-import { EfficiencyTrendChart } from '../components/EfficiencyTrendChart';
-import { JourneyMasterCard } from '../modules/journey/views/JourneyMasterCard';
+import { IdentityPassport } from '../components/IdentityPassport';
+import { VitalStatsTray } from '../components/VitalStatsTray';
+import { EfficiencyFlowCard } from '../components/EfficiencyFlowCard';
+import { ProfileModal } from '../components/ProfileModal';
 import { ConnectionArchetypes } from '../components/ConnectionArchetypes';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { ModuleCard } from '../components/ModuleCard';
+import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
 import { ViewState } from '../../types';
+import { supabase } from '../lib/supabase';
 
 // Types
 type TabState = 'personal' | 'network';
@@ -65,6 +69,22 @@ export default function Home({
 }: HomeProps) {
    const [activeTab, setActiveTab] = useState<TabState>('personal');
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
+   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+
+   // Get CP stats for VitalStatsTray
+   const { stats: cpStats } = useConsciousnessPoints();
+
+   // Handle account deletion
+   const handleDeleteAccount = async () => {
+      try {
+         // Sign out and redirect
+         await supabase.auth.signOut();
+         window.location.href = '/';
+      } catch (error) {
+         console.error('Error deleting account:', error);
+         throw error;
+      }
+   };
 
    // Grants Card State
    const [grantsActiveProjects, setGrantsActiveProjects] = useState<number>(0);
@@ -122,28 +142,45 @@ export default function Home({
                onTabChange={setActiveTab}
             />
 
-            <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
-               {/* Journey Master Card - Unified Journey + Consciousness Score */}
+            <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-8">
+               {/* 1. Identity Passport - Full Width Hero */}
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
                   custom={0}
+               >
+                  <IdentityPassport
+                     userId={userId}
+                     onOpenProfile={() => setProfileModalOpen(true)}
+                  />
+               </motion.div>
+
+               {/* 2. Vital Stats Tray - Full Width */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={1}
                   onClick={() => onNavigateToView('journey')}
                   className="cursor-pointer"
                >
-                  <JourneyMasterCard userId={userId} />
+                  <VitalStatsTray
+                     streak={cpStats?.current_streak || 0}
+                     moments={cpStats?.total_moments || 0}
+                     reflections={cpStats?.total_summaries_reflected || 0}
+                  />
                </motion.div>
 
-               {/* Efficiency Trend Chart */}
+               {/* 3. Efficiency Flow Card - Full Width */}
                {userId && (
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={1}
+                     custom={2}
                   >
-                     <EfficiencyTrendChart userId={userId} days={30} />
+                     <EfficiencyFlowCard userId={userId} days={30} />
                   </motion.div>
                )}
 
@@ -327,6 +364,15 @@ export default function Home({
                   </motion.div>
                </div>
             </main>
+
+            {/* Profile Modal */}
+            <ProfileModal
+               isOpen={isProfileModalOpen}
+               onClose={() => setProfileModalOpen(false)}
+               userId={userId}
+               userEmail={userEmail || ''}
+               onDeleteAccount={handleDeleteAccount}
+            />
          </div>
       );
    } else {

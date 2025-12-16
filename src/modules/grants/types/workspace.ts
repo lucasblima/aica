@@ -89,6 +89,7 @@ export interface RequiredDocument {
   description?: string;
   status: 'required' | 'available' | 'uploaded';
   uploadedPath?: string;
+  uploadedFileName?: string;
   dueDate?: string;
 }
 
