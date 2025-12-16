@@ -23,6 +23,8 @@ interface PodcastDashboardProps {
     onSelectEpisode: (episodeId: string) => void;
     onCreateEpisode: () => void;
     onBack: () => void;
+    isLoadingEpisode?: boolean;
+    loadingEpisodeId?: string | null;
 }
 
 export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
@@ -30,7 +32,9 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
     showTitle: fallbackTitle,
     onSelectEpisode,
     onCreateEpisode,
-    onBack
+    onBack,
+    isLoadingEpisode = false,
+    loadingEpisodeId = null
 }) => {
     const [show, setShow] = useState<PodcastShow | null>(null);
     const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -380,19 +384,33 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                     ) : (
                         /* Episode List */
                         <div className="space-y-3">
-                            {episodes.map(episode => (
+                            {episodes.map(episode => {
+                                const isThisEpisodeLoading = loadingEpisodeId === episode.id;
+                                return (
                                 <div
                                     key={episode.id}
-                                    onClick={() => onSelectEpisode(episode.id)}
+                                    onClick={() => !isLoadingEpisode && onSelectEpisode(episode.id)}
                                     role="button"
-                                    tabIndex={0}
+                                    tabIndex={isLoadingEpisode ? -1 : 0}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
+                                        if (!isLoadingEpisode && (e.key === 'Enter' || e.key === ' ')) {
                                             onSelectEpisode(episode.id);
                                         }
                                     }}
-                                    className="w-full bg-[#F7F6F4] hover:bg-white transition-all duration-200 rounded-xl p-5 text-left group shadow-[2px_2px_6px_rgba(163,158,145,0.1)] hover:shadow-[4px_4px_12px_rgba(163,158,145,0.15)] cursor-pointer outline-none focus:ring-2 focus:ring-amber-500/20"
+                                    className={`relative w-full bg-[#F7F6F4] transition-all duration-200 rounded-xl p-5 text-left group shadow-[2px_2px_6px_rgba(163,158,145,0.1)] outline-none
+                                        ${isLoadingEpisode ? 'cursor-wait' : 'cursor-pointer hover:bg-white hover:shadow-[4px_4px_12px_rgba(163,158,145,0.15)]'}
+                                        ${isThisEpisodeLoading ? 'ring-2 ring-amber-400 bg-amber-50/50' : 'focus:ring-2 focus:ring-amber-500/20'}
+                                        ${isLoadingEpisode && !isThisEpisodeLoading ? 'opacity-60' : ''}`}
                                 >
+                                    {/* Loading Overlay */}
+                                    {isThisEpisodeLoading && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-xl z-10">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-sm text-amber-600 font-medium">Carregando...</span>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex items-start justify-between gap-4">
                                         {/* Episode Info */}
                                         <div className="flex-1 min-w-0">
@@ -472,7 +490,8 @@ export const PodcastDashboard: React.FC<PodcastDashboardProps> = ({
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            );
+                            })}
                         </div>
                     )}
                 </div>

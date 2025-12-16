@@ -141,7 +141,12 @@ export const spaceService = {
         throw new Error('User not authenticated');
       }
 
-      // Get default archetype config
+      // Validate archetype
+      if (!data.archetype || !ARCHETYPE_CONFIG[data.archetype]) {
+        throw new Error(`Invalid archetype: ${data.archetype}. Must be one of: habitat, ventures, academia, tribo`);
+      }
+
+      // Get default archetype config (now guaranteed to exist)
       const archetypeConfig = ARCHETYPE_CONFIG[data.archetype];
 
       const spacePayload = {

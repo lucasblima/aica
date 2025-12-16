@@ -76,8 +76,7 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
         const archetypeId = ids[0];
         console.log('[ConnectionArchetypes] Navegando para:', `/connections/${archetypeId}`);
         navigate(`/connections/${archetypeId}`);
-        // Também chama o callback para compatibilidade
-        onSelectArchetype(archetypeId);
+        // Não chama callback - navegação é suficiente (evita abrir modal)
       }
     }
   });
@@ -85,10 +84,9 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
   // Handler para clique em card - navega diretamente
   const handleCardClick = (archetypeId: string) => {
     if (!multiSelect) {
-      // Modo single-select: navega diretamente
+      // Modo single-select: navega diretamente (não chama callback para evitar abrir modal)
       console.log('[ConnectionArchetypes] Navegando para:', `/connections/${archetypeId}`);
       navigate(`/connections/${archetypeId}`);
-      onSelectArchetype(archetypeId);
     } else {
       // Modo multi-select: usa o toggle
       toggle(archetypeId);

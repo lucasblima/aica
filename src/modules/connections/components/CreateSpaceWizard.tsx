@@ -542,7 +542,7 @@ function ConfigStep({
         {/* Archetype-specific fields could go here */}
         <div className="ceramic-tray p-4 text-center">
           <p className="text-xs text-ceramic-text-secondary italic">
-            Configurações específicas de {archetype || 'espaço'} virão aqui
+            Configurações específicas de {typeof archetype === 'string' ? archetype : 'espaço'} virão aqui
           </p>
         </div>
       </div>
