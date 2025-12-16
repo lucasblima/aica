@@ -92,7 +92,7 @@ export function ProfileModal({
 
           {/* Modal */}
           <motion.div
-            className="relative w-full max-w-md ceramic-card p-0 overflow-hidden"
+            className="relative w-full max-w-md ceramic-card p-0 overflow-hidden max-h-[90vh] overflow-y-auto"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -100,6 +100,7 @@ export function ProfileModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="profile-modal-title"
+            data-testid="profile-modal"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">

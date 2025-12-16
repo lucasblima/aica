@@ -38,7 +38,7 @@ export function DangerZone({ userEmail, onDeleteAccount, isDeleting }: DangerZon
   }
 
   return (
-    <div className="danger-zone">
+    <div className="danger-zone" data-testid="danger-zone" role="region" aria-label="Zona de perigo - ações irreversíveis">
       <h5 className="danger-zone-title">Zona de Perigo</h5>
 
       <AnimatePresence mode="wait">
@@ -54,7 +54,8 @@ export function DangerZone({ userEmail, onDeleteAccount, isDeleting }: DangerZon
             </p>
             <button
               onClick={handleFirstClick}
-              className="danger-zone-btn w-full flex items-center justify-center gap-2"
+              className="danger-zone-btn w-full flex items-center justify-center gap-2 min-h-[44px]"
+              data-testid="delete-account-btn"
             >
               <Trash2 className="w-4 h-4" />
               Deletar Minha Conta

@@ -78,6 +78,9 @@ export function VitalStatsTray({
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
+      data-testid="vital-stats-tray"
+      role="region"
+      aria-label="Estatísticas vitais"
     >
       <div className="grid grid-cols-3 gap-8">
         <StatItem

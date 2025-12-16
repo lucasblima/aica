@@ -317,19 +317,19 @@ export function CreateSpaceWizard({
             <div className="flex items-center justify-between p-6 border-t border-ceramic-text-secondary/10">
               <button
                 onClick={isFirstStep ? handleClose : handleBack}
-                className="ceramic-concave px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-95 active:scale-90 transition-transform"
+                className="ceramic-inset text-ceramic-text-primary hover:text-ceramic-accent rounded-full px-6 py-3 flex items-center gap-2 font-medium transition-all"
               >
                 {isFirstStep ? (
                   <>
                     <X className="w-4 h-4" />
-                    <span className="text-sm font-medium text-ceramic-text-secondary">
+                    <span className="text-sm font-medium">
                       Cancelar
                     </span>
                   </>
                 ) : (
                   <>
                     <ChevronLeft className="w-4 h-4" />
-                    <span className="text-sm font-medium text-ceramic-text-secondary">
+                    <span className="text-sm font-medium">
                       Voltar
                     </span>
                   </>
@@ -339,7 +339,7 @@ export function CreateSpaceWizard({
               <button
                 onClick={handleNext}
                 disabled={!canProceed() || isLoading}
-                className="ceramic-shadow px-6 py-2 rounded-xl flex items-center gap-2 bg-ceramic-accent-dark text-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="ceramic-shadow bg-ceramic-accent text-[#1F1710] rounded-full px-8 py-3 flex items-center gap-2 font-semibold hover:bg-[#C2850A] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-ceramic-accent"
               >
                 {isLoading ? (
                   <>
@@ -599,7 +599,7 @@ function InviteStep({
           <button
             onClick={onAddInvite}
             disabled={!emailInput.trim() || !emailInput.includes('@')}
-            className="ceramic-shadow px-4 py-2 rounded-xl bg-ceramic-accent-dark text-white hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="ceramic-shadow bg-ceramic-accent text-[#1F1710] rounded-full px-4 py-3 hover:bg-[#C2850A] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-ceramic-accent"
           >
             <Mail className="w-4 h-4" />
           </button>
