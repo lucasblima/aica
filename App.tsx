@@ -1,32 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ArrowRight, Users, Briefcase, ChevronRight, Plus } from 'lucide-react';
 import { supabase } from './src/services/supabaseClient';
 import { handleOAuthCallback } from './src/services/googleAuthService';
 import { BottomNav } from './components/BottomNav';
-import { JourneyFullScreen } from './src/modules/journey/views/JourneyFullScreen';
-import { AgendaView } from './src/views/AgendaView';
-import { PodcastCopilotView } from './src/views/PodcastCopilotView';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding } from './src/services/supabaseService';
 import { generateMissingDailyReports } from './src/services/dailyReportService';
-import { FinanceDashboard } from './src/modules/finance/views/FinanceDashboard';
-import { FinanceAgentView } from './src/modules/finance/views/FinanceAgentView';
-import { GrantsModuleView } from './src/modules/grants/views/GrantsModuleView';
 import { NotificationContainer } from './src/components/NotificationContainer';
-import { AICostDashboard } from './src/components/aiCost/AICostDashboard';
-import { FileSearchAnalyticsView } from './src/components/fileSearch/FileSearchAnalyticsView';
 import { ViewState } from './types';
-import { LandingPage, OnboardingFlow } from './src/modules/onboarding';
-import Home from './src/pages/Home';
-import { GuestApprovalPage } from './src/modules/podcast/views/GuestApprovalPage';
-import { ConnectionsPage } from './src/pages/ConnectionsPage';
-import { ArchetypeListPage } from './src/pages/ArchetypeListPage';
-import { SpaceDetailPage } from './src/pages/SpaceDetailPage';
-import { SpaceSectionPage } from './src/pages/SpaceSectionPage';
-import { PrivacyPolicyPage } from './src/pages/PrivacyPolicyPage';
-import { TermsOfServicePage } from './src/pages/TermsOfServicePage';
 import { NavigationProvider, useNavigation } from './src/contexts/NavigationContext';
+import { LoadingScreen } from './src/components/LoadingScreen';
+
+// ==================== LAZY LOADED MODULES ====================
+// Heavy modules are loaded on-demand to reduce initial bundle size
+// This improves First Contentful Paint (FCP) and Time to Interactive (TTI)
+
+// Core Views - Frequently accessed, loaded lazily
+const Home = lazy(() => import('./src/pages/Home'));
+const AgendaView = lazy(() => import('./src/views/AgendaView').then(m => ({ default: m.AgendaView })));
+
+// Journey Module - Self-contained feature
+const JourneyFullScreen = lazy(() => import('./src/modules/journey/views/JourneyFullScreen').then(m => ({ default: m.JourneyFullScreen })));
+
+// Podcast Module - Large module with many components
+const PodcastCopilotView = lazy(() => import('./src/views/PodcastCopilotView').then(m => ({ default: m.PodcastCopilotView })));
+const GuestApprovalPage = lazy(() => import('./src/modules/podcast/views/GuestApprovalPage').then(m => ({ default: m.GuestApprovalPage })));
+
+// Finance Module - Heavy with charts and data processing
+const FinanceDashboard = lazy(() => import('./src/modules/finance/views/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
+const FinanceAgentView = lazy(() => import('./src/modules/finance/views/FinanceAgentView').then(m => ({ default: m.FinanceAgentView })));
+
+// Grants Module - Document processing intensive
+const GrantsModuleView = lazy(() => import('./src/modules/grants/views/GrantsModuleView').then(m => ({ default: m.GrantsModuleView })));
+
+// Connections Module - Multiple nested views
+const ConnectionsPage = lazy(() => import('./src/pages/ConnectionsPage').then(m => ({ default: m.ConnectionsPage })));
+const ArchetypeListPage = lazy(() => import('./src/pages/ArchetypeListPage').then(m => ({ default: m.ArchetypeListPage })));
+const SpaceDetailPage = lazy(() => import('./src/pages/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
+const SpaceSectionPage = lazy(() => import('./src/pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
+
+// Onboarding Module - Only loaded for new users
+const LandingPage = lazy(() => import('./src/modules/onboarding').then(m => ({ default: m.LandingPage })));
+const OnboardingFlow = lazy(() => import('./src/modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
+
+// Analytics/Settings - Rarely accessed
+const AICostDashboard = lazy(() => import('./src/components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
+const FileSearchAnalyticsView = lazy(() => import('./src/components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
+
+// Legal Pages - Rarely accessed
+const PrivacyPolicyPage = lazy(() => import('./src/pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
+const TermsOfServicePage = lazy(() => import('./src/pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
 
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
@@ -577,51 +600,54 @@ function AppContent() {
    );
 
    // Use React Router Routes to ensure proper Router context for all components
+   // Wrapped in Suspense to handle lazy-loaded components
    return (
-      <Routes>
-         {/* Guest Approval Page - Public route for podcast guests */}
-         <Route
-            path="/guest-approval/:episodeId/:approvalToken"
-            element={<GuestApprovalPage />}
-         />
+      <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+         <Routes>
+            {/* Guest Approval Page - Public route for podcast guests */}
+            <Route
+               path="/guest-approval/:episodeId/:approvalToken"
+               element={<GuestApprovalPage />}
+            />
 
-         {/* Landing Page - Unauthenticated users */}
-         <Route
-            path="/landing"
-            element={<LandingPage />}
-         />
+            {/* Landing Page - Unauthenticated users */}
+            <Route
+               path="/landing"
+               element={<LandingPage />}
+            />
 
-         {/* Privacy Policy - Public route */}
-         <Route
-            path="/privacy"
-            element={<PrivacyPolicyPage />}
-         />
+            {/* Privacy Policy - Public route */}
+            <Route
+               path="/privacy"
+               element={<PrivacyPolicyPage />}
+            />
 
-         {/* Terms of Service - Public route */}
-         <Route
-            path="/terms"
-            element={<TermsOfServicePage />}
-         />
+            {/* Terms of Service - Public route */}
+            <Route
+               path="/terms"
+               element={<TermsOfServicePage />}
+            />
 
-         {/* Connections Module Routes - Protected */}
-         {isAuthenticated && (
-            <>
-               {/* Global navigation visible on main connections views */}
-               <Route path="/connections" element={<ConnectionsLayout><ConnectionsPage /></ConnectionsLayout>} />
-               <Route path="/connections/:archetype" element={<ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout>} />
+            {/* Connections Module Routes - Protected */}
+            {isAuthenticated && (
+               <>
+                  {/* Global navigation visible on main connections views */}
+                  <Route path="/connections" element={<ConnectionsLayout><ConnectionsPage /></ConnectionsLayout>} />
+                  <Route path="/connections/:archetype" element={<ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout>} />
 
-               {/* Contextual descent: Detail and section views have back button, no bottom nav */}
-               <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
-               <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
-            </>
-         )}
+                  {/* Contextual descent: Detail and section views have back button, no bottom nav */}
+                  <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
+                  <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
+               </>
+            )}
 
-         {/* Main App - Authenticated users */}
-         <Route
-            path="/*"
-            element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
-         />
-      </Routes>
+            {/* Main App - Authenticated users */}
+            <Route
+               path="/*"
+               element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
+            />
+         </Routes>
+      </Suspense>
    );
 }
 
