@@ -287,9 +287,9 @@ Escreva de forma que o avaliador perceba expertise, viabilidade técnica e poten
  * Constrói o prompt do usuário com contexto específico do campo
  *
  * HIERARQUIA DE CONTEXTO (do mais importante para o menos):
- * 1. Edital PDF Principal (texto extraído do PDF oficial do edital)
- * 2. Documentos Adicionais do Edital (anexos, regulamentos, tabelas - compartilhados entre projetos)
- * 3. Documentos do Projeto (arquivos enviados pelo usuário específicos deste projeto)
+ * 1. Edital PDF (texto extraído do PDF oficial do edital)
+ * 2. Documentos Adicionais do Edital (regulamentos, anexos, tabelas)
+ * 3. Documentos do Projeto (arquivos enviados pelo usuário específicos do projeto)
  * 4. Briefing (respostas manuais do usuário)
  * 5. Respostas Anteriores (para coesão)
  *
@@ -297,7 +297,7 @@ Escreva de forma que o avaliador perceba expertise, viabilidade técnica e poten
  * @param briefing - Briefing do projeto
  * @param previousResponses - Respostas anteriores de outros campos
  * @param sourceDocumentContent - Conteúdo extraído dos documentos do projeto (opcional)
- * @param editalTextContent - Conteúdo extraído do PDF principal do edital (opcional)
+ * @param editalTextContent - Conteúdo extraído do PDF do edital (opcional)
  * @param opportunityDocumentsContent - Conteúdo dos documentos adicionais do edital (opcional)
  * @returns Prompt do usuário formatado
  */
@@ -322,7 +322,7 @@ Obrigatório: ${fieldConfig.required ? 'Sim' : 'Não'}
 
 `
 
-  // 1. PRIORIDADE MÁXIMA: Edital PDF Principal (contexto compartilhado para todos os projetos)
+  // 1. PRIORIDADE MÁXIMA: Edital PDF (contexto compartilhado para todos os projetos)
   if (editalTextContent && editalTextContent.trim().length > 0) {
     prompt += `**📋 EDITAL OFICIAL (PRIORIDADE MÁXIMA - Requisitos e Critérios do Edital):**
 
@@ -333,13 +333,13 @@ ${editalTextContent.substring(0, 20000)}
 `
   }
 
-  // 2. PRIORIDADE ALTA: Documentos Adicionais do Edital (anexos, regulamentos, tabelas de critérios)
+  // 2. PRIORIDADE ALTA: Documentos Adicionais do Edital (regulamentos, anexos, tabelas)
   if (opportunityDocumentsContent && opportunityDocumentsContent.trim().length > 0) {
-    prompt += `**📎 DOCUMENTOS COMPLEMENTARES DO EDITAL (Anexos e Regulamentos Compartilhados):**
+    prompt += `**📑 DOCUMENTOS ADICIONAIS DO EDITAL (Regulamentos, Anexos, Critérios Detalhados):**
 
 ${opportunityDocumentsContent.substring(0, 15000)}
 
-⚠️ IMPORTANTE: Estes são documentos adicionais do edital (regulamentos, tabelas de critérios, anexos). Use estas informações para complementar o entendimento do edital principal.
+⚠️ IMPORTANTE: Estes são documentos complementares do edital (regulamentos, tabelas de critérios, anexos) que fornecem detalhes adicionais sobre requisitos e avaliação. Use estas informações junto com o edital principal.
 
 `
   }
