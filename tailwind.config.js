@@ -57,6 +57,13 @@ export default {
             boxShadow: {
                 'ceramic-inset': 'inset 3px 3px 6px rgba(163, 158, 145, 0.35), inset -3px -3px 6px rgba(255, 255, 255, 1.0)',
                 'ceramic-elevated': '6px 6px 12px rgba(163, 158, 145, 0.35), -6px -6px 12px rgba(255, 255, 255, 1.0)',
+                // Digital Desire - Landing Page V2 shadows
+                'levitation': '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 40px rgba(217, 119, 6, 0.1)',
+                'bento': '6px 6px 12px rgba(163, 158, 145, 0.15), -6px -6px 12px rgba(255, 255, 255, 0.8)',
+                'bento-hover': '8px 8px 16px rgba(163, 158, 145, 0.20), -8px -8px 16px rgba(255, 255, 255, 0.9)',
+            },
+            letterSpacing: {
+                'tighter': '-0.05em',
             }
         }
     },
