@@ -62,6 +62,7 @@ export const USE_CASE_TO_MODEL: Record<string, GeminiModel> = {
   // Journey (Minha Jornada)
   'analyze_moment_sentiment': 'fast',  // Real-time sentiment analysis (< 10s)
   'generate_weekly_summary': 'smart',   // Complex weekly summary (~8s)
+  'generate_daily_question': 'fast',    // AI-driven contextual daily questions (< 3s)
 }
 
 /**
