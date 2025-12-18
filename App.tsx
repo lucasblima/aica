@@ -10,6 +10,7 @@ import { NotificationContainer } from './src/components/NotificationContainer';
 import { ViewState } from './types';
 import { NavigationProvider, useNavigation } from './src/contexts/NavigationContext';
 import { LoadingScreen } from './src/components/LoadingScreen';
+import { StudioProvider } from './src/modules/studio/context/StudioContext';
 
 // ==================== LAZY LOADED MODULES ====================
 // Heavy modules are loaded on-demand to reduce initial bundle size
@@ -26,6 +27,9 @@ const JourneyFullScreen = lazy(() => import('./src/modules/journey/views/Journey
 const PodcastCopilotView = lazy(() => import('./src/views/PodcastCopilotView').then(m => ({ default: m.PodcastCopilotView })));
 const GuestApprovalPage = lazy(() => import('./src/modules/podcast/views/GuestApprovalPage').then(m => ({ default: m.GuestApprovalPage })));
 
+// Studio Module - New refactored podcast module with FSM
+const StudioMainView = lazy(() => import('./src/modules/studio/views/StudioMainView'));
+
 // Finance Module - Heavy with charts and data processing
 const FinanceDashboard = lazy(() => import('./src/modules/finance/views/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
 const FinanceAgentView = lazy(() => import('./src/modules/finance/views/FinanceAgentView').then(m => ({ default: m.FinanceAgentView })));
@@ -40,7 +44,7 @@ const SpaceDetailPage = lazy(() => import('./src/pages/SpaceDetailPage').then(m 
 const SpaceSectionPage = lazy(() => import('./src/pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
 
 // Onboarding Module - Only loaded for new users
-const LandingPage = lazy(() => import('./src/modules/onboarding').then(m => ({ default: m.LandingPage })));
+const LandingPage = lazy(() => import('./src/modules/onboarding').then(m => ({ default: m.LandingPageV2 })));
 const OnboardingFlow = lazy(() => import('./src/modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
 
 // Analytics/Settings - Rarely accessed
@@ -452,12 +456,9 @@ function AppContent() {
 
    // ==================== STUDIO VIEW ====================
    const renderStudio = () => (
-      <PodcastCopilotView
-         userEmail={userEmail || undefined}
-         onLogout={() => setIsAuthenticated(false)}
-         onExit={() => setCurrentView('vida')}
-         onNavVisibilityChange={setShowPodcastNav}
-      />
+      <StudioProvider>
+         <StudioMainView />
+      </StudioProvider>
    );
 
    // ==================== CONNECTIONS VIEW ====================
@@ -610,7 +611,7 @@ function AppContent() {
                element={<GuestApprovalPage />}
             />
 
-            {/* Landing Page - Unauthenticated users */}
+            {/* Landing Page - Digital Ceramic Redesign (Operation "Digital Desire") */}
             <Route
                path="/landing"
                element={<LandingPage />}
@@ -638,6 +639,27 @@ function AppContent() {
                   {/* Contextual descent: Detail and section views have back button, no bottom nav */}
                   <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
                   <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
+               </>
+            )}
+
+            {/* Studio Module Routes - Protected */}
+            {isAuthenticated && (
+               <>
+                  {/* Main Studio route with new StudioMainView */}
+                  <Route
+                     path="/studio"
+                     element={
+                        <StudioProvider>
+                           <StudioMainView />
+                        </StudioProvider>
+                     }
+                  />
+
+                  {/* Backward compatibility: redirect /podcast to /studio */}
+                  <Route
+                     path="/podcast"
+                     element={<Navigate to="/studio" replace />}
+                  />
                </>
             )}
 

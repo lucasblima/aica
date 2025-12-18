@@ -1,13 +1,19 @@
 // Onboarding Module Exports
-export { LandingPage } from './components/LandingPage';
 export { default as OnboardingFlow } from './components/OnboardingFlow';
-export { Header } from './components/landing/Header';
-export { HeroSection } from './components/landing/HeroSection';
-export { ValueProposition } from './components/landing/ValueProposition';
-export { HowItWorks } from './components/landing/HowItWorks';
-export { TrustIndicators } from './components/landing/TrustIndicators';
-export { CTASection } from './components/landing/CTASection';
-export { Footer } from './components/landing/Footer';
+
+// Landing Page - Digital Ceramic Redesign (Operation "Digital Desire")
+export { LandingPageV2 } from './components/landing-v2';
+export {
+  DigitalHero,
+  BentoFeatures,
+  BentoCard,
+  ScrollStory,
+  ScrollStorySection,
+  MinimalFooter,
+  CeramicPillButton,
+  MockupPlaceholder,
+  useScrollReveal,
+} from './components/landing-v2';
 
 // Welcome Tour Components
 export { WelcomeTour } from './components/WelcomeTour';
