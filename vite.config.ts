@@ -46,11 +46,12 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             // Vendor chunks - bibliotecas de terceiros
             if (id.includes('node_modules')) {
-              // React ecosystem - inclui scheduler para evitar dependencia circular
+              // React ecosystem - inclui scheduler e react-router para evitar dependencia circular
               // O scheduler e uma dependencia interna do react-dom e deve estar no mesmo chunk
               if (
                 id.includes('react') ||
                 id.includes('react-dom') ||
+                id.includes('react-router') ||
                 id.includes('scheduler')
               ) {
                 return 'vendor-react';
@@ -72,9 +73,13 @@ export default defineConfig(({ mode }) => {
               if (id.includes('@supabase')) {
                 return 'vendor-supabase';
               }
-              // Lucide (icones)
-              if (id.includes('lucide-react')) {
+              // Lucide icons - biblioteca grande de icones
+              if (id.includes('lucide-react') || id.includes('lucide')) {
                 return 'vendor-icons';
+              }
+              // Heroicons
+              if (id.includes('@heroicons')) {
+                return 'vendor-heroicons';
               }
               // Google Generative AI
               if (
@@ -83,8 +88,32 @@ export default defineConfig(({ mode }) => {
               ) {
                 return 'vendor-google';
               }
-              // Outras bibliotecas de terceiros
-              return 'vendor-other';
+              // TanStack (React Query e React Virtual)
+              if (id.includes('@tanstack')) {
+                return 'vendor-tanstack';
+              }
+              // Date utilities
+              if (id.includes('date-fns') || id.includes('dayjs')) {
+                return 'vendor-date';
+              }
+              // PDF processing - biblioteca pesada
+              if (id.includes('pdfjs-dist') || id.includes('pdf.js')) {
+                return 'vendor-pdf';
+              }
+              // Document processing (mammoth for DOCX)
+              if (id.includes('mammoth')) {
+                return 'vendor-docs';
+              }
+              // Canvas confetti (animations)
+              if (id.includes('canvas-confetti')) {
+                return 'vendor-confetti';
+              }
+              // Axios HTTP client
+              if (id.includes('axios')) {
+                return 'vendor-http';
+              }
+              // Outras bibliotecas de terceiros - agora muito menor
+              return 'vendor-libs';
             }
 
             // Module chunks - modulos da aplicacao
@@ -94,6 +123,18 @@ export default defineConfig(({ mode }) => {
             if (id.includes('src/modules/finance')) {
               return 'module-finance';
             }
+            if (id.includes('src/modules/grants')) {
+              return 'module-grants';
+            }
+            if (id.includes('src/modules/journey')) {
+              return 'module-journey';
+            }
+            if (id.includes('src/modules/connections')) {
+              return 'module-connections';
+            }
+            if (id.includes('src/modules/onboarding')) {
+              return 'module-onboarding';
+            }
 
             // Services chunk
             if (id.includes('src/services')) {
@@ -102,8 +143,8 @@ export default defineConfig(({ mode }) => {
           }
         }
       },
-      // Aumentar o limite de warning para chunks grandes
-      chunkSizeWarningLimit: 600,
+      // Limite de warning para chunks grandes (500KB target)
+      chunkSizeWarningLimit: 500,
       // Usar esbuild para minificacao (mais rapido que terser)
       minify: 'esbuild',
       // Remover console.log em producao
