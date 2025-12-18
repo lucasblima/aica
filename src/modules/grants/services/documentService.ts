@@ -138,6 +138,70 @@ async function extractTextFromTxt(file: File): Promise<string> {
 }
 
 /**
+ * Extrai texto de arquivo .csv
+ * Converte CSV para formato texto estruturado
+ */
+async function extractTextFromCSV(file: File): Promise<string> {
+  try {
+    const text = await file.text();
+    const lines = text.split('\n').filter(line => line.trim());
+
+    if (lines.length === 0) {
+      return '';
+    }
+
+    // Parse CSV manualmente (simples, sem biblioteca externa)
+    const parseCsvLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+
+      result.push(current.trim());
+      return result;
+    };
+
+    // Processar header e linhas
+    const header = parseCsvLine(lines[0]);
+    const rows = lines.slice(1).map(line => parseCsvLine(line));
+
+    // Formatar como texto estruturado para a IA
+    let output = `Arquivo CSV: ${file.name}\n\n`;
+    output += `Colunas: ${header.join(', ')}\n\n`;
+    output += `Total de linhas: ${rows.length}\n\n`;
+    output += '--- Dados ---\n\n';
+
+    // Incluir todas as linhas em formato legível
+    rows.forEach((row, index) => {
+      output += `Linha ${index + 1}:\n`;
+      header.forEach((col, colIndex) => {
+        if (row[colIndex]) {
+          output += `  ${col}: ${row[colIndex]}\n`;
+        }
+      });
+      output += '\n';
+    });
+
+    return output;
+  } catch (error) {
+    console.error('[Document] CSV extraction error:', error);
+    throw new Error('Falha ao processar arquivo CSV');
+  }
+}
+
+/**
  * Extrai texto de arquivo .md (Markdown)
  */
 async function extractTextFromMarkdown(file: File): Promise<string> {
@@ -191,84 +255,6 @@ async function extractTextFromDocx(file: File): Promise<string> {
     console.error('[Document] DOCX extraction error:', error);
     throw new Error('Falha ao processar arquivo DOCX');
   }
-}
-
-/**
- * Extrai texto de arquivo .csv e formata para leitura pela IA
- */
-async function extractTextFromCSV(file: File): Promise<string> {
-  try {
-    const text = await file.text();
-    const lines = text.split('\n').filter(line => line.trim());
-
-    if (lines.length === 0) {
-      return '';
-    }
-
-    // Detecta o delimitador (vírgula, ponto-e-vírgula, ou tab)
-    const firstLine = lines[0];
-    let delimiter = ',';
-    if (firstLine.includes(';') && !firstLine.includes(',')) {
-      delimiter = ';';
-    } else if (firstLine.includes('\t') && !firstLine.includes(',') && !firstLine.includes(';')) {
-      delimiter = '\t';
-    }
-
-    // Parse headers
-    const headers = parseCSVLine(firstLine, delimiter);
-
-    // Formata para a IA entender melhor
-    let formatted = `=== TABELA CSV: ${file.name} ===\n`;
-    formatted += `Colunas (${headers.length}): ${headers.join(' | ')}\n`;
-    formatted += `Total de linhas de dados: ${lines.length - 1}\n\n`;
-    formatted += `--- DADOS ---\n`;
-
-    // Formata cada linha como objeto para melhor compreensão
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i], delimiter);
-      const rowData = headers.map((header, idx) => {
-        const value = values[idx] || '';
-        return `${header}: ${value}`;
-      }).join(' | ');
-      formatted += `Linha ${i}: ${rowData}\n`;
-    }
-
-    return formatted.trim();
-  } catch (error) {
-    console.error('[Document] CSV extraction error:', error);
-    throw new Error('Falha ao processar arquivo CSV');
-  }
-}
-
-/**
- * Parse uma linha CSV respeitando aspas
- */
-function parseCSVLine(line: string, delimiter: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        // Escaped quote
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === delimiter && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  result.push(current.trim());
-  return result;
 }
 
 /**

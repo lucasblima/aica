@@ -49,9 +49,6 @@ export interface GrantOpportunity {
   // PDF do edital
   edital_pdf_path?: string;
   edital_text_content?: string;
-
-  // Relações (carregadas via join)
-  documents?: OpportunityDocument[]; // Documentos adicionais de contexto do edital
 }
 
 export interface EvaluationCriterion {
@@ -317,10 +314,10 @@ export interface GenerateFieldPayload {
   field_config: FormField;
   briefing: Record<string, string>; // Campos dinâmicos do briefing
   previous_responses?: Record<string, string>;
+  project_id?: string; // ID do projeto (para tracking de AI usage)
   source_document_content?: string | null; // Conteúdo dos documentos do projeto (PDF, MD, DOCX, TXT, CSV)
-  edital_text_content?: string | null; // Conteúdo do PDF principal do edital
-  opportunity_documents_content?: string | null; // Conteúdo dos documentos adicionais do edital (CSV, PDF, etc.)
-  project_id?: string; // ID do projeto (para tracking)
+  edital_text_content?: string | null; // Conteúdo do PDF do edital (contexto compartilhado)
+  opportunity_documents_content?: string | null; // Conteúdo dos documentos adicionais do edital (regulamentos, anexos, tabelas)
 }
 
 // ============================================
