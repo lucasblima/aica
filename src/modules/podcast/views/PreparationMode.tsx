@@ -1,3 +1,8 @@
+/**
+ * @deprecated Replaced by src/modules/studio/views/StudioWizard.tsx
+ * Will be removed in version 2.0
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Search, User, MessageSquare, Zap, Loader2, ArrowRight, Clock, Calendar, Hash, MapPin, Sparkles, Wand2 } from 'lucide-react';
 import { generateDossier, suggestTrendingTheme, suggestTrendingGuest } from '../services/geminiService';

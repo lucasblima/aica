@@ -69,9 +69,13 @@ export function IdentityPassport({
 
   return (
     <motion.div
-      className={`ceramic-passport ${className}`}
+      className={`ceramic-passport cursor-pointer ${className}`}
+      onClick={onOpenProfile}
+      role="button"
+      aria-label="Abrir perfil"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
       data-testid="identity-passport"
     >
@@ -144,20 +148,6 @@ export function IdentityPassport({
             </span>
           </div>
         </div>
-
-        {/* Profile Button */}
-        <motion.button
-          onClick={onOpenProfile}
-          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors text-ceramic-text-primary font-medium text-sm min-h-[44px]"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          aria-label="Abrir configurações da conta"
-          data-testid="profile-button"
-        >
-          <Settings className="w-4 h-4" />
-          <span className="hidden sm:inline">Minha Conta</span>
-          <ChevronRight className="w-4 h-4" />
-        </motion.button>
       </div>
     </motion.div>
   )
