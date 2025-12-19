@@ -12,6 +12,7 @@ import { NavigationProvider, useNavigation } from './src/contexts/NavigationCont
 import { LoadingScreen } from './src/components/LoadingScreen';
 import { StudioProvider } from './src/modules/studio/context/StudioContext';
 import { TestAuth } from './src/components/TestAuth';
+import { useAuth } from './src/hooks/useAuth';
 
 // ==================== LAZY LOADED MODULES ====================
 // Heavy modules are loaded on-demand to reduce initial bundle size
@@ -111,10 +112,11 @@ function AppContent() {
    const navigate = useNavigate();
    const location = useLocation();
    const [currentView, setCurrentView] = useState<ViewState>('vida');
-   const [isAuthenticated, setIsAuthenticated] = useState(false);
-   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-   const [userId, setUserId] = useState<string | null>(null);
-   const [userEmail, setUserEmail] = useState<string | null>(null);
+
+   // 🔄 Phase A: Auth Migration - Using useAuth hook instead of manual state
+   const { user, session, isLoading: isCheckingAuth, isAuthenticated } = useAuth();
+   const userId = user?.id || null;
+   const userEmail = user?.email || null;
    const [associations, setAssociations] = useState<any[]>([]);
    const [agenda, setAgenda] = useState<any[]>([]);
    const [lifeAreas, setLifeAreas] = useState<any[]>([]);
@@ -154,71 +156,9 @@ function AppContent() {
       }
    };
 
-   useEffect(() => {
-      const initAuth = async () => {
-         try {
-            setIsCheckingAuth(true);
-            console.log('[App] 🔐 Verificando sessão de autenticação...');
-
-            // Detecta e limpa URLs com tokens OAuth expirados
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            const hasAuthParams = hashParams.has('access_token') ||
-               hashParams.has('refresh_token') ||
-               hashParams.has('error');
-
-            if (hasAuthParams) {
-               console.log('[App] 🔍 Detectados parâmetros de autenticação na URL');
-            }
-
-            // CRITICAL: Wait for session check BEFORE rendering routes
-            const { data: { session }, error } = await supabase.auth.getSession();
-
-            if (error) {
-               console.error('[App] ❌ Erro ao verificar sessão:', error);
-            }
-
-            if (session) {
-               console.log('[App] ✅ Sessão válida encontrada');
-               setIsAuthenticated(true);
-               setUserId(session.user.id);
-               setUserEmail(session.user.email || null);
-            } else {
-               console.log('[App] ⚠️ Nenhuma sessão válida encontrada');
-               setIsAuthenticated(false);
-               setUserId(null);
-               setUserEmail(null);
-
-               // Limpa parâmetros OAuth expirados da URL
-               if (hasAuthParams) {
-                  console.log('[App] 🧹 Limpando parâmetros de autenticação expirados da URL');
-                  window.history.replaceState(null, '', window.location.pathname);
-               }
-            }
-         } catch (error) {
-            console.error('[App] ❌ Erro crítico ao verificar autenticação:', error);
-            setIsAuthenticated(false);
-            setUserId(null);
-            setUserEmail(null);
-         } finally {
-            setIsCheckingAuth(false);
-            console.log('[App] 🏁 Verificação de autenticação concluída');
-         }
-      };
-
-      initAuth();
-
-      // Listen for auth state changes
-      const {
-         data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-         console.log('[App] 🔄 Auth state changed:', _event);
-         setIsAuthenticated(!!session);
-         setUserId(session?.user?.id || null);
-         setUserEmail(session?.user?.email || null);
-      });
-
-      return () => subscription.unsubscribe();
-   }, []);
+   // 🔄 Phase A: Auth Migration Complete
+   // Manual session management removed - now handled by useAuth hook
+   // The useAuth hook manages: session, user, isLoading, and isAuthenticated
 
    /**
     * Processa callback do OAuth do Google Calendar
