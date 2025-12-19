@@ -415,3 +415,48 @@ body {
   letter-spacing: 0.05em;
   margin-top: 8px;
 }
+/* Ceramic Inset Small - For badges and compact elements */
+.ceramic-inset-sm {
+  background-color: #F0EFE9;
+  border-radius: 9999px;
+  box-shadow:
+    inset 2px 2px 4px rgba(163, 158, 145, 0.25),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.95);
+  padding: 4px 12px;
+}
+
+/* Ceramic Card Flat - Minimal shadow for small module icons */
+.ceramic-card-flat {
+  background-color: #F0EFE9;
+  border-radius: 16px;
+  box-shadow:
+    2px 2px 6px rgba(163, 158, 145, 0.15),
+    -2px -2px 6px rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.ceramic-card-flat:hover {
+  box-shadow:
+    4px 4px 8px rgba(163, 158, 145, 0.20),
+    -4px -4px 8px rgba(255, 255, 255, 0.95);
+}
+
+/* Scrollbar hide utility - Track 2 ModuleTray */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ceramic Badge Small - Track 2 ContextCard */
+.ceramic-badge-sm {
+  background-color: #F0EFE9;
+  border-radius: 9999px;
+  box-shadow:
+    inset 1px 1px 2px rgba(163, 158, 145, 0.2),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.9);
+  padding: 2px 8px;
+}

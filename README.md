@@ -1,102 +1,223 @@
+# AICA Life OS
+
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+
+**Sistema Operacional de Vida Integral**
+*Plataforma integrada para gestão de vida pessoal e profissional*
+
+[![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database-green.svg)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38bdf8.svg)](https://tailwindcss.com/)
+
 </div>
 
-# Run and deploy your AI Studio app
+---
 
-This contains everything you need to run your app locally.
+## 📋 Visão Geral
 
-View your app in AI Studio: https://ai.studio/apps/drive/1YI00vl3LP8v5uAFBNtEGJiqQLDsFGbsz
+AICA Life OS é uma plataforma completa que unifica gestão de vida pessoal e profissional em um único sistema integrado. Combina autoconhecimento, produtividade, conexões significativas e crescimento profissional através de módulos especializados.
 
-## Run Locally
+### Módulos Principais
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **🌟 Minha Jornada** - Autoconhecimento e desenvolvimento pessoal através de momentos diários, perguntas de reflexão e sistema de consciência
+- **🎯 Meu Dia (Atlas)** - Gestão inteligente de tarefas com matriz de Eisenhower e sincronização Google Calendar
+- **🎙️ Estúdio (Podcast Copilot)** - Produção profissional de podcasts com IA (pesquisa de convidados, roteiros, pautas)
+- **🤝 Conexões** - Rede de conexões profissionais organizadas por contexto (Habitat, Academia, Ventures, Tribo)
+- **💼 Captação (Grants)** - Gestão de oportunidades e projetos de financiamento
+- **💰 Finanças** - Controle financeiro integrado
 
 ---
 
-## Features
+## 🚀 Quick Start
 
-### Guest Identification Wizard
-A comprehensive podcast episode creation workflow with dual-path support:
+### Pré-requisitos
 
-- **Public Figure Detection**: Automatic profile search using Gemini Deep Research for Wikipedia-present guests
-- **Manual Entry**: Structured contact collection for common people (phone, email)
-- **Contact Management**: Captures guest information for episode coordination and pauta approval
-- **Smart Episode Creation**: Automatic database entry with proper ownership tracking (user_id)
-- **WCAG 2.1 AA Compliant**: Full accessibility with keyboard navigation, screen readers, and focus management
-- **Error Resilience**: Graceful fallback when AI search fails, allowing manual data entry
+- Node.js 18.x ou superior
+- npm ou yarn
+- Conta Supabase (backend)
+- API Key do Google Gemini
 
-Learn more: [Guest Identification Workflow Documentation](./docs/features/GUEST_IDENTIFICATION_WORKFLOW.md)
+### Instalação
+
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/aica-frontend.git
+cd aica-frontend
+
+# Instale as dependências
+npm install
+
+# Configure as variáveis de ambiente
+cp .env.example .env.local
+# Edite .env.local com suas credenciais
+
+# Inicie o servidor de desenvolvimento
+npm run dev
+```
+
+O aplicativo estará disponível em `http://localhost:3000`
+
+**Para instruções completas de setup e deployment**, consulte: [SETUP_AND_DEPLOYMENT.md](./SETUP_AND_DEPLOYMENT.md)
 
 ---
 
-## Journey Redesign Deployment
+## 🏗️ Arquitetura
 
-The Journey Redesign feature is ready for deployment. This includes database migrations, Edge Functions, and storage setup.
+### Stack Tecnológico
 
-### Quick Deployment
+- **Frontend**: React 18 + TypeScript
+- **Styling**: Tailwind CSS + Ceramic Design System
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **IA**: Google Gemini API
+- **Build**: Vite
+- **State Management**: React Query + Context API
+- **Routing**: React Router v6
 
-For experienced engineers who need to deploy FAST:
+### Estrutura do Projeto
 
-See [QUICK_START_DEPLOYMENT.md](./QUICK_START_DEPLOYMENT.md) - 10 minutes
+```
+aica-frontend/
+├── src/
+│   ├── modules/          # Módulos principais do sistema
+│   │   ├── journey/      # Minha Jornada (moments, questions, CP)
+│   │   ├── studio/       # Estúdio Podcast
+│   │   ├── connections/  # Rede de Conexões
+│   │   ├── grants/       # Captação de Recursos
+│   │   ├── finance/      # Gestão Financeira
+│   │   └── onboarding/   # Fluxo de boas-vindas
+│   ├── components/       # Componentes compartilhados
+│   ├── services/         # Integrações (Supabase, Gemini, Calendar)
+│   ├── hooks/            # React hooks customizados
+│   ├── router/           # Configuração de rotas
+│   └── providers/        # Context providers globais
+├── supabase/
+│   ├── migrations/       # Migrações do banco de dados
+│   └── functions/        # Edge Functions (gemini-chat, etc.)
+├── docs/                 # Documentação organizada
+│   ├── architecture/     # Arquitetura e decisões técnicas
+│   ├── features/         # Documentação de funcionalidades
+│   ├── design/           # Design system e UI/UX
+│   ├── deployment/       # Guias de deployment
+│   ├── testing/          # Testes E2E e estratégias
+│   └── delivery/         # Histórico de entregas
+└── tests/
+    └── e2e/              # Testes end-to-end (Playwright)
+```
 
-### Full Deployment Guide
+---
 
-For complete step-by-step instructions:
+## 📚 Documentação
 
-See [docs/DEPLOYMENT_INSTRUCTIONS_20251206.md](./docs/DEPLOYMENT_INSTRUCTIONS_20251206.md) - 15 min read, 45 min execution
+A documentação está organizada por categoria em `docs/`:
 
-### Deployment Package Contents
+### 🏛️ Arquitetura & Design
+- [Arquitetura Geral](./docs/architecture/) - Diagramas, fluxos e decisões técnicas
+- [Design System Ceramic](./docs/design/CERAMIC_DESIGN_SYSTEM_GUIDANCE.md) - Sistema de design do projeto
+- [Guia de UI/UX](./docs/design/UI_UX_GUIDELINES.md) - Padrões de interface
 
-- Database Migration: `supabase/migrations/20251206_journey_redesign.sql`
-  - 6 tables (moments, weekly_summaries, daily_questions, etc)
-  - 4 functions (CP calculation, point awarding, streak tracking)
-  - 15+ RLS policies
-  - 10 seeded daily questions
+### ⚙️ Features & Integrações
+- [Google Calendar Integration](./docs/features/GOOGLE_CALENDAR_INTEGRATION.md) - Sincronização de calendário
+- [Daily Questions AI](./docs/features/DAILY_QUESTIONS_AI_DRIVEN.md) - Perguntas diárias com IA
+- [Journey Schema Validation](./docs/features/JOURNEY_SCHEMA_VALIDATION_COMPLETE.md) - Sistema de validação
+- [Efficiency Score System](./docs/features/EFFICIENCY_SCORE_SYSTEM.md) - Gamificação e pontuação
 
-- Edge Function: `supabase/functions/gemini-chat/index.ts`
-  - AI sentiment analysis
-  - AI weekly summary generation
-  - Backward-compatible finance chat
+### 🚀 Deployment & Testing
+- [Deployment Guide](./docs/deployment/) - Guias de implantação
+- [E2E Testing](./docs/testing/) - Testes end-to-end com Playwright
+- [Migration Guide](./docs/deployment/MIGRATION_GUIDE.md) - Migrações de banco de dados
 
-- Storage Bucket: `moments-audio`
-  - Audio moment uploads
-  - RLS-protected user folders
+### 📦 Entregas & Sprints
+- [Delivery History](./docs/delivery/) - Histórico de entregas e sprints completados
 
-### Documentation Index
+---
 
-All deployment documentation:
+## 🧪 Testes
 
-[DEPLOYMENT_INDEX.md](./DEPLOYMENT_INDEX.md) - Navigate all deployment files
+```bash
+# Rodar testes E2E
+npm run test:e2e
 
-Key documents:
-- [QUICK_START_DEPLOYMENT.md](./QUICK_START_DEPLOYMENT.md) - Fast deployment guide
-- [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) - Interactive checklist (37 checkpoints)
-- [DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md) - Architecture overview
-- [DEPLOYMENT_REPORT.md](./DEPLOYMENT_REPORT.md) - Complete package report
+# Rodar testes em modo UI
+npm run test:e2e:ui
 
-### Deployment Status
+# Rodar build de produção
+npm run build
+```
 
-Status: Ready for Deployment
+---
 
-- Migration validated
-- Edge Function tested
-- RLS policies reviewed
-- Validation scripts ready
-- Rollback plan documented
+## 🎨 Design System
 
-Risk Level: Low (no breaking changes)
+O projeto utiliza o **Ceramic Design System**, um sistema de design personalizado com:
 
-### Support
+- Efeitos de relevo (emboss/deboss)
+- Paleta de cores neutra e acessível
+- Componentes com estados interativos
+- Suporte WCAG 2.1 AA
 
-For deployment issues, consult:
-1. [DEPLOYMENT_INDEX.md](./DEPLOYMENT_INDEX.md) - Find relevant documentation
-2. [docs/DEPLOYMENT_INSTRUCTIONS_20251206.md](./docs/DEPLOYMENT_INSTRUCTIONS_20251206.md) - Troubleshooting section
-3. [DEPLOYMENT_REPORT.md](./DEPLOYMENT_REPORT.md) - Risk assessment and mitigations
+Consulte: [Ceramic Design System Guide](./docs/design/CERAMIC_DESIGN_SYSTEM_GUIDANCE.md)
+
+---
+
+## 🤝 Desenvolvimento
+
+### Scripts Disponíveis
+
+```bash
+npm run dev          # Inicia servidor de desenvolvimento
+npm run build        # Build de produção
+npm run preview      # Preview do build
+npm run test:e2e     # Testes E2E
+npm run type-check   # Verificação de tipos TypeScript
+```
+
+### Estrutura de Branches
+
+- `main` - Branch principal (produção)
+- `develop` - Branch de desenvolvimento
+- `feature/*` - Features em desenvolvimento
+- `fix/*` - Correções de bugs
+
+---
+
+## 🔒 Segurança & Privacidade
+
+AICA Life OS implementa:
+
+- Row Level Security (RLS) em todas as tabelas Supabase
+- Criptografia de dados sensíveis
+- Autenticação via Supabase Auth
+- Políticas de privacidade LGPD/GDPR compliant
+
+Consulte: [Privacy & Security](./docs/security/PRIVACY_AND_SECURITY.md)
+
+---
+
+## 📝 Licença
+
+[Adicionar informações de licença]
+
+---
+
+## 👥 Equipe
+
+[Adicionar informações da equipe]
+
+---
+
+## 📞 Suporte
+
+Para dúvidas ou problemas:
+
+1. Consulte a [documentação](./docs/)
+2. Verifique o [guia de setup](./SETUP_AND_DEPLOYMENT.md)
+3. Entre em contato com a equipe
+
+---
+
+<div align="center">
+
+**Desenvolvido com ❤️ pela equipe AICA**
+
+</div>

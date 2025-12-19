@@ -1,6 +1,7 @@
 import React from 'react';
 import { ViewState } from '../types';
 import { LayoutGrid, Calendar, Mic, Network, Radio } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface BottomNavProps {
   currentView: ViewState;
@@ -33,14 +34,34 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
             <span className="text-[10px] font-bold tracking-widest uppercase">Agenda</span>
           </button>
 
-          {/* Voice Button (Concave) - Floating above */}
+          {/* Voice Button with Ambient Glow */}
           <div className="relative -top-8">
+            {/* Ambient Glow Ring - only when not listening */}
+            {!isListening && (
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                animate={{
+                  boxShadow: [
+                    '0 0 20px 2px rgba(217, 119, 6, 0.2)',
+                    '0 0 30px 4px rgba(217, 119, 6, 0.3)',
+                    '0 0 20px 2px rgba(217, 119, 6, 0.2)',
+                  ],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+            )}
+
             <button
               onClick={onMicClick}
-              className={`group relative w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-95 ${isListening
-                ? 'bg-rose-500 animate-pulse shadow-rose-500/50'
-                : 'ceramic-concave hover:scale-105'
-                }`}
+              className={`group relative w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                isListening
+                  ? 'bg-rose-500 animate-pulse shadow-lg shadow-rose-500/50'
+                  : 'ceramic-concave hover:scale-105'
+              }`}
             >
               <Mic className={`w-6 h-6 ${isListening ? 'text-white' : 'text-ceramic-text-primary opacity-80'}`} />
               {isListening && (

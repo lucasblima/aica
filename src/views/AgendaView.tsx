@@ -23,11 +23,12 @@ import { NextEventHero } from '../components/NextEventHero';
 import { AgendaTimeline } from '../components/AgendaTimeline';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components/NextTwoDaysView';
 import { Task, Quadrant } from '../../types';
-import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
-import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
-import { TaskList } from '../modules/atlas/components/TaskList';
-import { ProjectList } from '../modules/atlas/components/ProjectList';
-import { AtlasTask } from '../modules/atlas/types/plane';
+// REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
+// import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
+// import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
+// import { TaskList } from '../modules/atlas/components/TaskList';
+// import { ProjectList } from '../modules/atlas/components/ProjectList';
+// import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { TimelineEvent } from '../services/googleCalendarService';
 import { disconnectGoogleCalendar } from '../services/googleAuthService';
@@ -51,14 +52,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [skippedEvents, setSkippedEvents] = useState<Set<string>>(new Set());
 
-    // Atlas Module Integration
-    const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
+    // REMOVED: Atlas Module Integration (deprecated - moved to _deprecated/modules/)
+    // const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
 
-    // B1: Wrapper function to ensure task list synchronization
-    const handleAddTask = async (input: any) => {
-        await addAtlasTask(input);
-        await loadAllTasks(); // Refresh all data to sync TaskList
-    };
+    // REMOVED: Atlas task creation wrapper function
+    // const handleAddTask = async (input: any) => {
+    //     await addAtlasTask(input);
+    //     await loadAllTasks(); // Refresh all data to sync TaskList
+    // };
 
     // Google Calendar Integration - Buscar próximos 7 dias
     // Usar useMemo para evitar recriar datas a cada render e causar loop
@@ -210,39 +211,32 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         return merged;
     }, [timelineTasks, calendarEvents, selectedDate]);
 
-    // Merge Atlas Tasks with Matrix Tasks
-    const mergedMatrixTasks = useMemo(() => {
-        const merged = { ...matrixTasks };
-
-        atlasTasks.forEach(atlasTask => {
-            // Use Eisenhower Matrix dimensions (is_urgent, is_important) to determine quadrant
-            let quadrant: Quadrant = 'low';
-
-            if (atlasTask.is_urgent && atlasTask.is_important) {
-                quadrant = 'urgent-important';
-            } else if (!atlasTask.is_urgent && atlasTask.is_important) {
-                quadrant = 'important';
-            } else if (atlasTask.is_urgent && !atlasTask.is_important) {
-                quadrant = 'urgent';
-            } else {
-                quadrant = 'low';
-            }
-
-            // Map AtlasTask to Task
-            const task: Task = {
-                id: atlasTask.id,
-                title: atlasTask.title,
-                priority_quadrant: quadrant,
-                priority: atlasTask.priority,
-                // Add visual indicator for optimistic/syncing state if needed
-                // For now, we just treat it as a normal task
-            };
-
-            merged[quadrant] = [task, ...merged[quadrant]];
-        });
-
-        return merged;
-    }, [matrixTasks, atlasTasks]);
+    // REMOVED: Atlas Tasks merging logic (deprecated - moved to _deprecated/modules/)
+    // const mergedMatrixTasks = useMemo(() => {
+    //     const merged = { ...matrixTasks };
+    //     atlasTasks.forEach(atlasTask => {
+    //         // Use Eisenhower Matrix dimensions (is_urgent, is_important) to determine quadrant
+    //         let quadrant: Quadrant = 'low';
+    //         if (atlasTask.is_urgent && atlasTask.is_important) {
+    //             quadrant = 'urgent-important';
+    //         } else if (!atlasTask.is_urgent && atlasTask.is_important) {
+    //             quadrant = 'important';
+    //         } else if (atlasTask.is_urgent && !atlasTask.is_important) {
+    //             quadrant = 'urgent';
+    //         } else {
+    //             quadrant = 'low';
+    //         }
+    //         // Map AtlasTask to Task
+    //         const task: Task = {
+    //             id: atlasTask.id,
+    //             title: atlasTask.title,
+    //             priority_quadrant: quadrant,
+    //             priority: atlasTask.priority,
+    //         };
+    //         merged[quadrant] = [task, ...merged[quadrant]];
+    //     });
+    //     return merged;
+    // }, [matrixTasks, atlasTasks]);
 
     // Identify next event and rest of day
     const { nextEvent, restOfDay } = useMemo(() => {
@@ -716,13 +710,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         />
                     </section>
 
-                    {/* Atlas Quick Add - Abaixo do foco principal */}
-                    <div className="flex-none max-w-2xl mx-auto w-full">
+                    {/* REMOVED: Atlas Quick Add (deprecated - moved to _deprecated/modules/) */}
+                    {/* <div className="flex-none max-w-2xl mx-auto w-full">
                         <TaskCreationInput
                             onAddTask={handleAddTask}
                             isSyncing={isAtlasSyncing}
                         />
-                    </div>
+                    </div> */}
 
                     {/* TIMELINE: Mais Tarde */}
                     {restOfDay.length > 0 && (
@@ -758,14 +752,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         </h2>
                         <PriorityMatrix
                             userId={userId}
-                            tasks={mergedMatrixTasks}
+                            tasks={matrixTasks}
                             isLoading={isLoading}
                             onRefresh={loadAllTasks}
                         />
                     </div>
 
-                    {/* Task List - Complete CRUD */}
-                    <div className="flex-none max-w-2xl mx-auto w-full">
+                    {/* REMOVED: Atlas Task List (deprecated - moved to _deprecated/modules/) */}
+                    {/* <div className="flex-none max-w-2xl mx-auto w-full">
                         <TaskList
                             tasks={Object.values(matrixTasks).flat().map(task => ({
                                 id: task.id,
@@ -782,12 +776,12 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             }))}
                             onTaskCreated={loadAllTasks}
                         />
-                    </div>
+                    </div> */}
 
-                    {/* Projects Section */}
-                    <div className="flex-none max-w-4xl mx-auto w-full">
+                    {/* REMOVED: Atlas Projects Section (deprecated - moved to _deprecated/modules/) */}
+                    {/* <div className="flex-none max-w-4xl mx-auto w-full">
                         <ProjectList />
-                    </div>
+                    </div> */}
                 </main>
 
                 <DragOverlay>
