@@ -4,8 +4,6 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus } from 'lucide-react';
 import { HeaderGlobal } from '../components/HeaderGlobal';
 import { IdentityPassport } from '../components/IdentityPassport';
-import { VitalStatsTray } from '../components/VitalStatsTray';
-import { EfficiencyFlowCard } from '../components/EfficiencyFlowCard';
 import { ProfileModal } from '../components/ProfileModal';
 import { ConnectionArchetypes } from '../components/ConnectionArchetypes';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
@@ -55,6 +53,23 @@ interface HomeProps {
    onCreateAssociation: () => void;
 }
 
+interface LifeArea {
+   id: string;
+   label: string;
+   icon: string;
+   route: ViewState;
+}
+
+// Life Areas configuration for minimalst grid
+const LIFE_AREAS: LifeArea[] = [
+   { id: 'finance', label: 'Finanças', icon: '💰', route: 'finance' },
+   { id: 'health', label: 'Saúde', icon: '🫀', route: 'health' },
+   { id: 'education', label: 'Educação', icon: '📚', route: 'education' },
+   { id: 'legal', label: 'Jurídico', icon: '⚖️', route: 'legal' },
+   { id: 'professional', label: 'Profissional', icon: '💼', route: 'professional' },
+   { id: 'relationships', label: 'Relacionamentos', icon: '💝', route: 'relationships' },
+];
+
 export default function Home({
    userId,
    userEmail,
@@ -81,7 +96,7 @@ export default function Home({
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
 
-   // Get CP stats for VitalStatsTray
+   // Get CP stats for streak integration
    const { stats: cpStats } = useConsciousnessPoints();
 
    // Handle account deletion
@@ -147,110 +162,99 @@ export default function Home({
                onLogout={onLogout}
                onNavigateToAICost={onNavigateToAICost}
                onNavigateToFileSearch={onNavigateToFileSearch}
-               showTabs={true}
+               showTabs={false}
                activeTab={activeTab}
                onTabChange={handleTabChange}
             />
 
             <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-8">
-               {/* 1. Identity Passport - Full Width Hero */}
+               {/* 1. Identity Passport - Full Width Hero with Streak Badge */}
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
                   custom={0}
+                  className="relative"
                >
                   <IdentityPassport
                      userId={userId}
                      onOpenProfile={() => setProfileModalOpen(true)}
                   />
+                  {/* GAP 5: Streak Badge - Minimalista */}
+                  <motion.div
+                     className="absolute top-4 right-4 sm:top-6 sm:right-6"
+                     initial={{ opacity: 0, scale: 0.8 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     transition={{ delay: 0.3, duration: 0.4, type: 'spring', stiffness: 200 }}
+                  >
+                     <div className="ceramic-inset-sm px-3 py-1 flex items-center gap-2">
+                        <span className="text-base">🔥</span>
+                        <span className="text-amber-600 text-xs font-bold">{cpStats?.current_streak || 0} dias</span>
+                     </div>
+                  </motion.div>
                </motion.div>
 
-               {/* 2. Vital Stats Tray - Full Width */}
-               <motion.div
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={1}
-                  onClick={() => onNavigateToView('journey')}
-                  className="cursor-pointer"
-               >
-                  <VitalStatsTray
-                     streak={cpStats?.current_streak || 0}
-                     moments={cpStats?.total_moments || 0}
-                     reflections={cpStats?.total_summaries_reflected || 0}
-                  />
-               </motion.div>
 
-               {/* 3. Efficiency Flow Card - Full Width */}
-               {userId && (
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={2}
-                  >
-                     <EfficiencyFlowCard userId={userId} days={30} />
-                  </motion.div>
-               )}
+               {/* GAP 6: Life Modules Grid - Minimalista Ícones */}
+               <div className="space-y-6">
+                  {/* Primary Modules: Finance & Grants */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                     {/* Finanças */}
+                     {userId ? (
+                        <motion.div
+                           variants={cardVariants}
+                           initial="hidden"
+                           animate="visible"
+                           custom={2}
+                           className="cursor-pointer hover:scale-[1.01] transition-transform"
+                           onClick={() => onNavigateToView('finance')}
+                        >
+                           <FinanceCard userId={userId} />
+                        </motion.div>
+                     ) : (
+                        <motion.div
+                           variants={cardVariants}
+                           initial="hidden"
+                           animate="visible"
+                           custom={2}
+                        >
+                           <ModuleCard
+                              moduleId="finance"
+                              title="Finanças"
+                              icon={Wallet}
+                              color="emerald"
+                              accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
+                           />
+                        </motion.div>
+                     )}
 
-               {/* Life Modules Grid - Normalized Bento Layout */}
-               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Finanças */}
-                  {userId ? (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={2}
-                        className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
-                        onClick={() => onNavigateToView('finance')}
-                     >
-                        <FinanceCard userId={userId} />
-                     </motion.div>
-                  ) : (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={2}
-                     >
-                        <ModuleCard
-                           moduleId="finance"
-                           title="Finanças"
-                           icon={Wallet}
-                           color="emerald"
-                           accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
-                        />
-                     </motion.div>
-                  )}
-
-                  {/* Grants Module */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={3}
-                     className="col-span-2 row-span-2 cursor-pointer hover:scale-[1.01] transition-transform"
-                     onClick={() => onNavigateToView('grants')}
-                  >
-                     <GrantsCard
-                        activeProjects={grantsActiveProjects}
-                        upcomingDeadlines={grantsUpcomingDeadlines}
-                        recentProjects={grantsRecentProjects}
-                        onOpenModule={() => onNavigateToView('grants')}
-                        onCreateProject={() => onNavigateToView('grants')}
-                     />
-                  </motion.div>
-
-                  {/* Módulos Secundários - Colapsar quando todos vazios */}
-                  {allSecondaryModulesLoaded && allSecondaryModulesEmpty ? (
+                     {/* Grants Module */}
                      <motion.div
                         variants={cardVariants}
                         initial="hidden"
                         animate="visible"
                         custom={3}
-                        className="ceramic-card p-5 min-h-[180px] col-span-1 sm:col-span-2 lg:col-span-3 flex items-center justify-center"
+                        className="cursor-pointer hover:scale-[1.01] transition-transform"
+                        onClick={() => onNavigateToView('grants')}
+                     >
+                        <GrantsCard
+                           activeProjects={grantsActiveProjects}
+                           upcomingDeadlines={grantsUpcomingDeadlines}
+                           recentProjects={grantsRecentProjects}
+                           onOpenModule={() => onNavigateToView('grants')}
+                           onCreateProject={() => onNavigateToView('grants')}
+                        />
+                     </motion.div>
+                  </div>
+
+                  {/* Secondary Modules - Minimalst Icon Grid */}
+                  {allSecondaryModulesLoaded && allSecondaryModulesEmpty ? (
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={4}
+                        className="ceramic-card p-5 min-h-[120px] flex items-center justify-center"
                      >
                         <div className="flex items-center gap-3">
                            <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
@@ -258,75 +262,85 @@ export default function Home({
                            </div>
                            <div>
                               <p className="font-bold text-ceramic-text-primary">Tudo em equilíbrio</p>
-                              <p className="text-sm text-ceramic-text-secondary">
-                                 Sem pendências
-                              </p>
+                              <p className="text-sm text-ceramic-text-secondary">Sem pendências</p>
                            </div>
                         </div>
                      </motion.div>
                   ) : (
-                     <>
-                        {/* Saúde & Bem-estar */}
-                        <motion.div
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={3}
-                        >
-                           <ModuleCard
-                              moduleId="health"
-                              title="Saúde"
-                              icon={Heart}
-                              color="orange"
-                              accentColor="bg-orange-50 border-orange-100 text-orange-600"
-                              onTasksLoaded={handleTasksLoaded}
-                           />
-                        </motion.div>
-
-                        {/* Educação */}
-                        <motion.div
+                     <div className="grid grid-cols-3 lg:grid-cols-4 gap-4">
+                        {/* Saúde */}
+                        <motion.button
                            variants={cardVariants}
                            initial="hidden"
                            animate="visible"
                            custom={4}
+                           onClick={() => onNavigateToView('health')}
+                           className="ceramic-card-flat p-4 flex flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
+                           whileHover={{ scale: 1.05 }}
+                           whileTap={{ scale: 0.98 }}
                         >
-                           <ModuleCard
-                              moduleId="education"
-                              title="Educação"
-                              icon={BookOpen}
-                              color="amber"
-                              accentColor="bg-amber-50 border-amber-100 text-amber-600"
-                              onTasksLoaded={handleTasksLoaded}
-                           />
-                        </motion.div>
+                           <div className="text-4xl sm:text-3xl">🫀</div>
+                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Saúde</span>
+                        </motion.button>
 
-                        {/* Jurídico */}
-                        <motion.div
+                        {/* Educação */}
+                        <motion.button
                            variants={cardVariants}
                            initial="hidden"
                            animate="visible"
                            custom={5}
+                           onClick={() => onNavigateToView('education')}
+                           className="ceramic-card-flat p-4 flex flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
+                           whileHover={{ scale: 1.05 }}
+                           whileTap={{ scale: 0.98 }}
                         >
-                           <ModuleCard
-                              moduleId="legal"
-                              title="Jurídico"
-                              icon={Scale}
-                              color="slate"
-                              accentColor="bg-slate-50 border-slate-100 text-slate-600"
-                              onTasksLoaded={handleTasksLoaded}
-                           />
-                        </motion.div>
-                     </>
-                  )}
+                           <div className="text-4xl sm:text-3xl">📚</div>
+                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Educação</span>
+                        </motion.button>
 
+                        {/* Jurídico */}
+                        <motion.button
+                           variants={cardVariants}
+                           initial="hidden"
+                           animate="visible"
+                           custom={6}
+                           onClick={() => onNavigateToView('legal')}
+                           className="ceramic-card-flat p-4 flex flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
+                           whileHover={{ scale: 1.05 }}
+                           whileTap={{ scale: 0.98 }}
+                        >
+                           <div className="text-4xl sm:text-3xl">⚖️</div>
+                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Jurídico</span>
+                        </motion.button>
+
+                        {/* Profissional - Hidden on mobile, visible on lg */}
+                        <motion.button
+                           variants={cardVariants}
+                           initial="hidden"
+                           animate="visible"
+                           custom={7}
+                           onClick={() => onNavigateToView('professional')}
+                           className="hidden lg:flex ceramic-card-flat p-4 flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
+                           whileHover={{ scale: 1.05 }}
+                           whileTap={{ scale: 0.98 }}
+                        >
+                           <div className="text-4xl sm:text-3xl">💼</div>
+                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Profissional</span>
+                        </motion.button>
+                     </div>
+                  )}
+               </div>
+
+               {/* Network & Podcast Cards */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Associações */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={6}
+                     custom={8}
                      onClick={() => setActiveTab('network')}
-                     className="ceramic-card relative overflow-hidden p-5 min-h-[180px] flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+                     className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
                      <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
                      <div className="relative z-10 flex flex-col h-full">
@@ -334,13 +348,13 @@ export default function Home({
                            <div className="ceramic-inset p-2">
                               <Building2 className="w-5 h-5 text-blue-600" />
                            </div>
-                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Associações</span>
+                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
                         </div>
                         <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
-                           {associations.filter(a => a.type !== 'personal').length} Conexões Ativas
+                           {associations.filter(a => a.type !== 'personal').length} Conexões
                         </p>
                         <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
-                           <span>Ver Rede</span>
+                           <span>Ver</span>
                            <ChevronRight className="w-3 h-3" />
                         </div>
                      </div>
@@ -351,9 +365,9 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={7}
+                     custom={9}
                      onClick={() => onNavigateToView('podcast')}
-                     className="ceramic-card relative overflow-hidden p-5 min-h-[180px] flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+                     className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
                      <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-purple-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
                      <div className="relative z-10 flex flex-col h-full">
@@ -364,10 +378,10 @@ export default function Home({
                            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Studio</span>
                         </div>
                         <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
-                           Podcast Copilot
+                           Podcast
                         </p>
                         <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
-                           <span>Gerar Pauta</span>
+                           <span>Gerar</span>
                            <ChevronRight className="w-3 h-3" />
                         </div>
                      </div>
@@ -398,7 +412,7 @@ export default function Home({
                onLogout={onLogout}
                onNavigateToAICost={onNavigateToAICost}
                onNavigateToFileSearch={onNavigateToFileSearch}
-               showTabs={true}
+               showTabs={false}
                activeTab={activeTab}
                onTabChange={handleTabChange}
             />

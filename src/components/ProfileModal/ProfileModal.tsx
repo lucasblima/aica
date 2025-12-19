@@ -8,8 +8,9 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Mail, Calendar, Shield, AlertTriangle } from 'lucide-react'
+import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp } from 'lucide-react'
 import { DangerZone } from './DangerZone'
+import { EfficiencyFlowCard } from '@/components/EfficiencyFlowCard'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -49,6 +50,7 @@ export function ProfileModal({
   onDeleteAccount,
 }: ProfileModalProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'profile' | 'metrics'>('profile')
 
   const handleDeleteAccount = async () => {
     try {
@@ -118,77 +120,128 @@ export function ProfileModal({
               </motion.button>
             </div>
 
+            {/* Tab Selector */}
+            <div className="flex border-b border-ceramic-text-secondary/10">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`flex-1 py-3 text-sm font-bold transition-colors ${
+                  activeTab === 'profile'
+                    ? 'text-ceramic-text-primary border-b-2 border-amber-500'
+                    : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+                }`}
+              >
+                Perfil
+              </button>
+              <button
+                onClick={() => setActiveTab('metrics')}
+                className={`flex-1 py-3 text-sm font-bold transition-colors ${
+                  activeTab === 'metrics'
+                    ? 'text-ceramic-text-primary border-b-2 border-amber-500'
+                    : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+                }`}
+              >
+                Metricas
+              </button>
+            </div>
+
             {/* Content */}
             <div className="p-6 space-y-6">
-              {/* User Info */}
-              <div className="flex items-center gap-4">
-                <div className="ceramic-avatar-recessed">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt={userName || userEmail}
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-xl">
-                      {initials}
+              {activeTab === 'profile' ? (
+                <>
+                  {/* User Info Section */}
+                <div className="flex items-center gap-4">
+                  <div className="ceramic-avatar-recessed">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={userName || userEmail}
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-xl">
+                        {initials}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-ceramic-text-primary text-lg">
+                      {userName || 'Usuario'}
+                    </h3>
+                    <p className="text-sm text-ceramic-text-secondary">{userEmail}</p>
+                  </div>
+                </div>
+
+                {/* Account Info */}
+                <div className="ceramic-stats-tray space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-ceramic-text-secondary" />
+                    <div>
+                      <p className="text-xs text-ceramic-text-secondary">Email</p>
+                      <p className="text-sm font-medium text-ceramic-text-primary">{userEmail}</p>
                     </div>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-bold text-ceramic-text-primary text-lg">
-                    {userName || 'Usuario'}
-                  </h3>
-                  <p className="text-sm text-ceramic-text-secondary">{userEmail}</p>
-                </div>
-              </div>
-
-              {/* Account Info */}
-              <div className="ceramic-stats-tray space-y-4">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-ceramic-text-secondary" />
-                  <div>
-                    <p className="text-xs text-ceramic-text-secondary">Email</p>
-                    <p className="text-sm font-medium text-ceramic-text-primary">{userEmail}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
+                    <div>
+                      <p className="text-xs text-ceramic-text-secondary">Membro desde</p>
+                      <p className="text-sm font-medium text-ceramic-text-primary">{formattedDate}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-4 h-4 text-ceramic-text-secondary" />
+                    <div>
+                      <p className="text-xs text-ceramic-text-secondary">ID da Conta</p>
+                      <p className="text-sm font-mono text-ceramic-text-primary truncate max-w-[200px]">
+                        {userId.slice(0, 8)}...
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
-                  <div>
-                    <p className="text-xs text-ceramic-text-secondary">Membro desde</p>
-                    <p className="text-sm font-medium text-ceramic-text-primary">{formattedDate}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Shield className="w-4 h-4 text-ceramic-text-secondary" />
-                  <div>
-                    <p className="text-xs text-ceramic-text-secondary">ID da Conta</p>
-                    <p className="text-sm font-mono text-ceramic-text-primary truncate max-w-[200px]">
-                      {userId.slice(0, 8)}...
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Data Sovereignty Section */}
-              <div className="pt-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-4 h-4 text-ceramic-text-secondary" />
-                  <h4 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                    Soberania de Dados
-                  </h4>
-                </div>
-                <p className="text-xs text-ceramic-text-secondary mb-4">
-                  Voce tem controle total sobre seus dados. A exclusao da conta remove permanentemente
-                  todas as suas informacoes de nossos servidores.
-                </p>
+                  {/* Data Sovereignty Section */}
+                <div className="pt-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <AlertTriangle className="w-4 h-4 text-ceramic-text-secondary" />
+                    <h4 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                      Soberania de Dados
+                    </h4>
+                  </div>
+                  <p className="text-xs text-ceramic-text-secondary mb-4">
+                    Voce tem controle total sobre seus dados. A exclusao da conta remove permanentemente
+                    todas as suas informacoes de nossos servidores.
+                  </p>
 
-                <DangerZone
-                  userEmail={userEmail}
-                  onDeleteAccount={handleDeleteAccount}
-                  isDeleting={isDeleting}
-                />
-              </div>
+                  <DangerZone
+                    userEmail={userEmail}
+                    onDeleteAccount={handleDeleteAccount}
+                    isDeleting={isDeleting}
+                  />
+                    </div>
+                </>
+              ) : (
+                <>
+                  {/* Metrics Tab */}
+                  <div className="space-y-6">
+                    {/* Efficiency Metrics */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp className="w-4 h-4 text-ceramic-text-secondary" />
+                        <h4 className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                          Metricas de Eficiencia
+                        </h4>
+                      </div>
+                      <EfficiencyFlowCard userId={userId} days={30} />
+                    </div>
+
+                    {/* Placeholder for future metrics */}
+                    <div className="ceramic-inset p-4 text-center">
+                      <p className="text-sm text-ceramic-text-secondary">
+                        Mais metricas em breve...
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </motion.div>

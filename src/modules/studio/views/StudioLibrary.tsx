@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, ArrowRight, Mic2 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
-import { PodcastShow } from '../../podcast/types';
-import { CreatePodcastDialog } from '../../podcast/components/CreatePodcastDialog';
+import { PodcastShow } from '../types/podcast';
+import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
 import { HeaderGlobal } from '../../../components/HeaderGlobal';
 import type { StudioLibraryProps, StudioProject } from '../types/studio';
 
@@ -72,7 +72,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       const { data, error } = await supabase
         .from('podcast_episodes')
         .select('*')
-        .eq('podcast_show_id', showId)
+        .eq('show_id', showId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -140,7 +140,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
   };
 
   return (
-    <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+    <div data-testid="studio-library" className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
       {/* Header with HeaderGlobal */}
       <HeaderGlobal
         title="Estúdio Aica"
@@ -163,6 +163,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
             {/* New Show Card - Inset Style */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               <button
+                data-testid="create-new-button"
                 onClick={() => setShowModal(true)}
                 className="group ceramic-inset p-4 flex flex-col items-center justify-center gap-3 hover:scale-[1.02] transition-all duration-300 min-h-[12rem] rounded-2xl"
               >
@@ -176,6 +177,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
               {shows.map(show => (
                 <button
                   key={show.id}
+                  data-testid="show-card"
                   onClick={() => handleToggleExpand(show.id, show)}
                   className="group ceramic-card p-4 text-left hover:scale-[1.02] transition-all duration-300 flex flex-col rounded-2xl"
                 >
@@ -243,6 +245,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
                     {episodesByShow[expandedShowId].map(episode => (
                       <button
                         key={episode.id}
+                        data-testid="episode-card"
                         onClick={() => onSelectProject(episode)}
                         className="group ceramic-card p-4 text-left hover:scale-[1.02] transition-all duration-300 flex flex-col rounded-2xl"
                       >
@@ -338,7 +341,7 @@ function episodeToProject(
     type: 'podcast',
     title: episode.title || 'Untitled Episode',
     description: episode.description,
-    showId: episode.podcast_show_id,
+    showId: episode.show_id,
     showTitle: show.title,
     status: episode.status || 'draft',
     createdAt: new Date(episode.created_at),
