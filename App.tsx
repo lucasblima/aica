@@ -24,12 +24,9 @@ const AgendaView = lazy(() => import('./src/views/AgendaView').then(m => ({ defa
 // Journey Module - Self-contained feature
 const JourneyFullScreen = lazy(() => import('./src/modules/journey/views/JourneyFullScreen').then(m => ({ default: m.JourneyFullScreen })));
 
-// Podcast Module - Large module with many components
-const PodcastCopilotView = lazy(() => import('./src/views/PodcastCopilotView').then(m => ({ default: m.PodcastCopilotView })));
-const GuestApprovalPage = lazy(() => import('./src/modules/podcast/views/GuestApprovalPage').then(m => ({ default: m.GuestApprovalPage })));
-
-// Studio Module - New refactored podcast module with FSM
+// Studio Module - Podcast production with FSM architecture
 const StudioMainView = lazy(() => import('./src/modules/studio/views/StudioMainView'));
+const GuestApprovalPage = lazy(() => import('./src/modules/podcast/views/GuestApprovalPage').then(m => ({ default: m.GuestApprovalPage })));
 
 // Finance Module - Heavy with charts and data processing
 const FinanceDashboard = lazy(() => import('./src/modules/finance/views/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
@@ -131,9 +128,6 @@ function AppContent() {
    // Onboarding State
    const [showOnboarding, setShowOnboarding] = useState(false);
    const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-
-   // Podcast Nav State
-   const [showPodcastNav, setShowPodcastNav] = useState(true);
 
    // Sync view state with URL location
    useEffect(() => {
@@ -448,15 +442,12 @@ function AppContent() {
       // Hide when:
       // 1. In NavigationContext focused mode
       // 2. In a focused ViewState mode
-      // 3. In studio mode and podcast nav is hidden
-      // 4. On detail/section routes (these are handled by React Router and don't use BottomNav)
+      // 3. On detail/section routes (these are handled by React Router and don't use BottomNav)
       const isInFocusedViewState = focusedModes.includes(currentView);
-      const isInStudioWithHiddenNav = currentView === 'studio' && !showPodcastNav;
       const isOnDetailRoute = location.pathname.match(/^\/connections\/[^/]+\/[^/]+/);
 
       const shouldShowGlobalNav = !isFocusedMode &&
                                    !isInFocusedViewState &&
-                                   !isInStudioWithHiddenNav &&
                                    !isOnDetailRoute;
 
       return (
@@ -593,12 +584,6 @@ function AppContent() {
                            <StudioMainView />
                         </StudioProvider>
                      }
-                  />
-
-                  {/* Backward compatibility: redirect /podcast to /studio */}
-                  <Route
-                     path="/podcast"
-                     element={<Navigate to="/studio" replace />}
                   />
                </>
             )}
