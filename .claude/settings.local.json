@@ -103,7 +103,8 @@
       "Bash(git -C \"C:/Users/lucas/repos/Aica_frontend/Aica_frontend\" diff index.css)",
       "Bash(lsof:*)",
       "Bash(git -C \"C:/Users/lucas/repos/Aica_frontend/Aica_frontend\" status --short)",
-      "Bash(timeout 60 npx tsc:*)"
+      "Bash(timeout 60 npx tsc:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

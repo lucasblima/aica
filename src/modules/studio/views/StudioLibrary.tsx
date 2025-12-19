@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, ArrowRight, Mic2 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
-import { PodcastShow } from '../../podcast/types';
-import { CreatePodcastDialog } from '../../podcast/components/CreatePodcastDialog';
+import { PodcastShow } from '../types/podcast';
+import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
 import { HeaderGlobal } from '../../../components/HeaderGlobal';
 import type { StudioLibraryProps, StudioProject } from '../types/studio';
 
