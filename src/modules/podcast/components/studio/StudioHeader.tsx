@@ -50,7 +50,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         <header className="border-b border-[#D6D3CD]/50 px-6 bg-ceramic-base pt-4 pb-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                    <button onClick={onBack} className="text-xs font-bold text-ceramic-text-secondary hover:text-ceramic-text-primary uppercase tracking-wider transition-colors flex items-center gap-1">
+                    <button data-testid="back-to-library" onClick={onBack} className="text-xs font-bold text-ceramic-text-secondary hover:text-ceramic-text-primary uppercase tracking-wider transition-colors flex items-center gap-1">
                         ← Voltar
                     </button>
                     <div className="h-6 w-px bg-[#D6D3CD]" />

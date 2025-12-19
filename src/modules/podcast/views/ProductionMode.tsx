@@ -1,3 +1,8 @@
+/**
+ * @deprecated Replaced by src/modules/podcast/components/stages/ProductionStage.tsx
+ * Will be removed in version 2.0
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

@@ -1,3 +1,34 @@
+/**
+ * @deprecated This file is deprecated and will be removed in version 2.0
+ *
+ * MIGRATION NOTICE:
+ * This component has been replaced by the new Studio Module architecture.
+ *
+ * Old Architecture (Deprecated):
+ * - PodcastCopilotView.tsx (this file) - Monolithic component with race conditions
+ * - Used useEffect-based navigation causing state flickering
+ * - 809 lines with complex guard logic
+ *
+ * New Architecture (Use this instead):
+ * - src/modules/studio/views/StudioMainView.tsx - FSM-based component
+ * - src/modules/studio/context/StudioContext.tsx - Centralized state management
+ * - Eliminates race conditions through explicit state transitions
+ *
+ * Migration Guide:
+ * 1. Replace route: <Route path="/podcast" element={<PodcastCopilotView />} />
+ * 2. With: <Route path="/studio" element={<StudioProvider><StudioMainView /></StudioProvider>} />
+ * 3. The /podcast route now redirects to /studio automatically
+ *
+ * DO NOT USE THIS COMPONENT IN NEW CODE.
+ *
+ * For questions, see:
+ * - docs/architecture/STUDIO_REFACTORING_PLAN.md
+ * - docs/architecture/STUDIO_PHASE_3_4_EXECUTION_PLAN.md
+ *
+ * @see StudioMainView
+ * @see StudioContext
+ */
+
 import React, { useState, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
 import PodcastLibrary from '../modules/podcast/views/PodcastLibrary';
@@ -12,6 +43,7 @@ import TeleprompterWindow from '../modules/podcast/components/TeleprompterWindow
 import type { Dossier, Topic } from '../modules/podcast/types';
 import { StudioLayout } from '../modules/podcast/components/StudioLayout';
 import { ErrorBoundary, ModuleErrorFallback } from '../components/ErrorBoundary';
+import PodcastWorkspace from '../modules/podcast/components/workspace/PodcastWorkspace';
 
 interface PodcastCopilotViewProps {
     userEmail?: string;
@@ -24,6 +56,7 @@ interface PodcastCopilotViewProps {
 type PodcastView =
     | 'library'
     | 'dashboard'
+    | 'workspace'        // NEW: Unified workspace (Phase 1)
     | 'wizard'           // NEW: Guest identification wizard
     | 'preproduction'    // NEW: Pre-production hub
     | 'preparation'      // Legacy (kept for compatibility)
@@ -166,10 +199,10 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             return;
         }
 
-        // PROTECTION 3: If we're in any production flow, don't redirect
+        // PROTECTION 3: If we're in workspace or any production flow, don't redirect
         // These views have their own loading states and should handle missing data gracefully
-        if (view === 'preproduction' || view === 'production' || view === 'postproduction') {
-            console.log('[PodcastCopilot] Guard: In production flow, skipping redirect');
+        if (view === 'workspace' || view === 'preproduction' || view === 'production' || view === 'postproduction') {
+            console.log('[PodcastCopilot] Guard: In workspace/production flow, skipping redirect');
             return;
         }
 
@@ -257,8 +290,8 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 guestData
             });
 
-            console.log('[PodcastCopilot] Setting view to preproduction');
-            setView('preproduction');
+            console.log('[PodcastCopilot] Setting view to workspace');
+            setView('workspace');
         } catch (error) {
             console.error('[PodcastCopilot] Error loading episode:', error);
             alert('Erro ao carregar episódio. Tente novamente.');
@@ -275,7 +308,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         }
     };
 
-    // Dashboard -> Create New Episode -> Wizard (NEW FLOW)
+    // Dashboard -> Create New Episode -> Workspace (NEW FLOW)
     const handleCreateEpisode = async () => {
         console.log('[PodcastCopilot] handleCreateEpisode called', { currentShowId, userId, view });
 
@@ -291,12 +324,14 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             }
 
             // If userId is null, try to re-fetch it
-            if (!userId) {
+            let currentUserId = userId;
+            if (!currentUserId) {
                 console.log('[PodcastCopilot] userId is null, attempting to re-fetch...');
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
                     console.log('[PodcastCopilot] User re-fetched successfully:', user.id);
                     setUserId(user.id);
+                    currentUserId = user.id;
                 } else {
                     console.error('[PodcastCopilot] Failed to get user, showing error');
                     alert('Sessão expirada. Por favor, faça login novamente.');
@@ -304,14 +339,48 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 }
             }
 
-            // Don't create episode here - Wizard will do it
-            console.log('[PodcastCopilot] Setting view to wizard');
-            setView('wizard');
+            // Create empty episode
+            console.log('[PodcastCopilot] Creating empty episode...');
+            const { data: newEpisode, error } = await supabase
+                .from('podcast_episodes')
+                .insert({
+                    show_id: currentShowId,
+                    user_id: currentUserId,
+                    status: 'draft',
+                    title: 'Novo Episódio',
+                    guest_name: '',
+                    episode_theme: '',
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('[PodcastCopilot] Failed to create episode:', error);
+                alert('Erro ao criar episódio: ' + error.message);
+                return;
+            }
+
+            console.log('[PodcastCopilot] Episode created:', newEpisode.id);
+
+            // Update episode state
+            setEpisodeState({
+                episodeId: newEpisode.id,
+                projectId: newEpisode.id,
+                dossier: null,
+                guestData: null,
+            });
+
+            // Navigate to workspace
+            console.log('[PodcastCopilot] Setting view to workspace');
+            setView('workspace');
+        } catch (error) {
+            console.error('[PodcastCopilot] Error creating episode:', error);
+            alert('Erro ao criar episódio. Tente novamente.');
         } finally {
             // Clear transition flag after state is settled
             setTimeout(() => {
                 isTransitioningRef.current = false;
-                console.log('[PodcastCopilot] Transition to wizard complete');
+                console.log('[PodcastCopilot] Transition to workspace complete');
             }, 100);
         }
     };
@@ -440,6 +509,52 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     // CRITICAL: Priority order matters! Wizard and PreProduction must be checked FIRST
     // to prevent visual redirect when currentShowId temporarily becomes null
     console.log('[PodcastCopilot] Rendering, view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
+
+    // 0. PRIORITY: Workspace (NEW unified interface)
+    // CRITICAL: Workspace has highest priority - render it BEFORE any currentShowId checks
+    // This prevents redirects when currentShowId temporarily becomes null during transitions
+    if (view === 'workspace') {
+        console.log('[PodcastCopilot] Rendering Workspace view', {
+            currentEpisodeId,
+            currentShowId,
+            isTransitioning: isTransitioningRef.current
+        });
+
+        // During transition, show loading without checking dependencies
+        // This prevents flash of Library view when state is being updated
+        if (isTransitioningRef.current) {
+            return (
+                <div className="flex items-center justify-center h-screen bg-gray-50">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-gray-600 text-sm">Carregando workspace...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Only show loading if we genuinely don't have the required data
+        if (!currentEpisodeId || !currentShowId) {
+            console.log('[PodcastCopilot] Workspace waiting for data', { currentEpisodeId, currentShowId });
+            return (
+                <div className="flex items-center justify-center h-screen bg-gray-50">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-gray-600 text-sm">Carregando workspace...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <PodcastWorkspace
+                episodeId={currentEpisodeId}
+                showId={currentShowId}
+                showTitle={currentShowTitle}
+                onBack={handleBackToDashboard}
+            />
+        );
+    }
 
     // 1. PRIORITY: Guest Identification Wizard (checked FIRST!)
     // The wizard has absolute priority - if view is 'wizard', render it regardless of other state

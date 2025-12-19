@@ -11,6 +11,7 @@ import { ViewState } from './types';
 import { NavigationProvider, useNavigation } from './src/contexts/NavigationContext';
 import { LoadingScreen } from './src/components/LoadingScreen';
 import { StudioProvider } from './src/modules/studio/context/StudioContext';
+import { TestAuth } from './src/components/TestAuth';
 
 // ==================== LAZY LOADED MODULES ====================
 // Heavy modules are loaded on-demand to reduce initial bundle size
@@ -669,6 +670,14 @@ function AppContent() {
                element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
             />
          </Routes>
+
+         {/* 🧪 DEBUG: Auth Migration Validation (Phase A) - REMOVE AFTER COMPLETION */}
+         <TestAuth
+            currentIsAuthenticated={isAuthenticated}
+            currentUserId={userId}
+            currentUserEmail={userEmail}
+            currentIsCheckingAuth={isCheckingAuth}
+         />
       </Suspense>
    );
 }

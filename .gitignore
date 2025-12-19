@@ -62,3 +62,5 @@ tests/e2e/manual-login.mjs
 *.bak
 *.backup
 *~
+.gemini/
+gha-creds-*.json

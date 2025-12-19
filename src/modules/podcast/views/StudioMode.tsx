@@ -1,3 +1,8 @@
+/**
+ * @deprecated Replaced by src/modules/studio/views/StudioWorkspace.tsx
+ * Will be removed in version 2.0
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Dossier } from '../types';
 import { useGeminiLive } from '../hooks/useGeminiLive';

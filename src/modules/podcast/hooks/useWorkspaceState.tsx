@@ -34,12 +34,16 @@ export function useWorkspaceState({
         setIsLoading(true);
         setError(null);
 
+        console.log('[useWorkspaceState] Loading episode:', episodeId);
+
         // Load episode data
         const { data: episode, error: episodeError } = await supabase
           .from('podcast_episodes')
           .select('*')
           .eq('id', episodeId)
           .single();
+
+        console.log('[useWorkspaceState] Episode query result:', { episode, episodeError });
 
         if (episodeError) throw episodeError;
         if (!episode) throw new Error('Episode not found');
