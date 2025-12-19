@@ -1,5 +1,4 @@
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import { AppProviders } from './src/providers/AppProviders';
 import { AppRouter } from './src/router/AppRouter';
 
@@ -7,7 +6,7 @@ import { AppRouter } from './src/router/AppRouter';
  * App - Root Component
  *
  * Architecture:
- * - BrowserRouter: Enables React Router
+ * - BrowserRouter: Configured in index.tsx (root entry point)
  * - AppProviders: Manages global context providers (NavigationProvider, etc.)
  * - AppRouter: Handles all routing logic and view rendering
  *
@@ -18,10 +17,8 @@ import { AppRouter } from './src/router/AppRouter';
  */
 export default function App() {
    return (
-      <BrowserRouter>
-         <AppProviders>
-            <AppRouter />
-         </AppProviders>
-      </BrowserRouter>
+      <AppProviders>
+         <AppRouter />
+      </AppProviders>
    );
 }
