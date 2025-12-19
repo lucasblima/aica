@@ -64,3 +64,6 @@ tests/e2e/manual-login.mjs
 *~
 .gemini/
 gha-creds-*.json
+
+# Deprecated/Quarantined code (Phase B cleanup)
+_deprecated/

@@ -10,7 +10,7 @@ import React from 'react';
 import type { StudioWorkspaceProps } from '../types/studio';
 
 // Import workspace implementations
-import PodcastWorkspace from '../../podcast/components/workspace/PodcastWorkspace';
+import PodcastWorkspace from '../../../../_deprecated/modules/podcast/components/workspace/PodcastWorkspace';
 
 /**
  * Unsupported project type fallback

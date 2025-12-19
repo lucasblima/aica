@@ -10,7 +10,7 @@
  * - NO useEffect-based navigation logic
  */
 
-import type { PodcastShow } from '../../podcast/types';
+import type { PodcastShow } from './podcast';
 
 // ============================================
 // STUDIO MODE (Finite State Machine)
