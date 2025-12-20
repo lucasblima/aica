@@ -104,7 +104,17 @@
       "Bash(lsof:*)",
       "Bash(git -C \"C:/Users/lucas/repos/Aica_frontend/Aica_frontend\" status --short)",
       "Bash(timeout 60 npx tsc:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh api:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr list:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
