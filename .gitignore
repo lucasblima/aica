@@ -66,4 +66,6 @@ tests/e2e/manual-login.mjs
 gha-creds-*.json
 
 # Deprecated/Quarantined code (Phase B cleanup)
-_deprecated/
+# TEMPORARY: Re-enabled for Cloud Build until workspace migration is complete
+# TODO: Remove this comment and re-enable exclusion after migrating PodcastWorkspace
+# _deprecated/
