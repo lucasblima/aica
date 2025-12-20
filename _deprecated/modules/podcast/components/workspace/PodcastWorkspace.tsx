@@ -29,6 +29,14 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
   const { state, actions, stageCompletions } = usePodcastWorkspace();
   const [isSaving, setIsSaving] = useState(false);
 
+  // DEBUG: Log workspace content state
+  console.log('[WorkspaceContent] Rendering with state:', {
+    isLoading: state.isLoading,
+    error: state.error,
+    currentStage: state.currentStage,
+    visitedStages: state.visitedStages
+  });
+
   // Auto-save with visual feedback
   useAutoSave({
     state,
@@ -127,6 +135,14 @@ export default function PodcastWorkspace({
     episodeId,
     showId,
     showTitle,
+  });
+
+  // DEBUG: Log workspace state
+  console.log('[PodcastWorkspace] Initial state loaded:', {
+    isLoading: initialState.isLoading,
+    error: initialState.error,
+    currentStage: initialState.currentStage,
+    episodeId
   });
 
   // Handle save callback
