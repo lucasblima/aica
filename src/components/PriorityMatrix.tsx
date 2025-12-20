@@ -13,9 +13,12 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Sparkles, Calendar, Clock } from 'lucide-react';
+import { GripVertical, Sparkles, Calendar, Clock, Edit2, Trash2, Filter } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { Task, Quadrant } from '../../types';
+import { TaskEditModal } from './TaskEditModal';
+import { ConfirmationModal } from './ConfirmationModal';
+import { EmptyQuadrantState } from './EmptyQuadrantState';
 
 interface QuadrantConfig {
     id: Quadrant;
@@ -61,8 +64,10 @@ const DroppableQuadrant: React.FC<{
     quadrant: QuadrantConfig;
     tasks: Task[];
     isLoading: boolean;
+    onEditTask: (task: Task) => void;
+    onDeleteTask: (task: Task) => void;
     children?: React.ReactNode;
-}> = ({ quadrant, tasks, isLoading, children }) => {
+}> = ({ quadrant, tasks, isLoading, onEditTask, onDeleteTask, children }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: quadrant.id,
     });
@@ -102,12 +107,10 @@ const DroppableQuadrant: React.FC<{
                         ))}
                     </div>
                 ) : tasks.length === 0 ? (
-                    <div className="text-center py-8 text-ceramic-text-secondary text-sm border-2 border-dashed border-gray-200 rounded-lg">
-                        Arraste tarefas para cá
-                    </div>
+                    <EmptyQuadrantState quadrantType={quadrant.id} />
                 ) : (
                     tasks.map(task => (
-                        <TaskCard key={task.id} task={task} />
+                        <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} />
                     ))
                 )}
             </SortableContext>
@@ -116,7 +119,7 @@ const DroppableQuadrant: React.FC<{
 };
 
 // Sortable Task Card Component
-const TaskCard: React.FC<{ task: Task; isDragging?: boolean }> = ({ task, isDragging }) => {
+const TaskCard: React.FC<{ task: Task; isDragging?: boolean; onEdit: (task: Task) => void; onDelete: (task: Task) => void }> = ({ task, isDragging, onEdit, onDelete }) => {
     const {
         attributes,
         listeners,
@@ -137,19 +140,19 @@ const TaskCard: React.FC<{ task: Task; isDragging?: boolean }> = ({ task, isDrag
         <div
             ref={setNodeRef}
             style={style}
-            className="ceramic-card p-3 mb-2 cursor-move group hover:scale-[1.02] transition-all bg-[#F7F6F4] border-l-4 border-amber-400 shadow-sm"
-            {...attributes}
-            {...listeners}
+            className="ceramic-card p-3 mb-2 group hover:scale-[1.02] transition-all bg-[#F7F6F4] border-l-4 border-amber-400 shadow-sm"
         >
             <div className="flex items-start gap-2">
-                <GripVertical className="w-4 h-4 text-ceramic-text-secondary mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="cursor-move" {...attributes} {...listeners}>
+                    <GripVertical className="w-4 h-4 text-ceramic-text-secondary mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
                 <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-bold text-ceramic-text-primary truncate">
                         {task.title}
                     </h4>
-                    {task.association && (
+                    {task.associations && (
                         <p className="text-xs text-ceramic-text-secondary truncate">
-                            {task.association.name}
+                            {task.associations.name}
                         </p>
                     )}
                     <div className="flex items-center gap-2 mt-1">
@@ -167,6 +170,28 @@ const TaskCard: React.FC<{ task: Task; isDragging?: boolean }> = ({ task, isDrag
                         )}
                     </div>
                 </div>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(task);
+                        }}
+                        className="p-1 rounded-lg hover:bg-ceramic-text-secondary/10 transition-all"
+                        title="Editar tarefa"
+                    >
+                        <Edit2 className="w-4 h-4 text-ceramic-text-secondary" />
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(task);
+                        }}
+                        className="p-1 rounded-lg hover:bg-red-50 transition-all"
+                        title="Remover tarefa"
+                    >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -182,6 +207,107 @@ interface PriorityMatrixProps {
 
 export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, isLoading, onRefresh }) => {
     const [isAicaWorking, setIsAicaWorking] = useState(false);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [selectedAssociation, setSelectedAssociation] = useState<string>('all');
+    const [showFilters, setShowFilters] = useState(false);
+
+    const handleEditTask = (task: Task) => {
+        setEditingTask(task);
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveTask = async (taskId: string, updates: Partial<Task>) => {
+        try {
+            const { error } = await supabase
+                .from('work_items')
+                .update(updates)
+                .eq('id', taskId);
+
+            if (error) throw error;
+
+            console.log('[PriorityMatrix] Task updated:', taskId, updates);
+            onRefresh();
+        } catch (error) {
+            console.error('[PriorityMatrix] Error updating task:', error);
+            throw error;
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditModalOpen(false);
+        setEditingTask(null);
+    };
+
+    const handleDeleteTask = (task: Task) => {
+        setDeletingTask(task);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletingTask) return;
+
+        setIsDeleting(true);
+        try {
+            const { error } = await supabase
+                .from('work_items')
+                .delete()
+                .eq('id', deletingTask.id);
+
+            if (error) throw error;
+
+            console.log('[PriorityMatrix] Task deleted:', deletingTask.id);
+            onRefresh();
+            setIsDeleteModalOpen(false);
+            setDeletingTask(null);
+        } catch (error) {
+            console.error('[PriorityMatrix] Error deleting task:', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setIsDeleteModalOpen(false);
+        setDeletingTask(null);
+    };
+
+    // Extract unique associations from tasks
+    const uniqueAssociations = React.useMemo(() => {
+        const allTasks = Object.values(tasks).flat();
+        const associations = new Set<string>();
+        allTasks.forEach(task => {
+            if (task.associations?.name) {
+                associations.add(task.associations.name);
+            }
+        });
+        return Array.from(associations).sort();
+    }, [tasks]);
+
+    // Filter tasks based on selected association
+    const filteredTasks = React.useMemo(() => {
+        if (selectedAssociation === 'all') {
+            return tasks;
+        }
+
+        const filtered: Record<Quadrant, Task[]> = {
+            'urgent-important': [],
+            'important': [],
+            'urgent': [],
+            'low': []
+        };
+
+        Object.entries(tasks).forEach(([quadrant, taskList]) => {
+            filtered[quadrant as Quadrant] = taskList.filter(task =>
+                task.associations?.name === selectedAssociation
+            );
+        });
+
+        return filtered;
+    }, [tasks, selectedAssociation]);
 
     const handleAicaAuto = async () => {
         setIsAicaWorking(true);
@@ -244,15 +370,55 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                         Eisenhower Matrix - Organize por Urgência & Importância
                     </p>
                 </div>
-                <button
-                    onClick={handleAicaAuto}
-                    disabled={isAicaWorking || isLoading}
-                    className="ceramic-card px-4 py-2 flex items-center gap-2 text-ceramic-text-primary font-bold hover:scale-105 transition-all disabled:opacity-50"
-                >
-                    <Sparkles className={`w-4 h-4 ${isAicaWorking ? 'animate-spin' : ''}`} />
-                    AICA Auto
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="ceramic-card px-4 py-2 flex items-center gap-2 text-ceramic-text-primary font-bold hover:scale-105 transition-all"
+                    >
+                        <Filter className="w-4 h-4" />
+                        Filtros
+                    </button>
+                    <button
+                        onClick={handleAicaAuto}
+                        disabled={isAicaWorking || isLoading}
+                        className="ceramic-card px-4 py-2 flex items-center gap-2 text-ceramic-text-primary font-bold hover:scale-105 transition-all disabled:opacity-50"
+                    >
+                        <Sparkles className={`w-4 h-4 ${isAicaWorking ? 'animate-spin' : ''}`} />
+                        AICA Auto
+                    </button>
+                </div>
             </div>
+
+            {/* Filters Section */}
+            {showFilters && (
+                <div className="mb-6 p-4 ceramic-tray rounded-2xl">
+                    <div className="flex items-center gap-4">
+                        <label className="text-sm font-bold text-ceramic-text-secondary">
+                            Associação:
+                        </label>
+                        <select
+                            value={selectedAssociation}
+                            onChange={(e) => setSelectedAssociation(e.target.value)}
+                            className="flex-1 max-w-xs px-4 py-2 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+                        >
+                            <option value="all">Todas as Associações</option>
+                            {uniqueAssociations.map(association => (
+                                <option key={association} value={association}>
+                                    {association}
+                                </option>
+                            ))}
+                        </select>
+                        {selectedAssociation !== 'all' && (
+                            <button
+                                onClick={() => setSelectedAssociation('all')}
+                                className="px-3 py-2 text-sm rounded-lg ceramic-card text-ceramic-text-secondary hover:text-ceramic-text-primary hover:scale-105 transition-all"
+                            >
+                                Limpar Filtro
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Matrix Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -260,11 +426,36 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                     <DroppableQuadrant
                         key={quadrant.id}
                         quadrant={quadrant}
-                        tasks={tasks[quadrant.id]}
+                        tasks={filteredTasks[quadrant.id]}
                         isLoading={isLoading}
+                        onEditTask={handleEditTask}
+                        onDeleteTask={handleDeleteTask}
                     />
                 ))}
             </div>
+
+            {/* Edit Modal */}
+            {editingTask && (
+                <TaskEditModal
+                    taskId={editingTask.id}
+                    initialData={editingTask}
+                    isOpen={isEditModalOpen}
+                    onSave={handleSaveTask}
+                    onCancel={handleCancelEdit}
+                />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                title="Remover Tarefa"
+                message={`Tem certeza que deseja remover a tarefa "${deletingTask?.title}"? Esta ação não pode ser desfeita.`}
+                confirmText="Remover"
+                variant="danger"
+                isOpen={isDeleteModalOpen}
+                isLoading={isDeleting}
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+            />
         </div>
     );
 };
