@@ -22,6 +22,7 @@ import { CalendarStatusDot } from '../components/CalendarStatusDot';
 import { NextEventHero } from '../components/NextEventHero';
 import { AgendaTimeline } from '../components/AgendaTimeline';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components/NextTwoDaysView';
+import { TaskCreationQuickAdd } from '../components/TaskCreationQuickAdd';
 import { Task, Quadrant } from '../../types';
 // REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
 // import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
@@ -710,13 +711,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         />
                     </section>
 
-                    {/* REMOVED: Atlas Quick Add (deprecated - moved to _deprecated/modules/) */}
-                    {/* <div className="flex-none max-w-2xl mx-auto w-full">
-                        <TaskCreationInput
-                            onAddTask={handleAddTask}
-                            isSyncing={isAtlasSyncing}
+                    {/* Quick Add de Tarefas */}
+                    <section className="max-w-2xl mx-auto w-full">
+                        <TaskCreationQuickAdd
+                            userId={userId}
+                            onTaskCreated={loadAllTasks}
                         />
-                    </div> */}
+                    </section>
 
                     {/* TIMELINE: Mais Tarde */}
                     {restOfDay.length > 0 && (
