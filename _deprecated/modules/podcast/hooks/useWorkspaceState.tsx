@@ -44,6 +44,8 @@ export function useWorkspaceState({
           .single();
 
         console.log('[useWorkspaceState] Episode query result:', { episode, episodeError });
+        console.log('[useWorkspaceState] Episode biography:', episode?.biography);
+        console.log('[useWorkspaceState] Episode data:', JSON.stringify(episode, null, 2));
 
         if (episodeError) throw episodeError;
         if (!episode) throw new Error('Episode not found');
@@ -144,6 +146,15 @@ export function useWorkspaceState({
           currentStage: determineInitialStage(episode, topics),
           visitedStages: determineVisitedStages(episode, topics),
         };
+
+        console.log('[useWorkspaceState] Hydrated state:', {
+          currentStage: hydratedState.currentStage,
+          visitedStages: hydratedState.visitedStages,
+          hasDossier: !!hydratedState.research.dossier,
+          hasTopics: hydratedState.pauta.topics.length,
+          isLoading: false
+        });
+        console.log('[useWorkspaceState] Should transition to:', episode?.biography ? 'research' : 'setup');
 
         setState(hydratedState);
         onLoad?.(hydratedState);

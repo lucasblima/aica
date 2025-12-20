@@ -29,6 +29,14 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
   const { state, actions, stageCompletions } = usePodcastWorkspace();
   const [isSaving, setIsSaving] = useState(false);
 
+  // DEBUG: Log workspace content state
+  console.log('[WorkspaceContent] Rendering with state:', {
+    isLoading: state.isLoading,
+    error: state.error,
+    currentStage: state.currentStage,
+    visitedStages: state.visitedStages
+  });
+
   // Auto-save with visual feedback
   useAutoSave({
     state,
@@ -129,6 +137,14 @@ export default function PodcastWorkspace({
     showTitle,
   });
 
+  // DEBUG: Log workspace state
+  console.log('[PodcastWorkspace] Initial state loaded:', {
+    isLoading: initialState.isLoading,
+    error: initialState.error,
+    currentStage: initialState.currentStage,
+    episodeId
+  });
+
   // Handle save callback
   const handleSave = async (state: any) => {
     // Save is handled by useAutoSave hook inside WorkspaceContent
@@ -156,6 +172,26 @@ export default function PodcastWorkspace({
       </div>
     );
   }
+
+  // Wait for initial state to finish loading before mounting Provider
+  // This ensures the reducer is initialized with the correct isLoading state
+  if (initialState.isLoading) {
+    console.log('[PodcastWorkspace] Waiting for initial state to load...');
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando episódio...</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('[PodcastWorkspace] Mounting provider with loaded state:', {
+    currentStage: initialState.currentStage,
+    isLoading: initialState.isLoading,
+    hasError: !!initialState.error
+  });
 
   return (
     <PodcastWorkspaceProvider
