@@ -4,12 +4,18 @@
  *
  * CRITICAL: This is a THIN wrapper - does NOT duplicate workspace logic
  * It simply routes to the correct workspace implementation
+ *
+ * MIGRATION STATUS:
+ * - Currently using PodcastWorkspace from _deprecated folder
+ * - TODO: Migrate workspace to src/modules/studio/ structure
+ * - See: docs/architecture/STUDIO_WORKSPACE_MIGRATION.md (to be created)
  */
 
 import React from 'react';
 import type { StudioWorkspaceProps } from '../types/studio';
 
-// Import workspace implementations
+// TEMPORARY: Import from _deprecated until migration is complete
+// eslint-disable-next-line import/no-internal-modules
 import PodcastWorkspace from '../../../../_deprecated/modules/podcast/components/workspace/PodcastWorkspace';
 
 /**
@@ -53,8 +59,8 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
   // Route to appropriate workspace based on project type
   switch (project.type) {
     case 'podcast':
-      // CRITICAL: PodcastWorkspace expects specific props
-      // Ensure we pass the correct shape
+      // TEMPORARY: Using PodcastWorkspace from _deprecated
+      // TODO: Migrate to src/modules/studio/components/workspace/
       return (
         <div data-testid="studio-workspace">
           <PodcastWorkspace
