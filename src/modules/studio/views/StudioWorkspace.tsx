@@ -13,6 +13,7 @@
 
 import React from 'react';
 import type { StudioWorkspaceProps } from '../types/studio';
+import { generateDossier, searchGuestProfile } from '../services/podcastAIService';
 
 // TEMPORARY: Import from _deprecated until migration is complete
 // eslint-disable-next-line import/no-internal-modules
@@ -68,9 +69,15 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
             showId={project.showId || ''}
             showTitle={project.showTitle || project.title}
             onBack={onBack}
-            // Optional callbacks for AI features
-            onGenerateDossier={undefined} // TODO: Wire up AI service
-            onSearchGuestProfile={undefined} // TODO: Wire up search service
+            // AI service callbacks
+            onGenerateDossier={async (guestName, theme, customSources) => {
+              console.log('[StudioWorkspace] Generating dossier via AI service:', { guestName, theme });
+              return await generateDossier(guestName, theme, customSources);
+            }}
+            onSearchGuestProfile={async (name, reference) => {
+              console.log('[StudioWorkspace] Searching guest profile via AI service:', { name, reference });
+              return await searchGuestProfile(name, reference);
+            }}
           />
         </div>
       );
