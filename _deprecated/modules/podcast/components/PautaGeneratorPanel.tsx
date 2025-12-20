@@ -139,8 +139,14 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
   }
 
   const handleGenerate = useCallback(async () => {
+    // Validate: at least guestName or theme must be provided
+    if (!guestName.trim() && !theme.trim()) {
+      setError('Nome do convidado ou tema do episódio é obrigatório')
+      return
+    }
+
     if (!guestName.trim()) {
-      setError('Nome do convidado e obrigatorio')
+      setError('Nome do convidado é obrigatório')
       return
     }
 
@@ -156,11 +162,12 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
         title: s.title
       }))
 
+      // Ensure at least guestName is always provided (required by backend)
       const pauta = await pautaGeneratorService.generateCompletePauta(
         {
-          guestName,
-          theme: theme || undefined,
-          context: additionalContext || undefined,
+          guestName: guestName.trim(),
+          theme: theme.trim() || undefined,
+          context: additionalContext.trim() || undefined,
           sources: pautaSources.length > 0 ? pautaSources : undefined,
           style,
           duration

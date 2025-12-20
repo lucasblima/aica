@@ -219,10 +219,15 @@ class PautaGeneratorService {
   ): Promise<GeneratedPauta> {
     const { guestName, theme, context, sources, style, duration = 60 } = request
 
+    // Validate required fields
+    if (!guestName || !guestName.trim()) {
+      throw new Error('Nome do convidado é obrigatório para gerar pauta')
+    }
+
     try {
       // Step 1: Deep Research (30%)
       onProgress?.('Pesquisando informacoes sobre o convidado...', 10)
-      const research = await this.performDeepResearch(guestName, theme, sources)
+      const research = await this.performDeepResearch(guestName.trim(), theme?.trim(), sources)
       onProgress?.('Pesquisa concluida', 30)
 
       // Step 2: Generate Outline (50%)
@@ -350,13 +355,16 @@ Retorne APENAS JSON valido.
       }
     } catch (error) {
       console.error('Deep research failed:', error)
-      // Fallback data
+      // Fallback data - ensure all required fields exist
       return {
-        biography: `${guestName} e uma personalidade a ser pesquisada.`,
+        biography: `${guestName} é uma personalidade a ser pesquisada. Informações detalhadas estarão disponíveis em breve.`,
         controversies: [],
-        keyFacts: [],
+        keyFacts: [
+          `Pesquisa sobre ${guestName}`,
+          theme ? `Tema: ${theme}` : 'Tema a definir'
+        ],
         sourceCitations: [],
-        suggestedTheme: theme || 'Entrevista'
+        suggestedTheme: theme || 'Trajetória e Carreira'
       }
     }
   }
@@ -439,6 +447,20 @@ Retorne APENAS JSON valido.
         ? JSON.parse(response.result)
         : response.result
 
+      // Ensure all sections have keyPoints array
+      if (data.introduction && !data.introduction.keyPoints) {
+        data.introduction.keyPoints = []
+      }
+      if (data.mainSections) {
+        data.mainSections = data.mainSections.map((section: any) => ({
+          ...section,
+          keyPoints: section.keyPoints || []
+        }))
+      }
+      if (data.conclusion && !data.conclusion.keyPoints) {
+        data.conclusion.keyPoints = []
+      }
+
       return data as PautaOutline
     } catch (error) {
       console.error('Outline generation failed:', error)
@@ -488,8 +510,9 @@ Retorne APENAS JSON valido.
     },
     additionalContext?: string
   ): Promise<PautaQuestion[]> {
+    // Ensure keyPoints exists for all sections (fallback to empty array)
     const sectionsContext = outline.mainSections.map(s =>
-      `- ${s.title}: ${s.keyPoints.join(', ')}`
+      `- ${s.title}: ${(s.keyPoints || []).join(', ')}`
     ).join('\n')
 
     const prompt = `
