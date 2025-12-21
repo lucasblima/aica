@@ -243,7 +243,11 @@ export interface SetupState {
   /** Reference for AI search (title, occupation) or manual occupation */
   guestReference: string;
 
-  /** Manual bio notes for common people */
+  /**
+   * Manual bio notes for common people (UI-only field).
+   * NOT persisted to database - used only during setup flow.
+   * The actual biography is stored in research.dossier.biography.
+   */
   guestBio: string;
 
   /** Contact information */
