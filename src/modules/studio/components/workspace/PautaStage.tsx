@@ -281,7 +281,7 @@ export default function PautaStage() {
     if (!newTopicText.trim()) return;
 
     const newTopic: Topic = {
-      id: `topic_${Date.now()}`,
+      id: crypto.randomUUID(),  // ✅ FIX: Use proper UUID instead of topic_${Date.now()}
       text: newTopicText.trim(),
       completed: false,
       order: pauta.topics.filter(t => t.categoryId === selectedCategory).length,
