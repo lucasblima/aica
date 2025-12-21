@@ -1,0 +1,588 @@
+/**
+ * ResearchStage - Guest research and dossier generation
+ *
+ * Migrated from _deprecated/modules/podcast/components/stages/ResearchStage.tsx
+ * Wave 5 - Stream 2: Research & Pauta Components Migration
+ *
+ * Features:
+ * - AI-powered dossier generation
+ * - Custom research sources (text, URL, file)
+ * - Multi-tab dossier view (Biography, Technical Sheet, News)
+ * - Interactive chat for guest questions
+ *
+ * UX Improvements:
+ * - Ceramic Design System classes
+ * - WCAG 2.1 AA accessibility compliance
+ * - Proper loading states and error handling
+ * - Enhanced visual hierarchy
+ */
+
+import React, { useState } from 'react';
+import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
+import { useWorkspaceAI } from '@/modules/studio/hooks/useWorkspaceAI';
+import {
+  Sparkles,
+  FileText,
+  Newspaper,
+  AlertCircle,
+  Plus,
+  X,
+  Link as LinkIcon,
+  Upload,
+  Loader2,
+  Send,
+  RefreshCw,
+  Check,
+} from 'lucide-react';
+import type { WorkspaceCustomSource } from '@/modules/studio/types';
+
+type ResearchTab = 'bio' | 'ficha' | 'noticias';
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
+  timestamp: number;
+}
+
+export default function ResearchStage() {
+  const { state, actions } = usePodcastWorkspace();
+  const { setup, research } = state;
+  const ai = useWorkspaceAI();
+
+  const [activeTab, setActiveTab] = useState<ResearchTab>('bio');
+  const [showSourcesModal, setShowSourcesModal] = useState(false);
+  const [sourceText, setSourceText] = useState('');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [isProcessingSources, setIsProcessingSources] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const handleAddCustomSource = async () => {
+    if (!sourceText && !sourceUrl && !sourceFile) {
+      alert('Por favor, adicione uma fonte');
+      return;
+    }
+
+    setIsProcessingSources(true);
+    try {
+      const newSource: WorkspaceCustomSource = {
+        id: `source_${Date.now()}`,
+        type: sourceFile ? 'file' : sourceUrl ? 'url' : 'text',
+        content: sourceFile ? sourceFile.name : sourceUrl || sourceText,
+        label: sourceFile?.name || sourceUrl || sourceText.substring(0, 50),
+        createdAt: new Date(),
+      };
+
+      actions.addCustomSource(newSource);
+      setSourceText('');
+      setSourceUrl('');
+      setSourceFile(null);
+    } catch (error) {
+      console.error('Error adding custom source:', error);
+    } finally {
+      setIsProcessingSources(false);
+    }
+  };
+
+  const handleRemoveSource = (sourceId: string) => {
+    actions.removeCustomSource(sourceId);
+  };
+
+  const handleGenerateDossier = async () => {
+    await actions.generateDossier();
+  };
+
+  const handleRegenerateDossier = async () => {
+    await actions.regenerateDossier();
+  };
+
+  const handleSendChatMessage = async () => {
+    if (!chatInput.trim()) return;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      text: chatInput,
+      timestamp: Date.now(),
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      // TODO: Integrate with Gemini Live API in future iteration
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        text: 'Resposta simulada. Integração com Gemini Live API em fase posterior.',
+        timestamp: Date.now(),
+      };
+      setChatMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-ceramic-base">
+      {/* Header */}
+      <div className="bg-ceramic-surface border-b border-ceramic-border px-8 py-6">
+        <div className="flex items-center space-x-3 mb-2">
+          <Sparkles className="w-8 h-8 text-orange-500" aria-hidden="true" />
+          <h1 className="text-3xl font-bold text-ceramic-primary">Pesquisa do Convidado</h1>
+        </div>
+        <p className="text-ceramic-secondary">
+          Gere o dossier completo sobre {setup.guestName || 'o convidado'}
+        </p>
+      </div>
+
+      {/* Main 2-Column Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Column - Actions & Sources */}
+        <div className="w-80 bg-ceramic-surface border-r border-ceramic-border flex flex-col overflow-y-auto">
+          {/* Action Buttons */}
+          <div className="p-6 border-b border-ceramic-border">
+            <div className="space-y-3">
+              {!research.dossier ? (
+                <button
+                  onClick={handleGenerateDossier}
+                  disabled={research.isGenerating}
+                  className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                  aria-label={research.isGenerating ? 'Gerando dossier' : 'Gerar dossier do convidado'}
+                  aria-busy={research.isGenerating}
+                >
+                  {research.isGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                      <span>Gerando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" aria-hidden="true" />
+                      <span>Gerar Dossier</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleRegenerateDossier}
+                  disabled={research.isGenerating}
+                  className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-label={research.isGenerating ? 'Regenerando dossier' : 'Regenerar dossier do convidado'}
+                  aria-busy={research.isGenerating}
+                >
+                  {research.isGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                      <span>Regenerando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-5 h-5" aria-hidden="true" />
+                      <span>Regenerar</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowSourcesModal(true)}
+                className="w-full px-4 py-3 bg-ceramic-surface-secondary text-ceramic-primary rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                aria-label="Adicionar fontes personalizadas de pesquisa"
+              >
+                <Plus className="w-5 h-5" aria-hidden="true" />
+                <span>Adicionar Fontes</span>
+              </button>
+            </div>
+
+            {/* Error Alert */}
+            {research.error && (
+              <div
+                className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3"
+                role="alert"
+                aria-live="polite"
+              >
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-sm text-red-700">{research.error}</p>
+              </div>
+            )}
+
+            {/* Generation Timestamp */}
+            {research.lastGenerated && (
+              <div className="mt-4 p-3 bg-ceramic-surface-secondary rounded-lg text-xs text-ceramic-secondary">
+                <span className="font-semibold">Gerado:</span> {new Date(research.lastGenerated).toLocaleString('pt-BR')}
+              </div>
+            )}
+          </div>
+
+          {/* Tabs */}
+          {research.dossier && (
+            <div className="flex border-b border-ceramic-border bg-ceramic-base" role="tablist" aria-label="Seções do dossier">
+              <button
+                onClick={() => setActiveTab('bio')}
+                role="tab"
+                aria-selected={activeTab === 'bio'}
+                aria-controls="bio-panel"
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+                  activeTab === 'bio'
+                    ? 'border-orange-500 text-orange-600 bg-ceramic-surface'
+                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-primary'
+                }`}
+              >
+                <FileText className="w-4 h-4 inline mr-2" aria-hidden="true" />
+                Bio
+              </button>
+              <button
+                onClick={() => setActiveTab('ficha')}
+                role="tab"
+                aria-selected={activeTab === 'ficha'}
+                aria-controls="ficha-panel"
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+                  activeTab === 'ficha'
+                    ? 'border-orange-500 text-orange-600 bg-ceramic-surface'
+                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-primary'
+                }`}
+              >
+                <FileText className="w-4 h-4 inline mr-2" aria-hidden="true" />
+                Ficha
+              </button>
+              <button
+                onClick={() => setActiveTab('noticias')}
+                role="tab"
+                aria-selected={activeTab === 'noticias'}
+                aria-controls="noticias-panel"
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+                  activeTab === 'noticias'
+                    ? 'border-orange-500 text-orange-600 bg-ceramic-surface'
+                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-primary'
+                }`}
+              >
+                <Newspaper className="w-4 h-4 inline mr-2" aria-hidden="true" />
+                Notícias
+              </button>
+            </div>
+          )}
+
+          {/* Custom Sources List */}
+          {research.customSources.length > 0 && (
+            <div className="p-4 border-b border-ceramic-border">
+              <h4 className="text-sm font-semibold text-ceramic-primary mb-3">
+                Fontes ({research.customSources.length})
+              </h4>
+              <div className="space-y-2" role="list" aria-label="Fontes personalizadas">
+                {research.customSources.map(source => (
+                  <div key={source.id} className="flex items-start justify-between gap-2 p-2 bg-ceramic-base rounded border border-ceramic-border text-xs" role="listitem">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {source.type === 'url' && <LinkIcon className="w-3 h-3 text-blue-500 flex-shrink-0" aria-hidden="true" />}
+                        {source.type === 'file' && <Upload className="w-3 h-3 text-green-500 flex-shrink-0" aria-hidden="true" />}
+                        {source.type === 'text' && <FileText className="w-3 h-3 text-gray-500 flex-shrink-0" aria-hidden="true" />}
+                        <span className="font-medium text-ceramic-primary truncate">{source.label || source.content.substring(0, 30)}</span>
+                      </div>
+                      <span className="text-ceramic-tertiary">{source.type === 'url' ? 'URL' : source.type === 'file' ? 'Arquivo' : 'Texto'}</span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveSource(source.id)}
+                      className="p-1 hover:bg-red-100 rounded transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      aria-label={`Remover fonte: ${source.label || source.content.substring(0, 30)}`}
+                    >
+                      <X className="w-4 h-4 text-red-500" aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Dossier Content & Chat */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Dossier Content */}
+          <div className="flex-1 overflow-y-auto">
+            {!research.dossier ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center py-12">
+                  <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" aria-hidden="true" />
+                  <h3 className="text-lg font-semibold text-ceramic-primary mb-2">Dossier não gerado</h3>
+                  <p className="text-ceramic-secondary max-w-sm">
+                    Clique em Gerar Dossier para começar
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8">
+                {/* Biography Tab */}
+                {activeTab === 'bio' && (
+                  <div className="max-w-3xl" role="tabpanel" id="bio-panel" aria-labelledby="bio-tab">
+                    <h2 className="text-2xl font-bold text-ceramic-primary mb-4">Biografia</h2>
+                    <p className="text-ceramic-primary whitespace-pre-wrap leading-relaxed">
+                      {research.dossier.biography}
+                    </p>
+                  </div>
+                )}
+
+                {/* Technical Sheet Tab */}
+                {activeTab === 'ficha' && (
+                  <div className="max-w-3xl" role="tabpanel" id="ficha-panel" aria-labelledby="ficha-tab">
+                    <h2 className="text-2xl font-bold text-ceramic-primary mb-6">Ficha Técnica</h2>
+                    {research.dossier.technicalSheet ? (
+                      <div className="space-y-6">
+                        {research.dossier.technicalSheet.fullName && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-ceramic-primary mb-2">Nome Completo</h3>
+                            <p className="text-ceramic-secondary">{research.dossier.technicalSheet.fullName}</p>
+                          </div>
+                        )}
+                        {research.dossier.technicalSheet.education && research.dossier.technicalSheet.education.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-ceramic-primary mb-3">Educação</h3>
+                            <ul className="space-y-2">
+                              {research.dossier.technicalSheet.education.map((edu, idx) => (
+                                <li key={idx} className="text-ceramic-secondary">
+                                  <span className="font-medium">{edu.degree}</span> - {edu.institution}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {research.dossier.technicalSheet.careerHighlights && research.dossier.technicalSheet.careerHighlights.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-ceramic-primary mb-3">Carreira</h3>
+                            <ul className="space-y-2">
+                              {research.dossier.technicalSheet.careerHighlights.map((career, idx) => (
+                                <li key={idx} className="text-ceramic-secondary">
+                                  <span className="font-medium">{career.title}</span> na {career.organization}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {research.dossier.technicalSheet.keyFacts && research.dossier.technicalSheet.keyFacts.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-ceramic-primary mb-3">Fatos</h3>
+                            <ul className="space-y-2">
+                              {research.dossier.technicalSheet.keyFacts.map((fact, idx) => (
+                                <li key={idx} className="text-ceramic-secondary flex items-start gap-2">
+                                  <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                                  <span>{fact}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-ceramic-tertiary text-center py-8">
+                        <p>Ficha técnica não disponível</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* News & Controversies Tab */}
+                {activeTab === 'noticias' && (
+                  <div className="max-w-3xl" role="tabpanel" id="noticias-panel" aria-labelledby="noticias-tab">
+                    <h2 className="text-2xl font-bold text-ceramic-primary mb-6">Notícias & Controvérsias</h2>
+                    {research.dossier.controversies && research.dossier.controversies.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-lg font-semibold text-ceramic-primary mb-4">Controvérsias</h3>
+                        <div className="space-y-3">
+                          {research.dossier.controversies.map((controversy, idx) => (
+                            <div key={idx} className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-ceramic-primary">{controversy}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {research.dossier.iceBreakers && research.dossier.iceBreakers.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-ceramic-primary mb-4">Quebra-Gelo</h3>
+                        <div className="space-y-3">
+                          {research.dossier.iceBreakers.map((breaker, idx) => (
+                            <div key={idx} className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                              <p className="text-ceramic-primary">{breaker}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Chat Section */}
+          <div className="border-t border-ceramic-border bg-ceramic-surface">
+            <div className="flex flex-col h-80">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite" aria-label="Chat de perguntas sobre o convidado">
+                {chatMessages.length === 0 && (
+                  <div className="flex items-center justify-center h-full text-center">
+                    <p className="text-ceramic-tertiary text-sm">
+                      Faça perguntas sobre o convidado
+                    </p>
+                  </div>
+                )}
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`max-w-xs px-4 py-2 rounded-lg ${
+                        msg.role === 'user'
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-ceramic-surface-secondary text-ceramic-primary'
+                      }`}
+                    >
+                      <p className="text-sm">{msg.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-ceramic-surface-secondary text-ceramic-primary px-4 py-2 rounded-lg">
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-ceramic-border p-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }} className="flex gap-2">
+                  <label htmlFor="chat-input" className="sr-only">Pergunta sobre o convidado</label>
+                  <input
+                    id="chat-input"
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Faça uma pergunta..."
+                    className="flex-1 px-3 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                    disabled={isChatLoading}
+                    aria-required="true"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isChatLoading || !chatInput.trim()}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                    aria-label="Enviar pergunta"
+                  >
+                    <Send className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Custom Sources Modal */}
+      {showSourcesModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          role="dialog"
+          aria-labelledby="sources-modal-title"
+          aria-modal="true"
+        >
+          <div className="bg-ceramic-surface rounded-lg shadow-xl max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+            <div className="sticky top-0 bg-ceramic-surface border-b border-ceramic-border p-6 flex items-center justify-between">
+              <h2 id="sources-modal-title" className="text-lg font-bold text-ceramic-primary">Adicionar Fontes</h2>
+              <button
+                onClick={() => {
+                  setShowSourcesModal(false);
+                  setSourceText('');
+                  setSourceUrl('');
+                  setSourceFile(null);
+                }}
+                className="text-ceramic-tertiary hover:text-ceramic-secondary focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
+                aria-label="Fechar modal"
+              >
+                <X className="w-6 h-6" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label htmlFor="source-text" className="block text-sm font-medium text-ceramic-primary mb-2">Texto</label>
+                <textarea
+                  id="source-text"
+                  value={sourceText}
+                  onChange={(e) => setSourceText(e.target.value)}
+                  placeholder="Cole informações..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="source-url" className="block text-sm font-medium text-ceramic-primary mb-2">URL</label>
+                <input
+                  id="source-url"
+                  type="url"
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                  placeholder="https://exemplo.com"
+                  className="w-full px-3 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="source-file" className="block text-sm font-medium text-ceramic-primary mb-2">Arquivo</label>
+                <input
+                  id="source-file"
+                  type="file"
+                  onChange={(e) => setSourceFile(e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                  accept=".pdf,.txt,.doc,.docx"
+                />
+              </div>
+              <button
+                onClick={handleAddCustomSource}
+                disabled={isProcessingSources}
+                className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                aria-label={isProcessingSources ? 'Adicionando fonte' : 'Adicionar fonte'}
+                aria-busy={isProcessingSources}
+              >
+                {isProcessingSources ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    <span>Adicionando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" aria-hidden="true" />
+                    <span>Adicionar</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setShowSourcesModal(false);
+                  setSourceText('');
+                  setSourceUrl('');
+                  setSourceFile(null);
+                }}
+                className="w-full px-4 py-2 border border-ceramic-border text-ceramic-primary rounded-lg hover:bg-ceramic-base transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      {research.dossier && (
+        <div className="border-t border-ceramic-border bg-ceramic-surface px-8 py-6 flex justify-end gap-4">
+          <button
+            onClick={() => actions.setStage('pauta')}
+            className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+            aria-label="Ir para próxima etapa: Pauta"
+          >
+            <span>Próximo: Pauta</span>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
