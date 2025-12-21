@@ -16,6 +16,51 @@ interface UseAutoSaveOptions {
   onSaveError?: (error: Error) => void;
 }
 
+/**
+ * Sanitiza o payload removendo/convertendo valores inválidos para o PostgreSQL
+ *
+ * Estratégia: Converte TODAS strings vazias para null, exceto campos que
+ * explicitamente podem ter string vazia (campos de texto livre).
+ *
+ * Razões:
+ * - TIME/DATE/INTEGER/BOOLEAN não aceitam string vazia
+ * - Campos com CHECK constraints (ex: guest_email) não aceitam string vazia
+ * - É mais seguro converter tudo para null do que listar cada campo problemático
+ */
+function sanitizePayload(data: Record<string, any>): Record<string, any> {
+  const sanitized: Record<string, any> = {};
+
+  // Campos que PODEM ser string vazia (texto livre sem constraints)
+  // Todos os outros campos vazios serão convertidos para null
+  const allowEmptyString = [
+    'guest_name',           // Nome do convidado (pode ser preenchido depois)
+    'guest_reference',      // Referência do convidado (opcional)
+    'episode_theme',        // Tema do episódio (pode ser preenchido depois)
+    'recording_file_path',  // Caminho do arquivo (será preenchido quando gravar)
+    'transcript',           // Transcrição (será preenchida depois)
+    'blog_post_url',        // URL do post (será preenchida depois)
+  ];
+
+  const convertedFields: string[] = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    // Converter string vazia para null, exceto campos permitidos
+    if (value === '' && !allowEmptyString.includes(key)) {
+      sanitized[key] = null;
+      convertedFields.push(key);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  // Log de debug mostrando quais campos foram convertidos
+  if (convertedFields.length > 0) {
+    console.log('[sanitizePayload] Fields converted from "" to null:', convertedFields);
+  }
+
+  return sanitized;
+}
+
 export function useAutoSave({
   state,
   enabled = true,
@@ -38,30 +83,19 @@ export function useAutoSave({
     onSaveStart?.();
 
     try {
-      console.log('[useAutoSave] Saving workspace state...');
+      console.log('[useAutoSave] Saving workspace state for episode:', currentState.episodeId);
 
-      // Save episode data (setup + research + production)
+      // Save episode data (setup + production ONLY)
+      // Note: Research data (biography, technical_sheet, etc.) belongs in podcast_guest_research table
+      // Note: season, location, scheduled_date fields don't exist in podcast_episodes schema
       const episodeUpdate = {
-        // Setup fields
+        // Setup fields (only fields that exist in podcast_episodes)
         guest_name: currentState.setup.guestName,
         guest_reference: currentState.setup.guestReference,
-        // Note: guest_bio is NOT persisted to podcast_episodes
-        // It's a temporary UI field used for common people during setup
-        // The actual biography is stored in research.dossier.biography
         guest_phone: currentState.setup.phone,
         guest_email: currentState.setup.email,
-        episode_theme: currentState.setup.theme,
-        season: currentState.setup.season,
-        location: currentState.setup.location,
-        scheduled_date: currentState.setup.scheduledDate,
+        episode_theme: currentState.setup.theme, // Added: migration 20251221
         scheduled_time: currentState.setup.scheduledTime,
-
-        // Research fields
-        biography: currentState.research.dossier?.biography || '',
-        technical_sheet: currentState.research.dossier?.technicalSheet || null,
-        controversies: currentState.research.dossier?.controversies || [],
-        ice_breakers: currentState.research.dossier?.iceBreakers || [],
-        suggested_topics: currentState.research.dossier?.suggestedTopics || [],
 
         // Production fields
         recording_duration: currentState.production.duration,
@@ -73,12 +107,23 @@ export function useAutoSave({
         updated_at: new Date().toISOString(),
       };
 
+      console.log('[useAutoSave] Updating episode with data (before sanitization):', episodeUpdate);
+
+      // Sanitize payload to convert empty strings to null for TIME/DATE/INTEGER fields
+      const sanitizedUpdate = sanitizePayload(episodeUpdate);
+      console.log('[useAutoSave] Sanitized payload:', sanitizedUpdate);
+
       const { error: episodeError } = await supabase
         .from('podcast_episodes')
-        .update(episodeUpdate)
+        .update(sanitizedUpdate)
         .eq('id', currentState.episodeId);
 
-      if (episodeError) throw episodeError;
+      if (episodeError) {
+        console.error('[useAutoSave] Episode update failed:', episodeError);
+        throw episodeError;
+      }
+
+      console.log('[useAutoSave] Episode update successful');
 
       // Save topics (if changed)
       const topicsChanged =
@@ -88,13 +133,18 @@ export function useAutoSave({
         );
 
       if (topicsChanged) {
+        console.log('[useAutoSave] Topics changed, updating...');
+
         // Delete all existing topics for this episode (simpler than selective update)
         const { error: deleteError } = await supabase
           .from('podcast_topics')
           .delete()
           .eq('episode_id', currentState.episodeId);
 
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          console.error('[useAutoSave] Topics delete failed:', deleteError);
+          throw deleteError;
+        }
 
         // Insert updated topics
         if (currentState.pauta.topics.length > 0) {
@@ -109,11 +159,18 @@ export function useAutoSave({
             sponsor_script: topic.sponsorScript || null,
           }));
 
+          console.log('[useAutoSave] Inserting topics:', topicsToInsert);
+
           const { error: insertError } = await supabase
             .from('podcast_topics')
             .insert(topicsToInsert);
 
-          if (insertError) throw insertError;
+          if (insertError) {
+            console.error('[useAutoSave] Topics insert failed:', insertError);
+            throw insertError;
+          }
+
+          console.log('[useAutoSave] Topics insert successful');
         }
       }
 
@@ -125,13 +182,18 @@ export function useAutoSave({
         );
 
       if (categoriesChanged) {
+        console.log('[useAutoSave] Categories changed, updating...');
+
         // Delete existing categories
         const { error: deleteCatError } = await supabase
           .from('podcast_topic_categories')
           .delete()
           .eq('episode_id', currentState.episodeId);
 
-        if (deleteCatError) throw deleteCatError;
+        if (deleteCatError) {
+          console.error('[useAutoSave] Categories delete failed:', deleteCatError);
+          throw deleteCatError;
+        }
 
         // Insert updated categories
         if (currentState.pauta.categories.length > 0) {
@@ -144,11 +206,18 @@ export function useAutoSave({
             icon: cat.icon || null,
           }));
 
+          console.log('[useAutoSave] Inserting categories:', categoriesToInsert);
+
           const { error: insertCatError } = await supabase
             .from('podcast_topic_categories')
             .insert(categoriesToInsert);
 
-          if (insertCatError) throw insertCatError;
+          if (insertCatError) {
+            console.error('[useAutoSave] Categories insert failed:', insertCatError);
+            throw insertCatError;
+          }
+
+          console.log('[useAutoSave] Categories insert successful');
         }
       }
 
@@ -158,6 +227,13 @@ export function useAutoSave({
 
     } catch (error: any) {
       console.error('[useAutoSave] Save failed:', error);
+      console.error('[useAutoSave] Error details:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        statusCode: error?.statusCode,
+      });
       onSaveError?.(error);
     } finally {
       isSavingRef.current = false;
