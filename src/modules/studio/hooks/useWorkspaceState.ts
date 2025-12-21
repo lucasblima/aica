@@ -77,7 +77,9 @@ export function useWorkspaceState({
             guestType: episode.guest_name ? 'public_figure' : null, // Infer from data
             guestName: episode.guest_name || '',
             guestReference: episode.guest_reference || '',
-            guestBio: episode.guest_bio || '',
+            // guestBio is a temporary UI-only field, not loaded from DB
+            // The actual biography comes from research.dossier.biography
+            guestBio: '',
             phone: episode.guest_phone || '',
             email: episode.guest_email || '',
             theme: episode.episode_theme || '',

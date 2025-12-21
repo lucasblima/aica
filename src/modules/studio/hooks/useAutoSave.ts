@@ -45,7 +45,9 @@ export function useAutoSave({
         // Setup fields
         guest_name: currentState.setup.guestName,
         guest_reference: currentState.setup.guestReference,
-        guest_bio: currentState.setup.guestBio,
+        // Note: guest_bio is NOT persisted to podcast_episodes
+        // It's a temporary UI field used for common people during setup
+        // The actual biography is stored in research.dossier.biography
         guest_phone: currentState.setup.phone,
         guest_email: currentState.setup.email,
         episode_theme: currentState.setup.theme,
