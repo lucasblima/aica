@@ -30,12 +30,15 @@
 - **Commits:** 322c37b, 9de1dc4
 
 **Issue #2: Topic ID UUID Type Mismatch** (Part 6)
-- **Status:** 🔴 CRITICAL - NOT FIXED
+- **Status:** ✅ FIXED (Option A - Quick Fix)
 - **Root Cause:** Topic IDs generated as `topic_${Date.now()}` instead of UUIDs
 - **Location:** `src/modules/studio/components/workspace/PautaStage.tsx:284`
 - **Impact:** HTTP 400 errors on `podcast_topics` endpoint, topics cannot persist to database
-- **Fix Required:** Replace `id: \`topic_${Date.now()}\`` with `id: crypto.randomUUID()`
-- **Priority:** BLOCKER - Users lose work silently
+- **Fix Applied:**
+  - Replaced `id: \`topic_${Date.now()}\`` with `id: crypto.randomUUID()`
+  - Changed `category_id` to `category` (TEXT field) in auto-save
+- **Commit:** 68c2bee
+- **Next Phase:** Option B (Complete UUID migration) - Technical debt for next sprint
 
 **Issue #2: AI Theme Button Missing Functionality** (Part 3)
 - **Status:** ✅ FIXED
@@ -516,23 +519,35 @@ const newTopic: Topic = {
 - After page refresh, topics are lost
 - This explains the auto-save persistence bug from Part 4
 
-**Fix Required:**
+**Fix Applied:** ✅ **IMPLEMENTED**
 ```typescript
-// Use crypto.randomUUID() for topic IDs
+// File: src/modules/studio/components/workspace/PautaStage.tsx:284
 const newTopic: Topic = {
-  id: crypto.randomUUID(),  // ✅ Generates proper UUID
+  id: crypto.randomUUID(),  // ✅ FIX: Generates proper UUID
   // ... rest of fields
 };
+
+// File: src/modules/studio/hooks/useAutoSave.ts:154
+const topicsToInsert = currentState.pauta.topics.map((topic, index) => ({
+  id: topic.id,
+  episode_id: currentState.episodeId,
+  category: topic.categoryId || null,  // ✅ FIX: Use TEXT field instead of UUID
+  // ... rest of fields
+}));
 ```
 
-**Priority:** 🔴 **CRITICAL** - Blocks data persistence for podcast topics
-**Severity:** HIGH - Users lose work silently
-**Documented In:** `docs/architecture/WAVE_7_PART_6_ANALYSIS.md`
+**Status:** ✅ **FIXED** (Option A - Quick Fix)
+**Commit:** 68c2bee
+**Documented In:** `docs/architecture/WAVE_7_PART_6_ANALYSIS.md`, `docs/architecture/DATABASE_SCHEMA_INVESTIGATION.md`
+
+**Next Steps:**
+- ⚠️ **Manual Testing Required:** Add topic → Save → Refresh → Verify persistence
+- 📋 **Technical Debt:** Option B (Complete UUID migration) for next sprint
 
 ---
 
 **✅ PASS CRITERIA:** Errors handled gracefully ✅ MET
-**❌ CRITICAL BUG:** UUID type mismatch in topic creation ❌ BLOCKER
+**✅ CRITICAL BUG FIXED:** UUID type mismatch resolved ✅ DEPLOYED
 
 ---
 
