@@ -12,10 +12,12 @@
 import React, { useEffect, useCallback } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { useAuth } from '../../../hooks/useAuth';
+import { supabase } from '../../../services/supabaseClient';
 import type { StudioProject } from '../types/studio';
 
 // Lazy load views for better performance
 const StudioLibrary = React.lazy(() => import('./StudioLibrary'));
+const PodcastShowPage = React.lazy(() => import('./PodcastShowPage'));
 const StudioWizard = React.lazy(() => import('./StudioWizard'));
 const StudioWorkspace = React.lazy(() => import('./StudioWorkspace'));
 
@@ -131,13 +133,55 @@ export default function StudioMainView() {
 
   /**
    * Handler for selecting a show (podcast-specific)
-   * This does NOT change mode, only updates show selection
+   * Transitions: LIBRARY -> SHOW_PAGE
    */
-  const handleSelectShow = useCallback((showId: string) => {
-    // In the future, we could fetch show details here
-    // For now, just store the ID
-    actions.selectShow(showId, 'Show Title'); // TODO: Fetch actual title
+  const handleSelectShow = useCallback((showId: string, showTitle: string) => {
+    actions.goToShowPage(showId, showTitle);
   }, [actions]);
+
+  /**
+   * Handler for selecting an episode from show page
+   * Transitions: SHOW_PAGE -> WORKSPACE
+   */
+  const handleSelectEpisode = useCallback(async (episodeId: string) => {
+    try {
+      // Fetch episode data from database
+      const { data: episode, error } = await supabase
+        .from('podcast_episodes')
+        .select('*')
+        .eq('id', episodeId)
+        .single();
+
+      if (error) throw error;
+      if (!episode) throw new Error('Episódio não encontrado');
+
+      // Convert to StudioProject
+      const project: StudioProject = {
+        id: episode.id,
+        type: 'podcast',
+        title: episode.title || 'Untitled Episode',
+        description: episode.description,
+        showId: episode.show_id,
+        showTitle: state.currentShowTitle || 'Unknown Show',
+        status: episode.status || 'draft',
+        createdAt: new Date(episode.created_at),
+        updatedAt: new Date(episode.updated_at),
+        metadata: {
+          type: 'podcast',
+          guestName: episode.guest_name,
+          episodeTheme: episode.episode_theme,
+          scheduledTime: episode.scheduled_time,
+          recordingDuration: episode.recording_duration,
+        },
+      };
+
+      // Navigate to workspace
+      actions.goToWorkspace(project);
+    } catch (error) {
+      console.error('[StudioMainView] Error selecting episode:', error);
+      actions.setError('Erro ao carregar episódio');
+    }
+  }, [actions, state.currentShowTitle]);
 
   // ============================================
   // RENDER LOGIC (FSM with SWITCH)
@@ -168,6 +212,31 @@ export default function StudioMainView() {
           <StudioWorkspace
             project={state.currentProject}
             onBack={handleBackToLibrary}
+          />
+        </React.Suspense>
+      );
+
+    case 'SHOW_PAGE':
+      // CRITICAL: Show page requires showId and showTitle
+      if (!state.currentShowId || !state.currentShowTitle) {
+        console.error('[StudioMainView] In SHOW_PAGE mode but no currentShowId/currentShowTitle!');
+        actions.setError('Podcast não encontrado');
+        return null;
+      }
+
+      return (
+        <React.Suspense fallback={<LoadingScreen />}>
+          <PodcastShowPage
+            showId={state.currentShowId}
+            showTitle={state.currentShowTitle}
+            onBack={handleBackToLibrary}
+            onSelectEpisode={handleSelectEpisode}
+            onCreateEpisode={handleCreateNew}
+            userEmail={user?.email || ''}
+            onLogout={() => {
+              // TODO: Implement logout
+              console.log('[StudioMainView] Logout clicked');
+            }}
           />
         </React.Suspense>
       );
