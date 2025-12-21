@@ -1,23 +1,23 @@
 /**
  * StudioWorkspace - Wrapper component that routes to specific workspace
- * Based on project type, renders the appropriate workspace component
  *
- * CRITICAL: This is a THIN wrapper - does NOT duplicate workspace logic
- * It simply routes to the correct workspace implementation
+ * Based on project type, renders the appropriate workspace component.
+ * This is a THIN wrapper that simply routes to the correct workspace implementation.
  *
  * MIGRATION STATUS:
- * - Currently using PodcastWorkspace from _deprecated folder
- * - TODO: Migrate workspace to src/modules/studio/ structure
- * - See: docs/architecture/STUDIO_WORKSPACE_MIGRATION.md (to be created)
+ * - ✅ Wave 6 Complete: Now using migrated PodcastWorkspace from src/modules/studio/
+ * - All workspace components migrated from _deprecated/ folder
+ * - See: docs/architecture/STUDIO_WORKSPACE_MIGRATION.md for details
+ *
+ * @see PodcastWorkspace for podcast episode workspace
+ * @see generateDossier for AI-powered guest research
+ * @see searchGuestProfile for AI-powered guest search
  */
 
 import React from 'react';
 import type { StudioWorkspaceProps } from '../types/studio';
 import { generateDossier, searchGuestProfile } from '../services/podcastAIService';
-
-// TEMPORARY: Import from _deprecated until migration is complete
-// eslint-disable-next-line import/no-internal-modules
-import PodcastWorkspace from '../../../../_deprecated/modules/podcast/components/workspace/PodcastWorkspace';
+import { PodcastWorkspace } from '../components/workspace';
 
 /**
  * Unsupported project type fallback
@@ -60,8 +60,7 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
   // Route to appropriate workspace based on project type
   switch (project.type) {
     case 'podcast':
-      // TEMPORARY: Using PodcastWorkspace from _deprecated
-      // TODO: Migrate to src/modules/studio/components/workspace/
+      // Using migrated PodcastWorkspace from src/modules/studio/
       return (
         <div data-testid="studio-workspace">
           <PodcastWorkspace
