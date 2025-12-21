@@ -151,7 +151,7 @@ export function useAutoSave({
           const topicsToInsert = currentState.pauta.topics.map((topic, index) => ({
             id: topic.id,
             episode_id: currentState.episodeId,
-            category_id: topic.categoryId || null,
+            category: topic.categoryId || null,  // ✅ FIX: Use 'category' TEXT field instead of 'category_id' UUID
             question_text: topic.text,
             completed: topic.completed,
             order: index,
