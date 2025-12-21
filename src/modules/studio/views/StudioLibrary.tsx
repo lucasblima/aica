@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, ArrowRight, Mic2 } from 'lucide-react';
+import { Plus, ArrowRight, Mic2, ChevronDown } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { PodcastShow } from '../types/podcast';
 import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
@@ -128,8 +128,13 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       setShowModal(false);
       loadShows();
 
-      // Call the onCreateNew callback
-      onCreateNew();
+      // Select the newly created show and expand it
+      // This allows the user to see the "Criar Episódio" button for this show
+      setExpandedShowId(data.id);
+      onSelectShow(data.id);
+
+      // Note: Don't call onCreateNew() here - let user manually click "Criar Episódio"
+      // This ensures the show ID is properly set before opening the wizard
     } catch (error) {
       console.error('Error creating show:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -174,12 +179,16 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
               </button>
 
               {/* Existing Shows */}
-              {shows.map(show => (
+              {shows.map(show => {
+                const isExpanded = expandedShowId === show.id;
+                return (
                 <button
                   key={show.id}
                   data-testid="show-card"
                   onClick={() => handleToggleExpand(show.id, show)}
-                  className="group ceramic-card p-4 text-left hover:scale-[1.02] transition-all duration-300 flex flex-col rounded-2xl"
+                  className={`group ceramic-card p-4 text-left hover:scale-[1.02] transition-all duration-300 flex flex-col rounded-2xl ${
+                    isExpanded ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-ceramic-base' : ''
+                  }`}
                 >
                   {/* Cover Image */}
                   <div className="ceramic-inset rounded-xl mb-3 aspect-square overflow-hidden bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
@@ -207,20 +216,36 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
                     </div>
                   </div>
 
-                  {/* Hover Arrow */}
-                  <div className="flex justify-end mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ArrowRight className="w-4 h-4 text-amber-600" />
+                  {/* Expansion Indicator */}
+                  <div className="flex justify-between items-center mt-2">
+                    <span className={`text-[10px] font-bold transition-opacity ${
+                      isExpanded ? 'text-amber-600 opacity-100' : 'opacity-0 group-hover:opacity-70 text-ceramic-text-secondary'
+                    }`}>
+                      {isExpanded ? 'Ver episódios ↓' : 'Clique para ver episódios'}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-amber-600 transition-transform duration-300 ${
+                      isExpanded ? 'rotate-180' : 'opacity-0 group-hover:opacity-100'
+                    }`} />
                   </div>
                 </button>
-              ))}
+              )}
+              )}
             </div>
 
             {/* Episodes List for Expanded Show */}
             {expandedShowId && episodesByShow[expandedShowId] && (
-              <div className="mt-8 pt-8 border-t border-ceramic-text-tertiary/20">
-                <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">
-                  Episódios
-                </h2>
+              <div className="mt-8 pt-8 border-t border-ceramic-text-tertiary/20 animate-in slide-in-from-top-4 fade-in duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-ceramic-text-primary">
+                    Episódios
+                  </h2>
+                  <button
+                    onClick={() => setExpandedShowId(null)}
+                    className="text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors font-bold"
+                  >
+                    Fechar ✕
+                  </button>
+                </div>
                 {loadingEpisodes[expandedShowId] ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {[1, 2, 3, 4].map(i => (
@@ -232,7 +257,10 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
                     <p className="text-ceramic-text-secondary mb-4">Nenhum episódio neste podcast</p>
                     <button
                       onClick={() => {
+                        // Set the show ID in context FIRST
                         onSelectShow(expandedShowId);
+                        // Then open the wizard to create an episode for this show
+                        onCreateNew();
                       }}
                       className="ceramic-card px-6 py-3 text-ceramic-text-primary font-bold rounded-xl hover:scale-105 transition-transform inline-flex items-center gap-2"
                     >
@@ -280,7 +308,12 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
 
                     {/* Create New Episode Button */}
                     <button
-                      onClick={() => onSelectShow(expandedShowId)}
+                      onClick={() => {
+                        // Set the show ID in context FIRST
+                        onSelectShow(expandedShowId);
+                        // Then open the wizard to create an episode for this show
+                        onCreateNew();
+                      }}
                       className="group ceramic-inset p-4 flex flex-col items-center justify-center gap-3 hover:scale-[1.02] transition-all duration-300 min-h-[12rem] rounded-2xl"
                     >
                       <div className="h-12 w-12 rounded-full border-2 border-dashed border-ceramic-text-secondary/50 flex items-center justify-center group-hover:border-ceramic-text-primary transition-colors">
