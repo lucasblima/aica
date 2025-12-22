@@ -148,6 +148,11 @@ export function useAutoSave({
 
         // Insert updated topics
         if (currentState.pauta.topics.length > 0) {
+          // Helper function to validate UUID format
+          const isValidUUID = (str: string): boolean => {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+          };
+
           const topicsToInsert = currentState.pauta.topics.map((topic, index) => ({
             id: topic.id,
             episode_id: currentState.episodeId,
@@ -159,11 +164,23 @@ export function useAutoSave({
             sponsor_script: topic.sponsorScript || null,
           }));
 
-          console.log('[useAutoSave] Inserting topics:', topicsToInsert);
+          // ✅ FIX: Remove non-UUID topic IDs (e.g., "topic_1766361842098")
+          // Database expects UUID format, will auto-generate if ID is omitted
+          const cleanedTopics = topicsToInsert.map(topic => {
+            if (topic.id && isValidUUID(topic.id)) {
+              return topic;  // UUID válido, manter
+            }
+            // ID inválido (ex: "topic_1766361842098"), remover e deixar DB gerar UUID
+            const { id, ...rest } = topic;
+            console.log(`[useAutoSave] Removing non-UUID topic ID: "${id}" - database will generate UUID`);
+            return rest;
+          });
+
+          console.log('[useAutoSave] Inserting topics:', cleanedTopics);
 
           const { error: insertError } = await supabase
             .from('podcast_topics')
-            .insert(topicsToInsert);
+            .insert(cleanedTopics);
 
           if (insertError) {
             console.error('[useAutoSave] Topics insert failed:', insertError);
@@ -197,6 +214,11 @@ export function useAutoSave({
 
         // Insert updated categories
         if (currentState.pauta.categories.length > 0) {
+          // Helper function to validate UUID format
+          const isValidUUID = (str: string): boolean => {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+          };
+
           const categoriesToInsert = currentState.pauta.categories.map(cat => ({
             id: cat.id,
             episode_id: currentState.episodeId,
@@ -207,11 +229,23 @@ export function useAutoSave({
             // Removed: icon: cat.icon || null,
           }));
 
-          console.log('[useAutoSave] Inserting categories:', categoriesToInsert);
+          // ✅ FIX: Remove non-UUID category IDs (e.g., "quebra-gelo", "aprofundamento")
+          // Database expects UUID format, will auto-generate if ID is omitted
+          const cleanedCategories = categoriesToInsert.map(cat => {
+            if (cat.id && isValidUUID(cat.id)) {
+              return cat;  // UUID válido, manter
+            }
+            // ID inválido (ex: "quebra-gelo"), remover e deixar DB gerar UUID
+            const { id, ...rest } = cat;
+            console.log(`[useAutoSave] Removing non-UUID category ID: "${id}" - database will generate UUID`);
+            return rest;
+          });
+
+          console.log('[useAutoSave] Inserting categories:', cleanedCategories);
 
           const { error: insertCatError } = await supabase
             .from('podcast_topic_categories')
-            .insert(categoriesToInsert);
+            .insert(cleanedCategories);
 
           if (insertCatError) {
             console.error('[useAutoSave] Categories insert failed:', insertCatError);
