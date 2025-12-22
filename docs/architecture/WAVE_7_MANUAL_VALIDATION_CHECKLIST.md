@@ -29,15 +29,20 @@
 - **Files Modified:** `useAutoSave.ts`, `20251221_add_episode_theme_column.sql`
 - **Commits:** 322c37b, 9de1dc4
 
-**Issue #2: Topic ID UUID Type Mismatch** (Part 6)
-- **Status:** ✅ FIXED (Option A - Quick Fix)
-- **Root Cause:** Topic IDs generated as `topic_${Date.now()}` instead of UUIDs
-- **Location:** `src/modules/studio/components/workspace/PautaStage.tsx:284`
-- **Impact:** HTTP 400 errors on `podcast_topics` endpoint, topics cannot persist to database
-- **Fix Applied:**
-  - Replaced `id: \`topic_${Date.now()}\`` with `id: crypto.randomUUID()`
-  - Changed `category_id` to `category` (TEXT field) in auto-save
-- **Commit:** 68c2bee
+**Issue #2: Topic & Category UUID Type Mismatch** (Part 6)
+- **Status:** ✅ FULLY FIXED (All UUID validation complete)
+- **Root Cause:** IDs generated as `topic_${Date.now()}` and semantic strings like "quebra-gelo" instead of UUIDs
+- **Locations:**
+  - `src/modules/studio/components/workspace/PautaStage.tsx:284`
+  - `src/modules/studio/context/PodcastWorkspaceContext.tsx:588`
+  - `src/modules/studio/hooks/useAutoSave.ts`
+- **Impact:** HTTP 400 errors on `podcast_topics` and `podcast_topic_categories` endpoints
+- **Fixes Applied:**
+  1. ✅ Frontend ID generation - Use `crypto.randomUUID()` (commit 68c2bee)
+  2. ✅ Context ID preservation - Don't overwrite valid UUIDs (commit 9d9f5d4)
+  3. ✅ Icon column removal - Removed non-existent field (commit 9897bae)
+  4. ✅ UUID validation before insert - Filter invalid IDs (commit 31ff935)
+- **Final State:** Auto-save now validates all IDs, removes non-UUIDs, lets DB generate proper UUIDs
 - **Next Phase:** Option B (Complete UUID migration) - Technical debt for next sprint
 
 **Issue #2: AI Theme Button Missing Functionality** (Part 3)
@@ -771,12 +776,17 @@ document.querySelector('[data-testid="studio-workspace"]') !== null
 - 🔄 **Part 4 Blocked:** Auto-save persistence bug (CRITICAL)
 - ⏭️ **Parts 5-8:** Ready for agent to continue
 
-#### 3. Critical Issue Outstanding
+#### 3. Critical Issue Outstanding → ✅ RESOLVED
 **Auto-Save Persistence Failure**
 - **Symptom:** UI shows save indicator but data doesn't persist
 - **Console:** `[useAutoSave] Save failed: Object`
 - **File:** `src/modules/studio/hooks/useAutoSave.ts`
 - **Impact:** Topics and theme changes lost after refresh
+- **✅ FINAL FIX APPLIED (Commit 31ff935):**
+  - Added UUID validation for both topics and categories
+  - Non-UUID IDs are filtered before database insert
+  - Database auto-generates proper UUIDs
+  - All auto-save HTTP 400 errors resolved
 - **Priority:** 🔴 BLOCKER for Wave 9
 
 ### Next Steps
