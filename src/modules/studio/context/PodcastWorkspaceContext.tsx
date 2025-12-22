@@ -38,7 +38,7 @@ const initialSetupState: SetupState = {
   phone: '',
   email: '',
   theme: '',
-  themeMode: 'auto',
+  themeMode: 'manual',
   season: '',
   location: '',
   scheduledDate: '',
@@ -582,10 +582,12 @@ export function PodcastWorkspaceProvider({
     },
 
     // Pauta actions
-    addTopic: async (topic: Omit<Topic, 'id'>) => {
+    addTopic: async (topic: Topic) => {
+      // Se o topic já tem um ID válido (UUID), usar ele
+      // Caso contrário, gerar um UUID (mas PautaStage já deve enviar com ID)
       const newTopic: Topic = {
         ...topic,
-        id: `topic_${Date.now()}`,
+        id: topic.id || crypto.randomUUID(),  // ✅ FIX: Use UUID instead of topic_${Date.now()}
       };
       dispatch({ type: 'ADD_TOPIC', payload: newTopic });
     },
