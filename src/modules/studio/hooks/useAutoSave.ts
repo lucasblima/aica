@@ -203,7 +203,8 @@ export function useAutoSave({
             name: cat.name,
             color: cat.color,
             description: cat.description || null,
-            icon: cat.icon || null,
+            // ✅ FIX: 'icon' column doesn't exist in podcast_topic_categories table
+            // Removed: icon: cat.icon || null,
           }));
 
           console.log('[useAutoSave] Inserting categories:', categoriesToInsert);
