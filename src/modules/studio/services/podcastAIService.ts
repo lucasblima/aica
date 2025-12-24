@@ -11,20 +11,10 @@
  */
 
 import { GeminiClient } from '@/lib/gemini'
-import type { Dossier } from '../../../_deprecated/modules/podcast/types'
+import type { Dossier, WorkspaceCustomSource } from '../types'
 
 // Initialize client singleton
 const geminiClient = GeminiClient.getInstance()
-
-/**
- * Custom source for guest research
- */
-export interface CustomSource {
-  id: string
-  url: string
-  title: string
-  type: 'article' | 'video' | 'social' | 'other'
-}
 
 /**
  * Guest search result
@@ -59,7 +49,7 @@ export interface GuestSearchResult {
 export async function generateDossier(
   guestName: string,
   theme?: string,
-  customSources?: CustomSource[]
+  customSources?: WorkspaceCustomSource[]
 ): Promise<Dossier> {
   try {
     console.log('[podcastAIService] Generating dossier:', { guestName, theme, customSources })

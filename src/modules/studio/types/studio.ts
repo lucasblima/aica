@@ -23,10 +23,11 @@ import type { PodcastShow } from './podcast';
  * States:
  * - LOADING: Initial state while fetching data
  * - LIBRARY: Showing list of shows/projects
+ * - SHOW_PAGE: Showing episodes for a specific podcast show
  * - WIZARD: Creating a new project
  * - WORKSPACE: Editing an existing project
  */
-export type StudioMode = 'LOADING' | 'LIBRARY' | 'WIZARD' | 'WORKSPACE';
+export type StudioMode = 'LOADING' | 'LIBRARY' | 'SHOW_PAGE' | 'WIZARD' | 'WORKSPACE';
 
 // ============================================
 // PROJECT TYPES
@@ -127,6 +128,7 @@ export type StudioAction =
   | { type: 'START_LOADING' }
   | { type: 'FINISH_LOADING'; payload: { project: StudioProject | null } }
   | { type: 'GO_TO_LIBRARY' }
+  | { type: 'GO_TO_SHOW_PAGE'; payload: { showId: string; showTitle: string } }
   | { type: 'GO_TO_WIZARD' }
   | { type: 'GO_TO_WORKSPACE'; payload: StudioProject }
 
@@ -152,6 +154,9 @@ export type StudioAction =
 export interface StudioActions {
   /** Navigate to library view */
   goToLibrary: () => void;
+
+  /** Navigate to show page (podcast-specific) */
+  goToShowPage: (showId: string, showTitle: string) => void;
 
   /** Navigate to wizard for creating new project */
   goToWizard: () => void;
@@ -191,7 +196,7 @@ export interface StudioContextValue {
  * Props for StudioLibrary component.
  */
 export interface StudioLibraryProps {
-  onSelectShow: (showId: string) => void;
+  onSelectShow: (showId: string, showTitle: string) => void;
   onSelectProject: (project: StudioProject) => void;
   onCreateNew: () => void;
   userEmail?: string;

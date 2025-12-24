@@ -17,13 +17,37 @@ interface AgendaTimelineProps {
   events: TimelineEvent[];
   onEventClick?: (eventId: string) => void;
   onTaskToggle?: (taskId: string) => void;
+  onEventEdit?: (eventId: string) => void;
 }
 
 export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
   events,
   onEventClick,
-  onTaskToggle
+  onTaskToggle,
+  onEventEdit
 }) => {
+  // Helper to check if event ID is from Google Calendar (not UUID format)
+  const isGoogleCalendarEvent = (eventId: string): boolean => {
+    // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return !uuidPattern.test(eventId);
+  };
+
+  const handleEventAction = (item: TimelineEvent) => {
+    if (item.type === 'task') {
+      onTaskToggle?.(item.id);
+    } else {
+      // Event type
+      if (isGoogleCalendarEvent(item.id)) {
+        // Google Calendar event - open in new tab
+        const googleCalendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit/${item.id}`;
+        window.open(googleCalendarUrl, '_blank');
+      } else {
+        // Supabase event - call edit handler
+        onEventEdit?.(item.id);
+      }
+    }
+  };
   const formatTime = (isoString: string) => {
     return new Date(isoString).toLocaleTimeString('pt-BR', {
       hour: '2-digit',
@@ -79,13 +103,7 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
           <motion.div
             key={item.id}
             variants={itemVariants}
-            onClick={() => {
-              if (isTask) {
-                onTaskToggle?.(item.id);
-              } else {
-                onEventClick?.(item.id);
-              }
-            }}
+            onClick={() => handleEventAction(item)}
             className={`ceramic-card p-4 rounded-2xl cursor-pointer hover:scale-[1.01] transition-transform ${
               isTask && item.isCompleted ? 'opacity-60' : ''
             }`}

@@ -22,6 +22,7 @@ import { CalendarStatusDot } from '../components/CalendarStatusDot';
 import { NextEventHero } from '../components/NextEventHero';
 import { AgendaTimeline } from '../components/AgendaTimeline';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components/NextTwoDaysView';
+import { TaskCreationQuickAdd } from '../components/TaskCreationQuickAdd';
 import { Task, Quadrant } from '../../types';
 // REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
 // import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
@@ -32,6 +33,7 @@ import { Task, Quadrant } from '../../types';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { TimelineEvent } from '../services/googleCalendarService';
 import { disconnectGoogleCalendar } from '../services/googleAuthService';
+import { notificationService } from '../services/notificationService';
 
 interface AgendaViewProps {
     userId: string;
@@ -166,6 +168,20 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const transformCalendarEventToTask = (event: TimelineEvent): Task => {
         // Extract time from startTime (format: "HH:MM")
         const startDate = new Date(event.startTime);
+
+        // Validate if date is valid
+        if (isNaN(startDate.getTime())) {
+            console.warn('[AgendaView] Invalid startTime:', event.startTime);
+            return {
+                id: event.id,
+                title: event.title,
+                scheduled_time: undefined,
+                estimated_duration: event.duration,
+                due_date: event.startTime.split('T')[0],
+                priority_quadrant: undefined,
+            };
+        }
+
         const scheduled_time = event.isAllDay
             ? undefined
             : `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`;
@@ -625,10 +641,32 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         }));
 
         // DB Update
-        await supabase
+        const { error } = await supabase
             .from('work_items')
             .update({ scheduled_time: null, priority_quadrant: targetQuadrant })
             .eq('id', taskId);
+
+        if (!error) {
+            // Show success notification
+            notificationService.show({
+                type: 'success',
+                title: 'Tarefa removida da agenda',
+                message: `"${task.title}" foi movida para a matriz de prioridades`,
+                icon: '✅',
+                duration: 3000
+            });
+        } else {
+            console.error('[AgendaView] Error unscheduling task:', error);
+            notificationService.show({
+                type: 'error',
+                title: 'Erro ao remover tarefa',
+                message: 'Não foi possível remover a tarefa da agenda',
+                icon: '❌',
+                duration: 5000
+            });
+            // Revert optimistic update
+            loadAllTasks();
+        }
     };
 
     // Handler para conectar Google Calendar
@@ -710,13 +748,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         />
                     </section>
 
-                    {/* REMOVED: Atlas Quick Add (deprecated - moved to _deprecated/modules/) */}
-                    {/* <div className="flex-none max-w-2xl mx-auto w-full">
-                        <TaskCreationInput
-                            onAddTask={handleAddTask}
-                            isSyncing={isAtlasSyncing}
+                    {/* Quick Add de Tarefas */}
+                    <section className="max-w-2xl mx-auto w-full">
+                        <TaskCreationQuickAdd
+                            userId={userId}
+                            onTaskCreated={loadAllTasks}
                         />
-                    </div> */}
+                    </section>
 
                     {/* TIMELINE: Mais Tarde */}
                     {restOfDay.length > 0 && (

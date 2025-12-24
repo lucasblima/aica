@@ -339,7 +339,7 @@ export default function Home({
                      initial="hidden"
                      animate="visible"
                      custom={8}
-                     onClick={() => setActiveTab('network')}
+                     onClick={() => onNavigateToView('connections')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
                      <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
@@ -366,7 +366,7 @@ export default function Home({
                      initial="hidden"
                      animate="visible"
                      custom={9}
-                     onClick={() => onNavigateToView('podcast')}
+                     onClick={() => onNavigateToView('studio')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
                      <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-purple-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />

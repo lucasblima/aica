@@ -319,6 +319,12 @@ export interface FileSearchCorpus {
   /** Number of documents in corpus */
   document_count: number;
 
+  /** Module type this corpus belongs to (optional) */
+  module_type?: ModuleType;
+
+  /** Module item ID (optional) */
+  module_id?: string;
+
   /** Timestamp when created */
   created_at: string;
 }
@@ -394,6 +400,9 @@ export interface IndexDocumentRequest {
   /** Corpus ID to add to */
   corpus_id: string;
 
+  /** Display name for the document (optional) */
+  display_name?: string;
+
   /** Module type (optional) */
   module_type?: ModuleType;
 
@@ -402,6 +411,9 @@ export interface IndexDocumentRequest {
 
   /** Custom metadata (optional) */
   metadata?: DocumentMetadata;
+
+  /** Alias for metadata (for backward compatibility) */
+  custom_metadata?: DocumentMetadata;
 }
 
 /**
