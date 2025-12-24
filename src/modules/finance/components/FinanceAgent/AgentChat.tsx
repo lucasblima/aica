@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Sparkles, TrendingDown, PieChart, AlertTriangle, Loader2 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { financeAgentService } from '../../services/financeAgentService';
 import type { AgentContext } from '../../types';
 
@@ -222,11 +223,17 @@ Como posso ajudar hoje?`,
     }
 
     // Simple markdown rendering
-    return content
+    const html = content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded">$1</code>')
       .replace(/\n/g, '<br />');
+
+    // Sanitize HTML to prevent XSS attacks
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['strong', 'em', 'code', 'br'],
+      ALLOWED_ATTR: ['class'],
+    });
   };
 
   return (
