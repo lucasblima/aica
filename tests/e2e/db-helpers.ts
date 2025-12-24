@@ -10,10 +10,20 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+
+// Ensure .env is loaded
+dotenv.config();
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://gppebtrshbvuzatmebhr.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Debug: Log environment variable status
+if (!SUPABASE_SERVICE_KEY) {
+  console.error('❌ SUPABASE_SERVICE_ROLE_KEY is not set!');
+  console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
+}
 
 /**
  * Initialize Supabase client for testing
@@ -21,7 +31,11 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
  */
 export function getSupabaseAdminClient() {
   if (!SUPABASE_SERVICE_KEY) {
-    console.warn('⚠️  SUPABASE_SERVICE_ROLE_KEY not set - some tests may fail');
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is required for E2E tests. ' +
+      'Please add it to your .env file:\n' +
+      'SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here'
+    );
   }
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 }

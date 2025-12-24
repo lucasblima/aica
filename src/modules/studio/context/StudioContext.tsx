@@ -53,6 +53,18 @@ function studioReducer(state: StudioState, action: StudioAction): StudioState {
         ...state,
         mode: 'LIBRARY',
         currentProject: null,
+        currentShowId: null,
+        currentShowTitle: null,
+        error: null,
+      };
+
+    case 'GO_TO_SHOW_PAGE':
+      return {
+        ...state,
+        mode: 'SHOW_PAGE',
+        currentProject: null,
+        currentShowId: action.payload.showId,
+        currentShowTitle: action.payload.showTitle,
         error: null,
       };
 
@@ -159,6 +171,10 @@ export function StudioProvider({ children, initialState }: StudioProviderProps) 
   const actions = useMemo<StudioActions>(() => ({
     goToLibrary: () => {
       dispatch({ type: 'GO_TO_LIBRARY' });
+    },
+
+    goToShowPage: (showId: string, showTitle: string) => {
+      dispatch({ type: 'GO_TO_SHOW_PAGE', payload: { showId, showTitle } });
     },
 
     goToWizard: () => {
