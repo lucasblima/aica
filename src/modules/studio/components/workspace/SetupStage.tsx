@@ -13,10 +13,11 @@
  * @module studio/components/workspace
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
 import { User, Users, UserCircle, Sparkles, Calendar, MapPin, Clock, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { searchGuestProfile } from '@/services/podcastProductionService';
+import { GeminiClient } from '@/lib/gemini/client';
 
 export default function SetupStage() {
   const { state, actions } = usePodcastWorkspace();
@@ -24,6 +25,12 @@ export default function SetupStage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<any | null>(null);
+
+  // Theme suggestion state
+  const [themeSuggestions, setThemeSuggestions] = useState<string[]>([]);
+  const [isGeneratingThemes, setIsGeneratingThemes] = useState(false);
+  const [themeError, setThemeError] = useState<string | null>(null);
+  const hasGeneratedRef = useRef(false);
 
   // Handle guest type selection
   const handleGuestTypeSelect = (type: 'public_figure' | 'common_person') => {
@@ -35,6 +42,16 @@ export default function SetupStage() {
     });
     setProfileData(null);
     setSearchError(null);
+  };
+
+  // Handle theme mode change to auto
+  const handleThemeModeAuto = () => {
+    actions.updateSetup({ themeMode: 'auto' });
+
+    // If guest name is filled, auto-generate suggestions
+    if (setup.guestName.trim()) {
+      handleGenerateThemeSuggestions();
+    }
   };
 
   // Handle AI profile search
@@ -79,6 +96,113 @@ export default function SetupStage() {
       // Could also pre-populate research stage here if needed
     }
   };
+
+  // Handle theme suggestion generation
+  const handleGenerateThemeSuggestions = async () => {
+    if (!setup.guestName.trim()) {
+      setThemeError('Por favor, insira o nome do convidado primeiro');
+      return;
+    }
+
+    setIsGeneratingThemes(true);
+    setThemeError(null);
+    setThemeSuggestions([]);
+
+    try {
+      // Build the message for theme suggestion
+      let messageContent = `Sugira 3-5 temas atraentes e específicos para um episódio de podcast com ${setup.guestName}`;
+      if (setup.guestReference) {
+        messageContent += ` (${setup.guestReference})`;
+      }
+      if (setup.guestType === 'common_person' && setup.guestBio) {
+        messageContent += `\n\nInformações adicionais: ${setup.guestBio}`;
+      }
+      if (profileData) {
+        messageContent += `\n\nPerfil do convidado:`;
+        if (profileData.occupation) messageContent += `\nOcupação: ${profileData.occupation}`;
+        if (profileData.known_for) messageContent += `\nConhecido por: ${profileData.known_for}`;
+        if (profileData.bio_summary) messageContent += `\nBiografia: ${profileData.bio_summary}`;
+      }
+
+      // Call Gemini API via GeminiClient
+      const geminiClient = GeminiClient.getInstance();
+      const result = await geminiClient.call({
+        action: 'finance_chat', // Use finance_chat action which supports custom systemPrompt
+        payload: {
+          message: messageContent,
+          systemPrompt: `Você é um assistente especializado em sugerir temas para episódios de podcast.
+Baseado nas informações fornecidas sobre o convidado, sugira 3-5 temas específicos, envolventes e relevantes.
+Cada tema deve ser curto (máximo 10 palavras), direto e adequado para um episódio de podcast.
+Retorne APENAS um array JSON de strings com os temas sugeridos, sem nenhum texto adicional.
+Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
+        },
+        model: 'fast',
+      });
+
+      // Parse the response - expecting array of strings
+      let suggestions: string[] = [];
+      const responseText = result.result?.response || result.response;
+
+      if (Array.isArray(responseText)) {
+        suggestions = responseText;
+      } else if (typeof responseText === 'string') {
+        // Try to parse as JSON array
+        try {
+          const parsed = JSON.parse(responseText.replace(/```json\n?|\n?```/g, '').trim());
+          if (Array.isArray(parsed)) {
+            suggestions = parsed;
+          }
+        } catch {
+          // If parsing fails, split by newlines and clean up
+          suggestions = responseText
+            .split('\n')
+            .map((line: string) => line.trim())
+            .filter((line: string) => line.length > 0 && !line.startsWith('[') && !line.startsWith(']'))
+            .map((line: string) => line.replace(/^["'-]\s*|["'-]$/g, '').replace(/^-\s*/, ''))
+            .slice(0, 5);
+        }
+      }
+
+      if (suggestions.length === 0) {
+        throw new Error('Nenhuma sugestão foi gerada');
+      }
+
+      setThemeSuggestions(suggestions);
+      setThemeError(null);
+    } catch (error: any) {
+      console.error('Error generating theme suggestions:', error);
+      setThemeError(error.message || 'Erro ao gerar sugestões de tema. Tente novamente.');
+      setThemeSuggestions([]);
+    } finally {
+      setIsGeneratingThemes(false);
+    }
+  };
+
+  // Handle selecting a theme suggestion
+  const handleSelectThemeSuggestion = (theme: string) => {
+    actions.updateSetup({ theme });
+    setThemeSuggestions([]); // Clear suggestions after selection
+  };
+
+  // Auto-generate theme suggestions when guest name is filled in auto mode
+  useEffect(() => {
+    if (
+      setup.themeMode === 'auto' &&
+      setup.guestName.trim() &&
+      !isGeneratingThemes &&
+      themeSuggestions.length === 0 &&
+      !themeError &&
+      !hasGeneratedRef.current
+    ) {
+      hasGeneratedRef.current = true;
+      handleGenerateThemeSuggestions();
+    }
+
+    // Reset the ref when mode changes or suggestions are cleared
+    if (setup.themeMode !== 'auto' || themeSuggestions.length > 0) {
+      hasGeneratedRef.current = false;
+    }
+  }, [setup.themeMode, setup.guestName, isGeneratingThemes, themeSuggestions.length, themeError]);
 
   return (
     <div className="p-8 max-w-4xl mx-auto" role="main">
@@ -452,10 +576,12 @@ export default function SetupStage() {
                   type="button"
                   role="radio"
                   aria-checked={setup.themeMode === 'auto'}
-                  onClick={() => actions.updateSetup({ themeMode: 'auto' })}
+                  onClick={handleThemeModeAuto}
+                  disabled={isGeneratingThemes}
                   className={`
                     flex-1 px-4 py-3 rounded-lg border-2 transition-all
                     focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20
+                    disabled:opacity-50 disabled:cursor-not-allowed
                     ${setup.themeMode === 'auto'
                       ? 'border-ceramic-primary bg-ceramic-accent text-ceramic-primary'
                       : 'border-ceramic-border hover:border-ceramic-primary/50 text-ceramic-secondary'
@@ -463,11 +589,17 @@ export default function SetupStage() {
                   `}
                 >
                   <div className="flex items-center justify-center space-x-2">
-                    <Sparkles className="w-5 h-5" aria-hidden="true" />
-                    <span className="font-medium">Auto-sugerir com IA</span>
+                    {isGeneratingThemes ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current" role="status" aria-label="Gerando sugestões" />
+                    ) : (
+                      <Sparkles className="w-5 h-5" aria-hidden="true" />
+                    )}
+                    <span className="font-medium">
+                      {isGeneratingThemes ? 'Gerando sugestões...' : 'Auto-sugerir com IA'}
+                    </span>
                   </div>
                   <p className="text-xs mt-1">
-                    Gerar sugestões baseadas no convidado
+                    {isGeneratingThemes ? 'Aguarde...' : 'Gerar sugestões baseadas no convidado'}
                   </p>
                 </button>
                 <button
@@ -515,28 +647,95 @@ export default function SetupStage() {
               />
             </div>
 
-            {/* AI Theme Suggestions (when auto mode is active) */}
-            {setup.themeMode === 'auto' && setup.guestName && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start space-x-3 mb-3">
-                  <Sparkles className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-ceramic-primary mb-2">Sugestões de Tema</h3>
-                    <p className="text-sm text-ceramic-secondary mb-4">
-                      Baseado nas informações do convidado, a IA pode sugerir temas relevantes para o episódio.
+            {/* AI Theme Suggestions - Waiting for guest name */}
+            {setup.themeMode === 'auto' && !setup.guestName.trim() && !isGeneratingThemes && themeSuggestions.length === 0 && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <Sparkles className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <p className="font-medium text-ceramic-primary mb-1">Preencha o nome do convidado</p>
+                    <p className="text-sm text-ceramic-secondary">
+                      Assim que você preencher o nome do convidado acima, a IA gerará automaticamente sugestões de temas relevantes para o episódio.
                     </p>
-                    <button
-                      type="button"
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm inline-flex items-center space-x-2 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
-                    >
-                      <Sparkles className="w-4 h-4" aria-hidden="true" />
-                      <span>Gerar Sugestões de Tema</span>
-                    </button>
                   </div>
                 </div>
-                <p className="text-xs text-ceramic-tertiary mt-3">
-                  💡 Dica: Preencha mais informações sobre o convidado para obter sugestões mais precisas
-                </p>
+              </div>
+            )}
+
+            {/* AI Theme Suggestions - Loading State */}
+            {setup.themeMode === 'auto' && isGeneratingThemes && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" role="status" aria-label="Gerando sugestões" />
+                  <div>
+                    <p className="font-medium text-ceramic-primary">Gerando sugestões de tema...</p>
+                    <p className="text-sm text-ceramic-secondary">A IA está analisando as informações do convidado</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* AI Theme Suggestions - Error State */}
+            {setup.themeMode === 'auto' && themeError && !isGeneratingThemes && (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3"
+              >
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="flex-1">
+                  <p className="font-medium text-red-800 mb-1">Erro ao gerar sugestões</p>
+                  <p className="text-sm text-red-700 mb-3">{themeError}</p>
+                  <button
+                    type="button"
+                    onClick={handleGenerateThemeSuggestions}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm inline-flex items-center space-x-2 focus:outline-none focus:ring-4 focus:ring-red-500/20"
+                  >
+                    <span>Tentar Novamente</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* AI Theme Suggestions - Results */}
+            {setup.themeMode === 'auto' && themeSuggestions.length > 0 && !isGeneratingThemes && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-ceramic-primary flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-blue-500" aria-hidden="true" />
+                    <span>Selecione um tema sugerido pela IA:</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setThemeSuggestions([])}
+                    className="text-xs text-ceramic-tertiary hover:text-ceramic-secondary underline focus:outline-none focus:ring-2 focus:ring-ceramic-primary rounded px-2 py-1"
+                  >
+                    Gerar novamente
+                  </button>
+                </div>
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="space-y-2"
+                >
+                  {themeSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleSelectThemeSuggestion(suggestion)}
+                      className="w-full text-left px-4 py-3 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/20 group"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-semibold group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                          {index + 1}
+                        </div>
+                        <p className="flex-1 text-sm text-ceramic-primary group-hover:text-blue-700 transition-colors">
+                          {suggestion}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </section>
@@ -685,7 +884,7 @@ export default function SetupStage() {
               onClick={() => actions.setStage('research')}
               disabled={!setup.guestName || !setup.theme}
               aria-label={!setup.guestName || !setup.theme ? 'Preencha nome do convidado e tema para continuar' : 'Ir para próxima etapa: Pesquisa'}
-              className="px-6 py-3 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover disabled:bg-ceramic-disabled disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
+              className="px-6 py-3 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:border disabled:border-gray-400 transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
             >
               <span>Próximo: Pesquisa</span>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
