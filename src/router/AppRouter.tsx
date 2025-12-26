@@ -543,16 +543,16 @@ export function AppRouter() {
                element={<GuestApprovalPage />}
             />
 
-            {/* Landing Page - Digital Ceramic Redesign (Operation "Digital Desire") */}
+            {/* Landing Page - Apple-Scale Digital Ceramic Transformation (V3 is now default) */}
             <Route
                path="/landing"
-               element={<LandingPage />}
+               element={<LandingPageV3 />}
             />
 
-            {/* Landing Page V3 - Apple-Scale Digital Ceramic Transformation */}
+            {/* Landing Page V2 - Previous version (backup) */}
             <Route
-               path="/landing-v3"
-               element={<LandingPageV3 />}
+               path="/landing-v2"
+               element={<LandingPage />}
             />
 
             {/* Privacy Policy - Public route */}
