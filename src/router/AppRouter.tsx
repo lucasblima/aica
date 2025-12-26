@@ -43,6 +43,7 @@ const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m =
 
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding').then(m => ({ default: m.LandingPageV2 })));
+const LandingPageV3 = lazy(() => import('../modules/onboarding/components/landing-v3').then(m => ({ default: m.LandingPageV3 })));
 const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
 
 // Analytics/Settings - Rarely accessed
@@ -546,6 +547,12 @@ export function AppRouter() {
             <Route
                path="/landing"
                element={<LandingPage />}
+            />
+
+            {/* Landing Page V3 - Apple-Scale Digital Ceramic Transformation */}
+            <Route
+               path="/landing-v3"
+               element={<LandingPageV3 />}
             />
 
             {/* Privacy Policy - Public route */}
