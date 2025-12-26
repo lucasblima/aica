@@ -163,6 +163,12 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
   const handleCreate = async () => {
     // Validate podcast-specific fields
     if (formData.projectType === 'podcast') {
+      // Validate show ID is provided
+      if (!showId || showId.trim() === '') {
+        setError('Erro: Podcast não selecionado. Por favor, selecione um podcast primeiro.');
+        return;
+      }
+
       if (!formData.guestName.trim()) {
         setError('Nome do convidado é obrigatório');
         return;

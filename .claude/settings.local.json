@@ -114,7 +114,12 @@
       "Bash(gh pr checks:*)",
       "Bash(gh pr merge:*)",
       "Bash(gh pr list:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(timeout 60 npm run type-check:*)",
+      "Bash(xargs -I {} bash -c \"echo ''===== {} ====='' && grep -n ''podcast_topics'' {} | head -5\")",
+      "Bash(timeout 30 npx tsc:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh run view:*)"
     ],
     "deny": [],
     "ask": []
