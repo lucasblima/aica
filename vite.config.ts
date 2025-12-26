@@ -14,6 +14,34 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         }
+      },
+      // Security headers middleware
+      headers: {
+        // Content Security Policy - defense against XSS attacks
+        'Content-Security-Policy': [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-inline/eval needed for React dev tools and HMR
+          "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for styled components
+          "img-src 'self' data: https: blob:", // Allow images from data URIs, HTTPS, and blob URLs
+          "font-src 'self' data:",
+          "connect-src 'self' https://ai.google.dev https://*.supabase.co wss://*.supabase.co https://n8n-n8n.w9jo16.easypanel.host https://project-management-docker.w9jo16.easypanel.host",
+          "media-src 'self' blob: data:",
+          "object-src 'none'",
+          "frame-ancestors 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+          "upgrade-insecure-requests"
+        ].join('; '),
+        // Prevent clickjacking attacks
+        'X-Frame-Options': 'DENY',
+        // Prevent MIME type sniffing
+        'X-Content-Type-Options': 'nosniff',
+        // Enable XSS protection in older browsers
+        'X-XSS-Protection': '1; mode=block',
+        // Referrer policy for privacy
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        // Permissions policy (formerly Feature Policy)
+        'Permissions-Policy': 'camera=(), microphone=(self), geolocation=(self)',
       }
     },
     plugins: [react()],

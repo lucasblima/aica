@@ -54,11 +54,25 @@ interface SentimentAnalysisResult {
 // CONFIGURATION
 // ============================================================================
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': Deno.env.get('CORS_ORIGIN') || 'http://localhost:3000',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-evolution-signature',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
+// Whitelist of allowed origins for CORS - update with your production domains
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://yourdomain.com', // TODO: Replace with actual production domain
+  'https://www.yourdomain.com', // TODO: Replace with actual production domain
+]
+
+function getCorsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('origin') || ''
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ''
+
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-evolution-signature',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json',
+  }
 }
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
@@ -380,6 +394,8 @@ async function handleMessageUpsert(data: MessageUpsertData, userId?: string) {
 // ============================================================================
 
 serve(async (req) => {
+  const CORS_HEADERS = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
