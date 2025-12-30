@@ -27,7 +27,12 @@ const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
  * Ações que possuem Edge Functions dedicadas (não vão para gemini-chat)
  */
 const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
-  'deep_research': 'deep-research'
+  'deep_research': 'deep-research',
+  'create_store': 'file-search',
+  'upload_document': 'file-search',
+  'search_documents': 'file-search',
+  'delete_store': 'file-search',
+  'list_stores': 'file-search'
 }
 
 /**
