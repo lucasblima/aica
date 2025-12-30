@@ -14,6 +14,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 // Flag to use Supabase directly instead of Python backend
 const USE_SUPABASE_DIRECT = true;
 
+// Supabase Edge Function URL for File Search operations
+const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/file-search-corpus`;
+
 /**
  * Get the JWT token from Supabase session for backend API calls
  * @returns JWT token or null if no session
@@ -253,7 +256,23 @@ export async function createCorpus(
 }
 
 /**
- * Indexes a document in a corpus
+ * Helper: Convert File to base64
+ */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(',')[1]; // Remove "data:mime/type;base64," prefix
+      resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+  });
+}
+
+/**
+ * Indexes a document in a corpus via Supabase Edge Function
  * @param request - Index document request with file and metadata
  * @returns The indexed FileSearchDocument
  */
@@ -263,36 +282,46 @@ export async function indexDocument(
   const startTime = Date.now();
 
   try {
-    const formData = new FormData();
-    formData.append('file', request.file);
-    formData.append('corpus_id', request.corpusId);
-    formData.append('module_type', request.moduleType);
-    formData.append('module_id', request.moduleId);
-
-    if (request.metadata) {
-      formData.append('metadata', JSON.stringify(request.metadata));
-    }
-
     const token = await getAuthToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (!token) {
+      throw new Error('No authentication token available');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/file-search/documents`, {
+    // Convert file to base64
+    const base64Data = await fileToBase64(request.file);
+
+    // Call Edge Function
+    const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',
-      headers,
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        action: 'upload_document',
+        payload: {
+          corpusId: request.corpusId,
+          file: {
+            name: request.file.name,
+            type: request.file.type,
+            data: base64Data,
+            size: request.file.size,
+          },
+          metadata: request.metadata,
+          moduleType: request.moduleType,
+          moduleId: request.moduleId,
+        },
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail || `Failed to index document: ${response.statusText}`
+        errorData.error || `Failed to index document: ${response.statusText}`
       );
     }
 
-    const document = await response.json();
+    const { result } = await response.json();
 
     // ✅ CACHE: Invalidate module cache (new document changes search results)
     fileSearchCache.invalidateModule(request.moduleType, request.moduleId);
@@ -317,7 +346,20 @@ export async function indexDocument(
       console.debug('[fileSearchApiClient] Tracking error:', err);
     });
 
-    return document;
+    // Convert Edge Function response to FileSearchDocument format
+    return {
+      id: result.id,
+      name: result.geminiFileName,
+      displayName: request.metadata?.display_name || request.file.name,
+      corpusId: request.corpusId,
+      mimeType: request.file.type,
+      sizeBytes: request.file.size,
+      status: result.status,
+      createdAt: new Date().toISOString(),
+      moduleType: request.moduleType,
+      moduleId: request.moduleId,
+      metadata: request.metadata,
+    };
   } catch (error) {
     console.error('Error indexing document:', error);
     throw error;
@@ -325,7 +367,7 @@ export async function indexDocument(
 }
 
 /**
- * Performs semantic search across indexed documents
+ * Performs semantic search across indexed documents via Supabase Edge Function
  * @param query - File search query with filters
  * @returns Array of FileSearchResult objects
  */
@@ -342,21 +384,56 @@ export async function queryFileSearch(
   }
 
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/file-search/query`, {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+
+    // Call Edge Function for each corpus
+    const corpusIds = Array.isArray(query.corpusNames) ? query.corpusNames : [query.corpusId].filter(Boolean);
+
+    if (corpusIds.length === 0) {
+      throw new Error('At least one corpus ID must be provided');
+    }
+
+    // For simplicity, query the first corpus
+    // TODO: Support multi-corpus queries by merging results
+    const corpusId = corpusIds[0];
+
+    const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',
-      headers,
-      body: JSON.stringify(query),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        action: 'query_corpus',
+        payload: {
+          corpusId,
+          query: query.query,
+          resultCount: query.resultCount || 5,
+        },
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail || `Failed to query file search: ${response.statusText}`
+        errorData.error || `Failed to query file search: ${response.statusText}`
       );
     }
 
-    const results = await response.json();
+    const { result } = await response.json();
+
+    // Convert Edge Function response to FileSearchResult format
+    const results: FileSearchResult[] = [{
+      content: result.answer,
+      score: 1.0, // Edge Function doesn't return score yet
+      documentName: 'Multiple documents',
+      metadata: {
+        citations: result.citations || [],
+      },
+    }];
 
     // ✅ CACHE: Store results for future queries
     fileSearchCache.set(query, results);
@@ -365,13 +442,13 @@ export async function queryFileSearch(
     const duration = (Date.now() - startTime) / 1000;
     trackAIUsage({
       operation_type: 'file_search_query', // Matches ai_usage_analytics CHECK constraint
-      ai_model: 'aqa', // Gemini AQA (Attributed Question Answering)
+      ai_model: 'gemini-2.0-flash-exp',
       module_type: query.moduleType,
       module_id: query.moduleId,
       duration_seconds: duration,
       request_metadata: {
         query_text: query.query,
-        corpus_names: query.corpusNames,
+        corpus_ids: corpusIds,
         result_count: results.length,
       },
     }).catch(err => {
@@ -480,7 +557,7 @@ export async function listDocuments(
 }
 
 /**
- * Deletes a document from the corpus
+ * Deletes a document from the corpus via Supabase Edge Function
  * @param documentId - ID of the document to delete
  * @param moduleType - Optional module type for targeted cache invalidation
  * @param moduleId - Optional module ID for targeted cache invalidation
@@ -491,19 +568,29 @@ export async function deleteDocument(
   moduleId?: string
 ): Promise<void> {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${API_BASE_URL}/api/file-search/documents/${documentId}`,
-      {
-        method: 'DELETE',
-        headers,
-      }
-    );
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        action: 'delete_document',
+        payload: {
+          documentId,
+        },
+      }),
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail || `Failed to delete document: ${response.statusText}`
+        errorData.error || `Failed to delete document: ${response.statusText}`
       );
     }
 
