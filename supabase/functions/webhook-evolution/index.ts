@@ -112,8 +112,8 @@ const EVOLUTION_API_URL = Deno.env.get('EVOLUTION_API_URL')
 const EVOLUTION_API_KEY = Deno.env.get('EVOLUTION_API_KEY')
 
 // Instance configuration
-const AICA_INSTANCE_NAME = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'Lucas_4569'
-const AICA_PHONE = Deno.env.get('AICA_WHATSAPP_PHONE') || '5521965564006'
+const AICA_INSTANCE_NAME = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
+const AICA_PHONE = Deno.env.get('AICA_WHATSAPP_PHONE') || '552196556400'
 
 // Rate limiting
 const RATE_LIMIT_WINDOW_MS = 60000 // 1 minute
