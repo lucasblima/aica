@@ -4,6 +4,18 @@ import { LucideIcon, ChevronRight } from 'lucide-react';
 import { getModuleTasks } from '../services/supabaseService';
 import { cardElevationVariants } from '../lib/animations/ceramic-motion';
 
+/**
+ * Contextual descriptions for empty states in each module category
+ */
+const MODULE_DESCRIPTIONS: Record<string, string> = {
+  health: 'Hábitos, métricas e bem-estar',
+  education: 'Cursos, aprendizado contínuo',
+  legal: 'Documentos, contratos, processos',
+  professional: 'Carreira, projetos, metas',
+  relationships: 'Conexões, família, amizades',
+  finance: 'Orçamento, investimentos, planejamento',
+};
+
 interface ModuleCardProps {
   /** Unique identifier for the module (e.g., 'health', 'education', 'legal') */
   moduleId: string;
@@ -119,8 +131,8 @@ export function ModuleCard({
             ))
           ) : (
             <div className="flex items-center justify-center h-full">
-              <p className="text-xs text-ceramic-text-secondary italic font-light">
-                Sem tarefas
+              <p className="text-xs text-ceramic-text-secondary text-center leading-relaxed">
+                {MODULE_DESCRIPTIONS[moduleId] || 'Organize suas tarefas'}
               </p>
             </div>
           )}
