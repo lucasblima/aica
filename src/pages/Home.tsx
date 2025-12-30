@@ -350,11 +350,24 @@ export default function Home({
                            </div>
                            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
                         </div>
-                        <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
-                           {associations.filter(a => a.type !== 'personal').length} Conexões
-                        </p>
+                        {associations.filter(a => a.type !== 'personal').length === 0 ? (
+                           <div className="flex-1 flex flex-col justify-center space-y-3">
+                              <div>
+                                 <p className="text-sm font-bold text-ceramic-text-primary mb-1">
+                                    Mapeie seus relacionamentos
+                                 </p>
+                                 <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                                    Organize suas conexões em 4 arquétipos: Habitat, Ventures, Academia e Tribo
+                                 </p>
+                              </div>
+                           </div>
+                        ) : (
+                           <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
+                              {associations.filter(a => a.type !== 'personal').length} Conexões
+                           </p>
+                        )}
                         <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
-                           <span>Ver</span>
+                           <span>{associations.filter(a => a.type !== 'personal').length === 0 ? 'Começar' : 'Ver'}</span>
                            <ChevronRight className="w-3 h-3" />
                         </div>
                      </div>
@@ -368,6 +381,9 @@ export default function Home({
                      custom={9}
                      onClick={() => onNavigateToView('studio')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+                     style={{
+                        background: 'linear-gradient(135deg, #F0EFE9 0%, #F5E6F0 100%)'
+                     }}
                   >
                      <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-purple-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
                      <div className="relative z-10 flex flex-col h-full">
@@ -377,9 +393,16 @@ export default function Home({
                            </div>
                            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Studio</span>
                         </div>
-                        <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
-                           Podcast
-                        </p>
+                        <div className="flex-1 flex flex-col justify-center space-y-3">
+                           <div>
+                              <p className="text-sm font-bold text-ceramic-text-primary mb-1">
+                                 Podcast AI
+                              </p>
+                              <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                                 Transforme suas reflexões em episódios de podcast
+                              </p>
+                           </div>
+                        </div>
                         <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
                            <span>Gerar</span>
                            <ChevronRight className="w-3 h-3" />

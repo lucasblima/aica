@@ -90,15 +90,38 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
       <div className="flex-1 flex flex-col space-y-4 overflow-y-auto">
         {/* Active Projects Summary */}
         <div className="ceramic-tray p-4 text-center flex-shrink-0">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5 text-ceramic-text-secondary" />
-            <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
-              Projetos Ativos
-            </p>
-          </div>
-          <p className="text-3xl font-black text-etched">
-            {projectCount}
-          </p>
+          {projectCount === 0 ? (
+            <div className="space-y-3">
+              {/* Potential Funding Amount */}
+              <div>
+                <p className="text-2xl font-black text-ceramic-text-primary">
+                  R$ 0
+                </p>
+                <p className="text-xs text-ceramic-text-secondary">
+                  em captação potencial
+                </p>
+              </div>
+
+              {/* Agencies */}
+              <p className="text-xs text-ceramic-text-secondary">
+                Explore editais de <span className="font-semibold">FAPERJ</span>,{' '}
+                <span className="font-semibold">FINEP</span> e{' '}
+                <span className="font-semibold">CNPq</span>
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-ceramic-text-secondary" />
+                <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                  Projetos Ativos
+                </p>
+              </div>
+              <p className="text-3xl font-black text-etched">
+                {projectCount}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Upcoming Deadlines */}
