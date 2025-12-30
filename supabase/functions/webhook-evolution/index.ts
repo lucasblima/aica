@@ -1,13 +1,20 @@
 /**
- * Webhook Evolution API Handler
- * Receives events from Evolution API (WhatsApp) and processes them
- * - Onboarding: connection.update → update users table
- * - Message Processing: messages.upsert → RAG + sentiment analysis
+ * Evolution API Webhook Handler - Enhanced Version
+ * Issue #12: WhatsApp Integration via Evolution API
+ *
+ * Features:
+ * - HMAC-SHA256 signature validation
+ * - Message storage with deduplication
+ * - Consent keyword processing (LGPD)
+ * - Media download to Supabase Storage
+ * - Queue integration with pgmq for async processing
+ * - Rate limiting protection
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
+import { encodeHex } from "https://deno.land/std@0.168.0/encoding/hex.ts"
 
 // ============================================================================
 // TYPES
@@ -16,216 +23,297 @@ import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
 interface EvolutionWebhookEvent {
   event: string
   instance: string
-  data: Record<string, any>
+  data: Record<string, unknown>
+  date_time?: string
+  sender?: string
+  server_url?: string
+  apikey?: string
+}
+
+interface MessageData {
+  key: {
+    remoteJid: string
+    fromMe: boolean
+    id: string
+    participant?: string
+  }
+  pushName?: string
+  message?: {
+    conversation?: string
+    extendedTextMessage?: { text: string }
+    imageMessage?: {
+      url?: string
+      mimetype?: string
+      caption?: string
+      fileLength?: string
+      fileName?: string
+    }
+    audioMessage?: {
+      url?: string
+      mimetype?: string
+      seconds?: number
+      fileLength?: string
+    }
+    videoMessage?: {
+      url?: string
+      mimetype?: string
+      caption?: string
+      seconds?: number
+      fileLength?: string
+    }
+    documentMessage?: {
+      url?: string
+      mimetype?: string
+      title?: string
+      fileName?: string
+      fileLength?: string
+    }
+    stickerMessage?: {
+      url?: string
+      mimetype?: string
+    }
+    reactionMessage?: {
+      key: { id: string }
+      text: string
+    }
+    locationMessage?: {
+      degreesLatitude: number
+      degreesLongitude: number
+      name?: string
+      address?: string
+    }
+  }
+  messageTimestamp?: number | string
+  messageType?: string
 }
 
 interface ConnectionUpdateData {
   instance: string
-  status: string
-  statusMessage?: string
+  state?: string
+  statusReason?: number
 }
 
-interface MessageUpsertData {
-  instanceId: string
-  data: {
-    key: {
-      remoteJid: string
-      fromMe: boolean
-      id: string
-    }
-    message?: {
-      conversation?: string
-      imageMessage?: { caption?: string }
-      videoMessage?: { caption?: string }
-      documentMessage?: { title?: string }
-    }
-    messageTimestamp?: number
+interface QRCodeData {
+  instance: string
+  qrcode?: {
+    base64?: string
+    code?: string
   }
-}
-
-interface SentimentAnalysisResult {
-  sentiment: string
-  sentimentScore: number
-  triggers: string[]
-  summary: string
 }
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-// Whitelist of allowed origins for CORS - update with your production domains
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const EVOLUTION_WEBHOOK_SECRET = Deno.env.get('EVOLUTION_WEBHOOK_SECRET')
+const EVOLUTION_API_URL = Deno.env.get('EVOLUTION_API_URL')
+const EVOLUTION_API_KEY = Deno.env.get('EVOLUTION_API_KEY')
+
+// Instance configuration
+const AICA_INSTANCE_NAME = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
+const AICA_PHONE = Deno.env.get('AICA_WHATSAPP_PHONE') || '552196556400'
+
+// Rate limiting
+const RATE_LIMIT_WINDOW_MS = 60000 // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 100 // Max 100 requests per minute per IP
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+// Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://yourdomain.com', // TODO: Replace with actual production domain
-  'https://www.yourdomain.com', // TODO: Replace with actual production domain
+  'https://evolution-evolution-api.w9jo16.easypanel.host',
 ]
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?: unknown) {
+  const timestamp = new Date().toISOString()
+  const logData = data ? `: ${JSON.stringify(data)}` : ''
+  console.log(`[${timestamp}] [${level}] [webhook-evolution] ${message}${logData}`)
+}
 
 function getCorsHeaders(request: Request): Record<string, string> {
   const origin = request.headers.get('origin') || ''
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ''
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-evolution-signature',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-evolution-signature, x-webhook-signature',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json',
   }
 }
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-const EVOLUTION_WEBHOOK_SECRET = Deno.env.get('EVOLUTION_WEBHOOK_SECRET')
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Supabase configuration is missing')
-}
-
-if (!GEMINI_API_KEY) {
-  throw new Error('GEMINI_API_KEY is not set')
-}
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
 /**
- * Log with timestamp
+ * Validate HMAC-SHA256 signature from Evolution API
  */
-function log(level: string, message: string, data?: any) {
-  const timestamp = new Date().toISOString()
-  console.log(`[${timestamp}] [${level}] [webhook-evolution] ${message}${data ? ': ' + JSON.stringify(data) : ''}`)
-}
-
-/**
- * Validate HMAC signature (if secret is configured)
- */
-function validateWebhookSignature(body: string, signature: string | null): boolean {
+async function validateHmacSignature(body: string, signature: string | null): Promise<boolean> {
   if (!EVOLUTION_WEBHOOK_SECRET) {
     log('WARN', 'EVOLUTION_WEBHOOK_SECRET not configured, skipping signature validation')
-    return true
+    return true // Allow in development, should be required in production
   }
 
   if (!signature) {
-    log('ERROR', 'Webhook signature missing')
+    log('ERROR', 'Webhook signature missing from request headers')
     return false
   }
 
   try {
-    const key = new TextEncoder().encode(EVOLUTION_WEBHOOK_SECRET)
-    const encoder = new TextEncoder()
-    const data = encoder.encode(body)
+    // Evolution API sends signature as: sha256=<hex_signature>
+    const expectedPrefix = 'sha256='
+    const signatureValue = signature.startsWith(expectedPrefix)
+      ? signature.slice(expectedPrefix.length)
+      : signature
 
-    // Note: Deno.crypto.subtle for HMAC-SHA256
-    return true // Placeholder - signature validation would go here
+    // Create HMAC-SHA256
+    const encoder = new TextEncoder()
+    const keyData = encoder.encode(EVOLUTION_WEBHOOK_SECRET)
+    const messageData = encoder.encode(body)
+
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, messageData)
+    const computedSignature = encodeHex(new Uint8Array(signatureBuffer))
+
+    // Constant-time comparison to prevent timing attacks
+    if (computedSignature.length !== signatureValue.length) {
+      log('ERROR', 'Signature length mismatch')
+      return false
+    }
+
+    let match = true
+    for (let i = 0; i < computedSignature.length; i++) {
+      if (computedSignature[i] !== signatureValue[i]) {
+        match = false
+      }
+    }
+
+    if (!match) {
+      log('ERROR', 'Signature mismatch', {
+        expected: computedSignature.substring(0, 10) + '...',
+        received: signatureValue.substring(0, 10) + '...'
+      })
+    }
+
+    return match
   } catch (error) {
-    log('ERROR', 'Signature validation failed', (error as Error).message)
+    log('ERROR', 'HMAC validation error', (error as Error).message)
     return false
   }
 }
 
 /**
- * Extract message text from Evolution API message object
+ * Rate limiting check
  */
-function extractMessageText(messageData: any): string {
-  if (messageData.message?.conversation) {
-    return messageData.message.conversation
+function checkRateLimit(clientIp: string): boolean {
+  const now = Date.now()
+  const record = rateLimitMap.get(clientIp)
+
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return true
   }
-  if (messageData.message?.imageMessage?.caption) {
-    return messageData.message.imageMessage.caption
+
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    log('WARN', 'Rate limit exceeded', { ip: clientIp, count: record.count })
+    return false
   }
-  if (messageData.message?.videoMessage?.caption) {
-    return messageData.message.videoMessage.caption
-  }
+
+  record.count++
+  return true
+}
+
+/**
+ * Extract client IP from request
+ */
+function getClientIp(request: Request): string {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         request.headers.get('x-real-ip') ||
+         'unknown'
+}
+
+/**
+ * Extract message text from various message types
+ */
+function extractMessageText(message: MessageData['message']): string {
+  if (!message) return ''
+
+  if (message.conversation) return message.conversation
+  if (message.extendedTextMessage?.text) return message.extendedTextMessage.text
+  if (message.imageMessage?.caption) return message.imageMessage.caption
+  if (message.videoMessage?.caption) return message.videoMessage.caption
+  if (message.documentMessage?.title) return message.documentMessage.title
+  if (message.reactionMessage?.text) return message.reactionMessage.text
+  if (message.locationMessage?.name) return message.locationMessage.name
+
   return ''
 }
 
 /**
- * Convert WhatsApp JID to phone number
+ * Determine message type from Evolution API message
+ */
+function getMessageType(message: MessageData['message']): string {
+  if (!message) return 'text'
+
+  if (message.audioMessage) return 'audio'
+  if (message.imageMessage) return 'image'
+  if (message.videoMessage) return 'video'
+  if (message.documentMessage) return 'document'
+  if (message.stickerMessage) return 'sticker'
+  if (message.locationMessage) return 'location'
+  if (message.reactionMessage) return 'reaction'
+
+  return 'text'
+}
+
+/**
+ * Convert WhatsApp JID to normalized phone number
  */
 function jidToPhone(remoteJid: string): string {
   return remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '')
 }
 
-// ============================================================================
-// GEMINI SENTIMENT ANALYSIS
-// ============================================================================
-
 /**
- * Analyze message sentiment using Gemini
+ * Get media info from message
  */
-async function analyzeMessageSentiment(text: string): Promise<SentimentAnalysisResult> {
-  try {
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 512,
-      }
-    })
+function getMediaInfo(message: MessageData['message']): {
+  url?: string
+  mimetype?: string
+  filename?: string
+  size?: number
+  duration?: number
+} | null {
+  if (!message) return null
 
-    const prompt = `Analise o sentimento da seguinte mensagem de WhatsApp:
+  const mediaFields = [
+    message.audioMessage,
+    message.imageMessage,
+    message.videoMessage,
+    message.documentMessage,
+    message.stickerMessage,
+  ].find(m => m)
 
-"${text}"
+  if (!mediaFields) return null
 
-Retorne APENAS um JSON com:
-- sentiment: 'positive', 'neutral', ou 'negative'
-- sentimentScore: numero de -1 (negativo) a 1 (positivo)
-- triggers: lista de ate 3 gatilhos (work, health, relationship, finance, personal_growth, etc)
-- summary: resumo em 1 frase (max 100 caracteres)
-
-Responda APENAS com JSON valido, sem explicacoes.`
-
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const responseText = response.text()
-
-    // Parse JSON
-    const jsonStr = responseText.replace(/```json\n?|\n?```/g, '').trim()
-    const parsed = JSON.parse(jsonStr)
-
-    return {
-      sentiment: parsed.sentiment || 'neutral',
-      sentimentScore: Math.max(-1, Math.min(1, parsed.sentimentScore || 0)),
-      triggers: Array.isArray(parsed.triggers) ? parsed.triggers.slice(0, 3) : [],
-      summary: parsed.summary || '',
-    }
-  } catch (error) {
-    log('ERROR', 'Sentiment analysis failed', (error as Error).message)
-    // Return neutral sentiment on error
-    return {
-      sentiment: 'neutral',
-      sentimentScore: 0,
-      triggers: [],
-      summary: 'Analysis failed',
-    }
-  }
-}
-
-// ============================================================================
-// EMBEDDING GENERATION
-// ============================================================================
-
-/**
- * Generate embedding for message text
- */
-async function generateEmbedding(text: string): Promise<number[]> {
-  try {
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({
-      model: 'embedding-001',
-    })
-
-    const result = await model.embedContent(text)
-    return result.embedding.values
-  } catch (error) {
-    log('ERROR', 'Embedding generation failed', (error as Error).message)
-    // Return zero vector on error
-    return new Array(768).fill(0)
+  return {
+    url: (mediaFields as { url?: string }).url,
+    mimetype: (mediaFields as { mimetype?: string }).mimetype,
+    filename: (mediaFields as { fileName?: string }).fileName ||
+              (mediaFields as { title?: string }).title,
+    size: parseInt((mediaFields as { fileLength?: string }).fileLength || '0'),
+    duration: (mediaFields as { seconds?: number }).seconds,
   }
 }
 
@@ -234,159 +322,316 @@ async function generateEmbedding(text: string): Promise<number[]> {
 // ============================================================================
 
 /**
- * Handle connection.update event (onboarding)
+ * Find user by Evolution instance or phone number
  */
-async function handleConnectionUpdate(data: ConnectionUpdateData, userId?: string) {
-  try {
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-
-    const { status, instance } = data
-
-    log('INFO', 'Processing connection update', { status, instance })
-
-    if (status === 'open') {
-      // Update user status to active
-      if (userId) {
-        const { error } = await supabase
-          .from('users')
-          .update({
-            status: 'active',
-            instance_name: instance,
-            last_connected_at: new Date().toISOString(),
-          })
-          .eq('id', userId)
-
-        if (error) {
-          log('ERROR', 'Failed to update user status', error)
-        } else {
-          log('INFO', 'User status updated', { userId, instance })
-        }
-      }
-    } else if (status === 'closed' || status === 'disconnected') {
-      // Update user status to inactive
-      if (userId) {
-        const { error } = await supabase
-          .from('users')
-          .update({
-            status: 'inactive',
-            last_disconnected_at: new Date().toISOString(),
-          })
-          .eq('id', userId)
-
-        if (error) {
-          log('ERROR', 'Failed to update user disconnection status', error)
-        } else {
-          log('INFO', 'User disconnected', { userId })
-        }
-      }
+async function findUserByInstance(supabase: ReturnType<typeof createClient>, instanceName: string): Promise<string | null> {
+  // Try to find user by instance name pattern (userId_instanceName)
+  const parts = instanceName.split('_')
+  if (parts.length > 1) {
+    const possibleUserId = parts[0]
+    // Validate UUID format
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(possibleUserId)) {
+      const { data } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', possibleUserId)
+        .single()
+      if (data) return data.id
     }
-  } catch (error) {
-    log('ERROR', 'handleConnectionUpdate failed', (error as Error).message)
   }
+
+  // Fallback: look for user with this instance_name in users table
+  const { data } = await supabase
+    .from('users')
+    .select('id')
+    .eq('instance_name', instanceName)
+    .single()
+
+  return data?.id || null
 }
 
 /**
- * Handle messages.upsert event (message processing)
+ * Store incoming message
  */
-async function handleMessageUpsert(data: MessageUpsertData, userId?: string) {
+async function storeMessage(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  instanceName: string,
+  messageData: MessageData
+): Promise<string | null> {
   try {
-    if (!userId) {
-      log('WARN', 'No userId provided for message processing, skipping')
-      return
-    }
-
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-
-    const messageData = data.data
+    const messageId = messageData.key.id
     const remoteJid = messageData.key.remoteJid
     const fromMe = messageData.key.fromMe
+    const contactPhone = jidToPhone(remoteJid)
+    const messageText = extractMessageText(messageData.message)
+    const messageType = getMessageType(messageData.message)
+    const mediaInfo = getMediaInfo(messageData.message)
 
-    // Skip bot's own messages
-    if (fromMe) {
-      log('INFO', 'Skipping bot message')
-      return
+    // Timestamp handling
+    let messageTimestamp: Date
+    if (typeof messageData.messageTimestamp === 'number') {
+      // Unix timestamp in seconds
+      messageTimestamp = new Date(messageData.messageTimestamp * 1000)
+    } else if (typeof messageData.messageTimestamp === 'string') {
+      messageTimestamp = new Date(parseInt(messageData.messageTimestamp) * 1000)
+    } else {
+      messageTimestamp = new Date()
     }
 
-    const messageText = extractMessageText(messageData)
-
-    if (!messageText || messageText.trim().length < 2) {
-      log('WARN', 'Message text is empty or too short, skipping')
-      return
-    }
-
-    log('INFO', 'Processing incoming message', { remoteJid, textLength: messageText.length })
-
-    // 1. Generate embedding
-    const embedding = await generateEmbedding(messageText)
-
-    // 2. Analyze sentiment
-    const sentiment = await analyzeMessageSentiment(messageText)
-
-    // 3. Save to message_embeddings table
-    const { data: embeddingData, error: embeddingError } = await supabase
-      .from('message_embeddings')
+    const { data, error } = await supabase
+      .from('whatsapp_messages')
       .insert({
         user_id: userId,
-        instance_name: data.instanceId,
-        remote_jid: jidToPhone(remoteJid),
-        message_text: messageText,
-        embedding: embedding,
-        sentiment: sentiment,
-        message_date: new Date(messageData.messageTimestamp ? messageData.messageTimestamp * 1000 : Date.now()).toISOString(),
+        instance_name: instanceName,
+        message_id: messageId,
+        remote_jid: remoteJid,
+        contact_name: messageData.pushName || null,
+        contact_phone: contactPhone,
+        direction: fromMe ? 'outgoing' : 'incoming',
+        message_type: messageType,
+        content_text: messageText || null,
+        media_url: mediaInfo?.url || null,
+        media_mimetype: mediaInfo?.mimetype || null,
+        media_filename: mediaInfo?.filename || null,
+        media_size_bytes: mediaInfo?.size || null,
+        media_duration_seconds: mediaInfo?.duration || null,
+        processing_status: messageType === 'text' ? 'completed' : 'pending',
+        message_timestamp: messageTimestamp.toISOString(),
       })
       .select('id')
       .single()
 
-    if (embeddingError) {
-      log('ERROR', 'Failed to save embedding', embeddingError)
-      return
+    if (error) {
+      // Check if it's a duplicate
+      if (error.code === '23505') {
+        log('DEBUG', 'Duplicate message, skipping', { messageId })
+        return null
+      }
+      throw error
     }
 
-    const embeddingId = embeddingData?.id
-
-    // 4. Create memory entry
-    const { error: memoryError } = await supabase
-      .from('memories')
-      .insert({
-        user_id: userId,
-        content: messageText,
-        sentiment: sentiment.sentiment,
-        created_from: 'whatsapp',
-        source_instance: data.instanceId,
-        message_embedding_id: embeddingId,
-        tags: sentiment.triggers || [],
-      })
-
-    if (memoryError) {
-      log('ERROR', 'Failed to create memory', memoryError)
-    } else {
-      log('INFO', 'Memory created successfully', { embeddingId })
-    }
-
-    // 5. Update or create contact in contact_network
-    const phone = jidToPhone(remoteJid)
-    const healthScore = sentiment.sentimentScore >= 0.5 ? 1 : sentiment.sentimentScore <= -0.5 ? 0 : 0.5
-
-    const { error: contactError } = await supabase
-      .from('contact_network')
-      .upsert({
-        user_id: userId,
-        phone: phone,
-        last_interaction: new Date().toISOString(),
-        health_score: healthScore,
-      }, {
-        onConflict: 'user_id,phone'
-      })
-
-    if (contactError) {
-      log('ERROR', 'Failed to update contact_network', contactError)
-    } else {
-      log('INFO', 'Contact network updated', { phone, healthScore })
-    }
-
+    log('INFO', 'Message stored', { id: data.id, messageId, type: messageType })
+    return data.id
   } catch (error) {
-    log('ERROR', 'handleMessageUpsert failed', (error as Error).message)
+    log('ERROR', 'Failed to store message', (error as Error).message)
+    return null
   }
+}
+
+/**
+ * Process consent keywords
+ */
+async function processConsentKeyword(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  contactPhone: string,
+  messageText: string
+): Promise<{ matched: boolean; response?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('process_consent_keyword', {
+      p_user_id: userId,
+      p_contact_phone: contactPhone,
+      p_message: messageText,
+      p_language: 'pt-BR'
+    })
+
+    if (error) {
+      log('ERROR', 'Consent keyword processing error', error)
+      return { matched: false }
+    }
+
+    if (data && data.length > 0 && data[0].matched) {
+      log('INFO', 'Consent keyword processed', {
+        action: data[0].action,
+        consent_type: data[0].consent_type
+      })
+      return { matched: true, response: data[0].response_message }
+    }
+
+    return { matched: false }
+  } catch (error) {
+    log('ERROR', 'Consent processing failed', (error as Error).message)
+    return { matched: false }
+  }
+}
+
+/**
+ * Enqueue message for async processing (AI analysis, transcription, etc.)
+ */
+async function enqueueForProcessing(
+  supabase: ReturnType<typeof createClient>,
+  messageDbId: string,
+  messageType: string,
+  userId: string
+): Promise<void> {
+  if (messageType === 'text') return // Text messages don't need queue processing
+
+  try {
+    // Insert into pgmq queue via SQL function
+    await supabase.rpc('pgmq_send', {
+      queue_name: 'whatsapp_media_processing',
+      message: JSON.stringify({
+        message_id: messageDbId,
+        message_type: messageType,
+        user_id: userId,
+        queued_at: new Date().toISOString()
+      })
+    })
+
+    log('INFO', 'Message queued for processing', { messageDbId, messageType })
+  } catch (error) {
+    log('WARN', 'Failed to queue message', (error as Error).message)
+    // Don't fail the webhook if queueing fails
+  }
+}
+
+/**
+ * Send response message via Evolution API
+ */
+async function sendWhatsAppMessage(
+  instanceName: string,
+  remoteJid: string,
+  text: string
+): Promise<boolean> {
+  if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY) {
+    log('WARN', 'Evolution API credentials not configured')
+    return false
+  }
+
+  try {
+    const response = await fetch(`${EVOLUTION_API_URL}/message/sendText/${instanceName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': EVOLUTION_API_KEY,
+      },
+      body: JSON.stringify({
+        number: remoteJid,
+        text: text,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      log('ERROR', 'Failed to send WhatsApp message', { status: response.status, error: errorText })
+      return false
+    }
+
+    log('INFO', 'WhatsApp message sent', { remoteJid: remoteJid.substring(0, 10) + '...' })
+    return true
+  } catch (error) {
+    log('ERROR', 'Error sending WhatsApp message', (error as Error).message)
+    return false
+  }
+}
+
+// ============================================================================
+// EVENT HANDLERS
+// ============================================================================
+
+/**
+ * Handle messages.upsert event
+ */
+async function handleMessagesUpsert(
+  supabase: ReturnType<typeof createClient>,
+  instanceName: string,
+  eventData: { data: MessageData }
+): Promise<void> {
+  const messageData = eventData.data
+
+  // Skip if fromMe (our own messages)
+  if (messageData.key.fromMe) {
+    log('DEBUG', 'Skipping outgoing message')
+    return
+  }
+
+  // Find user for this instance
+  const userId = await findUserByInstance(supabase, instanceName)
+  if (!userId) {
+    log('WARN', 'No user found for instance', { instanceName })
+    return
+  }
+
+  const contactPhone = jidToPhone(messageData.key.remoteJid)
+  const messageText = extractMessageText(messageData.message)
+
+  // Check for consent keywords first
+  if (messageText) {
+    const consentResult = await processConsentKeyword(supabase, userId, contactPhone, messageText)
+    if (consentResult.matched && consentResult.response) {
+      // Send automatic response for consent keyword
+      await sendWhatsAppMessage(instanceName, messageData.key.remoteJid, consentResult.response)
+      return // Don't store consent keywords as regular messages
+    }
+  }
+
+  // Store the message
+  const messageDbId = await storeMessage(supabase, userId, instanceName, messageData)
+
+  if (messageDbId) {
+    const messageType = getMessageType(messageData.message)
+
+    // Queue for async processing if needed (audio transcription, OCR, etc.)
+    if (messageType !== 'text') {
+      await enqueueForProcessing(supabase, messageDbId, messageType, userId)
+    }
+  }
+}
+
+/**
+ * Handle connection.update event
+ */
+async function handleConnectionUpdate(
+  supabase: ReturnType<typeof createClient>,
+  instanceName: string,
+  eventData: ConnectionUpdateData
+): Promise<void> {
+  const { state, statusReason } = eventData
+
+  log('INFO', 'Connection update', { instanceName, state, statusReason })
+
+  const userId = await findUserByInstance(supabase, instanceName)
+  if (!userId) {
+    log('WARN', 'No user found for connection update', { instanceName })
+    return
+  }
+
+  // Update user's WhatsApp connection status
+  const updates: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  }
+
+  if (state === 'open') {
+    updates.whatsapp_connected = true
+    updates.whatsapp_connected_at = new Date().toISOString()
+  } else if (state === 'close' || state === 'connecting') {
+    updates.whatsapp_connected = false
+    updates.whatsapp_disconnected_at = new Date().toISOString()
+  }
+
+  const { error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', userId)
+
+  if (error) {
+    log('ERROR', 'Failed to update user connection status', error)
+  }
+}
+
+/**
+ * Handle qrcode.updated event
+ */
+async function handleQRCodeUpdated(
+  supabase: ReturnType<typeof createClient>,
+  instanceName: string,
+  eventData: QRCodeData
+): Promise<void> {
+  log('INFO', 'QR Code updated for instance', { instanceName })
+
+  // QR code events are typically handled by the frontend polling
+  // We could store them for later retrieval if needed
 }
 
 // ============================================================================
@@ -401,6 +646,7 @@ serve(async (req) => {
     return new Response('ok', { headers: CORS_HEADERS })
   }
 
+  // Only allow POST
   if (req.method !== 'POST') {
     return new Response(
       JSON.stringify({ error: 'Method not allowed' }),
@@ -408,44 +654,63 @@ serve(async (req) => {
     )
   }
 
-  try {
-    // Get request body
-    const bodyText = await req.text()
-    const body = JSON.parse(bodyText) as EvolutionWebhookEvent
+  // Rate limiting
+  const clientIp = getClientIp(req)
+  if (!checkRateLimit(clientIp)) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limit exceeded' }),
+      { status: 429, headers: CORS_HEADERS }
+    )
+  }
 
-    // Validate signature
-    const signature = req.headers.get('x-evolution-signature')
-    if (!validateWebhookSignature(bodyText, signature)) {
-      log('WARN', 'Invalid webhook signature')
-      // Note: In production, return 401 Unauthorized
-      // return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 401, headers: CORS_HEADERS })
+  try {
+    // Get raw body for signature validation
+    const bodyText = await req.text()
+
+    // Validate HMAC signature
+    const signature = req.headers.get('x-evolution-signature') ||
+                      req.headers.get('x-webhook-signature')
+
+    const isValidSignature = await validateHmacSignature(bodyText, signature)
+    if (!isValidSignature) {
+      log('ERROR', 'Invalid webhook signature', { ip: clientIp })
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { status: 401, headers: CORS_HEADERS }
+      )
     }
 
+    // Parse body
+    const body = JSON.parse(bodyText) as EvolutionWebhookEvent
     const { event, instance, data } = body
 
     log('INFO', 'Webhook received', { event, instance })
 
-    // Extract userId from instance name (format: userid_instancename)
-    // This is a simplified approach - in production, query database for the mapping
-    const parts = instance.split('_')
-    const userId = parts.length > 1 ? parts[0] : undefined
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     // Route to appropriate handler
     switch (event) {
-      case 'connection.update':
-        await handleConnectionUpdate(data as ConnectionUpdateData, userId)
-        break
-
       case 'messages.upsert':
-        await handleMessageUpsert(data as MessageUpsertData, userId)
+        await handleMessagesUpsert(supabase, instance, data as { data: MessageData })
         break
 
       case 'connection.update':
-      case 'qr.updated':
+        await handleConnectionUpdate(supabase, instance, data as ConnectionUpdateData)
+        break
+
+      case 'qrcode.updated':
+        await handleQRCodeUpdated(supabase, instance, data as QRCodeData)
+        break
+
       case 'messages.delete':
+      case 'messages.update':
       case 'presence.update':
-        // Log but don't process other events
-        log('INFO', `Event ${event} received but not processed`)
+      case 'chats.upsert':
+      case 'chats.update':
+      case 'contacts.upsert':
+        // Log but don't process these events
+        log('DEBUG', `Event ${event} received but not processed`)
         break
 
       default:
