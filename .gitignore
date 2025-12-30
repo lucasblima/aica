@@ -72,3 +72,4 @@ gha-creds-*.json
 # TEMPORARY: Re-enabled for Cloud Build until workspace migration is complete
 # TODO: Remove this comment and re-enable exclusion after migrating PodcastWorkspace
 # _deprecated/
+.mcp.json
