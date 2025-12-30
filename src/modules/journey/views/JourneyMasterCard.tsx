@@ -6,6 +6,8 @@
 
 import React, { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import { Compass } from 'lucide-react'
 import { useConsciousnessPoints } from '../hooks/useConsciousnessPoints'
 import {
   LEVEL_COLORS,
@@ -41,6 +43,7 @@ export function JourneyMasterCard({
   onNotificationClick,
   className = '',
 }: JourneyMasterCardProps) {
+  const navigate = useNavigate()
   const { stats, progress, isLoading } = useConsciousnessPoints()
 
   // Calculate progress percentage
@@ -250,10 +253,31 @@ export function JourneyMasterCard({
 
       {/* Empty state when no activity */}
       {stats.total_moments === 0 && (
-        <div className="mt-6 pt-4 border-t border-gray-200 text-center">
-          <p className="text-xs text-ceramic-text-secondary">
-            Registre seu primeiro momento
-          </p>
+        <div className="mt-6 pt-4 border-t border-gray-200 text-center space-y-4">
+          {/* Icon in ceramic circle */}
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-ceramic-warm flex items-center justify-center ceramic-inset">
+              <Compass className="w-8 h-8 text-ceramic-accent" />
+            </div>
+          </div>
+
+          {/* Heading + Message */}
+          <div>
+            <h4 className="font-bold text-ceramic-text-primary mb-2">
+              Sua jornada começa aqui
+            </h4>
+            <p className="text-xs text-ceramic-text-secondary">
+              Registre sua primeira reflexão e comece a evoluir
+            </p>
+          </div>
+
+          {/* CTA Button */}
+          <button
+            onClick={() => navigate('/journey')}
+            className="ceramic-btn-primary text-sm px-6 py-2"
+          >
+            Fazer primeira reflexão
+          </button>
         </div>
       )}
     </motion.div>
