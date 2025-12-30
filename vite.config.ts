@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
           "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for styled components
           "img-src 'self' data: https: blob:", // Allow images from data URIs, HTTPS, and blob URLs
           "font-src 'self' data:",
-          "connect-src 'self' https://ai.google.dev https://*.supabase.co wss://*.supabase.co https://n8n-n8n.w9jo16.easypanel.host https://project-management-docker.w9jo16.easypanel.host",
+          "connect-src 'self' https://ai.google.dev https://*.supabase.co wss://*.supabase.co https://n8n-n8n.w9jo16.easypanel.host https://project-management-docker.w9jo16.easypanel.host https://www.googleapis.com https://*.googleapis.com https://oauth2.googleapis.com https://accounts.google.com https://*.googleusercontent.com",
           "media-src 'self' blob: data:",
           "object-src 'none'",
           "frame-ancestors 'none'",
