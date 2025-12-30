@@ -5,12 +5,37 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 import { cleanExpiredOAuthParams, suppressExpiredSessionWarnings } from './src/utils/authUrlCleaner';
+import { validateEnv, logEnvStatus } from './src/lib/envCheck';
 
-// Limpa parâmetros OAuth expirados ANTES de inicializar a aplicação
+// =============================================================================
+// ENVIRONMENT VALIDATION
+// Validates that required VITE_* environment variables are set.
+// This catches configuration issues early in production deployments.
+// =============================================================================
+const envValidation = validateEnv();
+
+// In development mode, log detailed environment status for debugging
+if (import.meta.env.DEV) {
+  logEnvStatus();
+}
+
+// In production, warn if critical environment variables are missing
+if (import.meta.env.PROD && !envValidation.isValid) {
+  console.error(
+    '%c[AICA] CRITICAL: Production deployment has missing environment variables!',
+    'color: red; font-size: 16px; font-weight: bold'
+  );
+  console.error(
+    'This usually means VITE_* variables were not passed during the build process.',
+    'Check cloudbuild.yaml and Dockerfile for proper --build-arg configuration.'
+  );
+}
+
+// Limpa parametros OAuth expirados ANTES de inicializar a aplicacao
 // Isso previne erros do Supabase ao tentar processar tokens expirados
 cleanExpiredOAuthParams();
 
-// Suprime warnings esperados sobre sessões expiradas que já estamos tratando
+// Suprime warnings esperados sobre sessoes expiradas que ja estamos tratando
 suppressExpiredSessionWarnings();
 
 // Cria instância do QueryClient para React Query

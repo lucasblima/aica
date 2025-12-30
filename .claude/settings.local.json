@@ -119,7 +119,15 @@
       "Bash(xargs -I {} bash -c \"echo ''===== {} ====='' && grep -n ''podcast_topics'' {} | head -5\")",
       "Bash(timeout 30 npx tsc:*)",
       "Bash(gh pr edit:*)",
-      "Bash(gh run view:*)"
+      "Bash(gh run view:*)",
+      "Bash(claude mcp add supabase -s project -e SUPABASE_ACCESS_TOKEN=sbp_4e08f1972d0243b134ca4933d5a4f657ee906f16 -- npx -y @supabase/mcp-server-supabase@0.5.10)",
+      "Bash(git branch:*)",
+      "Bash(gh issue list:*)",
+      "Bash(https://*.supabase.co)",
+      "Bash(wss://*.supabase.co)",
+      "Bash(https://n8n-n8n.w9jo16.easypanel.host)",
+      "Bash(gh issue view:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

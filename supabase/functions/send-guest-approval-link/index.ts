@@ -17,11 +17,10 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendMessage } from '../_shared/evolution-client.ts';
 
 const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY');
-const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
-const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
-const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
+const EVOLUTION_INSTANCE_NAME = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006';
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@podcast.com';
 
 const supabase = createClient(
@@ -134,51 +133,57 @@ async function sendEmailViaSendGrid(
 }
 
 /**
- * Send WhatsApp message via Twilio
+ * Send WhatsApp message via Evolution API
  */
-async function sendWhatsAppViaTwilio(
+async function sendWhatsAppViaEvolution(
   toPhone: string,
   guestName: string,
   approvalUrl: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+  if (!EVOLUTION_INSTANCE_NAME) {
     return {
       success: false,
-      error: 'Twilio credentials not configured',
+      error: 'Evolution instance name not configured',
     };
   }
+
+  // Format phone number for WhatsApp (remove non-digits and ensure format)
+  const phoneNumber = toPhone.replace(/\D/g, '');
+
+  // Evolution API expects format: 5511999999999@s.whatsapp.net
+  const remoteJid = phoneNumber.includes('@')
+    ? phoneNumber
+    : `${phoneNumber}@s.whatsapp.net`;
 
   const message = `Olá ${guestName}! 🎙️\n\nPor favor, revise suas informações para o podcast clicando no link abaixo:\n\n${approvalUrl}\n\nEste link expira em 30 dias.`;
 
   try {
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          From: `whatsapp:${TWILIO_PHONE_NUMBER}`,
-          To: `whatsapp:${toPhone}`,
-          Body: message,
-        }).toString(),
-      }
+    console.log('[send-guest-approval-link] Sending message to:', remoteJid);
+    console.log('[send-guest-approval-link] Instance:', EVOLUTION_INSTANCE_NAME);
+
+    const result = await sendMessage(
+      EVOLUTION_INSTANCE_NAME,
+      remoteJid,
+      message
     );
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Twilio Error:', error);
-      return {
-        success: false,
-        error: `Twilio API error: ${response.status}`,
-      };
+    console.log('[send-guest-approval-link] Evolution API response:', JSON.stringify(result));
+
+    // Check if message was sent successfully
+    // Evolution API may return different response structures
+    if (result && (result.key || result.message || result.data)) {
+      // Message sent successfully
+      return { success: true };
     }
 
-    return { success: true };
+    // If we got here, something went wrong
+    console.error('[send-guest-approval-link] Unexpected response:', result);
+    return {
+      success: false,
+      error: typeof result === 'string' ? result : JSON.stringify(result),
+    };
   } catch (error) {
-    console.error('Twilio request failed:', error);
+    console.error('[send-guest-approval-link] Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send WhatsApp',
@@ -272,7 +277,7 @@ serve(async (req) => {
     if (body.method === 'email') {
       result = await sendEmailViaSendGrid(body.guestEmail!, body.guestName, body.approvalUrl);
     } else if (body.method === 'whatsapp') {
-      result = await sendWhatsAppViaTwilio(body.guestPhone!, body.guestName, body.approvalUrl);
+      result = await sendWhatsAppViaEvolution(body.guestPhone!, body.guestName, body.approvalUrl);
     } else {
       return new Response(
         JSON.stringify({
