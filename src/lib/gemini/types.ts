@@ -60,6 +60,13 @@ export type GeminiAction =
   | 'analyze_edital_structure'
   | 'extract_edital_text'
 
+  // File-Search (RAG)
+  | 'create_store'
+  | 'upload_document'
+  | 'search_documents'
+  | 'delete_store'
+  | 'list_stores'
+
 /**
  * Request base para chamadas ao Gemini
  */
@@ -104,4 +111,38 @@ export interface StreamOptions {
   onChunk: (chunk: string) => void
   onComplete: () => void
   onError: (error: Error) => void
+}
+
+/**
+ * Tipos específicos para File-Search
+ */
+export type FileSearchCategory =
+  | 'financial'
+  | 'documents'
+  | 'personal'
+  | 'business'
+  | 'grants'
+  | 'podcast_transcripts'
+  | 'habitat_documents'
+  | 'venture_documents'
+  | 'academia_documents'
+  | 'tribo_documents'
+  | 'onboarding_resources';
+
+export interface FileSearchResult {
+  answer: string;
+  citations?: Array<{
+    uri?: string;
+    title?: string;
+  }>;
+  model: string;
+}
+
+export interface FileSearchStoreInfo {
+  id: string;
+  user_id: string;
+  store_name: string;
+  store_category: FileSearchCategory;
+  display_name: string;
+  created_at: string;
 }
