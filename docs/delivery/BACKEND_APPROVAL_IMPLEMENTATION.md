@@ -1,5 +1,9 @@
 # Backend Guest Approval Implementation Guide
 
+**Last Updated**: 2025-12-30
+**Status**: Production (v4 - Evolution API)
+**Migration**: Twilio → Evolution API completed
+
 ## Overview
 
 The guest approval system has two backend components:
@@ -104,10 +108,10 @@ Add the following secrets to your Supabase project:
 supabase secrets set SENDGRID_API_KEY=your_sendgrid_api_key
 supabase secrets set FROM_EMAIL=noreply@yourpodcast.com
 
-# For WhatsApp (Twilio)
-supabase secrets set TWILIO_ACCOUNT_SID=your_twilio_account_sid
-supabase secrets set TWILIO_AUTH_TOKEN=your_twilio_auth_token
-supabase secrets set TWILIO_PHONE_NUMBER=+1234567890
+# For WhatsApp (Evolution API)
+supabase secrets set EVOLUTION_API_URL=https://evolution-evolution-api.w9jo16.easypanel.host
+supabase secrets set EVOLUTION_API_KEY=your_evolution_api_key
+supabase secrets set EVOLUTION_INSTANCE_NAME=AI_Comtxae_4006
 ```
 
 #### 4. Test the Function Locally
@@ -188,26 +192,57 @@ curl -X POST \
 
 ---
 
-## Part 4: WhatsApp Configuration (Twilio)
+## Part 4: WhatsApp Configuration (Evolution API)
 
 ### Setup
 
-1. **Create Twilio Account**
-   - Go to https://www.twilio.com
-   - Sign up and verify phone
-   - Create WhatsApp Business account
+Evolution API is a self-hosted WhatsApp Business API solution that provides more control and lower costs compared to Twilio.
+
+1. **Access Evolution API Instance**
+   - URL: `https://evolution-evolution-api.w9jo16.easypanel.host`
+   - Instance Name: `AI_Comtxae_4006`
+   - Managed via Easypanel dashboard
 
 2. **Get Credentials**
-   - Account SID (from dashboard)
-   - Auth Token (from dashboard)
-   - WhatsApp phone number (from settings)
+   - API Key (from Evolution dashboard)
+   - Instance Name
+   - API Base URL
 
 3. **Configure Secrets**
    ```bash
-   supabase secrets set TWILIO_ACCOUNT_SID=your_account_sid
-   supabase secrets set TWILIO_AUTH_TOKEN=your_auth_token
-   supabase secrets set TWILIO_PHONE_NUMBER=+1234567890
+   supabase secrets set EVOLUTION_API_URL=https://evolution-evolution-api.w9jo16.easypanel.host
+   supabase secrets set EVOLUTION_API_KEY=your_api_key
+   supabase secrets set EVOLUTION_INSTANCE_NAME=AI_Comtxae_4006
    ```
+
+### Phone Number Format
+
+Evolution API expects phone numbers in a specific format:
+- **Input**: `5521999999999` (digits only, no + sign)
+- **Internal format**: `5521999999999@s.whatsapp.net` (handled automatically)
+
+The Edge Function automatically normalizes phone numbers:
+```typescript
+// Input: "+55 21 99999-9999" or "5521999999999"
+// Output: "5521999999999@s.whatsapp.net"
+```
+
+### Shared Evolution Client
+
+The Edge Function uses `supabase/functions/_shared/evolution-client.ts` which provides:
+
+```typescript
+// Send text message
+await sendMessage(instanceName, remoteJid, text);
+
+// Send media (images, audio, video)
+await sendMedia(instanceName, remoteJid, mediaUrl, mediaType, caption);
+```
+
+This shared client is used across multiple Edge Functions:
+- `send-guest-approval-link` (this function)
+- `webhook-evolution` (WhatsApp webhook handler)
+- `notification-sender` (notification system)
 
 ### Message Template
 
@@ -224,7 +259,7 @@ Este link expira em 30 dias.
 
 ### Customize Message
 
-Edit the `message` variable in the Edge Function:
+Edit the `message` variable in the `sendWhatsAppViaEvolution` function:
 
 ```typescript
 const message = `Your custom message here`;
@@ -245,6 +280,25 @@ curl -X POST \
     "method": "whatsapp"
   }'
 ```
+
+### Evolution API vs Twilio
+
+**Why we migrated from Twilio to Evolution API:**
+
+| Feature | Twilio | Evolution API |
+|---------|--------|---------------|
+| **Cost** | Pay per message (~$0.005/msg) | Self-hosted (fixed cost) |
+| **Control** | Limited customization | Full control over instance |
+| **Phone Format** | `whatsapp:+number` | `number@s.whatsapp.net` |
+| **Setup Complexity** | Easy (managed) | Moderate (self-hosted) |
+| **Reliability** | High (99.95% SLA) | Depends on hosting |
+| **Vendor Lock-in** | Yes | No |
+
+**Migration Benefits:**
+- Reduced operational costs (no per-message charges)
+- Better control over message delivery
+- Shared client across multiple functions
+- No vendor lock-in
 
 ---
 
@@ -404,10 +458,14 @@ supabase functions logs send-guest-approval-link
 - Check spam complaints
 - Review email analytics
 
-**Twilio Dashboard:**
-- Check message delivery
+### Monitor WhatsApp Delivery
+
+**Evolution API Dashboard:**
+- Check message delivery status
 - Monitor failed sends
-- Review usage
+- Review instance health
+- Check webhook logs
+- Monitor API rate limits
 
 ---
 
@@ -419,7 +477,8 @@ supabase functions logs send-guest-approval-link
 |-------|-------|----------|
 | "SendGrid API key not configured" | Missing env var | Set SENDGRID_API_KEY secret |
 | "Failed to send email" | SendGrid API error | Check SendGrid logs, verify from email |
-| "Twilio credentials not configured" | Missing env vars | Set all TWILIO_* secrets |
+| "Evolution instance name not configured" | Missing env var | Set EVOLUTION_INSTANCE_NAME secret |
+| "Failed to send WhatsApp" | Evolution API error | Check Evolution API logs, verify instance status |
 | "Method not allowed" | Wrong HTTP method | Use POST requests only |
 | "Missing required fields" | Incomplete request body | Include all required fields |
 | "Token invalid" | Mismatched or expired token | Generate new token |
@@ -497,7 +556,8 @@ async function retryWithBackoff(fn: () => Promise<any>, maxRetries = 3) {
 - [ ] Test function in production
 - [ ] Update frontend API endpoints
 - [ ] Create database tables
-- [ ] Configure SendGrid/Twilio
+- [ ] Configure SendGrid
+- [ ] Configure Evolution API
 - [ ] Test end-to-end flow
 - [ ] Monitor for errors
 - [ ] Document configuration
@@ -511,12 +571,52 @@ async function retryWithBackoff(fn: () => Promise<any>, maxRetries = 3) {
 - API Ref: https://docs.sendgrid.com/api-reference
 - Support: https://support.sendgrid.com
 
-### Twilio
-- Docs: https://www.twilio.com/docs
-- WhatsApp Guide: https://www.twilio.com/docs/whatsapp/quickstart
-- Support: https://support.twilio.com
+### Evolution API
+- GitHub: https://github.com/EvolutionAPI/evolution-api
+- Docs: https://doc.evolution-api.com/
+- Community: Discord/Telegram (check GitHub)
+- Self-hosted instance: https://evolution-evolution-api.w9jo16.easypanel.host
 
 ### Supabase
 - Docs: https://supabase.com/docs
 - Edge Functions: https://supabase.com/docs/guides/functions
 - Support: https://github.com/supabase/supabase/discussions
+
+---
+
+## Changelog
+
+### v4 (2025-12-30) - Evolution API Migration
+- ✅ **BREAKING**: Migrated WhatsApp from Twilio to Evolution API
+- ✅ Added shared `evolution-client.ts` for code reuse
+- ✅ Improved phone number normalization (handles multiple formats)
+- ✅ Reduced external dependencies (no Twilio SDK)
+- ✅ Lower operational costs (self-hosted vs per-message pricing)
+- ⚠️ **Action Required**: Remove obsolete Twilio secrets after validation period
+
+**Migration Details:**
+- Commit: `f7add4c` (2025-12-30)
+- Pull Request: #12
+- Documentation: See `docs/migrations/SEND_GUEST_APPROVAL_LINK_MIGRATION.md`
+- Security Audit: See `docs/security/TWILIO_SECRETS_CLEANUP_AUDIT.md`
+
+**Secrets to Remove** (after 7-day validation):
+```bash
+npx supabase secrets unset TWILIO_ACCOUNT_SID
+npx supabase secrets unset TWILIO_AUTH_TOKEN
+npx supabase secrets unset TWILIO_PHONE_NUMBER
+```
+
+### v3 (Previous)
+- Added email support via SendGrid
+- Implemented `approval_link_history` table
+- Added token expiration logic (30 days)
+- Improved error handling
+
+### v2 (Previous)
+- Initial Twilio WhatsApp integration
+- Basic approval flow implementation
+
+### v1 (Previous)
+- Basic approval link functionality
+- Email-only delivery
