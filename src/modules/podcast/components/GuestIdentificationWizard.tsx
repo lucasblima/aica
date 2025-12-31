@@ -23,7 +23,7 @@ import type {
   EpisodeCreationData,
   GuestProfile
 } from '../types/wizard.types';
-import { GuestTypeSelector, GuestManualForm, EpisodeDetailsForm } from './wizard';
+import { GuestTypeSelector, GuestManualForm, EpisodeDetailsForm, GuestNameSearchForm } from './wizard';
 import { createEpisode, type PodcastEpisode } from '../services/episodeService';
 
 // Component Props
@@ -65,6 +65,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
   const [wizardState, setWizardState] = useState<WizardState>(initialState);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSearchingGuest, setIsSearchingGuest] = useState(false);
 
   // Calculate progress percentage based on current step
   const getProgressPercentage = (): number => {
@@ -226,6 +227,39 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     handleNext();
   };
 
+  // Handler for guest search (Public Figure flow)
+  const handleGuestSearch = async (data: { name: string; reference: string }) => {
+    console.log('[GuestIdentificationWizard] Starting guest search...', data);
+
+    // Save guest data temporarily
+    setWizardState((prev) => ({
+      ...prev,
+      guestData: {
+        ...prev.guestData,
+        name: data.name,
+        reference: data.reference,
+      },
+    }));
+
+    setIsSearchingGuest(true);
+
+    try {
+      // TODO: Task 2.2 will implement actual Gemini API search
+      // For now, simulate delay and advance to next step
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      console.log('[GuestIdentificationWizard] Guest search completed (simulated)');
+
+      // Advance to Step 2 (Profile Confirmation)
+      handleNext();
+    } catch (error) {
+      console.error('[GuestIdentificationWizard] Error searching for guest:', error);
+      // TODO: Show error to user (will be implemented in Task 2.2)
+    } finally {
+      setIsSearchingGuest(false);
+    }
+  };
+
   // Render current step
   const renderStep = () => {
     switch (wizardState.currentStep) {
@@ -239,38 +273,15 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
       case 'search-public':
         return (
-          <div
-            data-testid="guest-search-form-placeholder"
-            className="ceramic-card p-8 space-y-6"
-          >
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-ceramic-text-primary">
-                Buscar Figura Pública
-              </h2>
-              <p className="text-ceramic-text-secondary">
-                GuestNameSearchForm será implementado na Task 1.3
-              </p>
-            </div>
-
-            {/* Temporary action buttons */}
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={() => {
-                  updateGuestData({ name: 'Teste Convidado' });
-                  handleNext();
-                }}
-                className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-all"
-              >
-                Continuar (Teste)
-              </button>
-            </div>
-          </div>
+          <GuestNameSearchForm
+            initialData={{
+              name: wizardState.guestData.name,
+              reference: wizardState.guestData.reference || '',
+            }}
+            onSearch={handleGuestSearch}
+            onBack={handleBack}
+            isSearching={isSearchingGuest}
+          />
         );
 
       case 'manual-form':

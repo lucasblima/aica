@@ -150,7 +150,8 @@
       "Bash(gcloud run services:*)",
       "Bash(gcloud secrets versions access:*)",
       "Bash(gcloud run domain-mappings list:*)",
-      "Bash(gh issue create:*)"
+      "Bash(gh issue create:*)",
+      "Bash(git cherry-pick:*)"
     ],
     "deny": [],
     "ask": []
