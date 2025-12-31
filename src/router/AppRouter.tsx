@@ -12,6 +12,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
 import { useAuth } from '../hooks/useAuth';
+import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 
 // ==================== LAZY LOADED MODULES ====================
 // Heavy modules are loaded on-demand to reduce initial bundle size
@@ -535,8 +536,9 @@ export function AppRouter() {
    // Use React Router Routes to ensure proper Router context for all components
    // Wrapped in Suspense to handle lazy-loaded components
    return (
-      <Suspense fallback={<LoadingScreen message="Carregando..." />}>
-         <Routes>
+      <XPNotificationProvider>
+         <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+            <Routes>
             {/* Guest Approval Page - Public route for podcast guests */}
             <Route
                path="/guest-approval/:episodeId/:approvalToken"
@@ -600,7 +602,8 @@ export function AppRouter() {
                path="/*"
                element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
             />
-         </Routes>
-      </Suspense>
+            </Routes>
+         </Suspense>
+      </XPNotificationProvider>
    );
 }

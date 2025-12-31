@@ -11,7 +11,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { addXP, awardAchievement, WHATSAPP_XP_REWARDS, BADGES_CATALOG } from '@/services/gamificationService';
-import { notificationService } from '@/services/notificationService';
+import { useXPNotifications } from '@/contexts/XPNotificationContext';
 
 // ============================================================================
 // TYPES
@@ -74,6 +74,8 @@ async function insertActivity(
  * Hook for tracking WhatsApp gamification activities
  */
 export function useWhatsAppGamification(): WhatsAppGamificationHook {
+  const { showXPGain, showBadgeUnlock } = useXPNotifications();
+
   /**
    * Track WhatsApp connection (award badge + XP)
    */
@@ -83,6 +85,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
 
       // Award XP for connection
       await addXP(userId, WHATSAPP_XP_REWARDS.connection);
+      showXPGain(WHATSAPP_XP_REWARDS.connection);
 
       // Insert activity
       await insertActivity(userId, 'connection');
@@ -90,14 +93,10 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
       // Award badge
       await awardAchievement(userId, 'first_whatsapp_connect');
 
-      // Show achievement notification
+      // Show badge unlock modal
       const badge = BADGES_CATALOG.first_whatsapp_connect;
       if (badge) {
-        notificationService.showAchievement(
-          badge.name,
-          `${badge.description} (+${badge.xp_reward} XP)`,
-          badge.icon
-        );
+        showBadgeUnlock(badge as any);
       }
 
       console.log('[useWhatsAppGamification] Connection tracked:', {
@@ -107,7 +106,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
     } catch (error) {
       console.error('[useWhatsAppGamification] trackConnection error:', error);
     }
-  }, []);
+  }, [showXPGain, showBadgeUnlock]);
 
   /**
    * Track consent grant (award XP + check for all consents badge)
@@ -118,6 +117,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
 
       // Award XP for consent grant
       await addXP(userId, WHATSAPP_XP_REWARDS.consent_grant);
+      showXPGain(WHATSAPP_XP_REWARDS.consent_grant);
 
       // Insert activity
       await insertActivity(userId, 'consent_grant', { consent_type: consentType });
@@ -130,14 +130,10 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
       if (allGranted) {
         await awardAchievement(userId, 'consent_champion');
 
-        // Show achievement notification
+        // Show badge unlock modal
         const badge = BADGES_CATALOG.consent_champion;
         if (badge) {
-          notificationService.showAchievement(
-            badge.name,
-            `${badge.description} (+${badge.xp_reward} XP)`,
-            badge.icon
-          );
+          showBadgeUnlock(badge as any);
         }
 
         console.log('[useWhatsAppGamification] Consent Champion badge unlocked!');
@@ -151,7 +147,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
     } catch (error) {
       console.error('[useWhatsAppGamification] trackConsentGrant error:', error);
     }
-  }, []);
+  }, [showXPGain, showBadgeUnlock]);
 
   /**
    * Track analytics view (award XP + check for view milestone badges)
@@ -162,6 +158,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
 
       // Award XP for viewing analytics
       await addXP(userId, WHATSAPP_XP_REWARDS.analytics_view);
+      showXPGain(WHATSAPP_XP_REWARDS.analytics_view);
 
       // Insert activity
       await insertActivity(userId, 'analytics_view');
@@ -175,28 +172,20 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
       if (viewCount === 5) {
         await awardAchievement(userId, 'emotional_awareness_beginner');
 
-        // Show achievement notification
+        // Show badge unlock modal
         const badge = BADGES_CATALOG.emotional_awareness_beginner;
         if (badge) {
-          notificationService.showAchievement(
-            badge.name,
-            `${badge.description} (+${badge.xp_reward} XP)`,
-            badge.icon
-          );
+          showBadgeUnlock(badge as any);
         }
 
         console.log('[useWhatsAppGamification] Emotional Awareness (Beginner) badge unlocked!');
       } else if (viewCount === 20) {
         await awardAchievement(userId, 'emotional_awareness_master');
 
-        // Show achievement notification
+        // Show badge unlock modal
         const badge = BADGES_CATALOG.emotional_awareness_master;
         if (badge) {
-          notificationService.showAchievement(
-            badge.name,
-            `${badge.description} (+${badge.xp_reward} XP)`,
-            badge.icon
-          );
+          showBadgeUnlock(badge as any);
         }
 
         console.log('[useWhatsAppGamification] Emotional Awareness (Master) badge unlocked!');
@@ -209,7 +198,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
     } catch (error) {
       console.error('[useWhatsAppGamification] trackAnalyticsView error:', error);
     }
-  }, []);
+  }, [showXPGain, showBadgeUnlock]);
 
   /**
    * Track contact analysis (award XP + check for unique contacts badge)
@@ -220,6 +209,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
 
       // Award XP for analyzing contact
       await addXP(userId, WHATSAPP_XP_REWARDS.contact_analysis);
+      showXPGain(WHATSAPP_XP_REWARDS.contact_analysis);
 
       // Insert activity
       await insertActivity(userId, 'contact_analysis', { contact_hash: contactHash });
@@ -233,14 +223,10 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
       if (uniqueCount === 10) {
         await awardAchievement(userId, 'sentiment_explorer');
 
-        // Show achievement notification
+        // Show badge unlock modal
         const badge = BADGES_CATALOG.sentiment_explorer;
         if (badge) {
-          notificationService.showAchievement(
-            badge.name,
-            `${badge.description} (+${badge.xp_reward} XP)`,
-            badge.icon
-          );
+          showBadgeUnlock(badge as any);
         }
 
         console.log('[useWhatsAppGamification] Sentiment Explorer badge unlocked!');
@@ -254,7 +240,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
     } catch (error) {
       console.error('[useWhatsAppGamification] trackContactAnalysis error:', error);
     }
-  }, []);
+  }, [showXPGain, showBadgeUnlock]);
 
   /**
    * Track anomaly check (small XP reward for engagement)
@@ -265,6 +251,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
 
       // Award small XP for checking anomalies
       await addXP(userId, WHATSAPP_XP_REWARDS.anomaly_check);
+      showXPGain(WHATSAPP_XP_REWARDS.anomaly_check);
 
       // Insert activity
       await insertActivity(userId, 'anomaly_check');
@@ -275,7 +262,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
     } catch (error) {
       console.error('[useWhatsAppGamification] trackAnomalyCheck error:', error);
     }
-  }, []);
+  }, [showXPGain]);
 
   return {
     trackConnection,
