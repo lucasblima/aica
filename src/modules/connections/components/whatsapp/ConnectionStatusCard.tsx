@@ -1,0 +1,360 @@
+/**
+ * ConnectionStatusCard Component
+ *
+ * Displays WhatsApp connection status with QR code for pairing.
+ * Shows connection state, instance information, and connection actions.
+ *
+ * Related: Issue #12 - Privacy-First WhatsApp Integration, Task 2.3
+ */
+
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Smartphone,
+  QrCode,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import { useWhatsAppConnection } from '../../hooks/useWhatsAppConnection';
+import { useWhatsAppGamification } from '../../hooks/useWhatsAppGamification';
+import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+interface ConnectionStatusCardProps {
+  className?: string;
+  showQRCode?: boolean;
+  autoRefresh?: boolean;
+  refreshInterval?: number; // milliseconds
+}
+
+type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'unknown';
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Get status color based on connection state
+ */
+function getStatusColor(status: ConnectionStatus): string {
+  switch (status) {
+    case 'connected':
+      return '#6B7B5C'; // Ceramic positive
+    case 'connecting':
+      return '#D97706'; // Ceramic accent
+    case 'disconnected':
+      return '#9B4D3A'; // Ceramic negative
+    default:
+      return '#9CA3AF'; // Gray
+  }
+}
+
+/**
+ * Get status label in Portuguese
+ */
+function getStatusLabel(status: ConnectionStatus): string {
+  switch (status) {
+    case 'connected':
+      return 'Conectado';
+    case 'connecting':
+      return 'Conectando...';
+    case 'disconnected':
+      return 'Desconectado';
+    default:
+      return 'Desconhecido';
+  }
+}
+
+/**
+ * Get status icon
+ */
+function getStatusIcon(status: ConnectionStatus): React.ReactNode {
+  switch (status) {
+    case 'connected':
+      return <CheckCircle2 className="w-5 h-5 text-ceramic-positive" />;
+    case 'connecting':
+      return <Loader2 className="w-5 h-5 text-ceramic-accent animate-spin" />;
+    case 'disconnected':
+      return <XCircle className="w-5 h-5 text-ceramic-negative" />;
+    default:
+      return <AlertCircle className="w-5 h-5 text-gray-500" />;
+  }
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
+  className = '',
+  showQRCode = true,
+  autoRefresh = true,
+  refreshInterval = 10000, // 10 seconds
+}) => {
+  const {
+    connectionState,
+    qrCode,
+    isLoading,
+    error,
+    connect,
+    disconnect,
+    fetchQRCode,
+    checkConnection,
+  } = useWhatsAppConnection();
+
+  const { trackConnection } = useWhatsAppGamification();
+
+  const [status, setStatus] = useState<ConnectionStatus>('unknown');
+
+  // Determine connection status from connectionState
+  useEffect(() => {
+    if (!connectionState) {
+      setStatus('unknown');
+    } else if (connectionState.state === 'open') {
+      setStatus('connected');
+    } else if (connectionState.state === 'connecting') {
+      setStatus('connecting');
+    } else {
+      setStatus('disconnected');
+    }
+  }, [connectionState]);
+
+  // Auto-refresh connection status
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      checkConnection();
+    }, refreshInterval);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, checkConnection]);
+
+  // Handle connect action
+  const handleConnect = async () => {
+    try {
+      await connect();
+      if (showQRCode && !qrCode) {
+        await fetchQRCode();
+      }
+
+      // Award XP and badge for first connection
+      await trackConnection();
+    } catch (err) {
+      console.error('[ConnectionStatusCard] Connect error:', err);
+    }
+  };
+
+  // Handle disconnect action
+  const handleDisconnect = async () => {
+    try {
+      await disconnect();
+    } catch (err) {
+      console.error('[ConnectionStatusCard] Disconnect error:', err);
+    }
+  };
+
+  // Handle refresh QR code
+  const handleRefreshQR = async () => {
+    try {
+      await fetchQRCode();
+    } catch (err) {
+      console.error('[ConnectionStatusCard] Refresh QR error:', err);
+    }
+  };
+
+  return (
+    <motion.div
+      className={`ceramic-card p-6 rounded-3xl space-y-6 ${className}`}
+      variants={cardElevationVariants}
+      initial="rest"
+      whileHover="hover"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="ceramic-concave p-4 rounded-xl">
+            <Smartphone className="w-6 h-6 text-ceramic-accent" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-ceramic-text-primary">
+              Conexão WhatsApp
+            </h3>
+            <p className="text-sm text-ceramic-text-secondary">
+              {process.env.VITE_EVOLUTION_INSTANCE_NAME || 'AI_Comtxae_4006'}
+            </p>
+          </div>
+        </div>
+
+        {/* Refresh Button */}
+        <button
+          onClick={checkConnection}
+          disabled={isLoading}
+          className="ceramic-inset p-2 rounded-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
+          aria-label="Atualizar status"
+        >
+          <RefreshCw
+            className={`w-4 h-4 text-ceramic-text-secondary ${
+              isLoading ? 'animate-spin' : ''
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Status Indicator */}
+      <div className="ceramic-inset p-4 rounded-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {getStatusIcon(status)}
+            <div>
+              <p className="text-sm font-bold text-ceramic-text-primary">
+                {getStatusLabel(status)}
+              </p>
+              {connectionState?.state && (
+                <p className="text-xs text-ceramic-text-secondary">
+                  Estado: {connectionState.state}
+                </p>
+              )}
+            </div>
+          </div>
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: getStatusColor(status) }}
+          />
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-red-900">Erro</p>
+              <p className="text-xs text-red-700 mt-1">{error.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Display */}
+      {showQRCode && status === 'disconnected' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-bold text-ceramic-text-primary">
+              Escanear QR Code
+            </p>
+            <button
+              onClick={handleRefreshQR}
+              disabled={isLoading}
+              className="text-xs text-ceramic-accent hover:underline disabled:opacity-50"
+            >
+              Atualizar
+            </button>
+          </div>
+
+          <div className="ceramic-inset p-6 rounded-xl flex items-center justify-center bg-white">
+            {isLoading ? (
+              <Loader2 className="w-12 h-12 animate-spin text-ceramic-accent" />
+            ) : qrCode ? (
+              <img
+                src={qrCode}
+                alt="QR Code para conectar WhatsApp"
+                className="w-64 h-64 rounded-lg"
+              />
+            ) : (
+              <div className="text-center py-8">
+                <QrCode className="w-12 h-12 text-ceramic-text-secondary mx-auto mb-3" />
+                <p className="text-sm text-ceramic-text-secondary">
+                  Clique em "Conectar" para gerar QR Code
+                </p>
+              </div>
+            )}
+          </div>
+
+          {qrCode && (
+            <p className="text-xs text-ceramic-text-secondary text-center">
+              Abra o WhatsApp no seu celular e escaneie o QR Code acima
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Connection Actions */}
+      <div className="flex gap-3">
+        {status === 'disconnected' || status === 'unknown' ? (
+          <button
+            onClick={handleConnect}
+            disabled={isLoading}
+            className="flex-1 ceramic-card px-4 py-3 rounded-xl font-bold text-ceramic-positive hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Conectando...
+              </span>
+            ) : (
+              'Conectar'
+            )}
+          </button>
+        ) : (
+          <button
+            onClick={handleDisconnect}
+            disabled={isLoading}
+            className="flex-1 ceramic-card px-4 py-3 rounded-xl font-bold text-ceramic-negative hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Desconectando...
+              </span>
+            ) : (
+              'Desconectar'
+            )}
+          </button>
+        )}
+
+        {status === 'connected' && (
+          <button
+            onClick={checkConnection}
+            disabled={isLoading}
+            className="ceramic-card px-4 py-3 rounded-xl font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
+          >
+            Verificar
+          </button>
+        )}
+      </div>
+
+      {/* Connection Info */}
+      {connectionState && status === 'connected' && (
+        <div className="ceramic-inset p-4 rounded-xl space-y-2">
+          <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+            Informações da Conexão
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-ceramic-text-secondary">Instância</p>
+              <p className="text-sm font-bold text-ceramic-text-primary">
+                {connectionState.instance || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-ceramic-text-secondary">Estado</p>
+              <p className="text-sm font-bold text-ceramic-text-primary">
+                {connectionState.state}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+export default ConnectionStatusCard;
