@@ -200,6 +200,69 @@ const BADGES_CATALOG: Record<string, Badge> = {
     unlock_condition: 'analyze_10_statements',
     category: 'finance',
   },
+  // ============================================================================
+  // WHATSAPP MODULE BADGES
+  // ============================================================================
+  'first_whatsapp_connect': {
+    id: 'first_whatsapp_connect',
+    name: 'Conectado',
+    description: 'Conectou o WhatsApp pela primeira vez',
+    icon: '📱',
+    rarity: 'common',
+    xp_reward: 50,
+    unlock_condition: 'whatsapp_connected',
+    category: 'social',
+  },
+  'consent_champion': {
+    id: 'consent_champion',
+    name: 'Guardião da Privacidade',
+    description: 'Concedeu todos os consentimentos LGPD',
+    icon: '🛡️',
+    rarity: 'rare',
+    xp_reward: 100,
+    unlock_condition: 'all_consents_granted',
+    category: 'social',
+  },
+  'emotional_awareness_beginner': {
+    id: 'emotional_awareness_beginner',
+    name: 'Consciência Emocional',
+    description: 'Visualizou analytics do WhatsApp 5 vezes',
+    icon: '🧠',
+    rarity: 'rare',
+    xp_reward: 150,
+    unlock_condition: 'viewed_analytics_5x',
+    category: 'social',
+  },
+  'emotional_awareness_master': {
+    id: 'emotional_awareness_master',
+    name: 'Mestre da Consciência',
+    description: 'Visualizou analytics do WhatsApp 20 vezes',
+    icon: '🧘',
+    rarity: 'epic',
+    xp_reward: 300,
+    unlock_condition: 'viewed_analytics_20x',
+    category: 'social',
+  },
+  'positive_vibes_30': {
+    id: 'positive_vibes_30',
+    name: 'Vibes Positivas',
+    description: 'Manteve sentimento positivo por 30 dias',
+    icon: '✨',
+    rarity: 'epic',
+    xp_reward: 500,
+    unlock_condition: 'positive_sentiment_30_days',
+    category: 'social',
+  },
+  'sentiment_explorer': {
+    id: 'sentiment_explorer',
+    name: 'Explorador Emocional',
+    description: 'Analisou sentimento de 10 contatos diferentes',
+    icon: '🔍',
+    rarity: 'rare',
+    xp_reward: 200,
+    unlock_condition: 'analyzed_10_contacts',
+    category: 'social',
+  },
 };
 
 // ============================================================================
@@ -211,6 +274,17 @@ export const FINANCE_XP_REWARDS = {
   chat_with_agent: 10,
   create_budget: 20,
   achieve_budget_goal: 100,
+};
+
+// ============================================================================
+// WHATSAPP XP REWARDS
+// ============================================================================
+export const WHATSAPP_XP_REWARDS = {
+  connection: 50,
+  consent_grant: 20,
+  analytics_view: 10,
+  contact_analysis: 15,
+  anomaly_check: 5,
 };
 
 // ============================================================================
