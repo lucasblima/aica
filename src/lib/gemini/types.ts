@@ -18,6 +18,7 @@ export type GeminiAction =
   | 'chat_aica'
   | 'deep_research'
   | 'intelligent_search'
+  | 'research_guest'
   // Pauta Generation (NotebookLM-style)
   | 'generate_pauta_outline'
   | 'generate_pauta_questions'

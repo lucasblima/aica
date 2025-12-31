@@ -11,6 +11,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { addXP, awardAchievement, WHATSAPP_XP_REWARDS, BADGES_CATALOG } from '@/services/gamificationService';
+import { notificationService } from '@/services/notificationService';
 import { useXPNotifications } from '@/contexts/XPNotificationContext';
 
 // ============================================================================
