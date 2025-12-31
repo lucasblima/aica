@@ -24,12 +24,13 @@ import type {
   GuestProfile
 } from '../types/wizard.types';
 import { GuestTypeSelector, GuestManualForm, EpisodeDetailsForm } from './wizard';
+import { createEpisode, type PodcastEpisode } from '../services/episodeService';
 
 // Component Props
 export interface GuestIdentificationWizardProps {
   showId: string;
   userId: string;
-  onComplete: (wizardData: EpisodeCreationData, episodeId: string) => void;
+  onComplete: (episode: PodcastEpisode) => void;
   onCancel: () => void;
 }
 
@@ -62,6 +63,8 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 }) => {
   // Wizard state management
   const [wizardState, setWizardState] = useState<WizardState>(initialState);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Calculate progress percentage based on current step
   const getProgressPercentage = (): number => {
@@ -134,33 +137,60 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     onCancel();
   };
 
-  const handleComplete = (finalEpisodeData: Partial<WizardState['episodeData']>) => {
-    // Merge final episode data
-    const completeData: EpisodeCreationData = {
-      // Guest information
-      guest_name: wizardState.guestData.name,
-      guest_email: wizardState.guestData.email,
-      guest_phone: wizardState.guestData.phone,
-      guest_reference: wizardState.guestData.reference,
-      guest_profile: wizardState.guestData.confirmedProfile,
+  const handleComplete = async (finalEpisodeData: Partial<WizardState['episodeData']>) => {
+    // Reset error state
+    setSaveError(null);
+    setIsSaving(true);
 
-      // Episode information
-      episode_theme: finalEpisodeData.theme || wizardState.episodeData.theme,
-      theme_mode: finalEpisodeData.themeMode || wizardState.episodeData.themeMode,
-      season: finalEpisodeData.season || wizardState.episodeData.season,
-      location: finalEpisodeData.location || wizardState.episodeData.location,
-      scheduled_date: finalEpisodeData.scheduledDate || wizardState.episodeData.scheduledDate,
-      scheduled_time: finalEpisodeData.scheduledTime || wizardState.episodeData.scheduledTime,
+    try {
+      console.log('[GuestIdentificationWizard] Starting episode creation...');
 
-      // Metadata
-      status: 'draft',
-    };
+      // Merge final episode data
+      const completeData: EpisodeCreationData = {
+        // Guest information
+        guest_name: wizardState.guestData.name,
+        guest_email: wizardState.guestData.email,
+        guest_phone: wizardState.guestData.phone,
+        guest_reference: wizardState.guestData.reference,
+        guest_profile: wizardState.guestData.confirmedProfile,
 
-    // Generate a temporary episode ID (will be replaced by actual DB ID)
-    const tempEpisodeId = `temp-${Date.now()}`;
+        // Episode information
+        episode_theme: finalEpisodeData.theme || wizardState.episodeData.theme,
+        theme_mode: finalEpisodeData.themeMode || wizardState.episodeData.themeMode,
+        season: finalEpisodeData.season || wizardState.episodeData.season,
+        location: finalEpisodeData.location || wizardState.episodeData.location,
+        scheduled_date: finalEpisodeData.scheduledDate || wizardState.episodeData.scheduledDate,
+        scheduled_time: finalEpisodeData.scheduledTime || wizardState.episodeData.scheduledTime,
 
-    // Call parent completion handler
-    onComplete(completeData, tempEpisodeId);
+        // Metadata
+        status: 'draft',
+      };
+
+      console.log('[GuestIdentificationWizard] Episode data prepared:', completeData);
+
+      // Save episode to Supabase
+      const { data: episode, error } = await createEpisode({
+        ...completeData,
+        show_id: showId,
+        guest_type: wizardState.guestType || 'direct-contact',
+      });
+
+      if (error || !episode) {
+        console.error('[GuestIdentificationWizard] Error creating episode:', error);
+        setSaveError(error?.message || 'Erro ao salvar episódio. Tente novamente.');
+        return;
+      }
+
+      console.log('[GuestIdentificationWizard] Episode created successfully:', episode.id);
+
+      // Call parent completion handler with the created episode
+      onComplete(episode);
+    } catch (error) {
+      console.error('[GuestIdentificationWizard] Unexpected error:', error);
+      setSaveError('Erro inesperado ao salvar episódio. Tente novamente.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Update wizard state helpers
@@ -291,22 +321,39 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
       case 'episode-details':
         return (
-          <EpisodeDetailsForm
-            guestName={wizardState.guestData.name}
-            initialData={{
-              theme: wizardState.episodeData.theme,
-              season: wizardState.episodeData.season,
-              location: wizardState.episodeData.location,
-              scheduledDate: wizardState.episodeData.scheduledDate,
-              scheduledTime: wizardState.episodeData.scheduledTime,
-              themeMode: wizardState.episodeData.themeMode,
-            }}
-            onSubmit={(data) => {
-              updateEpisodeData(data);
-              handleComplete(data);
-            }}
-            onBack={handleBack}
-          />
+          <div className="space-y-4">
+            {/* Error message */}
+            {saveError && (
+              <div className="ceramic-card p-4 bg-red-50 border border-red-200">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">⚠️</div>
+                  <div className="flex-1">
+                    <h3 className="text-red-800 font-bold mb-1">Erro ao Salvar</h3>
+                    <p className="text-red-700 text-sm">{saveError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Episode details form */}
+            <EpisodeDetailsForm
+              guestName={wizardState.guestData.name}
+              initialData={{
+                theme: wizardState.episodeData.theme,
+                season: wizardState.episodeData.season,
+                location: wizardState.episodeData.location,
+                scheduledDate: wizardState.episodeData.scheduledDate,
+                scheduledTime: wizardState.episodeData.scheduledTime,
+                themeMode: wizardState.episodeData.themeMode,
+              }}
+              onSubmit={(data) => {
+                updateEpisodeData(data);
+                handleComplete(data);
+              }}
+              onBack={handleBack}
+              isLoading={isSaving}
+            />
+          </div>
         );
 
       default:
