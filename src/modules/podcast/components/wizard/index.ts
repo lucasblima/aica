@@ -13,8 +13,6 @@
 // Export wizard components as they are implemented
 export { GuestTypeSelector } from './GuestTypeSelector';
 export { GuestManualForm } from './GuestManualForm';
+export { GuestNameSearchForm } from './GuestNameSearchForm';
+export { GuestProfileConfirmation } from './GuestProfileConfirmation';
 export { EpisodeDetailsForm } from './EpisodeDetailsForm';
-
-// TODO: Export remaining wizard components
-// export { GuestNameSearchForm } from './GuestNameSearchForm';
-// export { GuestProfileConfirmation } from './GuestProfileConfirmation';
