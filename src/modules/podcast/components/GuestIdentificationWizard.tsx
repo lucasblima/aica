@@ -23,7 +23,7 @@ import type {
   EpisodeCreationData,
   GuestProfile
 } from '../types/wizard.types';
-import { GuestTypeSelector, GuestManualForm, EpisodeDetailsForm, GuestNameSearchForm } from './wizard';
+import { GuestTypeSelector, GuestManualForm, GuestNameSearchForm, GuestProfileConfirmation, EpisodeDetailsForm } from './wizard';
 import { createEpisode, type PodcastEpisode } from '../services/episodeService';
 import { searchGuestProfile } from '../services/guestResearchService';
 import { useXPNotifications } from '@/contexts/XPNotificationContext';
@@ -341,35 +341,11 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
       case 'confirm-profile':
         return (
-          <div
-            data-testid="guest-profile-confirmation-placeholder"
-            className="ceramic-card p-8 space-y-6"
-          >
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-ceramic-text-primary">
-                Confirmar Perfil
-              </h2>
-              <p className="text-ceramic-text-secondary">
-                GuestProfileConfirmation será implementado na Task 1.5
-              </p>
-            </div>
-
-            {/* Temporary action buttons */}
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={() => handleNext()}
-                className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-all"
-              >
-                Confirmar (Teste)
-              </button>
-            </div>
-          </div>
+          <GuestProfileConfirmation
+            profile={wizardState.guestData.confirmedProfile!}
+            onConfirm={() => handleNext()}
+            onSearchAgain={handleBack}
+          />
         );
 
       case 'episode-details':
