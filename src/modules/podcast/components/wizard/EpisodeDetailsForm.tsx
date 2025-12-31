@@ -36,6 +36,7 @@ export interface EpisodeDetailsFormProps {
     scheduledTime?: string;
   }) => void;
   onBack: () => void;
+  isLoading?: boolean; // For showing loading state during save
 }
 
 /**
@@ -63,6 +64,7 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
   initialData,
   onSubmit,
   onBack,
+  isLoading = false,
 }) => {
   // Theme mode state (auto vs manual)
   const [themeMode, setThemeMode] = useState<'auto' | 'manual'>(
@@ -337,17 +339,24 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
         <button
           type="submit"
           data-testid="guest-wizard-complete"
-          disabled={!isFormValid()}
+          disabled={!isFormValid() || isLoading}
           className={`
             px-6 py-3 rounded-xl font-bold transition-all
             ${
-              isFormValid()
+              isFormValid() && !isLoading
                 ? 'ceramic-button-primary'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }
           `}
         >
-          ✓ Completar
+          {isLoading ? (
+            <>
+              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              Salvando...
+            </>
+          ) : (
+            <>✓ Completar</>
+          )}
         </button>
       </div>
     </form>

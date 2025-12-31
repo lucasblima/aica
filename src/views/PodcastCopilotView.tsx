@@ -386,38 +386,40 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     };
 
     // Wizard -> Pre-Production
-    const handleWizardComplete = async (wizardData: any, episodeId: string) => {
-        console.log('[PodcastCopilot] handleWizardComplete called', { episodeId });
+    const handleWizardComplete = async (episode: any) => {
+        console.log('[PodcastCopilot] handleWizardComplete called', { episode });
 
         // Set transition flag
         isTransitioningRef.current = true;
 
-        // Prepare guest data from wizard
+        // Prepare guest data from episode
         const guestData: GuestData = {
-            name: wizardData.guestName,
-            fullName: wizardData.confirmedProfile?.fullName,
-            title: wizardData.confirmedProfile?.title || wizardData.guestReference,
-            theme: wizardData.themeMode === 'auto' ? undefined : wizardData.theme,
-            season: wizardData.season,
-            location: wizardData.location,
-            scheduledDate: wizardData.scheduledDate,
-            scheduledTime: wizardData.scheduledTime
+            name: episode.guest_name,
+            fullName: episode.guest_name,
+            title: episode.guest_type === 'public-figure' ? episode.guest_reference : undefined,
+            theme: episode.episode_theme,
+            season: episode.season?.toString(),
+            location: episode.location,
+            scheduledDate: episode.scheduled_date,
+            scheduledTime: episode.scheduled_time
         };
 
         // Update unified state atomically
         setEpisodeState({
-            episodeId,
-            projectId: episodeId,
+            episodeId: episode.id,
+            projectId: episode.id,
             dossier: null, // No dossier yet, will be generated in preproduction
             guestData
         });
 
-        setView('preproduction');
+        // Navigate to workspace instead of preproduction
+        console.log('[PodcastCopilot] Navigating to workspace with episode:', episode.id);
+        setView('workspace');
 
         // Clear transition flag after state is settled
         setTimeout(() => {
             isTransitioningRef.current = false;
-            console.log('[PodcastCopilot] Transition to preproduction complete');
+            console.log('[PodcastCopilot] Transition to workspace complete');
         }, 100);
     };
 
