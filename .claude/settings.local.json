@@ -127,9 +127,31 @@
       "Bash(wss://*.supabase.co)",
       "Bash(https://n8n-n8n.w9jo16.easypanel.host)",
       "Bash(gh issue view:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(gcloud secrets list:*)",
+      "Bash(gcloud projects describe:*)",
+      "Bash(gcloud auth login:*)",
+      "Bash(gcloud auth list:*)",
+      "Bash(gcloud auth application-default print-access-token:*)",
+      "Bash(gcloud config set:*)",
+      "Bash(gcloud auth print-access-token:*)",
+      "Bash(gcloud config:*)",
+      "Bash(gcloud services enable:*)",
+      "Bash(gcloud secrets create:*)",
+      "Bash(gcloud secrets versions add:*)",
+      "Bash(gcloud secrets add-iam-policy-binding:*)",
+      "Bash(gcloud builds submit:*)",
+      "Bash(gcloud projects get-iam-policy:*)",
+      "Bash(gcloud secrets get-iam-policy:*)",
+      "Bash(gcloud iam service-accounts list:*)",
+      "Bash(gcloud builds describe:*)",
+      "Bash(gcloud builds log:*)",
+      "Bash(gcloud run services describe:*)",
+      "Bash(gcloud run services:*)",
+      "Bash(gcloud secrets versions access:*)",
+      "Bash(gcloud run domain-mappings list:*)",
+      "Bash(gh issue create:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git restore:*)"
     ],
-    "deny": [],
-    "ask": []
-  }
-}
+    "de

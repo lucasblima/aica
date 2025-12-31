@@ -26,6 +26,8 @@ ARG VITE_GOOGLE_OAUTH_CLIENT_SECRET
 # Optional: External services
 ARG VITE_PDF_EXTRACTOR_URL
 ARG VITE_N8N_WEBHOOK_URL
+ARG VITE_N8N_URL
+ARG VITE_EVOLUTION_URL
 ARG VITE_EVOLUTION_INSTANCE_NAME
 ARG VITE_API_URL
 
@@ -41,6 +43,8 @@ ENV VITE_GOOGLE_OAUTH_CLIENT_ID=$VITE_GOOGLE_OAUTH_CLIENT_ID
 ENV VITE_GOOGLE_OAUTH_CLIENT_SECRET=$VITE_GOOGLE_OAUTH_CLIENT_SECRET
 ENV VITE_PDF_EXTRACTOR_URL=$VITE_PDF_EXTRACTOR_URL
 ENV VITE_N8N_WEBHOOK_URL=$VITE_N8N_WEBHOOK_URL
+ENV VITE_N8N_URL=$VITE_N8N_URL
+ENV VITE_EVOLUTION_URL=$VITE_EVOLUTION_URL
 ENV VITE_EVOLUTION_INSTANCE_NAME=$VITE_EVOLUTION_INSTANCE_NAME
 ENV VITE_API_URL=$VITE_API_URL
 
@@ -53,13 +57,21 @@ RUN npm install
 # Copiar codigo fonte
 COPY . .
 
-# Debug: Print environment variables during build (remove in production if sensitive)
+# Debug: Print environment variables during build (sanitized output)
 RUN echo "=== Build Environment ===" && \
-    echo "VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:0:30}..." && \
-    echo "VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:+SET}" && \
-    echo "VITE_GEMINI_API_KEY: ${VITE_GEMINI_API_KEY:+SET}" && \
+    echo "VITE_SUPABASE_URL: SET" && \
+    echo "VITE_SUPABASE_ANON_KEY: SET" && \
+    echo "VITE_GEMINI_API_KEY: SET" && \
     echo "VITE_FRONTEND_URL: ${VITE_FRONTEND_URL}" && \
     echo "========================="
+
+# Validate that critical environment variables are actually set
+RUN echo "=== Validating Build Arguments ===" && \
+    test -n "${VITE_SUPABASE_URL}" && echo "✓ VITE_SUPABASE_URL: SET" || (echo "✗ VITE_SUPABASE_URL: MISSING" && exit 1) && \
+    test -n "${VITE_SUPABASE_ANON_KEY}" && echo "✓ VITE_SUPABASE_ANON_KEY: SET" || (echo "✗ VITE_SUPABASE_ANON_KEY: MISSING" && exit 1) && \
+    test -n "${VITE_GEMINI_API_KEY}" && echo "✓ VITE_GEMINI_API_KEY: SET" || (echo "✗ VITE_GEMINI_API_KEY: MISSING" && exit 1) && \
+    test -n "${VITE_GOOGLE_OAUTH_CLIENT_SECRET}" && echo "✓ VITE_GOOGLE_OAUTH_CLIENT_SECRET: SET" || (echo "✗ VITE_GOOGLE_OAUTH_CLIENT_SECRET: MISSING" && exit 1) && \
+    echo "==================================="
 
 # Build da aplicacao para producao
 RUN npm run build

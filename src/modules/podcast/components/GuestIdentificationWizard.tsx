@@ -23,7 +23,7 @@ import type {
   EpisodeCreationData,
   GuestProfile
 } from '../types/wizard.types';
-import { GuestTypeSelector } from './wizard';
+import { GuestTypeSelector, GuestManualForm, EpisodeDetailsForm } from './wizard';
 
 // Component Props
 export interface GuestIdentificationWizardProps {
@@ -182,6 +182,20 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     }));
   };
 
+  // Handler for manual form submission
+  const handleManualFormSubmit = (data: { name: string; phone: string; email: string }) => {
+    setWizardState((prev) => ({
+      ...prev,
+      guestData: {
+        ...prev.guestData,
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+      },
+    }));
+    handleNext();
+  };
+
   // Render current step
   const renderStep = () => {
     switch (wizardState.currentStep) {
@@ -231,42 +245,15 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
       case 'manual-form':
         return (
-          <div
-            data-testid="guest-manual-form-placeholder"
-            className="ceramic-card p-8 space-y-6"
-          >
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-ceramic-text-primary">
-                Informações do Contato
-              </h2>
-              <p className="text-ceramic-text-secondary">
-                GuestManualForm será implementado na Task 1.4
-              </p>
-            </div>
-
-            {/* Temporary action buttons */}
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={() => {
-                  updateGuestData({
-                    name: 'Contato Direto Teste',
-                    email: 'teste@example.com',
-                    phone: '+55 11 99999-9999'
-                  });
-                  handleNext();
-                }}
-                className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-all"
-              >
-                Continuar (Teste)
-              </button>
-            </div>
-          </div>
+          <GuestManualForm
+            initialData={{
+              name: wizardState.guestData.name,
+              phone: wizardState.guestData.phone || '',
+              email: wizardState.guestData.email || '',
+            }}
+            onSubmit={handleManualFormSubmit}
+            onBack={handleBack}
+          />
         );
 
       case 'confirm-profile':
@@ -304,42 +291,22 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
       case 'episode-details':
         return (
-          <div
-            data-testid="episode-details-form-placeholder"
-            className="ceramic-card p-8 space-y-6"
-          >
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-ceramic-text-primary">
-                Detalhes do Episódio
-              </h2>
-              <p className="text-ceramic-text-secondary">
-                EpisodeDetailsForm será implementado na Task 1.6
-              </p>
-            </div>
-
-            {/* Temporary action buttons */}
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all"
-              >
-                Voltar
-              </button>
-              <button
-                onClick={() => {
-                  handleComplete({
-                    theme: 'Tema de Teste',
-                    themeMode: 'auto',
-                    season: 1,
-                    location: 'Remoto',
-                  });
-                }}
-                className="px-6 py-3 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600 transition-all"
-              >
-                Concluir (Teste)
-              </button>
-            </div>
-          </div>
+          <EpisodeDetailsForm
+            guestName={wizardState.guestData.name}
+            initialData={{
+              theme: wizardState.episodeData.theme,
+              season: wizardState.episodeData.season,
+              location: wizardState.episodeData.location,
+              scheduledDate: wizardState.episodeData.scheduledDate,
+              scheduledTime: wizardState.episodeData.scheduledTime,
+              themeMode: wizardState.episodeData.themeMode,
+            }}
+            onSubmit={(data) => {
+              updateEpisodeData(data);
+              handleComplete(data);
+            }}
+            onBack={handleBack}
+          />
         );
 
       default:
