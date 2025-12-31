@@ -15,17 +15,21 @@
 substitutions:
   _SERVICE_NAME: aica
   _DEPLOY_REGION: southamerica-east1
+  _IMAGE_NAME: aica-frontend
+  _TAG: latest
   # Required: Supabase configuration (safe to include - these are public client keys)
   _VITE_SUPABASE_URL: https://gppebtrshbvuzatmebhr.supabase.co
   _VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwcGVidHJzaGJ2dXphdG1lYmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMjYzNTMsImV4cCI6MjA3NjkwMjM1M30.vY3EBXKTUj60TVwcDJonbEcOAfbUoO8BCRzuy1NErDw
   # Required: Frontend URL for OAuth redirect
   _VITE_FRONTEND_URL: https://aica-5562559893.southamerica-east1.run.app
   # Optional: Set these in Cloud Build trigger or leave empty
-  _VITE_GOOGLE_OAUTH_CLIENT_ID: ''
+  _VITE_GOOGLE_OAUTH_CLIENT_ID: '5562559893-j9n4ec5vo4dlo4c30hpefca1nf8md0bo.apps.googleusercontent.com'
   _VITE_PDF_EXTRACTOR_URL: ''
-  _VITE_N8N_WEBHOOK_URL: ''
+  _VITE_N8N_WEBHOOK_URL: 'https://n8n-n8n.w9jo16.easypanel.host/'
   _VITE_EVOLUTION_INSTANCE_NAME: ''
   _VITE_API_URL: ''
+  _VITE_N8N_URL: 'https://n8n-n8n.w9jo16.easypanel.host/'
+  _VITE_EVOLUTION_URL: 'https://evolution-evolution-api.w9jo16.easypanel.host/'
 
 # =============================================================================
 # SECRETS - Sensitive values from Secret Manager
@@ -50,6 +54,45 @@ availableSecrets:
 
 steps:
   # =========================================================================
+  # Step 0: Validate that secrets exist and were loaded
+  # =========================================================================
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'validate-secrets'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Validating Secrets Configuration ==="
+
+        # Verificar se secrets existem no Secret Manager
+        gcloud secrets describe vite-gemini-api-key --project=$PROJECT_ID || {
+          echo "ERROR: Secret 'vite-gemini-api-key' não encontrado!"
+          exit 1
+        }
+
+        gcloud secrets describe vite-google-oauth-client-secret --project=$PROJECT_ID || {
+          echo "ERROR: Secret 'vite-google-oauth-client-secret' não encontrado!"
+          exit 1
+        }
+
+        # Verificar se secrets foram carregados no secretEnv
+        if [ -z "$$VITE_GEMINI_API_KEY" ]; then
+          echo "ERROR: VITE_GEMINI_API_KEY secret está vazio ou não foi carregado!"
+          exit 1
+        fi
+
+        if [ -z "$$VITE_GOOGLE_OAUTH_CLIENT_SECRET" ]; then
+          echo "ERROR: VITE_GOOGLE_OAUTH_CLIENT_SECRET secret está vazio ou não foi carregado!"
+          exit 1
+        fi
+
+        echo "✓ Gemini API Key: SET"
+        echo "✓ OAuth Client Secret: SET"
+        echo "✓ Todos os secrets validados com sucesso"
+        echo "========================================"
+    secretEnv: ['VITE_GEMINI_API_KEY', 'VITE_GOOGLE_OAUTH_CLIENT_SECRET']
+
+  # =========================================================================
   # Step 1: Build Docker image with environment variables
   # =========================================================================
   - name: 'gcr.io/cloud-builders/docker'
@@ -72,10 +115,12 @@ steps:
           --build-arg VITE_GOOGLE_OAUTH_CLIENT_SECRET="$$VITE_GOOGLE_OAUTH_CLIENT_SECRET" \
           --build-arg VITE_PDF_EXTRACTOR_URL="${_VITE_PDF_EXTRACTOR_URL}" \
           --build-arg VITE_N8N_WEBHOOK_URL="${_VITE_N8N_WEBHOOK_URL}" \
+          --build-arg VITE_N8N_URL="${_VITE_N8N_URL}" \
+          --build-arg VITE_EVOLUTION_URL="${_VITE_EVOLUTION_URL}" \
           --build-arg VITE_EVOLUTION_INSTANCE_NAME="${_VITE_EVOLUTION_INSTANCE_NAME}" \
           --build-arg VITE_API_URL="${_VITE_API_URL}" \
-          -t gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA \
-          -t gcr.io/$PROJECT_ID/$REPO_NAME:latest \
+          -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG} \
+          -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest \
           .
     secretEnv: ['VITE_GEMINI_API_KEY', 'VITE_GOOGLE_OAUTH_CLIENT_SECRET']
 
@@ -84,11 +129,11 @@ steps:
   # =========================================================================
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-image'
-    args: ['push', 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA']
+    args: ['push', 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG}']
 
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-latest'
-    args: ['push', 'gcr.io/$PROJECT_ID/$REPO_NAME:latest']
+    args: ['push', 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest']
 
   # =========================================================================
   # Step 3: Deploy to Cloud Run
@@ -102,20 +147,21 @@ steps:
       - 'update'
       - '$_SERVICE_NAME'
       - '--platform=managed'
-      - '--image=gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA'
+      - '--image=gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG}'
       - '--region=$_DEPLOY_REGION'
 
 # =============================================================================
 # OUTPUT IMAGES
 # =============================================================================
 images:
-  - 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/$REPO_NAME:latest'
+  - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG}'
+  - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest'
 
 # =============================================================================
 # BUILD OPTIONS
 # =============================================================================
 options:
   logging: CLOUD_LOGGING_ONLY
-  # Increase timeout for larger builds (default is 10 minutes)
-  timeout: '1200s'
+
+# Increase timeout for larger builds (default is 10 minutes)
+timeout: '1200s'
