@@ -25,6 +25,8 @@ import type {
 } from '../types/wizard.types';
 import { GuestTypeSelector, GuestManualForm, EpisodeDetailsForm, GuestNameSearchForm } from './wizard';
 import { createEpisode, type PodcastEpisode } from '../services/episodeService';
+import { searchGuestProfile } from '../services/guestResearchService';
+import { useXPNotifications } from '@/contexts/XPNotificationContext';
 
 // Component Props
 export interface GuestIdentificationWizardProps {
@@ -66,6 +68,10 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSearchingGuest, setIsSearchingGuest] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  // XP notifications hook
+  const { showXPGain } = useXPNotifications();
 
   // Calculate progress percentage based on current step
   const getProgressPercentage = (): number => {
@@ -229,32 +235,52 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
   // Handler for guest search (Public Figure flow)
   const handleGuestSearch = async (data: { name: string; reference: string }) => {
-    console.log('[GuestIdentificationWizard] Starting guest search...', data);
+    console.log('[GuestIdentificationWizard] Starting guest research...', data);
 
-    // Save guest data temporarily
-    setWizardState((prev) => ({
-      ...prev,
-      guestData: {
-        ...prev.guestData,
-        name: data.name,
-        reference: data.reference,
-      },
-    }));
-
+    // Clear any previous search error
+    setSearchError(null);
     setIsSearchingGuest(true);
 
     try {
-      // TODO: Task 2.2 will implement actual Gemini API search
-      // For now, simulate delay and advance to next step
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Call Gemini API to research the guest
+      const profile = await searchGuestProfile(data.name, data.reference);
 
-      console.log('[GuestIdentificationWizard] Guest search completed (simulated)');
+      console.log('[GuestIdentificationWizard] Guest research completed', {
+        name: profile.name,
+        confidence: profile.confidence_score,
+        isReliable: profile.is_reliable,
+      });
+
+      // Save profile to wizard state
+      setWizardState((prev) => ({
+        ...prev,
+        guestData: {
+          ...prev.guestData,
+          name: data.name,
+          reference: data.reference,
+          confirmedProfile: profile,
+        },
+      }));
+
+      // Award XP for successful guest identification (50 XP)
+      // Only award if the research was reliable and has good confidence
+      if (profile.is_reliable && profile.confidence_score && profile.confidence_score >= 30) {
+        showXPGain(50);
+        console.log('[GuestIdentificationWizard] Awarded 50 XP for successful guest research');
+      }
 
       // Advance to Step 2 (Profile Confirmation)
       handleNext();
     } catch (error) {
       console.error('[GuestIdentificationWizard] Error searching for guest:', error);
-      // TODO: Show error to user (will be implemented in Task 2.2)
+
+      // Show user-friendly error message
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Erro ao pesquisar convidado. Por favor, tente novamente.';
+
+      setSearchError(errorMessage);
     } finally {
       setIsSearchingGuest(false);
     }
@@ -273,15 +299,31 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
       case 'search-public':
         return (
-          <GuestNameSearchForm
-            initialData={{
-              name: wizardState.guestData.name,
-              reference: wizardState.guestData.reference || '',
-            }}
-            onSearch={handleGuestSearch}
-            onBack={handleBack}
-            isSearching={isSearchingGuest}
-          />
+          <div className="space-y-4">
+            {/* Error message */}
+            {searchError && (
+              <div className="ceramic-card p-4 bg-red-50 border border-red-200">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">⚠️</div>
+                  <div className="flex-1">
+                    <h3 className="text-red-800 font-bold mb-1">Erro na Pesquisa</h3>
+                    <p className="text-red-700 text-sm">{searchError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Search form */}
+            <GuestNameSearchForm
+              initialData={{
+                name: wizardState.guestData.name,
+                reference: wizardState.guestData.reference || '',
+              }}
+              onSearch={handleGuestSearch}
+              onBack={handleBack}
+              isSearching={isSearchingGuest}
+            />
+          </div>
         );
 
       case 'manual-form':

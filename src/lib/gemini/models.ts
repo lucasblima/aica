@@ -32,6 +32,7 @@ export const USE_CASE_TO_MODEL: Record<string, GeminiModel> = {
   'analyze_news': 'fast',
   'chat_aica': 'fast',
   'deep_research': 'smart',
+  'research_guest': 'smart',
 
   // Pauta Generation (NotebookLM-style)
   'generate_pauta_outline': 'smart',
