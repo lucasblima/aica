@@ -3,6 +3,25 @@ import type { CookieOptions } from '@supabase/ssr';
 /**
  * Cookie Storage Adapter for Client-Side (Browser)
  *
+ * Permite @supabase/ssr usar cookies no browser, resolvendo problemas de
+ * stateless containers no Cloud Run onde localStorage não persiste entre requests.
+ *
+ * PKCE Flow:
+ * 1. signInWithOAuth() gera code_verifier e armazena em cookie
+ * 2. Browser redireciona para Google OAuth
+ * 3. Google redireciona de volta com authorization code
+ * 4. Cookie com code_verifier é lido para completar o exchange
+ *
+ * FIX: Corrigido parsing de cookies com valores base64 (contêm '=')
+ */
+
+const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
+
+function log(message: string, data?: unknown) {
+  if (DEBUG) {
+    console.log(`[CookieAdapter] ${message}`, data ?? '');
+  }
+}
  * This adapter properly handles:
  * - Cookie chunking for large tokens (required for PKCE/JWT)
  * - Cross-domain OAuth redirects
@@ -20,26 +39,36 @@ const getDefaultCookieOptions = (): Partial<CookieOptions> => {
 
   return {
     path: '/',
-    sameSite: 'lax',      // Required for OAuth redirects
-    secure: isProduction, // true in HTTPS (production)
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    sameSite: 'lax',      // Permite OAuth redirects (top-level navigation)
+    secure: isProduction, // true em HTTPS (produção)
+    maxAge: 60 * 60 * 24 * 7, // 7 dias
   };
 };
 
+/**
+ * Parse cookies from document.cookie string
+ * FIX: Usa indexOf para encontrar primeiro '=' e preservar '=' no valor (base64)
+ */
 function parseCookies(): Record<string, string> {
-  if (typeof document === 'undefined') return {};
+  if (!document.cookie) {
+    return {};
+  }
 
   return document.cookie.split('; ').reduce((acc, cookie) => {
-    const separatorIndex = cookie.indexOf('=');
-    if (separatorIndex > 0) {
-      const key = cookie.substring(0, separatorIndex);
-      const value = cookie.substring(separatorIndex + 1);
-      if (key && value) {
-        try {
-          acc[key] = decodeURIComponent(value);
-        } catch {
-          acc[key] = value;
-        }
+    // FIX: Encontra o primeiro '=' para separar nome do valor
+    // Isso preserva '=' em valores base64 como o code_verifier
+    const eqIndex = cookie.indexOf('=');
+    if (eqIndex === -1) return acc;
+
+    const key = cookie.substring(0, eqIndex);
+    const value = cookie.substring(eqIndex + 1);
+
+    if (key && value !== undefined) {
+      try {
+        acc[key] = decodeURIComponent(value);
+      } catch {
+        // Se falhar decode, usa valor original
+        acc[key] = value;
       }
     }
     return acc;
@@ -60,102 +89,54 @@ function setCookie(name: string, value: string, options: Partial<CookieOptions> 
   if (opts.secure) cookieString += `; Secure`;
 
   document.cookie = cookieString;
+  log(`SET cookie: ${name}`, { valueLength: value.length, options: opts });
 }
 
 function deleteCookie(name: string, options: Partial<CookieOptions> = {}): void {
-  setCookie(name, '', { ...options, maxAge: 0 });
+  log(`DELETE cookie: ${name}`);
+  // Para deletar, precisamos setar com Max-Age=0 e mesmo path/domain
+  const opts = { ...getDefaultCookieOptions(), ...options, maxAge: 0 };
+  let cookieString = `${name}=`;
+
+  if (opts.path) cookieString += `; Path=${opts.path}`;
+  if (opts.domain) cookieString += `; Domain=${opts.domain}`;
+  cookieString += `; Max-Age=0`;
+  if (opts.sameSite) cookieString += `; SameSite=${opts.sameSite}`;
+  if (opts.secure) cookieString += `; Secure`;
+
+  document.cookie = cookieString;
 }
 
 /**
- * Chunks a large value into multiple cookie-safe pieces
- */
-function chunkValue(value: string): string[] {
-  const chunks: string[] = [];
-  for (let i = 0; i < value.length; i += CHUNK_SIZE) {
-    chunks.push(value.substring(i, i + CHUNK_SIZE));
-  }
-  return chunks;
-}
-
-/**
- * Gets all chunk cookie names for a base name
- */
-function getChunkNames(baseName: string, cookies: Record<string, string>): string[] {
-  const names: string[] = [];
-  let i = 0;
-  while (cookies[`${baseName}${CHUNK_SEPARATOR}${i}`] !== undefined) {
-    names.push(`${baseName}${CHUNK_SEPARATOR}${i}`);
-    i++;
-  }
-  return names;
-}
-
-/**
- * Create cookies getter/setter for @supabase/ssr with chunking support
+ * Create cookies getter/setter for @supabase/ssr
  *
- * This is critical for PKCE flow where:
- * 1. code_verifier is stored before OAuth redirect
- * 2. After callback, code_verifier is retrieved to exchange for tokens
- * 3. Large session tokens are stored after successful auth
+ * Implementa a interface CookieMethods esperada pelo createBrowserClient:
+ * - get(name): Retorna valor do cookie ou undefined
+ * - getAll(): Retorna array de {name, value} para todos os cookies
+ * - set(name, value, options): Define um cookie
+ * - remove(name, options): Remove um cookie
  */
 export function createCookieHandlers() {
   return {
-    /**
-     * Get a cookie value, reassembling chunks if necessary
-     */
     get(name: string): string | undefined {
       const cookies = parseCookies();
-
-      // Check for single cookie first
-      if (cookies[name] !== undefined) {
-        return cookies[name];
-      }
-
-      // Check for chunked cookies
-      const chunkNames = getChunkNames(name, cookies);
-      if (chunkNames.length > 0) {
-        // Reassemble chunks
-        return chunkNames.map(chunkName => cookies[chunkName]).join('');
-      }
-
-      return undefined;
+      const value = cookies[name];
+      log(`GET cookie: ${name}`, { found: !!value, valueLength: value?.length });
+      return value;
     },
 
-    /**
-     * Set a cookie value, chunking if necessary
-     */
+    getAll(): Array<{ name: string; value: string }> {
+      const cookies = parseCookies();
+      const result = Object.entries(cookies).map(([name, value]) => ({ name, value }));
+      log(`GET ALL cookies`, { count: result.length, names: result.map(c => c.name) });
+      return result;
+    },
+
     set(name: string, value: string, options: CookieOptions): void {
-      const cookies = parseCookies();
-
-      // First, remove any existing chunks for this cookie
-      const existingChunks = getChunkNames(name, cookies);
-      existingChunks.forEach(chunkName => deleteCookie(chunkName, options));
-
-      // Also remove the base cookie if it exists
-      if (cookies[name] !== undefined) {
-        deleteCookie(name, options);
-      }
-
-      // If value is small enough, store directly
-      if (value.length <= CHUNK_SIZE) {
-        setCookie(name, value, options);
-        return;
-      }
-
-      // Otherwise, chunk the value
-      const chunks = chunkValue(value);
-      chunks.forEach((chunk, index) => {
-        setCookie(`${name}${CHUNK_SEPARATOR}${index}`, chunk, options);
-      });
+      setCookie(name, value, options);
     },
 
-    /**
-     * Remove a cookie and all its chunks
-     */
     remove(name: string, options: CookieOptions): void {
-      const cookies = parseCookies();
-
-      // Remove base cookie
       deleteCookie(name, options);
 
       // Remove all chunks
