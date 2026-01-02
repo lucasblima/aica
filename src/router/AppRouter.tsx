@@ -234,6 +234,14 @@ export function AppRouter() {
    // Fixes race condition where AppRouter redirects to /landing
    // before useAuth completes, leaving user stuck on landing page
    useEffect(() => {
+      console.log('[AppRouter] Auth state check:', {
+         isAuthenticated,
+         checkingOnboarding,
+         showOnboarding,
+         pathname: location.pathname,
+         shouldNavigate: isAuthenticated && !checkingOnboarding && !showOnboarding && location.pathname === '/landing'
+      });
+
       if (isAuthenticated && !checkingOnboarding && !showOnboarding && location.pathname === '/landing') {
          console.log('[AppRouter] Auth completed, navigating from /landing to /');
          navigate('/', { replace: true });
