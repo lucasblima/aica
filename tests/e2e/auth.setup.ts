@@ -37,6 +37,13 @@ setup('authenticate via Supabase API', async ({ page, context }) => {
    * 4. Save the authenticated state for reuse in tests
    */
 
+  // Capture browser console logs for debugging
+  page.on('console', msg => {
+    if (msg.text().includes('[AppRouter]')) {
+      console.log(`🌐 [Browser Console] ${msg.text()}`);
+    }
+  });
+
   try {
     // Create directory if it doesn't exist
     fs.mkdirSync('tests/e2e', { recursive: true });
@@ -69,9 +76,10 @@ setup('authenticate via Supabase API', async ({ page, context }) => {
     // Navigate to about:blank first to get a context where we can set localStorage
     await page.goto('about:blank');
 
-    // Set up localStorage with the session data
+    // Set up cookies with the session data (Supabase SSR uses cookies, not localStorage)
     await page.addInitScript((authData) => {
-      const key = `sb-${authData.supabaseUrl.split('//')[1].split('.')[0]}-auth-token`;
+      const projectRef = authData.supabaseUrl.split('//')[1].split('.')[0];
+      const key = `sb-${projectRef}-auth-token`;
       const value = JSON.stringify({
         access_token: authData.access_token,
         refresh_token: authData.refresh_token,
@@ -80,8 +88,14 @@ setup('authenticate via Supabase API', async ({ page, context }) => {
         token_type: authData.token_type,
         user: authData.user,
       });
+
+      // Set cookie (Supabase SSR expects cookies, not localStorage)
+      const encodedValue = encodeURIComponent(value);
+      document.cookie = `${key}=${encodedValue}; Path=/; SameSite=lax; Max-Age=${60 * 60 * 24 * 7}`;
+      console.log('✓ Pre-loaded session into cookie:', key);
+
+      // Also set localStorage for backward compatibility and debugging
       localStorage.setItem(key, value);
-      console.log('✓ Pre-loaded session into localStorage:', key);
     }, {
       ...data.session,
       supabaseUrl: SUPABASE_URL,
