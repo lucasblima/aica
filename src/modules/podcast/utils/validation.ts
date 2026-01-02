@@ -69,9 +69,22 @@ export const validatePhone = (phone: string): ValidationResult => {
   // Remove all non-numeric characters
   let digitsOnly = trimmed.replace(/\D/g, '');
 
-  // Remove +55 country code if present
-  if (digitsOnly.startsWith('55') && digitsOnly.length >= 12) {
-    digitsOnly = digitsOnly.slice(2);
+  // Handle +55 country code
+  // Note: Brazilian area codes (DDD) range from 11-99, so if a number starts with 55,
+  // it's the country code, not a DDD
+  if (digitsOnly.startsWith('55')) {
+    // If starts with 55 and has 12-13 digits total (55 + 10-11 valid digits), remove country code
+    if (digitsOnly.length === 12 || digitsOnly.length === 13) {
+      digitsOnly = digitsOnly.slice(2);
+    }
+    // If starts with 55 but has fewer than 12 digits, it's an incomplete international number
+    else if (digitsOnly.length < 12) {
+      return { isValid: false, error: 'Telefone inválido' };
+    }
+    // If starts with 55 but has more than 13 digits, it's too long
+    else {
+      return { isValid: false, error: 'Telefone inválido' };
+    }
   }
 
   // Accept 10 or 11 digits (with or without DDD)
@@ -114,7 +127,9 @@ export const formatPhone = (phone: string): string => {
   let digitsOnly = phone.replace(/\D/g, '');
 
   // Remove +55 country code if present
-  if (digitsOnly.startsWith('55') && digitsOnly.length >= 12) {
+  // Note: Brazilian area codes (DDD) range from 11-99, so if a number starts with 55,
+  // it's the country code, not a DDD
+  if (digitsOnly.startsWith('55') && (digitsOnly.length === 12 || digitsOnly.length === 13)) {
     digitsOnly = digitsOnly.slice(2);
   }
 
