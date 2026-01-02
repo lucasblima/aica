@@ -10,18 +10,12 @@ import { motion } from 'framer-motion';
 
 interface Institution {
   name: string;
-  type: 'university' | 'company';
 }
 
 const institutions: Institution[] = [
-  { name: 'USP', type: 'university' },
-  { name: 'Unicamp', type: 'university' },
-  { name: 'FGV', type: 'university' },
-  { name: 'Insper', type: 'university' },
-  { name: 'Stanford', type: 'university' },
-  { name: 'Google', type: 'company' },
-  { name: 'Microsoft', type: 'company' },
-  { name: 'Amazon', type: 'company' },
+  { name: 'Evolution Hub' },
+  { name: 'Estúdio Pedra do Sal' },
+  { name: 'Uai, Ana!' },
 ];
 
 export function SocialProof() {
@@ -36,12 +30,9 @@ export function SocialProof() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <p className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
+          <p className="text-lg font-bold text-ceramic-text-secondary uppercase tracking-wider">
             Confiado por
           </p>
-          <h3 className="text-2xl md:text-3xl font-black text-ceramic-text-primary">
-            Profissionais de instituições líderes
-          </h3>
         </motion.div>
 
         {/* Logos Grid */}
@@ -50,7 +41,7 @@ export function SocialProof() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8 items-center justify-items-center"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-8 items-center justify-items-center max-w-4xl mx-auto"
         >
           {institutions.map((institution, index) => (
             <motion.div
@@ -84,25 +75,6 @@ export function SocialProof() {
               </div>
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* Testimonial Quote */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-16 max-w-3xl mx-auto text-center"
-        >
-          <blockquote className="ceramic-card p-8 rounded-2xl">
-            <p className="text-lg md:text-xl text-ceramic-text-primary font-light italic mb-4">
-              "Uma ferramenta essencial para quem busca autoconhecimento estruturado.
-              Transformou completamente minha rotina de reflexão."
-            </p>
-            <footer className="text-sm text-ceramic-text-secondary font-medium">
-              — Profissional USP
-            </footer>
-          </blockquote>
         </motion.div>
       </div>
     </section>
