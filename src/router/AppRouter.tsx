@@ -230,6 +230,16 @@ export function AppRouter() {
       checkOnboarding();
    }, [userId]);
 
+   // Navigate from landing to home when auth completes
+   // Fixes race condition where AppRouter redirects to /landing
+   // before useAuth completes, leaving user stuck on landing page
+   useEffect(() => {
+      if (isAuthenticated && !checkingOnboarding && !showOnboarding && location.pathname === '/landing') {
+         console.log('[AppRouter] Auth completed, navigating from /landing to /');
+         navigate('/', { replace: true });
+      }
+   }, [isAuthenticated, checkingOnboarding, showOnboarding, location.pathname, navigate]);
+
    useEffect(() => {
       if (!isAuthenticated) return;
 
