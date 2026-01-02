@@ -31,8 +31,8 @@ if (hasAuthCode) {
  *
  * Changes:
  * - createClient → createBrowserClient
- * - localStorage → Cookie storage (via adapter)
- * - PKCE flow mantido (default em @supabase/ssr)
+ * - localStorage → Cookie storage (via adapter with chunking support)
+ * - PKCE flow with explicit code exchange in useAuth hook
  *
  * Benefits:
  * - Cookies persistem entre diferentes containers em Cloud Run
@@ -53,13 +53,13 @@ export const supabase = createBrowserClient(
         cookieOptions: {
             path: '/',
             sameSite: 'lax',
-            secure: window.location.protocol === 'https:',
-            maxAge: 60 * 60 * 24 * 7, // 7 dias
+            secure: typeof window !== 'undefined' && window.location.protocol === 'https:',
+            maxAge: 60 * 60 * 24 * 7, // 7 days
         },
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true,
+            detectSessionInUrl: false, // Handled explicitly in useAuth hook
             flowType: 'pkce',
             // Debug: log storage operations
             debug: DEBUG,

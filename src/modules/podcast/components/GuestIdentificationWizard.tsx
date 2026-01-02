@@ -281,6 +281,33 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
           : 'Erro ao pesquisar convidado. Por favor, tente novamente.';
 
       setSearchError(errorMessage);
+
+      // Fallback profile - allow user to continue with basic profile
+      const fallbackProfile = {
+        name: data.name,
+        professional_title: 'Perfil indisponível',
+        biography_summary: 'Não foi possível buscar informações automáticas. Continue com dados manuais.',
+        biography: '',
+        notable_facts: [],
+        key_topics: [],
+        confidence_score: 0,
+        is_reliable: false,
+      };
+
+      // Save fallback profile to wizard state
+      setWizardState((prev) => ({
+        ...prev,
+        guestData: {
+          ...prev.guestData,
+          name: data.name,
+          reference: data.reference,
+          confirmedProfile: fallbackProfile,
+        },
+      }));
+
+      // Still advance to next step with fallback profile
+      // This prevents user from being blocked by API errors
+      handleNext();
     } finally {
       setIsSearchingGuest(false);
     }

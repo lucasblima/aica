@@ -22,6 +22,17 @@ function log(message: string, data?: unknown) {
     console.log(`[CookieAdapter] ${message}`, data ?? '');
   }
 }
+ * This adapter properly handles:
+ * - Cookie chunking for large tokens (required for PKCE/JWT)
+ * - Cross-domain OAuth redirects
+ * - Stateless container deployments (Cloud Run)
+ *
+ * IMPORTANT: Supabase stores large JSON payloads that may exceed cookie size limits.
+ * This adapter automatically chunks values across multiple cookies.
+ */
+
+const CHUNK_SIZE = 3500; // Safe size under 4096 byte cookie limit (leaving room for name + metadata)
+const CHUNK_SEPARATOR = '.';
 
 const getDefaultCookieOptions = (): Partial<CookieOptions> => {
   const isProduction = window.location.protocol === 'https:';
@@ -65,6 +76,8 @@ function parseCookies(): Record<string, string> {
 }
 
 function setCookie(name: string, value: string, options: Partial<CookieOptions> = {}): void {
+  if (typeof document === 'undefined') return;
+
   const opts = { ...getDefaultCookieOptions(), ...options };
 
   let cookieString = `${name}=${encodeURIComponent(value)}`;
@@ -125,6 +138,10 @@ export function createCookieHandlers() {
 
     remove(name: string, options: CookieOptions): void {
       deleteCookie(name, options);
+
+      // Remove all chunks
+      const chunkNames = getChunkNames(name, cookies);
+      chunkNames.forEach(chunkName => deleteCookie(chunkName, options));
     },
   };
 }
