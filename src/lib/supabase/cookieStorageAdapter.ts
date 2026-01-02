@@ -19,7 +19,8 @@ import type { CookieOptions } from '@supabase/ssr';
  * This adapter automatically chunks values across multiple cookies.
  */
 
-const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
+// TEMPORARY: Always enable debug logs in production to diagnose OAuth issue
+const DEBUG = true; // import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
 const CHUNK_SIZE = 3500; // Safe size under 4096 byte cookie limit (leaving room for name + metadata)
 const CHUNK_SEPARATOR = '.';
 
