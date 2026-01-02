@@ -161,12 +161,15 @@ export class GuestWizardPage {
       // Click "Criar Novo" button
       await this.page.locator('[data-testid="create-new-button"]').click();
 
+      // Wait for dialog to open
+      await expect(this.page.getByText('Novo Podcast')).toBeVisible({ timeout: 5000 });
+
       // Fill in show details
-      await this.page.getByPlaceholder(/Nome do Podcast/i).fill('Test Podcast Show');
-      await this.page.getByPlaceholder(/Descrição/i).fill('Test description for E2E tests');
+      await this.page.getByPlaceholder(/Ex: Sal na Veia/i).fill('Test Podcast Show');
+      await this.page.getByPlaceholder(/Sobre o que é o seu podcast/i).fill('Test description for E2E tests');
 
       // Submit
-      await this.page.getByRole('button', { name: /criar/i }).click();
+      await this.page.getByRole('button', { name: /criar podcast/i }).click();
 
       // Wait for show to be created and library to reload
       await this.page.waitForTimeout(2000);
