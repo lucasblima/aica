@@ -171,17 +171,20 @@ export class GuestWizardPage {
       // Submit
       await this.page.getByRole('button', { name: /criar podcast/i }).click();
 
-      // Wait for show to be created and library to reload
-      await this.page.waitForTimeout(2000);
+      // Wait for dialog to close
+      await expect(this.page.getByText('Novo Podcast')).not.toBeVisible({ timeout: 5000 });
+
+      // Wait for show to be created and show card to be visible in reloaded library
+      await this.page.waitForTimeout(1000);
+      await expect(this.page.locator('[data-testid="show-card"]').first()).toBeVisible({ timeout: 10000 });
     }
 
     // Step 4: Click on the first show card to navigate to PodcastShowPage
     await this.page.locator('[data-testid="show-card"]').first().click();
 
-    // Step 5: Wait for PodcastShowPage to load (show title or "Novo Episódio" button visible)
+    // Step 5: Wait for PodcastShowPage to load (use specific testid to avoid strict mode violation)
     await expect(
-      this.page.getByRole('button', { name: /novo episódio/i })
-        .or(this.page.getByText('Episódios'))
+      this.page.locator('[data-testid="new-episode-button"]')
     ).toBeVisible({ timeout: 10000 });
   }
 
