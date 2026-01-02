@@ -136,6 +136,7 @@ export class GuestWizardPage {
     await this.page.goto('/');
     await this.page.waitForLoadState('networkidle');
 
+    // Step 1: Click Podcast Copilot card on Home to navigate to Studio
     const podcastCard = this.page
       .locator('text=Podcast Copilot')
       .or(this.page.locator('text=Studio'))
@@ -144,8 +145,46 @@ export class GuestWizardPage {
 
     await podcastCard.click();
 
+    // Step 2: Wait for StudioLibrary to load
     await expect(
-      this.page.getByText('Podcast Copilot').or(this.page.getByText('Sal na Veia'))
+      this.page.locator('[data-testid="studio-library"]')
+    ).toBeVisible({ timeout: 10000 });
+
+    // Step 3: Check if any show cards exist, if not create one
+    const showCards = this.page.locator('[data-testid="show-card"]');
+    const showCardsCount = await showCards.count();
+
+    if (showCardsCount === 0) {
+      // No shows exist, create a default test show
+      console.log('[navigateToPodcastView] No shows found, creating test show...');
+
+      // Click "Criar Novo" button
+      await this.page.locator('[data-testid="create-new-button"]').click();
+
+      // Wait for dialog to open
+      await expect(this.page.getByText('Novo Podcast')).toBeVisible({ timeout: 5000 });
+
+      // Fill in show details
+      await this.page.getByPlaceholder(/Ex: Sal na Veia/i).fill('Test Podcast Show');
+      await this.page.getByPlaceholder(/Sobre o que é o seu podcast/i).fill('Test description for E2E tests');
+
+      // Submit
+      await this.page.getByRole('button', { name: /criar podcast/i }).click();
+
+      // Wait for dialog to close
+      await expect(this.page.getByText('Novo Podcast')).not.toBeVisible({ timeout: 5000 });
+
+      // Wait for show to be created and show card to be visible in reloaded library
+      await this.page.waitForTimeout(1000);
+      await expect(this.page.locator('[data-testid="show-card"]').first()).toBeVisible({ timeout: 10000 });
+    }
+
+    // Step 4: Click on the first show card to navigate to PodcastShowPage
+    await this.page.locator('[data-testid="show-card"]').first().click();
+
+    // Step 5: Wait for PodcastShowPage to load (use specific testid to avoid strict mode violation)
+    await expect(
+      this.page.locator('[data-testid="new-episode-button"]')
     ).toBeVisible({ timeout: 10000 });
   }
 

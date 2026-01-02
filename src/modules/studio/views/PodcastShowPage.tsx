@@ -172,6 +172,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
 
                 {/* Actions */}
                 <button
+                  data-testid="new-episode-button"
                   onClick={onCreateEpisode}
                   className="ceramic-card px-4 py-3 font-bold rounded-xl hover:scale-105 transition-transform inline-flex items-center gap-2 shadow-sm"
                 >
