@@ -396,7 +396,7 @@ export default function Home({
                         <div className="flex-1 flex flex-col justify-center space-y-3">
                            <div>
                               <p className="text-sm font-bold text-ceramic-text-primary mb-1">
-                                 Podcast AI
+                                 Podcast Copilot
                               </p>
                               <p className="text-xs text-ceramic-text-secondary leading-relaxed">
                                  Transforme suas reflexões em episódios de podcast
