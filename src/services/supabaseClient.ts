@@ -15,12 +15,18 @@ if (!supabaseUrl || !supabaseKey) {
  *
  * Changes:
  * - createClient → createBrowserClient
- * - localStorage → Cookie storage (via adapter)
- * - PKCE flow mantido (default em @supabase/ssr)
+ * - localStorage → Cookie storage (via adapter with chunking support)
+ * - PKCE flow with explicit code exchange in useAuth hook
  *
  * Benefits:
- * - Cookies persistem entre diferentes containers em Cloud Run
- * - code_verifier armazenado em cookie (acessível em callback)
+ * - Cookies persist across stateless containers (Cloud Run)
+ * - code_verifier properly stored/retrieved via chunked cookies
+ * - Explicit PKCE code exchange prevents 401 errors
+ *
+ * IMPORTANT: detectSessionInUrl is set to FALSE because:
+ * - The useAuth hook explicitly handles code exchange via exchangeCodeForSession()
+ * - This prevents race conditions and double-handling of the auth code
+ * - Gives us more control over error handling and URL cleanup
  */
 export const supabase = createBrowserClient(
     supabaseUrl || '',
@@ -30,13 +36,13 @@ export const supabase = createBrowserClient(
         cookieOptions: {
             path: '/',
             sameSite: 'lax',
-            secure: window.location.protocol === 'https:',
-            maxAge: 60 * 60 * 24 * 7, // 7 dias
+            secure: typeof window !== 'undefined' && window.location.protocol === 'https:',
+            maxAge: 60 * 60 * 24 * 7, // 7 days
         },
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true,
+            detectSessionInUrl: false, // Handled explicitly in useAuth hook
             flowType: 'pkce',
         },
     }
