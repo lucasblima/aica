@@ -98,21 +98,11 @@ supabase.auth.onAuthStateChange((event, session) => {
     }
 });
 
-// Se estamos no callback OAuth, força processamento da sessão
-if (hasAuthCode) {
-    authLog('🔄 Processando callback OAuth...');
-    supabase.auth.getSession().then(({ data, error }) => {
-        if (error) {
-            console.error('[Supabase Auth] ❌ Erro no callback OAuth:', error.message);
-            // Log adicional para debug do PKCE
-            if (error.message.includes('code_verifier')) {
-                console.error('[Supabase Auth] 💡 Problema com PKCE code_verifier - verifique se cookies estão habilitados');
-            }
-        } else if (data.session) {
-            authLog('✅ Sessão obtida com sucesso no callback', {
-                userId: data.session.user.id,
-                email: data.session.user.email,
-            });
-        }
-    });
-}
+// REMOVED: This was causing race condition with useAuth hook
+// The premature getSession() call was consuming and deleting the code_verifier cookie
+// BEFORE useAuth.exchangeCodeForSession() could use it, causing 401 errors.
+//
+// Root cause: getSession() during module load deletes code_verifier
+// Solution: Let useAuth hook handle OAuth callback exclusively
+//
+// See Issue #28 for full investigation
