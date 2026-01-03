@@ -45,6 +45,7 @@ const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m =
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding').then(m => ({ default: m.LandingPageV2 })));
 const LandingPageV3 = lazy(() => import('../modules/onboarding/components/landing-v3').then(m => ({ default: m.LandingPageV3 })));
+const LandingPageV4 = lazy(() => import('../modules/onboarding/components/landing-v4').then(m => ({ default: m.LandingPageV4 })));
 const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
 
 // Analytics/Settings - Rarely accessed
@@ -563,13 +564,19 @@ export function AppRouter() {
                element={<GuestApprovalPage />}
             />
 
-            {/* Landing Page - Apple-Scale Digital Ceramic Transformation (V3 is now default) */}
+            {/* Landing Page - Complete Redesign (V4 is now default - Issue #23) */}
             <Route
                path="/landing"
+               element={<LandingPageV4 />}
+            />
+
+            {/* Landing Page V3 - Previous version (backup) */}
+            <Route
+               path="/landing-v3"
                element={<LandingPageV3 />}
             />
 
-            {/* Landing Page V2 - Previous version (backup) */}
+            {/* Landing Page V2 - Original version (backup) */}
             <Route
                path="/landing-v2"
                element={<LandingPage />}
