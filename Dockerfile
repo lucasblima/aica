@@ -70,7 +70,7 @@ RUN echo "=== Validating Build Arguments ===" && \
     test -n "${VITE_SUPABASE_URL}" && echo "✓ VITE_SUPABASE_URL: SET" || (echo "✗ VITE_SUPABASE_URL: MISSING" && exit 1) && \
     test -n "${VITE_SUPABASE_ANON_KEY}" && echo "✓ VITE_SUPABASE_ANON_KEY: SET" || (echo "✗ VITE_SUPABASE_ANON_KEY: MISSING" && exit 1) && \
     test -n "${VITE_GEMINI_API_KEY}" && echo "✓ VITE_GEMINI_API_KEY: SET" || (echo "✗ VITE_GEMINI_API_KEY: MISSING" && exit 1) && \
-    test -n "${VITE_GOOGLE_OAUTH_CLIENT_SECRET}" && echo "✓ VITE_GOOGLE_OAUTH_CLIENT_SECRET: SET" || (echo "✗ VITE_GOOGLE_OAUTH_CLIENT_SECRET: MISSING" && exit 1) && \
+    echo "✓ VITE_GOOGLE_OAUTH_CLIENT_SECRET: Removed (now in Edge Function)" && \
     echo "==================================="
 
 # Build da aplicacao para producao
