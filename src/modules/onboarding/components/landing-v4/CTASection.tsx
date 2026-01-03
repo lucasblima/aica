@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Clock } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 /**
- * CTASection - "Criar Conta Grátis" com waitlist urgência
+ * CTASection - "Criar Conta Grátis"
  *
- * Design Philosophy: Create FOMO and urgency without being pushy
- * Features: Countdown timer, social proof, clear value proposition
+ * Design Philosophy: Honest, direct call-to-action
+ * Features: Clear value proposition without fake urgency
  */
 
 interface CTASectionProps {
@@ -14,18 +14,6 @@ interface CTASectionProps {
 }
 
 export function CTASection({ onGetStarted }: CTASectionProps) {
-  // Simulate limited spots countdown
-  const [spotsLeft, setSpotsLeft] = useState(47);
-
-  useEffect(() => {
-    // Randomly decrease spots every 30-60 seconds to create urgency
-    const interval = setInterval(() => {
-      setSpotsLeft(prev => Math.max(10, prev - Math.floor(Math.random() * 3)));
-    }, 45000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <section className="relative bg-ceramic-base py-20 md:py-32 px-6 overflow-hidden">
       {/* Gradient Background */}
@@ -43,20 +31,6 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
           transition={{ duration: 0.8 }}
           className="ceramic-card p-10 md:p-16 rounded-3xl text-center"
         >
-          {/* Urgency Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-2 ceramic-inset rounded-full mb-6"
-          >
-            <Clock className="w-4 h-4 text-ceramic-accent" />
-            <span className="text-sm font-bold text-ceramic-text-secondary">
-              Apenas <span className="text-ceramic-accent">{spotsLeft}</span> vagas disponíveis hoje
-            </span>
-          </motion.div>
-
           {/* Main Headline */}
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -77,8 +51,7 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-xl text-ceramic-text-secondary mb-10 max-w-2xl mx-auto font-light"
           >
-            Junte-se a milhares de pessoas que já estão transformando
-            autoconhecimento em resultados concretos
+            Comece sua jornada de autoconhecimento estruturado hoje
           </motion.p>
 
           {/* CTA Buttons */}
@@ -128,47 +101,6 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
             </p>
           </motion.div>
 
-          {/* Social Proof */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            className="mt-10 pt-8 border-t border-ceramic-text-secondary/10"
-          >
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center text-xs font-bold text-ceramic-text-secondary border-2 border-ceramic-base"
-                  >
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                ))}
-              </div>
-              <span className="text-sm text-ceramic-text-secondary">
-                +1.247 pessoas se cadastraram esta semana
-              </span>
-            </div>
-            <div className="flex items-center justify-center gap-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, scale: 0 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: 0.8 + i * 0.1 }}
-                  className="text-2xl text-ceramic-accent"
-                >
-                  ★
-                </motion.span>
-              ))}
-              <span className="ml-2 text-sm text-ceramic-text-secondary">
-                4.9/5 baseado em 342 avaliações
-              </span>
-            </div>
-          </motion.div>
         </motion.div>
       </div>
     </section>
