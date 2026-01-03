@@ -36,21 +36,39 @@ function log(message: string, data?: unknown) {
  * Decode cookie value that may be base64url-encoded by @supabase/ssr
  *
  * @supabase/ssr stores values with "base64-" prefix when cookieEncoding="base64url" (default)
- * This function matches their decoding algorithm from cookies.ts:208-212
+ * The storage process is: JSON.stringify → base64url encode → add "base64-" prefix
+ * So we must: strip prefix → base64url decode → JSON.parse
+ *
+ * This matches @supabase/ssr/src/cookies.ts:208-212 algorithm
  *
  * @param value - Raw cookie value (may have "base64-" prefix)
- * @returns Decoded value or original value if not encoded
+ * @returns Decoded and parsed value or original value if not encoded
  */
 function decodeCookieValue(value: string): string {
   if (value.startsWith(BASE64_PREFIX)) {
     try {
+      // Step 1: Strip "base64-" prefix
       const encoded = value.substring(BASE64_PREFIX.length);
+
+      // Step 2: Decode from base64url
       const decoded = stringFromBase64URL(encoded);
+
+      // Step 3: Parse JSON (Supabase stores values as JSON.stringify before encoding)
+      let finalValue = decoded;
+      try {
+        finalValue = JSON.parse(decoded);
+      } catch {
+        // If not valid JSON, use decoded value as-is
+        finalValue = decoded;
+      }
+
       log('Decoded base64url cookie value', {
         originalLength: value.length,
-        decodedLength: decoded.length
+        decodedLength: decoded.length,
+        parsedJSON: decoded !== finalValue
       });
-      return decoded;
+
+      return finalValue;
     } catch (error) {
       log('Base64url decode failed, using raw value', { error });
       return value; // Graceful fallback
