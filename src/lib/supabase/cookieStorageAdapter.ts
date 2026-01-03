@@ -1,4 +1,5 @@
 import type { CookieOptions } from '@supabase/ssr';
+import { stringFromBase64URL } from '@supabase/ssr';
 
 /**
  * Cookie Storage Adapter for Client-Side (Browser)
@@ -23,11 +24,39 @@ import type { CookieOptions } from '@supabase/ssr';
 const DEBUG = true; // import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
 const CHUNK_SIZE = 3500; // Safe size under 4096 byte cookie limit (leaving room for name + metadata)
 const CHUNK_SEPARATOR = '.';
+const BASE64_PREFIX = 'base64-';
 
 function log(message: string, data?: unknown) {
   if (DEBUG) {
     console.log(`[CookieAdapter] ${message}`, data ?? '');
   }
+}
+
+/**
+ * Decode cookie value that may be base64url-encoded by @supabase/ssr
+ *
+ * @supabase/ssr stores values with "base64-" prefix when cookieEncoding="base64url" (default)
+ * This function matches their decoding algorithm from cookies.ts:208-212
+ *
+ * @param value - Raw cookie value (may have "base64-" prefix)
+ * @returns Decoded value or original value if not encoded
+ */
+function decodeCookieValue(value: string): string {
+  if (value.startsWith(BASE64_PREFIX)) {
+    try {
+      const encoded = value.substring(BASE64_PREFIX.length);
+      const decoded = stringFromBase64URL(encoded);
+      log('Decoded base64url cookie value', {
+        originalLength: value.length,
+        decodedLength: decoded.length
+      });
+      return decoded;
+    } catch (error) {
+      log('Base64url decode failed, using raw value', { error });
+      return value; // Graceful fallback
+    }
+  }
+  return value; // No prefix, return as-is
 }
 
 const getDefaultCookieOptions = (): Partial<CookieOptions> => {
@@ -145,17 +174,33 @@ export function createCookieHandlers() {
 
       // Check for single cookie first
       if (cookies[name] !== undefined) {
-        log(`GET cookie: ${name}`, { type: 'single', valueLength: cookies[name].length });
-        return cookies[name];
+        const rawValue = cookies[name];
+        const decodedValue = decodeCookieValue(rawValue);
+
+        log(`GET cookie: ${name}`, {
+          type: 'single',
+          valueLength: decodedValue.length,
+          wasEncoded: rawValue.startsWith(BASE64_PREFIX),
+          // TEMP: Log decoded value for code_verifier to verify fix
+          ...(name.includes('code-verifier') && { decodedValue })
+        });
+        return decodedValue;
       }
 
       // Check for chunked cookies
       const chunkNames = getChunkNames(name, cookies);
       if (chunkNames.length > 0) {
-        // Reassemble chunks
-        const reassembled = chunkNames.map(chunkName => cookies[chunkName]).join('');
-        log(`GET cookie: ${name}`, { type: 'chunked', chunks: chunkNames.length, totalLength: reassembled.length });
-        return reassembled;
+        // CRITICAL: Decode AFTER reassembly (Supabase encodes entire value, then chunks it)
+        const rawReassembled = chunkNames.map(chunkName => cookies[chunkName]).join('');
+        const decodedValue = decodeCookieValue(rawReassembled);
+
+        log(`GET cookie: ${name}`, {
+          type: 'chunked',
+          chunks: chunkNames.length,
+          totalLength: decodedValue.length,
+          wasEncoded: rawReassembled.startsWith(BASE64_PREFIX)
+        });
+        return decodedValue;
       }
 
       log(`GET cookie: ${name}`, { found: false });
@@ -185,8 +230,9 @@ export function createCookieHandlers() {
           // Get all chunks for this base name
           const chunkNames = getChunkNames(baseName, cookies);
           if (chunkNames.length > 0) {
-            const reassembled = chunkNames.map(cn => cookies[cn]).join('');
-            result.push({ name: baseName, value: reassembled });
+            const rawReassembled = chunkNames.map(cn => cookies[cn]).join('');
+            const decodedValue = decodeCookieValue(rawReassembled);
+            result.push({ name: baseName, value: decodedValue });
 
             // Mark all chunks and base name as processed
             chunkNames.forEach(cn => processedChunks.add(cn));
@@ -196,7 +242,8 @@ export function createCookieHandlers() {
         }
 
         // Regular cookie (not chunked)
-        result.push({ name, value });
+        const decodedValue = decodeCookieValue(value);
+        result.push({ name, value: decodedValue });
         processedChunks.add(name);
       }
 
