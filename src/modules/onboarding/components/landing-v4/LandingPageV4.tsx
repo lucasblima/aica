@@ -3,7 +3,6 @@ import { HeroSection } from './HeroSection';
 import { SocialProof } from './SocialProof';
 import { Features } from './Features';
 import { HowItWorks } from './HowItWorks';
-import { CaptacaoSection } from './CaptacaoSection';
 import { CTASection } from './CTASection';
 import { MinimalFooter } from '../landing-v2/MinimalFooter';
 import { AuthSheet } from '../../../../components/AuthSheet';
@@ -16,12 +15,11 @@ import { AuthSheet } from '../../../../components/AuthSheet';
  *
  * Structure:
  * 1. HeroSection - "Conheça a si mesmo" headline
- * 2. SocialProof - University and company logos
+ * 2. SocialProof - Real partners
  * 3. Features - Module showcase with icons
  * 4. HowItWorks - 3-step illustrated guide
- * 5. CaptacaoSection - Agency/enterprise offering
- * 6. CTASection - Waitlist with urgency
- * 7. MinimalFooter - Grounded footer
+ * 5. CTASection - Waitlist with urgency
+ * 6. MinimalFooter - Grounded footer
  *
  * Features:
  * - Fully responsive (mobile-first)
@@ -63,14 +61,11 @@ export function LandingPageV4() {
         {/* 4. How It Works - 3 Steps */}
         <HowItWorks />
 
-        {/* 5. Captação - Agency/Enterprise */}
-        <CaptacaoSection />
-
-        {/* 6. Final CTA - Waitlist with Urgency */}
+        {/* 5. Final CTA - Waitlist with Urgency */}
         <CTASection onGetStarted={handleGetStarted} />
       </main>
 
-      {/* 7. Footer */}
+      {/* 6. Footer */}
       <MinimalFooter onGetStarted={handleGetStarted} />
 
       {/* Skip to main content link (accessibility) */}
