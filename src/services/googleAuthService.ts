@@ -43,13 +43,19 @@ const GOOGLE_CALENDAR_SCOPES = [
  */
 export async function connectGoogleCalendar(): Promise<void> {
     try {
+        // Debug logs para diagnosticar server_error
+        const redirectUrl = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
+        console.log('[OAuth Debug] Iniciando OAuth...');
+        console.log('[OAuth Debug] Redirect URL:', redirectUrl);
+        console.log('[OAuth Debug] Window origin:', window.location.origin);
+        console.log('[OAuth Debug] VITE_FRONTEND_URL:', import.meta.env.VITE_FRONTEND_URL);
         console.log('[connectGoogleCalendar] 🔐 Solicitando escopos OAuth:', GOOGLE_CALENDAR_SCOPES);
         console.log('[connectGoogleCalendar] 🔑 Escopos concatenados:', GOOGLE_CALENDAR_SCOPES.join(' '));
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: redirectUrl,
                 scopes: GOOGLE_CALENDAR_SCOPES.join(' '),
                 queryParams: {
                     access_type: 'offline', // Garante refresh token
