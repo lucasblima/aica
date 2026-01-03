@@ -21,7 +21,7 @@ substitutions:
   _VITE_SUPABASE_URL: https://gppebtrshbvuzatmebhr.supabase.co
   _VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwcGVidHJzaGJ2dXphdG1lYmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMjYzNTMsImV4cCI6MjA3NjkwMjM1M30.vY3EBXKTUj60TVwcDJonbEcOAfbUoO8BCRzuy1NErDw
   # Required: Frontend URL for OAuth redirect
-  _VITE_FRONTEND_URL: https://aica-5p22u2w6jq-rj.a.run.app
+  _VITE_FRONTEND_URL: https://aica-5562559893.southamerica-east1.run.app
   # Optional: Set these in Cloud Build trigger or leave empty
   _VITE_GOOGLE_OAUTH_CLIENT_ID: '5562559893-1ufv0knok8k4679kr35p7aqdhp55drg0.apps.googleusercontent.com'
   _VITE_PDF_EXTRACTOR_URL: ''
