@@ -49,8 +49,8 @@ availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/vite-gemini-api-key/versions/latest
       env: 'VITE_GEMINI_API_KEY'
-    - versionName: projects/$PROJECT_ID/secrets/vite-google-oauth-client-secret/versions/latest
-      env: 'VITE_GOOGLE_OAUTH_CLIENT_SECRET'
+    # SECURITY: vite-google-oauth-client-secret removed (2026-01-03)
+    # OAuth client secret now stored in Supabase secrets for Edge Function use only
 
 steps:
   # =========================================================================
@@ -70,27 +70,19 @@ steps:
           exit 1
         }
 
-        gcloud secrets describe vite-google-oauth-client-secret --project=$PROJECT_ID || {
-          echo "ERROR: Secret 'vite-google-oauth-client-secret' não encontrado!"
-          exit 1
-        }
-
         # Verificar se secrets foram carregados no secretEnv
         if [ -z "$$VITE_GEMINI_API_KEY" ]; then
           echo "ERROR: VITE_GEMINI_API_KEY secret está vazio ou não foi carregado!"
           exit 1
         fi
 
-        if [ -z "$$VITE_GOOGLE_OAUTH_CLIENT_SECRET" ]; then
-          echo "ERROR: VITE_GOOGLE_OAUTH_CLIENT_SECRET secret está vazio ou não foi carregado!"
-          exit 1
-        fi
-
         echo "✓ Gemini API Key: SET"
-        echo "✓ OAuth Client Secret: SET"
-        echo "✓ Todos os secrets validados com sucesso"
+        echo "✓ Secrets validados com sucesso"
+        echo "✓ OAuth client secret agora em Supabase Edge Function (secure)"
         echo "========================================"
-    secretEnv: ['VITE_GEMINI_API_KEY', 'VITE_GOOGLE_OAUTH_CLIENT_SECRET']
+    secretEnv: ['VITE_GEMINI_API_KEY']
+    # SECURITY: VITE_GOOGLE_OAUTH_CLIENT_SECRET removed (2026-01-03)
+    # OAuth client secret now in Supabase Edge Function secrets, not frontend
 
   # =========================================================================
   # Step 1: Build Docker image with environment variables
@@ -112,7 +104,6 @@ steps:
           --build-arg VITE_FRONTEND_URL="${_VITE_FRONTEND_URL}" \
           --build-arg VITE_GEMINI_API_KEY="$$VITE_GEMINI_API_KEY" \
           --build-arg VITE_GOOGLE_OAUTH_CLIENT_ID="${_VITE_GOOGLE_OAUTH_CLIENT_ID}" \
-          --build-arg VITE_GOOGLE_OAUTH_CLIENT_SECRET="$$VITE_GOOGLE_OAUTH_CLIENT_SECRET" \
           --build-arg VITE_PDF_EXTRACTOR_URL="${_VITE_PDF_EXTRACTOR_URL}" \
           --build-arg VITE_N8N_WEBHOOK_URL="${_VITE_N8N_WEBHOOK_URL}" \
           --build-arg VITE_N8N_URL="${_VITE_N8N_URL}" \
@@ -122,7 +113,9 @@ steps:
           -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG} \
           -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest \
           .
-    secretEnv: ['VITE_GEMINI_API_KEY', 'VITE_GOOGLE_OAUTH_CLIENT_SECRET']
+    secretEnv: ['VITE_GEMINI_API_KEY']
+    # SECURITY: VITE_GOOGLE_OAUTH_CLIENT_SECRET removed (2026-01-03)
+    # OAuth client secret now in Supabase Edge Function secrets, not frontend
 
   # =========================================================================
   # Step 2: Push image to Container Registry

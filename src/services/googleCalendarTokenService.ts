@@ -251,44 +251,51 @@ export async function getValidAccessToken(): Promise<string | null> {
 
 /**
  * Renova o token de acesso usando o refresh token
+ *
+ * SECURITY: Client secret removido do frontend - agora usa Edge Function
+ * A Edge Function oauth-token-refresh gerencia tokens server-side de forma segura
  */
 export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
     try {
-        console.log('[refreshAccessToken] 🔄 Iniciando renovação do token...');
+        console.log('[refreshAccessToken] 🔄 Iniciando renovação do token via Edge Function...');
         console.log('[refreshAccessToken] 🔑 Refresh token presente:', !!refreshToken);
-        console.log('[refreshAccessToken] 🔑 Client ID:', import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID?.substring(0, 20) + '...');
-        console.log('[refreshAccessToken] 🔑 Client Secret:', !!import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET);
 
-        const response = await fetch('https://oauth2.googleapis.com/token', {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+            throw new Error('Configuração Supabase ausente');
+        }
+
+        // Call Edge Function instead of Google directly
+        const response = await fetch(`${supabaseUrl}/functions/v1/oauth-token-refresh`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseAnonKey}`,
             },
-            body: new URLSearchParams({
-                client_id: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || '',
-                client_secret: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_SECRET || '',
+            body: JSON.stringify({
                 refresh_token: refreshToken,
-                grant_type: 'refresh_token',
-            }).toString(),
+            }),
         });
 
-        console.log('[refreshAccessToken] 📡 Resposta recebida:', {
+        console.log('[refreshAccessToken] 📡 Resposta recebida da Edge Function:', {
             status: response.status,
             ok: response.ok
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[refreshAccessToken] ❌ Erro na resposta:', errorText);
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('[refreshAccessToken] ❌ Erro na resposta:', errorData);
 
             // Se o erro for invalid_grant (token revogado ou expirado), desconectar para evitar loops
-            if (response.status === 400 && errorText.includes('invalid_grant')) {
+            if (response.status === 400 && JSON.stringify(errorData).includes('invalid_grant')) {
                 console.warn('[refreshAccessToken] 🚨 Refresh token inválido/revogado. Desconectando Google Calendar...');
                 await disconnectGoogleCalendar();
                 throw new Error('Conexão com Google Calendar expirou. Por favor, reconecte.');
             }
 
-            throw new Error(`Falha ao renovar token de acesso: ${response.status} - ${errorText}`);
+            throw new Error(`Falha ao renovar token de acesso: ${response.status} - ${errorData.error || 'Unknown error'}`);
         }
 
         const data = await response.json();
