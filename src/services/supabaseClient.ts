@@ -63,7 +63,7 @@ export const supabase = createBrowserClient(
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: false, // Handled explicitly in useAuth hook
+            detectSessionInUrl: true, // FIX: Let Supabase handle OAuth callback automatically
             flowType: 'pkce',
             // Debug: log storage operations
             debug: DEBUG,
