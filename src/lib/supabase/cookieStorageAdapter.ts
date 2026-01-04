@@ -173,7 +173,8 @@ export function createCookieHandlers() {
 
             log(`GET cookie (chunked): ${baseName}`, {
               chunks: chunkNames.length,
-              totalLength: rawReassembled.length
+              totalLength: rawReassembled.length,
+              preview: rawReassembled.substring(0, 30) + (rawReassembled.length > 30 ? '...' : '')
             });
 
             // Mark all chunks and base name as processed
@@ -187,7 +188,10 @@ export function createCookieHandlers() {
         result.push({ name, value });
         processedChunks.add(name);
 
-        log(`GET cookie: ${name}`, { valueLength: value.length });
+        log(`GET cookie: ${name}`, {
+          valueLength: value.length,
+          preview: value.substring(0, 30) + (value.length > 30 ? '...' : '')
+        });
       }
 
       log(`GET ALL cookies`, { count: result.length, names: result.map(c => c.name) });
