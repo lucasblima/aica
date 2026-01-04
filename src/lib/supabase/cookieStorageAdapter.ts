@@ -1,5 +1,4 @@
 import type { CookieOptions } from '@supabase/ssr';
-import { stringFromBase64URL } from '@supabase/ssr';
 
 /**
  * Cookie Storage Adapter for Client-Side (Browser)
@@ -24,85 +23,11 @@ import { stringFromBase64URL } from '@supabase/ssr';
 const DEBUG = true; // import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
 const CHUNK_SIZE = 3500; // Safe size under 4096 byte cookie limit (leaving room for name + metadata)
 const CHUNK_SEPARATOR = '.';
-const BASE64_PREFIX = 'base64-';
 
 function log(message: string, data?: unknown) {
   if (DEBUG) {
     console.log(`[CookieAdapter] ${message}`, data ?? '');
   }
-}
-
-/**
- * Decode cookie value that may be base64url-encoded by @supabase/ssr
- *
- * @supabase/ssr stores values with "base64-" prefix when cookieEncoding="base64url" (default)
- * The storage process is: JSON.stringify → base64url encode → add "base64-" prefix
- * So we must: strip prefix → base64url decode → JSON.parse
- *
- * This matches @supabase/ssr/src/cookies.ts:208-212 algorithm
- *
- * @param value - Raw cookie value (may have "base64-" prefix)
- * @returns Decoded and parsed value or original value if not encoded
- */
-function decodeCookieValue(value: string): string {
-  if (value.startsWith(BASE64_PREFIX)) {
-    try {
-      // Step 1: Strip "base64-" prefix
-      const encoded = value.substring(BASE64_PREFIX.length);
-
-      // Step 2: Decode from base64url
-      const decoded = stringFromBase64URL(encoded);
-
-      // Step 3: Smart JSON.parse - ONLY if value is a JSON string (starts with ")
-      // Supabase stores strings as JSON: "abc" becomes base64("\"abc\"")
-      // After decode we get "\"abc\"", and JSON.parse gives us "abc" (correct!)
-      //
-      // But if the value is an object/array, JSON.parse would return object/array,
-      // breaking the string contract. So we ONLY parse if it's a JSON string.
-      let finalValue = decoded;
-
-      if (decoded.startsWith('"') && decoded.endsWith('"')) {
-        // This looks like a JSON string - parse to remove quotes
-        try {
-          const parsed = JSON.parse(decoded);
-          // Only use parsed value if it's a string (not object/array)
-          if (typeof parsed === 'string') {
-            finalValue = parsed;
-            log('Decoded base64url cookie value (JSON string parsed)', {
-              originalLength: value.length,
-              decodedLength: decoded.length,
-              finalLength: finalValue.length,
-              hadQuotes: true
-            });
-          } else {
-            log('Decoded base64url cookie value (JSON parse returned non-string)', {
-              originalLength: value.length,
-              decodedLength: decoded.length,
-              parsedType: typeof parsed
-            });
-          }
-        } catch (parseError) {
-          // Not valid JSON, use decoded value as-is
-          log('Decoded base64url cookie value (JSON parse failed, using raw)', {
-            originalLength: value.length,
-            decodedLength: decoded.length
-          });
-        }
-      } else {
-        log('Decoded base64url cookie value (no JSON parsing needed)', {
-          originalLength: value.length,
-          decodedLength: decoded.length,
-          decodedValue: decoded.substring(0, 50) + '...'
-        });
-      }
-
-      return finalValue;
-    } catch (error) {
-      log('Base64url decode failed, using raw value', { error });
-      return value; // Graceful fallback
-    }
-  }
-  return value; // No prefix, return as-is
 }
 
 const getDefaultCookieOptions = (): Partial<CookieOptions> => {
@@ -205,16 +130,22 @@ function getChunkNames(baseName: string, cookies: Record<string, string>): strin
 /**
  * Create cookies getter/setter for @supabase/ssr with chunking support
  *
+ * IMPORTANT: getAll() returns RAW cookie values (with "base64-" prefix if present)
+ * Supabase @supabase/ssr v0.8.0+ expects RAW values and does decoding internally.
+ *
  * This is critical for PKCE flow where:
- * 1. code_verifier is stored before OAuth redirect
- * 2. After callback, code_verifier is retrieved to exchange for tokens
- * 3. Large session tokens are stored after successful auth
+ * 1. code_verifier is stored before OAuth redirect (Supabase encodes it)
+ * 2. After callback, code_verifier is retrieved RAW (we just reassemble chunks)
+ * 3. Supabase decodes it internally and exchanges with Google
+ * 4. Large session tokens are stored after successful auth
  */
 export function createCookieHandlers() {
   return {
     /**
      * Get all cookies (NEW INTERFACE - required by @supabase/ssr v0.8.0+)
-     * This is the preferred method over get/set/remove
+     *
+     * Returns RAW cookie values (after decodeURIComponent only).
+     * Does NOT decode base64 - Supabase handles that internally.
      */
     getAll(): Array<{ name: string; value: string }> {
       const cookies = parseCookies();
@@ -236,9 +167,14 @@ export function createCookieHandlers() {
           // Get all chunks for this base name
           const chunkNames = getChunkNames(baseName, cookies);
           if (chunkNames.length > 0) {
+            // Reassemble chunks and return RAW value (Supabase will decode)
             const rawReassembled = chunkNames.map(cn => cookies[cn]).join('');
-            const decodedValue = decodeCookieValue(rawReassembled);
-            result.push({ name: baseName, value: decodedValue });
+            result.push({ name: baseName, value: rawReassembled });
+
+            log(`GET cookie (chunked): ${baseName}`, {
+              chunks: chunkNames.length,
+              totalLength: rawReassembled.length
+            });
 
             // Mark all chunks and base name as processed
             chunkNames.forEach(cn => processedChunks.add(cn));
@@ -247,10 +183,11 @@ export function createCookieHandlers() {
           }
         }
 
-        // Regular cookie (not chunked)
-        const decodedValue = decodeCookieValue(value);
-        result.push({ name, value: decodedValue });
+        // Regular cookie (not chunked) - return RAW value
+        result.push({ name, value });
         processedChunks.add(name);
+
+        log(`GET cookie: ${name}`, { valueLength: value.length });
       }
 
       log(`GET ALL cookies`, { count: result.length, names: result.map(c => c.name) });
