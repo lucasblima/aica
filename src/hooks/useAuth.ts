@@ -6,18 +6,29 @@
  * - Initial session retrieval from cookies
  * - OAuth PKCE code exchange on callback
  * - Auth state change subscriptions
+ *
+ * Enhanced with comprehensive logging for production debugging
  */
 
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../services/supabaseClient'
-import type { User, Session } from '@supabase/supabase-js'
+import { useEffect, useState, useRef } from 'react'
+import { Session, User } from '@supabase/supabase-js'
+import { supabase } from '@/services/supabaseClient'
+
+// Debug flag para produção - enabled by default to diagnose PKCE issues
+const DEBUG = true // import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true'
+
+function authLog(message: string, data?: unknown) {
+  if (DEBUG) {
+    console.log(`[useAuth] ${message}`, data ?? '')
+  }
+}
 
 /**
- * Checks if the current URL contains an OAuth callback code
+ * Gets the auth code from URL if present
  */
-function hasAuthCodeInUrl(): boolean {
+function getAuthCodeFromUrl(): string | null {
   const params = new URLSearchParams(window.location.search)
-  return params.has('code')
+  return params.get('code')
 }
 
 /**
@@ -31,10 +42,30 @@ function cleanAuthParamsFromUrl(): void {
   window.history.replaceState({}, '', url.pathname + url.search + url.hash)
 }
 
+/**
+ * Logs cookie state for debugging
+ */
+function logCookieState(context: string): void {
+  if (!DEBUG) return
+
+  const allCookies = document.cookie.split(';').map(c => c.trim())
+  const authCookies = allCookies.filter(c =>
+    c.startsWith('sb-') || c.includes('auth') || c.includes('code-verifier')
+  )
+
+  console.log(`[useAuth] 🍪 Cookies at ${context}:`, {
+    total: allCookies.length,
+    authRelated: authCookies.length,
+    names: authCookies.map(c => c.split('=')[0])
+  })
+}
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // CRITICAL: Use ref to prevent double exchange attempts
   const codeExchangeAttempted = useRef(false)
 
   useEffect(() => {
@@ -42,42 +73,78 @@ export function useAuth() {
 
     async function initializeAuth() {
       try {
-        // Step 1: Check if this is an OAuth callback with a code
-        // PKCE flow: The authorization server returns a 'code' that must be
-        // exchanged for tokens using the stored 'code_verifier'
-        if (hasAuthCodeInUrl() && !codeExchangeAttempted.current) {
+        const code = getAuthCodeFromUrl()
+
+        authLog('🚀 Initializing auth', {
+          hasCode: !!code,
+          url: window.location.pathname,
+          origin: window.location.origin
+        })
+
+        // =============================================================
+        // STEP 1: Handle OAuth callback (ONLY if code exists and not yet attempted)
+        // =============================================================
+        if (code && !codeExchangeAttempted.current) {
+          // Mark as attempted IMMEDIATELY to prevent race conditions
           codeExchangeAttempted.current = true
-          console.log('[useAuth] OAuth callback detected, exchanging code for session...')
+
+          authLog('🔐 OAuth callback detected')
+          authLog('Code (first 10 chars):', code.substring(0, 10) + '...')
+
+          logCookieState('before exchange')
 
           try {
-            // exchangeCodeForSession uses the code_verifier stored in cookies
-            // to complete the PKCE exchange
-            const { data, error } = await supabase.auth.exchangeCodeForSession(
-              new URLSearchParams(window.location.search).get('code')!
-            )
+            authLog('🔄 Calling exchangeCodeForSession...')
+
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
             if (error) {
-              console.error('[useAuth] PKCE code exchange failed:', error.message)
-              // Clean URL even on error to prevent retry loops
+              console.error('[useAuth] ❌ PKCE code exchange failed:', error.message)
+              console.error('[useAuth] Error details:', {
+                name: error.name,
+                status: (error as any).status,
+                message: error.message
+              })
+
+              logCookieState('after failed exchange')
+
+              // Provide helpful hints based on error
+              if (error.message.includes('code_verifier')) {
+                console.error('[useAuth] 💡 Possible causes:')
+                console.error('  1. Code was already used (browser back/forward)')
+                console.error('  2. Multiple Supabase client instances')
+                console.error('  3. Cookie storage adapter misconfigured')
+                console.error('  4. Code expired (>5 min since authorization)')
+              }
+
               cleanAuthParamsFromUrl()
             } else if (data.session) {
-              console.log('[useAuth] PKCE code exchange successful')
+              authLog('✅ PKCE code exchange successful!')
+              authLog('User:', data.session.user.email)
+
               if (isMounted) {
                 setSession(data.session)
                 setUser(data.session.user)
                 setIsLoading(false)
               }
-              // Clean the URL after successful exchange
+
               cleanAuthParamsFromUrl()
               return // Early return, session is set
             }
           } catch (exchangeError) {
-            console.error('[useAuth] Error during code exchange:', exchangeError)
+            console.error('[useAuth] ❌ Exception during code exchange:', exchangeError)
+            if (exchangeError instanceof Error) {
+              console.error('[useAuth] Stack:', exchangeError.stack)
+            }
             cleanAuthParamsFromUrl()
           }
         }
 
-        // Step 2: Get existing session from storage (cookies)
+        // =============================================================
+        // STEP 2: Get existing session from storage (no OAuth callback)
+        // =============================================================
+        authLog('📦 Checking for existing session...')
+
         const { data: { session: existingSession }, error } = await supabase.auth.getSession()
 
         if (error) {
@@ -88,6 +155,12 @@ export function useAuth() {
           setSession(existingSession)
           setUser(existingSession?.user ?? null)
           setIsLoading(false)
+
+          if (existingSession) {
+            authLog('✅ Existing session found:', existingSession.user.email)
+          } else {
+            authLog('ℹ️ No existing session')
+          }
         }
       } catch (error) {
         console.error('[useAuth] Initialization error:', error)
@@ -103,7 +176,7 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log('[useAuth] Auth state changed:', event)
+      authLog('Auth state changed:', event)
       if (isMounted) {
         setSession(newSession)
         setUser(newSession?.user ?? null)
@@ -117,10 +190,21 @@ export function useAuth() {
     }
   }, [])
 
+  const signOut = async () => {
+    authLog('👋 Signing out...')
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('[useAuth] Sign out error:', error.message)
+    } else {
+      authLog('✅ Signed out successfully')
+    }
+  }
+
   return {
     user,
     session,
     isLoading,
     isAuthenticated: !!user,
+    signOut,
   }
 }
