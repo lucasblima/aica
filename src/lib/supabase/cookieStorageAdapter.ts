@@ -53,17 +53,50 @@ function decodeCookieValue(value: string): string {
       // Step 2: Decode from base64url
       const decoded = stringFromBase64URL(encoded);
 
-      // REMOVED JSON.parse: @supabase/ssr expects string values, not parsed objects
-      // The decoded base64url string is the final value that Supabase needs
-      // Attempting to JSON.parse could return an object, breaking the string contract
+      // Step 3: Smart JSON.parse - ONLY if value is a JSON string (starts with ")
+      // Supabase stores strings as JSON: "abc" becomes base64("\"abc\"")
+      // After decode we get "\"abc\"", and JSON.parse gives us "abc" (correct!)
+      //
+      // But if the value is an object/array, JSON.parse would return object/array,
+      // breaking the string contract. So we ONLY parse if it's a JSON string.
+      let finalValue = decoded;
 
-      log('Decoded base64url cookie value', {
-        originalLength: value.length,
-        decodedLength: decoded.length,
-        decodedValue: decoded.substring(0, 50) + '...' // Log first 50 chars for debugging
-      });
+      if (decoded.startsWith('"') && decoded.endsWith('"')) {
+        // This looks like a JSON string - parse to remove quotes
+        try {
+          const parsed = JSON.parse(decoded);
+          // Only use parsed value if it's a string (not object/array)
+          if (typeof parsed === 'string') {
+            finalValue = parsed;
+            log('Decoded base64url cookie value (JSON string parsed)', {
+              originalLength: value.length,
+              decodedLength: decoded.length,
+              finalLength: finalValue.length,
+              hadQuotes: true
+            });
+          } else {
+            log('Decoded base64url cookie value (JSON parse returned non-string)', {
+              originalLength: value.length,
+              decodedLength: decoded.length,
+              parsedType: typeof parsed
+            });
+          }
+        } catch (parseError) {
+          // Not valid JSON, use decoded value as-is
+          log('Decoded base64url cookie value (JSON parse failed, using raw)', {
+            originalLength: value.length,
+            decodedLength: decoded.length
+          });
+        }
+      } else {
+        log('Decoded base64url cookie value (no JSON parsing needed)', {
+          originalLength: value.length,
+          decodedLength: decoded.length,
+          decodedValue: decoded.substring(0, 50) + '...'
+        });
+      }
 
-      return decoded; // Return the decoded string directly
+      return finalValue;
     } catch (error) {
       log('Base64url decode failed, using raw value', { error });
       return value; // Graceful fallback
