@@ -180,48 +180,8 @@ function getChunkNames(baseName: string, cookies: Record<string, string>): strin
 export function createCookieHandlers() {
   return {
     /**
-     * Get a cookie value, reassembling chunks if necessary
-     */
-    get(name: string): string | undefined {
-      const cookies = parseCookies();
-
-      // Check for single cookie first
-      if (cookies[name] !== undefined) {
-        const rawValue = cookies[name];
-        const decodedValue = decodeCookieValue(rawValue);
-
-        log(`GET cookie: ${name}`, {
-          type: 'single',
-          valueLength: decodedValue.length,
-          wasEncoded: rawValue.startsWith(BASE64_PREFIX),
-          // TEMP: Log decoded value for code_verifier to verify fix
-          ...(name.includes('code-verifier') && { decodedValue })
-        });
-        return decodedValue;
-      }
-
-      // Check for chunked cookies
-      const chunkNames = getChunkNames(name, cookies);
-      if (chunkNames.length > 0) {
-        // CRITICAL: Decode AFTER reassembly (Supabase encodes entire value, then chunks it)
-        const rawReassembled = chunkNames.map(chunkName => cookies[chunkName]).join('');
-        const decodedValue = decodeCookieValue(rawReassembled);
-
-        log(`GET cookie: ${name}`, {
-          type: 'chunked',
-          chunks: chunkNames.length,
-          totalLength: decodedValue.length,
-          wasEncoded: rawReassembled.startsWith(BASE64_PREFIX)
-        });
-        return decodedValue;
-      }
-
-      log(`GET cookie: ${name}`, { found: false });
-      return undefined;
-    },
-
-    /**
-     * Get all cookies (including reassembled chunks)
+     * Get all cookies (NEW INTERFACE - required by @supabase/ssr v0.8.0+)
+     * This is the preferred method over get/set/remove
      */
     getAll(): Array<{ name: string; value: string }> {
       const cookies = parseCookies();
@@ -265,7 +225,84 @@ export function createCookieHandlers() {
     },
 
     /**
-     * Set a cookie value, chunking if necessary
+     * Set all cookies (NEW INTERFACE - required by @supabase/ssr v0.8.0+)
+     * This is the preferred method over get/set/remove
+     */
+    setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>): void {
+      log(`SET ALL cookies`, { count: cookiesToSet.length, names: cookiesToSet.map(c => c.name) });
+
+      for (const { name, value, options } of cookiesToSet) {
+        const cookies = parseCookies();
+
+        // First, remove any existing chunks for this cookie
+        const existingChunks = getChunkNames(name, cookies);
+        existingChunks.forEach(chunkName => deleteCookie(chunkName, options));
+
+        // Also remove the base cookie if it exists
+        if (cookies[name] !== undefined) {
+          deleteCookie(name, options);
+        }
+
+        // If value is small enough, store directly
+        if (value.length <= CHUNK_SIZE) {
+          log(`SET cookie: ${name}`, { type: 'single', valueLength: value.length });
+          setCookie(name, value, options);
+        } else {
+          // Otherwise, chunk the value
+          const chunks = chunkValue(value);
+          log(`SET cookie: ${name}`, { type: 'chunked', chunks: chunks.length, totalLength: value.length });
+          chunks.forEach((chunk, index) => {
+            setCookie(`${name}${CHUNK_SEPARATOR}${index}`, chunk, options);
+          });
+        }
+      }
+    },
+
+    /**
+     * DEPRECATED: Get a cookie value (old interface - kept for backwards compatibility)
+     * Use getAll() instead
+     */
+    get(name: string): string | undefined {
+      const cookies = parseCookies();
+
+      // Check for single cookie first
+      if (cookies[name] !== undefined) {
+        const rawValue = cookies[name];
+        const decodedValue = decodeCookieValue(rawValue);
+
+        log(`GET cookie: ${name}`, {
+          type: 'single',
+          valueLength: decodedValue.length,
+          wasEncoded: rawValue.startsWith(BASE64_PREFIX),
+          // TEMP: Log decoded value for code_verifier to verify fix
+          ...(name.includes('code-verifier') && { decodedValue })
+        });
+        return decodedValue;
+      }
+
+      // Check for chunked cookies
+      const chunkNames = getChunkNames(name, cookies);
+      if (chunkNames.length > 0) {
+        // CRITICAL: Decode AFTER reassembly (Supabase encodes entire value, then chunks it)
+        const rawReassembled = chunkNames.map(chunkName => cookies[chunkName]).join('');
+        const decodedValue = decodeCookieValue(rawReassembled);
+
+        log(`GET cookie: ${name}`, {
+          type: 'chunked',
+          chunks: chunkNames.length,
+          totalLength: decodedValue.length,
+          wasEncoded: rawReassembled.startsWith(BASE64_PREFIX)
+        });
+        return decodedValue;
+      }
+
+      log(`GET cookie: ${name}`, { found: false });
+      return undefined;
+    },
+
+    /**
+     * DEPRECATED: Set a cookie value (old interface - kept for backwards compatibility)
+     * Use setAll() instead
      */
     set(name: string, value: string, options: CookieOptions): void {
       const cookies = parseCookies();
