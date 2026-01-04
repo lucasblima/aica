@@ -258,93 +258,14 @@ export function createCookieHandlers() {
       }
     },
 
-    /**
-     * DEPRECATED: Get a cookie value (old interface - kept for backwards compatibility)
-     * Use getAll() instead
-     */
-    get(name: string): string | undefined {
-      const cookies = parseCookies();
-
-      // Check for single cookie first
-      if (cookies[name] !== undefined) {
-        const rawValue = cookies[name];
-        const decodedValue = decodeCookieValue(rawValue);
-
-        log(`GET cookie: ${name}`, {
-          type: 'single',
-          valueLength: decodedValue.length,
-          wasEncoded: rawValue.startsWith(BASE64_PREFIX),
-          // TEMP: Log decoded value for code_verifier to verify fix
-          ...(name.includes('code-verifier') && { decodedValue })
-        });
-        return decodedValue;
-      }
-
-      // Check for chunked cookies
-      const chunkNames = getChunkNames(name, cookies);
-      if (chunkNames.length > 0) {
-        // CRITICAL: Decode AFTER reassembly (Supabase encodes entire value, then chunks it)
-        const rawReassembled = chunkNames.map(chunkName => cookies[chunkName]).join('');
-        const decodedValue = decodeCookieValue(rawReassembled);
-
-        log(`GET cookie: ${name}`, {
-          type: 'chunked',
-          chunks: chunkNames.length,
-          totalLength: decodedValue.length,
-          wasEncoded: rawReassembled.startsWith(BASE64_PREFIX)
-        });
-        return decodedValue;
-      }
-
-      log(`GET cookie: ${name}`, { found: false });
-      return undefined;
-    },
-
-    /**
-     * DEPRECATED: Set a cookie value (old interface - kept for backwards compatibility)
-     * Use setAll() instead
-     */
-    set(name: string, value: string, options: CookieOptions): void {
-      const cookies = parseCookies();
-
-      // First, remove any existing chunks for this cookie
-      const existingChunks = getChunkNames(name, cookies);
-      existingChunks.forEach(chunkName => deleteCookie(chunkName, options));
-
-      // Also remove the base cookie if it exists
-      if (cookies[name] !== undefined) {
-        deleteCookie(name, options);
-      }
-
-      // If value is small enough, store directly
-      if (value.length <= CHUNK_SIZE) {
-        log(`SET cookie: ${name}`, { type: 'single', valueLength: value.length });
-        setCookie(name, value, options);
-        return;
-      }
-
-      // Otherwise, chunk the value
-      const chunks = chunkValue(value);
-      log(`SET cookie: ${name}`, { type: 'chunked', chunks: chunks.length, totalLength: value.length });
-      chunks.forEach((chunk, index) => {
-        setCookie(`${name}${CHUNK_SEPARATOR}${index}`, chunk, options);
-      });
-    },
-
-    /**
-     * Remove a cookie and all its chunks
-     */
-    remove(name: string, options: CookieOptions): void {
-      const cookies = parseCookies();
-
-      // Remove base cookie
-      deleteCookie(name, options);
-
-      // Remove all chunks
-      const chunkNames = getChunkNames(name, cookies);
-      chunkNames.forEach(chunkName => deleteCookie(chunkName, options));
-
-      log(`REMOVE cookie: ${name}`, { chunks: chunkNames.length });
-    },
+    // OLD INTERFACE (get/set/remove) COMPLETELY REMOVED
+    //
+    // Why: @supabase/ssr v0.8.0 was preferring the deprecated get/set/remove methods
+    // over the new getAll/setAll interface, even when both were present.
+    //
+    // By removing the old methods entirely, we FORCE Supabase to use getAll/setAll,
+    // which is the correct interface for v0.8.0+.
+    //
+    // This should finally make our cookie handlers work correctly!
   };
 }
