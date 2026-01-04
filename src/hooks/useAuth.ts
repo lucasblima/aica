@@ -82,68 +82,19 @@ export function useAuth() {
         })
 
         // =============================================================
-        // STEP 1: Handle OAuth callback (ONLY if code exists and not yet attempted)
+        // FIX: Let Supabase handle OAuth callback automatically
+        // With detectSessionInUrl: true, Supabase processes the callback
+        // and stores the session. We just need to get the session.
         // =============================================================
-        if (code && !codeExchangeAttempted.current) {
-          // Mark as attempted IMMEDIATELY to prevent race conditions
-          codeExchangeAttempted.current = true
-
-          authLog('🔐 OAuth callback detected')
-          authLog('Code (first 10 chars):', code.substring(0, 10) + '...')
-
-          logCookieState('before exchange')
-
-          try {
-            authLog('🔄 Calling exchangeCodeForSession...')
-
-            const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-
-            if (error) {
-              console.error('[useAuth] ❌ PKCE code exchange failed:', error.message)
-              console.error('[useAuth] Error details:', {
-                name: error.name,
-                status: (error as any).status,
-                message: error.message
-              })
-
-              logCookieState('after failed exchange')
-
-              // Provide helpful hints based on error
-              if (error.message.includes('code_verifier')) {
-                console.error('[useAuth] 💡 Possible causes:')
-                console.error('  1. Code was already used (browser back/forward)')
-                console.error('  2. Multiple Supabase client instances')
-                console.error('  3. Cookie storage adapter misconfigured')
-                console.error('  4. Code expired (>5 min since authorization)')
-              }
-
-              cleanAuthParamsFromUrl()
-            } else if (data.session) {
-              authLog('✅ PKCE code exchange successful!')
-              authLog('User:', data.session.user.email)
-
-              if (isMounted) {
-                setSession(data.session)
-                setUser(data.session.user)
-                setIsLoading(false)
-              }
-
-              cleanAuthParamsFromUrl()
-              return // Early return, session is set
-            }
-          } catch (exchangeError) {
-            console.error('[useAuth] ❌ Exception during code exchange:', exchangeError)
-            if (exchangeError instanceof Error) {
-              console.error('[useAuth] Stack:', exchangeError.stack)
-            }
-            cleanAuthParamsFromUrl()
-          }
+        if (code) {
+          authLog('🔐 OAuth callback detected - letting Supabase handle it')
+          logCookieState('OAuth callback')
         }
 
         // =============================================================
-        // STEP 2: Get existing session from storage (no OAuth callback)
+        // Get session from storage (includes OAuth callback processing)
         // =============================================================
-        authLog('📦 Checking for existing session...')
+        authLog('📦 Checking for session...')
 
         const { data: { session: existingSession }, error } = await supabase.auth.getSession()
 
