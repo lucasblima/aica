@@ -190,7 +190,10 @@ export function createCookieHandlers() {
 
         log(`GET cookie: ${name}`, {
           valueLength: value.length,
-          preview: value.substring(0, 30) + (value.length > 30 ? '...' : '')
+          first30: value.substring(0, 30),
+          last20: value.substring(Math.max(0, value.length - 20)),
+          hasPrefix: value.startsWith('base64-'),
+          fullValue: value  // TEMPORARY: Log full value for diagnosis
         });
       }
 
