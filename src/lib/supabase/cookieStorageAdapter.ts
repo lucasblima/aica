@@ -53,22 +53,17 @@ function decodeCookieValue(value: string): string {
       // Step 2: Decode from base64url
       const decoded = stringFromBase64URL(encoded);
 
-      // Step 3: Parse JSON (Supabase stores values as JSON.stringify before encoding)
-      let finalValue = decoded;
-      try {
-        finalValue = JSON.parse(decoded);
-      } catch {
-        // If not valid JSON, use decoded value as-is
-        finalValue = decoded;
-      }
+      // REMOVED JSON.parse: @supabase/ssr expects string values, not parsed objects
+      // The decoded base64url string is the final value that Supabase needs
+      // Attempting to JSON.parse could return an object, breaking the string contract
 
       log('Decoded base64url cookie value', {
         originalLength: value.length,
         decodedLength: decoded.length,
-        parsedJSON: decoded !== finalValue
+        decodedValue: decoded.substring(0, 50) + '...' // Log first 50 chars for debugging
       });
 
-      return finalValue;
+      return decoded; // Return the decoded string directly
     } catch (error) {
       log('Base64url decode failed, using raw value', { error });
       return value; // Graceful fallback
