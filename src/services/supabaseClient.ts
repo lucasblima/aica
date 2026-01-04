@@ -1,5 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { createCookieHandlers } from '../lib/supabase/cookieStorageAdapter';
+// REMOVED: Custom cookie adapter import - no longer needed
+// import { createCookieHandlers } from '../lib/supabase/cookieStorageAdapter';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -49,7 +50,15 @@ export const supabase = createBrowserClient(
     supabaseUrl || '',
     supabaseKey || '',
     {
-        cookies: createCookieHandlers(),
+        // REMOVED: Custom cookie handlers - let Supabase use native browser cookie implementation
+        // The custom handlers were causing "code_verifier not found" because they weren't
+        // being called correctly by @supabase/ssr v0.8.0 in browser context.
+        //
+        // For createBrowserClient, Supabase uses native document.cookie APIs by default,
+        // which is the correct approach for client-side PKCE flow.
+        //
+        // cookies: createCookieHandlers(), // ❌ REMOVED - was preventing cookie reads
+
         cookieOptions: {
             path: '/',
             sameSite: 'lax',
