@@ -206,25 +206,26 @@ export class GeminiClient {
 
   /**
    * Trata erros HTTP convertendo para GeminiError
+   *
+   * Detecta errorCode do backend para erros especificos como API_KEY_EXPIRED
    */
   private async handleError(response: Response): Promise<GeminiError> {
     const body = await response.json().catch(() => ({}))
 
+    // Priorizar errorCode do backend se disponivel
     let code: GeminiError['code']
-    switch (response.status) {
-      case 401:
-        code = 'UNAUTHORIZED'
-        break
-      case 429:
-        code = 'RATE_LIMITED'
-        break
-      case 500:
-      case 502:
-      case 503:
-        code = 'SERVER_ERROR'
-        break
-      default:
-        code = 'NETWORK_ERROR'
+    if (body.errorCode) {
+      // Map backend errorCode to GeminiError code
+      const backendCodeMap: Record<string, GeminiError['code']> = {
+        'API_KEY_EXPIRED': 'API_KEY_EXPIRED',
+        'RATE_LIMITED': 'RATE_LIMITED',
+        'PERMISSION_DENIED': 'PERMISSION_DENIED',
+        'VALIDATION_ERROR': 'VALIDATION_ERROR',
+        'SERVER_ERROR': 'SERVER_ERROR'
+      }
+      code = backendCodeMap[body.errorCode] || this.mapStatusToCode(response.status)
+    } else {
+      code = this.mapStatusToCode(response.status)
     }
 
     const error = new (GeminiError as any)(
@@ -233,7 +234,36 @@ export class GeminiClient {
       response.status
     ) as GeminiError
 
+    // Log critico para API_KEY_EXPIRED para facilitar diagnostico
+    if (code === 'API_KEY_EXPIRED') {
+      console.error(
+        '[GeminiClient] CRITICAL: Gemini API key is expired or invalid!\n' +
+        'See docs/GEMINI_API_SETUP.md for renewal instructions.\n' +
+        'Quick fix: npx supabase secrets set GEMINI_API_KEY=<new-key>'
+      )
+    }
+
     return error
+  }
+
+  /**
+   * Mapeia status HTTP para codigo de erro GeminiError
+   */
+  private mapStatusToCode(status: number): GeminiError['code'] {
+    switch (status) {
+      case 401:
+        return 'UNAUTHORIZED'
+      case 403:
+        return 'PERMISSION_DENIED'
+      case 429:
+        return 'RATE_LIMITED'
+      case 500:
+      case 502:
+      case 503:
+        return 'SERVER_ERROR'
+      default:
+        return 'NETWORK_ERROR'
+    }
   }
 }
 

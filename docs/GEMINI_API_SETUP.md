@@ -1,11 +1,65 @@
-# Guia de Configuração - Gemini API (Seguro)
+# Guia de Configuracao - Gemini API (Seguro)
 
-> **Última atualização:** 26/12/2025
-> **Status:** Migração para padrão seguro implementada
+> **Ultima atualizacao:** 06/01/2026
+> **Status:** Migracao para padrao seguro implementada
 
 ---
 
-## 🔐 Segurança CRÍTICA
+## RENOVACAO RAPIDA DA API KEY (5 minutos)
+
+**Erro:** `API key expired. Please renew the API key.`
+
+### Passo 1: Criar Nova API Key
+
+1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Click em **"Create API key"**
+3. Escolha seu projeto do Google Cloud
+4. **COPIE A KEY** (voce vera apenas uma vez!)
+
+### Passo 2: Atualizar no Supabase
+
+**Via Dashboard (Recomendado):**
+1. Acesse [Supabase Dashboard](https://supabase.com/dashboard)
+2. Selecione o projeto **gppebtrshbvuzatmebhr**
+3. Va em **Settings** -> **Edge Functions** -> **Secrets**
+4. Encontre `GEMINI_API_KEY` e click em **Edit**
+5. Cole a nova API key
+6. Click **Save**
+
+**Via CLI (Alternativa):**
+```bash
+cd C:\Users\lucas\repos\Aica_frontend\Aica_frontend
+
+# Login no Supabase (se necessario)
+npx supabase login
+
+# Link ao projeto (se necessario)
+npx supabase link --project-ref gppebtrshbvuzatmebhr
+
+# Atualizar secret
+npx supabase secrets set GEMINI_API_KEY=<sua-nova-api-key>
+
+# Verificar
+npx supabase secrets list
+```
+
+### Passo 3: Testar
+
+```bash
+# Verificar se a key foi atualizada
+npx supabase secrets list
+# Deve mostrar: GEMINI_API_KEY | *****************************XXX
+
+# Testar localmente
+npm run dev
+# Testar qualquer funcionalidade que usa IA
+```
+
+**Nao precisa de redeploy!** Os secrets sao atualizados automaticamente.
+
+---
+
+## Seguranca CRITICA
 
 **⚠️ NUNCA exponha a API key do Gemini no frontend!**
 
@@ -203,11 +257,30 @@ gcloud run services update aica-backend \
 
 ## 🐛 Troubleshooting
 
-### Erro: "API key não configurada no servidor"
+### Erro: "API key expired. Please renew the API key." (CRITICO)
 
-**Causa:** `GEMINI_API_KEY` não está nos secrets do Supabase
+**Causa:** A API key do Gemini expirou ou foi invalidada pelo Google.
 
-**Solução:**
+**Solucao Rapida (5 min):**
+1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Crie nova API key
+3. Atualize no Supabase Dashboard ou via CLI:
+```bash
+npx supabase secrets set GEMINI_API_KEY=<nova-key>
+```
+4. Teste - **nao precisa redeploy**, secrets atualizam automaticamente
+
+**Verificar nos logs:**
+```bash
+npx supabase functions logs gemini-chat
+# Procure por: [gemini-chat] CRITICAL: Gemini API key is expired
+```
+
+### Erro: "API key nao configurada no servidor"
+
+**Causa:** `GEMINI_API_KEY` nao esta nos secrets do Supabase
+
+**Solucao:**
 ```bash
 npx supabase secrets set GEMINI_API_KEY=<sua-key>
 npx supabase functions deploy file-search
