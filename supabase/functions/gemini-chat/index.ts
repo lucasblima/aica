@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { handleGenerateDailyQuestion, type GenerateDailyQuestionPayload } from "./daily-question-handler.ts"
 
 // ============================================================================
 // SECURE CORS CONFIGURATION
@@ -8,8 +9,8 @@ import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://yourdomain.com', // TODO: Replace with actual production domain
-  'https://www.yourdomain.com', // TODO: Replace with actual production domain
+  'https://aica-5562559893.southamerica-east1.run.app', // Production Cloud Run URL
+  'https://aica-5p22u2w6jq-rj.a.run.app', // Legacy Cloud Run URL
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {
@@ -195,6 +196,116 @@ interface DailyReportResult {
 }
 
 // ============================================================================
+// GRANTS MODULE TYPES
+// ============================================================================
+
+interface GenerateFieldContentPayload {
+  edital_text: string
+  evaluation_criteria: Array<{
+    name: string
+    description: string
+    weight: number
+    min_score: number
+    max_score: number
+  }>
+  field_config: {
+    id: string
+    label: string
+    max_chars: number
+    required: boolean
+    ai_prompt_hint?: string
+  }
+  briefing: Record<string, string>
+  previous_responses?: Record<string, string>
+  source_document_content?: string | null
+  edital_text_content?: string | null
+  opportunity_documents_content?: string | null
+  project_id?: string
+}
+
+interface AnalyzeEditalStructurePayload {
+  editalText: string
+}
+
+interface ParseFormFieldsPayload {
+  text: string
+}
+
+interface ParsedFormField {
+  id: string
+  label: string
+  max_chars: number
+  required: boolean
+  ai_prompt_hint: string
+  placeholder: string
+}
+
+// ============================================================================
+// BRIEFING MODULE TYPES
+// ============================================================================
+
+interface GenerateAutoBriefingPayload {
+  companyName?: string
+  projectIdea?: string
+  editalTitle?: string
+  editalText?: string
+  sourceDocumentContent?: string | null
+  formFields?: Array<{
+    id: string
+    label: string
+    max_chars: number
+    required: boolean
+    ai_prompt_hint?: string
+  }>
+}
+
+interface ImproveBriefingFieldPayload {
+  fieldId: string
+  currentContent: string
+  allBriefing: Record<string, string>
+}
+
+interface ExtractRequiredDocumentsPayload {
+  pdfContent: string
+}
+
+interface ExtractTimelinePhasesPayload {
+  pdfContent: string
+}
+
+// ============================================================================
+// PDF PROCESSING TYPES
+// ============================================================================
+
+interface ParseStatementPayload {
+  rawText: string
+}
+
+// ============================================================================
+// PODCAST/GUEST RESEARCH TYPES
+// ============================================================================
+
+interface ResearchGuestPayload {
+  guest_name: string
+  reference?: string
+  prompt?: string
+  system_instruction?: string
+}
+
+interface GuestProfile {
+  name: string
+  title: string
+  biography: string
+  recent_facts: string[]
+  topics_of_interest: string[]
+  controversies?: string[]
+  image_url?: string
+  is_reliable: boolean
+  confidence_score: number
+  researched_at: string
+}
+
+// ============================================================================
 // MODEL CONFIGURATION
 // ============================================================================
 
@@ -210,6 +321,9 @@ const SMART_MODEL_ACTIONS = [
   'generate_ice_breakers',
   'generate_pauta_questions',
   'generate_pauta_outline',
+  'analyze_edital_structure',
+  'generate_auto_briefing',
+  'research_guest',
 ]
 
 // ============================================================================
@@ -495,6 +609,571 @@ Seja empatico, construtivo e especifico. Retorne APENAS JSON valido.`
 }
 
 // ============================================================================
+// GRANTS MODULE HANDLERS
+// ============================================================================
+
+async function handleGenerateFieldContent(genAI: GoogleGenerativeAI, payload: GenerateFieldContentPayload): Promise<{ generatedText: string }> {
+  const { edital_text, evaluation_criteria, field_config, briefing, previous_responses, source_document_content, edital_text_content, opportunity_documents_content } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: Math.ceil(field_config.max_chars * 2),
+    },
+  })
+
+  // Build system prompt
+  let systemPrompt = `Voce e um especialista em redacao de propostas para editais de fomento a inovacao no Brasil.
+
+Sua tarefa e escrever respostas tecnicas, objetivas e persuasivas para campos de formularios de inscricao em editais.
+
+**CONTEXTO DO EDITAL:**
+${edital_text || 'Nao fornecido'}
+`
+
+  if (evaluation_criteria && evaluation_criteria.length > 0) {
+    systemPrompt += `\n**CRITERIOS DE AVALIACAO:**\nOs avaliadores considerarao os seguintes criterios:\n\n`
+    evaluation_criteria.forEach(c => {
+      systemPrompt += `- **${c.name}** (Peso: ${c.weight}/10): ${c.description}\n`
+    })
+  }
+
+  systemPrompt += `\n**DIRETRIZES:**
+1. Use linguagem tecnica mas acessivel
+2. Seja objetivo e direto
+3. Inclua dados quantitativos quando possivel
+4. Demonstre conhecimento do mercado
+5. Mostre diferenciais competitivos
+6. Use paragrafos curtos
+`
+
+  // Build user prompt
+  let userPrompt = `**CAMPO A SER PREENCHIDO:**
+${field_config.label}
+${field_config.ai_prompt_hint ? `Dica: ${field_config.ai_prompt_hint}\n` : ''}Limite de caracteres: ${field_config.max_chars}
+
+`
+
+  if (edital_text_content && edital_text_content.trim().length > 0) {
+    userPrompt += `**EDITAL OFICIAL:**\n${edital_text_content.substring(0, 20000)}\n\n`
+  }
+
+  if (opportunity_documents_content && opportunity_documents_content.trim().length > 0) {
+    userPrompt += `**DOCUMENTOS DO EDITAL:**\n${opportunity_documents_content.substring(0, 15000)}\n\n`
+  }
+
+  if (source_document_content && source_document_content.trim().length > 0) {
+    userPrompt += `**DOCUMENTOS DO PROJETO:**\n${source_document_content.substring(0, 15000)}\n\n`
+  }
+
+  userPrompt += `**CONTEXTO DO PROJETO:**\n\n`
+  Object.entries(briefing).forEach(([fieldId, content]) => {
+    if (content && content.trim().length > 0) {
+      const fieldLabel = fieldId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      userPrompt += `**${fieldLabel}:**\n${content}\n\n`
+    }
+  })
+
+  if (previous_responses && Object.keys(previous_responses).length > 0) {
+    userPrompt += `**RESPOSTAS JA FORNECIDAS:**\n`
+    Object.entries(previous_responses).forEach(([fieldId, content]) => {
+      userPrompt += `${fieldId}: ${content.substring(0, 200)}...\n`
+    })
+    userPrompt += `\n`
+  }
+
+  userPrompt += `**TAREFA:**\nEscreva uma resposta completa e persuasiva para "${field_config.label}", respeitando o limite de ${field_config.max_chars} caracteres.\n\nSua resposta:`
+
+  const result = await model.generateContent({
+    contents: [
+      { role: 'user', parts: [{ text: systemPrompt }, { text: userPrompt }] }
+    ],
+  })
+
+  let generatedText = result.response.text()
+
+  // Truncate intelligently
+  if (generatedText.length > field_config.max_chars) {
+    generatedText = generatedText.substring(0, field_config.max_chars - 3) + '...'
+  }
+
+  return { generatedText }
+}
+
+async function handleAnalyzeEditalStructure(genAI: GoogleGenerativeAI, payload: AnalyzeEditalStructurePayload): Promise<any> {
+  const { editalText } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.smart,
+    generationConfig: {
+      temperature: 0.3,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8000,
+    },
+  })
+
+  const prompt = `Voce e um especialista em analise de editais de fomento a inovacao no Brasil.
+
+Analise o edital abaixo e retorne um JSON estruturado com TODAS as informacoes.
+
+REGRAS:
+1. Retorne APENAS o JSON, sem texto adicional
+2. Use aspas duplas em todas as strings
+3. Todos os campos sao obrigatorios (use null se nao encontrar)
+4. Datas no formato ISO: "YYYY-MM-DD"
+5. Valores monetarios como numeros (sem R$)
+6. IDs em snake_case sem acentos
+
+ESTRUTURA:
+{
+  "title": "Titulo completo",
+  "funding_agency": "Agencia (FAPERJ, FINEP, etc)",
+  "program_name": "Nome do programa",
+  "edital_number": "Numero (ex: 32/2025)",
+  "min_funding": 375000,
+  "max_funding": 600000,
+  "counterpart_percentage": 5.0,
+  "submission_start": "2025-01-15",
+  "submission_deadline": "2025-03-31",
+  "result_date": "2025-06-30",
+  "eligible_themes": ["Saude", "Biotecnologia"],
+  "eligibility_requirements": {
+    "min_company_age_years": 2,
+    "must_have_cnpj": true,
+    "headquarter_location": "Rio de Janeiro"
+  },
+  "evaluation_criteria": [
+    {
+      "id": "innovation",
+      "name": "Grau de Inovacao",
+      "description": "Descricao",
+      "weight": 30,
+      "min_score": 7,
+      "max_score": 10
+    }
+  ],
+  "form_fields": [
+    {
+      "id": "company_presentation",
+      "label": "Apresentacao da Empresa",
+      "max_chars": 3000,
+      "required": true,
+      "ai_prompt_hint": "Descreva historico, porte, setor",
+      "placeholder": "Descreva..."
+    }
+  ],
+  "external_system_url": "https://sistema.gov.br"
+}
+
+TEXTO DO EDITAL:
+${editalText.substring(0, 50000)}`
+
+  const result = await model.generateContent(prompt)
+  const text = result.response.text()
+
+  // Clean JSON from markdown
+  const jsonText = text.replace(/```json\n?|\n?```/g, '').trim()
+  const data = JSON.parse(jsonText)
+
+  return data
+}
+
+async function handleParseFormFields(genAI: GoogleGenerativeAI, payload: ParseFormFieldsPayload): Promise<{ fields: ParsedFormField[] }> {
+  const { text } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.2,
+      topP: 0.8,
+      topK: 40,
+      maxOutputTokens: 4000,
+    },
+  })
+
+  const prompt = `Voce e um especialista em analise de formularios de editais.
+
+Parsear o texto abaixo e extraia os campos do formulario.
+
+REGRAS:
+1. Identifique TODAS as perguntas/campos
+2. Extraia limite de caracteres ("max X caracteres", "ate X chars")
+3. Se nao houver limite, estime entre 1000-5000
+4. Crie ID em snake_case sem acentos
+5. Marque required: true por padrao
+6. Crie dicas uteis para ai_prompt_hint
+7. Retorne APENAS o JSON array
+
+FORMATO:
+[
+  {
+    "id": "company_presentation",
+    "label": "Apresentacao da Empresa",
+    "max_chars": 3000,
+    "required": true,
+    "ai_prompt_hint": "Descreva historico, porte, setor",
+    "placeholder": "Descreva o historico..."
+  }
+]
+
+TEXTO:
+${text}`
+
+  const result = await model.generateContent(prompt)
+  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
+  const fields = JSON.parse(jsonText) as ParsedFormField[]
+
+  return { fields }
+}
+
+// ============================================================================
+// BRIEFING MODULE HANDLERS
+// ============================================================================
+
+async function handleGenerateAutoBriefing(genAI: GoogleGenerativeAI, payload: GenerateAutoBriefingPayload): Promise<{ briefing: Record<string, string> }> {
+  const { companyName, projectIdea, editalTitle, editalText, sourceDocumentContent, formFields } = payload
+
+  const hasSourceDocument = sourceDocumentContent && sourceDocumentContent.trim().length > 100
+  const hasMinimalContext = companyName || projectIdea
+
+  if (!hasSourceDocument && !hasMinimalContext) {
+    throw new Error('Documento fonte obrigatorio. Faca upload de um arquivo com informacoes do projeto.')
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.smart,
+    generationConfig: {
+      temperature: 0.3,
+      topP: 0.8,
+      topK: 20,
+      maxOutputTokens: 4000,
+    },
+  })
+
+  const jsonStructure = formFields?.map(f => `  "${f.id}": "Extrair: ${f.ai_prompt_hint || f.label}"`).join(',\n') || ''
+
+  const systemPrompt = `Voce e um especialista em analise de documentos para editais de fomento.
+
+Sua tarefa e EXTRAIR e ORGANIZAR informacoes do documento fonte para preencher um briefing.
+
+REGRAS CRITICAS:
+1. APENAS EXTRAIA informacoes EXPLICITAMENTE no documento
+2. NUNCA invente dados ou informacoes
+3. Se nao encontrar, retorne "" (string vazia)
+4. Use CITACOES DIRETAS quando possivel
+5. Retorne APENAS o JSON
+
+${formFields && formFields.length > 0 ? `ESTRUTURA:\n{\n${jsonStructure}\n}` : ''}`
+
+  const userPrompt = hasSourceDocument
+    ? `DOCUMENTO FONTE:
+---
+${sourceDocumentContent!.substring(0, 30000)}
+---
+
+${editalTitle ? `Edital: ${editalTitle}\n` : ''}${editalText ? `Requisitos: ${editalText.substring(0, 2000)}\n` : ''}
+INSTRUCAO: Analise o documento e EXTRAIA as informacoes. NAO INVENTE nada.
+
+Retorne APENAS o JSON.`
+    : `INFORMACOES DISPONIVEIS:
+${companyName ? `Empresa: ${companyName}\n` : ''}${projectIdea ? `Projeto: ${projectIdea}\n` : ''}${editalTitle ? `Edital: ${editalTitle}\n` : ''}
+Documento fonte nao fornecido. Organize as informacoes disponiveis.
+
+Retorne APENAS o JSON.`
+
+  const result = await model.generateContent([
+    { text: systemPrompt },
+    { text: userPrompt }
+  ])
+
+  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
+  const briefing = JSON.parse(jsonText) as Record<string, string>
+
+  return { briefing }
+}
+
+async function handleImproveBriefingField(genAI: GoogleGenerativeAI, payload: ImproveBriefingFieldPayload): Promise<{ improvedText: string }> {
+  const { fieldId, currentContent, allBriefing } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 2000,
+    },
+  })
+
+  const prompt = `Voce e um especialista em redacao de projetos para editais de inovacao.
+
+TAREFA: Melhore e expanda o texto do campo "${fieldId}":
+
+TEXTO ATUAL:
+${currentContent}
+
+CONTEXTO ADICIONAL:
+${JSON.stringify(allBriefing, null, 2)}
+
+INSTRUCOES:
+1. Expanda para 300-500 palavras
+2. Adicione detalhes tecnicos e numeros
+3. Mantenha coerencia com outros campos
+4. Use linguagem profissional
+5. Retorne APENAS o texto melhorado
+
+Texto melhorado:`
+
+  const result = await model.generateContent(prompt)
+  const improvedText = result.response.text().trim()
+
+  return { improvedText }
+}
+
+async function handleExtractRequiredDocuments(genAI: GoogleGenerativeAI, payload: ExtractRequiredDocumentsPayload): Promise<{ documents: Array<{ name: string; description?: string; dueDate?: string }> }> {
+  const { pdfContent } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.2,
+      topP: 0.8,
+      topK: 20,
+      maxOutputTokens: 4000,
+    },
+  })
+
+  const prompt = `Analise o edital e extraia TODOS os documentos exigidos.
+
+TEXTO:
+${pdfContent.substring(0, 20000)}
+
+FORMATO:
+[
+  {
+    "name": "Certidao Negativa de Debitos",
+    "description": "Descricao",
+    "dueDate": "2025-12-31"
+  }
+]
+
+Retorne APENAS o JSON.`
+
+  const result = await model.generateContent(prompt)
+  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
+  const documents = JSON.parse(jsonText)
+
+  return { documents }
+}
+
+async function handleExtractTimelinePhases(genAI: GoogleGenerativeAI, payload: ExtractTimelinePhasesPayload): Promise<{ phases: Array<{ name: string; description?: string; date: string }> }> {
+  const { pdfContent } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.2,
+      topP: 0.8,
+      topK: 20,
+      maxOutputTokens: 4000,
+    },
+  })
+
+  const prompt = `Extraia o cronograma/timeline do edital com TODAS as datas.
+
+TEXTO:
+${pdfContent.substring(0, 20000)}
+
+FORMATO (ORDENADO por data):
+[
+  {
+    "name": "Submissao de Propostas",
+    "description": "Descricao",
+    "date": "2025-12-15"
+  }
+]
+
+Use formato ISO (YYYY-MM-DD). Retorne APENAS o JSON.`
+
+  const result = await model.generateContent(prompt)
+  const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
+  const phases = JSON.parse(jsonText)
+
+  // Sort by date
+  phases.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  return { phases }
+}
+
+// ============================================================================
+// PDF PROCESSING HANDLERS
+// ============================================================================
+
+async function handleParseStatement(genAI: GoogleGenerativeAI, payload: ParseStatementPayload): Promise<any> {
+  const { rawText } = payload
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.3,
+      topP: 0.8,
+      topK: 40,
+      maxOutputTokens: 4000,
+    },
+  })
+
+  const prompt = `Voce e um assistente especializado em extrair dados de extratos bancarios.
+
+Analise o texto e extraia as informacoes em formato JSON:
+
+{
+  "bankName": "nome do banco",
+  "accountType": "checking|savings|credit_card|investment|other",
+  "periodStart": "YYYY-MM-DD",
+  "periodEnd": "YYYY-MM-DD",
+  "openingBalance": numero,
+  "closingBalance": numero,
+  "currency": "BRL",
+  "transactions": [
+    {
+      "date": "YYYY-MM-DD",
+      "description": "descricao",
+      "amount": numero (positivo=receita, negativo=despesa),
+      "type": "income|expense",
+      "category": "food|transport|housing|health|education|entertainment|shopping|bills|salary|investment|other"
+    }
+  ]
+}
+
+IMPORTANTE:
+- Despesas devem ser NEGATIVAS
+- Receitas devem ser POSITIVAS
+- Categorias em ingles
+- Retorne APENAS o JSON
+
+TEXTO:
+${rawText.substring(0, 10000)}`
+
+  const result = await model.generateContent(prompt)
+  const text = result.response.text()
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/)?.[0]
+  if (!jsonMatch) {
+    throw new Error('Nao foi possivel extrair JSON da resposta')
+  }
+
+  const data = JSON.parse(jsonMatch)
+  return data
+}
+
+// ============================================================================
+// PODCAST GUEST RESEARCH HANDLER
+// ============================================================================
+
+async function handleResearchGuest(genAI: GoogleGenerativeAI, payload: ResearchGuestPayload): Promise<GuestProfile> {
+  const { guest_name, reference, prompt: customPrompt, system_instruction } = payload
+
+  if (!guest_name || typeof guest_name !== 'string' || guest_name.trim().length < 2) {
+    throw new Error('Campo "guest_name" e obrigatorio e deve ter pelo menos 2 caracteres')
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.smart,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.9,
+      topK: 40,
+      maxOutputTokens: 4096,
+    },
+  })
+
+  const defaultSystemInstruction = `Voce e um assistente de pesquisa especializado em preparar entrevistas para podcasts.
+
+Responsabilidades:
+- Pesquisar informacoes precisas e verificaveis sobre figuras publicas
+- Focar em conquistas e fatos recentes (ultimos 2 anos)
+- Identificar topicos de interesse relevantes para uma entrevista
+- Alertar sobre controversias importantes que o entrevistador deve conhecer
+- Retornar apenas informacoes confiaveis
+
+Estilo:
+- Seja conciso mas informativo
+- Use linguagem clara e objetiva
+- Priorize qualidade sobre quantidade
+- Indique quando informacoes nao sao confiaveis
+
+Formato:
+Retorne APENAS um objeto JSON valido, sem markdown ou texto adicional.`
+
+  const defaultPrompt = `Pesquise a seguinte pessoa para uma entrevista de podcast:
+
+Nome: ${guest_name}
+${reference ? `Contexto/Referencia: ${reference}` : ''}
+
+Por favor, forneca:
+1. Nome completo e titulo profissional
+2. Uma biografia de 2-3 frases
+3. 3-5 fatos notaveis ou conquistas recentes (ultimos 2 anos)
+4. 3-5 topicos pelos quais a pessoa e conhecida ou apaixonada
+5. Quaisquer controversias significativas que um entrevistador deveria saber
+
+Retorne as informacoes no seguinte formato JSON:
+{
+  "name": "string (nome completo)",
+  "title": "string (titulo profissional/cargo)",
+  "biography": "string (biografia de 2-3 frases)",
+  "recent_facts": ["string", "string", ...],
+  "topics_of_interest": ["string", "string", ...],
+  "controversies": ["string", "string", ...],
+  "is_reliable": true/false (true se encontrou informacoes confiaveis),
+  "confidence_score": number (0-100, confianca na precisao das informacoes)
+}
+
+Se voce nao conseguir encontrar informacoes confiaveis sobre esta pessoa, retorne um objeto com is_reliable: false e confidence_score: 0.
+
+IMPORTANTE: Retorne APENAS o objeto JSON, sem markdown, sem blocos de codigo, sem texto adicional.`
+
+  const finalSystemInstruction = system_instruction || defaultSystemInstruction
+  const finalPrompt = customPrompt || defaultPrompt
+
+  const result = await model.generateContent({
+    contents: [
+      { role: 'user', parts: [{ text: finalSystemInstruction }, { text: finalPrompt }] }
+    ],
+  })
+
+  const text = result.response.text()
+
+  let parsed: Omit<GuestProfile, 'researched_at'>
+  try {
+    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
+  } catch {
+    console.error('[research_guest] Failed to parse JSON response:', text)
+    throw new Error('Falha ao processar resposta do modelo')
+  }
+
+  // Validate and normalize response
+  const profile: GuestProfile = {
+    name: String(parsed.name || guest_name),
+    title: String(parsed.title || reference || ''),
+    biography: String(parsed.biography || 'Informacoes detalhadas nao disponiveis no momento.'),
+    recent_facts: Array.isArray(parsed.recent_facts) ? parsed.recent_facts.map(String).slice(0, 10) : [],
+    topics_of_interest: Array.isArray(parsed.topics_of_interest) ? parsed.topics_of_interest.map(String).slice(0, 10) : [],
+    controversies: Array.isArray(parsed.controversies) ? parsed.controversies.map(String).slice(0, 5) : [],
+    image_url: parsed.image_url ? String(parsed.image_url) : undefined,
+    is_reliable: Boolean(parsed.is_reliable),
+    confidence_score: typeof parsed.confidence_score === 'number' ? Math.max(0, Math.min(100, parsed.confidence_score)) : 0,
+    researched_at: new Date().toISOString(),
+  }
+
+  return profile
+}
+
+// ============================================================================
 // MAIN SERVER
 // ============================================================================
 
@@ -561,6 +1240,36 @@ serve(async (req) => {
         case 'generate_daily_report':
           result = await handleGenerateDailyReport(genAI, payload as DailyReportPayload)
           break
+        case 'generate_field_content':
+          result = await handleGenerateFieldContent(genAI, payload as GenerateFieldContentPayload)
+          break
+        case 'analyze_edital_structure':
+          result = await handleAnalyzeEditalStructure(genAI, payload as AnalyzeEditalStructurePayload)
+          break
+        case 'parse_form_fields':
+          result = await handleParseFormFields(genAI, payload as ParseFormFieldsPayload)
+          break
+        case 'generate_auto_briefing':
+          result = await handleGenerateAutoBriefing(genAI, payload as GenerateAutoBriefingPayload)
+          break
+        case 'improve_briefing_field':
+          result = await handleImproveBriefingField(genAI, payload as ImproveBriefingFieldPayload)
+          break
+        case 'extract_required_documents':
+          result = await handleExtractRequiredDocuments(genAI, payload as ExtractRequiredDocumentsPayload)
+          break
+        case 'extract_timeline_phases':
+          result = await handleExtractTimelinePhases(genAI, payload as ExtractTimelinePhasesPayload)
+          break
+        case 'parse_statement':
+          result = await handleParseStatement(genAI, payload as ParseStatementPayload)
+          break
+        case 'generate_daily_question':
+          result = await handleGenerateDailyQuestion(genAI, payload as GenerateDailyQuestionPayload)
+          break
+        case 'research_guest':
+          result = await handleResearchGuest(genAI, payload as ResearchGuestPayload)
+          break
         default:
           return new Response(JSON.stringify({ error: `Action desconhecida: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
@@ -579,8 +1288,37 @@ serve(async (req) => {
   } catch (error) {
     const err = error as Error
     console.error('[gemini-chat] Error:', err.message)
+
     let statusCode = 500
-    if (err.message.includes('obrigatorio') || err.message.includes('deve ser')) statusCode = 400
-    return new Response(JSON.stringify({ error: err.message || 'Erro interno do servidor', success: false }), { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    let errorCode = 'SERVER_ERROR'
+    let userMessage = err.message || 'Erro interno do servidor'
+
+    // Detect specific error types for better diagnostics
+    if (err.message.includes('obrigatorio') || err.message.includes('deve ser')) {
+      statusCode = 400
+      errorCode = 'VALIDATION_ERROR'
+    } else if (err.message.includes('API key expired') || err.message.includes('API key not valid') || err.message.includes('API_KEY_INVALID')) {
+      statusCode = 503
+      errorCode = 'API_KEY_EXPIRED'
+      userMessage = 'Servico de IA temporariamente indisponivel. A chave da API precisa ser renovada. Contate o administrador.'
+      console.error('[gemini-chat] CRITICAL: Gemini API key is expired or invalid! See docs/GEMINI_API_SETUP.md for renewal instructions.')
+    } else if (err.message.includes('quota') || err.message.includes('Resource exhausted')) {
+      statusCode = 429
+      errorCode = 'RATE_LIMITED'
+      userMessage = 'Limite de requisicoes excedido. Tente novamente em alguns minutos.'
+    } else if (err.message.includes('permission') || err.message.includes('403')) {
+      statusCode = 403
+      errorCode = 'PERMISSION_DENIED'
+      userMessage = 'Permissao negada para acessar o servico de IA.'
+    }
+
+    return new Response(
+      JSON.stringify({
+        error: userMessage,
+        errorCode,
+        success: false
+      }),
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 })
