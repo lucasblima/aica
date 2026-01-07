@@ -1,0 +1,209 @@
+# =============================================================================
+# AICA Frontend - Staging Environment Build Configuration
+# =============================================================================
+# This file configures the CI/CD pipeline for building and deploying the
+# React/Vite frontend application to the STAGING environment on Cloud Run.
+#
+# USAGE:
+#   gcloud builds submit --config=cloudbuild-staging.yaml --project=gen-lang-client-0948335762
+#
+# IMPORTANT: Environment variables with VITE_* prefix are injected at build time
+# because Vite replaces import.meta.env.VITE_* during compilation.
+#
+# DIFFERENCES FROM PRODUCTION (cloudbuild.yaml):
+#   - Service name: aica-staging (vs aica)
+#   - Image name: aica-staging (vs aica-frontend)
+#   - Frontend URL: staging URL (to be updated after first deploy)
+#   - Resources: Lower (min 0, max 3 instances) for cost optimization
+# =============================================================================
+
+# =============================================================================
+# SUBSTITUTIONS - Default values for build variables
+# These can be overridden in the Cloud Build trigger configuration
+# =============================================================================
+substitutions:
+  _SERVICE_NAME: aica-staging
+  _DEPLOY_REGION: southamerica-east1
+  _IMAGE_NAME: aica-staging
+  _TAG: latest
+  # Required: Supabase configuration (safe to include - these are public client keys)
+  # STAGING PROJECT: aica-staging (uzywajqzbdbrfammshdg) - separate from production
+  _VITE_SUPABASE_URL: https://uzywajqzbdbrfammshdg.supabase.co
+  _VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6eXdhanF6YmRicmZhbW1zaGRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTE0MjEsImV4cCI6MjA4MzMyNzQyMX0.cQHqHZtIlIzX2hucb5n53PDvGYHb43ra6G5cCTlvblM
+  # Required: Frontend URL for OAuth redirect
+  _VITE_FRONTEND_URL: https://aica-staging-5p22u2w6jq-rj.a.run.app
+  # Optional: Set these in Cloud Build trigger or leave empty
+  _VITE_GOOGLE_OAUTH_CLIENT_ID: '5562559893-1ufv0knok8k4679kr35p7aqdhp55drg0.apps.googleusercontent.com'
+  _VITE_PDF_EXTRACTOR_URL: ''
+  _VITE_N8N_WEBHOOK_URL: 'https://n8n-n8n.w9jo16.easypanel.host/'
+  _VITE_EVOLUTION_INSTANCE_NAME: ''
+  _VITE_API_URL: ''
+  _VITE_N8N_URL: 'https://n8n-n8n.w9jo16.easypanel.host/'
+  _VITE_EVOLUTION_URL: 'https://evolution-evolution-api.w9jo16.easypanel.host/'
+
+# =============================================================================
+# SECRETS - Sensitive values from Secret Manager
+# These secrets must be created in Secret Manager before running the build
+# =============================================================================
+# To create secrets:
+#   gcloud secrets create vite-gemini-api-key --replication-policy="automatic"
+#   echo -n "YOUR_KEY" | gcloud secrets versions add vite-gemini-api-key --data-file=-
+#
+# To grant Cloud Build access:
+#   PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+#   gcloud secrets add-iam-policy-binding vite-gemini-api-key \
+#     --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+#     --role="roles/secretmanager.secretAccessor"
+# =============================================================================
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/vite-gemini-api-key/versions/latest
+      env: 'VITE_GEMINI_API_KEY'
+    # SECURITY: OAuth client secret stored in Supabase secrets for Edge Function use only
+
+steps:
+  # =========================================================================
+  # Step 0: Validate that secrets exist and were loaded
+  # =========================================================================
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'validate-secrets'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== STAGING: Validating Secrets Configuration ==="
+
+        # Verificar se secrets existem no Secret Manager
+        gcloud secrets describe vite-gemini-api-key --project=$PROJECT_ID || {
+          echo "ERROR: Secret 'vite-gemini-api-key' not found!"
+          exit 1
+        }
+
+        # Verificar se secrets foram carregados no secretEnv
+        if [ -z "$$VITE_GEMINI_API_KEY" ]; then
+          echo "ERROR: VITE_GEMINI_API_KEY secret is empty or was not loaded!"
+          exit 1
+        fi
+
+        echo "Environment: STAGING"
+        echo "Gemini API Key: SET"
+        echo "Secrets validated successfully"
+        echo "========================================"
+    secretEnv: ['VITE_GEMINI_API_KEY']
+
+  # =========================================================================
+  # Step 1: Build Docker image with environment variables
+  # =========================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== STAGING: Starting Docker Build ==="
+        echo "Service Name: ${_SERVICE_NAME}"
+        echo "Image Name: ${_IMAGE_NAME}"
+        echo "VITE_SUPABASE_URL: ${_VITE_SUPABASE_URL:0:40}..."
+        echo "VITE_FRONTEND_URL: ${_VITE_FRONTEND_URL}"
+        echo "========================================"
+
+        # Use SHORT_SHA if available, fallback to timestamp for manual builds
+        IMAGE_TAG="${SHORT_SHA:-$$(date +%Y%m%d%H%M%S)}"
+        echo "Using image tag: $$IMAGE_TAG"
+
+        docker build \
+          --build-arg VITE_SUPABASE_URL="${_VITE_SUPABASE_URL}" \
+          --build-arg VITE_SUPABASE_ANON_KEY="${_VITE_SUPABASE_ANON_KEY}" \
+          --build-arg VITE_FRONTEND_URL="${_VITE_FRONTEND_URL}" \
+          --build-arg VITE_GEMINI_API_KEY="$$VITE_GEMINI_API_KEY" \
+          --build-arg VITE_GOOGLE_OAUTH_CLIENT_ID="${_VITE_GOOGLE_OAUTH_CLIENT_ID}" \
+          --build-arg VITE_PDF_EXTRACTOR_URL="${_VITE_PDF_EXTRACTOR_URL}" \
+          --build-arg VITE_N8N_WEBHOOK_URL="${_VITE_N8N_WEBHOOK_URL}" \
+          --build-arg VITE_N8N_URL="${_VITE_N8N_URL}" \
+          --build-arg VITE_EVOLUTION_URL="${_VITE_EVOLUTION_URL}" \
+          --build-arg VITE_EVOLUTION_INSTANCE_NAME="${_VITE_EVOLUTION_INSTANCE_NAME}" \
+          --build-arg VITE_API_URL="${_VITE_API_URL}" \
+          -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$$IMAGE_TAG \
+          -t gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG} \
+          .
+
+        # Save tag for next steps
+        echo "$$IMAGE_TAG" > /workspace/image_tag.txt
+    secretEnv: ['VITE_GEMINI_API_KEY']
+
+  # =========================================================================
+  # Step 2: Push image to Container Registry
+  # =========================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image-tag'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IMAGE_TAG=$$(cat /workspace/image_tag.txt)
+        docker push gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$$IMAGE_TAG
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image-latest'
+    args: ['push', 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG}']
+
+  # =========================================================================
+  # Step 3: Deploy to Cloud Run (Staging)
+  # =========================================================================
+  # NOTE: Using 'deploy' instead of 'services update' to create the service
+  # if it doesn't exist. After first deploy, this will update the existing service.
+  # =========================================================================
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run-staging'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IMAGE_TAG=$$(cat /workspace/image_tag.txt)
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image=gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$$IMAGE_TAG \
+          --region=${_DEPLOY_REGION} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=80 \
+          --memory=512Mi \
+          --cpu=1 \
+          --min-instances=0 \
+          --max-instances=3
+
+  # =========================================================================
+  # Step 4: Output staging URL
+  # =========================================================================
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'output-staging-url'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== STAGING DEPLOY COMPLETE ==="
+        STAGING_URL=$$(gcloud run services describe ${_SERVICE_NAME} \
+          --region=${_DEPLOY_REGION} \
+          --format='value(status.url)' \
+          --project=$PROJECT_ID)
+        echo ""
+        echo "Staging URL: $$STAGING_URL"
+        echo ""
+        echo "IMPORTANT: If this is the first deploy, update _VITE_FRONTEND_URL"
+        echo "in cloudbuild-staging.yaml with the URL above for OAuth to work."
+        echo "================================="
+
+# =============================================================================
+# OUTPUT IMAGES
+# =============================================================================
+# Note: Using latest tag only since we use dynamic tags for manual builds
+images:
+  - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest'
+
+# =============================================================================
+# BUILD OPTIONS
+# =============================================================================
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# Increase timeout for larger builds (default is 10 minutes)
+timeout: '1200s'
