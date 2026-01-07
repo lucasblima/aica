@@ -1,7 +1,18 @@
 # Guia de Configuracao - Gemini API (Seguro)
 
-> **Ultima atualizacao:** 06/01/2026
-> **Status:** Migracao para padrao seguro implementada
+> **Ultima atualizacao:** 07/01/2026
+> **Status:** Migracao para padrao seguro **COMPLETA**
+
+---
+
+## IMPORTANTE: VITE_GEMINI_API_KEY Depreciado
+
+**A variavel `VITE_GEMINI_API_KEY` foi REMOVIDA do frontend.**
+
+Todas as chamadas ao Gemini API agora usam Edge Functions via `edgeFunctionService.ts`.
+A API key esta armazenada de forma segura nos secrets do Supabase.
+
+**NAO adicione VITE_GEMINI_API_KEY ao arquivo .env** - ela nao e mais necessaria.
 
 ---
 
