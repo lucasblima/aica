@@ -9,6 +9,7 @@
  * - All transitions via explicit callbacks (NO side effects)
  */
 
+import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useEffect, useCallback } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -65,8 +66,10 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
  * StudioMainView - Main component
  * Manages view state and renders appropriate component based on mode
  */
+/* data-tour markers: studio-header, studio-shows-list, create-show-button, wizard-button, guest-management, episode-production, studio-library, workspace-view */
 export default function StudioMainView() {
-  const { state, actions } = useStudio();
+
+  useTourAutoStart('studio-first-visit');  const { state, actions } = useStudio();
   const { user } = useAuth();
 
   // CRITICAL: ONLY ONE useEffect for initialization

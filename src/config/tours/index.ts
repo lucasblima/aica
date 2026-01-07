@@ -5,6 +5,10 @@
 
 import { TourConfig } from '@/contexts/TourContext';
 import { atlasFirstVisitTour } from './atlasFirstVisitTour';
+import { journeyFirstVisitTour } from './journeyFirstVisitTour';
+import { studioFirstVisitTour } from './studioFirstVisitTour';
+import { financeFirstVisitTour } from './financeFirstVisitTour';
+import { grantsFirstVisitTour } from './grantsFirstVisitTour';
 
 /**
  * All available tours
@@ -12,11 +16,16 @@ import { atlasFirstVisitTour } from './atlasFirstVisitTour';
  */
 export const allTours: TourConfig[] = [
   atlasFirstVisitTour,
-  // journeyFirstVisitTour, // To be created in Phase 2
-  // studioFirstVisitTour, // To be created in Phase 2
-  // financeFirstVisitTour, // To be created in Phase 2
-  // grantsFirstVisitTour, // To be created in Phase 2
+  journeyFirstVisitTour,
+  studioFirstVisitTour,
+  financeFirstVisitTour,
+  grantsFirstVisitTour,
 ];
 
-export { atlasFirstVisitTour };
-// Additional exports for Phase 2 tours will be added here
+export {
+  atlasFirstVisitTour,
+  journeyFirstVisitTour,
+  studioFirstVisitTour,
+  financeFirstVisitTour,
+  grantsFirstVisitTour,
+};
