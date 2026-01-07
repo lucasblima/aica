@@ -2,13 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase } from 'lucide-react';
-import { HeaderGlobal } from '../components/HeaderGlobal';
-import { IdentityPassport } from '../components/IdentityPassport';
-import { ProfileModal } from '../components/ProfileModal';
-import { ConnectionArchetypes } from '../components/ConnectionArchetypes';
+import { HeaderGlobal, IdentityPassport, ProfileModal, ConnectionArchetypes, ModuleCard } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
-import { ModuleCard } from '../components/ModuleCard';
+import { RecentContactsWidget } from '../components';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
@@ -314,6 +311,19 @@ export default function Home({
                   </motion.div>
                </div>
 
+               {/* Recent Contacts Widget */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={8}
+               >
+                  <RecentContactsWidget
+                     onViewAllClick={() => navigate('/contacts')}
+                     onContactClick={(contact) => console.log('Contact clicked:', contact)}
+                  />
+               </motion.div>
+
                {/* Network & Podcast Cards */}
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Associações */}
@@ -321,7 +331,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={8}
+                     custom={9}
                      onClick={() => onNavigateToView('connections')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
@@ -361,7 +371,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={9}
+                     custom={10}
                      onClick={() => onNavigateToView('studio')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                      style={{
