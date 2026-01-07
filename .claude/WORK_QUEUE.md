@@ -2,19 +2,23 @@
 
 ## 📋 Tarefas Recentes (2026-01-07)
 
-### ✅ CONCLUÍDO: Planejamento de Redistribuição Agent 1 & 2
-**Status:** 🟢 PLANEJAMENTO COMPLETO
+### ✅ AUDITORIA DE ISSUES COMPLETA (2026-01-07 18:00)
+**Status:** 🟢 AUDITORIA FINALIZADA
 **Data:** 2026-01-07
-**Artefatos:**
-- `.claude/plans/steady-plotting-cherny.md` - Plano detalhado de redistribuição
-- `.claude/IMPLEMENTATION_GUIDE.md` - Guia step-by-step para execução manual
+**Objetivo:** Sincronizar WORK_QUEUE.md com status atual das issues do GitHub
 
-**Distribuição Planejada:**
-- **Agent 1**: 5 P1/P2 issues backend (#41-45) | Q1 2026
-- **Agent 2**: 5 frontend/UX + 4 backlog + 3 EPICs | Q1/Q2/Long-term
+**Resultado:**
+- Total de issues analisadas: 46 (Open: 13, Closed: 33)
+- Issues atualizadas no documento: 10
+- Issues fechadas mas ainda listadas como abertas: 7 (REMOVIDAS)
+- Issues novas não documentadas: 3 (ADICIONADAS)
+- Issues críticas resolvidas nas últimas 24h: 4 (#38, #41, #42, #43)
 
-**Motivo do Guia Manual:** Token GitHub sem `read:project` scope requer UI manual
-**Próximo Passo:** Usuário executa 6 fases da implementação via GitHub UI (~30-45 min)
+**Commits resolventes identificados:**
+- 04e7993 - fix(onboarding): Resolve issue #38
+- 02c4565 - fix(database): Resolve issue #41
+- aad0737 - docs: Close issue #42
+- 8111417 - fix(ai): Add API_KEY_EXPIRED detection for issue #40
 
 ---
 
@@ -63,50 +67,77 @@ gcloud builds submit --config=cloudbuild-staging.yaml --project=gen-lang-client-
 
 ## 🎯 Prioridades Globais (GitHub Issues)
 
-### ✅ RESOLVIDO (2026-01-07)
-- **#42** - Query Supabase com Filtro Duplicado em `memories` ✅ **RESOLVIDO**
-  - Filtros duplicados em `created_at` corrigidos
-  - Commit: 02c4565
-  - Alterado de `.lte()` para `.lt()` com `nextDay` para evitar erro 400
-  - Arquivos: src/services/dailyReportService.ts, scripts/generate_daily_report.py
-  - GitHub Issue: Fechada com documentação
+### ✅ RESOLVIDO NAS ÚLTIMAS 24H (2026-01-07)
+
+#### CRÍTICA - RESOLVIDAS
+- **#38** - [BUG/UX] Beco sem saída no onboarding - Usuário fica preso ✅ **RESOLVIDO**
+  - Commit: 04e7993 - fix(onboarding): Resolve issue #38 - Prevent deadlock in trail selection flow
+  - Status: CLOSED
+  - Impacto: Corrigiu deadlock que impedia usuários de progredir no fluxo onboarding
+
+- **#41** - [P1] 🔴 Query Supabase com Filtro Duplicado em work_items ✅ **RESOLVIDO**
+  - Commit: 02c4565 - fix(database): Resolve duplicate created_at filter in work_items queries
+  - Status: CLOSED
+  - Impacto: Removeu filtros duplicados que causavam erro 400 em queries
+
+- **#42** - [P1] 🔴 Query Supabase com Filtro Duplicado em memories ✅ **RESOLVIDO**
+  - Commit: aad0737 - docs: Close issue #42 - memories table duplicate filters resolved
+  - Status: CLOSED
+  - Impacto: Corrigiu filtros duplicados em created_at, alterado de .lte() para .lt()
+
+- **#43** - [P2] 🟠 Edge Function gemini-chat Retornando 500 ✅ **RESOLVIDO**
+  - Status: CLOSED (2026-01-07 15:44:46Z)
+  - Impacto: Edge Function gemini-chat agora funciona sem erro 500
+
+#### BACKLOG
+- **#40** - [P0] 🔴 API Key do Gemini Expirada - CRÍTICO ✅ **RESOLVIDO** (2026-01-06)
+  - Commit: 8111417 - fix(ai): Add API_KEY_EXPIRED error detection
+  - Status: CLOSED
+  - Impacto: Implementado sistema de detecção de expiração de API key
 
 - **#68** - Could not find table 'public.onboarding_context_captures' in schema cache ✅ **RESOLVIDO**
-  - Migração aplicada com sucesso via supabase db push --include-all
-  - Commit: ab27d86
+  - Commit: ab27d86 - fix(database): Apply onboarding_context_captures table migration
+  - Status: CLOSED
+  - Impacto: Migração aplicada com sucesso
 
-### 🔴 CRÍTICA (P1 - Blocking Production)
-1. **#41** - Query Supabase com Filtro Duplicado em `work_items` (database)
+### 🟠 ALTA (P2 - High Impact Bugs) - AINDA ABERTA
+1. **#37** - [BUG] TypeError: chunkedCookie.startsWith is not a function
+   - Status: OPEN (2026-01-04)
+   - Área: Onboarding, autenticação
+   - Impacto: Erro no fluxo de onboarding
 
-### 🟠 ALTA (P2 - High Impact Bugs)
-2. **#43** - Edge Function gemini-chat Retornando 500 (backend)
-3. **#44** - Múltiplas Re-inicializações do useAuth (Performance)
-4. **#37** - TypeError: chunkedCookie.startsWith is not a function (onboarding)
-5. **#38** - Beco sem saída no onboarding - Usuário fica preso (UX/UI)
-6. **#27** - Checklist OAuth Google Cloud - Critérios de Aprovação (docs, priority:high)
+2. **#44** - [P2] 🟡 Múltiplas Re-inicializações do useAuth (Performance)
+   - Status: OPEN (2026-01-07)
+   - Área: Performance, hooks
+   - Impacto: useAuth está reinicializando múltiplas vezes
 
-### 🟡 MÉDIA (P3 - Medium Priority)
-7. **#52** - [STAGING] Fase 7: Testar o Ambiente de Staging (devops, priority:medium)
-8. **#50** - [STAGING] Fase 5: Configurar Google OAuth para URL de Staging (backend)
-9. **#49** - [STAGING] Fase 4: Configurar Supabase para Aceitar URL de Staging (database)
-10. **#48** - [STAGING] Fase 3: Atualizar Configurações com URL Real do Staging (devops)
-11. **#45** - Falha na Geração de Daily Reports
+### 🟡 MÉDIA (P3 - Medium Priority) - AINDA ABERTA
+3. **#45** - [P3] 🟡 Falha na Geração de Daily Reports
+   - Status: OPEN (2026-01-04)
+   - Área: Relatórios, geração de dados
+   - Impacto: Daily reports não estão sendo gerados corretamente
 
-### 💡 FEATURES & MELHORIAS
-12. **#36** - 🔍 UX Audit - Análise Completa da Experiência do Usuário (documentation)
-13. **#39** - [REFACTOR] Reorganizar estrutura de pastas (refactor)
-14. **#21** - Melhorar sistema de sugestões geradas por IA para Aica Studio
-15. **#24** - Roadmap de monetização - Planos e métricas de sucesso
-16. **#22** - Integração WhatsApp via Evolution API
-17. **#20** - Criar VacationTimeline para planejamento de férias em família
+### 💡 FEATURES & MELHORIAS - ABERTA
+- **#8** - [Feature] Integração ElevenLabs para Voz Conversacional do AICA (OPEN)
+- **#15** - [EPIC] Implementar GuestIdentificationWizard (OPEN)
+- **#16** - [Feature] Integração de Gamificação WhatsApp (OPEN)
+- **#20** - feat: Criar VacationTimeline para planejamento de férias (OPEN)
+- **#21** - feat: Melhorar sistema de sugestões geradas por IA (OPEN)
+- **#22** - feat: Integração WhatsApp via Evolution API (OPEN)
+- **#24** - feat: Roadmap de monetização - Planos e métricas (OPEN)
+- **#27** - docs: Checklist de Verificação OAuth Google Cloud (OPEN)
+- **#36** - 🔍 [UX Audit] Análise Completa da Experiência do Usuário (OPEN)
+- **#39** - [REFACTOR] Reorganizar estrutura de pastas (OPEN)
 
-### 📋 STAGING PIPELINE (Issues #48-53) - ✅ TODAS CONCLUÍDAS
-- **#53** - Fase 8: Pausar/Limpar Produção Antiga ✅ **CONCLUÍDO**
-- **#52** - Fase 7: Testar o Ambiente de Staging ✅ **CONCLUÍDO** (Login OK, agent resolvendo bugs onboarding)
+### 📋 STAGING PIPELINE (Issues #46-53) - ✅ TODAS CONCLUÍDAS
+- **#53** - Fase 8: Pausar/Limpar Produção Antiga ✅ **CONCLUÍDO** (2026-01-07)
+- **#52** - Fase 7: Testar o Ambiente de Staging ✅ **CONCLUÍDO** (2026-01-07)
 - **#51** - Fase 6: Criar GitHub Actions para Deploy Automático ✅ **CONCLUÍDO**
 - **#50** - Fase 5: Configurar Google OAuth ✅ **CONCLUÍDO**
 - **#49** - Fase 4: Configurar Supabase ✅ **CONCLUÍDO**
 - **#48** - Fase 3: Atualizar Configurações ✅ **CONCLUÍDO**
+- **#47** - Fase 2: Criar Serviço aica-staging no Cloud Run ✅ **CONCLUÍDO**
+- **#46** - Fase 1: Desabilitar Deploy Automático ✅ **CONCLUÍDO**
 
 ---
 
@@ -305,5 +336,51 @@ git log main..HEAD --oneline
 
 ---
 
-**Última Atualização:** 2026-01-07 10:30
+---
+
+## 📊 RESUMO DA AUDITORIA DE ISSUES (2026-01-07 18:00)
+
+### Estatísticas Gerais
+```
+Total de issues no repositório: 46
+├── Issues OPEN (ativas): 13
+└── Issues CLOSED (resolvidas): 33
+
+Última análise: 2026-01-07 18:00:00Z
+Período analisado: Últimos 7 dias
+Commits analisados: 40+ commits
+```
+
+### Issues RESOLVIDAS nas últimas 24h (4 CRÍTICAS)
+```
+✅ #38 - Onboarding deadlock [Commit: 04e7993]
+✅ #41 - Duplicate filter work_items [Commit: 02c4565]
+✅ #42 - Duplicate filter memories [Commit: aad0737]
+✅ #43 - Edge Function 500 error [Status: CLOSED 2026-01-07]
+```
+
+### Issues AINDA ABERTAS (Requerem atenção)
+```
+🟠 P2 (Alta):
+   - #37: TypeError chunkedCookie.startsWith (OPEN, 3 dias)
+   - #44: useAuth re-inicializations (OPEN, <1 dia)
+
+🟡 P3 (Média):
+   - #45: Falha na Geração de Daily Reports (OPEN, 3 dias)
+
+💡 Features (10 issues):
+   - #8, #15, #16, #20, #21, #22, #24, #27, #36, #39
+```
+
+### Staging Pipeline Status
+```
+✅ 8/8 Fases concluídas
+✅ Staging environment totalmente operacional
+✅ Migração do banco de dados completa
+✅ OAuth Google configurado para staging
+✅ Deploy automático via GitHub Actions
+```
+
+**Última Atualização:** 2026-01-07 18:00
 **Maintainers:** Lucas Boscacci Lima + Claude Haiku 4.5
+**Auditor:** Claude Code (Auditoria de Issues)
