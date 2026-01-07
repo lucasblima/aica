@@ -3,13 +3,11 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
-import { BottomNav } from '../../components/BottomNav';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from '../services/supabaseService';
 import { generateMissingDailyReports } from '../services/dailyReportService';
-import { NotificationContainer } from '../components/NotificationContainer';
+import { NotificationContainer, LoadingScreen } from '../components';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
-import { LoadingScreen } from '../components/LoadingScreen';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
