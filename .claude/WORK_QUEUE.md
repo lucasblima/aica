@@ -72,13 +72,13 @@ gcloud builds submit --config=cloudbuild-staging.yaml --project=gen-lang-client-
 18. **#22** - Integração WhatsApp via Evolution API
 19. **#20** - Criar VacationTimeline para planejamento de férias em família
 
-### 📋 STAGING PIPELINE (Issues #48-53)
-- **#53** - [STAGING] Fase 8: Pausar/Limpar Produção Antiga ✅ **CONCLUÍDO**
-- **#52** - [STAGING] Fase 7: Testar o Ambiente de Staging 🟡 **PRÓXIMO**
-- **#51** - [STAGING] Fase 6: Criar GitHub Actions para Deploy Automático (optional)
-- **#50** - [STAGING] Fase 5: Configurar Google OAuth ✅ **CONCLUÍDO**
-- **#49** - [STAGING] Fase 4: Configurar Supabase ✅ **CONCLUÍDO**
-- **#48** - [STAGING] Fase 3: Atualizar Configurações ✅ **CONCLUÍDO**
+### 📋 STAGING PIPELINE (Issues #48-53) - ✅ TODAS CONCLUÍDAS
+- **#53** - Fase 8: Pausar/Limpar Produção Antiga ✅ **CONCLUÍDO**
+- **#52** - Fase 7: Testar o Ambiente de Staging ✅ **CONCLUÍDO** (Login OK, agent resolvendo bugs onboarding)
+- **#51** - Fase 6: Criar GitHub Actions para Deploy Automático ✅ **CONCLUÍDO**
+- **#50** - Fase 5: Configurar Google OAuth ✅ **CONCLUÍDO**
+- **#49** - Fase 4: Configurar Supabase ✅ **CONCLUÍDO**
+- **#48** - Fase 3: Atualizar Configurações ✅ **CONCLUÍDO**
 
 ---
 
