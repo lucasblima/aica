@@ -64,36 +64,41 @@ gcloud builds submit --config=cloudbuild-staging.yaml --project=gen-lang-client-
 ## 🎯 Prioridades Globais (GitHub Issues)
 
 ### ✅ RESOLVIDO (2026-01-07)
+- **#42** - Query Supabase com Filtro Duplicado em `memories` ✅ **RESOLVIDO**
+  - Filtros duplicados em `created_at` corrigidos
+  - Commit: 02c4565
+  - Alterado de `.lte()` para `.lt()` com `nextDay` para evitar erro 400
+  - Arquivos: src/services/dailyReportService.ts, scripts/generate_daily_report.py
+  - GitHub Issue: Fechada com documentação
+
 - **#68** - Could not find table 'public.onboarding_context_captures' in schema cache ✅ **RESOLVIDO**
   - Migração aplicada com sucesso via supabase db push --include-all
   - Commit: ab27d86
 
 ### 🔴 CRÍTICA (P1 - Blocking Production)
-1. **#42** - Query Supabase com Filtro Duplicado em `memories` (database)
-2. **#41** - Query Supabase com Filtro Duplicado em `work_items` (database)
+1. **#41** - Query Supabase com Filtro Duplicado em `work_items` (database)
 
 ### 🟠 ALTA (P2 - High Impact Bugs)
-3. **#43** - Edge Function gemini-chat Retornando 500 (backend)
-4. **#44** - Múltiplas Re-inicializações do useAuth (Performance)
-5. **#37** - TypeError: chunkedCookie.startsWith is not a function (onboarding)
-6. **#38** - Beco sem saída no onboarding - Usuário fica preso (UX/UI)
-7. **#27** - Checklist OAuth Google Cloud - Critérios de Aprovação (docs, priority:high)
+2. **#43** - Edge Function gemini-chat Retornando 500 (backend)
+3. **#44** - Múltiplas Re-inicializações do useAuth (Performance)
+4. **#37** - TypeError: chunkedCookie.startsWith is not a function (onboarding)
+5. **#38** - Beco sem saída no onboarding - Usuário fica preso (UX/UI)
+6. **#27** - Checklist OAuth Google Cloud - Critérios de Aprovação (docs, priority:high)
 
 ### 🟡 MÉDIA (P3 - Medium Priority)
-8. **#52** - [STAGING] Fase 7: Testar o Ambiente de Staging (devops, priority:medium)
-9. **#50** - [STAGING] Fase 5: Configurar Google OAuth para URL de Staging (backend)
-10. **#49** - [STAGING] Fase 4: Configurar Supabase para Aceitar URL de Staging (database)
-11. **#48** - [STAGING] Fase 3: Atualizar Configurações com URL Real do Staging (devops)
-12. **#45** - Falha na Geração de Daily Reports
-13. **#44** - Múltiplas Re-inicializações do useAuth (Performance)
+7. **#52** - [STAGING] Fase 7: Testar o Ambiente de Staging (devops, priority:medium)
+8. **#50** - [STAGING] Fase 5: Configurar Google OAuth para URL de Staging (backend)
+9. **#49** - [STAGING] Fase 4: Configurar Supabase para Aceitar URL de Staging (database)
+10. **#48** - [STAGING] Fase 3: Atualizar Configurações com URL Real do Staging (devops)
+11. **#45** - Falha na Geração de Daily Reports
 
 ### 💡 FEATURES & MELHORIAS
-14. **#36** - 🔍 UX Audit - Análise Completa da Experiência do Usuário (documentation)
-15. **#39** - [REFACTOR] Reorganizar estrutura de pastas (refactor)
-16. **#21** - Melhorar sistema de sugestões geradas por IA para Aica Studio
-17. **#24** - Roadmap de monetização - Planos e métricas de sucesso
-18. **#22** - Integração WhatsApp via Evolution API
-19. **#20** - Criar VacationTimeline para planejamento de férias em família
+12. **#36** - 🔍 UX Audit - Análise Completa da Experiência do Usuário (documentation)
+13. **#39** - [REFACTOR] Reorganizar estrutura de pastas (refactor)
+14. **#21** - Melhorar sistema de sugestões geradas por IA para Aica Studio
+15. **#24** - Roadmap de monetização - Planos e métricas de sucesso
+16. **#22** - Integração WhatsApp via Evolution API
+17. **#20** - Criar VacationTimeline para planejamento de férias em família
 
 ### 📋 STAGING PIPELINE (Issues #48-53) - ✅ TODAS CONCLUÍDAS
 - **#53** - Fase 8: Pausar/Limpar Produção Antiga ✅ **CONCLUÍDO**
@@ -300,5 +305,5 @@ git log main..HEAD --oneline
 
 ---
 
-**Última Atualização:** 2026-01-02 23:15
-**Maintainers:** Lucas Boscacci Lima + Claude Sonnet 4.5
+**Última Atualização:** 2026-01-07 10:30
+**Maintainers:** Lucas Boscacci Lima + Claude Haiku 4.5
