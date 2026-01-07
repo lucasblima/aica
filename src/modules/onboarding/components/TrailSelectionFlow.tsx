@@ -172,6 +172,19 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
         const nextTrailIndex = prev.currentTrailIndex + 1;
 
         if (nextTrailIndex >= prev.selectedTrails.length) {
+          // ✅ Validação defensiva: só permite 'complete' se tem mín trilhas respondidas
+          if (prev.completedTrails.length < minTrailsRequired) {
+            // Se não completou mín trilhas, volta à seleção
+            return {
+              ...prev,
+              phase: 'trail-selection',
+              currentTrailIndex: 0,
+              currentQuestionIndex: 0,
+              loading: false,
+              error: `Complete pelo menos ${minTrailsRequired} trilhas para continuar`,
+            };
+          }
+
           return {
             ...prev,
             phase: 'complete',
@@ -193,7 +206,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
         loading: false,
       }));
     }
-  }, []);
+  }, [minTrailsRequired]);
 
   // Submit current trail responses
   const submitTrail = useCallback(async () => {
@@ -265,8 +278,12 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
     if (state.completedTrails.length < minTrailsRequired) {
       setState(prev => ({
         ...prev,
-        error: `Complète pelo menos ${minTrailsRequired} trilhas`,
+        error: `Complete pelo menos ${minTrailsRequired} trilhas antes de finalizar. Respondidas: ${state.completedTrails.length}/${minTrailsRequired}`,
       }));
+      console.warn('[Onboarding] Attempt to finalize with insufficient completed trails', {
+        completed: state.completedTrails.length,
+        required: minTrailsRequired,
+      });
       return;
     }
 
@@ -521,6 +538,11 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
               </h2>
               <p className="text-lg text-[#5C554B] mb-8">
                 Você completou {state.completedTrails.length} trilha(s) com sucesso!
+                {state.completedTrails.length < state.selectedTrails.length && (
+                  <span className="block text-sm text-[#948D82] mt-2">
+                    {state.selectedTrails.length - state.completedTrails.length} trilha(s) foram puladas
+                  </span>
+                )}
               </p>
 
               {/* Summary */}
@@ -563,6 +585,24 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
                 className="px-8 py-3 bg-[#6B9EFF] text-white font-bold rounded-lg hover:bg-[#5A8FEF] disabled:opacity-50 transition-all"
               >
                 {state.loading ? 'Processando...' : 'Continuar para Próximo Passo'}
+              </button>
+
+              {/* ✅ NOVO: Back to Trails Button */}
+              <button
+                onClick={() => {
+                  setState(prev => ({
+                    ...prev,
+                    phase: 'answering-questions',
+                    currentTrailIndex: state.completedTrails.length,
+                    currentQuestionIndex: 0,
+                    error: null,
+                  }));
+                }}
+                disabled={state.loading}
+                className="px-6 py-2 mt-4 text-[#6B9EFF] font-semibold border border-[#6B9EFF] rounded-lg hover:bg-blue-50 transition-all flex items-center gap-2 mx-auto"
+              >
+                <ChevronLeft size={18} />
+                Voltar para Trilhas
               </button>
 
               {state.completedTrails.length < minTrailsRequired && (
