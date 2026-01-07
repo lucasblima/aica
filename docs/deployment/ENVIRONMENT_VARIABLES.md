@@ -18,12 +18,14 @@ This document explains how to configure environment variables for:
 | `VITE_SUPABASE_URL` | **Yes** | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | **Yes** | Supabase anonymous (public) key |
 | `VITE_FRONTEND_URL` | Recommended | Production URL for OAuth redirects |
-| `VITE_GEMINI_API_KEY` | Optional | Gemini AI API key |
+| `VITE_GEMINI_API_KEY` | **DEPRECATED** | ~~Gemini AI API key~~ - Now uses Edge Functions |
 | `VITE_GOOGLE_OAUTH_CLIENT_ID` | Optional | Google OAuth client ID |
 | `VITE_GOOGLE_OAUTH_CLIENT_SECRET` | Optional | Google OAuth client secret |
 | `VITE_PDF_EXTRACTOR_URL` | Optional | PDF extraction microservice URL |
 | `VITE_N8N_WEBHOOK_URL` | Optional | n8n webhook URL |
 | `VITE_EVOLUTION_INSTANCE_NAME` | Optional | Evolution API instance name |
+
+> **Note:** `VITE_GEMINI_API_KEY` has been deprecated. All Gemini API calls now go through Supabase Edge Functions (`edgeFunctionService.ts`). The API key is stored securely in Supabase secrets, not exposed to the frontend.
 
 ---
 
@@ -47,8 +49,9 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 
 # Optional but recommended
-VITE_GEMINI_API_KEY=your-gemini-key
 VITE_FRONTEND_URL=http://localhost:3000
+
+# NOTE: VITE_GEMINI_API_KEY is no longer needed - Gemini API uses Edge Functions
 ```
 
 ### Step 3: Run development server

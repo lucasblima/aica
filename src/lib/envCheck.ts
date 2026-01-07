@@ -21,6 +21,7 @@ export interface EnvConfig {
 
   // Optional but recommended
   frontendUrl?: string;
+  /** @deprecated VITE_GEMINI_API_KEY is no longer used. All Gemini API calls now go through Edge Functions. */
   geminiApiKey?: string;
   googleOAuthClientId?: string;
 
@@ -87,12 +88,9 @@ export function validateEnv(): EnvValidationResult {
   // RECOMMENDED VARIABLES - Features may be limited without these
   // =========================================================================
 
-  if (!config.geminiApiKey) {
-    warnings.push(
-      'VITE_GEMINI_API_KEY is not configured. ' +
-        'AI-powered features will be limited or unavailable.'
-    );
-  }
+  // NOTE: VITE_GEMINI_API_KEY is DEPRECATED - All Gemini API calls now use Edge Functions
+  // The API key is stored securely in Supabase Edge Function secrets, not in the frontend.
+  // No warning is needed for missing VITE_GEMINI_API_KEY as it's no longer required.
 
   if (!config.frontendUrl && import.meta.env.PROD) {
     warnings.push(
@@ -161,7 +159,7 @@ export function logEnvStatus(): void {
   console.log('');
   console.log('  Optional Variables:');
   console.log(
-    `    VITE_GEMINI_API_KEY: ${import.meta.env.VITE_GEMINI_API_KEY ? 'SET' : 'NOT SET'}`
+    `    VITE_GEMINI_API_KEY: ${import.meta.env.VITE_GEMINI_API_KEY ? 'SET (DEPRECATED)' : 'NOT SET (OK - uses Edge Functions)'}`
   );
   console.log(
     `    VITE_FRONTEND_URL: ${import.meta.env.VITE_FRONTEND_URL || 'NOT SET'}`
