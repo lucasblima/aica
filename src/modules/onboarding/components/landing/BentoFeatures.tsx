@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BentoCard } from './BentoCard';
-import { PrivacyMockup, CeramicDesignMockup, SelfKnowledgeMockup } from './mockups';
+import { BentoCard } from '../../../../components/ui/BentoCard';
+import { PrivacyMockup, CeramicDesignMockup, SelfKnowledgeMockup } from './features/mockups';
 
 /**
  * BentoFeatures Section

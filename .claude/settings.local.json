@@ -184,7 +184,9 @@
       "Bash(git show:*)",
       "Bash(sort:*)",
       "Bash(paste:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(gcloud run domain-mappings create:*)",
+      "Bash(gcloud beta run domain-mappings:*)"
     ],
     "deny": [],
     "ask": []

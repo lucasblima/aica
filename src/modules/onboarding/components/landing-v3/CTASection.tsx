@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CeramicPillButton } from '../landing-v2/CeramicPillButton';
+import { CeramicPillButton } from '../../../../components/ui/CeramicPillButton';
 
 interface CTASectionProps {
   onGetStarted: () => void;

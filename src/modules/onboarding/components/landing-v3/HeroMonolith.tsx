@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { PhoneMockup } from './PhoneMockup';
-import { CeramicPillButton } from '../landing-v2/CeramicPillButton';
+import { CeramicPillButton } from '../../../../components/ui/CeramicPillButton';
 import { staggerContainer, staggerItem } from '../../../../lib/animations/ceramic-motion';
 
 interface HeroMonolithProps {

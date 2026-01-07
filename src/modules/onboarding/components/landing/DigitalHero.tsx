@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CeramicPillButton } from './CeramicPillButton';
+import { CeramicPillButton } from '../../../../components/ui/CeramicPillButton';
 import { MockupPlaceholder } from './MockupPlaceholder';
 
 interface DigitalHeroProps {
