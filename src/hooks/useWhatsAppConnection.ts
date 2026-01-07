@@ -12,6 +12,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
+  generateWhatsAppQRCode as generateQRCodeEdge,
+  disconnectWhatsApp as disconnectWhatsAppEdge,
+} from '@/services/edgeFunctionService';
+import {
   WhatsAppConnectionStatus,
   ConnectionState,
   EvolutionInstance,
@@ -181,19 +185,14 @@ export function useWhatsAppConnection(
       setIsLoading(true);
       setError(null);
 
-      // Call Edge Function to generate QR code
-      const { data, error: fnError } = await supabase.functions.invoke('webhook-evolution', {
-        body: {
-          action: 'generate_qrcode',
-          instance: status.instanceName,
-        },
-      });
+      // Call Edge Function helper to generate QR code
+      const response = await generateQRCodeEdge(status.instanceName);
 
-      if (fnError) {
-        throw fnError;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to generate QR code');
       }
 
-      const qrCodeBase64 = data?.qrcode?.base64 || data?.qrcode || null;
+      const qrCodeBase64 = response.qrcode?.base64 || null;
 
       if (isMountedRef.current) {
         setQRCode(qrCodeBase64);
@@ -285,16 +284,11 @@ export function useWhatsAppConnection(
       setIsLoading(true);
       setError(null);
 
-      // Call Edge Function to disconnect
-      const { error: fnError } = await supabase.functions.invoke('webhook-evolution', {
-        body: {
-          action: 'disconnect',
-          instance: status.instanceName,
-        },
-      });
+      // Call Edge Function helper to disconnect
+      const response = await disconnectWhatsAppEdge(status.instanceName);
 
-      if (fnError) {
-        console.warn('[useWhatsAppConnection] disconnect warning:', fnError);
+      if (!response.success) {
+        console.warn('[useWhatsAppConnection] disconnect warning:', response.error);
       }
 
       // Update local state

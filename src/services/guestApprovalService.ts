@@ -6,6 +6,7 @@
  */
 
 import { supabase } from './supabaseClient';
+import { sendGuestApprovalLink as sendApprovalLinkEdge } from './edgeFunctionService';
 
 // ============================================================================
 // TYPES
@@ -159,7 +160,7 @@ export const getOrCreateApprovalToken = async (
 
 /**
  * Send approval link to guest via email or WhatsApp
- * Calls Edge Function: send-guest-approval-link
+ * Uses centralized Edge Function helper for unified error handling
  */
 export const sendApprovalLink = async (
   request: ApprovalLinkRequest
@@ -190,36 +191,26 @@ export const sendApprovalLink = async (
       };
     }
 
-    // Call Edge Function
-    const { data, error } = await supabase.functions.invoke('send-guest-approval-link', {
-      body: {
-        episodeId: request.episodeId,
-        guestName: request.guestName,
-        guestEmail: request.guestEmail,
-        guestPhone: request.guestPhone,
-        approvalUrl: tokenData.url,
-        method: request.method,
-      },
+    // Call Edge Function helper
+    const response = await sendApprovalLinkEdge({
+      episodeId: request.episodeId,
+      guestName: request.guestName,
+      guestEmail: request.guestEmail,
+      guestPhone: request.guestPhone,
+      approvalUrl: tokenData.url,
+      method: request.method,
     });
 
-    if (error) {
-      console.error('Edge Function error:', error);
+    if (!response.success) {
       return {
         success: false,
-        error: error.message || 'Erro ao enviar link de aprovação',
-      };
-    }
-
-    if (!data?.success) {
-      return {
-        success: false,
-        error: data?.error || 'Erro desconhecido ao enviar link',
+        error: response.error || 'Erro desconhecido ao enviar link',
       };
     }
 
     return {
       success: true,
-      message: data.message || `Link enviado com sucesso via ${request.method}`,
+      message: response.message || `Link enviado com sucesso via ${request.method}`,
     };
   } catch (error) {
     console.error('Error sending approval link:', error);

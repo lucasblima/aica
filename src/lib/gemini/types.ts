@@ -92,16 +92,42 @@ export interface GeminiChatResponse {
 }
 
 /**
+ * Códigos de erro possíveis da API Gemini
+ */
+export type GeminiErrorCode =
+  | 'UNAUTHORIZED'
+  | 'RATE_LIMITED'
+  | 'SERVER_ERROR'
+  | 'NETWORK_ERROR'
+  | 'VALIDATION_ERROR'
+  | 'API_KEY_EXPIRED'
+  | 'PERMISSION_DENIED'
+
+/**
  * Erro customizado para operações Gemini
  */
 export class GeminiError extends Error {
   constructor(
     message: string,
-    public code: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'SERVER_ERROR' | 'NETWORK_ERROR',
+    public code: GeminiErrorCode,
     public statusCode?: number
   ) {
     super(message)
     this.name = 'GeminiError'
+  }
+
+  /**
+   * Verifica se o erro é devido a uma API key expirada ou inválida
+   */
+  isApiKeyError(): boolean {
+    return this.code === 'API_KEY_EXPIRED'
+  }
+
+  /**
+   * Verifica se o erro é recuperável (vale tentar novamente)
+   */
+  isRetryable(): boolean {
+    return this.code === 'RATE_LIMITED' || this.code === 'SERVER_ERROR' || this.code === 'NETWORK_ERROR'
   }
 }
 

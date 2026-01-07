@@ -11,6 +11,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { sendWhatsAppMessage as sendWhatsAppMessageEdge } from './edgeFunctionService';
 import {
   WhatsAppMessage,
   WhatsAppConversation,
@@ -206,28 +207,21 @@ export async function getConversation(contactPhone: string): Promise<WhatsAppCon
 
 /**
  * Send a WhatsApp message via Evolution API
+ * Uses centralized Edge Function helper for unified error handling
  */
 export async function sendMessage(request: SendMessageRequest): Promise<SendMessageResponse> {
   try {
-    // Call the webhook-evolution function to send message
-    const { data, error } = await supabase.functions.invoke('webhook-evolution', {
-      body: {
-        action: 'send_message',
-        instance: request.instanceName || EVOLUTION_INSTANCE_NAME,
-        phone: request.phone,
-        message: request.message,
-      },
-    });
-
-    if (error) {
-      console.error('[whatsappService] sendMessage error:', error);
-      return { success: false, error: error.message };
-    }
+    const instanceName = request.instanceName || EVOLUTION_INSTANCE_NAME;
+    const response = await sendWhatsAppMessageEdge(
+      request.phone,
+      request.message,
+      instanceName
+    );
 
     return {
-      success: data?.success || false,
-      messageId: data?.messageId,
-      error: data?.error,
+      success: response.success,
+      messageId: response.messageId,
+      error: response.error,
     };
   } catch (err) {
     const error = err as Error;

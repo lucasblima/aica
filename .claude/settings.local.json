@@ -157,9 +157,14 @@
       "Bash(timeout 60 npm run test:e2e:*)",
       "Bash(timeout 90 npm run test:e2e:*)",
       "Bash(gcloud run revisions list:*)",
-      "Bash(gcloud builds cancel:*)"
+      "Bash(gcloud builds cancel:*)",
+      "Bash(gcloud secrets versions list:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": true
 }
