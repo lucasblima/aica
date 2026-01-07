@@ -4,6 +4,7 @@
  * Main view for the Finance module showing overview, upload, and agent access.
  */
 
+import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useEffect, useState, useMemo } from 'react';
 import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, LayoutDashboard, Target, FileSpreadsheet } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
@@ -43,6 +44,7 @@ interface MonthData {
 // Component
 // =====================================================
 
+/* data-tour markers: finance-header, balance-overview, income-expenses, budget-categories, transaction-list, upload-statement, ai-insights, goals-tracking */
 export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   userId,
   onNavigateToAgent,

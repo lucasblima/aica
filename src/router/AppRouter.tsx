@@ -4,7 +4,7 @@ import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
 import { BottomNav } from '../../components/BottomNav';
-import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, hasCompletedOnboarding, completeOnboarding } from '../services/supabaseService';
+import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from '../services/supabaseService';
 import { generateMissingDailyReports } from '../services/dailyReportService';
 import { NotificationContainer } from '../components/NotificationContainer';
 import { ViewState } from '../../types';
@@ -46,7 +46,6 @@ const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m =
 const LandingPage = lazy(() => import('../modules/onboarding').then(m => ({ default: m.LandingPageV2 })));
 const LandingPageV3 = lazy(() => import('../modules/onboarding/components/landing-v3').then(m => ({ default: m.LandingPageV3 })));
 const LandingPageV4 = lazy(() => import('../modules/onboarding/components/landing-v4').then(m => ({ default: m.LandingPageV4 })));
-const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
 
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
@@ -56,6 +55,8 @@ const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/File
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
 
+
+const ProfilePage = lazy(() => import('../views/ProfilePage').then(m => ({ default: m.ProfilePage })));
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
    const [tasks, setTasks] = useState<any[]>([]);
@@ -129,8 +130,6 @@ export function AppRouter() {
    const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
 
    // Onboarding State
-   const [showOnboarding, setShowOnboarding] = useState(false);
-   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
    // Sync view state with URL location
    useEffect(() => {
@@ -189,65 +188,19 @@ export function AppRouter() {
             }
          } catch (error) {
             console.error('[App] Erro ao processar callback do Google Calendar:', error);
-            // Não interrompe o fluxo da app se houver erro no callback
          }
       };
 
       processGoogleOAuth();
    }, [isAuthenticated]);
 
-   /**
-    * Gera relatórios diários faltantes após autenticação
-    * Fire-and-forget para não bloquear a UI
-    */
-   useEffect(() => {
-      if (!userId) return;
-
-      // Fire-and-forget: executa em background sem bloquear a UI
-      generateMissingDailyReports(userId).catch((error) => {
-         // Tratamento de erro silencioso - apenas log no console
-         console.error('[App] Erro ao gerar relatórios diários:', error);
-      });
-   }, [userId]);
-
-   // Check onboarding status after authentication
-   useEffect(() => {
-      const checkOnboarding = async () => {
-         if (!userId) {
-            setCheckingOnboarding(false);
-            return;
-         }
-
-         try {
-            const completed = await hasCompletedOnboarding(userId);
-            setShowOnboarding(!completed);
-         } catch (error) {
-            console.error('Error checking onboarding:', error);
-         } finally {
-            setCheckingOnboarding(false);
-         }
-      };
-
-      checkOnboarding();
-   }, [userId]);
-
    // Navigate from landing to home when auth completes
-   // Fixes race condition where AppRouter redirects to /landing
-   // before useAuth completes, leaving user stuck on landing page
    useEffect(() => {
-      console.log('[AppRouter] Auth state check:', {
-         isAuthenticated,
-         checkingOnboarding,
-         showOnboarding,
-         pathname: location.pathname,
-         shouldNavigate: isAuthenticated && !checkingOnboarding && !showOnboarding && location.pathname === '/landing'
-      });
-
-      if (isAuthenticated && !checkingOnboarding && !showOnboarding && location.pathname === '/landing') {
+      if (isAuthenticated && location.pathname === '/landing') {
          console.log('[AppRouter] Auth completed, navigating from /landing to /');
          navigate('/', { replace: true });
       }
-   }, [isAuthenticated, checkingOnboarding, showOnboarding, location.pathname, navigate]);
+   }, [isAuthenticated, location.pathname, navigate]);
 
    useEffect(() => {
       if (!isAuthenticated) return;
@@ -309,16 +262,7 @@ export function AppRouter() {
    };
 
    // Handle onboarding completion
-   const handleOnboardingComplete = async (connectedCalendar: boolean) => {
-      if (userId) {
-         try {
-            await completeOnboarding(userId, connectedCalendar);
-            setShowOnboarding(false);
-         } catch (error) {
-            console.error('Error completing onboarding:', error);
-         }
-      }
-   };
+
 
    // ==================== MINHA VIDA VIEW ====================
    // Uses the updated Home component from src/pages/Home.tsx with Ceramic Design System
@@ -504,19 +448,6 @@ export function AppRouter() {
                   isListening={false}
                />
             )}
-
-            {/* New Onboarding Flow */}
-            {!checkingOnboarding && showOnboarding && userId && (
-               <OnboardingFlow
-                  userId={userId}
-                  onComplete={() => handleOnboardingComplete(false)}
-                  onError={(error) => {
-                     console.error('Onboarding error:', error);
-                     // In production, show error notification
-                  }}
-               />
-            )}
-
             {/* Notification Toast Container */}
             <NotificationContainer />
          </div>

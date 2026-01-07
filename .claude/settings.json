@@ -1,16 +1,6 @@
 {
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "📋 REMINDER: Conventional Commits Format\n\n[type]([scope]): [description]\n\nExamples:\n- feat(podcast): Add guest identification wizard\n- fix(auth): Resolve OAuth redirect mismatch\n- docs(readme): Update setup instructions\n- test(e2e): Add Playwright tests for OAuth flow\n\nALWAYS include co-authorship:\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 noreply@anthropic.com"
-          }
-        ]
-      }
-    ],
+    "UserPromptSubmit": [],
     "PreToolUse": [
       {
         "matcher": "Bash",

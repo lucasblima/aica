@@ -3,6 +3,7 @@
  * Full-screen view with 3 zones: Momento Presente, Timeline Viva, Insights & Patterns
  */
 
+import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { QuickCapture } from '../components/capture/QuickCapture'
@@ -33,7 +34,8 @@ import { useAuth } from '../../../hooks/useAuth'
 import { SettingsMenu } from '../../../components/SettingsMenu'
 
 export function JourneyFullScreen() {
-  const [showCapture, setShowCapture] = useState(false)
+
+  useTourAutoStart('journey-first-visit');  const [showCapture, setShowCapture] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search'>('timeline')
   const [showInsight, setShowInsight] = useState(false)
@@ -156,7 +158,7 @@ export function JourneyFullScreen() {
   return (
     <div className="min-h-screen bg-[#F0EFE9]">
       {/* Header - Digital Ceramic System */}
-      <div className="ceramic-card rounded-none p-6 border-b border-[#A39E91]/10">
+      <div className="ceramic-card rounded-none p-6 border-b border-[#A39E91]/10" data-tour="journey-header">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -167,6 +169,7 @@ export function JourneyFullScreen() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowCapture(!showCapture)}
+                data-tour="add-moment-button"
                 className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${
                   showCapture
                     ? 'ceramic-pressed text-[#5C554B]'
@@ -213,7 +216,8 @@ export function JourneyFullScreen() {
                 />
               ) : (
                 <div className="space-y-6">
-                  {/* CP Score detailed */}
+                  {/* CP Score detailed - Consciousness Points */}
+          {/* data-tour="consciousness-points" */}
                   {stats && (
                     <ConsciousnessScore stats={stats} size="md" showDetails={true} />
                   )}

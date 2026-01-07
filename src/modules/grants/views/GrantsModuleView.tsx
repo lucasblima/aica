@@ -3,6 +3,7 @@
  * Gerencia o fluxo completo: Dashboard → Setup → Briefing → Geração
  */
 
+import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical } from 'lucide-react';
 import { EditalSetupWizard } from '../components/EditalSetupWizard';
@@ -54,6 +55,7 @@ interface GrantsModuleViewProps {
   onBack: () => void;
 }
 
+/* data-tour markers: grants-header, opportunities-list, opportunity-filter, edital-parser, opportunity-detail, saved-opportunities, application-tracking, ai-briefing */
 export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) => {
   // View state
   const [currentView, setCurrentView] = useState<ModuleView>('dashboard');

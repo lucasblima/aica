@@ -1,7 +1,18 @@
-// Onboarding Module Exports
-export { default as OnboardingFlow } from './components/OnboardingFlow';
+/**
+ * Onboarding Module Exports
+ *
+ * NOTE: This module is now primarily used for landing pages.
+ * The interactive onboarding flow has been replaced with:
+ * - Organic tours via TourProvider (Phases 1-2)
+ * - Optional trails via /profile/trails (Phase 3)
+ * - Direct app access (Phase 4)
+ *
+ * Remaining components:
+ * - Landing pages (entry point for new users)
+ * - TrailSelectionFlow (optional contextual trails)
+ */
 
-// Landing Page - Digital Ceramic Redesign (Operation "Digital Desire")
+// Landing Page - Digital Ceramic Redesign
 export { LandingPageV2 } from './components/landing-v2';
 export {
   DigitalHero,
@@ -15,10 +26,11 @@ export {
   useScrollReveal,
 } from './components/landing-v2';
 
-// Welcome Tour Components
-export { WelcomeTour } from './components/WelcomeTour';
-export { ProgressDots, NavigationArrows, PillarCard, PillarDetails } from './components/tour';
+// Landing Page V3 - Previous version (backup)
+export { LandingPageV3 } from './components/landing-v3';
 
-// Flow Components
+// Landing Page V4 - Current default
+export { LandingPageV4 } from './components/landing-v4';
+
+// Optional Contextual Trails (accessible from /profile/trails)
 export { default as TrailSelectionFlow } from './components/TrailSelectionFlow';
-export { default as MomentCaptureFlow } from './components/MomentCaptureFlow';
