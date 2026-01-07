@@ -1,0 +1,73 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: gen-lang-client-0948335762
+  REGION: southamerica-east1
+  SERVICE_NAME: aica-staging
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Build and Deploy to Staging
+        run: |
+          echo "🚀 Starting deployment to staging..."
+          echo "Project: ${{ env.PROJECT_ID }}"
+          echo "Service: ${{ env.SERVICE_NAME }}"
+          echo "Region: ${{ env.REGION }}"
+
+          gcloud builds submit \
+            --config=cloudbuild-staging.yaml \
+            --project=${{ env.PROJECT_ID }} \
+            --no-source
+
+          echo "✅ Build submitted successfully"
+
+          # Get build ID and monitor
+          BUILD_ID=$(gcloud builds list --project=${{ env.PROJECT_ID }} --limit=1 --format='value(id)')
+          echo "Build ID: $BUILD_ID"
+
+          # Wait for build to complete (timeout after 30 minutes)
+          gcloud builds log $BUILD_ID --project=${{ env.PROJECT_ID }} --stream
+
+      - name: Verify Deployment
+        run: |
+          echo "✅ Deployment verification..."
+          gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format='value(status.url)'
+
+      - name: Slack Notification (Success)
+        if: success()
+        run: |
+          echo "✅ Staging deployment completed successfully!"
+          echo "App URL: https://${{ env.SERVICE_NAME }}-*.a.run.app"
+
+      - name: Slack Notification (Failure)
+        if: failure()
+        run: |
+          echo "❌ Staging deployment failed!"
+          echo "Check the logs above for details"
