@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText } from 'lucide-react';
+import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText, FileText as FileTextIcon, ListChecks, Tag, Repeat } from 'lucide-react';
 import { Task } from '../../types';
+import { Accordion } from './Accordion';
+import { SubtaskList, Subtask } from './SubtaskList';
+import { RecurrencePicker } from './RecurrencePicker';
+import { TagInput } from './TagInput';
 
 interface TaskEditModalProps {
     taskId: string;
@@ -18,11 +22,17 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     onSave,
     onCancel
 }) => {
-    // Form state
+    // Form state - Core Fields
     const [title, setTitle] = useState(initialData.title);
     const [dueDate, setDueDate] = useState(initialData.due_date || '');
     const [estimatedDuration, setEstimatedDuration] = useState(initialData.estimated_duration?.toString() || '');
     const [scheduledTime, setScheduledTime] = useState(initialData.scheduled_time || '');
+
+    // Form state - Advanced Fields
+    const [description, setDescription] = useState(initialData.description || '');
+    const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+    const [tags, setTags] = useState<string[]>(initialData.tags || []);
+    const [recurrenceRule, setRecurrenceRule] = useState(initialData.recurrence_rule || undefined);
 
     // UI state
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -34,6 +44,10 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
         setDueDate(initialData.due_date || '');
         setEstimatedDuration(initialData.estimated_duration?.toString() || '');
         setScheduledTime(initialData.scheduled_time || '');
+        setDescription(initialData.description || '');
+        setTags(initialData.tags || []);
+        setRecurrenceRule(initialData.recurrence_rule || undefined);
+        setSubtasks([]); // Will be loaded from DB
         setErrors({});
     }, [initialData]);
 
@@ -87,6 +101,9 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                 due_date: dueDate || undefined,
                 estimated_duration: estimatedDuration ? Number(estimatedDuration) : undefined,
                 scheduled_time: scheduledTime || undefined,
+                description: description.trim() || undefined,
+                tags: tags.length > 0 ? tags : undefined,
+                recurrence_rule: recurrenceRule || undefined,
             };
 
             await onSave(taskId, updates);
@@ -142,131 +159,196 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
 
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto p-6">
-                            <div className="space-y-6">
-                                {/* Title */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                                        Título *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={title}
-                                        onChange={(e) => {
-                                            setTitle(e.target.value);
-                                            if (errors.title) {
-                                                setErrors({ ...errors, title: '' });
-                                            }
-                                        }}
-                                        placeholder="Título da tarefa"
-                                        className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                            errors.title ? 'border border-red-500' : ''
-                                        }`}
-                                        autoFocus
-                                    />
-                                    {errors.title && (
-                                        <p className="text-sm text-red-600 flex items-center gap-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {errors.title}
-                                        </p>
-                                    )}
-                                </div>
+                            <div className="space-y-4">
+                                {/* Core Fields - Always Visible */}
+                                <div className="space-y-3">
+                                    {/* Title */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                                            Título *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={title}
+                                            onChange={(e) => {
+                                                setTitle(e.target.value);
+                                                if (errors.title) {
+                                                    setErrors({ ...errors, title: '' });
+                                                }
+                                            }}
+                                            placeholder="Título da tarefa"
+                                            className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
+                                                errors.title ? 'border border-red-500' : ''
+                                            }`}
+                                            autoFocus
+                                        />
+                                        {errors.title && (
+                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                                <AlertCircle className="w-3 h-3" />
+                                                {errors.title}
+                                            </p>
+                                        )}
+                                    </div>
 
-                                {/* Due Date */}
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                                        <Calendar className="w-4 h-4" />
-                                        Data Limite
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={dueDate}
-                                        onChange={(e) => {
-                                            setDueDate(e.target.value);
-                                            if (errors.dueDate) {
-                                                setErrors({ ...errors, dueDate: '' });
-                                            }
-                                        }}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                            errors.dueDate ? 'border border-red-500' : ''
-                                        }`}
-                                    />
-                                    {errors.dueDate && (
-                                        <p className="text-sm text-red-600 flex items-center gap-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {errors.dueDate}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Estimated Duration */}
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                                        <Clock className="w-4 h-4" />
-                                        Duração Estimada (minutos)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={estimatedDuration}
-                                        onChange={(e) => {
-                                            setEstimatedDuration(e.target.value);
-                                            if (errors.estimatedDuration) {
-                                                setErrors({ ...errors, estimatedDuration: '' });
-                                            }
-                                        }}
-                                        placeholder="60"
-                                        min="1"
-                                        className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                            errors.estimatedDuration ? 'border border-red-500' : ''
-                                        }`}
-                                    />
-                                    {errors.estimatedDuration && (
-                                        <p className="text-sm text-red-600 flex items-center gap-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {errors.estimatedDuration}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Scheduled Time */}
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                                        <Clock className="w-4 h-4" />
-                                        Horário Agendado
-                                    </label>
-                                    <input
-                                        type="time"
-                                        value={scheduledTime}
-                                        onChange={(e) => {
-                                            setScheduledTime(e.target.value);
-                                            if (errors.scheduledTime) {
-                                                setErrors({ ...errors, scheduledTime: '' });
-                                            }
-                                        }}
-                                        className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                            errors.scheduledTime ? 'border border-red-500' : ''
-                                        }`}
-                                    />
-                                    {errors.scheduledTime && (
-                                        <p className="text-sm text-red-600 flex items-center gap-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {errors.scheduledTime}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Association (read-only) */}
-                                {initialData.associations && (
+                                    {/* Due Date */}
                                     <div className="space-y-2">
                                         <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                                            <Link2 className="w-4 h-4" />
-                                            Associação
+                                            <Calendar className="w-4 h-4" />
+                                            Data Limite
                                         </label>
-                                        <div className="w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-secondary bg-ceramic-text-secondary/5">
-                                            {initialData.associations.name}
-                                        </div>
+                                        <input
+                                            type="date"
+                                            value={dueDate}
+                                            onChange={(e) => {
+                                                setDueDate(e.target.value);
+                                                if (errors.dueDate) {
+                                                    setErrors({ ...errors, dueDate: '' });
+                                                }
+                                            }}
+                                            min={new Date().toISOString().split('T')[0]}
+                                            className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
+                                                errors.dueDate ? 'border border-red-500' : ''
+                                            }`}
+                                        />
+                                        {errors.dueDate && (
+                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                                <AlertCircle className="w-3 h-3" />
+                                                {errors.dueDate}
+                                            </p>
+                                        )}
                                     </div>
-                                )}
+
+                                    {/* Estimated Duration */}
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                                            <Clock className="w-4 h-4" />
+                                            Duração Estimada (minutos)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={estimatedDuration}
+                                            onChange={(e) => {
+                                                setEstimatedDuration(e.target.value);
+                                                if (errors.estimatedDuration) {
+                                                    setErrors({ ...errors, estimatedDuration: '' });
+                                                }
+                                            }}
+                                            placeholder="60"
+                                            min="1"
+                                            className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
+                                                errors.estimatedDuration ? 'border border-red-500' : ''
+                                            }`}
+                                        />
+                                        {errors.estimatedDuration && (
+                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                                <AlertCircle className="w-3 h-3" />
+                                                {errors.estimatedDuration}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Scheduled Time */}
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                                            <Clock className="w-4 h-4" />
+                                            Horário Agendado
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={scheduledTime}
+                                            onChange={(e) => {
+                                                setScheduledTime(e.target.value);
+                                                if (errors.scheduledTime) {
+                                                    setErrors({ ...errors, scheduledTime: '' });
+                                                }
+                                            }}
+                                            className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
+                                                errors.scheduledTime ? 'border border-red-500' : ''
+                                            }`}
+                                        />
+                                        {errors.scheduledTime && (
+                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                                <AlertCircle className="w-3 h-3" />
+                                                {errors.scheduledTime}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Association (read-only) */}
+                                    {initialData.associations && (
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 text-sm font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                                                <Link2 className="w-4 h-4" />
+                                                Associação
+                                            </label>
+                                            <div className="w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-secondary bg-ceramic-text-secondary/5">
+                                                {initialData.associations.name}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Accordion Sections */}
+                                <div className="space-y-3">
+                                    {/* Description */}
+                                    <Accordion
+                                        title="Descrição"
+                                        icon={FileTextIcon}
+                                        defaultExpanded={!!initialData.description}
+                                        id="accordion-description"
+                                    >
+                                        <textarea
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            placeholder="Adicione detalhes sobre a tarefa..."
+                                            maxLength={5000}
+                                            className="w-full px-4 py-3 rounded-lg ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all resize-none"
+                                            rows={4}
+                                        />
+                                        <div className="text-right text-xs text-ceramic-text-tertiary">
+                                            {description.length} / 5000
+                                        </div>
+                                    </Accordion>
+
+                                    {/* Subtasks */}
+                                    <Accordion
+                                        title="Subtarefas"
+                                        icon={ListChecks}
+                                        id="accordion-subtasks"
+                                    >
+                                        <SubtaskList
+                                            subtasks={subtasks}
+                                            onChange={setSubtasks}
+                                        />
+                                    </Accordion>
+
+                                    {/* Tags */}
+                                    <Accordion
+                                        title="Etiquetas"
+                                        icon={Tag}
+                                        defaultExpanded={tags.length > 0}
+                                        id="accordion-tags"
+                                    >
+                                        <TagInput
+                                            tags={tags}
+                                            onChange={setTags}
+                                        />
+                                    </Accordion>
+
+                                    {/* Recurrence */}
+                                    <Accordion
+                                        title="Repetir"
+                                        icon={Repeat}
+                                        defaultExpanded={!!initialData.recurrence_rule}
+                                        id="accordion-recurrence"
+                                    >
+                                        <RecurrencePicker
+                                            value={recurrenceRule}
+                                            onChange={setRecurrenceRule}
+                                            baseDate={dueDate ? new Date(dueDate) : new Date()}
+                                        />
+                                    </Accordion>
+                                </div>
                             </div>
                         </div>
 
