@@ -60,12 +60,12 @@ CREATE POLICY "Users can insert own achievements" ON user_achievements
 
 -- Trigger para atualizar updated_at
 CREATE OR REPLACE FUNCTION update_user_stats_updated_at()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_user_stats_updated_at ON user_stats;
 CREATE TRIGGER trigger_user_stats_updated_at
