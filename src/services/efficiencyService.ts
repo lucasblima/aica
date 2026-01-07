@@ -67,6 +67,7 @@ export async function calculateDailyEfficiency(
   try {
     const dayStart = `${date}T00:00:00Z`;
     const dayEnd = `${date}T23:59:59Z`;
+    const nextDay = new Date(new Date(dayEnd).getTime() + 86400000).toISOString();
 
     // Get tasks for the day
     const { data: tasks } = await supabase
@@ -74,7 +75,7 @@ export async function calculateDailyEfficiency(
       .select('id, title, completed_at, estimated_duration, association_id')
       .eq('user_id', userId)
       .gte('created_at', dayStart)
-      .lte('created_at', dayEnd);
+      .lt('created_at', nextDay);
 
     const taskList = tasks || [];
     const completedTasks = taskList.filter(t => t.completed_at);
@@ -224,12 +225,13 @@ export async function calculateModuleEfficiency(
     const moduleEfficiencies: ModuleEfficiency[] = [];
 
     for (const module of modules) {
+      const nextDay = new Date(new Date(dayEnd).getTime() + 86400000).toISOString();
       const { data: moduleTasks } = await supabase
         .from('work_items')
         .select('id, title, completed_at, estimated_duration, updated_at')
         .eq('module_id', module.id)
         .gte('created_at', dayStart)
-        .lte('created_at', dayEnd);
+        .lt('created_at', nextDay);
 
       const tasks = moduleTasks || [];
       const completed = tasks.filter(t => t.completed_at).length;

@@ -54,35 +54,38 @@ class DailyReportGenerator:
 
     def fetch_user_data(self, user_id: str, report_date: str) -> Dict[str, Any]:
         """Steps 5-8: Fetch all relevant data for the user for the given date."""
-        
+
         # Date filtering
         start_of_day = f"{report_date}T00:00:00"
         end_of_day = f"{report_date}T23:59:59"
-        
+        # Next day timestamp to avoid duplicate parameters in query
+        from datetime import datetime as dt
+        next_day = (dt.fromisoformat(end_of_day.replace('Z', '+00:00')) + timedelta(days=1)).isoformat()
+
         try:
             # 1. Completed Tasks (Step 5)
             completed_tasks = self.supabase.table("work_items")\
                 .select("id, title, estimated_duration, completed_at, association_id")\
                 .eq("user_id", user_id)\
                 .gte("completed_at", start_of_day)\
-                .lte("completed_at", end_of_day)\
+                .lt("completed_at", next_day)\
                 .execute().data
-                
+
             # 2. All Tasks Created/Active (Step 6)
             # Used for total count to calculate completion rate
             all_tasks = self.supabase.table("work_items")\
                 .select("id, state")\
                 .eq("user_id", user_id)\
                 .gte("created_at", start_of_day)\
-                .lte("created_at", end_of_day)\
+                .lt("created_at", next_day)\
                 .execute().data
-                
+
             # 3. Memories (Step 7)
             memories = self.supabase.table("memories")\
                 .select("id, sentiment, summary, triggers, subjects, importance, sentiment_score")\
                 .eq("user_id", user_id)\
                 .gte("created_at", start_of_day)\
-                .lte("created_at", end_of_day)\
+                .lt("created_at", next_day)\
                 .order("created_at", desc=True)\
                 .limit(50)\
                 .execute().data
