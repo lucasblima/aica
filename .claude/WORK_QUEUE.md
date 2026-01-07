@@ -45,6 +45,11 @@ gcloud builds submit --config=cloudbuild-staging.yaml --project=gen-lang-client-
 
 ## 🎯 Prioridades Globais (GitHub Issues)
 
+### ✅ RESOLVIDO (2026-01-07)
+- **#68** - Could not find table 'public.onboarding_context_captures' in schema cache ✅ **RESOLVIDO**
+  - Migração aplicada com sucesso via supabase db push --include-all
+  - Commit: ab27d86
+
 ### 🔴 CRÍTICA (P1 - Blocking Production)
 1. **#42** - Query Supabase com Filtro Duplicado em `memories` (database)
 2. **#41** - Query Supabase com Filtro Duplicado em `work_items` (database)
