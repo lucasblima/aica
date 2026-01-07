@@ -31,7 +31,7 @@ import {
 import { CreateMomentInput } from '../types/moment'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
-import { SettingsMenu } from '../../../components/SettingsMenu'
+import { SettingsMenu } from '@/components'
 
 export function JourneyFullScreen() {
 

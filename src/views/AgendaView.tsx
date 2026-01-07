@@ -15,14 +15,8 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { supabase } from '../services/supabaseClient';
-import { PriorityMatrix } from '../components/PriorityMatrix';
-import { DailyTimeline } from '../components/DailyTimeline';
-import { HeaderGlobal } from '../components/HeaderGlobal';
-import { CalendarStatusDot } from '../components/CalendarStatusDot';
-import { NextEventHero } from '../components/NextEventHero';
-import { AgendaTimeline } from '../components/AgendaTimeline';
-import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components/NextTwoDaysView';
-import { TaskCreationQuickAdd } from '../components/TaskCreationQuickAdd';
+import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd } from '../components';
+import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
 import { Task, Quadrant } from '../../types';
 // REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
 // import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';

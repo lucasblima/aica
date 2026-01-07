@@ -58,7 +58,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
 
   return (
     <motion.div
-      className="ceramic-card p-6 space-y-6 h-full min-h-[380px] flex flex-col cursor-pointer"
+      className="ceramic-card p-6 space-y-4 h-full min-h-[220px] flex flex-col cursor-pointer"
       variants={cardElevationVariants}
       initial="rest"
       whileHover="hover"

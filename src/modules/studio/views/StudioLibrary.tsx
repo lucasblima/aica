@@ -3,7 +3,7 @@ import { Plus, Mic2 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { PodcastShow } from '../types/podcast';
 import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
-import { HeaderGlobal } from '../../../components/HeaderGlobal';
+import { HeaderGlobal } from '@/components/layout';
 import type { StudioLibraryProps } from '../types/studio';
 
 /**

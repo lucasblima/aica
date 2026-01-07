@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus } from 'lucide-react';
-import { HeaderGlobal } from '../components/HeaderGlobal';
-import { IdentityPassport } from '../components/IdentityPassport';
-import { ProfileModal } from '../components/ProfileModal';
-import { ConnectionArchetypes } from '../components/ConnectionArchetypes';
+import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase } from 'lucide-react';
+import { HeaderGlobal, IdentityPassport, ProfileModal, ConnectionArchetypes, ModuleCard } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
-import { ModuleCard } from '../components/ModuleCard';
+import { RecentContactsWidget } from '../components';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
@@ -195,141 +192,137 @@ export default function Home({
                </motion.div>
 
 
-               {/* GAP 6: Life Modules Grid - Minimalista Ícones */}
-               <div className="space-y-6">
-                  {/* Primary Modules: Finance & Grants */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                     {/* Finanças */}
-                     {userId ? (
-                        <motion.div
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={2}
-                           className="cursor-pointer hover:scale-[1.01] transition-transform"
-                           onClick={() => onNavigateToView('finance')}
-                        >
-                           <FinanceCard userId={userId} />
-                        </motion.div>
-                     ) : (
-                        <motion.div
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={2}
-                        >
-                           <ModuleCard
-                              moduleId="finance"
-                              title="Finanças"
-                              icon={Wallet}
-                              color="emerald"
-                              accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
-                           />
-                        </motion.div>
-                     )}
-
-                     {/* Grants Module */}
+               {/* GAP 6: Life Modules Grid - Unified 220px Cards */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Finanças */}
+                  {userId ? (
                      <motion.div
                         variants={cardVariants}
                         initial="hidden"
                         animate="visible"
-                        custom={3}
+                        custom={2}
                         className="cursor-pointer hover:scale-[1.01] transition-transform"
-                        onClick={() => onNavigateToView('grants')}
+                        onClick={() => onNavigateToView('finance')}
                      >
-                        <GrantsCard
-                           activeProjects={grantsActiveProjects}
-                           upcomingDeadlines={grantsUpcomingDeadlines}
-                           recentProjects={grantsRecentProjects}
-                           onOpenModule={() => onNavigateToView('grants')}
-                           onCreateProject={() => onNavigateToView('grants')}
-                        />
-                     </motion.div>
-                  </div>
-
-                  {/* Secondary Modules - Minimalst Icon Grid */}
-                  {allSecondaryModulesLoaded && allSecondaryModulesEmpty ? (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={4}
-                        className="ceramic-card p-5 min-h-[120px] flex items-center justify-center"
-                     >
-                        <div className="flex items-center gap-3">
-                           <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                              <CheckCircle2 className="w-5 h-5 text-ceramic-accent" />
-                           </div>
-                           <div>
-                              <p className="font-bold text-ceramic-text-primary">Tudo em equilíbrio</p>
-                              <p className="text-sm text-ceramic-text-secondary">Sem pendências</p>
-                           </div>
-                        </div>
+                        <FinanceCard userId={userId} />
                      </motion.div>
                   ) : (
-                     <div className="grid grid-cols-3 lg:grid-cols-4 gap-4">
-                        {/* Saúde */}
-                        <motion.button
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={4}
-                           onClick={() => onNavigateToView('health')}
-                           className="ceramic-card-flat p-4 flex flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
-                           whileHover={{ scale: 1.05 }}
-                           whileTap={{ scale: 0.98 }}
-                        >
-                           <div className="text-4xl sm:text-3xl">🫀</div>
-                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Saúde</span>
-                        </motion.button>
-
-                        {/* Educação */}
-                        <motion.button
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={5}
-                           onClick={() => onNavigateToView('education')}
-                           className="ceramic-card-flat p-4 flex flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
-                           whileHover={{ scale: 1.05 }}
-                           whileTap={{ scale: 0.98 }}
-                        >
-                           <div className="text-4xl sm:text-3xl">📚</div>
-                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Educação</span>
-                        </motion.button>
-
-                        {/* Jurídico */}
-                        <motion.button
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={6}
-                           onClick={() => onNavigateToView('legal')}
-                           className="ceramic-card-flat p-4 flex flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
-                           whileHover={{ scale: 1.05 }}
-                           whileTap={{ scale: 0.98 }}
-                        >
-                           <div className="text-4xl sm:text-3xl">⚖️</div>
-                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Jurídico</span>
-                        </motion.button>
-
-                        {/* Profissional - Hidden on mobile, visible on lg */}
-                        <motion.button
-                           variants={cardVariants}
-                           initial="hidden"
-                           animate="visible"
-                           custom={7}
-                           onClick={() => onNavigateToView('professional')}
-                           className="hidden lg:flex ceramic-card-flat p-4 flex-col items-center gap-2 hover:ceramic-elevated transition-all duration-300 active:scale-95"
-                           whileHover={{ scale: 1.05 }}
-                           whileTap={{ scale: 0.98 }}
-                        >
-                           <div className="text-4xl sm:text-3xl">💼</div>
-                           <span className="text-xs text-ceramic-text-secondary font-medium text-center">Profissional</span>
-                        </motion.button>
-                     </div>
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={2}
+                        onClick={() => onNavigateToView('finance')}
+                     >
+                        <ModuleCard
+                           moduleId="finance"
+                           title="Finanças"
+                           icon={Wallet}
+                           color="emerald"
+                           accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
+                        />
+                     </motion.div>
                   )}
+
+                  {/* Grants */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={3}
+                     className="cursor-pointer hover:scale-[1.01] transition-transform"
+                     onClick={() => onNavigateToView('grants')}
+                  >
+                     <GrantsCard
+                        activeProjects={grantsActiveProjects}
+                        upcomingDeadlines={grantsUpcomingDeadlines}
+                        recentProjects={grantsRecentProjects}
+                        onOpenModule={() => onNavigateToView('grants')}
+                        onCreateProject={() => onNavigateToView('grants')}
+                     />
+                  </motion.div>
+
+                  {/* Saúde */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={4}
+                     onClick={() => onNavigateToView('health')}
+                  >
+                     <ModuleCard
+                        moduleId="health"
+                        title="Saúde"
+                        icon={Heart}
+                        color="orange"
+                        accentColor="bg-orange-50 border-orange-100 text-orange-600"
+                     />
+                  </motion.div>
+
+                  {/* Educação */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={5}
+                     onClick={() => onNavigateToView('education')}
+                  >
+                     <ModuleCard
+                        moduleId="education"
+                        title="Educação"
+                        icon={BookOpen}
+                        color="blue"
+                        accentColor="bg-blue-50 border-blue-100 text-blue-600"
+                     />
+                  </motion.div>
+
+                  {/* Jurídico */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={6}
+                     onClick={() => onNavigateToView('legal')}
+                  >
+                     <ModuleCard
+                        moduleId="legal"
+                        title="Jurídico"
+                        icon={Scale}
+                        color="slate"
+                        accentColor="bg-slate-50 border-slate-100 text-slate-600"
+                     />
+                  </motion.div>
+
+                  {/* Profissional */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={7}
+                     onClick={() => onNavigateToView('professional')}
+                  >
+                     <ModuleCard
+                        moduleId="professional"
+                        title="Profissional"
+                        icon={Briefcase}
+                        color="indigo"
+                        accentColor="bg-indigo-50 border-indigo-100 text-indigo-600"
+                     />
+                  </motion.div>
                </div>
+
+               {/* Recent Contacts Widget */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={8}
+               >
+                  <RecentContactsWidget
+                     onViewAllClick={() => navigate('/contacts')}
+                     onContactClick={(contact) => console.log('Contact clicked:', contact)}
+                  />
+               </motion.div>
 
                {/* Network & Podcast Cards */}
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -338,7 +331,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={8}
+                     custom={9}
                      onClick={() => onNavigateToView('connections')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
@@ -378,7 +371,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={9}
+                     custom={10}
                      onClick={() => onNavigateToView('studio')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                      style={{
