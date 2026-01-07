@@ -19,22 +19,38 @@ const GOOGLE_CALENDAR_EXPIRY_KEY = 'google_calendar_token_expiry';
 const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
 
 /**
- * Escopos do Google Calendar para funcionamento como secretária executiva
+ * Google Calendar Scopes - Minimum privilege required
  *
- * Escopos solicitados:
- * - calendar.readonly: Permite ler eventos do calendário
- * - calendar.events: Permite ler E ESCREVER eventos (criar, editar, deletar)
- *   Necessário para Aica organizar proativamente a agenda do usuário
- * - userinfo.email: Permite obter email do usuário
+ * Scopes:
+ * - calendar.readonly: Read-only access to calendar events
+ * - userinfo.email: Get user email address
  *
- * Nota: Usando ambos os escopos (readonly + events) para garantir compatibilidade
- * e permitir que Aica funcione como secretária executiva organizando tarefas na agenda
+ * Note: Using read-only scope for Google approval compliance
+ * Aica does NOT modify the user's calendar (only reads for conflict detection)
  */
 const GOOGLE_CALENDAR_SCOPES = [
-    'https://www.googleapis.com/auth/calendar',         // Acesso completo ao calendário
-    'https://www.googleapis.com/auth/calendar.events',  // Gerenciamento de eventos
-    'https://www.googleapis.com/auth/calendar.readonly', // Leitura de calendários
-    'https://www.googleapis.com/auth/userinfo.email',   // Email do usuário
+    'https://www.googleapis.com/auth/calendar.readonly', // Read calendar events
+    'https://www.googleapis.com/auth/userinfo.email',    // Get user email
+];
+
+/**
+ * Google Contacts Scopes
+ *
+ * Scopes:
+ * - contacts.readonly: Read-only access to user's contacts
+ * - contacts.other.readonly: Read-only access to other contacts
+ */
+const GOOGLE_CONTACTS_SCOPES = [
+    'https://www.googleapis.com/auth/contacts.readonly',       // User contacts
+    'https://www.googleapis.com/auth/contacts.other.readonly', // Other contacts
+];
+
+/**
+ * Combined Google Scopes for OAuth
+ */
+const ALL_GOOGLE_SCOPES = [
+    ...GOOGLE_CALENDAR_SCOPES,
+    ...GOOGLE_CONTACTS_SCOPES,
 ];
 
 /**
@@ -49,14 +65,14 @@ export async function connectGoogleCalendar(): Promise<void> {
         console.log('[OAuth Debug] Redirect URL:', redirectUrl);
         console.log('[OAuth Debug] Window origin:', window.location.origin);
         console.log('[OAuth Debug] VITE_FRONTEND_URL:', import.meta.env.VITE_FRONTEND_URL);
-        console.log('[connectGoogleCalendar] 🔐 Solicitando escopos OAuth:', GOOGLE_CALENDAR_SCOPES);
-        console.log('[connectGoogleCalendar] 🔑 Escopos concatenados:', GOOGLE_CALENDAR_SCOPES.join(' '));
+        console.log('[connectGoogleCalendar] 🔐 Solicitando escopos OAuth:', ALL_GOOGLE_SCOPES);
+        console.log('[connectGoogleCalendar] 🔑 Escopos concatenados:', ALL_GOOGLE_SCOPES.join(' '));
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo: redirectUrl,
-                scopes: GOOGLE_CALENDAR_SCOPES.join(' '),
+                scopes: ALL_GOOGLE_SCOPES.join(' '),
                 queryParams: {
                     access_type: 'offline', // Garante refresh token
                     prompt: 'consent', // Força popup de consentimento

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Plus, Mic2, FolderOpen } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
-import { HeaderGlobal } from '@/components/HeaderGlobal';
+import { HeaderGlobal } from '@/components/layout';
 import type { PodcastShow } from '../types/podcast';
 
 interface PodcastShowPageProps {

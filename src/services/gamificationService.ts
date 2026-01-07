@@ -76,7 +76,7 @@ const XP_PER_LEVEL = 1000;
 const XP_GROWTH_FACTOR = 1.15; // Each level requires 15% more XP
 
 // Badge definitions
-const BADGES_CATALOG: Record<string, Badge> = {
+export const BADGES_CATALOG: Record<string, Badge> = {
   'first_task': {
     id: 'first_task',
     name: 'Getting Started',

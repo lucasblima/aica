@@ -3,13 +3,11 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
-import { BottomNav } from '../../components/BottomNav';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from '../services/supabaseService';
 import { generateMissingDailyReports } from '../services/dailyReportService';
-import { NotificationContainer } from '../components/NotificationContainer';
+import { NotificationContainer, LoadingScreen } from '../components';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
-import { LoadingScreen } from '../components/LoadingScreen';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
@@ -41,9 +39,11 @@ const ConnectionsPage = lazy(() => import('../pages/ConnectionsPage').then(m => 
 const ArchetypeListPage = lazy(() => import('../pages/ArchetypeListPage').then(m => ({ default: m.ArchetypeListPage })));
 const SpaceDetailPage = lazy(() => import('../pages/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
 const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
+const WhatsAppAnalyticsPage = lazy(() => import('../pages/WhatsAppAnalyticsPage').then(m => ({ default: m.default })));
+const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
 
 // Onboarding Module - Only loaded for new users
-const LandingPage = lazy(() => import('../modules/onboarding').then(m => ({ default: m.LandingPageV2 })));
+const LandingPageComponent = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
 const LandingPageV3 = lazy(() => import('../modules/onboarding/components/landing-v3').then(m => ({ default: m.LandingPageV3 })));
 const LandingPageV4 = lazy(() => import('../modules/onboarding/components/landing-v4').then(m => ({ default: m.LandingPageV4 })));
 
@@ -495,10 +495,10 @@ export function AppRouter() {
                element={<GuestApprovalPage />}
             />
 
-            {/* Landing Page - Complete Redesign (V4 is now default - Issue #23) */}
+            {/* Landing Page - Consolidated version (Issue #39) */}
             <Route
                path="/landing"
-               element={<LandingPageV4 />}
+               element={<LandingPageComponent />}
             />
 
             {/* Landing Page V3 - Previous version (backup) */}
@@ -507,10 +507,10 @@ export function AppRouter() {
                element={<LandingPageV3 />}
             />
 
-            {/* Landing Page V2 - Original version (backup) */}
+            {/* Landing Page V4 - Alternative version (backup) */}
             <Route
-               path="/landing-v2"
-               element={<LandingPage />}
+               path="/landing-v4"
+               element={<LandingPageV4 />}
             />
 
             {/* Privacy Policy - Public route */}
@@ -535,6 +535,9 @@ export function AppRouter() {
                   {/* Contextual descent: Detail and section views have back button, no bottom nav */}
                   <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
                   <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
+
+                  {/* WhatsApp Analytics View - Emotional Intelligence Dashboard */}
+                  <Route path="/connections/analytics/whatsapp" element={<WhatsAppAnalyticsPage />} />
                </>
             )}
 
@@ -549,6 +552,16 @@ export function AppRouter() {
                            <StudioMainView />
                         </StudioProvider>
                      }
+                  />
+               </>
+            )}
+
+            {/* Contacts Module Routes - Protected */}
+            {isAuthenticated && (
+               <>
+                  <Route
+                     path="/contacts"
+                     element={<ContactsView />}
                   />
                </>
             )}

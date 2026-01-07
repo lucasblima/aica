@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mic, Calendar, CheckCircle2, FileText, Sparkles, X, Play, MoreVertical, Search, Headphones } from 'lucide-react';
-import { HeaderGlobal } from '../components/HeaderGlobal';
+import { HeaderGlobal } from '../components';
 
 interface Episode {
     id: string;

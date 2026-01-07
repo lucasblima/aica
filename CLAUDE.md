@@ -40,21 +40,126 @@ gcloud builds list --limit=5 --region=southamerica-east1
 ---
 
 ## Project Structure
+
+### Root Structure
 ```
 src/
-├── modules/           # Feature modules (atlas, journey, studio, grants, finance)
+├── modules/           # Feature modules (atlas, journey, studio, grants, finance, connections)
 │   └── {module}/
 │       ├── components/
 │       ├── hooks/
 │       ├── services/
-│       └── types.ts
-├── components/        # Shared UI (Ceramic design system)
+│       ├── types.ts (or types/index.ts)
+│       └── index.ts   # Barrel export for public API
+├── components/        # Shared UI components (semantic organization)
 ├── contexts/          # React Context providers
 ├── hooks/             # Global custom hooks
-└── services/          # API clients, Supabase queries
+├── services/          # API clients, Supabase queries, integrations
+├── integrations/      # Third-party service integrations (Gemini, Whisper, etc.)
+├── lib/               # Utility functions, helpers
+└── types/             # Global type definitions
 supabase/
 ├── migrations/        # SQL migrations (versioned)
 └── functions/         # Deno Edge Functions
+```
+
+### Components Organization (Issue #39 Refactor)
+Shared components are organized into **4 semantic categories**:
+
+```
+src/components/
+├── ui/               # 16 reusable UI primitives (no business logic)
+│   ├── Accordion.tsx
+│   ├── ConfirmationModal.tsx
+│   ├── LoadingScreen.tsx
+│   ├── NotificationContainer.tsx
+│   └── index.ts      # Barrel export
+├── layout/           # 4 layout components (headers, navigation, containers)
+│   ├── HeaderGlobal.tsx
+│   ├── AuthSheet.tsx
+│   ├── SettingsMenu.tsx
+│   └── index.ts      # Barrel export
+├── features/         # 24+ feature components (cross-module reusable)
+│   ├── Calendar*.tsx
+│   ├── Gamification*.tsx
+│   ├── Efficiency*.tsx
+│   ├── Timeline*.tsx
+│   └── index.ts      # Barrel export
+├── domain/           # 4 domain-specific business logic components
+│   ├── PriorityMatrix.tsx
+│   ├── TaskEditModal.tsx
+│   └── index.ts      # Barrel export
+├── index.ts          # Root barrel export (backward compatibility)
+└── {other}/          # Legacy folders (AreaQuickActionModal, ProfileModal, etc.)
+```
+
+### Import Patterns
+```typescript
+// ✅ Recommended: Use barrel exports
+import { LoadingScreen, NotificationContainer } from '@/components/ui'
+import { HeaderGlobal } from '@/components/layout'
+import { GamificationWidget, Calendar* } from '@/components/features'
+import { PriorityMatrix, TaskEditModal } from '@/components/domain'
+
+// ✅ Also works: Root-level barrel export (for backward compatibility)
+import { LoadingScreen, HeaderGlobal } from '@/components'
+
+// ❌ Avoid: Direct file imports (reduces maintainability)
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
+```
+
+---
+
+## Component Organization Best Practices (Issue #39)
+
+### Semantic Categorization
+Components are categorized by **purpose**, not location:
+
+| Category | Purpose | Examples | Reusable |
+|----------|---------|----------|----------|
+| **ui/** | UI primitives, no business logic | Accordion, Button, Modal, Card | ✅ Yes |
+| **layout/** | Page structure, navigation | Header, Sidebar, Nav | ✅ Yes |
+| **features/** | Cross-module reusable features | Calendar, Gamification, Timeline | ✅ Yes |
+| **domain/** | Business logic, domain-specific | PriorityMatrix, TaskEditor | ⚠️ Sometimes |
+
+### Naming Conventions
+- **Component files:** PascalCase (e.g., `LoadingScreen.tsx`)
+- **Barrel exports:** Always `index.ts` per category
+- **CSS files:** Same name as component (e.g., `LoadingScreen.css`)
+
+### When to Create New Components
+- ✅ **Move to components/ if:** Used by 2+ modules, no module-specific dependencies
+- ❌ **Keep in modules/ if:** Only used in 1 module, tight business logic coupling
+- ✅ **Add to ui/ if:** Pure presentation, reusable across any context
+- ✅ **Add to features/ if:** Feature-driven, cross-module, some business logic
+
+### Types Organization
+All modules follow the standardized pattern:
+```
+src/modules/{module}/
+├── types/
+│   ├── index.ts         # All public types (RECOMMENDED)
+│   └── *.ts             # Internal type files
+└── types.ts             # ❌ DEPRECATED - move to types/index.ts
+```
+
+Import pattern:
+```typescript
+// ✅ Recommended
+import type { GuestDossier } from '@/modules/podcast/types'
+
+// ✅ Also works
+import type { GuestDossier } from '@/modules/podcast/types/dossier'
+
+// ❌ Avoid
+import type { GuestDossier } from '@/modules/podcast'
+```
+
+### Integration Files
+All third-party integrations are in `src/integrations/`:
+```typescript
+import { transcribeAudioWithWhisper } from '@/integrations'
+import { analyzeSentimentWithGemini } from '@/integrations'
 ```
 
 ---
@@ -181,7 +286,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 **Types:** feat, fix, docs, test, refactor, chore
-**Scopes:** podcast, auth, gamification, whatsapp, security, studio, ui
+**Scopes:** podcast, auth, gamification, whatsapp, security, studio, ui, components, architecture, database
 
 ---
 
@@ -204,8 +309,10 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ---
 
 ## Related Docs
-- @.claude/AGENT_GUIDELINES.md - Workflow multi-terminal detalhado
-- @.claude/WORK_QUEUE.md - Branches ativas e prioridades
+- **docs/ARCHITECTURE_REFACTORING_ISSUE_39.md** - Comprehensive guide to Phase 1-7 refactoring
+- **docs/PRD.md** - Product requirements and feature specifications
+- **.claude/AGENT_GUIDELINES.md** - Workflow multi-terminal detalhado
+- **.claude/WORK_QUEUE.md** - Branches ativas e prioridades
 
 ---
-**Maintainers:** Lucas Boscacci Lima + Claude Sonnet 4.5
+**Maintainers:** Lucas Boscacci Lima + Claude Haiku 4.5
