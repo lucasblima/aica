@@ -1,11 +1,29 @@
 /**
  * Edge Function Service
  *
- * Centralized service for calling Supabase Edge Functions (gemini-chat)
- * Replaces direct Gemini API calls from frontend with secure backend calls
+ * Centralized service for calling ALL Supabase Edge Functions.
+ * Provides unified error handling, retry logic, and type-safe wrappers.
+ *
+ * Supported Edge Functions:
+ * - gemini-chat: AI operations (Gemini API)
+ * - webhook-evolution: WhatsApp operations (Evolution API)
+ * - send-guest-approval-link: Podcast guest approval notifications
  */
 
 import { supabase } from './supabaseClient'
+
+// ============================================================================
+// CORE TYPES
+// ============================================================================
+
+/**
+ * Options for Edge Function invocation
+ */
+export interface EdgeFunctionOptions {
+  retryCount?: number
+  timeoutMs?: number
+  logContext?: Record<string, string>
+}
 
 /**
  * Base interface for Edge Function requests
@@ -24,6 +42,117 @@ interface EdgeFunctionResponse<T = any> {
   success: boolean
   latencyMs?: number
   cached?: boolean
+}
+
+// ============================================================================
+// WHATSAPP TYPES
+// ============================================================================
+
+export interface QRCodeResponse {
+  success: boolean
+  qrcode?: {
+    base64?: string
+    code?: string
+  }
+  error?: string
+}
+
+export interface WhatsAppMessageResponse {
+  success: boolean
+  messageId?: string
+  error?: string
+}
+
+export interface WhatsAppConnectionResponse {
+  success: boolean
+  state?: string
+  error?: string
+}
+
+// ============================================================================
+// GUEST APPROVAL TYPES
+// ============================================================================
+
+export interface GuestApprovalRequest {
+  episodeId: string
+  guestName: string
+  guestEmail?: string
+  guestPhone?: string
+  approvalUrl: string
+  method: 'email' | 'whatsapp'
+}
+
+export interface GuestApprovalResponse {
+  success: boolean
+  message?: string
+  error?: string
+}
+
+// ============================================================================
+// CORE HELPER: RETRY WITH EXPONENTIAL BACKOFF
+// ============================================================================
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+
+      if (attempt < maxRetries) {
+        const delayMs = baseDelayMs * Math.pow(2, attempt)
+        console.log(`[EdgeFunction] Retry ${attempt + 1}/${maxRetries} after ${delayMs}ms`)
+        await new Promise(resolve => setTimeout(resolve, delayMs))
+      }
+    }
+  }
+
+  throw lastError
+}
+
+// ============================================================================
+// CORE HELPER: INVOKE EDGE FUNCTION
+// ============================================================================
+
+/**
+ * Generic Edge Function invoker with unified error handling
+ */
+export async function invokeEdgeFunction<T = any>(
+  functionName: string,
+  body: Record<string, any>,
+  options: EdgeFunctionOptions = {}
+): Promise<T> {
+  const { retryCount = 0, logContext = {} } = options
+
+  const invokeFn = async () => {
+    const startTime = Date.now()
+    const { data, error } = await supabase.functions.invoke(functionName, { body })
+    const latencyMs = Date.now() - startTime
+
+    if (error) {
+      console.error(`[EdgeFunction] ${functionName} error:`, {
+        ...logContext,
+        error: error.message,
+        latencyMs,
+      })
+      throw new Error(`Edge Function error: ${error.message || 'Unknown error'}`)
+    }
+
+    console.log(`[EdgeFunction] ${functionName} completed in ${latencyMs}ms`, logContext)
+    return data as T
+  }
+
+  if (retryCount > 0) {
+    return retryWithBackoff(invokeFn, retryCount)
+  }
+
+  return invokeFn()
 }
 
 /**
@@ -252,4 +381,90 @@ export async function researchGuest(payload: {
   researched_at: string
 }> {
   return callGeminiEdgeFunction('research_guest', payload, 'smart')
+}
+
+// ============================================================================
+// WHATSAPP FUNCTIONS (webhook-evolution)
+// ============================================================================
+
+/**
+ * Generate QR code for WhatsApp connection
+ */
+export async function generateWhatsAppQRCode(
+  instanceName: string
+): Promise<QRCodeResponse> {
+  return invokeEdgeFunction<QRCodeResponse>('webhook-evolution', {
+    action: 'generate_qrcode',
+    instance: instanceName,
+  }, {
+    logContext: { action: 'generate_qrcode', instance: instanceName },
+  })
+}
+
+/**
+ * Send a WhatsApp message
+ */
+export async function sendWhatsAppMessage(
+  phone: string,
+  message: string,
+  instanceName: string
+): Promise<WhatsAppMessageResponse> {
+  return invokeEdgeFunction<WhatsAppMessageResponse>('webhook-evolution', {
+    action: 'send_message',
+    instance: instanceName,
+    phone,
+    message,
+  }, {
+    logContext: { action: 'send_message', instance: instanceName },
+  })
+}
+
+/**
+ * Disconnect WhatsApp instance
+ */
+export async function disconnectWhatsApp(
+  instanceName: string
+): Promise<WhatsAppConnectionResponse> {
+  return invokeEdgeFunction<WhatsAppConnectionResponse>('webhook-evolution', {
+    action: 'disconnect',
+    instance: instanceName,
+  }, {
+    logContext: { action: 'disconnect', instance: instanceName },
+  })
+}
+
+/**
+ * Check WhatsApp connection status
+ */
+export async function checkWhatsAppConnection(
+  instanceName: string
+): Promise<WhatsAppConnectionResponse> {
+  return invokeEdgeFunction<WhatsAppConnectionResponse>('webhook-evolution', {
+    action: 'check_connection',
+    instance: instanceName,
+  }, {
+    logContext: { action: 'check_connection', instance: instanceName },
+  })
+}
+
+// ============================================================================
+// GUEST APPROVAL FUNCTIONS (send-guest-approval-link)
+// ============================================================================
+
+/**
+ * Send guest approval link via email or WhatsApp
+ */
+export async function sendGuestApprovalLink(
+  request: GuestApprovalRequest
+): Promise<GuestApprovalResponse> {
+  return invokeEdgeFunction<GuestApprovalResponse>('send-guest-approval-link', {
+    episodeId: request.episodeId,
+    guestName: request.guestName,
+    guestEmail: request.guestEmail,
+    guestPhone: request.guestPhone,
+    approvalUrl: request.approvalUrl,
+    method: request.method,
+  }, {
+    logContext: { action: 'send_approval_link', method: request.method },
+  })
 }

@@ -1,16 +1,16 @@
 /**
  * PDF Processing Service
  *
- * Refatorado para usar servidor Python backend para processamento seguro
- * - Remove API key exposta no frontend
- * - Usa PII sanitization automática
- * - Processa via servidor dedicado (sem limite de 10s das Edge Functions)
+ * Refatorado para usar Edge Functions para AI parsing
+ * - Secure backend AI calls via Supabase Edge Functions
+ * - Client-side PDF extraction using PDF.js
+ * - Falls back to Python server for complex processing
  */
 
 import * as pdfjsLib from 'pdfjs-dist'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { PDF_EXTRACTOR_URL } from '@/config/api'
 import { supabase } from '@/services/supabaseClient'
+import * as EdgeFunctionService from '@/services/edgeFunctionService'
 import type {
   PDFExtractionResult,
   ParsedStatement,
@@ -140,66 +140,21 @@ export class PDFProcessingService {
   }
 
   /**
-   * Parse statement using Gemini directly (fallback when Python server is unavailable)
+   * Parse statement using Gemini via Edge Function (secure backend call)
    *
    * @param rawText - Extracted text from PDF
    * @returns Parsed statement data
    */
   async parseStatementWithGeminiFallback(rawText: string): Promise<ParsedStatement> {
     try {
-      // Initialize Gemini API directly (fallback only - not for production)
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-      if (!apiKey) {
-        throw new Error('VITE_GEMINI_API_KEY não configurada')
+      console.log('[PDFProcessingService] Calling Edge Function for AI parsing...')
+
+      const parsed = await EdgeFunctionService.parseStatement({ rawText })
+
+      if (!parsed || typeof parsed !== 'object') {
+        console.error('[PDFProcessingService] Edge Function returned invalid data:', parsed)
+        throw new Error('Não foi possível extrair dados válidos da resposta')
       }
-
-      const genAI = new GoogleGenerativeAI(apiKey)
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
-
-      const prompt = `Você é um assistente especializado em extrair dados de extratos bancários.
-
-Analise o texto do extrato abaixo e extraia as seguintes informações em formato JSON:
-
-{
-  "bankName": "nome do banco",
-  "accountType": "checking|savings|credit_card|investment|other",
-  "periodStart": "YYYY-MM-DD",
-  "periodEnd": "YYYY-MM-DD",
-  "openingBalance": número,
-  "closingBalance": número,
-  "currency": "BRL",
-  "transactions": [
-    {
-      "date": "YYYY-MM-DD",
-      "description": "descrição da transação",
-      "amount": número (positivo para receita, negativo para despesa),
-      "type": "income|expense",
-      "category": "categoria sugerida (food, transport, housing, health, education, entertainment, shopping, bills, salary, investment, other)"
-    }
-  ]
-}
-
-IMPORTANTE:
-- Valores de despesa devem ser NEGATIVOS
-- Valores de receita devem ser POSITIVOS
-- Use categorias em inglês
-- Retorne APENAS o JSON, sem texto adicional
-
-TEXTO DO EXTRATO:
-${rawText.substring(0, 10000)}`
-
-      console.log('[PDFProcessingService] Calling Gemini API directly (fallback mode)...')
-      const result = await model.generateContent(prompt)
-      const response = result.response.text()
-
-      // Extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/)?.[0]
-      if (!jsonMatch) {
-        console.error('[PDFProcessingService] No JSON found in response:', response.substring(0, 200))
-        throw new Error('Não foi possível extrair JSON da resposta')
-      }
-
-      const parsed = JSON.parse(jsonMatch)
 
       // Normalize data
       return {

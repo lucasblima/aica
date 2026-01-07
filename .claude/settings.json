@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "📋 REMINDER: Conventional Commits Format\n\n<type>(<scope>): <description>\n\nExamples:\n- feat(podcast): Add guest identification wizard\n- fix(auth): Resolve OAuth redirect mismatch\n- docs(readme): Update setup instructions\n- test(e2e): Add Playwright tests for OAuth flow\n\nALWAYS include co-authorship:\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+            "prompt": "📋 REMINDER: Conventional Commits Format\n\n[type]([scope]): [description]\n\nExamples:\n- feat(podcast): Add guest identification wizard\n- fix(auth): Resolve OAuth redirect mismatch\n- docs(readme): Update setup instructions\n- test(e2e): Add Playwright tests for OAuth flow\n\nALWAYS include co-authorship:\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 noreply@anthropic.com"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.(backup|bak|old|~)$' && echo '❌ BLOCKED: Manual backup files violate \"Git is backup\" principle.\n\nInstead, use Git:\n- git show HEAD~1:path/to/file (view previous version)\n- git checkout <commit> -- path/to/file (restore version)\n- git diff HEAD~1 path/to/file (compare changes)\n- Create feature branch for experiments\n' && exit 1 || true"
+            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.(backup|bak|old|~)$' && echo '❌ BLOCKED: Manual backup files violate \"Git is backup\" principle.\n\nInstead, use Git:\n- git show HEAD~1:path/to/file (view previous version)\n- git checkout [commit] -- path/to/file (restore version)\n- git diff HEAD~1 path/to/file (compare changes)\n- Create feature branch for experiments\n' && exit 1 || true"
           }
         ]
       }
@@ -43,20 +43,13 @@
       }
     ]
   },
-  "model": {
-    "default": "sonnet",
-    "planning": "opus",
-    "fastTasks": "haiku"
+  "env": {
+    "CLAUDE_CODE_GIT_COAUTHOR": "Claude Sonnet 4.5 <noreply@anthropic.com>"
   },
   "permissions": {
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)"
+    "allow": [
+      "Read(.claude/CLAUDE.md)",
+      "Read(.claude/WORK_QUEUE.md)"
     ]
-  },
-  "attribution": {
-    "commit": "🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>",
-    "pr": "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
   }
 }
