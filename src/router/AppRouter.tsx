@@ -41,6 +41,7 @@ const ConnectionsPage = lazy(() => import('../pages/ConnectionsPage').then(m => 
 const ArchetypeListPage = lazy(() => import('../pages/ArchetypeListPage').then(m => ({ default: m.ArchetypeListPage })));
 const SpaceDetailPage = lazy(() => import('../pages/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
 const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
+const WhatsAppAnalyticsPage = lazy(() => import('../pages/WhatsAppAnalyticsPage').then(m => ({ default: m.default })));
 
 // Onboarding Module - Only loaded for new users
 const LandingPageComponent = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
@@ -535,6 +536,9 @@ export function AppRouter() {
                   {/* Contextual descent: Detail and section views have back button, no bottom nav */}
                   <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
                   <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
+
+                  {/* WhatsApp Analytics View - Emotional Intelligence Dashboard */}
+                  <Route path="/connections/analytics/whatsapp" element={<WhatsAppAnalyticsPage />} />
                </>
             )}
 
