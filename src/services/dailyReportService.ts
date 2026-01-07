@@ -57,18 +57,38 @@ export async function generateDailyReport(
     const metrics = await aggregateDailyMetrics(userId, date);
     console.log('✅ Metrics aggregated', metrics);
 
-    // Step 3: Generate insights via Gemini
-    const insights = await generateDailyReportInsights(userId, date, metrics);
+    // Step 3: Fetch memories for insights generation
+    const { data: memories } = await supabase
+      .from('memories')
+      .select('sentiment, triggers, subjects, summary')
+      .eq('user_id', userId)
+      .gte('created_at', `${date}T00:00:00Z`)
+      .lt('created_at', new Date(new Date(`${date}T23:59:59Z`).getTime() + 86400000).toISOString());
+
+    // Step 4: Generate insights via Gemini
+    const insightsInput = {
+      date,
+      tasks_completed: metrics.tasksCompleted,
+      tasks_total: metrics.tasksTotal,
+      memories: (memories || []).map((m: any) => ({
+        sentiment: m.sentiment,
+        triggers: m.triggers || [],
+        subjects: m.subjects || [],
+        summary: m.summary || ''
+      })),
+      contacts_interacted: metrics.topContacts
+    };
+    const insights = await generateDailyReportInsights(insightsInput);
     console.log('✅ Insights generated via Gemini');
 
-    // Step 4: Create report object
+    // Step 6: Create report object
     const report = buildReportObject(userId, date, metrics, insights);
 
-    // Step 5: Insert into Supabase
+    // Step 7: Insert into Supabase
     const savedReport = await insertDailyReport(report, userId);
     console.log('✅ Report saved to Supabase');
 
-    // Step 6: Send notifications
+    // Step 8: Send notifications
     await notifyUserOfReport(userId, savedReport);
     console.log('✅ Notifications sent');
 
@@ -209,8 +229,8 @@ function buildReportObject(
     stress_level: undefined, // User sets this via UI
     active_modules: metrics.topSubjects,
     summary: insights?.summary,
-    key_insights: insights?.insights || [],
-    recommendations: insights?.recommendations || [],
+    key_insights: insights?.key_insights || [],
+    recommendations: insights?.ai_recommendations || [],
     notes: undefined,
     location: undefined,
     weather_notes: undefined,
