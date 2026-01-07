@@ -168,14 +168,24 @@ export function createCookieHandlers() {
           const chunkNames = getChunkNames(baseName, cookies);
           if (chunkNames.length > 0) {
             // Reassemble chunks and return RAW value (Supabase will decode)
-            const rawReassembled = chunkNames.map(cn => cookies[cn]).join('');
+            // SECURITY: Filter out undefined chunks (should never happen, but safe guard)
+            const chunkValues = chunkNames.map(cn => cookies[cn]).filter(chunk => chunk !== undefined);
+            const rawReassembled = chunkValues.join('');
             result.push({ name: baseName, value: rawReassembled });
 
-            log(`GET cookie (chunked): ${baseName}`, {
-              chunks: chunkNames.length,
-              totalLength: rawReassembled.length,
-              preview: rawReassembled.substring(0, 30) + (rawReassembled.length > 30 ? '...' : '')
-            });
+            // SECURITY: Validate rawReassembled is a string before calling string methods
+            if (typeof rawReassembled === 'string') {
+              log(`GET cookie (chunked): ${baseName}`, {
+                chunks: chunkNames.length,
+                totalLength: rawReassembled.length,
+                preview: rawReassembled.substring(0, 30) + (rawReassembled.length > 30 ? '...' : '')
+              });
+            } else {
+              log(`GET cookie (chunked): ${baseName}`, {
+                chunks: chunkNames.length,
+                error: 'Reassembled value is not a string'
+              });
+            }
 
             // Mark all chunks and base name as processed
             chunkNames.forEach(cn => processedChunks.add(cn));
@@ -188,13 +198,22 @@ export function createCookieHandlers() {
         result.push({ name, value });
         processedChunks.add(name);
 
-        log(`GET cookie: ${name}`, {
-          valueLength: value.length,
-          first30: value.substring(0, 30),
-          last20: value.substring(Math.max(0, value.length - 20)),
-          hasPrefix: value.startsWith('base64-'),
-          fullValue: value  // TEMPORARY: Log full value for diagnosis
-        });
+        // SECURITY: Validate value is a string before calling string methods
+        if (typeof value === 'string') {
+          log(`GET cookie: ${name}`, {
+            valueLength: value.length,
+            first30: value.substring(0, 30),
+            last20: value.substring(Math.max(0, value.length - 20)),
+            hasPrefix: value.startsWith('base64-'),
+            fullValue: value  // TEMPORARY: Log full value for diagnosis
+          });
+        } else {
+          log(`GET cookie: ${name}`, {
+            valueType: typeof value,
+            valueIsNull: value === null,
+            error: 'Value is not a string, cannot call startsWith'
+          });
+        }
       }
 
       log(`GET ALL cookies`, { count: result.length, names: result.map(c => c.name) });
