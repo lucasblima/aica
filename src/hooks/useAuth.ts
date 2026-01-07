@@ -10,12 +10,12 @@
  * Enhanced with comprehensive logging for production debugging
  */
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabaseClient'
 
 // Debug flag para produção - enabled by default to diagnose PKCE issues
-const DEBUG = true // import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true'
+const DEBUG = false // import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true'
 
 function authLog(message: string, data?: unknown) {
   if (DEBUG) {
@@ -141,7 +141,9 @@ export function useAuth() {
     }
   }, [])
 
-  const signOut = async () => {
+  // CRITICAL: Memoize signOut to prevent unnecessary re-renders
+  // Without useCallback, signOut reference changes on every render
+  const signOut = useCallback(async () => {
     authLog('👋 Signing out...')
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -149,13 +151,19 @@ export function useAuth() {
     } else {
       authLog('✅ Signed out successfully')
     }
-  }
+  }, [])
 
-  return {
+  // CRITICAL: Memoize return object to prevent cascading re-renders
+  // Without useMemo, the entire object reference changes on every render,
+  // causing all consumers to re-render even if values haven't changed.
+  // This was causing the multiple initialization issue reported in #44.
+  const returnValue = useMemo(() => ({
     user,
     session,
     isLoading,
     isAuthenticated: !!user,
     signOut,
-  }
+  }), [user, session, isLoading, signOut])
+
+  return returnValue
 }
