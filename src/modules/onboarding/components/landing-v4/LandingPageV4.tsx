@@ -4,7 +4,7 @@ import { SocialProof } from './SocialProof';
 import { Features } from './Features';
 import { HowItWorks } from './HowItWorks';
 import { CTASection } from './CTASection';
-import { MinimalFooter } from '../landing-v2/MinimalFooter';
+import { MinimalFooter } from '../landing/MinimalFooter';
 import { AuthSheet } from '../../../../components/AuthSheet';
 
 /**

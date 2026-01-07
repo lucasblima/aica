@@ -81,7 +81,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
 
     if (loading) {
         return (
-            <div className="ceramic-card p-6 animate-pulse h-full min-h-[380px]">
+            <div className="ceramic-card p-6 animate-pulse h-full min-h-[220px]">
                 <div className="h-6 bg-gray-200 rounded w-24 mb-4"></div>
                 <div className="h-12 bg-gray-200 rounded w-32 mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded w-20"></div>
@@ -91,7 +91,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
 
     if (error || !summary || !burnRate) {
         return (
-            <div className="ceramic-card p-6 h-full min-h-[380px] flex items-center justify-center">
+            <div className="ceramic-card p-6 h-full min-h-[220px] flex items-center justify-center">
                 <p className="text-ceramic-text-secondary text-sm text-center">
                     {error || 'Sem dados'}
                 </p>
@@ -103,7 +103,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
 
     return (
         <motion.div
-            className="ceramic-card p-6 h-full min-h-[380px] flex flex-col relative overflow-hidden cursor-pointer"
+            className="ceramic-card p-6 h-full min-h-[220px] flex flex-col relative overflow-hidden cursor-pointer"
             variants={cardElevationVariants}
             initial="rest"
             whileHover="hover"

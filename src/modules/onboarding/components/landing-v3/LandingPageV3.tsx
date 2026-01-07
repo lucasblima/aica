@@ -3,7 +3,7 @@ import { HeroMonolith } from './HeroMonolith';
 import { BentoGridDense } from './BentoGridDense';
 import { FeatureStrip } from './FeatureStrip';
 import { CTASection } from './CTASection';
-import { MinimalFooter } from '../landing-v2/MinimalFooter';
+import { MinimalFooter } from '../landing/MinimalFooter';
 import { AuthSheet } from '../../../../components/AuthSheet';
 
 /**
