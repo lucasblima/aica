@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { LayoutGrid, Calendar, Mic, Network, Radio } from 'lucide-react';
+import { LayoutGrid, Calendar, Mic, Network, Users, Radio } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BottomNavProps {
@@ -76,6 +76,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
           >
             <Network className="w-6 h-6" strokeWidth={currentView === 'connections' ? 2.5 : 2} />
             <span className="text-[10px] font-bold tracking-widest uppercase">Conexões</span>
+          </button>
+
+          <button
+            onClick={() => onChange('contacts')}
+            className={`flex flex-col items-center gap-1 transition-all duration-300 ${currentView === 'contacts' ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
+          >
+            <Users className="w-6 h-6" strokeWidth={currentView === 'contacts' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Contatos</span>
           </button>
 
           <button

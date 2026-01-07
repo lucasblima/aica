@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users } from 'lucide-react';
-import type { ContactNetwork } from '../types';
+import type { ContactNetwork } from '../../types';
 
 interface RecentContactsWidgetProps {
   onViewAllClick?: () => void;

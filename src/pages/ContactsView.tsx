@@ -6,11 +6,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Users, Search } from 'lucide-react';
-import { HeaderGlobal } from '../../components/HeaderGlobal';
-import { ContactCard } from '../../components/ContactCard';
-import { ContactDetailModal } from '../../components/ContactDetailModal';
+import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
 import { useAuth } from '../hooks/useAuth';
-import type { ContactNetwork } from '../types';
+import type { ContactNetwork } from '../../types';
 
 export function ContactsView() {
   const { user } = useAuth();

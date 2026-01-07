@@ -6,7 +6,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Mail } from 'lucide-react';
-import type { ContactNetwork } from '../types';
+import type { ContactNetwork } from '../../../types';
 
 interface ContactCardProps {
   contact: ContactNetwork;
