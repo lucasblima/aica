@@ -42,7 +42,7 @@ import GuestIdentificationWizard from '../modules/podcast/components/GuestIdenti
 import TeleprompterWindow from '../modules/podcast/components/TeleprompterWindow';
 import type { Dossier, Topic } from '../modules/podcast/types';
 import { StudioLayout } from '../modules/podcast/components/StudioLayout';
-import { ErrorBoundary, ModuleErrorFallback } from '../components/ErrorBoundary';
+import { ErrorBoundary } from '../components';
 import PodcastWorkspace from '../modules/podcast/components/workspace/PodcastWorkspace';
 
 interface PodcastCopilotViewProps {

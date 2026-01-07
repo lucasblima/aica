@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Sparkles, TrendingUp } from 'lucide-react';
+import { Plus, Users, Sparkles, TrendingUp, MessageSquare } from 'lucide-react';
 import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
 import { SpaceCard } from '../components/SpaceCard';
-import { CeramicTabSelector } from '../../../components/CeramicTabSelector';
+import { CeramicTabSelector } from '@/components';
 import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';
 import type { Archetype } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';
@@ -45,6 +46,7 @@ export function ConnectionsView({
   onNavigateToSpace,
   onCreateSpace,
 }: ConnectionsViewProps) {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -360,6 +362,40 @@ export function ConnectionsView({
         )}
 
         {/* Main Grid */}
+
+        {/* Analytics & Tools Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="w-4 h-4 text-ceramic-accent" />
+            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+              Ferramentas & Análises
+            </h2>
+          </div>
+
+          <motion.button
+            onClick={() => navigate('/connections/analytics/whatsapp')}
+            className="w-full ceramic-card p-4 text-left hover:scale-[1.01] transition-transform group"
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            aria-label="WhatsApp Analytics Dashboard"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-bold text-base text-ceramic-text-primary group-hover:text-ceramic-accent transition-colors">
+                  WhatsApp Analytics
+                </h3>
+                <p className="text-sm text-ceramic-text-secondary mt-1">
+                  Análise emocional e inteligência de mensagens
+                </p>
+              </div>
+              <MessageSquare className="w-5 h-5 text-ceramic-accent/60 group-hover:text-ceramic-accent transition-colors flex-shrink-0 ml-3" />
+            </div>
+          </motion.button>
+        </motion.section>
         <section>
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4 text-ceramic-accent" />

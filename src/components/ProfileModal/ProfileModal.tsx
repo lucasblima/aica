@@ -10,7 +10,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp } from 'lucide-react'
 import { DangerZone } from './DangerZone'
-import { EfficiencyFlowCard } from '@/components/EfficiencyFlowCard'
+import { EfficiencyFlowCard } from '../EfficiencyFlowCard'
 
 interface ProfileModalProps {
   isOpen: boolean
