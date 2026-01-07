@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Sparkles, TrendingUp, MessageSquare } from 'lucide-react';
 import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
 import { SpaceCard } from '../components/SpaceCard';
-import { CeramicTabSelector } from '../../../components/CeramicTabSelector';
+import { CeramicTabSelector } from '@/components';
 import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';
 import type { Archetype } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Calendar, Brain, ChevronDown, ChevronUp, X, Sparkles, CheckCircle2, AlertCircle, Wallet, Heart, Users, Building2, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { updateUserProfile, getLifeEvents, createLifeEvent, getUserProfile } from '../services/supabaseService';
+import { updateUserProfile, getLifeEvents, createLifeEvent, getUserProfile } from '@/services/supabaseService';
 
 interface LifeWeeksGridProps {
     userId: string;

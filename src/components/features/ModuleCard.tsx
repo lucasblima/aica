@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LucideIcon, ChevronRight } from 'lucide-react';
-import { getModuleTasks } from '../services/supabaseService';
-import { cardElevationVariants } from '../lib/animations/ceramic-motion';
+import { getModuleTasks } from '@/services/supabaseService';
+import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 
 /**
  * Contextual descriptions for empty states in each module category

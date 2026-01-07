@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, LogOut, Loader2, Info, RefreshCw } from 'lucide-react';
-import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
+import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '@/services/googleAuthService';
 
 interface GoogleCalendarConnectProps {
     onSync?: () => void | Promise<void>;

@@ -4,7 +4,7 @@ import { BentoGridDense } from './BentoGridDense';
 import { FeatureStrip } from './FeatureStrip';
 import { CTASection } from './CTASection';
 import { MinimalFooter } from '../landing/MinimalFooter';
-import { AuthSheet } from '../../../../components/AuthSheet';
+import { AuthSheet } from '@/components/layout';
 
 /**
  * LandingPageV3 - Apple-Scale Digital Ceramic Landing Page

@@ -20,7 +20,7 @@ import {
   getXPToNextLevel,
   formatXP,
   getRarityColor,
-} from '../services/gamificationService';
+} from '@/services/gamificationService';
 import './GamificationWidget.css';
 
 interface GamificationWidgetProps {

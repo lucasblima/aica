@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Briefcase, GraduationCap, Users, Plus } from 'lucide-react';
-import { useCardSelection } from '../hooks/useCardSelection';
+import { useCardSelection } from '@/hooks/useCardSelection';
 
 interface Archetype {
   id: string;

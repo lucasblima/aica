@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Logo } from '../../../../components/ui/Logo';
+import { Logo } from '@/components/ui/Logo';
 
 interface MinimalFooterProps {
   /** Handler for login/signup action */

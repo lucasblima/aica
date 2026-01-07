@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Logo } from './ui/Logo';
-import { useGoogleAuth } from '../hooks/useGoogleAuth';
-import { springHover, springPress } from '../lib/animations/ceramic-motion';
+import { Logo } from '../ui';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { springHover, springPress } from '@/lib/animations/ceramic-motion';
 
 interface LoginProps {
   onLogin: () => void;

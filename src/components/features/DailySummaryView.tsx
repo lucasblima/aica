@@ -11,8 +11,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { DailyReport } from '../types/memoryTypes';
-import { supabase } from '../services/supabaseClient';
+import { DailyReport } from '@/types/memoryTypes';
+import { supabase } from '@/services/supabaseClient';
 import './DailySummaryView.css';
 
 interface DailySummaryProps {

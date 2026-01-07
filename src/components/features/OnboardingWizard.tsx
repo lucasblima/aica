@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, CheckCircle, X, ArrowRight, Sparkles } from 'lucide-react';
-import { connectGoogleCalendar } from '../services/googleAuthService';
+import { connectGoogleCalendar } from '@/services/googleAuthService';
 
 interface OnboardingWizardProps {
     onComplete: (connectedCalendar: boolean) => void;

@@ -15,7 +15,7 @@ import {
   getUserAchievements,
   getBadgesCatalog,
   getRarityColor,
-} from '../services/gamificationService';
+} from '@/services/gamificationService';
 import './AchievementsView.css';
 
 interface AchievementsViewProps {

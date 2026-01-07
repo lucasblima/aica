@@ -25,7 +25,7 @@ export { GoogleCalendarEventsList } from './GoogleCalendarEventsList';
 export { LifeWeeksGrid } from './LifeWeeksGrid';
 export { ModuleCard } from './ModuleCard';
 export { NextEventHero } from './NextEventHero';
-export { NextTwoDaysView } from './NextTwoDaysView';
+export { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from './NextTwoDaysView';
 export { OnboardingWizard } from './OnboardingWizard';
 export { PomodoroTimer } from './PomodoroTimer';
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';

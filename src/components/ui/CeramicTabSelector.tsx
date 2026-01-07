@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { springSlide, tabLayoutTransition } from '../lib/animations/ceramic-motion';
+import { springSlide, tabLayoutTransition } from '@/lib/animations/ceramic-motion';
 
 interface Tab {
   id: string;

@@ -14,11 +14,11 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Sparkles, Calendar, Clock, Edit2, Trash2, Filter } from 'lucide-react';
-import { supabase } from '../services/supabaseClient';
-import { Task, Quadrant } from '../../types';
-import { TaskEditModal } from './TaskEditModal';
-import { ConfirmationModal } from './ConfirmationModal';
-import { EmptyQuadrantState } from './EmptyQuadrantState';
+import { supabase } from '@/services/supabaseClient';
+import { Task, Quadrant } from '@/types';
+import { TaskEditModal } from '@/components/domain';
+import { ConfirmationModal } from '@/components/ui';
+import { EmptyQuadrantState } from '@/components/domain';
 
 interface QuadrantConfig {
     id: Quadrant;

@@ -25,7 +25,7 @@ import {
 import whatsappConsentService from '@/services/whatsappConsentService';
 import { useWhatsAppGamification } from '../../hooks/useWhatsAppGamification';
 import type { ConsentType, ConsentRecord } from '@/types/whatsapp';
-import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { ConfirmationModal } from '@/components/ui';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 
 // ============================================================================

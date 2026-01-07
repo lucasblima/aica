@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Calendar, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
-import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
+import { useGoogleCalendarEvents } from '@/hooks/useGoogleCalendarEvents';
 
 interface GoogleCalendarEventsListProps {
     /** Mostrar apenas eventos de hoje */

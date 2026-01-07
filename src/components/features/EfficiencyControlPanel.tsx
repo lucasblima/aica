@@ -27,7 +27,7 @@ import {
   getProductivityColor,
   getProductivityEmoji,
   EfficiencyMetrics,
-} from '../services/efficiencyService';
+} from '@/services/efficiencyService';
 import {
   UserGameProfile,
   getUserGameProfile,
@@ -35,7 +35,7 @@ import {
   StreakInfo,
   getLevelProgress,
   formatXP,
-} from '../services/gamificationService';
+} from '@/services/gamificationService';
 
 interface EfficiencyControlPanelProps {
   userId: string;

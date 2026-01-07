@@ -5,7 +5,7 @@ import { Features } from './Features';
 import { HowItWorks } from './HowItWorks';
 import { CTASection } from './CTASection';
 import { MinimalFooter } from '../landing/MinimalFooter';
-import { AuthSheet } from '../../../../components/AuthSheet';
+import { AuthSheet } from '@/components/layout';
 
 /**
  * LandingPageV4 - Complete Redesign (Issue #23)

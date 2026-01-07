@@ -4,7 +4,7 @@ import { DigitalHero } from './DigitalHero';
 import { BentoFeatures } from './BentoFeatures';
 import { ScrollStory } from './ScrollStory';
 import { MinimalFooter } from './MinimalFooter';
-import { AuthSheet } from '../../../../components/AuthSheet';
+import { AuthSheet } from '@/components/layout';
 
 /**
  * LandingPageV2 - Digital Ceramic Redesign

@@ -14,7 +14,7 @@ import {
   getProductivityColor,
   EfficiencyTrend,
 } from '@/services/efficiencyService'
-import EmptyState from '@/components/EmptyState'
+import { EmptyState } from '@/components/ui'
 
 interface EfficiencyFlowCardProps {
   userId: string

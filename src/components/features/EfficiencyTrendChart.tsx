@@ -16,8 +16,8 @@ import {
   getEfficiencyTrends,
   getProductivityColor,
   EfficiencyTrend,
-} from '../services/efficiencyService';
-import EmptyState from './EmptyState';
+} from '@/services/efficiencyService';
+import { EmptyState } from '@/components/ui';
 import './EfficiencyTrendChart.css';
 
 interface EfficiencyTrendChartProps {

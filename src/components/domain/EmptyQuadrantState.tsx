@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Target, Clock, Archive, LucideIcon } from 'lucide-react';
-import { Quadrant } from '../../types';
+import { Quadrant } from '@/types';
 
 interface EmptyQuadrantStateProps {
     quadrantType: Quadrant;

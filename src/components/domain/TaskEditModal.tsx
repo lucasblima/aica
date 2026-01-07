@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText, FileText as FileTextIcon, ListChecks, Tag, Repeat } from 'lucide-react';
-import { Task } from '../../types';
-import { Accordion } from './Accordion';
-import { SubtaskList, Subtask } from './SubtaskList';
-import { RecurrencePicker } from './RecurrencePicker';
-import { TagInput } from './TagInput';
+import { Task } from '@/types';
+import { Accordion } from '@/components/ui';
+import { SubtaskList, Subtask } from '@/components/ui';
+import { RecurrencePicker } from '@/components/ui';
+import { TagInput } from '@/components/ui';
 
 interface TaskEditModalProps {
     taskId: string;

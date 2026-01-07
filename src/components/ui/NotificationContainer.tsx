@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Notification, useNotifications } from '../services/notificationService';
+import { Notification, useNotifications } from '@/services/notificationService';
 import './NotificationContainer.css';
 
 export const NotificationContainer: React.FC = () => {

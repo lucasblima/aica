@@ -27,7 +27,7 @@ import {
   AlertTriangle,
   Sparkles,
 } from 'lucide-react';
-import { CeramicTabSelector } from '@/components/CeramicTabSelector';
+import { CeramicTabSelector } from '@/components/ui';
 import {
   ConnectionStatusCard,
   ConsentManager,

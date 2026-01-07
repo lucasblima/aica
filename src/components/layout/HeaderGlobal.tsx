@@ -1,8 +1,7 @@
 import React from 'react';
 import { User, Users } from 'lucide-react';
 import { SettingsMenu } from './SettingsMenu';
-import { CeramicTabSelector } from './CeramicTabSelector';
-import { Logo } from './ui/Logo';
+import { CeramicTabSelector, Logo } from '../ui';
 
 interface HeaderGlobalProps {
     title: string;

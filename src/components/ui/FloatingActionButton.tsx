@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { PlusIcon } from '@heroicons/react/24/solid';
-import { springElevation } from '../lib/animations/ceramic-motion';
+import { springElevation } from '@/lib/animations/ceramic-motion';
 
 interface FloatingActionButtonProps {
   isActive: boolean;

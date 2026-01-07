@@ -30,8 +30,8 @@ import {
   getProductivityEmoji,
   EfficiencyMetrics,
   ModuleEfficiency,
-} from '../services/efficiencyService';
-import { cardElevationVariants } from '../lib/animations/ceramic-motion';
+} from '@/services/efficiencyService';
+import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 import './EfficiencyScoreCard.css';
 
 interface EfficiencyScoreCardProps {

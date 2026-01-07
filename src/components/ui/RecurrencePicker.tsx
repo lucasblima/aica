@@ -10,7 +10,7 @@ import {
   RRULE_PRESETS,
   describeRRuleInPortuguese,
   generateUpcomingOccurrences,
-} from '../services/taskRecurrenceService';
+} from '@/services/taskRecurrenceService';
 
 interface RecurrencePickerProps {
   /** Current RRULE string (can be empty) */
