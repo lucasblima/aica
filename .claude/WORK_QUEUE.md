@@ -1,5 +1,23 @@
 # Fila de Trabalho - Multi-Branch Tracking
 
+## 📋 Tarefas Recentes (2026-01-07)
+
+### ✅ CONCLUÍDO: Planejamento de Redistribuição Agent 1 & 2
+**Status:** 🟢 PLANEJAMENTO COMPLETO
+**Data:** 2026-01-07
+**Artefatos:**
+- `.claude/plans/steady-plotting-cherny.md` - Plano detalhado de redistribuição
+- `.claude/IMPLEMENTATION_GUIDE.md` - Guia step-by-step para execução manual
+
+**Distribuição Planejada:**
+- **Agent 1**: 5 P1/P2 issues backend (#41-45) | Q1 2026
+- **Agent 2**: 5 frontend/UX + 4 backlog + 3 EPICs | Q1/Q2/Long-term
+
+**Motivo do Guia Manual:** Token GitHub sem `read:project` scope requer UI manual
+**Próximo Passo:** Usuário executa 6 fases da implementação via GitHub UI (~30-45 min)
+
+---
+
 ## 📊 Dashboard de Branches Ativas
 
 ### Branch: `main`

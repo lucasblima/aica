@@ -93,6 +93,7 @@ export async function aggregateDailyMetrics(
   try {
     const dayStart = `${date}T00:00:00Z`;
     const dayEnd = `${date}T23:59:59Z`;
+    const nextDay = new Date(new Date(dayEnd).getTime() + 86400000).toISOString();
 
     // Get completed tasks
     const { data: completedTasks } = await supabase
@@ -100,7 +101,7 @@ export async function aggregateDailyMetrics(
       .select('id, title, estimated_duration, completed_at, association_id')
       .eq('user_id', userId)
       .gte('completed_at', dayStart)
-      .lte('completed_at', dayEnd);
+      .lt('completed_at', nextDay);
 
     // Get all tasks created today
     const { data: allTasks } = await supabase
@@ -108,7 +109,7 @@ export async function aggregateDailyMetrics(
       .select('id, state')
       .eq('user_id', userId)
       .gte('created_at', dayStart)
-      .lte('created_at', dayEnd);
+      .lt('created_at', nextDay);
 
     // Get memories from today
     const { data: memories } = await supabase
@@ -116,7 +117,7 @@ export async function aggregateDailyMetrics(
       .select('id, sentiment_score, subjects')
       .eq('user_id', userId)
       .gte('created_at', dayStart)
-      .lte('created_at', dayEnd);
+      .lt('created_at', nextDay);
 
     // Get contacts interacted with
     const { data: contacts } = await supabase
