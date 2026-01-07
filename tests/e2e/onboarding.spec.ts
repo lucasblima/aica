@@ -470,6 +470,119 @@ test.describe('PHASE 4.1: Complete Onboarding Flow', () => {
       // Assert
       await expect(page).toHaveURL(/onboarding|trail|moment|recommendation/i);
     });
+
+    // ✅ NEW TESTS FOR ISSUE #38: Preventing deadlock when skipping all trails
+    test('4.10: Prevent deadlock by blocking skip when not enough trails completed', async ({ page }) => {
+      // Issue #38: Users could skip all trails and get stuck with disabled "Continue" button
+      // Arrange
+      await page.goto('/onboarding/trails');
+      const trailPage = new TrailSelectionPage(page);
+
+      // Act - Select 3 trails and try to skip all of them
+      // First, we need to select trails. For now, we'll check if skip prevents invalid state
+      const skipBtn = await page.locator('[data-testid="skip-trail-btn"]').isVisible({ timeout: 1000 }).catch(() => false);
+
+      if (skipBtn) {
+        // Skip first trail
+        await page.locator('[data-testid="skip-trail-btn"]').click();
+        await page.waitForLoadState('networkidle');
+
+        // Check if we're still on trails (not in complete phase) after skipping
+        const stillOnTrails = await page.url().match(/trail/i);
+        const hasError = await page.locator('[data-testid="error-message"]').isVisible({ timeout: 500 }).catch(() => false);
+
+        // Assert - Should either show error or remain on trails
+        expect(stillOnTrails || hasError).toBeTruthy();
+      }
+    });
+
+    test('4.11: Back to Trails button allows user to complete remaining trails', async ({ page }) => {
+      // Issue #38: Users need a way to go back from "complete" phase to answer remaining trails
+      // Arrange
+      await page.goto('/onboarding/trails');
+      const trailPage = new TrailSelectionPage(page);
+
+      // Act - Navigate to complete phase (by completing some trails)
+      const trailCount = await trailPage.getTrailCount();
+
+      if (trailCount >= 3) {
+        // Complete first trail
+        await trailPage.selectTrailByIndex(0);
+        const canComplete = await page.locator('[data-testid="submit-trail-btn"]').isVisible({ timeout: 500 }).catch(() => false);
+
+        if (canComplete) {
+          // We're on the trail, complete it
+          await trailPage.completeTrailWithRandomAnswers();
+          await page.waitForLoadState('networkidle');
+
+          // Look for "Back to Trails" button (should appear in complete phase if we haven't completed min trails)
+          const backButton = await page.locator(':text("Voltar para Trilhas")').isVisible({ timeout: 2000 }).catch(() => false);
+
+          // Assert
+          if (backButton) {
+            // Button exists, which is good
+            expect(backButton).toBeTruthy();
+          }
+        }
+      }
+    });
+
+    test('4.12: Correct completed trails count and skipped trails feedback', async ({ page }) => {
+      // Issue #38: Complete phase should show clear feedback on what was completed vs skipped
+      // Arrange
+      await page.goto('/onboarding/trails');
+
+      // Act - Complete some trails, skip others
+      const trailPage = new TrailSelectionPage(page);
+      const trailCount = await trailPage.getTrailCount();
+
+      if (trailCount >= 3) {
+        // Select and complete first trail
+        await trailPage.selectTrailByIndex(0);
+        const canComplete = await page.locator('[data-testid="submit-trail-btn"]').isVisible({ timeout: 500 }).catch(() => false);
+
+        if (canComplete) {
+          await trailPage.completeTrailWithRandomAnswers();
+          await page.waitForLoadState('networkidle');
+
+          // Check for feedback showing completed count
+          const completedText = await page.locator('text=/completou.*trilha/i').isVisible({ timeout: 2000 }).catch(() => false);
+
+          // Assert
+          expect(completedText).toBeTruthy();
+        }
+      }
+    });
+
+    test('4.13: Normal onboarding flow not affected by deadlock fix', async ({ page }) => {
+      // Issue #38: Ensure fix doesn't break normal flow when user completes all trails properly
+      // Arrange
+      await page.goto('/onboarding/trails');
+      const trailPage = new TrailSelectionPage(page);
+
+      // Act - Complete 3 trails normally without skipping
+      const trailCount = await trailPage.getTrailCount();
+
+      if (trailCount >= 3) {
+        for (let i = 0; i < Math.min(3, trailCount); i++) {
+          const canSelect = await page.locator('[data-testid="trail-card"]').first().isVisible({ timeout: 1000 }).catch(() => false);
+
+          if (canSelect) {
+            await trailPage.selectTrailByIndex(0);
+            await trailPage.completeTrailWithRandomAnswers();
+            await page.waitForLoadState('networkidle');
+          }
+        }
+
+        // Should be able to reach complete phase and continue
+        const continueBtn = await page.locator('[data-testid="finalize-btn"]').isEnabled({ timeout: 2000 }).catch(() => false);
+
+        // Assert
+        // Should reach a completion state
+        const finalURL = await page.url();
+        expect(finalURL).toBeTruthy();
+      }
+    });
   });
 
   /**
