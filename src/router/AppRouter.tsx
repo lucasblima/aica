@@ -56,6 +56,8 @@ const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/File
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
 
+
+const ProfilePage = lazy(() => import('../views/ProfilePage').then(m => ({ default: m.ProfilePage })));
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
    const [tasks, setTasks] = useState<any[]>([]);

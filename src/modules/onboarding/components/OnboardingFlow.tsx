@@ -200,7 +200,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   // Calculate progress percentage
   const getProgressPercentage = () => {
-    const steps: OnboardingStep[] = ['welcome-tour', 'trail-selection', 'moment-capture', 'recommendations'];
+    const steps: OnboardingStep[] = ['welcome-tour', 'moment-capture', 'recommendations'];
     const currentIndex = steps.indexOf(state.currentStep);
     return ((currentIndex + 1) / steps.length) * 100;
   };
