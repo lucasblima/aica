@@ -39,8 +39,7 @@ jobs:
 
           gcloud builds submit \
             --config=cloudbuild-staging.yaml \
-            --project=${{ env.PROJECT_ID }} \
-            --no-source
+            --project=${{ env.PROJECT_ID }}
 
           echo "✅ Build submitted successfully"
 
