@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ViewState } from '../types';
 import { LayoutGrid, Calendar, Mic, Network, Users, Radio } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -11,6 +12,12 @@ interface BottomNavProps {
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onMicClick, isListening = false }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if we're on the /people or /contacts route
+  const isOnPeopleRoute = location.pathname === '/people' || location.pathname === '/contacts';
+
   return (
     <div className="fixed bottom-8 left-0 right-0 z-50 pointer-events-none flex justify-center">
       <div className="pointer-events-auto relative">
@@ -79,11 +86,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
           </button>
 
           <button
-            onClick={() => onChange('contacts')}
-            className={`flex flex-col items-center gap-1 transition-all duration-300 ${currentView === 'contacts' ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
+            onClick={() => navigate('/people')}
+            aria-label="Navegue para pessoas"
+            className={`flex flex-col items-center gap-1 transition-all duration-300 ${isOnPeopleRoute ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
           >
-            <Users className="w-6 h-6" strokeWidth={currentView === 'contacts' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold tracking-widest uppercase">Contatos</span>
+            <Users className="w-6 h-6" strokeWidth={isOnPeopleRoute ? 2.5 : 2} />
+            <span className="text-[10px] font-bold tracking-widest uppercase">Pessoas</span>
           </button>
 
           <button
