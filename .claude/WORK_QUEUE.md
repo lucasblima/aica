@@ -2,6 +2,31 @@
 
 ## 📋 Tarefas Recentes (2026-01-07)
 
+
+### ✅ CORREÇÃO DO BOTTOMNAV REFERENCEERROR (2026-01-08 12:25)
+**Status:** 🟢 RESOLVIDO + STAGING VERIFICADO
+**Data:** 2026-01-08
+**Problema:** ReferenceError: BottomNav is not defined na staging
+
+**Trabalho Realizado:**
+1. ✅ Movido components/BottomNav.tsx → src/components/layout/BottomNav.tsx
+2. ✅ Adicionado export em src/components/layout/index.ts
+3. ✅ Adicionado export em src/components/index.ts
+4. ✅ Adicionado import em src/router/AppRouter.tsx
+5. ✅ Build verificado: 29.37s, 4489 módulos
+6. ✅ Staging verificado: Sem erros no console
+7. ✅ Landing page renderizando corretamente
+
+**Commits:**
+- c514005 - fix: Fix ReferenceError - Move BottomNav to proper location
+
+**Impacto:**
+- Staging environment totalmente operacional
+- Nenhum ReferenceError no console
+- Landing page renderiza com sucesso
+- Pronto para beta launch
+
+
 ### ✅ RESOLUÇÃO DE 6 ISSUES CRÍTICAS (2026-01-07 19:30) 🎉
 **Status:** 🟢 TODAS RESOLVIDAS E FECHADAS
 **Data:** 2026-01-07
