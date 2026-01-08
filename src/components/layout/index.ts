@@ -5,6 +5,7 @@
  * Not tied to specific business domains.
  */
 
+export { BottomNav } from './BottomNav';
 // prettier-ignore
 export { default as AuthSheet } from './AuthSheet';
 export { HeaderGlobal } from './HeaderGlobal';

@@ -34,6 +34,7 @@ export { default as SubtaskList } from './ui/SubtaskList';
 export { default as BentoCard } from './ui/BentoCard';
 // prettier-ignore
 export { default as Logo } from './ui/Logo';
+export { BottomNav } from './layout/BottomNav';
 
 // ============ Layout Components ============
 // prettier-ignore
