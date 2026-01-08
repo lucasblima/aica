@@ -5,7 +5,7 @@
  * Not tied to specific business domains.
  */
 
-export { AuthSheet } from './AuthSheet';
+export { default as AuthSheet } from './AuthSheet';
 export { HeaderGlobal } from './HeaderGlobal';
-export { Login } from './Login';
+export { default as Login } from './Login';
 export { SettingsMenu } from './SettingsMenu';
