@@ -15,12 +15,12 @@ import { createClient } from '@supabase/supabase-js';
  * - Can reuse same auth across all test specs
  */
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://gppebtrshbvuzatmebhr.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://uzywajqzbdbrfammshdg.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Test user credentials - these should be set in environment variables
 const TEST_EMAIL = process.env.TEST_EMAIL || 'usuario_teste@gmail.com';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || 'SecureTest123!@#';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || 'SenhaSegura123!';
 
 // Store auth data to be used by all tests
 const authFile = 'tests/e2e/.auth.json';

@@ -1037,3 +1037,59 @@ test.describe('People Module - Mobile Responsiveness', () => {
     expect(bodyOverflow).toBeLessThanOrEqual(375);
   });
 });
+
+/**
+ * Test Suite: User Email Display (Regression Test)
+ * Ensures that correct user email is shown in Settings Menu, not placeholder
+ */
+
+test.describe('Settings Menu - User Email Display', () => {
+  test('should display correct user email in settings menu, not example.com', async ({ page }) => {
+    const userEmail = TEST_USERS.user1.email;
+
+    // Login
+    await loginUser(page, userEmail, TEST_USERS.user1.password);
+
+    // Navigate to Contacts page (which has HeaderGlobal)
+    await page.goto(`${BASE_URL}/contacts`);
+    await page.waitForLoadState('networkidle');
+
+    // Click settings button (gear icon)
+    await page.click('button[class*="ceramic-card"] svg[class*="Settings"]').catch(() => {
+      // Alternative: click by aria-label or data-testid
+      return page.click('[data-testid="settings-menu-button"]').catch(() => {
+        // Try clicking any settings button
+        return page.click('button:has-text("Conta")').catch(() => null);
+      });
+    });
+
+    // Wait for menu to appear
+    await page.waitForSelector('text=Conta', { timeout: 5000 });
+
+    // Verify user email is displayed (NOT 'user@example.com')
+    const emailText = await page.locator('p:has-text("@")').first().textContent();
+
+    expect(emailText).toContain(userEmail);
+    expect(emailText).not.toContain('user@example.com');
+    expect(emailText).not.toContain('example.com');
+  });
+
+  test('should display user email in ContactsView settings menu', async ({ page }) => {
+    const userEmail = TEST_USERS.user1.email;
+
+    // Login and navigate to contacts
+    await loginUser(page, userEmail, TEST_USERS.user1.password);
+    await page.goto(`${BASE_URL}/contacts`);
+
+    // Open settings menu
+    const settingsButton = page.locator('button').filter({ has: page.locator('svg') }).first();
+    await settingsButton.click();
+
+    // Verify the email shown is the actual user email
+    const accountSection = page.locator(':text("Conta")').first();
+    const emailDisplay = accountSection.locator('..').locator('p').last();
+    const displayedEmail = await emailDisplay.textContent();
+
+    expect(displayedEmail?.trim()).toBe(userEmail);
+  });
+});
