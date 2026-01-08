@@ -6,50 +6,75 @@
  */
 
 // ============ UI Primitives ============
+// prettier-ignore
 export { default as Accordion } from './ui/Accordion';
 export { CalendarStatusDot } from './ui/CalendarStatusDot';
+// prettier-ignore
 export { default as CeramicPillButton } from './ui/CeramicPillButton';
+// prettier-ignore
 export { default as CeramicTabSelector } from './ui/CeramicTabSelector';
 export { ConfirmationModal } from './ui/ConfirmationModal';
+// prettier-ignore
 export { default as EmptyState } from './ui/EmptyState';
+// prettier-ignore
 export { default as ErrorBoundary } from './ui/ErrorBoundary';
 export { FloatingActionButton } from './ui/FloatingActionButton';
+// prettier-ignore
 export { default as LoadingScreen } from './ui/LoadingScreen';
 export { NotificationContainer } from './ui/NotificationContainer';
+// prettier-ignore
 export { default as AuthLoadingScreen } from './ui/AuthLoadingScreen';
+// prettier-ignore
 export { default as TagInput } from './ui/TagInput';
+// prettier-ignore
 export { default as RecurrencePicker } from './ui/RecurrencePicker';
+// prettier-ignore
 export { default as SubtaskList } from './ui/SubtaskList';
+// prettier-ignore
 export { default as BentoCard } from './ui/BentoCard';
+// prettier-ignore
 export { default as Logo } from './ui/Logo';
 
 // ============ Layout Components ============
+// prettier-ignore
 export { default as AuthSheet } from './layout/AuthSheet';
 export { HeaderGlobal } from './layout/HeaderGlobal';
+// prettier-ignore
 export { default as Login } from './layout/Login';
 export { SettingsMenu } from './layout/SettingsMenu';
 
 // ============ Features ============
+// prettier-ignore
 export { default as AchievementsView } from './features/AchievementsView';
 export { AgendaTimeline } from './features/AgendaTimeline';
 export { CalendarSyncIndicator } from './features/CalendarSyncIndicator';
 export { ConnectionArchetypes } from './features/ConnectionArchetypes';
+// prettier-ignore
 export { default as ContactCard } from './features/ContactCard';
+// prettier-ignore
 export { default as ContactDetailModal } from './features/ContactDetailModal';
 export { ContactProfileView } from './features/ContactProfileView';
 export { DailyTimeline } from './features/DailyTimeline';
 export { DailySummaryView } from './features/DailySummaryView';
+// prettier-ignore
 export { default as EfficiencyControlPanel } from './features/EfficiencyControlPanel';
 export { EfficiencyMedallion } from './features/EfficiencyMedallion';
+// prettier-ignore
 export { default as EfficiencyScoreCard } from './features/EfficiencyScoreCard';
+// prettier-ignore
 export { default as EfficiencyTrendChart } from './features/EfficiencyTrendChart';
+// prettier-ignore
 export { default as GamificationWidget } from './features/GamificationWidget';
+// prettier-ignore
 export { default as GoogleCalendarConnect } from './features/GoogleCalendarConnect';
+// prettier-ignore
 export { default as GoogleCalendarEventsList } from './features/GoogleCalendarEventsList';
 export { LifeWeeksGrid } from './features/LifeWeeksGrid';
+// prettier-ignore
 export { default as ModuleCard } from './features/ModuleCard';
 export { NextEventHero } from './features/NextEventHero';
 export { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from './features/NextTwoDaysView';
+// prettier-ignore
 export { default as OnboardingWizard } from './features/OnboardingWizard';
 export { PomodoroTimer } from './features/PomodoroTimer';
 export { UnifiedJourneyCard } from './features/UnifiedJourneyCard';
