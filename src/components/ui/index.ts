@@ -5,21 +5,33 @@
  * used across any module without dependencies on specific business domains.
  */
 
-export { Accordion } from './Accordion';
+// prettier-ignore
+export { default as Accordion } from './Accordion';
 export { ConfirmationModal } from './ConfirmationModal';
-export { CeramicTabSelector } from './CeramicTabSelector';
-export { EmptyState } from './EmptyState';
+// prettier-ignore
+export { default as CeramicTabSelector } from './CeramicTabSelector';
+// prettier-ignore
+export { default as EmptyState } from './EmptyState';
 export { FloatingActionButton } from './FloatingActionButton';
-export { ErrorBoundary } from './ErrorBoundary';
-export { LoadingScreen } from './LoadingScreen';
+// prettier-ignore
+export { default as ErrorBoundary } from './ErrorBoundary';
+// prettier-ignore
+export { default as LoadingScreen } from './LoadingScreen';
 export { NotificationContainer } from './NotificationContainer';
-export { AuthLoadingScreen } from './AuthLoadingScreen';
-export { TagInput } from './TagInput';
-export { RecurrencePicker } from './RecurrencePicker';
-export { SubtaskList } from './SubtaskList';
+// prettier-ignore
+export { default as AuthLoadingScreen } from './AuthLoadingScreen';
+// prettier-ignore
+export { default as TagInput } from './TagInput';
+// prettier-ignore
+export { default as RecurrencePicker } from './RecurrencePicker';
+// prettier-ignore
+export { default as SubtaskList } from './SubtaskList';
 export { CalendarStatusDot } from './CalendarStatusDot';
 
 // Import UI components that were already in ui/
-export { BentoCard } from './BentoCard';
-export { CeramicPillButton } from './CeramicPillButton';
-export { Logo } from './Logo';
+// prettier-ignore
+export { default as BentoCard } from './BentoCard';
+// prettier-ignore
+export { default as CeramicPillButton } from './CeramicPillButton';
+// prettier-ignore
+export { default as Logo } from './Logo';

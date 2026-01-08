@@ -6,27 +6,38 @@
  * not tied to a single module.
  */
 
-export { AchievementsView } from './AchievementsView';
+// prettier-ignore
+export { default as AchievementsView } from './AchievementsView';
 export { AgendaTimeline } from './AgendaTimeline';
 export { CalendarSyncIndicator } from './CalendarSyncIndicator';
 export { ConnectionArchetypes } from './ConnectionArchetypes';
-export { ContactCard } from './ContactCard';
-export { ContactDetailModal } from './ContactDetailModal';
+// prettier-ignore
+export { default as ContactCard } from './ContactCard';
+// prettier-ignore
+export { default as ContactDetailModal } from './ContactDetailModal';
 export { ContactProfileView } from './ContactProfileView';
 export { DailyTimeline } from './DailyTimeline';
 export { DailySummaryView } from './DailySummaryView';
-export { EfficiencyControlPanel } from './EfficiencyControlPanel';
+// prettier-ignore
+export { default as EfficiencyControlPanel } from './EfficiencyControlPanel';
 export { EfficiencyMedallion } from './EfficiencyMedallion';
-export { EfficiencyScoreCard } from './EfficiencyScoreCard';
-export { EfficiencyTrendChart } from './EfficiencyTrendChart';
-export { GamificationWidget } from './GamificationWidget';
-export { GoogleCalendarConnect } from './GoogleCalendarConnect';
-export { GoogleCalendarEventsList } from './GoogleCalendarEventsList';
+// prettier-ignore
+export { default as EfficiencyScoreCard } from './EfficiencyScoreCard';
+// prettier-ignore
+export { default as EfficiencyTrendChart } from './EfficiencyTrendChart';
+// prettier-ignore
+export { default as GamificationWidget } from './GamificationWidget';
+// prettier-ignore
+export { default as GoogleCalendarConnect } from './GoogleCalendarConnect';
+// prettier-ignore
+export { default as GoogleCalendarEventsList } from './GoogleCalendarEventsList';
 export { LifeWeeksGrid } from './LifeWeeksGrid';
-export { ModuleCard } from './ModuleCard';
+// prettier-ignore
+export { default as ModuleCard } from './ModuleCard';
 export { NextEventHero } from './NextEventHero';
 export { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from './NextTwoDaysView';
-export { OnboardingWizard } from './OnboardingWizard';
+// prettier-ignore
+export { default as OnboardingWizard } from './OnboardingWizard';
 export { PomodoroTimer } from './PomodoroTimer';
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';
 export { WeeklyCalendarView } from './WeeklyCalendarView';
