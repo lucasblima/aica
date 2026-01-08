@@ -2,5 +2,4 @@
  * ContextCard Component - Export Barrel
  */
 
-export { ContextCard, type ContextCardProps } from './ContextCard';
-export default ContextCard;
+export { ContextCard, ContextCard as default, type ContextCardProps } from './ContextCard';
