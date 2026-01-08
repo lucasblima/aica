@@ -561,7 +561,11 @@ export function AppRouter() {
                <>
                   <Route
                      path="/contacts"
-                     element={<ContactsView />}
+                     element={
+                        <ConnectionsLayout>
+                           <ContactsView />
+                        </ConnectionsLayout>
+                     }
                   />
                </>
             )}

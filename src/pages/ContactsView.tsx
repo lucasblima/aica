@@ -74,6 +74,7 @@ export function ContactsView() {
       <HeaderGlobal
         title="Contatos"
         subtitle="Minha Rede de Conexões"
+        userEmail={user?.email}
       />
 
       {/* Main Content */}
