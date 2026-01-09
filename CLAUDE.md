@@ -221,10 +221,17 @@ npm run build && npm run typecheck
 
 ---
 
-## URLs de Produção
-- **App:** https://aica-5562559893.southamerica-east1.run.app
+## URLs de Ambientes
+
+### Staging (Ambiente Ativo)
+- **App:** https://aica-staging-5p22u2w6jq-rj.a.run.app/
 - **Supabase:** https://gppebtrshbvuzatmebhr.supabase.co
 - **Region:** southamerica-east1 (São Paulo)
+- **Uso:** Desenvolvimento, testes e validação do MVP
+
+### Produção (Pausado)
+- **Status:** ⏸️ Desativado até MVP finalizar
+- **Motivo:** Foco total em staging, redução de overhead de manutenção
 
 ---
 
