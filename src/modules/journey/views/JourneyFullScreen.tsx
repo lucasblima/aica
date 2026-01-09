@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { QuickCapture } from '../components/capture/QuickCapture'
 import { MicrophoneFAB } from '../components/ceramic'
 import { UnifiedTimelineView } from '../components/timeline'
@@ -26,6 +27,7 @@ import {
   ClockIcon,
   ChartBarIcon,
   MagnifyingGlassIcon,
+  ArrowLeftIcon,
 } from '@heroicons/react/24/solid'
 import { CreateMomentInput } from '../types/moment'
 import confetti from 'canvas-confetti'
@@ -41,6 +43,7 @@ export function JourneyFullScreen() {
     };
   }, []);
 
+  const navigate = useNavigate()
   const [showCapture, setShowCapture] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search'>('timeline')
@@ -168,6 +171,15 @@ export function JourneyFullScreen() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
+              {/* Back Navigation Button */}
+              <button
+                onClick={() => navigate('/')}
+                className="ceramic-card hover:ceramic-elevated p-2 rounded-full transition-all"
+                aria-label="Voltar para página inicial"
+              >
+                <ArrowLeftIcon className="h-5 w-5 text-[#5C554B]" />
+              </button>
+
               <SparklesIcon className="h-8 w-8 text-amber-600" />
               <h1 className="text-3xl font-bold text-etched">Minha Jornada</h1>
             </div>

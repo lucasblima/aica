@@ -69,7 +69,9 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   const { relative, absolute } = formatEventTime(event.created_at)
-  const sentiment = getSentimentDisplay(event.sentiment, event.sentiment_score)
+  // Access sentiment from event if it has it
+  const eventSentiment = 'sentiment' in event ? event.sentiment : undefined
+  const sentiment = getSentimentDisplay(eventSentiment, undefined)
 
   const handleClick = () => {
     if (onClick) {
@@ -166,7 +168,7 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
         )}
 
         {/* Emotion */}
-        {event.emotion && (
+        {'emotion' in event && event.emotion && (
           <motion.span
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -178,7 +180,8 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
         )}
 
         {/* Tags */}
-        {event.tags &&
+        {'tags' in event &&
+          event.tags &&
           event.tags.slice(0, 3).map((tag, index) => (
             <motion.span
               key={`${tag}-${index}`}
@@ -192,7 +195,7 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
           ))}
 
         {/* More tags indicator */}
-        {event.tags && event.tags.length > 3 && (
+        {'tags' in event && event.tags && event.tags.length > 3 && (
           <span className="text-xs text-[#948D82]">
             +{event.tags.length - 3} mais
           </span>
@@ -225,37 +228,18 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
   if (isWhatsAppEvent(event)) {
     return (
       <div className="space-y-3">
-        {event.whatsapp.content_text && (
+        {event.content && (
           <div>
             <p className="text-sm font-medium text-[#5C554B] mb-1">Mensagem:</p>
             <p className="text-sm text-[#5C554B] leading-relaxed whitespace-pre-wrap">
-              {event.whatsapp.content_text}
+              {event.content}
             </p>
           </div>
         )}
 
-        {event.whatsapp.media_url && (
-          <div>
-            <p className="text-sm font-medium text-[#5C554B] mb-2">Mídia:</p>
-            {event.whatsapp.message_type === 'image' && (
-              <img
-                src={event.whatsapp.media_url}
-                alt="WhatsApp media"
-                className="rounded-lg max-w-full h-auto"
-              />
-            )}
-            {event.whatsapp.message_type === 'audio' && (
-              <audio src={event.whatsapp.media_url} controls className="w-full" />
-            )}
-            {event.whatsapp.message_type === 'video' && (
-              <video src={event.whatsapp.media_url} controls className="w-full rounded-lg" />
-            )}
-          </div>
-        )}
-
-        {event.whatsapp.contact_name && (
+        {event.contact_name && (
           <div className="text-xs text-[#948D82]">
-            Contato: <span className="font-medium">{event.whatsapp.contact_name}</span>
+            Contato: <span className="font-medium">{event.contact_name}</span>
           </div>
         )}
       </div>
@@ -266,24 +250,11 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
   if (isMomentEvent(event)) {
     return (
       <div className="space-y-3">
-        {event.moment.content && (
+        {event.content && (
           <div>
             <p className="text-sm text-[#5C554B] leading-relaxed whitespace-pre-wrap">
-              {event.moment.content}
+              {event.content}
             </p>
-          </div>
-        )}
-
-        {event.moment.audio_url && (
-          <div>
-            <p className="text-sm font-medium text-[#5C554B] mb-2">Áudio:</p>
-            <audio src={event.moment.audio_url} controls className="w-full" />
-          </div>
-        )}
-
-        {event.moment.location && (
-          <div className="text-xs text-[#948D82]">
-            Local: <span className="font-medium">{event.moment.location}</span>
           </div>
         )}
 
@@ -307,34 +278,27 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
   if (isTaskEvent(event)) {
     return (
       <div className="space-y-3">
-        {event.task.description && (
+        {event.description && (
           <div>
             <p className="text-sm font-medium text-[#5C554B] mb-1">Descrição:</p>
             <p className="text-sm text-[#5C554B] leading-relaxed">
-              {event.task.description}
+              {event.description}
             </p>
           </div>
         )}
 
         <div className="flex flex-wrap gap-3 text-xs">
-          {event.task.priority && (
+          {event.priority && (
             <div className="ceramic-inset-shallow px-3 py-1 rounded-full">
               <span className="text-[#948D82]">Prioridade:</span>{' '}
-              <span className="font-medium text-[#5C554B]">{event.task.priority}</span>
+              <span className="font-medium text-[#5C554B]">{event.priority}</span>
             </div>
           )}
 
-          {event.task.category_name && (
-            <div className="ceramic-inset-shallow px-3 py-1 rounded-full">
-              <span className="text-[#948D82]">Categoria:</span>{' '}
-              <span className="font-medium text-[#5C554B]">{event.task.category_name}</span>
-            </div>
-          )}
-
-          {event.task.status && (
+          {event.status && (
             <div className="ceramic-inset-shallow px-3 py-1 rounded-full">
               <span className="text-[#948D82]">Status:</span>{' '}
-              <span className="font-medium text-[#5C554B]">{event.task.status}</span>
+              <span className="font-medium text-[#5C554B]">{event.status}</span>
             </div>
           )}
         </div>
@@ -347,10 +311,10 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
     return (
       <div className="space-y-2">
         <p className="text-sm text-[#5C554B]">{event.displayData.preview}</p>
-        {event.activity.metadata && (
+        {event.metadata && (
           <div className="text-xs text-[#948D82]">
             <pre className="font-mono bg-[#F5F4F0] p-2 rounded overflow-x-auto">
-              {JSON.stringify(event.activity.metadata, null, 2)}
+              {JSON.stringify(event.metadata, null, 2)}
             </pre>
           </div>
         )}
@@ -365,34 +329,18 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
         <div>
           <p className="text-sm font-medium text-[#5C554B] mb-1">Pergunta:</p>
           <p className="text-sm text-[#5C554B] leading-relaxed">
-            {event.question.question_text}
+            {event.question_text}
           </p>
         </div>
 
-        {event.question.response_text && (
+        {event.response && (
           <div>
             <p className="text-sm font-medium text-[#5C554B] mb-1">Sua Resposta:</p>
             <p className="text-sm text-[#5C554B] leading-relaxed whitespace-pre-wrap">
-              {event.question.response_text}
+              {event.response}
             </p>
           </div>
         )}
-
-        <div className="flex gap-3 text-xs">
-          {event.question.question_source && (
-            <div className="ceramic-inset-shallow px-3 py-1 rounded-full">
-              <span className="text-[#948D82]">Fonte:</span>{' '}
-              <span className="font-medium text-[#5C554B]">{event.question.question_source}</span>
-            </div>
-          )}
-
-          {event.question.category && (
-            <div className="ceramic-inset-shallow px-3 py-1 rounded-full">
-              <span className="text-[#948D82]">Categoria:</span>{' '}
-              <span className="font-medium text-[#5C554B]">{event.question.category}</span>
-            </div>
-          )}
-        </div>
       </div>
     )
   }
@@ -401,57 +349,44 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
   if (isSummaryEvent(event)) {
     return (
       <div className="space-y-3">
-        {event.summary.summary_data.emotionalTrend && (
+        {event.highlights && event.highlights.length > 0 && (
           <div>
-            <p className="text-sm font-medium text-[#5C554B] mb-1">Tendência Emocional:</p>
-            <div className="ceramic-inset-shallow px-3 py-2 rounded-lg">
-              <span className="font-medium text-[#5C554B]">
-                {event.summary.summary_data.emotionalTrend}
-              </span>
-            </div>
+            <p className="text-sm font-medium text-[#5C554B] mb-2">Destaques:</p>
+            <ul className="space-y-1">
+              {event.highlights.map((highlight, i) => (
+                <li key={i} className="flex gap-2 text-sm text-[#5C554B]">
+                  <span className="text-[#C4A574]">•</span>
+                  <span>{highlight}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
-        {event.summary.summary_data.dominantEmotions &&
-          event.summary.summary_data.dominantEmotions.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-[#5C554B] mb-2">Emoções Dominantes:</p>
-              <div className="flex flex-wrap gap-2">
-                {event.summary.summary_data.dominantEmotions.map((emotion, i) => (
-                  <span
-                    key={i}
-                    className="ceramic-inset-shallow px-3 py-1 text-xs text-[#5C554B] rounded-full"
-                  >
-                    {emotion}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-        {event.summary.summary_data.insights &&
-          event.summary.summary_data.insights.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-[#5C554B] mb-2">Insights:</p>
-              <ul className="space-y-1">
-                {event.summary.summary_data.insights.map((insight, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-[#5C554B]">
-                    <span className="text-[#C4A574]">•</span>
-                    <span>{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-        {event.summary.user_reflection && (
+        {event.reflection && (
           <div className="pt-3 border-t border-[#E0DDD5]">
-            <p className="text-sm font-medium text-[#5C554B] mb-1">Sua Reflexão:</p>
+            <p className="text-sm font-medium text-[#5C554B] mb-1">Reflexão:</p>
             <p className="text-sm text-[#5C554B] leading-relaxed whitespace-pre-wrap">
-              {event.summary.user_reflection}
+              {event.reflection}
             </p>
           </div>
         )}
+
+        <div className="flex flex-wrap gap-3 text-xs">
+          {event.moments_count !== undefined && (
+            <div className="ceramic-inset-shallow px-3 py-1 rounded-full">
+              <span className="text-[#948D82]">Momentos:</span>{' '}
+              <span className="font-medium text-[#5C554B]">{event.moments_count}</span>
+            </div>
+          )}
+
+          {event.tasks_completed !== undefined && (
+            <div className="ceramic-inset-shallow px-3 py-1 rounded-full">
+              <span className="text-[#948D82]">Tarefas concluídas:</span>{' '}
+              <span className="font-medium text-[#5C554B]">{event.tasks_completed}</span>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
