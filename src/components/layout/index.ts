@@ -12,3 +12,4 @@ export { HeaderGlobal } from './HeaderGlobal';
 // prettier-ignore
 export { default as Login } from './Login';
 export { SettingsMenu } from './SettingsMenu';
+export { HelpButton } from './HelpButton';

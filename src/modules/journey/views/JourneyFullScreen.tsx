@@ -3,7 +3,6 @@
  * Full-screen view with 3 zones: Momento Presente, Timeline Viva, Insights & Patterns
  */
 
-import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { QuickCapture } from '../components/capture/QuickCapture'
@@ -31,11 +30,11 @@ import {
 import { CreateMomentInput } from '../types/moment'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
-import { SettingsMenu } from '@/components'
+import { SettingsMenu, HelpButton } from '@/components'
 
 export function JourneyFullScreen() {
 
-  useTourAutoStart('journey-first-visit');  const [showCapture, setShowCapture] = useState(false)
+  const [showCapture, setShowCapture] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search'>('timeline')
   const [showInsight, setShowInsight] = useState(false)
@@ -188,6 +187,9 @@ export function JourneyFullScreen() {
                   </>
                 )}
               </button>
+
+              {/* Help Button - Optional tour */}
+              <HelpButton tourKey="journey-first-visit" />
 
               {/* Settings Menu - Discrete gear icon */}
               <SettingsMenu userEmail={user?.email} />

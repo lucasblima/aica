@@ -26,7 +26,7 @@ export interface TourConfig {
  * Context type
  */
 interface TourContextType {
-  startTour: (tourKey: string) => Promise<void>;
+  startTour: (tourKey: string, forceStart?: boolean) => Promise<void>;
   completeTour: (tourKey: string) => Promise<void>;
   hasTourCompleted: (tourKey: string) => boolean;
   activeTourKey: string | null;
@@ -95,10 +95,17 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
 
   /**
    * Start a tour by key
+   * @param tourKey - The unique identifier of the tour
+   * @param forceStart - If true, start even if tour is already completed (allows re-watching)
    */
-  const startTour = useCallback(async (tourKey: string) => {
-    // Don't start if already started or already completed
-    if (activeTourKey || hasTourCompleted(tourKey)) {
+  const startTour = useCallback(async (tourKey: string, forceStart?: boolean) => {
+    // Don't start if already started
+    if (activeTourKey) {
+      return;
+    }
+
+    // Don't start if already completed, unless forceStart is true (for re-watching)
+    if (!forceStart && hasTourCompleted(tourKey)) {
       return;
     }
 
