@@ -10,6 +10,7 @@
  */
 
 import { GeminiClient } from '@/lib/gemini/client';
+import { trackAIUsage } from '@/services/aiUsageTrackingService';
 
 export interface AISuggestion {
   type: 'reflection' | 'question' | 'pattern';
@@ -25,6 +26,8 @@ export async function analyzeContentRealtime(content: string): Promise<AISuggest
   if (content.trim().length < 20) {
     return null;
   }
+
+  const startTime = Date.now();
 
   try {
     const gemini = GeminiClient.getInstance();
@@ -52,6 +55,24 @@ Seja conciso e empático. Máximo 2 linhas.`,
         temperature: 0.8,
         maxOutputTokens: 150,
       },
+    });
+
+    // Track AI usage (non-blocking, fire-and-forget)
+    trackAIUsage({
+      operation_type: 'text_generation',
+      ai_model: response.model || 'gemini-2.0-flash',
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      module_type: 'journey',
+      duration_seconds: (Date.now() - startTime) / 1000,
+      request_metadata: {
+        function_name: 'analyzeContentRealtime',
+        operation: 'realtime_analysis',
+        content_length: content.length,
+      }
+    }).catch(error => {
+      // Non-blocking: log error but don't throw
+      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     // Parse JSON response
@@ -105,6 +126,8 @@ export async function generatePostCaptureInsight(
     .slice(0, 3)
     .map(([tag]) => tag);
 
+  const startTime = Date.now();
+
   try {
     const gemini = GeminiClient.getInstance();
 
@@ -133,6 +156,24 @@ Retorne um JSON:
         temperature: 0.7,
         maxOutputTokens: 200,
       },
+    });
+
+    // Track AI usage (non-blocking, fire-and-forget)
+    trackAIUsage({
+      operation_type: 'text_generation',
+      ai_model: response.model || 'gemini-2.0-flash',
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      module_type: 'journey',
+      duration_seconds: (Date.now() - startTime) / 1000,
+      request_metadata: {
+        function_name: 'generatePostCaptureInsight',
+        operation: 'post_capture_insight',
+        recent_moments_count: recentMoments?.length || 0,
+      }
+    }).catch(error => {
+      // Non-blocking: log error but don't throw
+      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     const text = response.result?.text || JSON.stringify(response.result);
@@ -191,6 +232,8 @@ export async function clusterMomentsByTheme(
     return [];
   }
 
+  const startTime = Date.now();
+
   try {
     const gemini = GeminiClient.getInstance();
     const momentsSummary = moments
@@ -220,6 +263,24 @@ Máximo 5 temas. Seja específico e empático.`,
         temperature: 0.6,
         maxOutputTokens: 500,
       },
+    });
+
+    // Track AI usage (non-blocking, fire-and-forget)
+    trackAIUsage({
+      operation_type: 'text_generation',
+      ai_model: response.model || 'gemini-2.0-flash',
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      module_type: 'journey',
+      duration_seconds: (Date.now() - startTime) / 1000,
+      request_metadata: {
+        function_name: 'clusterMomentsByTheme',
+        operation: 'cluster_by_theme',
+        moments_count: moments.length,
+      }
+    }).catch(error => {
+      // Non-blocking: log error but don't throw
+      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     const text = response.result?.text || JSON.stringify(response.result);
