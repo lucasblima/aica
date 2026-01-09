@@ -35,6 +35,8 @@ import * as EdgeFunctionService from '../../../services/edgeFunctionService'
 export async function generateFieldContent(
   context: GenerateFieldPayload
 ): Promise<string> {
+  const startTime = Date.now()
+
   try {
     const result = await EdgeFunctionService.generateFieldContent({
       edital_text: context.edital_text,
@@ -51,9 +53,29 @@ export async function generateFieldContent(
     // ========================================
     // TRACKING DE CUSTO - AI Usage Analytics
     // ========================================
-    // Note: Edge Function doesn't return usage metadata yet
-    // This could be added to the Edge Function response in the future
-    // trackAIUsage({...})
+    const usageMetadata = (result as any).__usageMetadata
+    if (usageMetadata) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: 'gemini-2.0-flash-exp',
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0,
+        module_type: 'grants',
+        module_id: context.project_id,
+        duration_seconds: (Date.now() - startTime) / 1000,
+        request_metadata: {
+          use_case: 'generate_field_content',
+          field_id: context.field_config.id,
+          field_label: context.field_config.label,
+          max_chars: context.field_config.max_chars,
+          has_source_doc: !!context.source_document_content,
+          has_edital_content: !!context.edital_text_content,
+          criteria_count: context.evaluation_criteria?.length || 0
+        }
+      }).catch(error => {
+        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+      })
+    }
     // ========================================
 
     return result.generatedText
@@ -107,6 +129,8 @@ export async function analyzeEditalStructure(editalText: string): Promise<{
   }>;
   external_system_url: string | null;
 }> {
+  const startTime = Date.now()
+
   try {
     const data = await EdgeFunctionService.analyzeEditalStructure({ editalText })
 
@@ -115,6 +139,31 @@ export async function analyzeEditalStructure(editalText: string): Promise<{
       criteriaCount: data.evaluation_criteria?.length || 0,
       fieldsCount: data.form_fields?.length || 0
     })
+
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usageMetadata = (data as any).__usageMetadata
+    if (usageMetadata) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: 'gemini-2.0-flash-exp',
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0,
+        module_type: 'grants',
+        duration_seconds: (Date.now() - startTime) / 1000,
+        request_metadata: {
+          use_case: 'analyze_edital_structure',
+          edital_length: editalText.length,
+          criteria_extracted: data.evaluation_criteria?.length || 0,
+          fields_extracted: data.form_fields?.length || 0,
+          has_funding_info: !!(data.min_funding || data.max_funding)
+        }
+      }).catch(error => {
+        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+      })
+    }
+    // ========================================
 
     return data
   } catch (error) {
@@ -151,6 +200,8 @@ export async function parseFormFieldsFromText(pastedText: string): Promise<Array
   ai_prompt_hint: string;
   placeholder: string;
 }>> {
+  const startTime = Date.now()
+
   try {
     const result = await EdgeFunctionService.parseFormFields({ text: pastedText })
 
@@ -158,6 +209,29 @@ export async function parseFormFieldsFromText(pastedText: string): Promise<Array
       count: result.fields.length,
       fields: result.fields.map((f) => ({ label: f.label, max_chars: f.max_chars }))
     })
+
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usageMetadata = (result as any).__usageMetadata
+    if (usageMetadata) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: 'gemini-2.0-flash-exp',
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0,
+        module_type: 'grants',
+        duration_seconds: (Date.now() - startTime) / 1000,
+        request_metadata: {
+          use_case: 'parse_form_fields',
+          input_text_length: pastedText.length,
+          fields_parsed: result.fields.length
+        }
+      }).catch(error => {
+        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+      })
+    }
+    // ========================================
 
     return result.fields
   } catch (error) {
