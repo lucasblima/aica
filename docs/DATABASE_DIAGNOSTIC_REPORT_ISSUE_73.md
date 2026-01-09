@@ -2,7 +2,7 @@
 ## Migration Analysis and Integrity Audit
 
 **Project**: Aica Life OS
-**Supabase Project**: gppebtrshbvuzatmebhr
+**Supabase Project**: uzywajqzbdbrfammshdg
 **Environment**: STAGING ONLY (Production não iniciada)
 **Date**: 2026-01-08
 **Agent**: Backend Architect (Supabase)

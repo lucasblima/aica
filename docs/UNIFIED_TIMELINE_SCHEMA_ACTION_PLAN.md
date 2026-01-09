@@ -24,7 +24,7 @@ The unified timeline service layer queries columns that may not exist in Supabas
 **File**: `supabase/audit-queries/verify_unified_timeline_schema.sql`
 
 **How to run**:
-1. Open Supabase Dashboard: https://gppebtrshbvuzatmebhr.supabase.co
+1. Open Supabase Dashboard: https://uzywajqzbdbrfammshdg.supabase.co
 2. Go to SQL Editor
 3. Copy contents of verification script
 4. Execute and save results

@@ -325,7 +325,7 @@ npx supabase functions deploy sync-whatsapp-contacts
 npx supabase functions list
 
 # Test in production
-curl https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/sync-whatsapp-contacts \
+curl https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/sync-whatsapp-contacts \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -343,7 +343,7 @@ curl -X POST "https://evolution-evolution-api.w9jo16.easypanel.host/webhook/set/
   -d '{
     "webhook": {
       "enabled": true,
-      "url": "https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution"
+      "url": "https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution"
     }
   }'
 ```
@@ -352,7 +352,7 @@ curl -X POST "https://evolution-evolution-api.w9jo16.easypanel.host/webhook/set/
 ```bash
 # Apply database migration
 # Via Supabase Dashboard SQL Editor:
-# 1. Go to: https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/sql
+# 1. Go to: https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/sql
 # 2. Copy contents of supabase/migrations/20260108_whatsapp_contact_network.sql
 # 3. Paste and click "Run"
 
