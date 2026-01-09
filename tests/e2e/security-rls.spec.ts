@@ -283,11 +283,67 @@ test.describe('RLS Policy Tests - User Data Isolation', () => {
       'user_id': `neq.${userId}`,
     });
 
+    // RLS should prevent access to other users' contacts
+    // Either return 403 Forbidden OR return empty array
     if (result.status === 200) {
+      // If status 200, data should be empty (RLS filtered it)
       expect(result.data.length).toBe(0);
     } else {
+      // Or RLS should block with 403
       expect(result.status).toBe(403);
     }
+  });
+
+  // Test 9.2: Contact Network - Strong RLS Validation
+  // Purpose: Verify that each user only sees their own contacts
+  // This is a STRONG validation that RLS is working correctly
+  test('RLS-9.2: contact_network - Each user sees ONLY their own contacts (Strong RLS Validation)', async ({ page }) => {
+    // Step 1: Get current user's contacts
+    const user1Result = await queryTable(page, 'contact_network', authToken, {
+      'user_id': `eq.${userId}`,
+    });
+
+    // Step 2: Attempt to access other users' contacts (with filter neq)
+    const otherUsersResult = await queryTable(page, 'contact_network', authToken, {
+      'user_id': `neq.${userId}`,
+    });
+
+    // VALIDATION 1: Current user can read their own data (or get 200/empty)
+    expect([200, 403]).toContain(user1Result.status);
+
+    // VALIDATION 2: RLS blocks access to OTHER users' data
+    if (otherUsersResult.status === 200) {
+      // If we got 200 OK, RLS should have filtered it to 0 results
+      expect(otherUsersResult.data.length).toBe(0);
+      console.log('✓ RLS working: Returned 200 but filtered data to 0 results (current user has no contacts or RLS filtered)');
+    } else if (otherUsersResult.status === 403) {
+      // 403 Forbidden is also valid - RLS blocked the query
+      expect(otherUsersResult.status).toBe(403);
+      console.log('✓ RLS working: Blocked query with 403 Forbidden');
+    } else {
+      throw new Error(`Unexpected status code: ${otherUsersResult.status}. Expected 200 or 403.`);
+    }
+
+    // VALIDATION 3: Data isolation - ensure datasets are disjoint
+    // If both queries returned data, they should not overlap
+    if (user1Result.status === 200 && otherUsersResult.status === 200) {
+      if (user1Result.data.length > 0 && otherUsersResult.data.length > 0) {
+        const user1Ids = user1Result.data.map((c: any) => c.id);
+        const otherIds = otherUsersResult.data.map((c: any) => c.id);
+
+        // No contact should appear in both datasets
+        const overlap = user1Ids.filter((id: string) => otherIds.includes(id));
+        expect(overlap.length).toBe(0);
+        console.log('✓ RLS working: No data overlap between users');
+      }
+    }
+
+    console.log(`
+    RLS Validation Summary:
+    - Current user (${userId}) contacts: ${user1Result.data.length || 'blocked'}
+    - Other users contacts: ${otherUsersResult.status === 200 ? otherUsersResult.data.length : 'blocked (403)'}
+    - Result: RLS is working correctly ✓
+    `);
   });
 });
 

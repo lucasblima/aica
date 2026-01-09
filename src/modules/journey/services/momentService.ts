@@ -5,6 +5,7 @@
 
 import { supabase } from '@/lib/supabase'
 import { GeminiClient } from '@/lib/gemini'
+import { trackAIUsage } from '@/services/aiUsageTrackingService'
 import {
   Moment,
   CreateMomentInput,
@@ -316,12 +317,32 @@ async function transcribeAudio(audioBlob: Blob): Promise<string> {
  * Analyze moment sentiment using Gemini
  */
 async function analyzeMomentSentiment(content: string): Promise<SentimentAnalysis> {
+  const startTime = Date.now()
+
   try {
     const response = await geminiClient.call({
       action: 'analyze_moment_sentiment',
       payload: { content },
       model: 'fast',
     })
+
+    // Track AI usage (non-blocking, fire-and-forget)
+    trackAIUsage({
+      operation_type: 'text_generation',
+      ai_model: response.model || 'gemini-2.0-flash',
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      module_type: 'journey',
+      duration_seconds: (Date.now() - startTime) / 1000,
+      request_metadata: {
+        function_name: 'analyzeMomentSentiment',
+        operation: 'sentiment_analysis',
+        content_length: content.length,
+      }
+    }).catch(error => {
+      // Non-blocking: log error but don't throw
+      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+    });
 
     return response.result as SentimentAnalysis
   } catch (error) {

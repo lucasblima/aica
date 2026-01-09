@@ -16,6 +16,7 @@
 
 import { supabase } from '@/lib/supabase'
 import { GeminiClient } from '@/lib/gemini'
+import { trackAIUsage } from '@/services/aiUsageTrackingService'
 
 import {
   CreateMomentEntryInput,
@@ -435,6 +436,8 @@ async function deleteAudioFromStorage(audioUrl: string): Promise<void> {
  * Generate auto-tags using Gemini
  */
 async function generateAutoTags(content: string, lifeAreas: string[]): Promise<AutoTaggingResult> {
+  const startTime = Date.now()
+
   try {
     const prompt = `Analise este momento pessoal e gere tags relevantes.
 
@@ -460,6 +463,24 @@ Máximo 5 tags. Siga o padrão de tags em minúsculas com hífen.`
         maxOutputTokens: 200,
       },
     })
+
+    // Track AI usage (non-blocking, fire-and-forget)
+    trackAIUsage({
+      operation_type: 'text_generation',
+      ai_model: response.model || 'gemini-2.0-flash',
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      module_type: 'journey',
+      duration_seconds: (Date.now() - startTime) / 1000,
+      request_metadata: {
+        function_name: 'generateAutoTags',
+        operation: 'auto_tagging',
+        content_length: content.length,
+      }
+    }).catch(error => {
+      // Non-blocking: log error but don't throw
+      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+    });
 
     const responseText = response.result?.text || JSON.stringify(response.result)
     const jsonMatch = responseText.match(/\{[\s\S]*\}/)
