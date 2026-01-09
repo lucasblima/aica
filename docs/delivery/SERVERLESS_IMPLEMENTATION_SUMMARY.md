@@ -67,11 +67,11 @@ supabase db push
 
 ```bash
 # Deploy individual
-npx supabase functions deploy webhook-evolution --project-ref gppebtrshbvuzatmebhr
-npx supabase functions deploy gemini-chat --project-ref gppebtrshbvuzatmebhr
+npx supabase functions deploy webhook-evolution --project-ref uzywajqzbdbrfammshdg
+npx supabase functions deploy gemini-chat --project-ref uzywajqzbdbrfammshdg
 
 # Ou deploy automático
-npx supabase functions deploy --project-ref gppebtrshbvuzatmebhr
+npx supabase functions deploy --project-ref uzywajqzbdbrfammshdg
 ```
 
 ### Fase 3: Configurar Webhook na Evolution API
@@ -80,7 +80,7 @@ npx supabase functions deploy --project-ref gppebtrshbvuzatmebhr
 2. Vá para configurações de webhook
 3. Altere a URL para:
    ```
-   https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution
+   https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution
    ```
 4. Configure o secret em variáveis de ambiente Supabase
 
@@ -91,7 +91,7 @@ No painel Supabase → Project Settings → Edge Functions → Environment Varia
 ```env
 # Já existentes
 GEMINI_API_KEY=AIzaSy...
-SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # Novos
@@ -212,8 +212,8 @@ ORDER BY last_interaction DESC;
 
 ```bash
 # Logs da Edge Function
-npx supabase functions logs webhook-evolution --project-ref gppebtrshbvuzatmebhr
-npx supabase functions logs gemini-chat --project-ref gppebtrshbvuzatmebhr
+npx supabase functions logs webhook-evolution --project-ref uzywajqzbdbrfammshdg
+npx supabase functions logs gemini-chat --project-ref uzywajqzbdbrfammshdg
 ```
 
 ---

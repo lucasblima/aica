@@ -21,7 +21,7 @@ Microserviço Python para extrair PDFs de extratos bancários e converter para M
 ## Variáveis de Ambiente
 
 ```env
-SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 SUPABASE_SERVICE_KEY=eyJ...sua_service_role_key...
 ALLOWED_ORIGINS=https://seu-dominio.com,http://localhost:5173
 ```

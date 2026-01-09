@@ -32,7 +32,7 @@ Todos os 41 testes E2E estão falhando devido a uma combinação de:
 📍 Current page URL: http://localhost:3000/landing
 🔑 LocalStorage contents: [
   {
-    "key": "sb-gppebtrshbvuzatmebhr-auth-token",
+    "key": "sb-uzywajqzbdbrfammshdg-auth-token",
     "valueLength": 1429
   }
 ]

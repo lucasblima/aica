@@ -2,17 +2,17 @@
 
 ## 📍 Supabase Project URLs
 
-**Project ID:** `gppebtrshbvuzatmebhr`
+**Project ID:** `uzywajqzbdbrfammshdg`
 
 ### Dashboard
-- 🔗 [Supabase Dashboard](https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr)
-- 🔗 [Edge Functions Console](https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/functions)
-- 🔗 [SQL Editor](https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/sql)
-- 🔗 [Table Editor](https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/editor)
+- 🔗 [Supabase Dashboard](https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg)
+- 🔗 [Edge Functions Console](https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions)
+- 🔗 [SQL Editor](https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/sql)
+- 🔗 [Table Editor](https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/editor)
 
 ### API Endpoints
-- **REST API Base:** `https://gppebtrshbvuzatmebhr.supabase.co/rest/v1`
-- **GraphQL API:** `https://gppebtrshbvuzatmebhr.supabase.co/graphql/v1`
+- **REST API Base:** `https://uzywajqzbdbrfammshdg.supabase.co/rest/v1`
+- **GraphQL API:** `https://uzywajqzbdbrfammshdg.supabase.co/graphql/v1`
 
 ---
 
@@ -20,7 +20,7 @@
 
 ### Webhook Evolution (Nova)
 ```
-https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution
+https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution
 ```
 - **Método:** POST
 - **Descrição:** Recebe webhooks da Evolution API
@@ -28,7 +28,7 @@ https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution
 
 ### Gemini Chat (Atualizado)
 ```
-https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/gemini-chat
+https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/gemini-chat
 ```
 - **Método:** POST
 - **Ações:** Novo action `whatsapp_sentiment` para análise
@@ -118,7 +118,7 @@ EVOLUTION_BOT_PHONE=5511987654321
 CORS_ORIGIN=http://localhost:3000
 RATE_LIMIT_DAILY_PER_USER=1000
 GEMINI_API_KEY=AIzaSy...
-SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
@@ -133,7 +133,7 @@ https://n8n-n8n.w9jo16.easypanel.host/webhook/aicomtxae-client-4569
 
 ### Novo (Supabase - Alterar Para)
 ```
-https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution
+https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution
 ```
 
 **Onde Alterar:** Painel Evolution API → Webhooks/Settings
@@ -156,7 +156,7 @@ https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution
 ### Teste Local
 ```bash
 # Com curl
-curl -X POST https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution \
+curl -X POST https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
   -d '{
@@ -184,20 +184,20 @@ curl -X POST https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolu
 ### Logs em Tempo Real
 ```bash
 # Via CLI
-npx supabase functions logs webhook-evolution --project-ref gppebtrshbvuzatmebhr
+npx supabase functions logs webhook-evolution --project-ref uzywajqzbdbrfammshdg
 
 # Via Dashboard
-# https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/functions
+# https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions
 # → webhook-evolution → Logs
 ```
 
 ### Métricas
 ```bash
 # Ver execution statistics
-npx supabase functions list --project-ref gppebtrshbvuzatmebhr
+npx supabase functions list --project-ref uzywajqzbdbrfammshdg
 
 # Detailed info
-npx supabase functions info webhook-evolution --project-ref gppebtrshbvuzatmebhr
+npx supabase functions info webhook-evolution --project-ref uzywajqzbdbrfammshdg
 ```
 
 ---

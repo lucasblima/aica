@@ -49,7 +49,7 @@ In your Supabase dashboard:
 2. Enable **Google**
 3. Enter the **Client ID** and **Client Secret**
 4. Add authorized redirect URIs:
-   - `https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/callback`
+   - `https://uzywajqzbdbrfammshdg.supabase.co/auth/v1/callback`
    - Your app's domain(s)
 
 ## Usage

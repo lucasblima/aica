@@ -2,7 +2,7 @@
 
 **Generated**: 2026-01-08  
 **Project**: Aica Life OS  
-**Supabase**: gppebtrshbvuzatmebhr  
+**Supabase**: uzywajqzbdbrfammshdg  
 
 ---
 
