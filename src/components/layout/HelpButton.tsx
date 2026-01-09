@@ -11,7 +11,7 @@
  * - Mobile responsive (48px+ touch target)
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { useTour } from '@/contexts/TourContext';
 
@@ -24,10 +24,37 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
   tourKey,
   className = ''
 }) => {
-  const { startTour } = useTour();
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  let tourContext;
+  try {
+    tourContext = useTour();
+  } catch (err) {
+    console.warn('[HelpButton] TourContext not available:', err);
+    // Render disabled button if TourContext is not available
+    return (
+      <button
+        disabled
+        title="Tour system not available"
+        className={`
+          w-10 h-10
+          ceramic-card
+          flex items-center justify-center
+          text-ceramic-text-secondary
+          opacity-30
+          cursor-not-allowed
+          ${className}
+        `}
+        aria-label="Tour indisponível"
+      >
+        <HelpCircle className="w-5 h-5" />
+      </button>
+    );
+  }
+
+  const { startTour } = tourContext;
+
+  const handleClick = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -35,12 +62,13 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
       setIsLoading(true);
       // forceStart = true allows re-watching completed tours
       await startTour(tourKey, true);
-    } catch (error) {
-      console.error('[HelpButton] Error starting tour:', error);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[HelpButton] Error starting tour:', errorMsg);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [startTour, tourKey]);
 
   return (
     <button
