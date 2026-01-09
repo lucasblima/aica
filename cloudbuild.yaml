@@ -20,7 +20,7 @@ substitutions:
   # Required: Supabase configuration (safe to include - these are public client keys)
   _VITE_SUPABASE_URL: https://uzywajqzbdbrfammshdg.supabase.co
   _VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6eXdhanF6YmRicmZhbW1zaGRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTE0MjEsImV4cCI6MjA4MzMyNzQyMX0.cQHqHZtIlIzX2hucb5n53PDvGYHb43ra6G5cCTlvbl
-  # Required: Frontend URL for OAuth redirect (STAGING OFICIAL)
+  # Required: Frontend URL for OAuth redirect (Official Staging)
   _VITE_FRONTEND_URL: https://aica-staging-5p22u2w6jq-rj.a.run.app
   # Optional: Set these in Cloud Build trigger or leave empty
   _VITE_GOOGLE_OAUTH_CLIENT_ID: '5562559893-1ufv0knok8k4679kr35p7aqdhp55drg0.apps.googleusercontent.com'
