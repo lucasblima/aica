@@ -22,7 +22,7 @@ type ProfileTab = 'profile' | 'trails' | 'settings';
 
 export function ProfilePage({ userId, userEmail }: ProfilePageProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<ProfileTab>('trails');
+  const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
 
   const handleTrailsComplete = () => {
     // When user completes trails from profile, just stay on page

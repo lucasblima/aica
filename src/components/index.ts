@@ -43,6 +43,7 @@ export { HeaderGlobal } from './layout/HeaderGlobal';
 // prettier-ignore
 export { default as Login } from './layout/Login';
 export { SettingsMenu } from './layout/SettingsMenu';
+export { HelpButton } from './layout/HelpButton';
 
 // ============ Features ============
 // prettier-ignore

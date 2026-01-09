@@ -5,6 +5,7 @@ import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCi
 import { HeaderGlobal, IdentityPassport, ProfileModal, ConnectionArchetypes, ModuleCard } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
+import { JourneyCardCollapsed } from '../modules/journey/views/JourneyCardCollapsed';
 import { RecentContactsWidget } from '../components';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
@@ -96,6 +97,13 @@ export default function Home({
    // Get CP stats for streak integration
    const { stats: cpStats } = useConsciousnessPoints();
 
+   // Reset ProfileModal when component unmounts (prevents modal persisting across views)
+   useEffect(() => {
+      return () => {
+         setProfileModalOpen(false);
+      };
+   }, []);
+
    // Handle account deletion
    const handleDeleteAccount = async () => {
       try {
@@ -175,7 +183,10 @@ export default function Home({
                >
                   <IdentityPassport
                      userId={userId}
-                     onOpenProfile={() => setProfileModalOpen(true)}
+                     onOpenProfile={() => {
+                        console.log('[Home] IdentityPassport onOpenProfile clicked');
+                        setProfileModalOpen(true);
+                     }}
                   />
                   {/* GAP 5: Streak Badge - Minimalista */}
                   <motion.div
@@ -242,12 +253,24 @@ export default function Home({
                      />
                   </motion.div>
 
-                  {/* Saúde */}
+                  {/* Jornada - Timeline de Vida */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
                      custom={4}
+                     className="cursor-pointer hover:scale-[1.01] transition-transform"
+                     onClick={() => onNavigateToView('journey')}
+                  >
+                     <JourneyCardCollapsed />
+                  </motion.div>
+
+                  {/* Saúde */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={5}
                      onClick={() => onNavigateToView('health')}
                   >
                      <ModuleCard
@@ -264,7 +287,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={5}
+                     custom={6}
                      onClick={() => onNavigateToView('education')}
                   >
                      <ModuleCard
@@ -281,7 +304,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={6}
+                     custom={7}
                      onClick={() => onNavigateToView('legal')}
                   >
                      <ModuleCard
@@ -298,7 +321,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={7}
+                     custom={8}
                      onClick={() => onNavigateToView('professional')}
                   >
                      <ModuleCard
@@ -316,7 +339,7 @@ export default function Home({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={8}
+                  custom={9}
                >
                   <RecentContactsWidget
                      onViewAllClick={() => navigate('/contacts')}
@@ -331,7 +354,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={9}
+                     custom={10}
                      onClick={() => onNavigateToView('connections')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
@@ -371,7 +394,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={10}
+                     custom={11}
                      onClick={() => onNavigateToView('studio')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                      style={{
