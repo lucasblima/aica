@@ -86,7 +86,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
           </button>
 
           <button
-            onClick={() => navigate('/people')}
+            onClick={() => navigate('/contacts')}
             aria-label="Navegue para pessoas"
             className={`flex flex-col items-center gap-1 transition-all duration-300 ${isOnPeopleRoute ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
           >
