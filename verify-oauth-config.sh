@@ -11,7 +11,7 @@ echo ""
 # Expected values
 CLIENT_ID="5562559893-1ufv0knok8k4679kr35p7aqdhp55drg0.apps.googleusercontent.com"
 SUPABASE_CALLBACK="https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/callback"
-FRONTEND_URL="https://aica-5562559893.southamerica-east1.run.app"
+FRONTEND_URL="https://aica-staging-5p22u2w6jq-rj.a.run.app"
 
 echo "✓ Client ID: $CLIENT_ID"
 echo "✓ Supabase Callback: $SUPABASE_CALLBACK"
