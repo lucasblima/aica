@@ -537,21 +537,30 @@ async function handleAnalyzeContentRealtime(genAI: GoogleGenerativeAI, payload: 
   const { prompt, temperature, maxOutputTokens } = payload
   const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.8, maxOutputTokens: maxOutputTokens || 150 } })
   const result = await model.generateContent(prompt)
-  return { text: result.response.text() }
+  return {
+    text: result.response.text(),
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 async function handleGeneratePostCaptureInsight(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
   const { prompt, temperature, maxOutputTokens } = payload
   const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.7, maxOutputTokens: maxOutputTokens || 200 } })
   const result = await model.generateContent(prompt)
-  return { text: result.response.text() }
+  return {
+    text: result.response.text(),
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 async function handleClusterMomentsByTheme(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
   const { prompt, temperature, maxOutputTokens } = payload
   const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.6, maxOutputTokens: maxOutputTokens || 500 } })
   const result = await model.generateContent(prompt)
-  return { text: result.response.text() }
+  return {
+    text: result.response.text(),
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 // ============================================================================
@@ -701,7 +710,10 @@ ${field_config.ai_prompt_hint ? `Dica: ${field_config.ai_prompt_hint}\n` : ''}Li
     generatedText = generatedText.substring(0, field_config.max_chars - 3) + '...'
   }
 
-  return { generatedText }
+  return {
+    generatedText,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 async function handleAnalyzeEditalStructure(genAI: GoogleGenerativeAI, payload: AnalyzeEditalStructurePayload): Promise<any> {
@@ -780,7 +792,10 @@ ${editalText.substring(0, 50000)}`
   const jsonText = text.replace(/```json\n?|\n?```/g, '').trim()
   const data = JSON.parse(jsonText)
 
-  return data
+  return {
+    ...data,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 async function handleParseFormFields(genAI: GoogleGenerativeAI, payload: ParseFormFieldsPayload): Promise<{ fields: ParsedFormField[] }> {
@@ -828,7 +843,10 @@ ${text}`
   const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
   const fields = JSON.parse(jsonText) as ParsedFormField[]
 
-  return { fields }
+  return {
+    fields,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 // ============================================================================
@@ -894,7 +912,10 @@ Retorne APENAS o JSON.`
   const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
   const briefing = JSON.parse(jsonText) as Record<string, string>
 
-  return { briefing }
+  return {
+    briefing,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 async function handleImproveBriefingField(genAI: GoogleGenerativeAI, payload: ImproveBriefingFieldPayload): Promise<{ improvedText: string }> {
@@ -932,7 +953,10 @@ Texto melhorado:`
   const result = await model.generateContent(prompt)
   const improvedText = result.response.text().trim()
 
-  return { improvedText }
+  return {
+    improvedText,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 async function handleExtractRequiredDocuments(genAI: GoogleGenerativeAI, payload: ExtractRequiredDocumentsPayload): Promise<{ documents: Array<{ name: string; description?: string; dueDate?: string }> }> {
@@ -968,7 +992,10 @@ Retorne APENAS o JSON.`
   const jsonText = result.response.text().replace(/```json\n?|\n?```/g, '').trim()
   const documents = JSON.parse(jsonText)
 
-  return { documents }
+  return {
+    documents,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 async function handleExtractTimelinePhases(genAI: GoogleGenerativeAI, payload: ExtractTimelinePhasesPayload): Promise<{ phases: Array<{ name: string; description?: string; date: string }> }> {
@@ -1007,7 +1034,10 @@ Use formato ISO (YYYY-MM-DD). Retorne APENAS o JSON.`
   // Sort by date
   phases.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-  return { phases }
+  return {
+    phases,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 // ============================================================================
@@ -1068,7 +1098,10 @@ ${rawText.substring(0, 10000)}`
   }
 
   const data = JSON.parse(jsonMatch)
-  return data
+  return {
+    ...data,
+    __usageMetadata: result.response.usageMetadata
+  }
 }
 
 // ============================================================================
@@ -1171,7 +1204,10 @@ IMPORTANTE: Retorne APENAS o objeto JSON, sem markdown, sem blocos de codigo, se
     researched_at: new Date().toISOString(),
   }
 
-  return profile
+  return {
+    ...profile,
+    __usageMetadata: result.response.usageMetadata
+  } as any
 }
 
 // ============================================================================
@@ -1278,7 +1314,19 @@ serve(async (req) => {
       const latencyMs = Date.now() - startTime
       console.log(`[gemini-chat] Action ${action} completed in ${latencyMs}ms`)
 
-      return new Response(JSON.stringify({ result, success: true, latencyMs, cached: false }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      // Extract usageMetadata if present (for AI cost tracking)
+      const usageMetadata = (result as any)?.__usageMetadata || null
+
+      return new Response(
+        JSON.stringify({
+          result: (result as any)?.__usageMetadata ? { ...(result as any), __usageMetadata: undefined } : result,
+          success: true,
+          latencyMs,
+          cached: false,
+          ...(usageMetadata && { usageMetadata })
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
 
     } else {
       const result = await handleLegacyChat(genAI, body as ChatRequest)

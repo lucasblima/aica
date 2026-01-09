@@ -42,6 +42,11 @@ interface EdgeFunctionResponse<T = any> {
   success: boolean
   latencyMs?: number
   cached?: boolean
+  usageMetadata?: {
+    promptTokenCount?: number
+    candidatesTokenCount?: number
+    totalTokenCount?: number
+  }
 }
 
 // ============================================================================
@@ -168,7 +173,7 @@ export async function callGeminiEdgeFunction<T = any>(
   action: string,
   payload: Record<string, any>,
   model?: 'fast' | 'smart'
-): Promise<T> {
+): Promise<T & { __usageMetadata?: EdgeFunctionResponse['usageMetadata'] }> {
   try {
     const body: EdgeFunctionRequest = {
       action,
@@ -195,9 +200,21 @@ export async function callGeminiEdgeFunction<T = any>(
       throw new Error('Edge Function returned success: false')
     }
 
-    console.log(`[EdgeFunction] Action "${action}" completed in ${response.latencyMs || 0}ms`)
+    console.log(`[EdgeFunction] Action "${action}" completed in ${response.latencyMs || 0}ms`, {
+      ...(response.usageMetadata && {
+        tokens: {
+          input: response.usageMetadata.promptTokenCount,
+          output: response.usageMetadata.candidatesTokenCount,
+          total: response.usageMetadata.totalTokenCount
+        }
+      })
+    })
 
-    return response.result
+    // Return result with usageMetadata attached
+    return {
+      ...response.result,
+      ...(response.usageMetadata && { __usageMetadata: response.usageMetadata })
+    } as T & { __usageMetadata?: EdgeFunctionResponse['usageMetadata'] }
   } catch (error) {
     console.error(`[EdgeFunction] Failed to call action "${action}":`, error)
     throw error instanceof Error

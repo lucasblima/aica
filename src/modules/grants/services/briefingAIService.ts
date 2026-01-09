@@ -6,6 +6,7 @@
 
 import type { BriefingData, FormField } from '../types'
 import * as EdgeFunctionService from '../../../services/edgeFunctionService'
+import { trackAIUsage } from '../../../services/aiUsageTrackingService'
 
 /**
  * Contexto para geração de briefing
@@ -32,6 +33,8 @@ export interface BriefingGenerationContext {
  * @throws Error se documento fonte não for fornecido ou API falhar
  */
 export async function generateAutoBriefing(context: BriefingGenerationContext): Promise<Record<string, string>> {
+  const startTime = Date.now()
+
   try {
     const result = await EdgeFunctionService.generateAutoBriefing({
       companyName: context.companyName,
@@ -56,6 +59,31 @@ export async function generateAutoBriefing(context: BriefingGenerationContext): 
       console.log(`  - ${key}: ${preview}`)
     })
 
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usageMetadata = (result as any).__usageMetadata
+    if (usageMetadata) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0,
+        module_type: 'grants',
+        duration_seconds: (Date.now() - startTime) / 1000,
+        request_metadata: {
+          use_case: 'generate_auto_briefing',
+          has_source_document: !!context.sourceDocumentContent,
+          source_doc_length: context.sourceDocumentContent?.length || 0,
+          form_fields_count: context.formFields?.length || 0,
+          fields_extracted: Object.keys(result.briefing).length
+        }
+      }).catch(error => {
+        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+      })
+    }
+    // ========================================
+
     return result.briefing
   } catch (error) {
     console.error('[BriefingAI] Erro ao gerar briefing automático:', error)
@@ -71,12 +99,38 @@ export async function improveBriefingField(
   currentContent: string,
   allBriefing: BriefingData
 ): Promise<string> {
+  const startTime = Date.now()
+
   try {
     const result = await EdgeFunctionService.improveBriefingField({
       fieldId,
       currentContent,
       allBriefing,
     })
+
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usageMetadata = (result as any).__usageMetadata
+    if (usageMetadata) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0,
+        module_type: 'grants',
+        duration_seconds: (Date.now() - startTime) / 1000,
+        request_metadata: {
+          use_case: 'improve_briefing_field',
+          field_id: fieldId as string,
+          current_length: currentContent.length,
+          improved_length: result.improvedText.length
+        }
+      }).catch(error => {
+        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+      })
+    }
+    // ========================================
 
     return result.improvedText
   } catch (error) {
@@ -135,10 +189,35 @@ export interface ExtractedDocument {
  * Extract required documents list from edital PDF content
  */
 export async function extractRequiredDocuments(pdfContent: string): Promise<ExtractedDocument[]> {
+  const startTime = Date.now()
+
   try {
     const result = await EdgeFunctionService.extractRequiredDocuments({ pdfContent })
 
     console.log('[BriefingAI] Extracted required documents:', result.documents.length)
+
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usageMetadata = (result as any).__usageMetadata
+    if (usageMetadata) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0,
+        module_type: 'grants',
+        duration_seconds: (Date.now() - startTime) / 1000,
+        request_metadata: {
+          use_case: 'extract_required_documents',
+          pdf_content_length: pdfContent.length,
+          documents_extracted: result.documents.length
+        }
+      }).catch(error => {
+        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+      })
+    }
+    // ========================================
 
     return result.documents
   } catch (error) {
@@ -161,10 +240,35 @@ export interface ExtractedPhase {
  * Extract timeline phases from edital PDF content
  */
 export async function extractTimelinePhases(pdfContent: string): Promise<ExtractedPhase[]> {
+  const startTime = Date.now()
+
   try {
     const result = await EdgeFunctionService.extractTimelinePhases({ pdfContent })
 
     console.log('[BriefingAI] Extracted timeline phases:', result.phases.length)
+
+    // ========================================
+    // TRACKING DE CUSTO - AI Usage Analytics
+    // ========================================
+    const usageMetadata = (result as any).__usageMetadata
+    if (usageMetadata) {
+      trackAIUsage({
+        operation_type: 'text_generation',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0,
+        module_type: 'grants',
+        duration_seconds: (Date.now() - startTime) / 1000,
+        request_metadata: {
+          use_case: 'extract_timeline_phases',
+          pdf_content_length: pdfContent.length,
+          phases_extracted: result.phases.length
+        }
+      }).catch(error => {
+        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+      })
+    }
+    // ========================================
 
     return result.phases
   } catch (error) {

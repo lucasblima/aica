@@ -91,6 +91,9 @@ async function executeDeepResearch(
   const researchPlan = planResult.response.text()
   console.log('[Deep Research] Research plan generated')
 
+  // Track usage from plan generation
+  const planUsage = planResult.response.usageMetadata
+
   // Step 2: Execute comprehensive research
   const researchPrompt = `Com base no seguinte plano de pesquisa:
 
@@ -133,6 +136,16 @@ IMPORTANTE:
   const researchResult = await model.generateContent(researchPrompt)
   let researchText = researchResult.response.text()
 
+  // Track usage from research execution
+  const researchUsage = researchResult.response.usageMetadata
+
+  // Combine usage metadata from both API calls
+  const combinedUsage = {
+    promptTokenCount: (planUsage?.promptTokenCount || 0) + (researchUsage?.promptTokenCount || 0),
+    candidatesTokenCount: (planUsage?.candidatesTokenCount || 0) + (researchUsage?.candidatesTokenCount || 0),
+    totalTokenCount: (planUsage?.totalTokenCount || 0) + (researchUsage?.totalTokenCount || 0)
+  }
+
   // Clean JSON response (remove markdown formatting if present)
   researchText = researchText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
@@ -140,7 +153,10 @@ IMPORTANTE:
 
   try {
     const parsedResult: ResearchResult = JSON.parse(researchText)
-    return parsedResult
+    return {
+      ...parsedResult,
+      __usageMetadata: combinedUsage
+    } as any
   } catch (error) {
     console.error('[Deep Research] Failed to parse JSON:', error)
     console.error('[Deep Research] Raw response:', researchText)
@@ -151,8 +167,9 @@ IMPORTANTE:
       keyFacts: ['Pesquisa gerada, mas houve erro no parse do JSON'],
       controversies: [],
       recentWork: [],
-      sources: []
-    }
+      sources: [],
+      __usageMetadata: combinedUsage
+    } as any
   }
 }
 
@@ -206,6 +223,9 @@ Deno.serve(async (req) => {
 
     console.log('[Deep Research] Research completed successfully')
 
+    // Extract usageMetadata from the research result (if available)
+    const usageMetadata = (result as any)?.__usageMetadata || null
+
     // Return result
     return new Response(
       JSON.stringify({
@@ -216,7 +236,8 @@ Deno.serve(async (req) => {
           guestName,
           depth: depth || 'medium',
           timestamp: new Date().toISOString()
-        }
+        },
+        ...(usageMetadata && { usageMetadata })
       }),
       {
         headers: {
