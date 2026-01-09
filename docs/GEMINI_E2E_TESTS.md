@@ -108,7 +108,7 @@ TEST_EMAIL=test@aica.app
 TEST_PASSWORD=SecureTest123!@#
 
 # Supabase URLs (should match production)
-VITE_SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Python API server (for heavy operations)

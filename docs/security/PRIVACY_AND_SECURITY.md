@@ -279,7 +279,7 @@ const { data, error } = await supabase.auth.signInWithPassword({
 
 // JWT token structure
 {
-  iss: "https://gppebtrshbvuzatmebhr.supabase.co/auth/v1",
+  iss: "https://uzywajqzbdbrfammshdg.supabase.co/auth/v1",
   sub: "user-uuid",
   aud: "authenticated",
   exp: 1234567890,

@@ -93,7 +93,7 @@ gcloud secrets create evolution-api-key --data-file=- <<< "YOUR_KEY"
 #### 4. Cloud Run Secrets (Production)
 
 **Via Supabase Dashboard:**
-1. Go to: https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr
+1. Go to: https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg
 2. Navigate to: Settings > Edge Functions > Manage Secrets
 3. Add these secrets:
 
@@ -636,7 +636,7 @@ deno test --allow-net --allow-env tests/evolution-client.test.ts
    npx supabase functions deploy test-evolution
 
    # Test it
-   curl https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/test-evolution
+   curl https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/test-evolution
 
    # Should return: {"count": X, "contacts": [...]}
    ```
@@ -956,7 +956,7 @@ COMMENT ON FUNCTION is_whatsapp_sync_stale IS
 4. **Apply to Production (After local validation):**
    ```bash
    # Via Supabase Dashboard SQL Editor
-   # 1. Go to: https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/sql
+   # 1. Go to: https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/sql
    # 2. Copy contents of supabase/migrations/20260108_whatsapp_contact_network.sql
    # 3. Paste and click "Run"
 

@@ -396,7 +396,7 @@ curl https://evolution-evolution-api.w9jo16.easypanel.host/webhook/find/Lucas_45
 # Expected response:
 # {
 #   "enabled": true,
-#   "url": "https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution",
+#   "url": "https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution",
 #   "events": ["MESSAGES_UPSERT", ...]
 # }
 ```
@@ -410,7 +410,7 @@ curl -X POST "https://evolution-evolution-api.w9jo16.easypanel.host/webhook/set/
   -d '{
     "webhook": {
       "enabled": true,
-      "url": "https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution",
+      "url": "https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution",
       "webhookByEvents": true,
       "events": ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
       "webhookBase64": true
@@ -763,7 +763,7 @@ ON CONFLICT (id) DO NOTHING;
 **Q: Can I run sync manually without UI?**
 ```bash
 # Yes, via curl
-curl -X POST https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/sync-whatsapp-contacts \
+curl -X POST https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/sync-whatsapp-contacts \
   -H "Authorization: Bearer <user_token>" \
   -H "Content-Type: application/json" \
   -d '{"syncType": "full"}'
@@ -785,7 +785,7 @@ WHERE whatsapp_phone IS NOT NULL;
 
 **Q: How do I force re-analysis of all contacts?**
 ```bash
-curl -X POST https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/analyze-all-whatsapp-contacts \
+curl -X POST https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/analyze-all-whatsapp-contacts \
   -H "Authorization: Bearer <user_token>"
 ```
 

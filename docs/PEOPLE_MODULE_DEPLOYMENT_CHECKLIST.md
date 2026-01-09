@@ -153,7 +153,7 @@ gcloud run revisions list --service=aica-life-os \
 ### Step 2: Production Environment Variables
 ```env
 # Verify these are set in Cloud Run
-VITE_SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 VITE_SUPABASE_ANON_KEY=[correct-key-from-supabase]
 
 # Optional (already default)

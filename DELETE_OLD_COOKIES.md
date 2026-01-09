@@ -3,7 +3,7 @@
 ## ❌ Problema Persistente:
 O cookie do projeto Supabase antigo ainda está presente:
 ```
-sb-gppebtrshbvuzatmebhr-auth-token-code-verifier  ← PRECISA SER DELETADO!
+sb-uzywajqzbdbrfammshdg-auth-token-code-verifier  ← PRECISA SER DELETADO!
 ```
 
 ---
@@ -17,8 +17,8 @@ sb-gppebtrshbvuzatmebhr-auth-token-code-verifier  ← PRECISA SER DELETADO!
 3. No menu esquerdo, expanda **Cookies**
 4. Clique em `http://localhost:3001`
 5. **Procure e DELETE estes cookies:**
-   - ❌ `sb-gppebtrshbvuzatmebhr-auth-token-code-verifier`
-   - ❌ Qualquer outro cookie que comece com `sb-gppebtrshbvuzatmebhr`
+   - ❌ `sb-uzywajqzbdbrfammshdg-auth-token-code-verifier`
+   - ❌ Qualquer outro cookie que comece com `sb-uzywajqzbdbrfammshdg`
 6. **Mantenha apenas:**
    - ✅ `sb-uzywajqzbdbrfammshdg-auth-token`
    - ✅ `sb-uzywajqzbdbrfammshdg-auth-token-code-verifier` (se existir)
@@ -62,7 +62,7 @@ const cookies = document.cookie.split(';').map(c => c.trim().split('=')[0]);
 console.log("Cookies atuais:", cookies);
 
 // Verificar se há cookies antigos
-const oldCookies = cookies.filter(c => c.includes('gppebtrshbvuzatmebhr'));
+const oldCookies = cookies.filter(c => c.includes('uzywajqzbdbrfammshdg'));
 if (oldCookies.length > 0) {
   console.error("❌ Cookies antigos ainda presentes:", oldCookies);
 } else {

@@ -31,7 +31,7 @@ A API key esta armazenada de forma segura nos secrets do Supabase.
 
 **Via Dashboard (Recomendado):**
 1. Acesse [Supabase Dashboard](https://supabase.com/dashboard)
-2. Selecione o projeto **gppebtrshbvuzatmebhr**
+2. Selecione o projeto **uzywajqzbdbrfammshdg**
 3. Va em **Settings** -> **Edge Functions** -> **Secrets**
 4. Encontre `GEMINI_API_KEY` e click em **Edit**
 5. Cole a nova API key
@@ -45,7 +45,7 @@ cd C:\Users\lucas\repos\Aica_frontend\Aica_frontend
 npx supabase login
 
 # Link ao projeto (se necessario)
-npx supabase link --project-ref gppebtrshbvuzatmebhr
+npx supabase link --project-ref uzywajqzbdbrfammshdg
 
 # Atualizar secret
 npx supabase secrets set GEMINI_API_KEY=<sua-nova-api-key>
@@ -122,7 +122,7 @@ cd C:\Users\lucas\repos\Aica_frontend\Aica_frontend
 npx supabase login
 
 # Link ao projeto
-npx supabase link --project-ref gppebtrshbvuzatmebhr
+npx supabase link --project-ref uzywajqzbdbrfammshdg
 
 # Adicionar secret
 npx supabase secrets set GEMINI_API_KEY=<sua-api-key-aqui>

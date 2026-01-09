@@ -272,7 +272,7 @@ TTL: 3600
 - [ ] Atualizar Authorized redirect URIs:
   ```
   https://SEU_DOMINIO
-  https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/callback
+  https://uzywajqzbdbrfammshdg.supabase.co/auth/v1/callback
   ```
 
 #### 2.6 Atualizar OAuth Consent Screen

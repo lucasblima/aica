@@ -24,7 +24,7 @@ Frontend .env files should ONLY contain non-sensitive configuration:
 
 ```env
 # Supabase Project Configuration
-VITE_SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # OAuth (only Client ID, not Secret)
@@ -69,7 +69,7 @@ Secrets are stored in **Supabase Dashboard → Settings → Secrets**
 ```bash
 # How to add secrets to Supabase Edge Functions:
 # 1. Go to Supabase Dashboard
-# 2. Select your project (gppebtrshbvuzatmebhr)
+# 2. Select your project (uzywajqzbdbrfammshdg)
 # 3. Navigate to Settings → Secrets
 # 4. Click "Create new secret"
 # 5. Add environment variable pairs
@@ -87,7 +87,7 @@ EVOLUTION_API_KEY=9BE943A8...
 EVOLUTION_INSTANCE_NAME=AI_Comtxae_4006
 
 # Supabase (auto-provided by Supabase)
-SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
@@ -157,7 +157,7 @@ cp .env.example .env.local
 
 # Add your development values
 cat > .env.local << 'EOF'
-VITE_SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 VITE_GOOGLE_OAUTH_CLIENT_ID=your_client_id_here
 VITE_FRONTEND_URL=http://localhost:3000

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, LogOut, User, DollarSign, FileSearch } from 'lucide-react';
+import { Settings, LogOut, User, DollarSign, FileSearch, Wrench } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
 
 interface SettingsMenuProps {
@@ -10,6 +11,7 @@ interface SettingsMenuProps {
 }
 
 export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout, onNavigateToAICost, onNavigateToFileSearch }) => {
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -148,6 +150,22 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout,
                                 </span>
                             </button>
                         )}
+
+                        {/* Diagnostics Button */}
+                        <button
+                            onClick={() => {
+                                navigate('/diagnostics');
+                                setIsOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                        >
+                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Wrench className="w-4 h-4 text-ceramic-text-secondary group-hover:text-orange-600" />
+                            </div>
+                            <span className="font-bold text-sm transition-colors">
+                                Diagnósticos
+                            </span>
+                        </button>
 
                         {/* Logout Button */}
                         <button

@@ -4,7 +4,7 @@ Devido a conflitos no histórico de migrations, execute os seguintes passos manu
 
 ## Passo 1: Acesse o SQL Editor
 
-1. Acesse: https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr
+1. Acesse: https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg
 2. Vá em **SQL Editor** no menu lateral
 3. Click em **New Query**
 

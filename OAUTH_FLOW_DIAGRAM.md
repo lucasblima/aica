@@ -48,7 +48,7 @@
        ▼
 ┌─────────────────────────────────────────────────────────┐
 │  Supabase Auth Backend                                  │
-│  https://gppebtrshbvuzatmebhr.supabase.co              │
+│  https://uzywajqzbdbrfammshdg.supabase.co              │
 ├─────────────────────────────────────────────────────────┤
 │  - Receives code + code_verifier from frontend          │
 │  - Prepares to exchange code for tokens                 │
@@ -58,7 +58,7 @@
        │    Body:
        │      grant_type: authorization_code
        │      code: XXX
-       │      redirect_uri: https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/callback  ← KEY!
+       │      redirect_uri: https://uzywajqzbdbrfammshdg.supabase.co/auth/v1/callback  ← KEY!
        │      client_id: 5562559893-1ufv0knok8k4679kr35p7aqdhp55drg0.apps.googleusercontent.com
        │      client_secret: REDACTED_OAUTH_SECRET
        │      code_verifier: [from cookie]
@@ -104,7 +104,7 @@
 
 Google rejects the request because:
 ```
-redirect_uri = "https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/callback"
+redirect_uri = "https://uzywajqzbdbrfammshdg.supabase.co/auth/v1/callback"
 ```
 
 is **NOT** in the "Authorized redirect URIs" list in Google OAuth Console.
@@ -114,7 +114,7 @@ is **NOT** in the "Authorized redirect URIs" list in Google OAuth Console.
 Add this exact URL to Google OAuth Console → Credentials → OAuth 2.0 Client IDs → Edit → Authorized redirect URIs:
 
 ```
-https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/callback
+https://uzywajqzbdbrfammshdg.supabase.co/auth/v1/callback
 ```
 
 ## Why This Wasn't Obvious
@@ -149,7 +149,7 @@ For complete Aica Life OS OAuth support:
 
 ```
 Authorized redirect URIs:
-1. https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/callback  ← CRITICAL for Supabase Auth
+1. https://uzywajqzbdbrfammshdg.supabase.co/auth/v1/callback  ← CRITICAL for Supabase Auth
 2. https://aica-5562559893.southamerica-east1.run.app         ← Production frontend
 3. http://localhost:5173                                       ← Local dev (Vite default)
 4. http://localhost:3000                                       ← Local dev (alternative)

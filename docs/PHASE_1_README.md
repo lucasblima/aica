@@ -90,7 +90,7 @@ idx_moment_entries_weekly_summary_id → Summary linking
 
 ### Applied to Supabase
 
-✅ Project: `gppebtrshbvuzatmebhr`
+✅ Project: `uzywajqzbdbrfammshdg`
 ✅ Region: South America (sa-east-1)
 ✅ Postgres Version: 17.6.1
 
