@@ -104,9 +104,13 @@ export default function Home({
       };
    }, []);
 
-   // Debug: Log when ProfileModal state changes
+   // Debug: Log when ProfileModal state changes WITH STACK TRACE
    useEffect(() => {
       console.log('[Home] ProfileModal state changed:', isProfileModalOpen);
+      if (isProfileModalOpen) {
+         console.log('[Home] ProfileModal opened - Stack trace:');
+         console.trace('[Home] Stack trace');
+      }
    }, [isProfileModalOpen]);
 
    // Handle account deletion
@@ -188,7 +192,10 @@ export default function Home({
                >
                   <IdentityPassport
                      userId={userId}
-                     onOpenProfile={() => setProfileModalOpen(true)}
+                     onOpenProfile={() => {
+                        console.log('[Home] IdentityPassport onOpenProfile clicked');
+                        setProfileModalOpen(true);
+                     }}
                   />
                   {/* GAP 5: Streak Badge - Minimalista */}
                   <motion.div
