@@ -142,6 +142,8 @@ export function AppRouter() {
    const handleViewChange = (view: ViewState) => {
       if (view === 'connections') {
          navigate('/connections');
+      } else if (view === 'contacts') {
+         navigate('/contacts');
       } else {
          // For non-router views, navigate to root and set state
          if (location.pathname !== '/') {
@@ -561,7 +563,11 @@ export function AppRouter() {
                <>
                   <Route
                      path="/contacts"
-                     element={<ContactsView />}
+                     element={
+                        <ConnectionsLayout>
+                           <ContactsView />
+                        </ConnectionsLayout>
+                     }
                   />
                </>
             )}
