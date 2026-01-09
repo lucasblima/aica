@@ -134,7 +134,7 @@ Or create `.env.test`:
 TEST_EMAIL=test@aica.app
 TEST_PASSWORD=SecureTest123!@#
 VITE_APP_URL=http://localhost:3000
-VITE_SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
