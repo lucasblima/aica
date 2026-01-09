@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Edge Function - WhatsApp Sync</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        .log {
+            background: #000;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #00ff00;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+        .warning { color: #ffaa00; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Edge Function Diagnostic Tool</h1>
+        <p>Este arquivo testa a Edge Function sem restrições do console.</p>
+
+        <div>
+            <button onclick="testEdgeFunction()">🚀 Testar Edge Function</button>
+            <button onclick="checkSession()">👤 Verificar Sessão</button>
+            <button onclick="clearLogs()">🗑️ Limpar Logs</button>
+        </div>
+
+        <div id="logs" class="log">
+            <div class="info">📋 Logs aparecerão aqui...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://uzywajqzbdbrfammshdg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6eXdhanF6YmRicmZhbW1zaGRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA2NzExNTMsImV4cCI6MjA0NjI0NzE1M30.lMn0pYXb0oJgEHbBNmVNxBv1nYqM1nwPQXbYWOQ7Kig';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: false
+            }
+        });
+
+        const logsDiv = document.getElementById('logs');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(div);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            logsDiv.innerHTML = '<div class="info">📋 Logs limpos...</div>';
+        }
+
+        async function checkSession() {
+            log('🔍 Verificando sessão...', 'info');
+
+            try {
+                const { data, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    log(`❌ Erro ao obter sessão: ${error.message}`, 'error');
+                    return null;
+                }
+
+                if (!data.session) {
+                    log('❌ Nenhuma sessão ativa!', 'error');
+                    log('⚠️  Você precisa estar logado no app (http://localhost:3001)', 'warning');
+                    log('⚠️  Abra o app, faça login, e volte aqui', 'warning');
+                    return null;
+                }
+
+                log(`✅ Sessão ativa`, 'success');
+                log(`   User: ${data.session.user.email}`, 'info');
+                log(`   Token (primeiros 50 chars): ${data.session.access_token.substring(0, 50)}...`, 'info');
+
+                return data.session;
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function testEdgeFunction() {
+            log('🚀 Iniciando teste da Edge Function...', 'info');
+            log('─'.repeat(60), 'info');
+
+            // 1. Verificar sessão
+            const session = await checkSession();
+
+            if (!session) {
+                log('❌ Teste abortado: sem sessão ativa', 'error');
+                return;
+            }
+
+            log('', 'info');
+            log('📡 Chamando Edge Function...', 'info');
+
+            try {
+                const response = await fetch(
+                    `${SUPABASE_URL}/functions/v1/sync-whatsapp-contacts`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`
+                        },
+                        body: JSON.stringify({})
+                    }
+                );
+
+                log(`📊 Status: ${response.status} ${response.statusText}`,
+                    response.status === 200 ? 'success' : 'error');
+
+                const responseText = await response.text();
+
+                if (response.status === 200) {
+                    log('✅ SUCESSO! Edge Function funcionou!', 'success');
+
+                    try {
+                        const result = JSON.parse(responseText);
+                        log(`📋 Contatos sincronizados: ${result.contactsSynced || 0}`, 'success');
+                        log(`📋 Contatos ignorados: ${result.contactsSkipped || 0}`, 'info');
+                        log(`⏱️  Duração: ${result.durationMs || 0}ms`, 'info');
+                    } catch (e) {
+                        log(`📋 Response: ${responseText}`, 'info');
+                    }
+                } else if (response.status === 401) {
+                    log('❌ 401 UNAUTHORIZED', 'error');
+                    log('🔧 Possíveis causas:', 'warning');
+                    log('   1. Token expirado → Faça logout/login novamente', 'warning');
+                    log('   2. Token inválido → Limpe cookies e faça login', 'warning');
+                    log('   3. Edge Function não aceita este token', 'warning');
+                    log(`📋 Response: ${responseText}`, 'error');
+                } else if (response.status === 500) {
+                    log('❌ 500 SERVER ERROR', 'error');
+                    log('🔧 Erro na Edge Function - veja logs no Supabase:', 'warning');
+                    log('   https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions/sync-whatsapp-contacts/logs', 'info');
+                    log(`📋 Response: ${responseText}`, 'error');
+                } else {
+                    log(`⚠️  Status inesperado: ${response.status}`, 'warning');
+                    log(`📋 Response: ${responseText}`, 'info');
+                }
+
+            } catch (error) {
+                log(`❌ Erro ao chamar Edge Function: ${error.message}`, 'error');
+
+                if (error.message.includes('CORS')) {
+                    log('🔧 Erro de CORS - Edge Function pode não estar deployada', 'warning');
+                } else if (error.message.includes('fetch')) {
+                    log('🔧 Erro de rede - verifique se a URL está correta', 'warning');
+                }
+            }
+
+            log('─'.repeat(60), 'info');
+            log('✅ Teste finalizado!', 'success');
+        }
+
+        // Auto-check session on load
+        window.addEventListener('load', () => {
+            log('🔍 Ferramenta de diagnóstico carregada', 'success');
+            log('📋 Clique em "Verificar Sessão" para começar', 'info');
+        });
+    </script>
+</body>
+</html>

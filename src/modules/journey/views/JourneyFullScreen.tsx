@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { QuickCapture } from '../components/capture/QuickCapture'
 import { MomentCard } from '../components/timeline/MomentCard'
-import { MicrophoneFAB, LifeWeeksStrip, CeramicMomentCard } from '../components/ceramic'
+import { MicrophoneFAB, LifeDecadesStrip, CeramicMomentCard } from '../components/ceramic'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { ConsciousnessScore } from '../components/gamification/ConsciousnessScore'
@@ -288,8 +288,8 @@ export function JourneyFullScreen() {
             {/* Timeline Tab */}
             {activeTab === 'timeline' && (
               <div className="space-y-4">
-                {/* Life Weeks Strip - Memento Mori visualization */}
-                <LifeWeeksStrip
+                {/* Life Decades Strip - Memento Mori visualization with 10-year stages */}
+                <LifeDecadesStrip
                   birthDate={new Date(1990, 0, 1)} // TODO: Get from user profile
                   expectedLifespan={80}
                 />
