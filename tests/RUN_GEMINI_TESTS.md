@@ -21,7 +21,7 @@ TEST_EMAIL=your_test_email@example.com
 TEST_PASSWORD=your_test_password
 
 # Supabase
-VITE_SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Python API (for heavy operations)

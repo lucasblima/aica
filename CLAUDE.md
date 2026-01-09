@@ -225,7 +225,7 @@ npm run build && npm run typecheck
 
 ### Staging (Ambiente Ativo)
 - **App:** https://aica-staging-5p22u2w6jq-rj.a.run.app/
-- **Supabase:** https://gppebtrshbvuzatmebhr.supabase.co
+- **Supabase:** https://uzywajqzbdbrfammshdg.supabase.co
 - **Region:** southamerica-east1 (São Paulo)
 - **Uso:** Desenvolvimento, testes e validação do MVP
 
