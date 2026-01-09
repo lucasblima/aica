@@ -81,18 +81,18 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
 
     if (loading) {
         return (
-            <div className="ceramic-card p-6 animate-pulse h-full min-h-[220px]">
-                <div className="h-6 bg-gray-200 rounded w-24 mb-4"></div>
-                <div className="h-12 bg-gray-200 rounded w-32 mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded w-20"></div>
+            <div className="ceramic-card p-5 animate-pulse h-full min-h-[180px]">
+                <div className="h-4 bg-gray-200 rounded w-20 mb-3"></div>
+                <div className="h-10 bg-gray-200 rounded w-28 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-16"></div>
             </div>
         );
     }
 
     if (error || !summary || !burnRate) {
         return (
-            <div className="ceramic-card p-6 h-full min-h-[220px] flex items-center justify-center">
-                <p className="text-ceramic-text-secondary text-sm text-center">
+            <div className="ceramic-card p-5 h-full min-h-[180px] flex items-center justify-center">
+                <p className="text-ceramic-text-secondary text-xs text-center">
                     {error || 'Sem dados'}
                 </p>
             </div>
@@ -103,7 +103,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
 
     return (
         <motion.div
-            className="ceramic-card p-6 h-full min-h-[220px] flex flex-col relative overflow-hidden cursor-pointer"
+            className="ceramic-card p-5 h-full min-h-[180px] flex flex-col relative overflow-hidden cursor-pointer"
             variants={cardElevationVariants}
             initial="rest"
             whileHover="hover"
@@ -113,61 +113,61 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
             <Wallet className="absolute -right-6 -bottom-6 w-40 h-40 text-emerald-200 opacity-10" />
 
             {/* Header with Module Name and Visibility Toggle */}
-            <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="flex items-center justify-between mb-3 relative z-10">
                 <div className="flex items-center gap-2">
-                    <div className="ceramic-concave w-8 h-8 flex items-center justify-center">
-                        <Wallet className="w-4 h-4 text-emerald-600" />
+                    <div className="ceramic-concave w-7 h-7 flex items-center justify-center">
+                        <Wallet className="w-3.5 h-3.5 text-emerald-600" />
                     </div>
-                    <span className="text-xs text-ceramic-text-secondary uppercase tracking-wider font-bold">
+                    <span className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider font-bold">
                         Finanças
                     </span>
                 </div>
 
                 <button
                     onClick={toggleVisibility}
-                    className="ceramic-concave w-8 h-8 flex items-center justify-center hover:scale-95 transition-transform"
+                    className="ceramic-concave w-7 h-7 flex items-center justify-center hover:scale-95 transition-transform"
                     title={isValuesVisible ? 'Ocultar' : 'Mostrar'}
                 >
                     {isValuesVisible ? (
-                        <EyeOff className="w-3 h-3 text-ceramic-text-secondary" />
+                        <EyeOff className="w-2.5 h-2.5 text-ceramic-text-secondary" />
                     ) : (
-                        <Eye className="w-3 h-3 text-ceramic-text-secondary" />
+                        <Eye className="w-2.5 h-2.5 text-ceramic-text-secondary" />
                     )}
                 </button>
             </div>
 
-            {/* Main Balance - Large and Centered */}
-            <div className="flex-1 flex flex-col justify-center items-center relative z-10">
-                <p className="text-xs text-ceramic-text-secondary mb-2 uppercase tracking-wider">
+            {/* Main Balance - Balanced and Centered */}
+            <div className="flex-1 flex flex-col justify-center items-center relative z-10 min-h-[80px]">
+                <p className="text-[9px] text-ceramic-text-secondary mb-2 uppercase tracking-wider font-medium">
                     Saldo Atual
                 </p>
-                <p className={`text-3xl md:text-4xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
+                <p className={`text-2xl md:text-3xl font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
                     {formatCurrency(summary.currentBalance)}
                 </p>
             </div>
 
             {/* Trend Indicator */}
             {showTrend && (
-                <div className={`flex items-center justify-center gap-2 mt-4 relative z-10 ${
+                <div className={`flex items-center justify-center gap-1.5 pt-2 relative z-10 ${
                     isPositive ? 'text-ceramic-positive' : 'text-ceramic-negative'
                 }`}>
                     {isPositive ? (
-                        <TrendingUp className="w-5 h-5" />
+                        <TrendingUp className="w-3.5 h-3.5" />
                     ) : (
-                        <TrendingDown className="w-5 h-5" />
+                        <TrendingDown className="w-3.5 h-3.5" />
                     )}
-                    <span className="text-sm font-bold">
+                    <span className="text-xs font-bold">
                         {percentage.toFixed(1)}%
                     </span>
-                    <span className="text-xs text-ceramic-text-secondary">
+                    <span className="text-[9px] text-ceramic-text-secondary">
                         vs média
                     </span>
                 </div>
             )}
 
             {!showTrend && (
-                <div className="flex items-center justify-center gap-2 mt-4 relative z-10 text-ceramic-text-secondary">
-                    <span className="text-xs">Estável</span>
+                <div className="flex items-center justify-center gap-1.5 pt-2 relative z-10 text-ceramic-text-secondary">
+                    <span className="text-[9px]">Estável</span>
                 </div>
             )}
         </motion.div>
