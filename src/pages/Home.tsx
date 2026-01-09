@@ -96,6 +96,13 @@ export default function Home({
    // Get CP stats for streak integration
    const { stats: cpStats } = useConsciousnessPoints();
 
+   // Reset ProfileModal when component unmounts (prevents modal persisting across views)
+   useEffect(() => {
+      return () => {
+         setProfileModalOpen(false);
+      };
+   }, []);
+
    // Handle account deletion
    const handleDeleteAccount = async () => {
       try {
