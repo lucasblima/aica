@@ -1,0 +1,152 @@
+TABLE|COLUMN|REFERENCES_TABLE|REFERENCES_COLUMN|ON_DELETE|MIGRATION_FILE
+unknown|unknown|||CASCADE PRIMARY KEY|004_life_weeks_schema.sql
+unknown|unknown|||CASCADE NOT NULL|004_life_weeks_schema.sql
+unknown|unknown|||CASCADE PRIMARY KEY|005_users_birth_date.sql
+unknown|unknown|||CASCADE UNIQUE NOT NULL|20241207_create_gamification_tables.sql
+unknown|unknown|||CASCADE NOT NULL|20241207_create_gamification_tables.sql
+unknown|unknown|||CASCADE|20250101_whatsapp_gamification_tracking.sql
+unknown|unknown|||CASCADE|20251203_finance_module.sql
+unknown|unknown|||CASCADE|20251203_fix_rls_recursion_and_missing_columns.sql
+unknown|unknown|||CASCADE NOT NULL|20251205_google_calendar_integration.sql
+unknown|unknown|||CASCADE|20251205_podcast_production_workflow.sql
+unknown|unknown|||CASCADE|20251206_critical_fixes_systemic_collapse.sql
+unknown|unknown|||CASCADE NOT NULL|20251206_finance_statements_complete.sql
+unknown|unknown|finance_statements|id|CASCADE|20251206_finance_statements_complete.sql
+unknown|unknown|||CASCADE|20251206_journey_redesign.sql
+unknown|unknown|||CASCADE|20251206_journey_redesign.sql
+unknown|unknown|||CASCADE|20251206_journey_redesign.sql
+unknown|unknown|daily_questions|id|CASCADE|20251206_journey_redesign.sql
+unknown|unknown|daily_questions|id|CASCADE|20251206_journey_redesign.sql
+unknown|unknown|daily_questions|id|CASCADE|20251206_journey_redesign.sql
+unknown|unknown|||CASCADE NOT NULL|20251206_llm_infrastructure.sql
+unknown|unknown|||CASCADE|20251206_llm_infrastructure.sql
+unknown|unknown|||NO ACTION|20251208_create_finance_agent_conversations.sql
+unknown|unknown|||CASCADE|20251208_create_work_items_table.sql
+unknown|unknown|||CASCADE|20251208_create_work_items_table.sql
+unknown|unknown|associations|id|SET NULL|20251208_create_work_items_table.sql
+unknown|unknown|task_categories|id|SET NULL|20251208_create_work_items_table.sql
+unknown|unknown|||CASCADE NOT NULL|20251208_finance_robust_processing.sql
+unknown|unknown|finance_statements|id|CASCADE|20251208_finance_robust_processing.sql
+unknown|unknown|finance_transactions|id|SET NULL|20251208_finance_robust_processing.sql
+unknown|unknown|finance_transactions|id|CASCADE|20251208_finance_robust_processing.sql
+unknown|unknown|grant_projects|id|CASCADE|20251208_grant_project_multiple_documents.sql
+unknown|unknown|grant_projects|id|CASCADE|20251208_grant_project_multiple_documents.sql
+unknown|unknown|||CASCADE|20251208_podcast_pautas_generated.sql
+unknown|unknown|||CASCADE|20251208_podcast_pautas_generated.sql
+unknown|unknown|||CASCADE|20251208_podcast_pautas_generated.sql
+unknown|unknown|||CASCADE|20251208_podcast_pautas_generated.sql
+unknown|unknown|||CASCADE|20251208_podcast_pautas_generated.sql
+unknown|unknown|||CASCADE|20251208172500_gemini_file_search.sql
+unknown|unknown|||CASCADE|20251208172500_gemini_file_search.sql
+unknown|unknown|||CASCADE|20251208172500_gemini_file_search.sql
+unknown|unknown|||CASCADE|20251208172500_gemini_file_search.sql
+unknown|unknown|||CASCADE|20251208180000_multimodal_core_assets.sql
+unknown|unknown|||SET NULL|20251208180000_multimodal_core_assets.sql
+unknown|unknown|||SET NULL|20251208180000_multimodal_core_assets.sql
+unknown|unknown|||CASCADE|20251208180100_multimodal_transcriptions.sql
+unknown|unknown|||CASCADE|20251208180100_multimodal_transcriptions.sql
+unknown|unknown|||CASCADE|20251208180200_multimodal_veo_generations.sql
+unknown|unknown|||CASCADE|20251208180200_multimodal_veo_generations.sql
+unknown|unknown|||CASCADE|20251208180300_multimodal_analytics.sql
+unknown|unknown|||SET NULL|20251208180300_multimodal_analytics.sql
+unknown|unknown|||CASCADE|20251208180400_multimodal_module_assets.sql
+unknown|unknown|||SET NULL|20251209000001_add_approval_fields_to_responses.sql
+unknown|unknown|||CASCADE|20251209000003_create_grant_operations_log.sql
+unknown|unknown|grant_projects|id|CASCADE|20251209000003_create_grant_operations_log.sql
+unknown|unknown|grant_opportunities|id|CASCADE|20251209000003_create_grant_operations_log.sql
+unknown|unknown|||CASCADE|20251209170000_create_file_search_corpora_tables.sql
+unknown|unknown|||CASCADE|20251209170000_create_file_search_corpora_tables.sql
+unknown|unknown|||CASCADE|20251209170000_create_file_search_corpora_tables.sql
+unknown|unknown|||CASCADE|20251209200000_production_optimizations.sql
+unknown|unknown|||CASCADE|20251209200001_production_optimizations_fixed.sql
+unknown|unknown|||CASCADE|20251209200001_production_optimizations_fixed.sql
+unknown|unknown|||CASCADE|20251209200002_production_optimizations_final.sql
+unknown|unknown|||CASCADE|20251209200002_production_optimizations_final.sql
+unknown|unknown|||CASCADE|20251209200003_production_optimizations_clean.sql
+unknown|unknown|||CASCADE|20251209200003_production_optimizations_clean.sql
+unknown|unknown|||CASCADE|20251210_fix_podcast_pautas_schema.sql
+unknown|unknown|||CASCADE|20251210_fix_podcast_pautas_schema.sql
+unknown|unknown|||CASCADE|20251210_fix_podcast_pautas_schema.sql
+unknown|unknown|||CASCADE|20251210_fix_podcast_pautas_schema.sql
+unknown|unknown|||CASCADE|20251210_fix_podcast_pautas_schema.sql
+unknown|unknown|||CASCADE|20251210_fix_work_items_add_category.sql
+unknown|unknown|task_categories|id|SET NULL|20251210_fix_work_items_add_category.sql
+unknown|unknown|||CASCADE|20251211_ai_usage_tracking.sql
+unknown|unknown|||SET NULL|20251211_ai_usage_tracking.sql
+unknown|unknown|||CASCADE|20251211_consolidate_moment_tables.sql
+unknown|unknown|daily_questions|id|SET NULL|20251211_consolidate_moment_tables.sql
+unknown|unknown|weekly_summaries|id|SET NULL|20251211_consolidate_moment_tables.sql
+unknown|unknown|||CASCADE|20251211_message_embeddings.sql
+unknown|unknown|message_embeddings|id|SET NULL|20251211_message_embeddings.sql
+unknown|unknown|||CASCADE|20251211_onboarding_context_captures.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||SET NULL|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||SET NULL|20251214000000_connection_archetypes_base.sql
+unknown|unknown|||CASCADE|20251214100000_connection_habitat.sql
+unknown|unknown|||CASCADE|20251214100000_connection_habitat.sql
+unknown|unknown|||CASCADE|20251214100000_connection_habitat.sql
+unknown|unknown|||CASCADE|20251214100000_connection_habitat.sql
+unknown|unknown|||CASCADE|20251214100000_connection_habitat.sql
+unknown|unknown|||SET NULL|20251214100000_connection_habitat.sql
+unknown|unknown|||CASCADE|20251214100000_connection_habitat.sql
+unknown|unknown|||CASCADE|20251214100000_connection_habitat.sql
+unknown|unknown|||CASCADE|20251214200000_connection_ventures.sql
+unknown|unknown|||CASCADE|20251214200000_connection_ventures.sql
+unknown|unknown|||CASCADE|20251214200000_connection_ventures.sql
+unknown|unknown|||SET NULL|20251214200000_connection_ventures.sql
+unknown|unknown|||CASCADE|20251214200000_connection_ventures.sql
+unknown|unknown|||SET NULL|20251214200000_connection_ventures.sql
+unknown|unknown|||CASCADE|20251214300000_connection_academia.sql
+unknown|unknown|||CASCADE|20251214300000_connection_academia.sql
+unknown|unknown|||SET NULL|20251214300000_connection_academia.sql
+unknown|unknown|||CASCADE|20251214300000_connection_academia.sql
+unknown|unknown|||SET NULL|20251214300000_connection_academia.sql
+unknown|unknown|||SET NULL|20251214300000_connection_academia.sql
+unknown|unknown|||CASCADE|20251214300000_connection_academia.sql
+unknown|unknown|||SET NULL|20251214300000_connection_academia.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||SET NULL|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||SET NULL|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||SET NULL|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||CASCADE|20251214400000_connection_tribo.sql
+unknown|unknown|||NO ACTION|20251215_link_work_items_to_connections.sql
+unknown|unknown|||SET NULL|20251215_link_work_items_to_connections.sql
+unknown|unknown|||CASCADE|20251215_task_projects_mini_project_manager.sql
+unknown|unknown|||SET NULL|20251215_task_projects_mini_project_manager.sql
+unknown|unknown|||SET NULL|20251215_task_projects_mini_project_manager.sql
+unknown|unknown|grant_opportunities|id|CASCADE|20251216_grant_context_separation.sql
+unknown|unknown|grant_opportunities|id|CASCADE|20251216_grant_context_separation.sql
+unknown|unknown|||CASCADE NOT NULL|20251217_daily_questions_ai_integration.sql
+unknown|unknown|||NO ACTION|20251217_daily_questions_ai_integration.sql
+unknown|unknown|||CASCADE|20251230_consent_records.sql
+unknown|unknown|||CASCADE|20251230_consent_records.sql
+unknown|unknown|||CASCADE|20251230_scheduled_notifications.sql
+unknown|unknown|||CASCADE|20251230_scheduled_notifications.sql
+unknown|unknown|scheduled_notifications|id|SET NULL|20251230_scheduled_notifications.sql
+unknown|unknown|scheduled_notifications|id|CASCADE|20251230_scheduled_notifications.sql
+unknown|unknown|||CASCADE|20251230_whatsapp_media_bucket.sql
+unknown|unknown|whatsapp_messages|id|SET NULL|20251230_whatsapp_media_bucket.sql
+unknown|unknown|||CASCADE|20251230_whatsapp_messages.sql
+unknown|unknown|||CASCADE|20251230_whatsapp_messages.sql
+unknown|unknown|||CASCADE|20251231_whatsapp_sentiment_aggregates.sql
+unknown|unknown|||CASCADE|20260107_add_user_tour_progress.sql
+unknown|unknown|||CASCADE|20260107_apply_onboarding_context_captures_safe.sql
+unknown|unknown|||CASCADE|20260108_whatsapp_contact_network.sql
+unknown|unknown|work_items|id|CASCADE|20260108_work_items_enhancements.sql
