@@ -180,7 +180,7 @@
       "Bash(gcloud beta builds log:*)",
       "Bash(git -C \"C:\\\\Users\\\\lucas\\\\repos\\\\Aica_frontend\\\\Aica_frontend\" config --get remote.origin.url)",
       "Bash(export STAGING_FUNCTION_URL=\"https://uzywajqzbdbrfammshdg.functions.supabase.co/gemini-chat\")",
-      "Bash(export STAGING_URL=\"https://aica-staging-5562559893.southamerica-east1.run.app\")",
+      "Bash(export STAGING_URL=\"https://aica-staging-5p22u2w6jq-rj.a.run.app\")",
       "Bash(git show:*)",
       "Bash(sort:*)",
       "Bash(paste:*)",

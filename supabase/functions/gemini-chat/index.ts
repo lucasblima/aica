@@ -9,9 +9,8 @@ import { handleGenerateDailyQuestion, type GenerateDailyQuestionPayload } from "
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://aica-5562559893.southamerica-east1.run.app', // Production Cloud Run URL
-  'https://aica-staging-5562559893.southamerica-east1.run.app', // Staging Cloud Run URL
-  'https://aica-5p22u2w6jq-rj.a.run.app', // Legacy Cloud Run URL
+  'https://aica-staging-5p22u2w6jq-rj.a.run.app', // Staging Cloud Run URL (OFICIAL)
+  // Produção será adicionada quando Beta: https://aica.comtxae.com
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {

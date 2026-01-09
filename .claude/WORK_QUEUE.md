@@ -72,9 +72,9 @@
 ### URLs Atuais
 | Ambiente | URL | Status |
 |----------|-----|--------|
-| **Staging (ATIVO)** | https://aica-staging-5562559893.southamerica-east1.run.app | ✅ Login funcionando |
+| **Staging (ATIVO)** | https://aica-staging-5p22u2w6jq-rj.a.run.app | ✅ Login funcionando |
 | **Supabase Staging** | https://uzywajqzbdbrfammshdg.supabase.co | ✅ Database OK |
-| ~~Produção antiga~~ | ~~https://aica-5562559893.southamerica-east1.run.app~~ | ❌ DELETADO (2026-01-07) |
+| **Produção (FUTURO)** | https://aica.comtxae.com | ⏸️ Será criado no Beta |
 
 ### Trabalho Concluído (Issue #47)
 - ✅ Projeto Supabase staging criado (`uzywajqzbdbrfammshdg`)
