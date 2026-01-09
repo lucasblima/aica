@@ -4,7 +4,7 @@
 -- Issue: #73 Phase 1 - Security & Integrity
 -- Purpose: Apply all 5 RLS policy migrations in correct order
 -- Execute via: Supabase SQL Editor (Dashboard)
--- Project: gppebtrshbvuzatmebhr (Staging)
+-- Project: uzywajqzbdbrfammshdg (Staging)
 --
 -- WARNING: This script applies 20 RLS policies across 5 tables
 -- Estimated execution time: 30-60 seconds
@@ -12,7 +12,7 @@
 
 \echo '============================================================================'
 \echo 'STARTING PHASE 1 MIGRATION APPLICATION'
-\echo 'Project: gppebtrshbvuzatmebhr (Staging)'
+\echo 'Project: uzywajqzbdbrfammshdg (Staging)'
 \echo 'Tables affected: 5'
 \echo 'Policies to create: 20'
 \echo '============================================================================'

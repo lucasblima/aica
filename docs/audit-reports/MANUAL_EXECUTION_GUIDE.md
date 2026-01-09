@@ -2,7 +2,7 @@
 
 **Issue**: #73 Phase 1 - Security & Integrity
 **Date**: 2026-01-08
-**Environment**: Staging (Supabase: gppebtrshbvuzatmebhr)
+**Environment**: Staging (Supabase: uzywajqzbdbrfammshdg)
 
 ---
 
@@ -22,7 +22,7 @@ The Supabase CLI requires authentication which is not available in the current e
 ## Step 1: Access Supabase SQL Editor
 
 1. Open browser and go to: https://supabase.com/dashboard
-2. Select project: **gppebtrshbvuzatmebhr** (Aica Life OS)
+2. Select project: **uzywajqzbdbrfammshdg** (Aica Life OS - Staging)
 3. Navigate to: **SQL Editor** (left sidebar)
 
 ---

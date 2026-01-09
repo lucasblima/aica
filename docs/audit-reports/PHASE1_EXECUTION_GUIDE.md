@@ -2,7 +2,7 @@
 
 **Issue:** #73 Phase 2 - Performance & Indexes
 **Task:** 2.1 - Apply Phase 1 Migrations to Staging
-**Project:** gppebtrshbvuzatmebhr (Staging)
+**Project:** uzywajqzbdbrfammshdg (Staging)
 **Created:** 2026-01-10
 
 ---
@@ -24,7 +24,7 @@
 
 1. **Open Supabase SQL Editor**
    - Navigate to: https://supabase.com/dashboard
-   - Select project: `gppebtrshbvuzatmebhr`
+   - Select project: `uzywajqzbdbrfammshdg`
    - Go to: **SQL Editor** → **New query**
 
 2. **Copy & Paste Script**
@@ -218,7 +218,7 @@ ERROR: relation "whatsapp_messages" does not exist
 **Cause:** Table was not created in previous migrations, or you're in the wrong database.
 
 **Solution:**
-1. Verify you're in the correct project: `gppebtrshbvuzatmebhr`
+1. Verify you're in the correct project: `uzywajqzbdbrfammshdg`
 2. Check table existence: `SELECT tablename FROM pg_tables WHERE tablename LIKE '%whatsapp%';`
 3. If table doesn't exist, you need to run earlier migrations first (from Issue #42 - WhatsApp Integration)
 
