@@ -8,7 +8,7 @@ Este guia contém o passo a passo para validar o deploy do PR #79 em staging.
 - **Date:** 2026-01-09 ~11:36 UTC
 - **PR:** #79 - AI Cost Tracking, WhatsApp Integration, Database Security
 - **Environment:** https://aica-staging-5p22u2w6jq-rj.a.run.app/
-- **Database:** Supabase (https://gppebtrshbvuzatmebhr.supabase.co)
+- **Database:** Supabase (https://uzywajqzbdbrfammshdg.supabase.co)
 
 ---
 

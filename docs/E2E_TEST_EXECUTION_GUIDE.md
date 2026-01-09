@@ -24,7 +24,7 @@ Create a `.env` file in the project root with:
 VITE_APP_URL=http://localhost:5173
 
 # Supabase Configuration
-VITE_SUPABASE_URL=https://gppebtrshbvuzatmebhr.supabase.co
+VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Test User Credentials (for email/password authentication)

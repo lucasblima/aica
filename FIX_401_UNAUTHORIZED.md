@@ -53,7 +53,7 @@ Me envie o novo erro do Console (F12)
 ## 🔍 Por Que Isso Resolve?
 
 O problema é que havia cookies de **2 projetos Supabase diferentes**:
-- `sb-gppebtrshbvuzatmebhr` (antigo)
+- `sb-uzywajqzbdbrfammshdg` (antigo)
 - `sb-uzywajqzbdbrfammshdg` (atual)
 
 Limpar os dados remove todos os cookies antigos e força um novo login com token válido.

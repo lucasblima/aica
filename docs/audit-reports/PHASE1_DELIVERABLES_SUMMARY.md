@@ -179,7 +179,7 @@
 1. **Open Supabase Dashboard**
    ```
    URL: https://supabase.com/dashboard
-   Project: gppebtrshbvuzatmebhr
+   Project: uzywajqzbdbrfammshdg
    ```
 
 2. **Navigate to SQL Editor**
@@ -320,7 +320,7 @@ docs/
 ## 🤖 Agent Notes
 
 **Execution Mode:** Manual (Supabase CLI auth not available)
-**Target Environment:** STAGING ONLY (gppebtrshbvuzatmebhr)
+**Target Environment:** STAGING ONLY (uzywajqzbdbrfammshdg)
 **Safety Level:** HIGH (idempotent migrations, rollback plan included)
 **Estimated Risk:** LOW (non-destructive, RLS additions only)
 
