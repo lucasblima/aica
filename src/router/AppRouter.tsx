@@ -573,11 +573,13 @@ export function AppRouter() {
                </>
             )}
 
-            {/* Diagnostics Page - PUBLIC (needs to be accessible to fix auth issues) */}
-            <Route
-               path="/diagnostics"
-               element={<DiagnosticsPage />}
-            />
+            {/* Diagnostics Page - Protected */}
+            {isAuthenticated && (
+               <Route
+                  path="/diagnostics"
+                  element={<DiagnosticsPage />}
+               />
+            )}
 
             {/* Profile Page - Protected */}
             {isAuthenticated && (
