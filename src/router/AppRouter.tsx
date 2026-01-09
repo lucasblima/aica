@@ -140,7 +140,6 @@ export function AppRouter() {
 
    // Enhanced view change handler that bridges state and router navigation
    const handleViewChange = (view: ViewState) => {
-      console.log('[AppRouter] View change requested:', view, 'Current view:', currentView);
       if (view === 'connections') {
          navigate('/connections');
       } else if (view === 'contacts') {
@@ -150,7 +149,6 @@ export function AppRouter() {
          if (location.pathname !== '/') {
             navigate('/');
          }
-         console.log('[AppRouter] Setting currentView to:', view);
          setCurrentView(view);
       }
    };
@@ -421,14 +419,14 @@ export function AppRouter() {
 
       return (
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
-            {currentView === 'vida' && (console.log('[MainApp] Rendering vida'), renderVida())}
-            {currentView === 'agenda' && (console.log('[MainApp] Rendering agenda'), renderAgenda())}
-            {currentView === 'connections' && (console.log('[MainApp] Rendering connections'), renderConnections())}
-            {currentView === 'studio' && (console.log('[MainApp] Rendering studio'), renderStudio())}
-            {currentView === 'association_detail' && (console.log('[MainApp] Rendering association_detail'), renderAssociationDetail())}
-            {currentView === 'finance' && (console.log('[MainApp] Rendering finance'), renderFinance())}
-            {currentView === 'finance_agent' && (console.log('[MainApp] Rendering finance_agent'), renderFinanceAgent())}
-            {currentView === 'journey' && (console.log('[MainApp] Rendering journey'), renderJourney())}
+            {currentView === 'vida' && renderVida()}
+            {currentView === 'agenda' && renderAgenda()}
+            {currentView === 'connections' && renderConnections()}
+            {currentView === 'studio' && renderStudio()}
+            {currentView === 'association_detail' && renderAssociationDetail()}
+            {currentView === 'finance' && renderFinance()}
+            {currentView === 'finance_agent' && renderFinanceAgent()}
+            {currentView === 'journey' && renderJourney()}
             {currentView === 'grants' && (
                <GrantsModuleView onBack={() => setCurrentView('vida')} />
             )}

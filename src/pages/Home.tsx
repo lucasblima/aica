@@ -99,19 +99,9 @@ export default function Home({
    // Reset ProfileModal when component unmounts (prevents modal persisting across views)
    useEffect(() => {
       return () => {
-         console.log('[Home] Component unmounting, resetting ProfileModal state');
          setProfileModalOpen(false);
       };
    }, []);
-
-   // Debug: Log when ProfileModal state changes WITH STACK TRACE
-   useEffect(() => {
-      console.log('[Home] ProfileModal state changed:', isProfileModalOpen);
-      if (isProfileModalOpen) {
-         console.log('[Home] ProfileModal opened - Stack trace:');
-         console.trace('[Home] Stack trace');
-      }
-   }, [isProfileModalOpen]);
 
    // Handle account deletion
    const handleDeleteAccount = async () => {
