@@ -405,13 +405,15 @@ export async function fetchAllContacts(
   }
 
   try {
-    const response = await makeRequest<{ data?: WhatsAppContact[] }>(
-      'GET',
-      `/chat/findContacts/${instanceName}`
+    // Evolution API uses POST with where clause filter
+    const response = await makeRequest<WhatsAppContact[]>(
+      'POST',
+      `/chat/findContacts/${instanceName}`,
+      { where: {} } // Empty filter to get all contacts
     )
 
-    // Evolution API returns contacts in a 'data' property
-    return response.data || []
+    // Evolution API returns array directly
+    return Array.isArray(response) ? response : []
   } catch (error) {
     const err = error as Error
     console.error(`[evolution-client] fetchAllContacts error:`, err.message)
@@ -448,12 +450,21 @@ export async function fetchChatMessages(
   }
 
   try {
-    const response = await makeRequest<{ data?: WhatsAppMessageData[] }>(
-      'GET',
-      `/chat/findMessages/${instanceName}?remoteJid=${encodeURIComponent(remoteJid)}&limit=${limit}`
+    // Evolution API uses POST with where clause filter
+    const response = await makeRequest<WhatsAppMessageData[]>(
+      'POST',
+      `/chat/findMessages/${instanceName}`,
+      {
+        where: {
+          key: {
+            remoteJid: remoteJid
+          }
+        },
+        limit: limit
+      }
     )
 
-    return response.data || []
+    return Array.isArray(response) ? response : []
   } catch (error) {
     const err = error as Error
     console.error(`[evolution-client] fetchChatMessages error:`, err.message)
@@ -482,13 +493,19 @@ export async function fetchGroupMetadata(
     throw new Error('Instance name and group JID are required')
   }
 
-  if (!groupJid.endsWith('@g.us')) {
-    throw new Error('Invalid group JID format (must end with @g.us)')
+  if (!groupJid.endsWith('@g.us') && !groupJid.endsWith('@lid')) {
+    throw new Error('Invalid group JID format (must end with @g.us or @lid)')
   }
 
+  // Evolution API uses POST with where clause
   const response = await makeRequest<GroupMetadata>(
-    'GET',
-    `/group/metadata/${instanceName}?groupJid=${encodeURIComponent(groupJid)}`
+    'POST',
+    `/group/findGroupInfo/${instanceName}`,
+    {
+      where: {
+        id: groupJid
+      }
+    }
   )
 
   return response
