@@ -50,6 +50,7 @@ const LandingPageV4 = lazy(() => import('../modules/onboarding/components/landin
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
 const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
+const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => ({ default: m.default })));
 
 // Legal Pages - Rarely accessed
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
@@ -570,6 +571,20 @@ export function AppRouter() {
                      }
                   />
                </>
+            )}
+
+            {/* Diagnostics Page - PUBLIC (needs to be accessible to fix auth issues) */}
+            <Route
+               path="/diagnostics"
+               element={<DiagnosticsPage />}
+            />
+
+            {/* Profile Page - Protected */}
+            {isAuthenticated && (
+               <Route
+                  path="/profile"
+                  element={<ProfilePage />}
+               />
             )}
 
             {/* Main App - Authenticated users */}
