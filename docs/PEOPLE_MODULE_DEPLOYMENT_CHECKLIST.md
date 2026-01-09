@@ -165,7 +165,7 @@ VITE_PODCAST_INTEGRATION_ENABLED=true
 ### Step 3: Smoke Testing
 ```bash
 # Test production deployment
-curl https://aica-5562559893.southamerica-east1.run.app/api/health
+curl https://aica-staging-5p22u2w6jq-rj.a.run.app/api/health
 
 # Manual testing checklist:
 - [ ] Login works
