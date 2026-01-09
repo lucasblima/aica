@@ -328,7 +328,7 @@ export default function DiagnosticsPage() {
         </div>
 
         {/* Logs Container */}
-        <div className="ceramic-inset rounded-2xl p-4 h-[600px] overflow-y-auto font-mono text-sm bg-[#E8E6DB]">
+        <div className="ceramic-inset rounded-lg p-4 h-[600px] overflow-y-auto font-mono text-sm bg-[#E8E6DB]">
           {logs.length === 0 ? (
             <div className="text-ceramic-text-secondary text-center py-8">
               📋 Logs aparecerão aqui... Clique em um botão acima para começar.
@@ -343,7 +343,7 @@ export default function DiagnosticsPage() {
         </div>
 
         {/* Info Panel */}
-        <div className="mt-6 ceramic-card rounded-2xl p-4">
+        <div className="mt-6 ceramic-card rounded-lg p-4">
           <h3 className="text-lg font-semibold text-ceramic-text-primary mb-3">ℹ️ Informações</h3>
           <div className="space-y-2 text-sm text-ceramic-text-secondary">
             <p>

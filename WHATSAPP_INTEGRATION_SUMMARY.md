@@ -30,9 +30,9 @@
 
 | Function | Status | Tamanho | URL |
 |----------|--------|---------|-----|
-| `webhook-evolution` | ✅ Deployed | 977.3 kB | `https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution` |
-| `media-processor` | ✅ Deployed | 903.9 kB | `https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/media-processor` |
-| `notification-sender` | ✅ Deployed | 872.7 kB | `https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/notification-sender` |
+| `webhook-evolution` | ✅ Deployed | 977.3 kB | `https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution` |
+| `media-processor` | ✅ Deployed | 903.9 kB | `https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/media-processor` |
+| `notification-sender` | ✅ Deployed | 872.7 kB | `https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/notification-sender` |
 
 ### 3. Migrations Criadas ✅
 
@@ -66,7 +66,7 @@
 
 **IMPORTANTE:** Execute no SQL Editor do Supabase:
 
-1. **Acesse:** https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/sql
+1. **Acesse:** https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/sql
 
 2. **Cole e execute este SQL:**
 
@@ -232,10 +232,10 @@ SELECT keyword, action, consent_type FROM whatsapp_opt_keywords;
 
 ## 🔗 LINKS ÚTEIS
 
-- **Dashboard Supabase:** https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr
-- **SQL Editor:** https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/sql
-- **Edge Functions:** https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/functions
-- **Storage:** https://supabase.com/dashboard/project/gppebtrshbvuzatmebhr/storage
+- **Dashboard Supabase:** https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg
+- **SQL Editor:** https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/sql
+- **Edge Functions:** https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions
+- **Storage:** https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/storage
 - **Evolution API Dashboard:** https://evolution-evolution-api.w9jo16.easypanel.host/
 
 ---
@@ -261,7 +261,7 @@ curl -X POST "https://evolution-evolution-api.w9jo16.easypanel.host/webhook/set/
   -d '{
     "webhook": {
       "enabled": true,
-      "url": "https://gppebtrshbvuzatmebhr.supabase.co/functions/v1/webhook-evolution",
+      "url": "https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/webhook-evolution",
       "webhookByEvents": true,
       "events": ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE", "QRCODE_UPDATED"],
       "webhookBase64": true
