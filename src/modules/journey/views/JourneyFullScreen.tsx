@@ -1,13 +1,13 @@
 /**
  * JourneyFullScreen Component
- * Full-screen view with 3 zones: Momento Presente, Timeline Viva, Insights & Patterns
+ * Full-screen view with 3 zones: Momento Presente, Atividades (Unified Timeline), Insights & Patterns
  */
 
 import React, { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { QuickCapture } from '../components/capture/QuickCapture'
-import { MomentCard } from '../components/timeline/MomentCard'
-import { MicrophoneFAB, LifeDecadesStrip, CeramicMomentCard } from '../components/ceramic'
+import { MicrophoneFAB } from '../components/ceramic'
+import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { ConsciousnessScore } from '../components/gamification/ConsciousnessScore'
@@ -53,7 +53,7 @@ export function JourneyFullScreen() {
   } | null>(null)
 
   const { user } = useAuth()
-  const { moments, create: createMoment, delete: deleteMoment, loadMore, hasMore, isLoading } = useMoments()
+  const { moments, create: createMoment } = useMoments()
   const { summary, addReflection } = useCurrentWeeklySummary()
   const { question, answer: answerQuestion, skip: skipQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
@@ -257,7 +257,7 @@ export function JourneyFullScreen() {
                 }`}
               >
                 <ClockIcon className="h-5 w-5" />
-                <span>Timeline Viva</span>
+                <span>Atividades</span>
               </button>
 
               <button
@@ -288,44 +288,8 @@ export function JourneyFullScreen() {
             {/* Timeline Tab */}
             {activeTab === 'timeline' && (
               <div className="space-y-4">
-                {/* Life Decades Strip - Memento Mori visualization with 10-year stages */}
-                <LifeDecadesStrip
-                  birthDate={new Date(1990, 0, 1)} // TODO: Get from user profile
-                  expectedLifespan={80}
-                />
-
-                {moments.length === 0 && !isLoading && (
-                  <div className="text-center py-12">
-                    <SparklesIcon className="h-12 w-12 text-[#948D82] mx-auto mb-3" />
-                    <p className="text-[#5C554B] mb-4">
-                      Você ainda não registrou nenhum momento.
-                    </p>
-                    <button
-                      onClick={() => setShowCapture(true)}
-                      className="ceramic-btn-primary"
-                    >
-                      Registrar Primeiro Momento
-                    </button>
-                  </div>
-                )}
-
-                {moments.map(moment => (
-                  <CeramicMomentCard
-                    key={moment.id}
-                    moment={moment}
-                    onDelete={deleteMoment}
-                  />
-                ))}
-
-                {hasMore && (
-                  <button
-                    onClick={loadMore}
-                    disabled={isLoading}
-                    className="w-full px-4 py-3 ceramic-inset text-[#5C554B] font-medium hover:ceramic-pressed disabled:opacity-50 transition-all"
-                  >
-                    {isLoading ? 'Carregando...' : 'Carregar mais'}
-                  </button>
-                )}
+                {/* Unified Timeline - Aggregated user activities */}
+                <UnifiedTimelineView userId={user?.id} />
               </div>
             )}
 
