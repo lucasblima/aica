@@ -5,9 +5,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Users, Search } from 'lucide-react';
+import { RefreshCw, Users, Search, MessageCircle } from 'lucide-react';
 import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
 import { useAuth } from '../hooks/useAuth';
+import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
+import { supabase } from '../services/supabaseClient';
 import type { ContactNetwork } from '../../types';
 
 export function ContactsView() {
@@ -21,6 +23,78 @@ export function ContactsView() {
   const [selectedContact, setSelectedContact] = useState<ContactNetwork | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<{ lastSyncAt: string | null; contactCount: number } | null>(null);
+
+  // Load contacts from database
+  useEffect(() => {
+    if (user) {
+      loadContacts();
+      loadSyncStatus();
+    }
+  }, [user]);
+
+  const loadContacts = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('contact_network')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('name', { ascending: true });
+
+      if (fetchError) throw fetchError;
+
+      setContacts(data || []);
+    } catch (err) {
+      const error = err as Error;
+      console.error('[ContactsView] Error loading contacts:', error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadSyncStatus = async () => {
+    try {
+      const status = await getSyncStatus();
+      setSyncStatus({
+        lastSyncAt: status.lastSyncAt,
+        contactCount: status.contactCount,
+      });
+    } catch (err) {
+      console.error('[ContactsView] Error loading sync status:', err);
+    }
+  };
+
+  const handleWhatsAppSync = async () => {
+    setIsSyncing(true);
+    setError(null);
+
+    try {
+      const result = await syncWhatsAppContacts();
+
+      if (result.success) {
+        console.log('[ContactsView] WhatsApp sync completed:', result);
+        // Reload contacts after sync
+        await loadContacts();
+        await loadSyncStatus();
+
+        // Show success message
+        alert(`✅ Sincronização concluída!\n\n${result.contactsSynced} contatos sincronizados`);
+      } else {
+        throw new Error(result.errors.join(', '));
+      }
+    } catch (err) {
+      const error = err as Error;
+      console.error('[ContactsView] WhatsApp sync error:', error);
+      setError(`Erro ao sincronizar: ${error.message}`);
+      alert(`❌ Erro ao sincronizar:\n\n${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Filter contacts based on search and source
   useEffect(() => {
@@ -113,7 +187,54 @@ export function ContactsView() {
               <option value="whatsapp">WhatsApp</option>
             </select>
           </div>
+
+          {/* WhatsApp Sync Button */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
+              Sincronizar
+            </label>
+            <button
+              onClick={handleWhatsAppSync}
+              disabled={isSyncing}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+                isSyncing
+                  ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
+                  : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
+              }`}
+              title={syncStatus?.lastSyncAt ? `Última sincronização: ${new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR')}` : 'Sincronizar contatos WhatsApp'}
+            >
+              <MessageCircle className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
+              <span>{isSyncing ? 'Sincronizando...' : 'WhatsApp'}</span>
+              {isSyncing && (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Sync Status */}
+        {syncStatus && syncStatus.contactCount > 0 && (
+          <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
+            <MessageCircle className="w-3 h-3" />
+            <span>
+              {syncStatus.contactCount} contatos WhatsApp
+              {syncStatus.lastSyncAt && (
+                <> • Última sincronização: {new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
+              )}
+            </span>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="ceramic-card p-4 bg-red-500/10 border border-red-500/20"
+          >
+            <p className="text-sm text-red-300 font-medium">{error}</p>
+          </motion.div>
+        )}
 
         {/* Contact Grid */}
         {filteredContacts.length === 0 ? (

@@ -10,6 +10,7 @@
 import { supabase } from '@/lib/supabase'
 import { GeminiClient } from '@/lib/gemini'
 import type { GeminiChatResponse } from '@/lib/gemini'
+import { trackAIUsage } from '@/services/aiUsageTrackingService'
 import { QuestionWithResponse, DailyQuestion } from '../types/dailyQuestion'
 
 interface UserContext {
@@ -238,6 +239,7 @@ async function generateAIDrivenQuestion(
   retries: number = 2
 ): Promise<string | null> {
   const client = GeminiClient.getInstance()
+  const startTime = Date.now()
 
   // Estruturar prompt contextual
   const systemPrompt = `Você é um assistente compassivo de bem-estar para o Aica Life OS.
@@ -298,6 +300,24 @@ Gere uma pergunta reflexiva e apropriada:
 
         // Validar resposta (deve ter entre 5 e 100 caracteres)
         if (question.length >= 5 && question.length <= 200) {
+          // Track AI usage (non-blocking, fire-and-forget)
+          trackAIUsage({
+            operation_type: 'text_generation',
+            ai_model: result.model || 'gemini-2.0-flash',
+            input_tokens: result.usageMetadata?.promptTokenCount || 0,
+            output_tokens: result.usageMetadata?.candidatesTokenCount || 0,
+            module_type: 'journey',
+            duration_seconds: (Date.now() - startTime) / 1000,
+            request_metadata: {
+              function_name: 'generateAIDrivenQuestion',
+              operation: 'daily_question',
+              has_user_context: !!context,
+            }
+          }).catch(error => {
+            // Non-blocking: log error but don't throw
+            console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+          });
+
           return question
         }
       }
