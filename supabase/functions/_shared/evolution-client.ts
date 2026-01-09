@@ -38,6 +38,61 @@ export interface EvolutionApiResponse<T = any> {
 }
 
 // ============================================================================
+// SPRINT 1: Contact Sync Types
+// ============================================================================
+
+export interface WhatsAppContact {
+  id: string // remoteJid (e.g., "5521999999999@s.whatsapp.net")
+  name: string | null // Contact name from address book
+  pushName: string | null // Name they set in WhatsApp
+  profilePicUrl: string | null
+  isGroup: boolean
+  isMyContact: boolean // Is in user's contact list
+  lastMessageTimestamp?: number // Unix timestamp
+}
+
+export interface WhatsAppMessageData {
+  key: {
+    remoteJid: string
+    fromMe: boolean
+    id: string
+    participant?: string
+  }
+  pushName?: string
+  message?: {
+    conversation?: string
+    extendedTextMessage?: { text: string }
+    imageMessage?: WebhookMediaMessage
+    audioMessage?: WebhookMediaMessage
+    videoMessage?: WebhookMediaMessage
+    documentMessage?: WebhookMediaMessage
+  }
+  messageTimestamp?: number | string
+}
+
+export interface WebhookMediaMessage {
+  url?: string
+  mimetype?: string
+  caption?: string
+  fileName?: string
+  fileLength?: string
+  seconds?: number
+}
+
+export interface GroupMetadata {
+  id: string
+  subject: string // Group name
+  owner: string
+  creation: number // Unix timestamp
+  participants: Array<{
+    id: string
+    admin: 'admin' | 'superadmin' | null
+  }>
+  desc?: string // Group description
+  descOwner?: string
+}
+
+// ============================================================================
 // CONFIGURATION
 // ============================================================================
 
@@ -57,14 +112,20 @@ if (!EVOLUTION_API_KEY) {
 // ============================================================================
 
 /**
- * Make authenticated request to Evolution API
+ * Make authenticated request to Evolution API with retry logic
+ * @param method - HTTP method
+ * @param endpoint - API endpoint
+ * @param body - Request body (optional)
+ * @param retryCount - Current retry attempt (internal use)
  */
 async function makeRequest<T = any>(
   method: string,
   endpoint: string,
-  body?: any
+  body?: any,
+  retryCount = 0
 ): Promise<T> {
   const url = `${EVOLUTION_API_URL}${endpoint}`
+  const maxRetries = 3
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -80,7 +141,7 @@ async function makeRequest<T = any>(
     options.body = JSON.stringify(body)
   }
 
-  console.log(`[evolution-client] ${method} ${endpoint}`)
+  console.log(`[evolution-client] ${method} ${endpoint} (attempt ${retryCount + 1})`)
 
   try {
     const response = await fetch(url, options)
@@ -88,6 +149,20 @@ async function makeRequest<T = any>(
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`[evolution-client] Error ${response.status}: ${errorText}`)
+
+      // Don't retry on 4xx errors (client errors)
+      if (response.status >= 400 && response.status < 500) {
+        throw new Error(`Evolution API client error: ${response.status} - ${errorText}`)
+      }
+
+      // Retry on 5xx errors (server errors) and rate limiting
+      if ((response.status >= 500 || response.status === 429) && retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000 // 1s, 2s, 4s
+        console.log(`[evolution-client] Retrying after ${delay}ms...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return makeRequest<T>(method, endpoint, body, retryCount + 1)
+      }
+
       throw new Error(`Evolution API error: ${response.status} - ${errorText}`)
     }
 
@@ -95,6 +170,15 @@ async function makeRequest<T = any>(
     return data
   } catch (error) {
     const err = error as Error
+
+    // Network errors - retry
+    if (err.message.includes('fetch failed') && retryCount < maxRetries) {
+      const delay = Math.pow(2, retryCount) * 1000
+      console.log(`[evolution-client] Network error, retrying after ${delay}ms...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      return makeRequest<T>(method, endpoint, body, retryCount + 1)
+    }
+
     console.error(`[evolution-client] Request failed:`, err.message)
     throw err
   }
@@ -304,6 +388,112 @@ export async function deleteInstance(
   return response as EvolutionApiResponse
 }
 
+// ============================================================================
+// SPRINT 1: Contact Sync Functions
+// ============================================================================
+
+/**
+ * Fetch all contacts from WhatsApp
+ * @param instanceName - Name of the instance
+ * @returns Array of WhatsApp contacts
+ */
+export async function fetchAllContacts(
+  instanceName: string
+): Promise<WhatsAppContact[]> {
+  if (!instanceName) {
+    throw new Error('Instance name is required')
+  }
+
+  try {
+    const response = await makeRequest<{ data?: WhatsAppContact[] }>(
+      'GET',
+      `/chat/findContacts/${instanceName}`
+    )
+
+    // Evolution API returns contacts in a 'data' property
+    return response.data || []
+  } catch (error) {
+    const err = error as Error
+    console.error(`[evolution-client] fetchAllContacts error:`, err.message)
+
+    // Return empty array instead of throwing on API errors
+    // This allows graceful degradation if API is temporarily down
+    if (err.message.includes('5')) {
+      console.warn('[evolution-client] API server error, returning empty contacts')
+      return []
+    }
+
+    throw err
+  }
+}
+
+/**
+ * Fetch chat messages with a contact
+ * @param instanceName - Name of the instance
+ * @param remoteJid - Contact's WhatsApp ID (e.g., "5521999999999@s.whatsapp.net")
+ * @param limit - Maximum number of messages to fetch (default: 50)
+ * @returns Array of WhatsApp messages
+ */
+export async function fetchChatMessages(
+  instanceName: string,
+  remoteJid: string,
+  limit: number = 50
+): Promise<WhatsAppMessageData[]> {
+  if (!instanceName || !remoteJid) {
+    throw new Error('Instance name and remote JID are required')
+  }
+
+  if (limit < 1 || limit > 1000) {
+    throw new Error('Limit must be between 1 and 1000')
+  }
+
+  try {
+    const response = await makeRequest<{ data?: WhatsAppMessageData[] }>(
+      'GET',
+      `/chat/findMessages/${instanceName}?remoteJid=${encodeURIComponent(remoteJid)}&limit=${limit}`
+    )
+
+    return response.data || []
+  } catch (error) {
+    const err = error as Error
+    console.error(`[evolution-client] fetchChatMessages error:`, err.message)
+
+    // Return empty array for graceful degradation
+    if (err.message.includes('5')) {
+      console.warn('[evolution-client] API server error, returning empty messages')
+      return []
+    }
+
+    throw err
+  }
+}
+
+/**
+ * Fetch group metadata
+ * @param instanceName - Name of the instance
+ * @param groupJid - Group's WhatsApp ID (e.g., "120363123456789@g.us")
+ * @returns Group metadata including participants
+ */
+export async function fetchGroupMetadata(
+  instanceName: string,
+  groupJid: string
+): Promise<GroupMetadata> {
+  if (!instanceName || !groupJid) {
+    throw new Error('Instance name and group JID are required')
+  }
+
+  if (!groupJid.endsWith('@g.us')) {
+    throw new Error('Invalid group JID format (must end with @g.us)')
+  }
+
+  const response = await makeRequest<GroupMetadata>(
+    'GET',
+    `/group/metadata/${instanceName}?groupJid=${encodeURIComponent(groupJid)}`
+  )
+
+  return response
+}
+
 export default {
   createInstance,
   generatePairingCode,
@@ -312,4 +502,8 @@ export default {
   getInstanceInfo,
   restartInstance,
   deleteInstance,
+  // Sprint 1: Contact Sync
+  fetchAllContacts,
+  fetchChatMessages,
+  fetchGroupMetadata,
 }
