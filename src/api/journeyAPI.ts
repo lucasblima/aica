@@ -41,8 +41,8 @@ export async function apiCreateMoment(input: CreateMomentEntryInput): Promise<Mo
  * GET /api/journey/moments/:momentId
  */
 export async function apiGetMoment(momentId: string) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   return getMomentById(user.id, momentId)
 }
@@ -61,8 +61,8 @@ export async function apiGetMoments(options: {
   tags?: string
   lifeAreas?: string
 } = {}) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   const parsedOptions = {
     limit: options.limit ? parseInt(String(options.limit)) : 50,
@@ -82,8 +82,8 @@ export async function apiGetMoments(options: {
  * PUT /api/journey/moments/:momentId
  */
 export async function apiUpdateMoment(momentId: string, updates: Partial<CreateMomentEntryInput>) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   // Validate userId matches
   if (updates.userId && updates.userId !== user.id) {
@@ -98,8 +98,8 @@ export async function apiUpdateMoment(momentId: string, updates: Partial<CreateM
  * DELETE /api/journey/moments/:momentId
  */
 export async function apiDeleteMoment(momentId: string) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   return deleteMomentEntry(user.id, momentId)
 }
@@ -109,8 +109,8 @@ export async function apiDeleteMoment(momentId: string) {
  * GET /api/journey/stats
  */
 export async function apiGetUserStats() {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   return getUserStats(user.id)
 }
@@ -120,8 +120,8 @@ export async function apiGetUserStats() {
  * GET /api/journey/stats/streak
  */
 export async function apiGetCurrentStreak() {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   const stats = await getUserStats(user.id)
 
@@ -141,8 +141,8 @@ export async function apiGetCurrentStreak() {
  * GET /api/journey/moments/count
  */
 export async function apiGetMomentsCount() {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   try {
     const { count, error } = await supabase
@@ -164,8 +164,8 @@ export async function apiGetMomentsCount() {
  * GET /api/journey/moments/emotion/:emotion
  */
 export async function apiGetMomentsByEmotion(emotion: string) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   return getUserMoments(user.id, {
     emotions: [emotion],
@@ -178,8 +178,8 @@ export async function apiGetMomentsByEmotion(emotion: string) {
  * GET /api/journey/moments/area/:area
  */
 export async function apiGetMomentsByLifeArea(area: string) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   return getUserMoments(user.id, {
     lifeAreas: [area],
@@ -192,8 +192,8 @@ export async function apiGetMomentsByLifeArea(area: string) {
  * GET /api/journey/moments/tag/:tag
  */
 export async function apiGetMomentsByTag(tag: string) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   return getUserMoments(user.id, {
     tags: [tag],
@@ -206,8 +206,8 @@ export async function apiGetMomentsByTag(tag: string) {
  * GET /api/journey/moments/recent
  */
 export async function apiGetRecentMoments(days: number = 7) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
@@ -223,8 +223,8 @@ export async function apiGetRecentMoments(days: number = 7) {
  * GET /api/journey/moments/search
  */
 export async function apiSearchMoments(query: string) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   try {
     const { data, error } = await supabase
@@ -255,8 +255,8 @@ export async function apiSearchMoments(query: string) {
  * GET /api/journey/insights/emotional
  */
 export async function apiGetEmotionalInsights(days: number = 30) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
@@ -304,8 +304,8 @@ export async function apiGetEmotionalInsights(days: number = 30) {
  * GET /api/journey/insights/life-areas
  */
 export async function apiGetLifeAreasInsights(days: number = 30) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
@@ -352,8 +352,8 @@ export async function apiGetLifeAreasInsights(days: number = 30) {
  * GET /api/journey/insights/tags
  */
 export async function apiGetTagsSummary() {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   const { moments } = await getUserMoments(user.id, {
     limit: 100,
@@ -398,8 +398,8 @@ export async function apiGetTagsSummary() {
  * GET /api/journey/export
  */
 export async function apiExportMoments() {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   try {
     const { moments } = await getUserMoments(user.id, {
@@ -430,8 +430,8 @@ export async function apiExportMoments() {
  * GET /api/journey/timeline
  */
 export async function apiGetJourneyTimeline(months: number = 6) {
-  const { user } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('User not authenticated')
 
   const startDate = new Date()
   startDate.setMonth(startDate.getMonth() - months)
