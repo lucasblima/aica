@@ -99,9 +99,15 @@ export default function Home({
    // Reset ProfileModal when component unmounts (prevents modal persisting across views)
    useEffect(() => {
       return () => {
+         console.log('[Home] Component unmounting, resetting ProfileModal state');
          setProfileModalOpen(false);
       };
    }, []);
+
+   // Debug: Log when ProfileModal state changes
+   useEffect(() => {
+      console.log('[Home] ProfileModal state changed:', isProfileModalOpen);
+   }, [isProfileModalOpen]);
 
    // Handle account deletion
    const handleDeleteAccount = async () => {

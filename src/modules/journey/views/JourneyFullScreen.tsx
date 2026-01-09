@@ -33,6 +33,13 @@ import { useAuth } from '../../../hooks/useAuth'
 import { SettingsMenu, HelpButton } from '@/components'
 
 export function JourneyFullScreen() {
+  // Debug: Log when component mounts
+  React.useEffect(() => {
+    console.log('[JourneyFullScreen] Component mounted');
+    return () => {
+      console.log('[JourneyFullScreen] Component unmounting');
+    };
+  }, []);
 
   const [showCapture, setShowCapture] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
