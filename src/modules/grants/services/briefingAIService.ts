@@ -66,7 +66,7 @@ export async function generateAutoBriefing(context: BriefingGenerationContext): 
     if (usageMetadata) {
       trackAIUsage({
         operation_type: 'text_generation',
-        ai_model: 'gemini-2.0-flash-exp',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
         input_tokens: usageMetadata.promptTokenCount || 0,
         output_tokens: usageMetadata.candidatesTokenCount || 0,
         module_type: 'grants',
@@ -115,7 +115,7 @@ export async function improveBriefingField(
     if (usageMetadata) {
       trackAIUsage({
         operation_type: 'text_generation',
-        ai_model: 'gemini-2.0-flash-exp',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
         input_tokens: usageMetadata.promptTokenCount || 0,
         output_tokens: usageMetadata.candidatesTokenCount || 0,
         module_type: 'grants',
@@ -203,7 +203,7 @@ export async function extractRequiredDocuments(pdfContent: string): Promise<Extr
     if (usageMetadata) {
       trackAIUsage({
         operation_type: 'text_generation',
-        ai_model: 'gemini-2.0-flash-exp',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
         input_tokens: usageMetadata.promptTokenCount || 0,
         output_tokens: usageMetadata.candidatesTokenCount || 0,
         module_type: 'grants',
@@ -254,7 +254,7 @@ export async function extractTimelinePhases(pdfContent: string): Promise<Extract
     if (usageMetadata) {
       trackAIUsage({
         operation_type: 'text_generation',
-        ai_model: 'gemini-2.0-flash-exp',
+        ai_model: (result as any).model || 'gemini-2.0-flash-exp',
         input_tokens: usageMetadata.promptTokenCount || 0,
         output_tokens: usageMetadata.candidatesTokenCount || 0,
         module_type: 'grants',
