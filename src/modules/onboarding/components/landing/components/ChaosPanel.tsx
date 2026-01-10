@@ -9,20 +9,17 @@ interface ChaosPanelProps {
 export function ChaosPanel({ messages, isProcessing }: ChaosPanelProps) {
   return (
     <div
-      className="relative min-h-[600px] p-8 rounded-3xl overflow-hidden"
-      style={{
-        background: 'linear-gradient(135deg, #F0EFE9 0%, #E5E3DA 100%)'
-      }}
+      className="relative min-h-[600px] p-8 rounded-3xl overflow-hidden bg-gradient-to-br from-ceramic-base to-[#E5E3DA]"
       role="region"
       aria-label="Mensagens desorganizadas"
       aria-live="polite"
     >
       {/* Header */}
       <div className="mb-8 relative z-10">
-        <h3 className="text-3xl font-black text-[#5C554B] mb-2">
+        <h3 className="text-3xl font-black text-ceramic-text-primary mb-2">
           Caos
         </h3>
-        <p className="text-[#8B8378]">
+        <p className="text-ceramic-text-secondary">
           Mensagens desorganizadas, informacao dispersa
         </p>
       </div>
@@ -62,6 +59,14 @@ interface FloatingMessageCardProps {
   total: number;
 }
 
+// Category colors using Tailwind classes
+const categoryColorClasses: Record<string, string> = {
+  atlas: 'bg-blue-500',
+  journey: 'bg-purple-500',
+  studio: 'bg-orange-500',
+  connections: 'bg-emerald-500'
+};
+
 function FloatingMessageCard({
   message,
   index,
@@ -77,15 +82,7 @@ function FloatingMessageCard({
   const randomRotate = (index * 13) % 20 - 10; // -10 to +10 degrees
   const zIndex = total - index; // Cards no topo ficam na frente
 
-  // Categoria para cor do indicador
-  const categoryColors: Record<string, string> = {
-    atlas: '#3B82F6',
-    journey: '#8B5CF6',
-    studio: '#F59E0B',
-    connections: '#10B981'
-  };
-
-  const categoryColor = message.category ? categoryColors[message.category] : '#8B8378';
+  const categoryColorClass = message.category ? categoryColorClasses[message.category] : 'bg-gray-500';
 
   return (
     <motion.div
@@ -108,16 +105,12 @@ function FloatingMessageCard({
         delay: isProcessing ? index * 0.05 : index * 0.08,
         ease: isProcessing ? 'easeIn' : 'easeOut'
       }}
-      className="absolute max-w-[220px] p-4 bg-white/70 backdrop-blur-sm rounded-2xl"
-      style={{
-        boxShadow: '0 4px 20px rgba(163, 158, 145, 0.25)',
-        zIndex
-      }}
+      className="absolute max-w-[220px] p-4 bg-white/70 backdrop-blur-sm rounded-2xl shadow-[0_4px_20px_rgba(163,158,145,0.25)]"
+      style={{ zIndex }}
     >
       {/* Category Indicator */}
       <div
-        className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
-        style={{ backgroundColor: categoryColor }}
+        className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${categoryColorClass}`}
       />
 
       {/* Message Text */}
