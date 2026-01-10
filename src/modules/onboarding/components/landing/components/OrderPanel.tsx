@@ -293,7 +293,10 @@ function ConnectionsCard({ connections }: { connections: Connection[] }) {
     moderate: 'Moderado',
     declining: 'Requer atencao'
   };
-
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-emerald-100"
+        >
+          🤝
+        </div>
   return (
     <div className="p-6 rounded-2xl h-full ceramic-card">
       {/* Header */}
