@@ -149,7 +149,12 @@ export function LandingPage() {
             />
           )}
         </AnimatePresence>
-
+                <button
+                  onClick={handleResetDemo}
+                  className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-105 bg-ceramic-base shadow-[4px_4px_8px_rgba(163,158,145,0.2),-4px_-4px_8px_rgba(255,255,255,0.9)]"
+                >
+                  Reiniciar Demo
+                </button>
         {/* Main Demo Area - Chaos to Order Transformation */}
         <section className="max-w-7xl mx-auto px-6 mb-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
