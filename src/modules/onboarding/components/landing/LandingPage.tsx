@@ -129,7 +129,13 @@ export function LandingPage() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-ceramic-text-secondary max-w-3xl mx-auto">
-              Transforme suas mensagens do WhatsApp em tarefas, reflexoes e conexoes organizadas automaticamente por IA
+              <button
+                onClick={handleProcessChaos}
+                disabled={isProcessing}
+                className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-br from-blue-500 via-purple-500 to-orange-500 shadow-[0_8px_24px_rgba(59,130,246,0.35)]"
+              >
+                {isProcessing ? 'Processando...' : 'Processar Meu Caos'}
+              </button>
             </p>
           </motion.div>
         </section>
