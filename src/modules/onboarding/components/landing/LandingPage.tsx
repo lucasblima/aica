@@ -22,7 +22,12 @@ import type { DemoMessage, ProcessedModules, ProcessingStage } from './types';
  * - Framer Motion animations
  * - iOS-style auth sheet integration
  * - Digital Ceramic design system (Neumorphic)
- */
+  const [messages, setMessages] = useState<DemoMessage[]>(() =>
+    demoProcessingService.generateDemoMessages()
+  );
+  const [processedModules, setProcessedModules] = useState<ProcessedModules | null>(() => null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStage, setProcessingStage] = useState<ProcessingStage | null>(() => null);
 export function LandingPage() {
   const navigate = useNavigate();
   const [isAuthSheetOpen, setIsAuthSheetOpen] = useState(false);
