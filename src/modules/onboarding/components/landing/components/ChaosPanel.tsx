@@ -72,7 +72,73 @@ function FloatingMessageCard({
   index,
   isProcessing,
   total
-}: FloatingMessageCardProps) {
+  const categoryColors: Record<string, string> = {
+    atlas: 'bg-blue-500',
+    journey: 'bg-purple-500',
+    studio: 'bg-orange-500',
+    connections: 'bg-emerald-500'
+  };
+
+  const categoryColorClass = message.category ? categoryColors[message.category] : 'bg-gray-500';
+
+  return (
+    <motion.div
+      initial={{
+        x: `${randomX}%`,
+        y: `${randomY}%`,
+        rotate: randomRotate,
+        opacity: 0,
+        scale: 0.8
+      }}
+      animate={{
+        x: `${randomX}%`,
+        y: isProcessing ? '-120%' : `${randomY}%`,
+        rotate: shouldReduceMotion ? 0 : (isProcessing ? 0 : randomRotate),
+        opacity: isProcessing ? 0 : 1,
+        scale: isProcessing ? 0.5 : 1
+      }}
+      transition={{
+        duration: shouldReduceMotion ? 0 : (isProcessing ? 0.6 : 0.5),
+        delay: isProcessing ? index * 0.05 : index * 0.08,
+        ease: isProcessing ? 'easeIn' : 'easeOut'
+      }}
+      className="absolute max-w-[220px] p-4 bg-white/70 backdrop-blur-sm rounded-2xl shadow-[0_4px_20px_rgba(163,158,145,0.25)]"
+      style={{
+        zIndex
+      }}
+    >
+      {/* Category Indicator */}
+      <div
+        className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${categoryColorClass}`}
+      />
+
+      {/* Message Text */}
+      <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
+        {message.text}
+      </p>
+
+      {/* Footer */}
+      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-100">
+        <span className="text-xs">
+          {message.sender === 'user' ? '📤' : '📥'}
+        </span>
+        <span className="text-xs text-gray-400">
+          {formatRelativeDate(message.timestamp)}
+        </span>
+        {/* Chaos Level Indicator */}
+        <div className="ml-auto flex items-center gap-1">
+          <div
+            className="w-8 h-1 rounded-full bg-gray-200 overflow-hidden"
+            title={`Nivel de caos: ${message.chaos_level}%`}
+          >
+            <div
+              className="h-full bg-orange-400 rounded-full"
+              style={{ width: `${message.chaos_level}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </motion.div>
   const shouldReduceMotion = useReducedMotion();
 
   // Posicao aleatoria mas deterministica (baseada no index)
