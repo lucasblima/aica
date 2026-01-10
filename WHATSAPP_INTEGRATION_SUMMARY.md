@@ -1,8 +1,24 @@
 # ✅ Resumo da Implementação - WhatsApp Integration via Evolution API
 
 **Branch:** `feature/whatsapp-evolution-integration-issue-12`
-**Issue:** #12
-**Data:** 2025-12-30
+**Issues:** #12, #22, #83
+**Data:** 2026-01-10 (Atualizado)
+**Status:** ✅ Operacional
+
+---
+
+## 🔑 CREDENCIAIS
+
+> ⚠️ **SEGURANÇA:** Credenciais são gerenciadas via Supabase Edge Function Secrets.
+> Acesse: Project Settings > Edge Functions > Manage Secrets
+
+| Variável | Localização |
+|----------|-------------|
+| `EVOLUTION_API_URL` | Supabase Secrets |
+| `EVOLUTION_INSTANCE_NAME` | Supabase Secrets |
+| `EVOLUTION_API_KEY` | Supabase Secrets |
+
+**Status da Instância:** ✅ Conectada ("open")
 
 ---
 
@@ -102,13 +118,15 @@ Depois cole no SQL Editor e execute.
 
 Adicione os seguintes secrets:
 
-| Secret Name | Valor |
-|-------------|-------|
-| `EVOLUTION_API_URL` | `https://evolution-evolution-api.w9jo16.easypanel.host` |
-| `EVOLUTION_API_KEY` | `429683C4C977415CAAFCCE10F7D57E11` |
-| `EVOLUTION_INSTANCE_NAME` | `Lucas_4569` |
-| `EVOLUTION_WEBHOOK_SECRET` | *(gerar string aleatória segura)* |
-| `GEMINI_API_KEY` | `AIzaSyAihJ__7YQNFTZFx5HiulUjjS2vfUjwJsM` |
+| Secret Name | Descrição |
+|-------------|-----------|
+| `EVOLUTION_API_URL` | URL da sua instância Evolution API |
+| `EVOLUTION_API_KEY` | API Key da Evolution API |
+| `EVOLUTION_INSTANCE_NAME` | Nome da instância WhatsApp |
+| `EVOLUTION_WEBHOOK_SECRET` | String aleatória segura (gerar com comando abaixo) |
+| `GEMINI_API_KEY` | API Key do Google Gemini |
+
+> ⚠️ **NUNCA** commite credenciais no repositório. Use apenas Supabase Secrets.
 
 **Comando para gerar secret seguro:**
 ```bash
@@ -255,8 +273,8 @@ O webhook está configurado para apontar para o N8N em vez da Edge Function dire
 
 **OU** reconfigure o webhook para apontar diretamente para a Edge Function:
 ```bash
-curl -X POST "https://evolution-evolution-api.w9jo16.easypanel.host/webhook/set/Lucas_4569" \
-  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \
+curl -X POST "$EVOLUTION_API_URL/webhook/set/$EVOLUTION_INSTANCE_NAME" \
+  -H "apikey: $EVOLUTION_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "webhook": {
@@ -268,6 +286,13 @@ curl -X POST "https://evolution-evolution-api.w9jo16.easypanel.host/webhook/set/
     }
   }'
 ```
+
+> 💡 **Dica:** Configure as variáveis de ambiente antes de executar:
+> ```bash
+> export EVOLUTION_API_URL="sua-url"
+> export EVOLUTION_INSTANCE_NAME="sua-instancia"
+> export EVOLUTION_API_KEY="sua-api-key"
+> ```
 
 ---
 
