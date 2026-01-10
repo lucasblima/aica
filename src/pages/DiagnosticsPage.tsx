@@ -328,7 +328,7 @@ export default function DiagnosticsPage() {
         </div>
 
         {/* Logs Container */}
-        <div className="ceramic-inset rounded-lg p-4 h-[600px] overflow-y-auto font-mono text-sm bg-[#E8E6DB]">
+        <div className="ceramic-tray p-4 h-[600px] overflow-y-auto font-mono text-sm bg-[#E8E6DB]">
           {logs.length === 0 ? (
             <div className="text-ceramic-text-secondary text-center py-8">
               📋 Logs aparecerão aqui... Clique em um botão acima para começar.

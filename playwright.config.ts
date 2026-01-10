@@ -59,9 +59,19 @@ export default defineConfig({
       testMatch: /auth\.setup\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
+    // Unauthenticated project - for Landing Page tests
+    {
+      name: 'unauthenticated',
+      testMatch: /onboarding\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // NO storageState - tests run without authentication
+      },
+    },
     // Test projects - depend on setup
     {
       name: 'chromium',
+      testIgnore: /onboarding\.spec\.ts/, // Landing page runs in 'unauthenticated' project
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'tests/e2e/.auth.json', // Only set if setup succeeded
@@ -70,6 +80,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
+      testIgnore: /onboarding\.spec\.ts/, // Landing page runs in 'unauthenticated' project
       use: {
         ...devices['Desktop Firefox'],
         storageState: 'tests/e2e/.auth.json',
