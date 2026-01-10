@@ -1,14 +1,28 @@
 /**
- * Landing Page - Official Landing Page
+ * Landing Page - "Ordem ao Caos" Concept
  *
- * Barrel export for the consolidated landing page and its components
+ * Transform chaotic WhatsApp messages into organized, actionable modules
+ * using AI-powered classification and semantic analysis.
  */
 
+// Main component
 export { LandingPage, default } from './LandingPage';
-export { HeroSection } from './HeroSection';
-export { SocialProof } from './SocialProof';
-export { Features } from './Features';
-export { HowItWorks } from './HowItWorks';
-export { CaptacaoSection } from './CaptacaoSection';
-export { CTASection } from './CTASection';
-export { MinimalFooter } from './MinimalFooter';
+
+// Sub-components
+export { ChaosPanel } from './components/ChaosPanel';
+export { OrderPanel } from './components/OrderPanel';
+export { ProcessingPipeline } from './components/ProcessingPipeline';
+
+// Services
+export { demoProcessingService } from './services/demoProcessingService';
+
+// Types
+export type {
+  DemoMessage,
+  ProcessedModules,
+  AtlasTask,
+  JourneyMoment,
+  StudioEpisode,
+  Connection,
+  ProcessingStage
+} from './types';
