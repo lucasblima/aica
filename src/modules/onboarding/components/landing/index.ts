@@ -1,26 +1,14 @@
 /**
- * Landing Page - Digital Ceramic Redesign
+ * Landing Page - Official Landing Page
  *
- * Operation "Digital Desire" - Apple-inspired landing page
- * following the "Digital Ceramic" aesthetic.
- *
- * @module landing
+ * Barrel export for the consolidated landing page and its components
  */
 
-// Main Page Component
-export { LandingPageV2 as LandingPage, default } from './LandingPageV2';
-
-// Section Components
-export { DigitalHero } from './DigitalHero';
-export { BentoFeatures } from './BentoFeatures';
-export { ScrollStory } from './ScrollStory';
-export { ScrollStorySection } from './ScrollStorySection';
+export { LandingPage, default } from './LandingPage';
+export { HeroSection } from './HeroSection';
+export { SocialProof } from './SocialProof';
+export { Features } from './Features';
+export { HowItWorks } from './HowItWorks';
+export { CaptacaoSection } from './CaptacaoSection';
+export { CTASection } from './CTASection';
 export { MinimalFooter } from './MinimalFooter';
-
-// UI Components - Note: BentoCard and CeramicPillButton have been moved to src/components/ui/
-// Use: import { BentoCard } from '../../components/ui/BentoCard'
-// Use: import { CeramicPillButton } from '../../components/ui/CeramicPillButton'
-export { MockupPlaceholder } from './MockupPlaceholder';
-
-// Hooks
-export { useScrollReveal } from './hooks/useScrollReveal';

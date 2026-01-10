@@ -78,7 +78,10 @@ const features: Feature[] = [
 
 export function Features() {
   return (
-    <section className="bg-gradient-to-b from-ceramic-base to-ceramic-accent/5 py-20 md:py-32 px-6">
+    <section
+      data-testid="landing-pilares"
+      className="bg-gradient-to-b from-ceramic-base to-ceramic-accent/5 py-20 md:py-32 px-6"
+    >
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div

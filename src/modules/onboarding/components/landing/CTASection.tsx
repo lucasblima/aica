@@ -15,7 +15,10 @@ interface CTASectionProps {
 
 export function CTASection({ onGetStarted }: CTASectionProps) {
   return (
-    <section className="relative bg-ceramic-base py-20 md:py-32 px-6 overflow-hidden">
+    <section
+      data-testid="landing-cta"
+      className="relative bg-ceramic-base py-20 md:py-32 px-6 overflow-hidden"
+    >
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-ceramic-accent/10 via-transparent to-ceramic-accent/10" />
 

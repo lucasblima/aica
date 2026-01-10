@@ -24,11 +24,24 @@ export class LandingPage {
     authSheet: '[role="dialog"][aria-modal="true"]',
   };
 
+  // Public locators for direct test access
+  get hero() {
+    return this.page.locator(this.selectors.heroSection);
+  }
+
+  get pilares() {
+    return this.page.locator(this.selectors.pilaresSection);
+  }
+
+  get cta() {
+    return this.page.locator(this.selectors.ctaSection);
+  }
+
   /**
    * Navigate to landing page
    */
   async goto() {
-    await this.page.goto('/', { waitUntil: 'networkidle' });
+    await this.page.goto('/landing', { waitUntil: 'networkidle' });
     await this.expectHeroVisible();
   }
 
@@ -41,17 +54,26 @@ export class LandingPage {
   }
 
   /**
-   * Verify all 4 pilares are visible (Atlas, Jornada, Podcast, Finance)
+   * Verify all 4 main pilares are visible (Atlas, Jornada, Podcast, Finance)
    */
   async expectPilaresVisible() {
     const pilares = this.page.locator(this.selectors.pilaresSection);
     await expect(pilares).toBeVisible({ timeout: 5000 });
 
-    // Check for individual pilar cards
-    const pilarNames = ['Atlas', 'Jornada', 'Podcast', 'Finance'];
-    for (const pilar of pilarNames) {
-      const pilarCard = this.page.locator(`text=${pilar}`);
-      await expect(pilarCard).toBeVisible();
+    // Check for individual pilar cards within the pilares section
+    // Using exact heading titles as they appear in Features.tsx
+    const pilaresSection = pilares;
+    const pilarTitles = [
+      'Meu Dia (Atlas)',
+      'Minha Jornada',
+      'Podcast Studio',
+      'Finance Tracker'
+    ];
+
+    for (const title of pilarTitles) {
+      // Search within pilares section only, and use heading role for specificity
+      const pilarHeading = pilaresSection.getByRole('heading', { name: title });
+      await expect(pilarHeading).toBeVisible();
     }
   }
 

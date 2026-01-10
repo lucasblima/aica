@@ -4,11 +4,11 @@ import { SocialProof } from './SocialProof';
 import { Features } from './Features';
 import { HowItWorks } from './HowItWorks';
 import { CTASection } from './CTASection';
-import { MinimalFooter } from '../landing/MinimalFooter';
+import { MinimalFooter } from './MinimalFooter';
 import { AuthSheet } from '@/components/layout';
 
 /**
- * LandingPageV4 - Complete Redesign (Issue #23)
+ * LandingPage - Official Landing Page (Issue #23)
  *
  * Design Philosophy: "Conheça a si mesmo" - Self-knowledge as the core value
  * Following Digital Ceramic aesthetic with modern, clean layouts
@@ -18,7 +18,7 @@ import { AuthSheet } from '@/components/layout';
  * 2. SocialProof - Real partners
  * 3. Features - Module showcase with icons
  * 4. HowItWorks - 3-step illustrated guide
- * 5. CTASection - Waitlist with urgency
+ * 5. CTASection - Call-to-action
  * 6. MinimalFooter - Grounded footer
  *
  * Features:
@@ -28,7 +28,7 @@ import { AuthSheet } from '@/components/layout';
  * - iOS-style auth sheet integration
  * - Digital Ceramic design system
  */
-export function LandingPageV4() {
+export function LandingPage() {
   const [showLogin, setShowLogin] = useState(false);
 
   // Scroll to top on mount
@@ -85,4 +85,4 @@ export function LandingPageV4() {
   );
 }
 
-export default LandingPageV4;
+export default LandingPage;
