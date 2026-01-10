@@ -37,7 +37,11 @@ export function ProcessingPipeline({ stage, messageCount }: ProcessingPipelinePr
   }, [currentStageIndex]);
 
   return (
-    <motion.div
+          <div
+            className="rounded-full h-4 overflow-hidden ceramic-groove"
+          >
+            <motion.div
+              className="h-full rounded-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
