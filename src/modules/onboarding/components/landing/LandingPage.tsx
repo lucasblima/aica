@@ -24,8 +24,38 @@ export function LandingPage() {
   const [processingStage, setProcessingStage] = useState<ProcessingStage | null>(null);
   const [processedModules, setProcessedModules] = useState<ProcessedModules | null>(null);
 
-  // Scroll to top on mount
+  // SEO Meta Tags
   useEffect(() => {
+    // Title
+    document.title = 'Aica Life OS - Transforme o caos em ordem';
+
+    // Meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'O Life OS que refina suas conversas do WhatsApp em clareza absoluta. Tarefas, reflexões e conexões, destiladas por IA.');
+
+    // Open Graph tags for social sharing
+    const ogTags = [
+      { property: 'og:title', content: 'Aica Life OS - Transforme o caos em ordem' },
+      { property: 'og:description', content: 'O Life OS que refina suas conversas do WhatsApp em clareza absoluta.' },
+      { property: 'og:type', content: 'website' },
+    ];
+
+    ogTags.forEach(({ property, content }) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    });
+
+    // Scroll to top
     window.scrollTo(0, 0);
   }, []);
 
@@ -67,6 +97,14 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-ceramic-base font-sans overflow-x-hidden">
+      {/* Skip to main content - Accessibility */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-ceramic-text-primary focus:text-white focus:rounded-lg focus:outline-none"
+      >
+        Pular para o conteúdo principal
+      </a>
+
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-ceramic-base/80 backdrop-blur-md border-b border-white/20">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">

@@ -18,11 +18,14 @@ Cannot update Edge Function secrets in Supabase Dashboard.
 
 ## Credentials Updated
 
-| Secret | Value |
-|--------|-------|
-| `EVOLUTION_INSTANCE_NAME` | `AI_Comtxae_4006` |
-| `EVOLUTION_API_KEY` | `9BE943A8B11D-4260-9EFC-7B1F26B51BAB` |
-| `EVOLUTION_API_URL` | `https://evolution-evolution-api.w9jo16.easypanel.host` |
+> ⚠️ **SEGURANÇA:** Credenciais são gerenciadas via Supabase Edge Function Secrets.
+> Acesse: Project Settings > Edge Functions > Manage Secrets
+
+| Secret | Status |
+|--------|--------|
+| `EVOLUTION_INSTANCE_NAME` | ✅ Configurado |
+| `EVOLUTION_API_KEY` | ✅ Configurado |
+| `EVOLUTION_API_URL` | ✅ Configurado |
 
 ## Note
 
