@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users } from 'lucide-react';
-import type { ContactNetwork } from '../../types';
+import type { ContactNetwork } from '../types/memoryTypes';
 
 interface RecentContactsWidgetProps {
   onViewAllClick?: () => void;
@@ -25,6 +25,7 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
       setContacts([
         {
           id: '1',
+          user_id: 'demo-user-id',
           name: 'João Silva',
           email: 'joao@example.com',
           avatar_url: 'https://i.pravatar.cc/150?img=1',
@@ -34,6 +35,7 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
         },
         {
           id: '2',
+          user_id: 'demo-user-id',
           name: 'Maria Santos',
           email: 'maria@example.com',
           avatar_url: 'https://i.pravatar.cc/150?img=2',
@@ -43,6 +45,7 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
         },
         {
           id: '3',
+          user_id: 'demo-user-id',
           name: 'Pedro Oliveira',
           email: 'pedro@example.com',
           avatar_url: 'https://i.pravatar.cc/150?img=3',
@@ -52,6 +55,7 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
         },
         {
           id: '4',
+          user_id: 'demo-user-id',
           name: 'Ana Costa',
           email: 'ana@example.com',
           avatar_url: 'https://i.pravatar.cc/150?img=4',
