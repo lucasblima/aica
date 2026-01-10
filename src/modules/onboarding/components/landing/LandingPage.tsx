@@ -56,7 +56,12 @@ export function LandingPage() {
       messages,
       (stage) => setProcessingStage(stage as ProcessingStage),
       (modules) => {
-        setProcessedModules(modules);
+          <button
+            onClick={handleOpenLogin}
+            className="px-6 py-2.5 rounded-full font-semibold text-white transition-all hover:scale-105 bg-gradient-to-br from-[#5C554B] to-[#3A3632] shadow-[0_4px_12px_rgba(92,85,75,0.3)]"
+          >
+            Entrar
+          </button>
         setIsProcessing(false);
         setProcessingStage(null);
       }
