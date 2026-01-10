@@ -27,16 +27,16 @@ export function LandingPage() {
   const navigate = useNavigate();
   const [isAuthSheetOpen, setIsAuthSheetOpen] = useState(false);
 
-  // Demo state
-  const [messages, setMessages] = useState<DemoMessage[]>([]);
+  // Demo state - using functional form for consistent initialization
+  const [messages, setMessages] = useState<DemoMessage[]>(() =>
+    demoProcessingService.generateDemoMessages()
+  );
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState<ProcessingStage | null>(null);
   const [processedModules, setProcessedModules] = useState<ProcessedModules | null>(null);
 
-  // Initialize demo messages on mount
+  // Scroll to top on mount
   useEffect(() => {
-    const demoMessages = demoProcessingService.generateDemoMessages();
-    setMessages(demoMessages);
     window.scrollTo(0, 0);
   }, []);
 
@@ -92,11 +92,7 @@ export function LandingPage() {
           </div>
           <button
             onClick={handleOpenLogin}
-            className="px-6 py-2.5 rounded-full font-semibold text-white transition-all hover:scale-105"
-            style={{
-              background: 'linear-gradient(135deg, #5C554B 0%, #3A3632 100%)',
-              boxShadow: '0 4px 12px rgba(92, 85, 75, 0.3)'
-            }}
+            className="px-6 py-2.5 rounded-full font-semibold text-white transition-all hover:scale-105 bg-gradient-to-br from-[#5C554B] to-[#3A3632] shadow-[0_4px_12px_rgba(92,85,75,0.3)]"
           >
             Entrar
           </button>
@@ -177,11 +173,7 @@ export function LandingPage() {
               <button
                 onClick={handleProcessChaos}
                 disabled={isProcessing}
-                className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #F59E0B 100%)',
-                  boxShadow: '0 8px 24px rgba(59, 130, 246, 0.35)'
-                }}
+                className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-br from-blue-500 via-purple-500 to-orange-500 shadow-[0_8px_24px_rgba(59,130,246,0.35)]"
               >
                 {isProcessing ? 'Processando...' : 'Processar Meu Caos'}
               </button>
@@ -189,21 +181,13 @@ export function LandingPage() {
               <>
                 <button
                   onClick={handleResetDemo}
-                  className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-105"
-                  style={{
-                    background: '#F0EFE9',
-                    boxShadow: '4px 4px 8px rgba(163, 158, 145, 0.2), -4px -4px 8px rgba(255, 255, 255, 0.9)'
-                  }}
+                  className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-105 bg-ceramic-base ceramic-shadow"
                 >
                   Reiniciar Demo
                 </button>
                 <button
                   onClick={handleOpenLogin}
-                  className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-105"
-                  style={{
-                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                    boxShadow: '0 8px 24px rgba(16, 185, 129, 0.35)'
-                  }}
+                  className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-105 bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-[0_8px_24px_rgba(16,185,129,0.35)]"
                 >
                   Comecar Agora
                 </button>
@@ -246,11 +230,7 @@ export function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 * index }}
-                className="p-8 rounded-2xl text-center"
-                style={{
-                  background: '#F0EFE9',
-                  boxShadow: '6px 6px 12px rgba(163, 158, 145, 0.2), -6px -6px 12px rgba(255, 255, 255, 0.9)'
-                }}
+                className="p-8 rounded-2xl text-center ceramic-card"
               >
                 <div className="text-5xl mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">
@@ -270,11 +250,7 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="p-12 rounded-3xl"
-            style={{
-              background: 'linear-gradient(135deg, #F0EFE9 0%, #E5E3DA 100%)',
-              boxShadow: '8px 8px 24px rgba(163, 158, 145, 0.25), -8px -8px 24px rgba(255, 255, 255, 0.8)'
-            }}
+            className="p-12 rounded-3xl bg-gradient-to-br from-ceramic-base to-[#E5E3DA] shadow-[8px_8px_24px_rgba(163,158,145,0.25),-8px_-8px_24px_rgba(255,255,255,0.8)]"
           >
             <h2 className="text-3xl md:text-4xl font-black text-ceramic-text-primary mb-4">
               Pronto para transformar seu caos?
@@ -284,11 +260,7 @@ export function LandingPage() {
             </p>
             <button
               onClick={handleOpenLogin}
-              className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #5C554B 0%, #3A3632 100%)',
-                boxShadow: '0 8px 24px rgba(92, 85, 75, 0.35)'
-              }}
+              className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-105 bg-gradient-to-br from-[#5C554B] to-[#3A3632] shadow-[0_8px_24px_rgba(92,85,75,0.35)]"
             >
               Criar Conta Gratis
             </button>

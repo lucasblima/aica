@@ -11,11 +11,7 @@ export function OrderPanel({ modules, isProcessing }: OrderPanelProps) {
 
   return (
     <div
-      className="relative min-h-[600px] p-8 rounded-3xl"
-      style={{
-        background: '#F0EFE9',
-        boxShadow: 'inset 4px 4px 8px rgba(163, 158, 145, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.7)'
-      }}
+      className="relative min-h-[600px] p-8 rounded-3xl ceramic-tray"
       role="region"
       aria-label="Informacoes organizadas"
       aria-live="assertive"
@@ -23,10 +19,10 @@ export function OrderPanel({ modules, isProcessing }: OrderPanelProps) {
     >
       {/* Header */}
       <div className="mb-8">
-        <h3 className="text-3xl font-black text-[#5C554B] mb-2">
+        <h3 className="text-3xl font-black text-ceramic-text-primary mb-2">
           Ordem
         </h3>
-        <p className="text-[#8B8378]">
+        <p className="text-ceramic-text-secondary">
           Informacao estruturada, pronta para acao
         </p>
       </div>
@@ -42,7 +38,7 @@ export function OrderPanel({ modules, isProcessing }: OrderPanelProps) {
             >
               ⏳
             </motion.div>
-            <p className="text-xl text-[#8B8378]">
+            <p className="text-xl text-ceramic-text-secondary">
               Aguardando processamento...
             </p>
             <p className="text-sm text-[#A39E91] mt-2">
@@ -61,11 +57,7 @@ export function OrderPanel({ modules, isProcessing }: OrderPanelProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: [0.3, 0.6, 0.3] }}
               transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-              className="h-[200px] rounded-2xl"
-              style={{
-                background: '#F0EFE9',
-                boxShadow: '4px 4px 8px rgba(163, 158, 145, 0.2), -4px -4px 8px rgba(255, 255, 255, 0.9)'
-              }}
+              className="h-[200px] rounded-2xl ceramic-card"
             />
           ))}
         </div>
@@ -153,24 +145,15 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
   };
 
   return (
-    <div
-      className="p-6 rounded-2xl h-full"
-      style={{
-        background: '#F0EFE9',
-        boxShadow: '6px 6px 12px rgba(163, 158, 145, 0.2), -6px -6px 12px rgba(255, 255, 255, 0.9)'
-      }}
-    >
+    <div className="p-6 rounded-2xl h-full ceramic-card">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-          style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}
-        >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-blue-100">
           📋
         </div>
         <div>
-          <h4 className="font-bold text-[#5C554B]">Atlas</h4>
-          <p className="text-xs text-[#8B8378]">{tasks.length} tarefas identificadas</p>
+          <h4 className="font-bold text-ceramic-text-primary">Atlas</h4>
+          <p className="text-xs text-ceramic-text-secondary">{tasks.length} tarefas identificadas</p>
         </div>
       </div>
 
@@ -181,21 +164,21 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
             key={task.id}
             className="p-3 rounded-xl bg-white/50 border border-white/60"
           >
-            <p className="text-sm text-[#5C554B] font-medium line-clamp-1">
+            <p className="text-sm text-ceramic-text-primary font-medium line-clamp-1">
               {task.title}
             </p>
             <div className="flex items-center gap-2 mt-1">
               <span
-                className="text-xs px-2 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: task.priority === 'urgent_important' ? '#FEE2E2' : '#E0E7FF',
-                  color: task.priority === 'urgent_important' ? '#DC2626' : '#4F46E5'
-                }}
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  task.priority === 'urgent_important'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-indigo-100 text-indigo-700'
+                }`}
               >
                 {priorityLabels[task.priority]}
               </span>
               {task.scheduled_time && (
-                <span className="text-xs text-[#8B8378]">
+                <span className="text-xs text-ceramic-text-secondary">
                   {new Date(task.scheduled_time).toLocaleDateString('pt-BR', { weekday: 'short' })}
                 </span>
               )}
@@ -203,7 +186,7 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
           </div>
         ))}
         {tasks.length > 3 && (
-          <p className="text-xs text-[#8B8378] text-center pt-2">
+          <p className="text-xs text-ceramic-text-secondary text-center pt-2">
             +{tasks.length - 3} mais tarefas
           </p>
         )}
@@ -220,24 +203,15 @@ function JourneyCard({ moments }: { moments: JourneyMoment[] }) {
   };
 
   return (
-    <div
-      className="p-6 rounded-2xl h-full"
-      style={{
-        background: '#F0EFE9',
-        boxShadow: '6px 6px 12px rgba(163, 158, 145, 0.2), -6px -6px 12px rgba(255, 255, 255, 0.9)'
-      }}
-    >
+    <div className="p-6 rounded-2xl h-full ceramic-card">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-          style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)' }}
-        >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-purple-100">
           ✨
         </div>
         <div>
-          <h4 className="font-bold text-[#5C554B]">Journey</h4>
-          <p className="text-xs text-[#8B8378]">{moments.length} momentos capturados</p>
+          <h4 className="font-bold text-ceramic-text-primary">Journey</h4>
+          <p className="text-xs text-ceramic-text-secondary">{moments.length} momentos capturados</p>
         </div>
       </div>
 
@@ -250,7 +224,7 @@ function JourneyCard({ moments }: { moments: JourneyMoment[] }) {
           >
             <div className="flex items-start gap-2">
               <span className="text-lg">{sentimentEmoji[moment.sentiment]}</span>
-              <p className="text-sm text-[#5C554B] line-clamp-2 flex-1">
+              <p className="text-sm text-ceramic-text-primary line-clamp-2 flex-1">
                 {moment.content}
               </p>
             </div>
@@ -268,24 +242,15 @@ function JourneyCard({ moments }: { moments: JourneyMoment[] }) {
 
 function StudioCard({ episodes }: { episodes: StudioEpisode[] }) {
   return (
-    <div
-      className="p-6 rounded-2xl h-full"
-      style={{
-        background: '#F0EFE9',
-        boxShadow: '6px 6px 12px rgba(163, 158, 145, 0.2), -6px -6px 12px rgba(255, 255, 255, 0.9)'
-      }}
-    >
+    <div className="p-6 rounded-2xl h-full ceramic-card">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-          style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)' }}
-        >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-orange-100">
           🎙️
         </div>
         <div>
-          <h4 className="font-bold text-[#5C554B]">Studio</h4>
-          <p className="text-xs text-[#8B8378]">{episodes.length} ideias de episodio</p>
+          <h4 className="font-bold text-ceramic-text-primary">Studio</h4>
+          <p className="text-xs text-ceramic-text-secondary">{episodes.length} ideias de episodio</p>
         </div>
       </div>
 
@@ -296,11 +261,11 @@ function StudioCard({ episodes }: { episodes: StudioEpisode[] }) {
             key={episode.id}
             className="p-3 rounded-xl bg-white/50 border border-white/60"
           >
-            <p className="text-sm text-[#5C554B] font-medium line-clamp-1">
+            <p className="text-sm text-ceramic-text-primary font-medium line-clamp-1">
               {episode.title}
             </p>
             {episode.potential_guests.length > 0 && (
-              <p className="text-xs text-[#8B8378] mt-1">
+              <p className="text-xs text-ceramic-text-secondary mt-1">
                 🎤 {episode.potential_guests.join(', ')}
               </p>
             )}
@@ -330,24 +295,15 @@ function ConnectionsCard({ connections }: { connections: Connection[] }) {
   };
 
   return (
-    <div
-      className="p-6 rounded-2xl h-full"
-      style={{
-        background: '#F0EFE9',
-        boxShadow: '6px 6px 12px rgba(163, 158, 145, 0.2), -6px -6px 12px rgba(255, 255, 255, 0.9)'
-      }}
-    >
+    <div className="p-6 rounded-2xl h-full ceramic-card">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-          style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}
-        >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-emerald-100">
           🤝
         </div>
         <div>
-          <h4 className="font-bold text-[#5C554B]">Connections</h4>
-          <p className="text-xs text-[#8B8378]">{connections.length} relacionamentos</p>
+          <h4 className="font-bold text-ceramic-text-primary">Connections</h4>
+          <p className="text-xs text-ceramic-text-secondary">{connections.length} relacionamentos</p>
         </div>
       </div>
 
@@ -359,14 +315,14 @@ function ConnectionsCard({ connections }: { connections: Connection[] }) {
             className="p-3 rounded-xl bg-white/50 border border-white/60"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm text-[#5C554B] font-medium">
+              <p className="text-sm text-ceramic-text-primary font-medium">
                 {connection.name}
               </p>
               <span className="text-lg">
                 {healthEmoji[connection.relationship_health]}
               </span>
             </div>
-            <p className="text-xs text-[#8B8378] mt-1">
+            <p className="text-xs text-ceramic-text-secondary mt-1">
               {healthLabel[connection.relationship_health]}
             </p>
           </div>
