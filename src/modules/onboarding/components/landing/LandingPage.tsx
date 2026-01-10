@@ -164,7 +164,12 @@ export function LandingPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <ChaosPanel
+                <button
+                  onClick={handleOpenLogin}
+                  className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-105 bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-[0_8px_24px_rgba(16,185,129,0.35)]"
+                >
+                  Comecar Agora
+                </button>
                 messages={messages}
                 isProcessing={isProcessing}
               />
