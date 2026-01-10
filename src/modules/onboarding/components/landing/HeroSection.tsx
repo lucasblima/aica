@@ -14,7 +14,10 @@ interface HeroSectionProps {
 
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
   return (
-    <section className="relative min-h-[90vh] bg-ceramic-base flex items-center justify-center px-6 py-20 overflow-hidden">
+    <section
+      data-testid="landing-hero"
+      className="relative min-h-[90vh] bg-ceramic-base flex items-center justify-center px-6 py-20 overflow-hidden"
+    >
       {/* Background Pattern - Subtle ceramic texture */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-0 left-0 w-96 h-96 bg-ceramic-accent rounded-full blur-3xl" />
@@ -66,6 +69,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
           <motion.button
+            data-testid="landing-signup-cta"
             onClick={onGetStarted}
             className="
               px-12 py-5 rounded-full
@@ -84,6 +88,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           </motion.button>
 
           <motion.button
+            data-testid="landing-login-cta"
+            onClick={onGetStarted}
             className="
               px-8 py-4 rounded-full
               text-ceramic-text-secondary
@@ -93,7 +99,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             "
             whileHover={{ scale: 1.05 }}
           >
-            Ver demonstração →
+            Entrar →
           </motion.button>
         </motion.div>
 
