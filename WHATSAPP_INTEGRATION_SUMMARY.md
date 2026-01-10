@@ -1,8 +1,21 @@
 # ✅ Resumo da Implementação - WhatsApp Integration via Evolution API
 
 **Branch:** `feature/whatsapp-evolution-integration-issue-12`
-**Issue:** #12
-**Data:** 2025-12-30
+**Issues:** #12, #22, #83
+**Data:** 2026-01-10 (Atualizado)
+**Status:** ✅ Operacional
+
+---
+
+## 🔑 CREDENCIAIS ATUAIS (Janeiro 2026)
+
+| Variável | Valor |
+|----------|-------|
+| `EVOLUTION_API_URL` | `https://evolution-evolution-api.w9jo16.easypanel.host` |
+| `EVOLUTION_INSTANCE_NAME` | `AI_Comtxae_4006` |
+| `EVOLUTION_API_KEY` | `9BE943A8B11D-4260-9EFC-7B1F26B51BAB` |
+
+**Status da Instância:** ✅ Conectada ("open")
 
 ---
 
