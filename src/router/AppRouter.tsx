@@ -43,9 +43,7 @@ const WhatsAppAnalyticsPage = lazy(() => import('../pages/WhatsAppAnalyticsPage'
 const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
 
 // Onboarding Module - Only loaded for new users
-const LandingPageComponent = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
-const LandingPageV3 = lazy(() => import('../modules/onboarding/components/landing-v3').then(m => ({ default: m.LandingPageV3 })));
-const LandingPageV4 = lazy(() => import('../modules/onboarding/components/landing-v4').then(m => ({ default: m.LandingPageV4 })));
+const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
 
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
@@ -498,22 +496,10 @@ export function AppRouter() {
                element={<GuestApprovalPage />}
             />
 
-            {/* Landing Page - Consolidated version (Issue #39) */}
+            {/* Landing Page - Official version (consolidated from V4) */}
             <Route
                path="/landing"
-               element={<LandingPageComponent />}
-            />
-
-            {/* Landing Page V3 - Previous version (backup) */}
-            <Route
-               path="/landing-v3"
-               element={<LandingPageV3 />}
-            />
-
-            {/* Landing Page V4 - Alternative version (backup) */}
-            <Route
-               path="/landing-v4"
-               element={<LandingPageV4 />}
+               element={<LandingPage />}
             />
 
             {/* Privacy Policy - Public route */}

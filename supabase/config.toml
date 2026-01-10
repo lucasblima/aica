@@ -1,0 +1,24 @@
+# Supabase CLI Configuration
+# https://supabase.com/docs/guides/cli/config
+#
+# Project: aica-staging (uzywajqzbdbrfammshdg)
+
+[api]
+enabled = true
+port = 54321
+
+# ============================================================================
+# EDGE FUNCTIONS CONFIGURATION
+# ============================================================================
+
+# gemini-chat: AI operations via Gemini API
+# Requires user authentication to track usage and apply rate limits
+[functions.gemini-chat]
+verify_jwt = true
+
+# sync-whatsapp-contacts: Sync contacts from Evolution API to database
+# Requires user authentication (function validates token internally)
+# Note: Function has its own auth validation, but we keep verify_jwt = true
+# for defense in depth
+[functions.sync-whatsapp-contacts]
+verify_jwt = true

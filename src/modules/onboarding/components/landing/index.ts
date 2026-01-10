@@ -1,26 +1,28 @@
 /**
- * Landing Page - Digital Ceramic Redesign
+ * Landing Page - "Ordem ao Caos" Concept
  *
- * Operation "Digital Desire" - Apple-inspired landing page
- * following the "Digital Ceramic" aesthetic.
- *
- * @module landing
+ * Transform chaotic WhatsApp messages into organized, actionable modules
+ * using AI-powered classification and semantic analysis.
  */
 
-// Main Page Component
-export { LandingPageV2 as LandingPage, default } from './LandingPageV2';
+// Main component
+export { LandingPage, default } from './LandingPage';
 
-// Section Components
-export { DigitalHero } from './DigitalHero';
-export { BentoFeatures } from './BentoFeatures';
-export { ScrollStory } from './ScrollStory';
-export { ScrollStorySection } from './ScrollStorySection';
-export { MinimalFooter } from './MinimalFooter';
+// Sub-components
+export { ChaosPanel } from './components/ChaosPanel';
+export { OrderPanel } from './components/OrderPanel';
+export { ProcessingPipeline } from './components/ProcessingPipeline';
 
-// UI Components - Note: BentoCard and CeramicPillButton have been moved to src/components/ui/
-// Use: import { BentoCard } from '../../components/ui/BentoCard'
-// Use: import { CeramicPillButton } from '../../components/ui/CeramicPillButton'
-export { MockupPlaceholder } from './MockupPlaceholder';
+// Services
+export { demoProcessingService } from './services/demoProcessingService';
 
-// Hooks
-export { useScrollReveal } from './hooks/useScrollReveal';
+// Types
+export type {
+  DemoMessage,
+  ProcessedModules,
+  AtlasTask,
+  JourneyMoment,
+  StudioEpisode,
+  Connection,
+  ProcessingStage
+} from './types';
