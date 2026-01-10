@@ -230,7 +230,7 @@ export function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 * index }}
-                className="p-8 rounded-2xl text-center ceramic-card"
+                className="p-8 text-center ceramic-card-light"
               >
                 <div className="text-5xl mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">
@@ -250,7 +250,7 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="p-12 rounded-3xl bg-gradient-to-br from-ceramic-base to-[#E5E3DA] shadow-[8px_8px_24px_rgba(163,158,145,0.25),-8px_-8px_24px_rgba(255,255,255,0.8)]"
+            className="p-12 ceramic-card-light"
           >
             <h2 className="text-3xl md:text-4xl font-black text-ceramic-text-primary mb-4">
               Pronto para transformar seu caos?
