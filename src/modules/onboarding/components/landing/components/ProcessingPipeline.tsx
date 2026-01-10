@@ -19,7 +19,11 @@ export function ProcessingPipeline({ stage, messageCount }: ProcessingPipelinePr
 
   useEffect(() => {
     // Reset progress when stage changes
-    const stageProgress = ((currentStageIndex + 1) / PIPELINE_STAGES.length) * 100;
+      <div
+        className="p-8 rounded-3xl ceramic-card"
+      >
+        {/* Pipeline Header */}
+        <div className="flex items-center justify-between mb-6">
     const targetProgress = Math.min(stageProgress, 100);
 
     // Animate to target progress
