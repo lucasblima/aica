@@ -11,7 +11,7 @@ export function OrderPanel({ modules, isProcessing }: OrderPanelProps) {
 
   return (
     <div
-      className="relative min-h-[600px] p-8 rounded-3xl ceramic-tray"
+      className="relative min-h-[700px] p-8 rounded-3xl ceramic-tray"
       role="region"
       aria-label="Informacoes organizadas"
       aria-live="assertive"
@@ -19,11 +19,11 @@ export function OrderPanel({ modules, isProcessing }: OrderPanelProps) {
     >
       {/* Header */}
       <div className="mb-8">
-        <h3 className="text-3xl font-black text-ceramic-text-primary mb-2">
-          Ordem
+        <h3 className="text-4xl font-black text-ceramic-text-primary mb-4 tracking-tighter">
+          A destilação
         </h3>
-        <p className="text-ceramic-text-secondary">
-          Informacao estruturada, pronta para acao
+        <p className="text-lg text-ceramic-text-secondary font-medium">
+          A essência extraída, pronta para a vida.
         </p>
       </div>
 
@@ -42,7 +42,7 @@ export function OrderPanel({ modules, isProcessing }: OrderPanelProps) {
               Aguardando processamento...
             </p>
             <p className="text-sm text-[#A39E91] mt-2">
-              Clique em "Processar Meu Caos" para comecar
+              Clique em "Organizar meu WhatsApp" para começar
             </p>
           </div>
         </div>
@@ -145,21 +145,21 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
   };
 
   return (
-    <div className="p-6 rounded-2xl h-full ceramic-card">
+    <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-blue-100">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-blue-50/50 border border-blue-100/50 shadow-inner">
           📋
         </div>
         <div>
-          <h4 className="font-bold text-ceramic-text-primary">Atlas</h4>
-          <p className="text-xs text-ceramic-text-secondary">{tasks.length} tarefas identificadas</p>
+          <h4 className="text-lg font-black text-ceramic-text-primary tracking-tight">Atlas</h4>
+          <p className="text-xs font-bold text-ceramic-text-secondary/60 uppercase tracking-widest">{tasks.length} Tarefas</p>
         </div>
       </div>
 
       {/* Tasks List */}
       <div className="space-y-2">
-        {tasks.slice(0, 3).map((task) => (
+        {tasks.slice(0, 2).map((task) => (
           <div
             key={task.id}
             className="p-3 rounded-xl bg-white/50 border border-white/60"
@@ -169,11 +169,10 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
             </p>
             <div className="flex items-center gap-2 mt-1">
               <span
-                className={`text-xs px-2 py-0.5 rounded-full ${
-                  task.priority === 'urgent_important'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-indigo-100 text-indigo-700'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'urgent_important'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-indigo-100 text-indigo-700'
+                  }`}
               >
                 {priorityLabels[task.priority]}
               </span>
@@ -185,9 +184,9 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
             </div>
           </div>
         ))}
-        {tasks.length > 3 && (
+        {tasks.length > 2 && (
           <p className="text-xs text-ceramic-text-secondary text-center pt-2">
-            +{tasks.length - 3} mais tarefas
+            +{tasks.length - 2} mais tarefas
           </p>
         )}
       </div>
@@ -203,21 +202,21 @@ function JourneyCard({ moments }: { moments: JourneyMoment[] }) {
   };
 
   return (
-    <div className="p-6 rounded-2xl h-full ceramic-card">
+    <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-purple-100">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-purple-50/50 border border-purple-100/50 shadow-inner">
           ✨
         </div>
         <div>
-          <h4 className="font-bold text-ceramic-text-primary">Journey</h4>
-          <p className="text-xs text-ceramic-text-secondary">{moments.length} momentos capturados</p>
+          <h4 className="text-lg font-black text-ceramic-text-primary tracking-tight">Journey</h4>
+          <p className="text-xs font-bold text-ceramic-text-secondary/60 uppercase tracking-widest">{moments.length} Momentos</p>
         </div>
       </div>
 
       {/* Moments List */}
       <div className="space-y-2">
-        {moments.slice(0, 3).map((moment) => (
+        {moments.slice(0, 2).map((moment) => (
           <div
             key={moment.id}
             className="p-3 rounded-xl bg-white/50 border border-white/60"
@@ -242,21 +241,21 @@ function JourneyCard({ moments }: { moments: JourneyMoment[] }) {
 
 function StudioCard({ episodes }: { episodes: StudioEpisode[] }) {
   return (
-    <div className="p-6 rounded-2xl h-full ceramic-card">
+    <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-orange-100">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-orange-50/50 border border-orange-100/50 shadow-inner">
           🎙️
         </div>
         <div>
-          <h4 className="font-bold text-ceramic-text-primary">Studio</h4>
-          <p className="text-xs text-ceramic-text-secondary">{episodes.length} ideias de episodio</p>
+          <h4 className="text-lg font-black text-ceramic-text-primary tracking-tight">Studio</h4>
+          <p className="text-xs font-bold text-ceramic-text-secondary/60 uppercase tracking-widest">{episodes.length} Ideias</p>
         </div>
       </div>
 
       {/* Episodes List */}
       <div className="space-y-2">
-        {episodes.slice(0, 3).map((episode) => (
+        {episodes.slice(0, 2).map((episode) => (
           <div
             key={episode.id}
             className="p-3 rounded-xl bg-white/50 border border-white/60"
@@ -293,26 +292,23 @@ function ConnectionsCard({ connections }: { connections: Connection[] }) {
     moderate: 'Moderado',
     declining: 'Requer atencao'
   };
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-emerald-100"
-        >
-          🤝
-        </div>
+
   return (
-    <div className="p-6 rounded-2xl h-full ceramic-card">
+    <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-emerald-100">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-emerald-50/50 border border-emerald-100/50 shadow-inner">
           🤝
         </div>
         <div>
-          <h4 className="font-bold text-ceramic-text-primary">Connections</h4>
-          <p className="text-xs text-ceramic-text-secondary">{connections.length} relacionamentos</p>
+          <h4 className="text-lg font-black text-ceramic-text-primary tracking-tight">Connections</h4>
+          <p className="text-xs font-bold text-ceramic-text-secondary/60 uppercase tracking-widest">{connections.length} Redes</p>
         </div>
       </div>
 
       {/* Connections List */}
       <div className="space-y-2">
-        {connections.slice(0, 3).map((connection, index) => (
+        {connections.slice(0, 2).map((connection, index) => (
           <div
             key={index}
             className="p-3 rounded-xl bg-white/50 border border-white/60"
