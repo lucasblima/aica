@@ -33,6 +33,24 @@ export type {
   UpdateOrganizationDTO,
   CreateRelationshipDTO,
   CreateMemberDTO,
+  // Sponsorship types (Issue #97)
+  CaptureStatus,
+  DeliverableCategory,
+  SponsorStatus,
+  ProjectApprovalFields,
+  SponsorshipTier,
+  TierDeliverable,
+  ProjectSponsor,
+  CreateSponsorshipTierDTO,
+  UpdateSponsorshipTierDTO,
+  CreateTierDeliverableDTO,
+  UpdateTierDeliverableDTO,
+  CreateProjectSponsorDTO,
+  UpdateProjectSponsorDTO,
+  UpdateProjectApprovalDTO,
+  ProjectSponsorshipContext,
+  CaptureProgress,
+  TierAvailability,
 } from './types';
 
 export {
@@ -45,6 +63,14 @@ export {
   ORGANIZATION_TYPE_LABELS,
   RELATIONSHIP_TYPE_LABELS,
   AREAS_OF_ACTIVITY_OPTIONS,
+  // Sponsorship constants (Issue #97)
+  CAPTURE_STATUS_LABELS,
+  CAPTURE_STATUS_COLORS,
+  DELIVERABLE_CATEGORY_LABELS,
+  SPONSOR_STATUS_LABELS,
+  SPONSOR_STATUS_COLORS,
+  CONFIRMED_SPONSOR_STATUSES,
+  SPONSOR_PIPELINE_ORDER,
 } from './types';
 
 // Views
@@ -93,3 +119,41 @@ export {
   countOrganizations,
   checkDuplicateDocument,
 } from './services/organizationService';
+
+// Sponsorship hooks (Issue #97)
+export {
+  useSponsorshipTiers,
+  useTierDeliverables,
+  useProjectSponsors,
+  useCaptureProgress,
+} from './hooks/useSponsorship';
+
+// Sponsorship services (Issue #97)
+export {
+  getProjectTiers,
+  getTierById,
+  createTier,
+  updateTier,
+  deleteTier,
+  reorderTiers,
+  getTierDeliverables,
+  addDeliverable,
+  updateDeliverable,
+  deleteDeliverable,
+  bulkAddDeliverables,
+  getProjectSponsors,
+  getSponsorsByStatus,
+  getSponsorById,
+  addSponsor,
+  updateSponsor,
+  updateSponsorStatus,
+  deleteSponsor,
+  recordPayment,
+  updateProjectApproval,
+  getCaptureProgress,
+  getTiersAvailability,
+  getProjectSponsorshipContext,
+  getCapturedByStatus,
+  getSponsorsWithUpcomingPayments,
+  duplicateTiersStructure,
+} from './services/sponsorshipService';
