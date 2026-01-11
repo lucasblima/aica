@@ -95,12 +95,6 @@ export interface ContactNetwork {
   name: string;
   phone_number?: string; // E.164 format: +55 11 99999-9999
   email?: string;
-  avatar_url?: string;
-
-  // Association links
-  association_id?: string;
-  user_id_if_internal?: string;
-
   // Relationship metadata
   relationship_type?:
     | 'colleague'
@@ -130,6 +124,17 @@ export interface ContactNetwork {
   engagement_level?: 'high' | 'medium' | 'low' | 'inactive';
 
   // Notes & preferences
+  notes?: string;
+  preferences?: Record<string, any>;
+
+  // Status
+  is_active?: boolean;
+  is_archived?: boolean;
+  blocked?: boolean;
+
+  // Timestamps
+  created_at?: string;
+  updated_at?: string;
   notes?: string;
   preferences?: Record<string, any>;
 
