@@ -261,6 +261,7 @@ export function ContactsView() {
               <motion.div
                 key={contact.id}
                 variants={cardVariants.item}
+                layout
               >
                 <ContactCard
                   contact={contact}
