@@ -257,20 +257,18 @@ export function ContactsView() {
             initial="hidden"
             animate="visible"
           >
-            <AnimatePresence>
-              {filteredContacts.map((contact) => (
-                <motion.div
-                  key={contact.id}
-                  variants={cardVariants.item}
-                  layout
-                >
-                  <ContactCard
-                    contact={contact}
-                    onClick={() => handleContactSelect(contact)}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+            {filteredContacts.map((contact) => (
+              <motion.div
+                key={contact.id}
+                variants={cardVariants.item}
+                layout
+              >
+                <ContactCard
+                  contact={contact}
+                  onClick={() => handleContactSelect(contact)}
+                />
+              </motion.div>
+            ))}
           </motion.div>
         )}
 
