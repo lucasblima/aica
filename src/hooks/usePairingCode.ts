@@ -15,7 +15,7 @@ import { supabase } from '@/services/supabaseClient'
 
 interface PairingCodeResult {
   code: string
-  expiresAt: string
+  expiresAt: string | null
 }
 
 interface UsePairingCodeReturn {
@@ -117,7 +117,7 @@ export function usePairingCode(): UsePairingCodeReturn {
 
       return {
         code: formattedCode,
-        expiresAt: result.expiresAt || '',
+        expiresAt: result.expiresAt ?? null,
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'

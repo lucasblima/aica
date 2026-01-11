@@ -27,9 +27,9 @@ export async function generatePairingCode(
   instanceName?: string
 ): Promise<PairingCodeResult> {
   try {
-    // Validar formato do telefone
+    // Validar formato do telefone brasileiro (55 + DDD + 9 + 8 dígitos)
     const cleanPhone = phoneNumber.replace(/\D/g, '')
-    if (!/^\d{10,15}$/.test(cleanPhone)) {
+    if (!/^55\d{2}9\d{8}$/.test(cleanPhone)) {
       return {
         success: false,
         error: 'Número de telefone inválido. Use formato: 5511987654321',

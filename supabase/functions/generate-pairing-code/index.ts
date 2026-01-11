@@ -44,8 +44,12 @@ serve(async (req: Request) => {
     }
 
     // 3. Validar usuário com Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase environment variables are not configured')
+    }
 
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -128,10 +132,13 @@ serve(async (req: Request) => {
     }
 
     // 9. Formatar resposta
+    const EXPIRATION_IN_SECONDS = 60
+    const expiresAt = new Date(Date.now() + EXPIRATION_IN_SECONDS * 1000).toISOString()
+
     const response: PairingCodeResponse = {
       success: true,
       code: pairingCode,
-      expiresAt: new Date(Date.now() + 60000).toISOString(), // Código expira em ~60s
+      expiresAt,
     }
 
     console.log(`[generate-pairing-code] Code generated successfully for user ${user.id}`)
