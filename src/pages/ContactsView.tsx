@@ -10,7 +10,7 @@ import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
 import { supabase } from '../services/supabaseClient';
-import type { ContactNetwork } from '../../types';
+import type { ContactNetwork } from '../types/memoryTypes';
 
 export function ContactsView() {
   const { user } = useAuth();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ViewState } from '../types';
-import { LayoutGrid, Calendar, Mic, Network, Users, Radio } from 'lucide-react';
+import { LayoutGrid, Calendar, Mic, Network, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BottomNavProps {
@@ -92,14 +92,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange, onM
           >
             <Users className="w-6 h-6" strokeWidth={isOnPeopleRoute ? 2.5 : 2} />
             <span className="text-[10px] font-bold tracking-widest uppercase">Pessoas</span>
-          </button>
-
-          <button
-            onClick={() => onChange('studio')}
-            className={`flex flex-col items-center gap-1 transition-all duration-300 ${currentView === 'studio' ? 'text-ceramic-text-primary scale-110' : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'}`}
-          >
-            <Radio className="w-6 h-6" strokeWidth={currentView === 'studio' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold tracking-widest uppercase">Studio</span>
           </button>
 
         </div>
