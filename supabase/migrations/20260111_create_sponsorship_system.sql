@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS tier_deliverables (
     )),
   title VARCHAR(200) NOT NULL,
   description TEXT,
-  quantity INTEGER,
+  quantity INTEGER, -- NULL quando a contrapartida nao tem quantidade especifica (ex: "Exposicao de Logo")
 
   -- Ordenacao
   display_order INTEGER NOT NULL DEFAULT 1,
@@ -166,7 +166,7 @@ CREATE TABLE IF NOT EXISTS project_sponsors (
       'payment_pending', 'payment_partial', 'payment_complete',
       'declined', 'churned'
     )),
-  status_changed_at TIMESTAMPTZ,
+  status_changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   next_action TEXT,
   next_action_date DATE,
 

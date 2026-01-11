@@ -255,7 +255,7 @@ export interface ProjectSponsor {
 
   // Pipeline
   status: SponsorStatus;
-  status_changed_at: string | null;
+  status_changed_at: string;
   next_action: string | null;
   next_action_date: string | null;
 
