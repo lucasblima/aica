@@ -1,4 +1,11 @@
 /**
+ * Copyright (c) 2024 - Present. Aica Engineering. All rights reserved.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * useIncentiveLaws - React Hook for Incentive Laws
  * Issue #96 - Cadastro de leis de incentivo fiscal
  *
@@ -176,12 +183,12 @@ export function useIncentiveLaws(
     return laws.map(law => toSummary(law));
   }, [laws]);
 
-  // Auto-fetch on mount
+  // Auto-fetch on mount and when initial params change
   useEffect(() => {
     if (autoFetch) {
       fetchLaws(initialFilters, initialSort);
     }
-  }, [autoFetch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoFetch, fetchLaws, initialFilters, initialSort]);
 
   return {
     laws,

@@ -1,4 +1,11 @@
 /**
+ * Copyright (c) 2024 - Present. Aica Engineering. All rights reserved.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
  * Incentive Law Service
  * Issue #96 - Cadastro de leis de incentivo fiscal
  *
@@ -61,8 +68,9 @@ export async function getIncentiveLaws(
       query = query.eq('is_active', true);
     }
     if (filters?.search) {
+      const searchTerm = `%${filters.search}%`;
       query = query.or(
-        `name.ilike.%${filters.search}%,short_name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+        `name.ilike.${searchTerm},short_name.ilike.${searchTerm},description.ilike.${searchTerm}`
       );
     }
 
@@ -308,6 +316,10 @@ export async function createIncentiveLaw(dto: CreateIncentiveLawDTO): Promise<In
     return data as IncentiveLaw;
   } catch (error) {
     console.error('[IncentiveLawService] Erro ao criar lei:', error);
+    // Check for unique constraint violation
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+      throw new Error('Já existe uma lei de incentivo com este nome ou abreviação.');
+    }
     throw new Error(`Falha ao criar lei: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
@@ -324,12 +336,10 @@ export async function updateIncentiveLaw(
   dto: UpdateIncentiveLawDTO
 ): Promise<IncentiveLaw> {
   try {
+    // Note: updated_at is handled by database trigger
     const { data, error } = await supabase
       .from('incentive_laws')
-      .update({
-        ...dto,
-        updated_at: new Date().toISOString(),
-      })
+      .update(dto)
       .eq('id', id)
       .select()
       .single();
