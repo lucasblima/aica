@@ -21,6 +21,18 @@ export type {
   GenerateFieldPayload,
   DashboardGrantStats,
   BriefingData,
+  // Organizations types
+  OrganizationType,
+  RelationshipType,
+  BrandColors,
+  SocialLinks,
+  Organization,
+  OrganizationRelationship,
+  OrganizationMember,
+  CreateOrganizationDTO,
+  UpdateOrganizationDTO,
+  CreateRelationshipDTO,
+  CreateMemberDTO,
 } from './types';
 
 export {
@@ -29,6 +41,10 @@ export {
   PROJECT_STATUS_LABELS,
   RESPONSE_STATUS_LABELS,
   BRIEFING_SECTIONS,
+  // Organizations constants
+  ORGANIZATION_TYPE_LABELS,
+  RELATIONSHIP_TYPE_LABELS,
+  AREAS_OF_ACTIVITY_OPTIONS,
 } from './types';
 
 // Views
@@ -42,9 +58,38 @@ export { useGrantProject } from './hooks/useGrantProject';
 export { useGrantOpportunity } from './hooks/useGrantOpportunity';
 export { useGrantBriefing } from './hooks/useGrantBriefing';
 export { useGrantResponse } from './hooks/useGrantResponse';
+// Organizations hooks
+export {
+  useOrganizations,
+  useOrganization,
+  useOrganizationRelationships,
+  useOrganizationMembers,
+} from './hooks/useOrganizations';
 
 // Services
 export { getOpportunities, createOpportunity, updateOpportunity, deleteOpportunity } from './services';
 export { getProjects, createProject, updateProject, deleteProject } from './services';
 export { getBriefings, updateBriefing } from './services';
 export { getResponses, updateResponse, generateField } from './services';
+
+// Organizations services
+export {
+  getOrganizations,
+  getOrganizationById,
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
+  getOrganizationRelationships,
+  createRelationship,
+  updateRelationship,
+  deleteRelationship,
+  getOrganizationMembers,
+  addOrganizationMember,
+  updateOrganizationMember,
+  removeOrganizationMember,
+  searchOrganizations,
+  getOrganizationsByArea,
+  getOrganizationsByType,
+  countOrganizations,
+  checkDuplicateDocument,
+} from './services/organizationService';
