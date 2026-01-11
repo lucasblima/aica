@@ -95,14 +95,8 @@ export interface ContactNetwork {
   name: string;
   phone_number?: string; // E.164 format: +55 11 99999-9999
   email?: string;
-  avatar_url?: string;
-
-  // Association links
-  association_id?: string;
-  user_id_if_internal?: string;
-
   // Relationship metadata
-  relationship_type:
+  relationship_type?:
     | 'colleague'
     | 'client'
     | 'friend'
@@ -111,11 +105,11 @@ export interface ContactNetwork {
     | 'mentee'
     | 'vendor'
     | 'other';
-  tags: string[];
+  tags?: string[];
 
   // Interaction tracking (metadata only)
   last_interaction_at?: string;
-  interaction_count: number;
+  interaction_count?: number;
   interaction_frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
   // Relationship health
@@ -123,24 +117,59 @@ export interface ContactNetwork {
   sentiment_trend?: 'improving' | 'stable' | 'declining' | 'unknown';
 
   // Topics of interaction
-  interaction_topics: string[]; // ['work', 'personal', 'health']
+  interaction_topics?: string[]; // ['work', 'personal', 'health']
 
   // Engagement metrics
   response_avg_time_hours?: number;
-  engagement_level: 'high' | 'medium' | 'low' | 'inactive';
+  engagement_level?: 'high' | 'medium' | 'low' | 'inactive';
 
   // Notes & preferences
   notes?: string;
   preferences?: Record<string, any>;
 
   // Status
-  is_active: boolean;
-  is_archived: boolean;
-  blocked: boolean;
+  is_active?: boolean;
+  is_archived?: boolean;
+  blocked?: boolean;
 
   // Timestamps
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+  notes?: string;
+  preferences?: Record<string, any>;
+
+  // Status
+  is_active?: boolean;
+  is_archived?: boolean;
+  blocked?: boolean;
+
+  // Timestamps
+  created_at?: string;
+  updated_at?: string;
+
+  // ==========================================================================
+  // Sync Source & Google Contacts Integration
+  // ==========================================================================
+  sync_source?: 'manual' | 'google' | 'whatsapp' | 'evolution';
+  google_contact_id?: string;
+  google_resource_name?: string;
+  last_synced_at?: string;
+
+  // ==========================================================================
+  // WhatsApp Integration (Issue #23)
+  // ==========================================================================
+  whatsapp_id?: string; // remoteJid from Evolution API
+  whatsapp_phone?: string; // Phone number extracted from whatsapp_id
+  whatsapp_name?: string; // pushName or contact name
+  whatsapp_profile_pic_url?: string;
+  whatsapp_sync_enabled?: boolean;
+  whatsapp_sync_status?: 'pending' | 'syncing' | 'synced' | 'failed';
+  whatsapp_synced_at?: string;
+  whatsapp_last_message_at?: string;
+  whatsapp_message_count?: number;
+  whatsapp_sentiment_avg?: number; // -1 to 1
+  whatsapp_metadata?: Record<string, any>;
+  last_whatsapp_message_at?: string;
 }
 
 export interface ContactNetworkCreateInput {

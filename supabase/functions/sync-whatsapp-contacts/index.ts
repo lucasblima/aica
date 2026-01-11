@@ -261,11 +261,13 @@ async function syncContactToDatabase(
   const contactData = {
     user_id: userId,
     name: contact.pushName || contact.name || `WhatsApp ${phone || 'Contact'}`,
+    phone_number: phone ? `+${phone}` : null, // E.164 format for consistency
     whatsapp_phone: phone,
     whatsapp_id: remoteJid,
     whatsapp_name: contact.pushName || contact.name,
     whatsapp_profile_pic_url: contact.profilePicUrl,
     whatsapp_sync_enabled: true,
+    whatsapp_synced_at: new Date().toISOString(),
     last_whatsapp_message_at: contact.lastMessageTimestamp
       ? new Date(contact.lastMessageTimestamp * 1000).toISOString()
       : null,
@@ -275,6 +277,9 @@ async function syncContactToDatabase(
       syncedAt: new Date().toISOString(),
     },
     tags: isGroup ? ['whatsapp', 'group'] : ['whatsapp'],
+    // CRITICAL: Set sync_source so UI filtering works correctly
+    sync_source: 'whatsapp',
+    last_synced_at: new Date().toISOString(),
   }
 
   // Upsert contact (update if exists, insert if new)

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, Mail, MessageSquare } from 'lucide-react';
-import type { ContactNetwork } from '../../../types';
+import type { ContactNetwork } from '../../types/memoryTypes';
 
 interface ContactDetailModalProps {
   contact: ContactNetwork;
