@@ -406,3 +406,37 @@ export {
   RELATIONSHIP_TYPE_LABELS,
   AREAS_OF_ACTIVITY_OPTIONS,
 } from './organizations';
+
+// ============================================
+// SPONSORSHIP (Re-export from sponsorship.ts)
+// ============================================
+
+export type {
+  CaptureStatus,
+  DeliverableCategory,
+  SponsorStatus,
+  ProjectApprovalFields,
+  SponsorshipTier,
+  TierDeliverable,
+  ProjectSponsor,
+  CreateSponsorshipTierDTO,
+  UpdateSponsorshipTierDTO,
+  CreateTierDeliverableDTO,
+  UpdateTierDeliverableDTO,
+  CreateProjectSponsorDTO,
+  UpdateProjectSponsorDTO,
+  UpdateProjectApprovalDTO,
+  ProjectSponsorshipContext,
+  CaptureProgress,
+  TierAvailability,
+} from './sponsorship';
+
+export {
+  CAPTURE_STATUS_LABELS,
+  CAPTURE_STATUS_COLORS,
+  DELIVERABLE_CATEGORY_LABELS,
+  SPONSOR_STATUS_LABELS,
+  SPONSOR_STATUS_COLORS,
+  CONFIRMED_SPONSOR_STATUSES,
+  SPONSOR_PIPELINE_ORDER,
+} from './sponsorship';
