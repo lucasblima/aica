@@ -77,27 +77,53 @@ export function useOrganizations(
   }, []);
 
   const create = useCallback(async (org: CreateOrganizationDTO) => {
-    const newOrg = await orgService.createOrganization(org);
-    setOrganizations((prev) =>
-      [...prev, newOrg].sort((a, b) => a.name.localeCompare(b.name))
-    );
-    return newOrg;
+    try {
+      setError(null);
+      const newOrg = await orgService.createOrganization(org);
+      setOrganizations((prev) =>
+        [...prev, newOrg].sort((a, b) => a.name.localeCompare(b.name))
+      );
+      return newOrg;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao criar organizacao';
+      setError(message);
+      throw err;
+    }
   }, []);
 
   const update = useCallback(
     async (id: string, updates: UpdateOrganizationDTO) => {
-      const updatedOrg = await orgService.updateOrganization(id, updates);
-      setOrganizations((prev) =>
-        prev.map((org) => (org.id === id ? updatedOrg : org))
-      );
-      return updatedOrg;
+      try {
+        setError(null);
+        const updatedOrg = await orgService.updateOrganization(id, updates);
+        setOrganizations((prev) =>
+          prev
+            .map((org) => (org.id === id ? updatedOrg : org))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        );
+        return updatedOrg;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Erro ao atualizar organizacao';
+        setError(message);
+        throw err;
+      }
     },
     []
   );
 
   const remove = useCallback(async (id: string) => {
-    await orgService.deleteOrganization(id);
-    setOrganizations((prev) => prev.filter((org) => org.id !== id));
+    try {
+      setError(null);
+      await orgService.deleteOrganization(id);
+      setOrganizations((prev) => prev.filter((org) => org.id !== id));
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao remover organizacao';
+      setError(message);
+      throw err;
+    }
   }, []);
 
   const search = useCallback(async (query: string) => {
