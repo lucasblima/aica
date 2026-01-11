@@ -382,3 +382,27 @@ export const RESPONSE_STATUS_LABELS: Record<GrantResponse['status'], string> = {
   editing: 'Editando',
   approved: 'Aprovado'
 };
+
+// ============================================
+// ORGANIZATIONS (Re-export from organizations.ts)
+// ============================================
+
+export type {
+  OrganizationType,
+  RelationshipType,
+  BrandColors,
+  SocialLinks,
+  Organization,
+  OrganizationRelationship,
+  OrganizationMember,
+  CreateOrganizationDTO,
+  UpdateOrganizationDTO,
+  CreateRelationshipDTO,
+  CreateMemberDTO,
+} from './organizations';
+
+export {
+  ORGANIZATION_TYPE_LABELS,
+  RELATIONSHIP_TYPE_LABELS,
+  AREAS_OF_ACTIVITY_OPTIONS,
+} from './organizations';
