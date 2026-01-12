@@ -168,7 +168,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               }
             `}
           >
-            English (US)
+            Ingles (EUA)
           </button>
         </div>
       </div>
@@ -524,7 +524,7 @@ export function SponsorDeckGenerator({
     if (downloadUrl && filename && onGenerated) {
       onGenerated(downloadUrl, filename);
     }
-  }, [download, downloadUrl, filename, onGenerated]);
+  }, [download, downloadUrl, filename, onGenerated, projectId]);
 
   // Get next button text
   const getNextButtonText = () => {
