@@ -98,8 +98,7 @@ CREATE POLICY "contact_network_insert_own" ON contact_network
 -- Policy UPDATE: usuarios podem atualizar apenas seus proprios contatos
 CREATE POLICY "contact_network_update_own" ON contact_network
   FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid() = user_id);
 
 -- Policy DELETE: usuarios podem deletar apenas seus proprios contatos
 CREATE POLICY "contact_network_delete_own" ON contact_network
