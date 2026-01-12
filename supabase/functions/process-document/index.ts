@@ -32,15 +32,15 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
-// Model configuration
-const GEMINI_MODEL = 'gemini-2.0-flash-exp' // Cost-optimized for production
-const EMBEDDING_MODEL = 'text-embedding-004' // 768 dimensions
+// Model configuration (configurable via env vars)
+const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-2.0-flash-exp' // Cost-optimized for production
+const EMBEDDING_MODEL = Deno.env.get('EMBEDDING_MODEL') || 'text-embedding-004' // 768 dimensions
 
-// Processing configuration
-const CHUNK_SIZE_TOKENS = 500
-const CHUNK_OVERLAP_TOKENS = 50
-const MAX_RETRIES = 3
-const RETRY_BASE_DELAY_MS = 1000
+// Processing configuration (configurable via env vars)
+const CHUNK_SIZE_TOKENS = parseInt(Deno.env.get('CHUNK_SIZE_TOKENS') || '500', 10)
+const CHUNK_OVERLAP_TOKENS = parseInt(Deno.env.get('CHUNK_OVERLAP_TOKENS') || '50', 10)
+const MAX_RETRIES = parseInt(Deno.env.get('MAX_RETRIES') || '3', 10)
+const RETRY_BASE_DELAY_MS = parseInt(Deno.env.get('RETRY_BASE_DELAY_MS') || '1000', 10)
 
 // Document type detection keywords
 const DOCUMENT_TYPE_KEYWORDS = {
@@ -414,6 +414,11 @@ IMPORTANTE:
 
 /**
  * Approximate token count (rough estimate: 1 token ~= 4 chars for Portuguese)
+ *
+ * NOTE: This is a simple heuristic and may be inaccurate for certain languages
+ * or special characters. For production with high accuracy requirements, consider
+ * using a proper tokenizer library that matches the embedding model (tiktoken equivalent).
+ * However, for Deno Edge Functions, finding a compatible library is challenging.
  */
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4)
@@ -818,6 +823,11 @@ async function markDocumentFailed(
 // =============================================================================
 // MAIN PROCESSING PIPELINE
 // =============================================================================
+
+// TODO: Consider breaking down into smaller functions for better testability:
+// - extractAndClassify() - content extraction and classification
+// - generateChunksAndEmbeddings() - chunking and embedding generation
+// - findAndSaveLinks() - entity linking suggestions
 
 async function processDocument(
   supabase: ReturnType<typeof createClient>,
