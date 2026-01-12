@@ -17,10 +17,12 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
+  Hash,
 } from 'lucide-react';
 import { useWhatsAppConnection } from '../../hooks/useWhatsAppConnection';
 import { useWhatsAppGamification } from '../../hooks/useWhatsAppGamification';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
+import { PairingCodeDisplay } from './PairingCodeDisplay';
 
 // ============================================================================
 // TYPES
@@ -31,9 +33,14 @@ interface ConnectionStatusCardProps {
   showQRCode?: boolean;
   autoRefresh?: boolean;
   refreshInterval?: number; // milliseconds
+  /** Numero de telefone para pairing code (formato: 5511987654321) */
+  phoneNumber?: string;
+  /** Metodo de conexao padrao */
+  defaultMethod?: ConnectionMethod;
 }
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'unknown';
+type ConnectionMethod = 'qrcode' | 'pairing';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -96,6 +103,8 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   showQRCode = true,
   autoRefresh = true,
   refreshInterval = 10000, // 10 seconds
+  phoneNumber = '',
+  defaultMethod = 'pairing',
 }) => {
   const {
     connectionState,
@@ -111,6 +120,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   const { trackConnection } = useWhatsAppGamification();
 
   const [status, setStatus] = useState<ConnectionStatus>('unknown');
+  const [connectionMethod, setConnectionMethod] = useState<ConnectionMethod>(defaultMethod);
 
   // Determine connection status from connectionState
   useEffect(() => {
@@ -243,45 +253,90 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
         </div>
       )}
 
-      {/* QR Code Display */}
+      {/* Connection Method Toggle */}
       {showQRCode && status === 'disconnected' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-ceramic-text-primary">
-              Escanear QR Code
-            </p>
+          {/* Method Toggle */}
+          <div className="flex gap-2 p-1 ceramic-inset rounded-xl">
             <button
-              onClick={handleRefreshQR}
-              disabled={isLoading}
-              className="text-xs text-ceramic-accent hover:underline disabled:opacity-50"
+              onClick={() => setConnectionMethod('pairing')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                connectionMethod === 'pairing'
+                  ? 'ceramic-card text-ceramic-accent'
+                  : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+              }`}
+              aria-pressed={connectionMethod === 'pairing'}
             >
-              Atualizar
+              <Hash className="w-4 h-4" />
+              Codigo
+            </button>
+            <button
+              onClick={() => setConnectionMethod('qrcode')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                connectionMethod === 'qrcode'
+                  ? 'ceramic-card text-ceramic-accent'
+                  : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+              }`}
+              aria-pressed={connectionMethod === 'qrcode'}
+            >
+              <QrCode className="w-4 h-4" />
+              QR Code
             </button>
           </div>
 
-          <div className="ceramic-inset p-6 rounded-xl flex items-center justify-center bg-white">
-            {isLoading ? (
-              <Loader2 className="w-12 h-12 animate-spin text-ceramic-accent" />
-            ) : qrCode ? (
-              <img
-                src={qrCode}
-                alt="QR Code para conectar WhatsApp"
-                className="w-64 h-64 rounded-lg"
-              />
-            ) : (
-              <div className="text-center py-8">
-                <QrCode className="w-12 h-12 text-ceramic-text-secondary mx-auto mb-3" />
-                <p className="text-sm text-ceramic-text-secondary">
-                  Clique em "Conectar" para gerar QR Code
-                </p>
-              </div>
-            )}
-          </div>
+          {/* Pairing Code Display */}
+          {connectionMethod === 'pairing' && (
+            <PairingCodeDisplay
+              phoneNumber={phoneNumber}
+              onConnected={() => {
+                checkConnection();
+                trackConnection();
+              }}
+              onError={(err) => console.error('[ConnectionStatusCard] Pairing error:', err)}
+            />
+          )}
 
-          {qrCode && (
-            <p className="text-xs text-ceramic-text-secondary text-center">
-              Abra o WhatsApp no seu celular e escaneie o QR Code acima
-            </p>
+          {/* QR Code Display */}
+          {connectionMethod === 'qrcode' && (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-ceramic-text-primary">
+                  Escanear QR Code
+                </p>
+                <button
+                  onClick={handleRefreshQR}
+                  disabled={isLoading}
+                  className="text-xs text-ceramic-accent hover:underline disabled:opacity-50"
+                >
+                  Atualizar
+                </button>
+              </div>
+
+              <div className="ceramic-inset p-6 rounded-xl flex items-center justify-center bg-white">
+                {isLoading ? (
+                  <Loader2 className="w-12 h-12 animate-spin text-ceramic-accent" />
+                ) : qrCode ? (
+                  <img
+                    src={qrCode}
+                    alt="QR Code para conectar WhatsApp"
+                    className="w-64 h-64 rounded-lg"
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <QrCode className="w-12 h-12 text-ceramic-text-secondary mx-auto mb-3" />
+                    <p className="text-sm text-ceramic-text-secondary">
+                      Clique em "Conectar" para gerar QR Code
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {qrCode && (
+                <p className="text-xs text-ceramic-text-secondary text-center">
+                  Abra o WhatsApp no seu celular e escaneie o QR Code acima
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
