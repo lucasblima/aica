@@ -199,7 +199,8 @@ async function generateDeckContent(
   projectData: ProjectData,
   language: 'pt-BR' | 'en-US'
 ): Promise<{ content: GeneratedContent; usageMetadata: any }> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-001' })
+  const modelName = Deno.env.get('GEMINI_MODEL_NAME') || 'gemini-2.0-flash-001'
+  const model = genAI.getGenerativeModel({ model: modelName })
 
   const langInstructions = language === 'pt-BR'
     ? 'Responda em portugues brasileiro formal.'
@@ -263,7 +264,14 @@ IMPORTANTE:
     // Clean JSON response
     responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
-    const content: GeneratedContent = JSON.parse(responseText)
+    let content: GeneratedContent
+    try {
+      content = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error('[generate-sponsor-deck] Failed to parse Gemini response as JSON:', parseError)
+      console.error('[generate-sponsor-deck] Raw Gemini response:', responseText)
+      throw new Error('Conteudo gerado pela IA nao esta em formato JSON valido.')
+    }
 
     console.log('[generate-sponsor-deck] Content generated successfully')
 
@@ -312,10 +320,14 @@ IMPORTANTE:
 /**
  * Format currency for display
  */
-function formatCurrency(value: number, language: 'pt-BR' | 'en-US'): string {
+function formatCurrency(
+  value: number,
+  language: 'pt-BR' | 'en-US',
+  currencyCode: 'BRL' | 'USD' = 'BRL'
+): string {
   return new Intl.NumberFormat(language, {
     style: 'currency',
-    currency: language === 'pt-BR' ? 'BRL' : 'USD',
+    currency: currencyCode,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value)
@@ -1136,14 +1148,18 @@ async function buildPresentation(
 
 /**
  * Load project data with all related information
+ * @param supabase - Supabase client
+ * @param projectId - Project ID to load
+ * @param userId - User ID for ownership verification (security check)
  */
 async function loadProjectData(
   supabase: ReturnType<typeof createClient>,
-  projectId: string
+  projectId: string,
+  userId: string
 ): Promise<ProjectData | null> {
   console.log('[generate-sponsor-deck] Loading project data...')
 
-  // Load project with relations
+  // Load project with relations, ensuring it belongs to the user
   const { data: project, error: projectError } = await supabase
     .from('grant_projects')
     .select(`
@@ -1161,10 +1177,11 @@ async function loadProjectData(
       proponent_organization_id
     `)
     .eq('id', projectId)
+    .eq('user_id', userId)
     .single()
 
   if (projectError || !project) {
-    console.error('[generate-sponsor-deck] Failed to load project:', projectError)
+    console.error('[generate-sponsor-deck] Failed to load project or project not owned by user:', projectError)
     return null
   }
 
@@ -1290,14 +1307,34 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(`[generate-sponsor-deck] Starting deck generation for project: ${projectId}`)
+    // Verify user authentication and get user_id
+    const authClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token)
+
+    if (authError || !user) {
+      console.error('[generate-sponsor-deck] Authentication failed:', authError)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid or expired authentication token' }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      )
+    }
+
+    const userId = user.id
+    console.log(`[generate-sponsor-deck] Starting deck generation for project: ${projectId} by user: ${userId}`)
 
     // Initialize clients
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
-    // Load project data
-    const projectData = await loadProjectData(supabase, projectId)
+    // Load project data (with ownership verification)
+    const projectData = await loadProjectData(supabase, projectId, userId)
     if (!projectData) {
       return new Response(
         JSON.stringify({ success: false, error: 'Project not found or access denied' }),
