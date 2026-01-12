@@ -28,6 +28,40 @@ import {
 import { usePairingCode } from '@/hooks/usePairingCode';
 
 // ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/** Duracao do codigo de pareamento em segundos */
+const PAIRING_CODE_DURATION_SECONDS = 60;
+
+/** Delay para resetar o estado de "copiado" em ms */
+const COPIED_STATE_RESET_DELAY_MS = 2000;
+
+/** Instrucoes passo-a-passo para o usuario */
+const PAIRING_INSTRUCTIONS = [
+  {
+    step: 1,
+    title: 'Abra o WhatsApp',
+    description: 'No seu celular, abra o aplicativo WhatsApp',
+  },
+  {
+    step: 2,
+    title: 'Acesse Configuracoes',
+    description: 'Toque em Configuracoes > Dispositivos conectados',
+  },
+  {
+    step: 3,
+    title: 'Conectar dispositivo',
+    description: 'Toque em "Conectar um dispositivo"',
+  },
+  {
+    step: 4,
+    title: 'Digite o codigo',
+    description: 'Escolha "Conectar com numero de telefone" e digite o codigo abaixo',
+  },
+] as const;
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -122,14 +156,22 @@ function InstructionStep({ step, title, description, isActive = false }: Instruc
 /**
  * Timer Display Component
  */
-function TimerDisplay({ seconds, isExpired }: { seconds: number; isExpired: boolean }) {
+function TimerDisplay({
+  seconds,
+  isExpired,
+  totalDuration = PAIRING_CODE_DURATION_SECONDS,
+}: {
+  seconds: number;
+  isExpired: boolean;
+  totalDuration?: number;
+}) {
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remainingSecs = secs % 60;
     return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
-  const progress = Math.max(0, (seconds / 60) * 100);
+  const progress = Math.max(0, (seconds / totalDuration) * 100);
 
   return (
     <div className="flex items-center gap-2">
@@ -204,37 +246,13 @@ export function PairingCodeDisplay({
     if (!code) return;
 
     try {
-      await navigator.clipboard.writeText(code.replace('-', ''));
+      await navigator.clipboard.writeText(code.replace(/[^a-zA-Z0-9]/g, ''));
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), COPIED_STATE_RESET_DELAY_MS);
     } catch (err) {
       console.error('[PairingCodeDisplay] Copy failed:', err);
     }
   }, [code]);
-
-  // Instructions data
-  const instructions = [
-    {
-      step: 1,
-      title: 'Abra o WhatsApp',
-      description: 'No seu celular, abra o aplicativo WhatsApp',
-    },
-    {
-      step: 2,
-      title: 'Acesse Configuracoes',
-      description: 'Toque em Configuracoes > Dispositivos conectados',
-    },
-    {
-      step: 3,
-      title: 'Conectar dispositivo',
-      description: 'Toque em "Conectar um dispositivo"',
-    },
-    {
-      step: 4,
-      title: 'Digite o codigo',
-      description: 'Escolha "Conectar com numero de telefone" e digite o codigo abaixo',
-    },
-  ];
 
   return (
     <motion.div
@@ -411,7 +429,7 @@ export function PairingCodeDisplay({
           Como conectar
         </p>
         <div className="space-y-2">
-          {instructions.map((instruction, index) => (
+          {PAIRING_INSTRUCTIONS.map((instruction, index) => (
             <InstructionStep
               key={instruction.step}
               {...instruction}
