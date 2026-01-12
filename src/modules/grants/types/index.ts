@@ -440,3 +440,76 @@ export {
   CONFIRMED_SPONSOR_STATUSES,
   SPONSOR_PIPELINE_ORDER,
 } from './sponsorship';
+
+// ============================================
+// SPONSOR DECK (Re-export from sponsorDeck.ts)
+// ============================================
+
+export type {
+  GenerateDeckRequest,
+  DeckOptions,
+  GenerateDeckResponse,
+  GeneratedDeckContent,
+  WhySponsorshipItem,
+  SlideData,
+  SlideType,
+  CoverSlideContent,
+  OrganizationSlideContent,
+  ProjectSlideContent,
+  PreviousEditionsSlideContent,
+  ImpactSlideContent,
+  IncentiveLawSlideContent,
+  TiersSlideContent,
+  DeliverablesSlideContent,
+  WhySponsorSlideContent,
+  ContactSlideContent,
+  DeckTemplate,
+  TemplateColors,
+  TemplateFonts,
+  DeckWizardStep,
+  DeckWizardStepConfig,
+  SlidePreview,
+} from './sponsorDeck';
+
+export {
+  TEMPLATE_PROFESSIONAL,
+  TEMPLATE_CREATIVE,
+  TEMPLATE_INSTITUTIONAL,
+  DECK_TEMPLATES,
+  getTemplateById,
+  DECK_WIZARD_STEPS,
+  DEFAULT_SLIDE_STRUCTURE,
+} from './sponsorDeck';
+
+// ============================================
+// PROSPECT CRM (Re-export from prospect.ts)
+// ============================================
+
+export type {
+  ActivityType,
+  ActivityOutcome,
+  RecurrenceType,
+  ProspectActivity,
+  AttachmentInfo,
+  ProspectReminder,
+  CreateProspectActivityDTO,
+  UpdateProspectActivityDTO,
+  CreateProspectReminderDTO,
+  UpdateProspectReminderDTO,
+  PipelineConversionMetrics,
+  PendingReminder,
+  PipelineStats,
+  ActivityFilters,
+  PipelineKanbanData,
+  PipelineColumn,
+  KanbanSponsorCard,
+} from './prospect';
+
+export {
+  ACTIVITY_TYPE_LABELS,
+  ACTIVITY_TYPE_ICONS,
+  ACTIVITY_TYPE_COLORS,
+  ACTIVITY_OUTCOME_LABELS,
+  ACTIVITY_OUTCOME_COLORS,
+  RECURRENCE_TYPE_LABELS,
+} from './prospect';

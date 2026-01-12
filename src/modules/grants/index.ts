@@ -51,6 +51,19 @@ export type {
   ProjectSponsorshipContext,
   CaptureProgress,
   TierAvailability,
+  // Sponsor Deck types (Issue #98)
+  GenerateDeckRequest,
+  DeckOptions,
+  GenerateDeckResponse,
+  GeneratedDeckContent,
+  WhySponsorshipItem,
+  SlideData,
+  SlideType,
+  DeckTemplate,
+  TemplateColors,
+  TemplateFonts,
+  DeckWizardStep,
+  SlidePreview,
 } from './types';
 
 export {
@@ -71,6 +84,14 @@ export {
   SPONSOR_STATUS_COLORS,
   CONFIRMED_SPONSOR_STATUSES,
   SPONSOR_PIPELINE_ORDER,
+  // Sponsor Deck constants (Issue #98)
+  TEMPLATE_PROFESSIONAL,
+  TEMPLATE_CREATIVE,
+  TEMPLATE_INSTITUTIONAL,
+  DECK_TEMPLATES,
+  getTemplateById,
+  DECK_WIZARD_STEPS,
+  DEFAULT_SLIDE_STRUCTURE,
 } from './types';
 
 // Views
@@ -127,6 +148,12 @@ export {
   useProjectSponsors,
   useCaptureProgress,
 } from './hooks/useSponsorship';
+
+// Sponsor Deck hooks (Issue #98)
+export { useSponsorDeck } from './hooks/useSponsorDeck';
+
+// Sponsor Deck components (Issue #98)
+export { SponsorDeckGenerator } from './components/SponsorDeckGenerator';
 
 // Sponsorship services (Issue #97)
 export {
