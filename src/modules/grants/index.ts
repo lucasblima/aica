@@ -64,6 +64,24 @@ export type {
   TemplateFonts,
   DeckWizardStep,
   SlidePreview,
+  // Prospect CRM types (Issue #101)
+  ActivityType,
+  ActivityOutcome,
+  RecurrenceType,
+  ProspectActivity,
+  AttachmentInfo,
+  ProspectReminder,
+  CreateProspectActivityDTO,
+  UpdateProspectActivityDTO,
+  CreateProspectReminderDTO,
+  UpdateProspectReminderDTO,
+  PipelineConversionMetrics,
+  PendingReminder,
+  PipelineStats,
+  ActivityFilters,
+  PipelineKanbanData,
+  PipelineColumn,
+  KanbanSponsorCard,
 } from './types';
 
 export {
@@ -92,6 +110,13 @@ export {
   getTemplateById,
   DECK_WIZARD_STEPS,
   DEFAULT_SLIDE_STRUCTURE,
+  // Prospect CRM constants (Issue #101)
+  ACTIVITY_TYPE_LABELS,
+  ACTIVITY_TYPE_ICONS,
+  ACTIVITY_TYPE_COLORS,
+  ACTIVITY_OUTCOME_LABELS,
+  ACTIVITY_OUTCOME_COLORS,
+  RECURRENCE_TYPE_LABELS,
 } from './types';
 
 // Views
@@ -184,3 +209,42 @@ export {
   getSponsorsWithUpcomingPayments,
   duplicateTiersStructure,
 } from './services/sponsorshipService';
+
+// Prospect CRM hooks (Issue #101)
+export {
+  useProspectActivities,
+  useProspectReminders,
+  usePendingReminders,
+  usePipelineKanban,
+  usePipelineStats,
+  useQuickActions,
+  useRecentActivities,
+} from './hooks/useProspect';
+
+// Prospect CRM services (Issue #101)
+export {
+  getSponsorActivities,
+  getActivities,
+  getProjectActivities,
+  getActivityById,
+  createActivity,
+  updateActivity,
+  deleteActivity,
+  getSponsorReminders,
+  getPendingReminders,
+  createReminder,
+  updateReminder,
+  completeReminder,
+  deleteReminder,
+  getConversionMetrics,
+  getPipelineStats,
+  getPipelineKanbanData,
+  moveSponsorToStatus,
+  logActivityAndUpdateStatus,
+  getRecentActivities,
+} from './services/prospectService';
+
+// Prospect CRM components (Issue #101)
+export { ProspectCard } from './components/ProspectCard';
+export { ProspectPipeline } from './components/ProspectPipeline';
+export { ActivityTimeline, ActivitySummary } from './components/ActivityTimeline';
