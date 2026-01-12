@@ -1,6 +1,14 @@
 -- =============================================================================
 -- PROSPECT CRM MIGRATION
 -- Issue #101 - Sistema de prospeccao e CRM de patrocinadores
+--
+-- NOTES FOR FUTURE IMPROVEMENTS:
+-- 1. activity_type: Consider creating a lookup table (activity_types) for more
+--    flexibility in adding new types without schema changes.
+-- 2. attachments: Consider creating a separate attachments table if you need
+--    to query or manage attachments independently.
+-- 3. SPONSOR_PIPELINE_ORDER: The ORDER BY CASE in get_prospect_conversion_metrics
+--    uses hardcoded status order. Consider storing this order in a config table.
 -- =============================================================================
 
 -- Enable UUID extension if not already enabled
@@ -245,6 +253,8 @@ BEGIN
     END as conversion_rate,
     sd.avg_days
   FROM stage_data sd
+  -- NOTE: If adding new pipeline stages, update this ORDER BY clause
+  -- Consider moving this order to a config table for easier maintenance
   ORDER BY
     CASE sd.stage
       WHEN 'lead' THEN 1

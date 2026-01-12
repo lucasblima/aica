@@ -19,6 +19,9 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import type { DeckOptions, GenerateDeckResponse } from '../types/sponsorDeck';
 
+// Edge Function endpoint - uses same Supabase URL as main client
+const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -191,7 +194,7 @@ export function useSponsorDeck({ projectId }: UseSponsorDeckOptions): UseSponsor
         setProgressStep('Gerando conteudo com IA...');
 
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-sponsor-deck`,
+          `${SUPABASE_FUNCTIONS_URL}/generate-sponsor-deck`,
           {
             method: 'POST',
             headers: {

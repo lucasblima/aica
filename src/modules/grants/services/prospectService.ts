@@ -303,6 +303,10 @@ export async function getConversionMetrics(projectId: string): Promise<PipelineC
 
 /**
  * Buscar estatisticas do pipeline para dashboard
+ *
+ * NOTE: Esta funcao busca todos os sponsors e calcula estatisticas no cliente.
+ * Para projetos com muitos sponsors (1000+), considere criar uma view materializada
+ * ou funcao SQL para calcular as estatisticas diretamente no banco.
  */
 export async function getPipelineStats(projectId: string): Promise<PipelineStats> {
   // Buscar todos os sponsors do projeto

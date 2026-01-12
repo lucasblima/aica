@@ -86,12 +86,16 @@ interface GeneratedContent {
   callToAction: string
 }
 
-interface TemplateColors {
+interface TemplateConfig {
   primary: string
   secondary: string
   accent: string
   background: string
   text: string
+  fonts: {
+    heading: string
+    body: string
+  }
 }
 
 interface ProjectData {
@@ -147,13 +151,17 @@ interface ProjectData {
 // TEMPLATE DEFINITIONS
 // =============================================================================
 
-const TEMPLATES: Record<string, TemplateColors> = {
+const TEMPLATES: Record<string, TemplateConfig> = {
   professional: {
     primary: '#1a365d',
     secondary: '#2d4a6f',
     accent: '#ed8936',
     background: '#ffffff',
     text: '#1a202c',
+    fonts: {
+      heading: 'Arial',
+      body: 'Calibri',
+    },
   },
   creative: {
     primary: '#805ad5',
@@ -161,6 +169,10 @@ const TEMPLATES: Record<string, TemplateColors> = {
     accent: '#38b2ac',
     background: '#faf5ff',
     text: '#2d3748',
+    fonts: {
+      heading: 'Trebuchet MS',
+      body: 'Segoe UI',
+    },
   },
   institutional: {
     primary: '#2c5282',
@@ -168,6 +180,10 @@ const TEMPLATES: Record<string, TemplateColors> = {
     accent: '#d69e2e',
     background: '#f7fafc',
     text: '#1a202c',
+    fonts: {
+      heading: 'Georgia',
+      body: 'Calibri',
+    },
   },
 }
 
@@ -311,7 +327,7 @@ function formatCurrency(value: number, language: 'pt-BR' | 'en-US'): string {
 async function buildPresentation(
   projectData: ProjectData,
   generatedContent: GeneratedContent,
-  colors: TemplateColors,
+  template: TemplateConfig,
   options: DeckOptions
 ): Promise<string> {
   const pptx = new PptxGenJS()
@@ -326,7 +342,7 @@ async function buildPresentation(
   // Define master slide
   pptx.defineSlideMaster({
     title: 'MASTER_SLIDE',
-    background: { color: colors.background.replace('#', '') },
+    background: { color: template.background.replace('#', '') },
   })
 
   // ===================
@@ -340,7 +356,7 @@ async function buildPresentation(
     y: 0,
     w: '100%',
     h: '40%',
-    fill: { color: colors.primary.replace('#', '') },
+    fill: { color: template.primary.replace('#', '') },
   })
 
   // Project name
@@ -350,7 +366,7 @@ async function buildPresentation(
     w: '90%',
     h: 1,
     fontSize: 44,
-    fontFace: 'Arial',
+    fontFace: template.fonts.heading,
     color: 'FFFFFF',
     bold: true,
     align: 'center',
@@ -363,8 +379,8 @@ async function buildPresentation(
     w: '90%',
     h: 0.8,
     fontSize: 24,
-    fontFace: 'Calibri',
-    color: colors.text.replace('#', ''),
+    fontFace: template.fonts.body,
+    color: template.text.replace('#', ''),
     align: 'center',
     italic: true,
   })
@@ -377,8 +393,8 @@ async function buildPresentation(
       w: '90%',
       h: 0.5,
       fontSize: 18,
-      fontFace: 'Calibri',
-      color: colors.secondary.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.secondary.replace('#', ''),
       align: 'center',
     })
   }
@@ -390,7 +406,7 @@ async function buildPresentation(
       y: 5.2,
       w: 3,
       h: 0.4,
-      fill: { color: colors.accent.replace('#', '') },
+      fill: { color: template.accent.replace('#', '') },
       rectRadius: 0.1,
     })
     slide1.addText(projectData.approval_number, {
@@ -399,7 +415,7 @@ async function buildPresentation(
       w: 3,
       h: 0.4,
       fontSize: 12,
-      fontFace: 'Calibri',
+      fontFace: template.fonts.body,
       color: 'FFFFFF',
       align: 'center',
       valign: 'middle',
@@ -417,8 +433,8 @@ async function buildPresentation(
     w: '90%',
     h: 0.6,
     fontSize: 32,
-    fontFace: 'Arial',
-    color: colors.primary.replace('#', ''),
+    fontFace: template.fonts.heading,
+    color: template.primary.replace('#', ''),
     bold: true,
   })
 
@@ -428,7 +444,7 @@ async function buildPresentation(
     y: 0.95,
     w: 2,
     h: 0,
-    line: { color: colors.accent.replace('#', ''), width: 3 },
+    line: { color: template.accent.replace('#', ''), width: 3 },
   })
 
   // Organization name
@@ -438,8 +454,8 @@ async function buildPresentation(
     w: '90%',
     h: 0.5,
     fontSize: 24,
-    fontFace: 'Arial',
-    color: colors.secondary.replace('#', ''),
+    fontFace: template.fonts.heading,
+    color: template.secondary.replace('#', ''),
     bold: true,
   })
 
@@ -450,8 +466,8 @@ async function buildPresentation(
     w: '60%',
     h: 1.5,
     fontSize: 14,
-    fontFace: 'Calibri',
-    color: colors.text.replace('#', ''),
+    fontFace: template.fonts.body,
+    color: template.text.replace('#', ''),
     valign: 'top',
   })
 
@@ -462,7 +478,7 @@ async function buildPresentation(
       y: 3.5,
       w: '60%',
       h: 1,
-      fill: { color: colors.primary.replace('#', ''), transparency: 90 },
+      fill: { color: template.primary.replace('#', ''), transparency: 90 },
       rectRadius: 0.1,
     })
     slide2.addText(`Missao: ${projectData.proponent.mission}`, {
@@ -471,8 +487,8 @@ async function buildPresentation(
       w: '55%',
       h: 0.8,
       fontSize: 12,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
       italic: true,
     })
   }
@@ -486,8 +502,8 @@ async function buildPresentation(
       w: 3,
       h: 0.3,
       fontSize: 11,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     })
   }
   if (projectData.proponent?.email) {
@@ -497,8 +513,8 @@ async function buildPresentation(
       w: 3,
       h: 0.3,
       fontSize: 11,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     })
   }
   if (projectData.proponent?.phone) {
@@ -508,8 +524,8 @@ async function buildPresentation(
       w: 3,
       h: 0.3,
       fontSize: 11,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     })
   }
 
@@ -524,8 +540,8 @@ async function buildPresentation(
     w: '90%',
     h: 0.6,
     fontSize: 32,
-    fontFace: 'Arial',
-    color: colors.primary.replace('#', ''),
+    fontFace: template.fonts.heading,
+    color: template.primary.replace('#', ''),
     bold: true,
   })
 
@@ -534,7 +550,7 @@ async function buildPresentation(
     y: 0.95,
     w: 2,
     h: 0,
-    line: { color: colors.accent.replace('#', ''), width: 3 },
+    line: { color: template.accent.replace('#', ''), width: 3 },
   })
 
   // Executive summary
@@ -544,8 +560,8 @@ async function buildPresentation(
     w: '90%',
     h: 1.2,
     fontSize: 18,
-    fontFace: 'Calibri',
-    color: colors.text.replace('#', ''),
+    fontFace: template.fonts.body,
+    color: template.text.replace('#', ''),
     valign: 'top',
   })
 
@@ -560,7 +576,7 @@ async function buildPresentation(
       y: cardY,
       w: cardWidth,
       h: cardHeight,
-      fill: { color: colors.primary.replace('#', '') },
+      fill: { color: template.primary.replace('#', '') },
       rectRadius: 0.1,
     })
     slide3.addText('Valor Aprovado', {
@@ -569,7 +585,7 @@ async function buildPresentation(
       w: cardWidth,
       h: 0.4,
       fontSize: 12,
-      fontFace: 'Calibri',
+      fontFace: template.fonts.body,
       color: 'FFFFFF',
       align: 'center',
     })
@@ -579,7 +595,7 @@ async function buildPresentation(
       w: cardWidth,
       h: 0.6,
       fontSize: 22,
-      fontFace: 'Arial',
+      fontFace: template.fonts.heading,
       color: 'FFFFFF',
       bold: true,
       align: 'center',
@@ -592,7 +608,7 @@ async function buildPresentation(
       y: cardY,
       w: cardWidth,
       h: cardHeight,
-      fill: { color: colors.secondary.replace('#', '') },
+      fill: { color: template.secondary.replace('#', '') },
       rectRadius: 0.1,
     })
     slide3.addText('Lei de Incentivo', {
@@ -601,7 +617,7 @@ async function buildPresentation(
       w: cardWidth,
       h: 0.4,
       fontSize: 12,
-      fontFace: 'Calibri',
+      fontFace: template.fonts.body,
       color: 'FFFFFF',
       align: 'center',
     })
@@ -611,7 +627,7 @@ async function buildPresentation(
       w: cardWidth,
       h: 0.6,
       fontSize: 20,
-      fontFace: 'Arial',
+      fontFace: template.fonts.heading,
       color: 'FFFFFF',
       bold: true,
       align: 'center',
@@ -624,7 +640,7 @@ async function buildPresentation(
       y: cardY,
       w: cardWidth,
       h: cardHeight,
-      fill: { color: colors.accent.replace('#', '') },
+      fill: { color: template.accent.replace('#', '') },
       rectRadius: 0.1,
     })
     slide3.addText('Validade', {
@@ -633,7 +649,7 @@ async function buildPresentation(
       w: cardWidth,
       h: 0.4,
       fontSize: 12,
-      fontFace: 'Calibri',
+      fontFace: template.fonts.body,
       color: 'FFFFFF',
       align: 'center',
     })
@@ -644,7 +660,7 @@ async function buildPresentation(
       w: cardWidth,
       h: 0.6,
       fontSize: 18,
-      fontFace: 'Arial',
+      fontFace: template.fonts.heading,
       color: 'FFFFFF',
       bold: true,
       align: 'center',
@@ -662,8 +678,8 @@ async function buildPresentation(
     w: '90%',
     h: 0.6,
     fontSize: 32,
-    fontFace: 'Arial',
-    color: colors.primary.replace('#', ''),
+    fontFace: template.fonts.heading,
+    color: template.primary.replace('#', ''),
     bold: true,
   })
 
@@ -672,7 +688,7 @@ async function buildPresentation(
     y: 0.95,
     w: 2,
     h: 0,
-    line: { color: colors.accent.replace('#', ''), width: 3 },
+    line: { color: template.accent.replace('#', ''), width: 3 },
   })
 
   // Impact description
@@ -685,8 +701,8 @@ async function buildPresentation(
       w: '90%',
       h: 0.8,
       fontSize: 16,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     }
   )
 
@@ -707,7 +723,7 @@ async function buildPresentation(
       y: 2.5,
       w: 1.5,
       h: 1.5,
-      fill: { color: colors.primary.replace('#', ''), transparency: 80 },
+      fill: { color: template.primary.replace('#', ''), transparency: 80 },
     })
     slide4.addText(metric.value, {
       x: x,
@@ -715,8 +731,8 @@ async function buildPresentation(
       w: metricWidth,
       h: 0.6,
       fontSize: 24,
-      fontFace: 'Arial',
-      color: colors.primary.replace('#', ''),
+      fontFace: template.fonts.heading,
+      color: template.primary.replace('#', ''),
       bold: true,
       align: 'center',
     })
@@ -726,8 +742,8 @@ async function buildPresentation(
       w: metricWidth,
       h: 0.4,
       fontSize: 14,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
       align: 'center',
     })
   })
@@ -744,8 +760,8 @@ async function buildPresentation(
       w: '90%',
       h: 0.6,
       fontSize: 32,
-      fontFace: 'Arial',
-      color: colors.primary.replace('#', ''),
+      fontFace: template.fonts.heading,
+      color: template.primary.replace('#', ''),
       bold: true,
     })
 
@@ -754,7 +770,7 @@ async function buildPresentation(
       y: 0.95,
       w: 2,
       h: 0,
-      line: { color: colors.accent.replace('#', ''), width: 3 },
+      line: { color: template.accent.replace('#', ''), width: 3 },
     })
 
     // Law name and details
@@ -764,8 +780,8 @@ async function buildPresentation(
       w: '90%',
       h: 0.5,
       fontSize: 22,
-      fontFace: 'Arial',
-      color: colors.secondary.replace('#', ''),
+      fontFace: template.fonts.heading,
+      color: template.secondary.replace('#', ''),
       bold: true,
     })
 
@@ -775,8 +791,8 @@ async function buildPresentation(
       w: '90%',
       h: 0.4,
       fontSize: 16,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     })
 
     // Jurisdiction and tax type
@@ -790,8 +806,8 @@ async function buildPresentation(
       w: '45%',
       h: 0.4,
       fontSize: 14,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     })
 
     slide5.addText(`Tributo: ${projectData.incentive_law.tax_type}`, {
@@ -800,8 +816,8 @@ async function buildPresentation(
       w: '45%',
       h: 0.4,
       fontSize: 14,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     })
 
     // Big deduction percentage
@@ -811,7 +827,7 @@ async function buildPresentation(
         y: 3,
         w: 3,
         h: 2,
-        fill: { color: colors.accent.replace('#', '') },
+        fill: { color: template.accent.replace('#', '') },
       })
       slide5.addText(`${projectData.incentive_law.max_deduction_percentage}%`, {
         x: 3.5,
@@ -819,7 +835,7 @@ async function buildPresentation(
         w: 3,
         h: 0.8,
         fontSize: 48,
-        fontFace: 'Arial',
+        fontFace: template.fonts.heading,
         color: 'FFFFFF',
         bold: true,
         align: 'center',
@@ -830,7 +846,7 @@ async function buildPresentation(
         w: 3,
         h: 0.4,
         fontSize: 16,
-        fontFace: 'Calibri',
+        fontFace: template.fonts.body,
         color: 'FFFFFF',
         align: 'center',
       })
@@ -849,8 +865,8 @@ async function buildPresentation(
       w: '90%',
       h: 0.6,
       fontSize: 32,
-      fontFace: 'Arial',
-      color: colors.primary.replace('#', ''),
+      fontFace: template.fonts.heading,
+      color: template.primary.replace('#', ''),
       bold: true,
     })
 
@@ -859,7 +875,7 @@ async function buildPresentation(
       y: 0.95,
       w: 2,
       h: 0,
-      line: { color: colors.accent.replace('#', ''), width: 3 },
+      line: { color: template.accent.replace('#', ''), width: 3 },
     })
 
     // Tier cards
@@ -871,7 +887,7 @@ async function buildPresentation(
     tiersToShow.forEach((tier, index) => {
       const x = startX + index * (tierCardWidth + 0.3)
       const isHighlighted = tier.is_highlighted || tier.id === options.highlightTierId
-      const tierColor = tier.color?.replace('#', '') || (isHighlighted ? colors.accent : colors.primary).replace('#', '')
+      const tierColor = tier.color?.replace('#', '') || (isHighlighted ? template.accent : template.primary).replace('#', '')
 
       // Card background
       slide6.addShape(pptx.ShapeType.roundRect, {
@@ -891,7 +907,7 @@ async function buildPresentation(
         w: tierCardWidth,
         h: 0.5,
         fontSize: 16,
-        fontFace: 'Arial',
+        fontFace: template.fonts.heading,
         color: 'FFFFFF',
         bold: true,
         align: 'center',
@@ -904,7 +920,7 @@ async function buildPresentation(
         w: tierCardWidth,
         h: 0.5,
         fontSize: 20,
-        fontFace: 'Arial',
+        fontFace: template.fonts.heading,
         color: 'FFFFFF',
         bold: true,
         align: 'center',
@@ -918,7 +934,7 @@ async function buildPresentation(
         w: tierCardWidth,
         h: 0.3,
         fontSize: 10,
-        fontFace: 'Calibri',
+        fontFace: template.fonts.body,
         color: 'FFFFFF',
         align: 'center',
       })
@@ -932,7 +948,7 @@ async function buildPresentation(
           w: tierCardWidth - 0.2,
           h: 0.3,
           fontSize: 9,
-          fontFace: 'Calibri',
+          fontFace: template.fonts.body,
           color: 'FFFFFF',
         })
       })
@@ -945,7 +961,7 @@ async function buildPresentation(
           w: tierCardWidth,
           h: 0.3,
           fontSize: 9,
-          fontFace: 'Calibri',
+          fontFace: template.fonts.body,
           color: 'FFFFFF',
           italic: true,
           align: 'center',
@@ -965,8 +981,8 @@ async function buildPresentation(
     w: '90%',
     h: 0.6,
     fontSize: 32,
-    fontFace: 'Arial',
-    color: colors.primary.replace('#', ''),
+    fontFace: template.fonts.heading,
+    color: template.primary.replace('#', ''),
     bold: true,
   })
 
@@ -975,7 +991,7 @@ async function buildPresentation(
     y: 0.95,
     w: 2,
     h: 0,
-    line: { color: colors.accent.replace('#', ''), width: 3 },
+    line: { color: template.accent.replace('#', ''), width: 3 },
   })
 
   // Arguments
@@ -988,7 +1004,7 @@ async function buildPresentation(
       y: y,
       w: 0.6,
       h: 0.6,
-      fill: { color: colors.accent.replace('#', '') },
+      fill: { color: template.accent.replace('#', '') },
     })
     slide7.addText(`${index + 1}`, {
       x: 0.5,
@@ -996,7 +1012,7 @@ async function buildPresentation(
       w: 0.6,
       h: 0.4,
       fontSize: 18,
-      fontFace: 'Arial',
+      fontFace: template.fonts.heading,
       color: 'FFFFFF',
       bold: true,
       align: 'center',
@@ -1009,8 +1025,8 @@ async function buildPresentation(
       w: '70%',
       h: 0.4,
       fontSize: 18,
-      fontFace: 'Arial',
-      color: colors.primary.replace('#', ''),
+      fontFace: template.fonts.heading,
+      color: template.primary.replace('#', ''),
       bold: true,
     })
 
@@ -1021,8 +1037,8 @@ async function buildPresentation(
       w: '70%',
       h: 0.6,
       fontSize: 14,
-      fontFace: 'Calibri',
-      color: colors.text.replace('#', ''),
+      fontFace: template.fonts.body,
+      color: template.text.replace('#', ''),
     })
   })
 
@@ -1037,7 +1053,7 @@ async function buildPresentation(
     y: 0,
     w: '100%',
     h: '100%',
-    fill: { color: colors.primary.replace('#', '') },
+    fill: { color: template.primary.replace('#', '') },
   })
 
   // Call to action
@@ -1047,7 +1063,7 @@ async function buildPresentation(
     w: '90%',
     h: 1,
     fontSize: 32,
-    fontFace: 'Arial',
+    fontFace: template.fonts.heading,
     color: 'FFFFFF',
     bold: true,
     align: 'center',
@@ -1060,8 +1076,8 @@ async function buildPresentation(
     w: '90%',
     h: 0.5,
     fontSize: 20,
-    fontFace: 'Calibri',
-    color: colors.accent.replace('#', ''),
+    fontFace: template.fonts.body,
+    color: template.accent.replace('#', ''),
     align: 'center',
   })
 
@@ -1078,7 +1094,7 @@ async function buildPresentation(
     w: '90%',
     h: 0.5,
     fontSize: 14,
-    fontFace: 'Calibri',
+    fontFace: template.fonts.body,
     color: 'FFFFFF',
     align: 'center',
   })
@@ -1090,7 +1106,7 @@ async function buildPresentation(
       y: 4.5,
       w: 3,
       h: 0.5,
-      fill: { color: colors.accent.replace('#', '') },
+      fill: { color: template.accent.replace('#', '') },
       rectRadius: 0.1,
     })
     slide8.addText(projectData.approval_number, {
@@ -1099,7 +1115,7 @@ async function buildPresentation(
       w: 3,
       h: 0.5,
       fontSize: 14,
-      fontFace: 'Calibri',
+      fontFace: template.fonts.body,
       color: 'FFFFFF',
       align: 'center',
       valign: 'middle',

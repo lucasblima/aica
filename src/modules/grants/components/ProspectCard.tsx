@@ -52,9 +52,11 @@ export function ProspectCard({
 
     if (diffDays === 0) return 'Hoje';
     if (diffDays === 1) return 'Ontem';
-    if (diffDays < 7) return `${diffDays} dias atras`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} sem atras`;
-    return `${Math.floor(diffDays / 30)} mes(es) atras`;
+    if (diffDays < 7) return `${diffDays} dia${diffDays !== 1 ? 's' : ''} atras`;
+    const weeks = Math.floor(diffDays / 7);
+    if (diffDays < 30) return `${weeks} semana${weeks !== 1 ? 's' : ''} atras`;
+    const months = Math.floor(diffDays / 30);
+    return `${months} ${months === 1 ? 'mes' : 'meses'} atras`;
   };
 
   const getActivityIcon = (type: ActivityType | null) => {

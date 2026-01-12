@@ -497,8 +497,9 @@ export function SponsorDeckGenerator({
       setCurrentStep('generating');
       generateDeck(selectedTemplate, options).then(() => {
         setCurrentStep('done');
-      }).catch(() => {
-        // Error is handled in the hook, we just need to go back to options
+      }).catch((err) => {
+        // Error is handled in the hook, but log for debugging
+        console.error('[SponsorDeckGenerator] Generation failed:', err);
         setCurrentStep('options');
       });
     } else if (currentStepIndex < DECK_WIZARD_STEPS.length - 3) {
