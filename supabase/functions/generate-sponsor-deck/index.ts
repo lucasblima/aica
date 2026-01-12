@@ -34,6 +34,35 @@ if (!GEMINI_API_KEY) {
 }
 
 // =============================================================================
+// SLIDE LAYOUT CONSTANTS
+// Extracted to avoid magic numbers throughout the code
+// =============================================================================
+
+const SLIDE_LAYOUT = {
+  // Margins and padding
+  margin: 0.5,
+  contentWidth: '90%',
+
+  // Title positions
+  title: { x: 0.5, y: 0.3, h: 0.8, fontSize: 32 },
+  subtitle: { x: 0.5, y: 1.1, h: 0.5, fontSize: 18 },
+
+  // Content positions
+  content: { x: 0.5, y: 1.8, fontSize: 14 },
+
+  // Cover slide
+  cover: {
+    title: { y: 2, h: 1, fontSize: 44 },
+    tagline: { y: 3, h: 0.8, fontSize: 24 },
+    organization: { y: 4.5, h: 0.5, fontSize: 18 },
+    badge: { x: 3.5, y: 5.2, w: 3, h: 0.4, fontSize: 12 },
+  },
+
+  // Table defaults
+  table: { x: 0.5, y: 2, w: 9 },
+} as const
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -255,6 +284,7 @@ IMPORTANTE:
     return {
       content: fallbackContent,
       usageMetadata: null,
+      usedFallback: true, // Flag to indicate fallback was used
     }
   }
 }
