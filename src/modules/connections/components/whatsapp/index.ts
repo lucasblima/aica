@@ -7,3 +7,4 @@
 export { ConnectionStatusCard } from './ConnectionStatusCard';
 export { ConsentManager } from './ConsentManager';
 export { EmotionalThermometer } from './EmotionalThermometer';
+export { PairingCodeDisplay } from './PairingCodeDisplay';
