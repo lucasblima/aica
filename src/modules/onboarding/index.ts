@@ -1,28 +1,49 @@
 /**
  * Onboarding Module Exports
+ * Sprint: "Ordem ao Caos do WhatsApp"
  *
- * NOTE: This module is now primarily used for landing pages.
- * The interactive onboarding flow has been replaced with:
- * - Organic tours via TourProvider (Phases 1-2)
- * - Optional trails via /profile/trails (Phase 3)
- * - Direct app access (Phase 4)
- *
- * Remaining components:
+ * Public API for the onboarding module including:
  * - Landing page (entry point for new users)
+ * - WhatsApp onboarding flow (pairing, sync, ready)
  * - TrailSelectionFlow (optional contextual trails)
  */
 
-// Landing Page - Official consolidated version (from V4)
+// =============================================================================
+// LANDING PAGE
+// =============================================================================
 export { LandingPage } from './components/landing';
 export {
-  HeroSection,
-  SocialProof,
-  Features,
-  HowItWorks,
-  CTASection,
-  MinimalFooter,
-  CaptacaoSection,
+  ChaosPanel,
+  OrderPanel,
+  ProcessingPipeline,
 } from './components/landing';
 
-// Optional Contextual Trails (accessible from /profile/trails)
+// =============================================================================
+// WHATSAPP ONBOARDING FLOW
+// =============================================================================
+export { OnboardingFlow } from './components/OnboardingFlow';
+export { PairingCodeDisplay } from './components/PairingCodeDisplay';
+export { WelcomeStep } from './components/WelcomeStep';
+export { WhatsAppPairingStep } from './components/WhatsAppPairingStep';
+export { ContactsSyncStep } from './components/ContactsSyncStep';
+export { ReadyStep } from './components/ReadyStep';
+
+// =============================================================================
+// HOOKS
+// =============================================================================
+export { useOnboarding } from './hooks/useOnboarding';
+
+// =============================================================================
+// SERVICES
+// =============================================================================
+export * from './services/onboardingService';
+
+// =============================================================================
+// TYPES
+// =============================================================================
+export * from './types';
+
+// =============================================================================
+// LEGACY - Optional Contextual Trails
+// =============================================================================
 export { default as TrailSelectionFlow } from './components/TrailSelectionFlow';
