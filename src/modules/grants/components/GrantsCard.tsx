@@ -81,7 +81,10 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
           </div>
         </div>
         <button
-          onClick={onCreateProject}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreateProject();
+          }}
           className="ceramic-concave w-7 h-7 flex items-center justify-center hover:scale-95 transition-transform flex-shrink-0"
           title="Novo Projeto"
         >
