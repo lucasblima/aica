@@ -11,6 +11,7 @@ import { EditalDetailView } from '../components/EditalDetailView';
 import { ProjectBriefingView } from '../components/ProjectBriefingView';
 import { ProposalGeneratorView } from '../components/ProposalGeneratorView';
 import { EditalProjectWorkspace } from '../components/workspace/EditalProjectWorkspace';
+import { ApprovedProjectModal } from '../components/ApprovedProjectModal';
 import {
   createOpportunity,
   listOpportunities,
@@ -60,6 +61,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   // View state
   const [currentView, setCurrentView] = useState<ModuleView>('dashboard');
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [isApprovedProjectModalOpen, setIsApprovedProjectModalOpen] = useState(false);
 
   // Data state
   const [opportunities, setOpportunities] = useState<OpportunityWithCount[]>([]);
@@ -724,6 +726,12 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
               >
                 + Novo Edital
               </button>
+              <button
+                onClick={() => setIsApprovedProjectModalOpen(true)}
+                className="ceramic-card px-6 py-3 rounded-full font-bold text-green-600 hover:scale-105 transition-transform"
+              >
+                + Projeto Aprovado
+              </button>
             </div>
 
             {/* Active Opportunities List */}
@@ -905,6 +913,18 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         isOpen={isSetupModalOpen}
         onClose={() => setIsSetupModalOpen(false)}
         onSave={handleCreateOpportunity}
+      />
+
+      {/* Approved Project Modal */}
+      <ApprovedProjectModal
+        isOpen={isApprovedProjectModalOpen}
+        onClose={() => setIsApprovedProjectModalOpen(false)}
+        onSave={async (data) => {
+          // TODO: Implementar criação de projeto aprovado via lei de incentivo
+          console.log('[ApprovedProjectModal] Dados do projeto:', data);
+          // Por enquanto apenas fecha o modal e recarrega dados
+          loadOpportunitiesData();
+        }}
       />
     </>
   );

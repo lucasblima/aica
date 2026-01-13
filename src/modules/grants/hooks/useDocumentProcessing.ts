@@ -21,6 +21,8 @@ import {
   type LinkSuggestion,
   type ProcessingStatus,
   type ProcessDocumentResponse,
+  type SemanticSearchResult,
+  type SemanticSearchOptions,
 } from '../services/documentProcessingService';
 
 // =============================================================================
@@ -248,63 +250,77 @@ export function useDocument(documentId: string | null) {
 }
 
 // =============================================================================
-// useDocumentSearch - Semantic search
+// useDocumentSearch - Semantic search (RAG)
+// Issue #116 - Embeddings and Semantic Search
 // =============================================================================
 
-export function useDocumentSearch() {
-  const [results, setResults] = useState<
-    Array<{
-      document_id: string;
-      chunk_text: string;
-      similarity: number;
-      document_type: string | null;
-    }>
-  >([]);
+export interface UseDocumentSearchOptions {
+  defaultLimit?: number;
+  defaultThreshold?: number;
+  organizationId?: string;
+  projectId?: string;
+}
+
+export function useDocumentSearch(options: UseDocumentSearchOptions = {}) {
+  const [results, setResults] = useState<SemanticSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [lastQuery, setLastQuery] = useState<string>('');
+  const [searchTimeMs, setSearchTimeMs] = useState<number | null>(null);
 
   const search = useCallback(
-    async (
-      query: string,
-      options?: {
-        organizationId?: string;
-        projectId?: string;
-        limit?: number;
-        threshold?: number;
-      }
-    ) => {
+    async (query: string, searchOptions?: SemanticSearchOptions) => {
       if (!query.trim()) {
         setResults([]);
+        setLastQuery('');
+        setSearchTimeMs(null);
         return [];
       }
 
       setIsSearching(true);
       setError(null);
+      setLastQuery(query);
+
+      const startTime = performance.now();
 
       try {
-        const data = await searchDocuments(query, options);
+        const mergedOptions: SemanticSearchOptions = {
+          organizationId: searchOptions?.organizationId || options.organizationId,
+          projectId: searchOptions?.projectId || options.projectId,
+          limit: searchOptions?.limit || options.defaultLimit || 10,
+          threshold: searchOptions?.threshold || options.defaultThreshold || 0.7,
+          documentTypes: searchOptions?.documentTypes,
+        };
+
+        const data = await searchDocuments(query, mergedOptions);
         setResults(data);
+        setSearchTimeMs(Math.round(performance.now() - startTime));
         return data;
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Erro na busca');
         setError(error);
+        setSearchTimeMs(Math.round(performance.now() - startTime));
         throw error;
       } finally {
         setIsSearching(false);
       }
     },
-    []
+    [options.organizationId, options.projectId, options.defaultLimit, options.defaultThreshold]
   );
 
   const clear = useCallback(() => {
     setResults([]);
     setError(null);
+    setLastQuery('');
+    setSearchTimeMs(null);
   }, []);
 
   return {
     results,
     isSearching,
     error,
+    lastQuery,
+    searchTimeMs,
     search,
     clear,
   };
