@@ -1,14 +1,24 @@
 /**
- * Evolution API Webhook Handler - Enhanced Version
- * Issue #12: WhatsApp Integration via Evolution API
+ * Evolution API Webhook Handler
+ *
+ * Receives and processes webhook events from Evolution API for WhatsApp integration.
+ * Multi-instance architecture: routes events to correct user based on instance name.
+ *
+ * Endpoint: POST /functions/v1/webhook-evolution
+ * Headers: x-evolution-signature (HMAC-SHA256)
+ * Events: CONNECTION_UPDATE, MESSAGES_UPSERT, QRCODE_UPDATED, CONTACTS_UPDATE
  *
  * Features:
  * - HMAC-SHA256 signature validation
  * - Message storage with deduplication
- * - Consent keyword processing (LGPD)
+ * - Consent keyword processing (LGPD compliance)
  * - Media download to Supabase Storage
  * - Queue integration with pgmq for async processing
- * - Rate limiting protection
+ * - Rate limiting protection (100 req/min per IP)
+ *
+ * Epic: #122 - Multi-Instance WhatsApp Architecture
+ * Issue: #126 - Update webhook-evolution for multi-instance
+ * Original: Issue #12 - WhatsApp Integration via Evolution API
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
