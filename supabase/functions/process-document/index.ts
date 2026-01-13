@@ -42,16 +42,138 @@ const CHUNK_OVERLAP_TOKENS = parseInt(Deno.env.get('CHUNK_OVERLAP_TOKENS') || '5
 const MAX_RETRIES = parseInt(Deno.env.get('MAX_RETRIES') || '3', 10)
 const RETRY_BASE_DELAY_MS = parseInt(Deno.env.get('RETRY_BASE_DELAY_MS') || '1000', 10)
 
-// Document type detection keywords
-const DOCUMENT_TYPE_KEYWORDS = {
-  projeto_rouanet: ['PRONAC', 'Lei 8.313', 'MinC', 'Ministerio da Cultura', 'Rouanet', 'Lei de Incentivo Federal'],
-  projeto_proac: ['ProAC', 'ICMS', 'Secretaria de Cultura', 'Estado de Sao Paulo', 'Lei Paulista'],
-  estatuto_social: ['CNPJ', 'Estatuto Social', 'Objeto Social', 'Diretoria', 'Assembleia Geral', 'Art.'],
-  relatorio_execucao: ['Prestacao de Contas', 'Relatorio de Execucao', 'Despesas', 'Receitas', 'Saldo'],
-  apresentacao_institucional: ['Missao', 'Visao', 'Valores', 'Quem Somos', 'Nossa Historia', 'Sobre'],
-  orcamento: ['Planilha', 'Orcamento', 'Custos', 'Valor Unitario', 'Total', 'R$'],
-  contrato: ['Clausula', 'Contratante', 'Contratado', 'Objeto do Contrato', 'Vigencia', 'Assinatura'],
+// Document type detection keywords with weights (higher = stronger indicator)
+const DOCUMENT_TYPE_KEYWORDS: Record<string, Array<{ keyword: string; weight: number }>> = {
+  projeto_rouanet: [
+    { keyword: 'PRONAC', weight: 3 },
+    { keyword: 'Lei 8.313', weight: 3 },
+    { keyword: 'Lei Rouanet', weight: 3 },
+    { keyword: 'MinC', weight: 2 },
+    { keyword: 'Ministerio da Cultura', weight: 2 },
+    { keyword: 'Rouanet', weight: 2 },
+    { keyword: 'Lei de Incentivo Federal', weight: 2 },
+    { keyword: 'incentivo cultural federal', weight: 2 },
+    { keyword: 'mecenato', weight: 1.5 },
+    { keyword: 'captacao de recursos', weight: 1 },
+  ],
+  proac: [
+    { keyword: 'ProAC', weight: 3 },
+    { keyword: 'ICMS', weight: 2 },
+    { keyword: 'Secretaria de Cultura', weight: 1.5 },
+    { keyword: 'Estado de Sao Paulo', weight: 1 },
+    { keyword: 'Lei Paulista', weight: 2 },
+    { keyword: 'incentivo paulista', weight: 2 },
+    { keyword: 'Programa de Acao Cultural', weight: 3 },
+  ],
+  estatuto: [
+    { keyword: 'Estatuto Social', weight: 3 },
+    { keyword: 'Objeto Social', weight: 2 },
+    { keyword: 'Assembleia Geral', weight: 2 },
+    { keyword: 'Diretoria', weight: 1.5 },
+    { keyword: 'Art.', weight: 0.5 },
+    { keyword: 'Capitulo', weight: 0.5 },
+    { keyword: 'personalidade juridica', weight: 1.5 },
+    { keyword: 'associacao civil', weight: 2 },
+    { keyword: 'sem fins lucrativos', weight: 1.5 },
+    { keyword: 'conselho fiscal', weight: 1.5 },
+    { keyword: 'constituicao', weight: 1 },
+  ],
+  relatorio: [
+    { keyword: 'Prestacao de Contas', weight: 3 },
+    { keyword: 'Relatorio de Execucao', weight: 3 },
+    { keyword: 'Despesas', weight: 1 },
+    { keyword: 'Receitas', weight: 1 },
+    { keyword: 'Saldo', weight: 1 },
+    { keyword: 'execucao financeira', weight: 2 },
+    { keyword: 'comprovante', weight: 1 },
+    { keyword: 'nota fiscal', weight: 1.5 },
+    { keyword: 'extrato bancario', weight: 1.5 },
+  ],
+  apresentacao: [
+    { keyword: 'Missao', weight: 2 },
+    { keyword: 'Visao', weight: 2 },
+    { keyword: 'Valores', weight: 1.5 },
+    { keyword: 'Quem Somos', weight: 2 },
+    { keyword: 'Nossa Historia', weight: 2 },
+    { keyword: 'Sobre Nos', weight: 2 },
+    { keyword: 'institucional', weight: 1 },
+    { keyword: 'portfolio', weight: 1.5 },
+    { keyword: 'curriculo', weight: 1.5 },
+  ],
+  contrato: [
+    { keyword: 'Clausula', weight: 2 },
+    { keyword: 'Contratante', weight: 2.5 },
+    { keyword: 'Contratado', weight: 2.5 },
+    { keyword: 'Objeto do Contrato', weight: 3 },
+    { keyword: 'Vigencia', weight: 1.5 },
+    { keyword: 'Assinatura', weight: 1 },
+    { keyword: 'multa', weight: 1 },
+    { keyword: 'rescisao', weight: 1.5 },
+    { keyword: 'obrigacoes', weight: 1 },
+    { keyword: 'termo de compromisso', weight: 2 },
+  ],
+  edital: [
+    { keyword: 'Edital', weight: 3 },
+    { keyword: 'Chamada Publica', weight: 3 },
+    { keyword: 'inscricoes', weight: 1.5 },
+    { keyword: 'selecao', weight: 1.5 },
+    { keyword: 'criterios de avaliacao', weight: 2 },
+    { keyword: 'habilitacao', weight: 1.5 },
+    { keyword: 'documentos exigidos', weight: 2 },
+    { keyword: 'prazo para inscricao', weight: 2 },
+    { keyword: 'resultado', weight: 1 },
+    { keyword: 'recursos', weight: 1 },
+  ],
+  proposta: [
+    { keyword: 'Proposta', weight: 2 },
+    { keyword: 'Projeto Cultural', weight: 2.5 },
+    { keyword: 'Plano de Trabalho', weight: 2.5 },
+    { keyword: 'Cronograma', weight: 1.5 },
+    { keyword: 'Objetivos', weight: 1 },
+    { keyword: 'Justificativa', weight: 1.5 },
+    { keyword: 'Metodologia', weight: 1.5 },
+    { keyword: 'Metas', weight: 1.5 },
+    { keyword: 'Contrapartida', weight: 2 },
+    { keyword: 'democratizacao', weight: 1.5 },
+  ],
+  ata: [
+    { keyword: 'Ata', weight: 2.5 },
+    { keyword: 'Reuniao', weight: 1.5 },
+    { keyword: 'Assembleia', weight: 2 },
+    { keyword: 'deliberacao', weight: 2 },
+    { keyword: 'presentes', weight: 1 },
+    { keyword: 'pauta', weight: 1.5 },
+    { keyword: 'aprovado por unanimidade', weight: 2.5 },
+    { keyword: 'votacao', weight: 1.5 },
+    { keyword: 'encerramento', weight: 1 },
+  ],
+  outros: [],
 }
+
+// =============================================================================
+// ENTITY EXTRACTION PATTERNS (REGEX)
+// =============================================================================
+
+// CNPJ: XX.XXX.XXX/XXXX-XX
+const CNPJ_REGEX = /\d{2}[.\s]?\d{3}[.\s]?\d{3}[/\s]?\d{4}[-\s]?\d{2}/g
+
+// PRONAC: XXXXXX or XX-XXXX or YYXXXX (year prefix)
+const PRONAC_REGEX = /(?:PRONAC|N[°º]?\.?\s*)?\b(\d{2}[-.]?\d{4,5}|\d{6})\b/gi
+
+// ProAC number patterns
+const PROAC_REGEX = /(?:ProAC|PROAC|N[°º]?\.?\s*)?\b(\d{4,6}[/-]?\d{0,4})\b/gi
+
+// Currency values: R$ X.XXX,XX or R$ X,XX
+const CURRENCY_REGEX = /R\$\s*[\d.,]+(?:\d{2})?/g
+
+// Date patterns: DD/MM/YYYY, DD-MM-YYYY, DD de MMMM de YYYY
+const DATE_REGEX = /\b(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}|\d{1,2}\s+de\s+\w+\s+de\s+\d{4})\b/gi
+
+// Email pattern
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
+
+// Phone patterns: (XX) XXXXX-XXXX, XX XXXXX-XXXX, +55 XX XXXXX-XXXX
+const PHONE_REGEX = /(?:\+55\s?)?(?:\(?\d{2}\)?[\s.-]?)?\d{4,5}[-.\s]?\d{4}/g
 
 // =============================================================================
 // TYPES
@@ -89,6 +211,53 @@ interface ClassificationResult {
   detected_type: string
   confidence: number
   extracted_fields: Record<string, unknown>
+  keyword_scores?: Record<string, number>
+}
+
+interface ExtractedEntities {
+  cnpj: ExtractedCNPJ[]
+  pronac: ExtractedPRONAC[]
+  proac: ExtractedProAC[]
+  organizations: string[]
+  projects: string[]
+  dates: ExtractedDate[]
+  currency_values: ExtractedCurrency[]
+  emails: string[]
+  phones: string[]
+  people: string[]
+}
+
+interface ExtractedCNPJ {
+  raw: string
+  normalized: string
+  valid: boolean
+  context?: string
+}
+
+interface ExtractedPRONAC {
+  raw: string
+  normalized: string
+  year?: number
+  context?: string
+}
+
+interface ExtractedProAC {
+  raw: string
+  normalized: string
+  context?: string
+}
+
+interface ExtractedDate {
+  raw: string
+  parsed?: string // ISO format
+  type?: 'deadline' | 'start' | 'end' | 'submission' | 'other'
+  context?: string
+}
+
+interface ExtractedCurrency {
+  raw: string
+  value: number
+  context?: string
 }
 
 interface TextChunk {
