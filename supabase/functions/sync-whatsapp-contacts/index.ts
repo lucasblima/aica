@@ -1,16 +1,26 @@
 /**
- * Sync WhatsApp Contacts Edge Function - VERSÃO CORRIGIDA
+ * Sync WhatsApp Contacts Edge Function
  *
- * CORREÇÃO APLICADA: Usa dois clientes Supabase
- * - supabaseAuth (ANON_KEY) para validar token do usuário
- * - supabase (SERVICE_ROLE_KEY) para operações no banco
+ * Synchronizes contacts from Evolution API to contact_network table.
+ * Multi-instance architecture: uses user's own WhatsApp instance.
  *
- * Deploy via Dashboard:
- * 1. Copie TODO este arquivo
- * 2. Acesse: https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions/sync-whatsapp-contacts
- * 3. Clique em "Edit function"
- * 4. Cole este código completo
- * 5. Clique "Deploy"
+ * Endpoint: POST /functions/v1/sync-whatsapp-contacts
+ * Body: { instanceName?: string } (optional, defaults to user's session)
+ * Response: {
+ *   success: boolean,
+ *   contactsSynced: number,
+ *   contactsSkipped: number,
+ *   errors: string[],
+ *   syncLogId?: string,
+ *   durationMs: number
+ * }
+ *
+ * Authentication:
+ * - Uses ANON_KEY client to validate user token
+ * - Uses SERVICE_ROLE_KEY client for database operations
+ *
+ * Epic: #122 - Multi-Instance WhatsApp Architecture
+ * Issue: #127 - Update sync-whatsapp-contacts for multi-instance
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -44,7 +54,7 @@ interface WhatsAppContact {
 }
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
+  // 1. Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -52,17 +62,18 @@ serve(async (req: Request) => {
   const startTime = Date.now()
 
   try {
-    // Validate authentication
+    // 2. Validate authentication
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('Missing authorization header')
     }
 
+    // 3. Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Create client with ANON_KEY for user authentication
+    // Auth client (to validate user token)
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: false,
@@ -70,7 +81,6 @@ serve(async (req: Request) => {
       },
     })
 
-    // Get user from auth token (using ANON_KEY client)
     const token = authHeader.replace('Bearer ', '')
     const {
       data: { user },
@@ -82,7 +92,7 @@ serve(async (req: Request) => {
       throw new Error('Invalid authentication token')
     }
 
-    // Create client with SERVICE_ROLE_KEY for database operations
+    // Service client (for database operations bypassing RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -92,15 +102,51 @@ serve(async (req: Request) => {
 
     console.log(`[sync-whatsapp-contacts] Starting sync for user ${user.id}`)
 
-    // Parse request body
-    const body: SyncRequest = await req.json()
-    const instanceName = body.instanceName || Deno.env.get('EVOLUTION_INSTANCE_NAME')
+    // 4. Parse request body
+    let body: SyncRequest = {}
+    try {
+      body = await req.json()
+    } catch {
+      // Empty body is OK - will use user's session
+    }
+
+    // 5. Get user's WhatsApp session (multi-instance architecture)
+    let instanceName = body.instanceName
+    let sessionId: string | null = null
+
+    if (!instanceName) {
+      const { data: session, error: sessionError } = await supabase
+        .from('whatsapp_sessions')
+        .select('id, instance_name, status')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (sessionError || !session) {
+        console.error('[sync-whatsapp-contacts] No session found:', sessionError?.message)
+        throw new Error('No WhatsApp session found. Please connect your WhatsApp first.')
+      }
+
+      if (session.status !== 'connected') {
+        throw new Error(`WhatsApp not connected. Current status: ${session.status}`)
+      }
+
+      instanceName = session.instance_name
+      sessionId = session.id
+      console.log(`[sync-whatsapp-contacts] Using session instance: ${instanceName}`)
+    }
+
+    // Legacy fallback for backward compatibility
+    if (!instanceName) {
+      instanceName = Deno.env.get('EVOLUTION_INSTANCE_NAME')
+    }
 
     if (!instanceName) {
       throw new Error('Instance name is required')
     }
 
-    // Create sync log entry
+    // 6. Create sync log entry
     const { data: syncLog, error: syncLogError } = await supabase
       .from('whatsapp_sync_logs')
       .insert({
@@ -120,13 +166,12 @@ serve(async (req: Request) => {
 
     console.log(`[sync-whatsapp-contacts] Sync log created: ${syncLog.id}`)
 
-    // Fetch contacts from Evolution API
+    // 7. Fetch contacts from Evolution API
     console.log(`[sync-whatsapp-contacts] Fetching contacts from Evolution API...`)
     const whatsappContacts = await fetchAllContacts(instanceName)
-
     console.log(`[sync-whatsapp-contacts] Found ${whatsappContacts.length} WhatsApp contacts`)
 
-    // Sync contacts to database
+    // 8. Sync contacts to database
     let contactsSynced = 0
     let contactsSkipped = 0
     const errors: string[] = []
@@ -145,7 +190,7 @@ serve(async (req: Request) => {
 
     const durationMs = Date.now() - startTime
 
-    // Update sync log
+    // 9. Update sync log with results
     await supabase
       .from('whatsapp_sync_logs')
       .update({
@@ -161,8 +206,18 @@ serve(async (req: Request) => {
       })
       .eq('id', syncLog.id)
 
+    // 10. Update session sync stats (multi-instance architecture)
+    if (sessionId) {
+      await supabase.rpc('update_session_sync_stats', {
+        p_session_id: sessionId,
+        p_contacts_count: contactsSynced,
+      })
+      console.log(`[sync-whatsapp-contacts] Session sync stats updated: ${contactsSynced} contacts`)
+    }
+
     console.log(`[sync-whatsapp-contacts] Sync completed: ${contactsSynced} synced, ${contactsSkipped} skipped`)
 
+    // 11. Return success response
     const result: ContactSyncResult = {
       success: true,
       contactsSynced,
@@ -199,6 +254,10 @@ serve(async (req: Request) => {
 
 /**
  * Fetch all contacts from Evolution API
+ *
+ * @param instanceName - The Evolution API instance name
+ * @returns Array of WhatsApp contacts
+ * @throws Error if API credentials are not configured or API call fails
  */
 async function fetchAllContacts(instanceName: string): Promise<WhatsAppContact[]> {
   const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL')
@@ -243,9 +302,17 @@ async function fetchAllContacts(instanceName: string): Promise<WhatsAppContact[]
 
 /**
  * Sync individual contact to contact_network table
+ *
+ * Upserts contact data using whatsapp_id as conflict key.
+ * Handles both individual contacts and groups.
+ *
+ * @param supabase - Supabase client with SERVICE_ROLE_KEY
+ * @param userId - The authenticated user's ID
+ * @param contact - WhatsApp contact data from Evolution API
+ * @throws Error if upsert fails
  */
 async function syncContactToDatabase(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   userId: string,
   contact: WhatsAppContact
 ): Promise<void> {

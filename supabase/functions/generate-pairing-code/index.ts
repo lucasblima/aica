@@ -1,13 +1,15 @@
 /**
  * Generate Pairing Code Edge Function
  *
- * Gera código de pareamento para vincular WhatsApp via Evolution API.
+ * Generates a pairing code for the user's WhatsApp instance.
+ * Multi-instance architecture: each user has their own Evolution API instance.
  *
  * Endpoint: POST /functions/v1/generate-pairing-code
- * Body: { phoneNumber: string, instanceName?: string }
+ * Body: { phoneNumber: string }
  * Response: { success: boolean, code?: string, expiresAt?: string, error?: string }
  *
- * Issue: #87
+ * Epic: #122 - Multi-Instance WhatsApp Architecture
+ * Issue: #125 - Update generate-pairing-code for multi-instance
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -20,15 +22,18 @@ const corsHeaders = {
 
 interface PairingCodeRequest {
   phoneNumber: string
-  instanceName?: string
 }
 
 interface PairingCodeResponse {
   success: boolean
   code?: string
   expiresAt?: string
+  sessionId?: string
+  instanceName?: string
   error?: string
 }
+
+const PAIRING_CODE_EXPIRATION_SECONDS = 60
 
 serve(async (req: Request) => {
   // 1. Handle CORS preflight
@@ -37,21 +42,28 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 2. Validar autenticação
+    // 2. Validate authentication
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('Missing authorization header')
     }
 
-    // 3. Validar usuário com Supabase
+    // 3. Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
       throw new Error('Supabase environment variables are not configured')
     }
 
+    // Auth client (to validate user)
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+
+    // Service client (for database operations)
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
@@ -62,26 +74,38 @@ serve(async (req: Request) => {
       throw new Error('Invalid authentication token')
     }
 
-    // 4. Parse request body
+    // 4. Parse and validate request
     const body: PairingCodeRequest = await req.json()
 
     if (!body.phoneNumber) {
       throw new Error('Phone number is required')
     }
 
-    // 5. Validar formato do telefone (remover caracteres não numéricos)
+    // Clean phone number (remove non-digits)
     const cleanPhone = body.phoneNumber.replace(/\D/g, '')
     if (!/^\d{10,15}$/.test(cleanPhone)) {
       throw new Error('Invalid phone number format. Use format: 5511987654321')
     }
 
-    // 6. Obter instanceName
-    const instanceName = body.instanceName || Deno.env.get('EVOLUTION_INSTANCE_NAME')
-    if (!instanceName) {
-      throw new Error('Instance name is required')
+    console.log(`[generate-pairing-code] User ${user.id} requesting pairing code for ${cleanPhone}`)
+
+    // 5. Get or create user's WhatsApp session
+    const { data: session, error: sessionError } = await supabaseService
+      .rpc('get_or_create_whatsapp_session', { p_user_id: user.id })
+
+    if (sessionError || !session) {
+      console.error('[generate-pairing-code] Session error:', sessionError)
+      throw new Error('Failed to get/create WhatsApp session')
     }
 
-    // 7. Chamar Evolution API
+    console.log(`[generate-pairing-code] Session: ${session.instance_name}, status: ${session.status}`)
+
+    // 6. If already connected, return error
+    if (session.status === 'connected') {
+      throw new Error('WhatsApp already connected. Disconnect first to reconnect.')
+    }
+
+    // 7. Get Evolution API credentials
     const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL')
     const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY')
 
@@ -89,10 +113,9 @@ serve(async (req: Request) => {
       throw new Error('Evolution API credentials not configured')
     }
 
-    console.log(`[generate-pairing-code] Generating code for ${cleanPhone} on instance ${instanceName}`)
-
-    const evolutionResponse = await fetch(
-      `${evolutionApiUrl}/instance/connect/${instanceName}`,
+    // 8. Ensure instance exists in Evolution API
+    const checkResponse = await fetch(
+      `${evolutionApiUrl}/instance/fetchInstances?instanceName=${session.instance_name}`,
       {
         method: 'GET',
         headers: {
@@ -102,46 +125,122 @@ serve(async (req: Request) => {
       }
     )
 
-    if (!evolutionResponse.ok) {
-      const errorText = await evolutionResponse.text()
-      console.error(`[generate-pairing-code] Evolution API error: ${evolutionResponse.status} - ${errorText}`)
+    const existingInstances = await checkResponse.json()
+    const instanceExists = Array.isArray(existingInstances) &&
+      existingInstances.some((i: { name: string }) => i.name === session.instance_name)
 
-      // Tratar erros específicos
-      if (evolutionResponse.status === 404) {
-        throw new Error('Instance not found. Please check instance configuration.')
-      }
-      if (evolutionResponse.status === 400) {
-        throw new Error('Invalid request to Evolution API')
+    if (!instanceExists) {
+      console.log(`[generate-pairing-code] Creating instance: ${session.instance_name}`)
+
+      // Create the instance
+      const createResponse = await fetch(
+        `${evolutionApiUrl}/instance/create`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': evolutionApiKey,
+          },
+          body: JSON.stringify({
+            instanceName: session.instance_name,
+            qrcode: false,
+            integration: 'WHATSAPP-BAILEYS',
+          }),
+        }
+      )
+
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text()
+        console.error(`[generate-pairing-code] Failed to create instance: ${errorText}`)
+        throw new Error('Failed to create WhatsApp instance')
       }
 
-      throw new Error(`Evolution API error: ${evolutionResponse.status}`)
+      // Configure webhook
+      const webhookUrl = `${supabaseUrl}/functions/v1/webhook-evolution`
+      try {
+        await fetch(
+          `${evolutionApiUrl}/webhook/set/${session.instance_name}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': evolutionApiKey,
+            },
+            body: JSON.stringify({
+              url: webhookUrl,
+              webhook_by_events: true,
+              webhook_base64: false,
+              events: ['CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'QRCODE_UPDATED', 'CONTACTS_UPDATE'],
+            }),
+          }
+        )
+      } catch (e) {
+        console.warn('[generate-pairing-code] Webhook config failed:', e)
+      }
     }
 
-    const evolutionData = await evolutionResponse.json()
+    // 9. Generate pairing code via Evolution API
+    console.log(`[generate-pairing-code] Requesting code for instance: ${session.instance_name}`)
 
-    // 8. Extrair código de pareamento
-    // Evolution API retorna { pairingCode: "XXXX-XXXX" } ou { code: "..." }
-    const pairingCode = evolutionData.pairingCode || evolutionData.code
+    const pairingResponse = await fetch(
+      `${evolutionApiUrl}/instance/connect/${session.instance_name}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': evolutionApiKey,
+        },
+      }
+    )
+
+    if (!pairingResponse.ok) {
+      const errorText = await pairingResponse.text()
+      console.error(`[generate-pairing-code] Evolution API error: ${pairingResponse.status} - ${errorText}`)
+
+      if (pairingResponse.status === 404) {
+        throw new Error('Instance not found. Please try again.')
+      }
+
+      throw new Error(`Evolution API error: ${pairingResponse.status}`)
+    }
+
+    const pairingData = await pairingResponse.json()
+
+    // 10. Extract pairing code
+    const pairingCode = pairingData.pairingCode || pairingData.code
 
     if (!pairingCode) {
-      // Se não tiver código, pode ser que já esteja conectado
-      if (evolutionData.instance?.state === 'open') {
+      // Check if already connected
+      if (pairingData.instance?.state === 'open') {
+        // Update session status
+        await supabaseService.rpc('update_session_phone_info', {
+          p_session_id: session.id,
+          p_phone_number: cleanPhone,
+        })
         throw new Error('Instance already connected. No pairing code needed.')
       }
       throw new Error('Failed to generate pairing code. Please try again.')
     }
 
-    // 9. Formatar resposta
-    const EXPIRATION_IN_SECONDS = 60
-    const expiresAt = new Date(Date.now() + EXPIRATION_IN_SECONDS * 1000).toISOString()
+    // 11. Record pairing attempt in database
+    const expiresAt = new Date(Date.now() + PAIRING_CODE_EXPIRATION_SECONDS * 1000).toISOString()
 
+    await supabaseService.rpc('record_pairing_attempt', {
+      p_session_id: session.id,
+      p_pairing_code: pairingCode,
+      p_expires_at: expiresAt,
+    })
+
+    // 12. Format and return response
     const response: PairingCodeResponse = {
       success: true,
       code: pairingCode,
       expiresAt,
+      sessionId: session.id,
+      instanceName: session.instance_name,
     }
 
-    console.log(`[generate-pairing-code] Code generated successfully for user ${user.id}`)
+    console.log(`[generate-pairing-code] Code generated for user ${user.id}, instance: ${session.instance_name}`)
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
