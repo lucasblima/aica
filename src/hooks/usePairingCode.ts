@@ -82,10 +82,15 @@ export function usePairingCode(): UsePairingCodeReturn {
     setError(null)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      // Refresh session to ensure we have a valid token
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
 
-      if (!session?.access_token) {
-        throw new Error('Usuário não autenticado')
+      if (sessionError || !session?.access_token) {
+        // Fallback to getSession if refresh fails
+        const { data: { session: fallbackSession } } = await supabase.auth.getSession()
+        if (!fallbackSession?.access_token) {
+          throw new Error('Usuário não autenticado. Por favor, faça login novamente.')
+        }
       }
 
       const response = await supabase.functions.invoke('generate-pairing-code', {
