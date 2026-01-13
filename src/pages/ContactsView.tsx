@@ -1,16 +1,23 @@
 /**
  * ContactsView Page
- * Dedicated page for viewing and managing contacts with Google Contacts sync
+ * Dedicated page for viewing and managing contacts with WhatsApp sync
+ *
+ * Shows WhatsApp pairing flow if user hasn't connected their WhatsApp yet.
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Users, Search, MessageCircle } from 'lucide-react';
+import { RefreshCw, Users, Search, MessageCircle, Loader2 } from 'lucide-react';
 import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
 import { supabase } from '../services/supabaseClient';
 import type { ContactNetwork } from '../types/memoryTypes';
+
+// WhatsApp Onboarding Components
+import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep';
+import { getWhatsAppSession } from '../modules/onboarding/services/onboardingService';
+import type { WhatsAppSession } from '../modules/onboarding/types';
 
 export function ContactsView() {
   const { user } = useAuth();
@@ -25,13 +32,38 @@ export function ContactsView() {
   const [error, setError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<{ lastSyncAt: string | null; contactCount: number } | null>(null);
 
+  // WhatsApp session state
+  const [whatsappSession, setWhatsappSession] = useState<WhatsAppSession | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  // Check WhatsApp session status
+  useEffect(() => {
+    const checkWhatsAppSession = async () => {
+      if (!user?.id) {
+        setIsCheckingSession(false);
+        return;
+      }
+
+      try {
+        const session = await getWhatsAppSession(user.id);
+        setWhatsappSession(session);
+      } catch (err) {
+        console.error('[ContactsView] Error checking WhatsApp session:', err);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkWhatsAppSession();
+  }, [user?.id]);
+
   // Load contacts from database
   useEffect(() => {
-    if (user) {
+    if (user && whatsappSession?.status === 'connected') {
       loadContacts();
       loadSyncStatus();
     }
-  }, [user]);
+  }, [user, whatsappSession?.status]);
 
   const loadContacts = async () => {
     setIsLoading(true);
@@ -126,6 +158,20 @@ export function ContactsView() {
     setIsDetailModalOpen(false);
   };
 
+  // Handle WhatsApp pairing success
+  const handlePairingSuccess = async () => {
+    // Refresh session status
+    if (user?.id) {
+      const session = await getWhatsAppSession(user.id);
+      setWhatsappSession(session);
+      // Load contacts after successful pairing
+      if (session?.status === 'connected') {
+        loadContacts();
+        loadSyncStatus();
+      }
+    }
+  };
+
   const cardVariants = {
     container: {
       hidden: { opacity: 0 },
@@ -141,6 +187,41 @@ export function ContactsView() {
       visible: { opacity: 1, y: 0 },
     },
   };
+
+  // Show loading while checking session
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-ceramic-base flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
+          <p className="text-ceramic-text-secondary">Verificando conexão WhatsApp...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show pairing flow if no connected session
+  const needsPairing = !whatsappSession || whatsappSession.status !== 'connected';
+
+  if (needsPairing) {
+    return (
+      <div className="min-h-screen bg-ceramic-base">
+        <HeaderGlobal
+          title="Conectar WhatsApp"
+          subtitle="Configure sua conexão"
+          userEmail={user?.email}
+        />
+        <main className="p-6 max-w-2xl mx-auto">
+          <div className="ceramic-card p-8">
+            <WhatsAppPairingStep
+              onSuccess={handlePairingSuccess}
+              onBack={() => window.history.back()}
+            />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-ceramic-base">
