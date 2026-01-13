@@ -6,6 +6,8 @@
  *
  * @example
  * const { currentStep, goToNextStep, complete } = useOnboarding()
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { useState, useCallback, useEffect } from 'react';

@@ -1,7 +1,6 @@
 /**
  * PairingCodeDisplay Component
  * Sprint: "Ordem ao Caos do WhatsApp"
- * Issue: #86
  *
  * Displays the WhatsApp pairing code with:
  * - XXXX-XXXX format
@@ -9,6 +8,9 @@
  * - Copy to clipboard functionality
  * - Regenerate button
  * - Step-by-step instructions
+ *
+ * @see Issue #86 - PairingCodeDisplay Component
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { useCallback, useEffect } from 'react';

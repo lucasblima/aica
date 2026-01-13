@@ -6,6 +6,8 @@
  * - Landing page (entry point for new users)
  * - WhatsApp onboarding flow (pairing, sync, ready)
  * - TrailSelectionFlow (optional contextual trails)
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 // =============================================================================

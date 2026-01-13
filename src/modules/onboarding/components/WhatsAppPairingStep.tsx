@@ -6,6 +6,8 @@
  * - Phone number input with country code
  * - Pairing code display with countdown
  * - Connection status polling
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { useState, useCallback } from 'react';

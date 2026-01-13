@@ -6,6 +6,8 @@
  * - Animated sync progress
  * - Contacts and groups counters
  * - Privacy notice
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { useState, useEffect } from 'react';

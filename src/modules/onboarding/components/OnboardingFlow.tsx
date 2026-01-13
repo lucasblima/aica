@@ -6,6 +6,8 @@
  * - Progress indicator
  * - Step transitions with animations
  * - State management via useOnboarding hook
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { useState, useMemo } from 'react';

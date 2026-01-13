@@ -1,6 +1,8 @@
 /**
  * Onboarding Module Types
  * Sprint: "Ordem ao Caos do WhatsApp"
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 // =============================================================================

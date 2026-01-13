@@ -7,6 +7,8 @@
  * - Onboarding step tracking
  * - WhatsApp session management
  * - Credits management
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { supabase } from '@/services/supabaseClient';

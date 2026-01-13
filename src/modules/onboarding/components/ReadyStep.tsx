@@ -6,6 +6,8 @@
  * - Success celebration
  * - Stats display (credits, contacts, groups)
  * - CTA to start using the app
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { motion } from 'framer-motion';

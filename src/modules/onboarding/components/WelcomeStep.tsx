@@ -7,6 +7,8 @@
  * - Feature highlights
  * - Credits bonus display
  * - CTA to connect WhatsApp
+ *
+ * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { motion } from 'framer-motion';
