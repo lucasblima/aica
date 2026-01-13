@@ -189,7 +189,10 @@ async function executeSemanticSearch(
   let results = (data as SearchResult[]) || []
 
   // Apply additional filters that couldn't be done in SQL
-  // (organization_id and project_id filtering)
+  // (organization_id, project_id, and document_types filtering)
+  // TODO: For better performance at scale, consider adding these filters directly
+  // to the search_documents_by_embedding() RPC function via database migration.
+  // This would avoid fetching extra results that get filtered out in application code.
   if (options.organizationId || options.projectId || options.documentTypes?.length) {
     // Fetch full document details for filtering
     const documentIds = [...new Set(results.map((r) => r.document_id))]
@@ -458,6 +461,8 @@ Deno.serve(async (req) => {
 
     const searchRequest = validateRequest(body)
 
+    // NOTE: console.log statements are intentional for Supabase Edge Functions.
+    // These logs appear in Supabase Dashboard → Functions → Logs for production monitoring.
     console.log(`[search-documents] User ${user.id} searching: "${searchRequest.query.substring(0, 50)}..."`)
 
     // Generate embedding for query

@@ -480,11 +480,22 @@ export function DocumentSearchBox({
 // HELPERS
 // =============================================================================
 
+/**
+ * Similarity color constants for better maintainability
+ * Colors are used to visually indicate match quality in search results
+ */
+const SIMILARITY_COLORS = {
+  HIGH: 'rgba(34, 197, 94, 0.8)',        // Green - ≥90% similarity
+  MEDIUM_HIGH: 'rgba(124, 58, 237, 0.8)', // Purple - ≥80% similarity
+  MEDIUM: 'rgba(59, 130, 246, 0.8)',      // Blue - ≥70% similarity
+  LOW: 'rgba(156, 163, 175, 0.8)',        // Gray - <70% similarity
+};
+
 function getSimilarityColor(similarity: number): string {
-  if (similarity >= 0.9) return 'rgba(34, 197, 94, 0.8)'; // Green
-  if (similarity >= 0.8) return 'rgba(124, 58, 237, 0.8)'; // Purple
-  if (similarity >= 0.7) return 'rgba(59, 130, 246, 0.8)'; // Blue
-  return 'rgba(156, 163, 175, 0.8)'; // Gray
+  if (similarity >= 0.9) return SIMILARITY_COLORS.HIGH;
+  if (similarity >= 0.8) return SIMILARITY_COLORS.MEDIUM_HIGH;
+  if (similarity >= 0.7) return SIMILARITY_COLORS.MEDIUM;
+  return SIMILARITY_COLORS.LOW;
 }
 
 export default DocumentSearchBox;
