@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
-import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from '../services/supabaseService';
+import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, getUserProfile } from '../services/supabaseService';
 import { generateMissingDailyReports } from '../services/dailyReportService';
 import { NotificationContainer, LoadingScreen, BottomNav } from '../components';
 import { ViewState } from '../../types';
@@ -44,6 +44,7 @@ const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ def
 
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
+const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
 
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
@@ -129,6 +130,7 @@ export function AppRouter() {
    const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
 
    // Onboarding State
+   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
 
    // Sync view state with URL location
    useEffect(() => {
@@ -195,13 +197,44 @@ export function AppRouter() {
       processGoogleOAuth();
    }, [isAuthenticated]);
 
-   // Navigate from landing to home when auth completes
+   // Check onboarding status and redirect if needed
+   useEffect(() => {
+      if (!isAuthenticated || !user?.id) {
+         setNeedsOnboarding(null);
+         return;
+      }
+
+      const checkOnboardingStatus = async () => {
+         try {
+            const profile = await getUserProfile(user.id);
+            const needsOnboard = !profile?.onboarding_completed_at;
+            setNeedsOnboarding(needsOnboard);
+
+            // Redirect to onboarding if needed and not already there
+            if (needsOnboard && location.pathname !== '/onboarding' && location.pathname !== '/landing') {
+               console.log('[AppRouter] User needs onboarding, redirecting...');
+               navigate('/onboarding', { replace: true });
+            }
+         } catch (error) {
+            console.error('[AppRouter] Error checking onboarding status:', error);
+            setNeedsOnboarding(false); // Assume completed on error
+         }
+      };
+
+      checkOnboardingStatus();
+   }, [isAuthenticated, user?.id, location.pathname, navigate]);
+
+   // Navigate from landing to home or onboarding when auth completes
    useEffect(() => {
       if (isAuthenticated && location.pathname === '/landing') {
-         console.log('[AppRouter] Auth completed, navigating from /landing to /');
-         navigate('/', { replace: true });
+         console.log('[AppRouter] Auth completed, checking onboarding status...');
+         if (needsOnboarding === false) {
+            navigate('/', { replace: true });
+         } else if (needsOnboarding === true) {
+            navigate('/onboarding', { replace: true });
+         }
       }
-   }, [isAuthenticated, location.pathname, navigate]);
+   }, [isAuthenticated, location.pathname, navigate, needsOnboarding]);
 
    useEffect(() => {
       if (!isAuthenticated) return;
@@ -513,6 +546,14 @@ export function AppRouter() {
                path="/terms"
                element={<TermsOfServicePage />}
             />
+
+            {/* Onboarding Flow - Protected, for new users */}
+            {isAuthenticated && (
+               <Route
+                  path="/onboarding"
+                  element={<OnboardingFlow />}
+               />
+            )}
 
             {/* Connections Module Routes - Protected */}
             {isAuthenticated && (
