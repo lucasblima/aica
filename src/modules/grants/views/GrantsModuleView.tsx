@@ -919,8 +919,10 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       <ApprovedProjectModal
         isOpen={isApprovedProjectModalOpen}
         onClose={() => setIsApprovedProjectModalOpen(false)}
-        onSuccess={() => {
-          setIsApprovedProjectModalOpen(false);
+        onSave={async (data) => {
+          // TODO: Implementar criação de projeto aprovado via lei de incentivo
+          console.log('[ApprovedProjectModal] Dados do projeto:', data);
+          // Por enquanto apenas fecha o modal e recarrega dados
           loadOpportunitiesData();
         }}
       />

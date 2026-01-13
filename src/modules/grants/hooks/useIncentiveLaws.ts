@@ -26,8 +26,8 @@ import type {
   IncentiveLawSortOptions,
   IncentiveLawSummary,
   IncentiveLawCardData,
-  toCardData,
 } from '../types/incentiveLaws';
+import { toCardData, toSummary } from '../types/incentiveLaws';
 
 // =============================================================================
 // HOOK OPTIONS
@@ -172,14 +172,11 @@ export function useIncentiveLaws(
 
   // Derived data: cards
   const cardsData = useMemo((): IncentiveLawCardData[] => {
-    // Import utility from types
-    const { toCardData } = require('../types/incentiveLaws');
     return laws.map(law => toCardData(law));
   }, [laws]);
 
   // Derived data: summaries
   const summaries = useMemo((): IncentiveLawSummary[] => {
-    const { toSummary } = require('../types/incentiveLaws');
     return laws.map(law => toSummary(law));
   }, [laws]);
 
