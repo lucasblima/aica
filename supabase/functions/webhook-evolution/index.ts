@@ -322,32 +322,83 @@ function getMediaInfo(message: MessageData['message']): {
 // ============================================================================
 
 /**
- * Find user by Evolution instance or phone number
+ * Find user by Evolution instance name
+ * Multi-instance architecture: checks whatsapp_sessions table first
+ * Epic #122: Multi-Instance WhatsApp Architecture
+ * Issue #126: Update webhook-evolution for multi-instance
  */
 async function findUserByInstance(supabase: ReturnType<typeof createClient>, instanceName: string): Promise<string | null> {
-  // Try to find user by instance name pattern (userId_instanceName)
-  const parts = instanceName.split('_')
-  if (parts.length > 1) {
-    const possibleUserId = parts[0]
-    // Validate UUID format
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(possibleUserId)) {
-      const { data } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', possibleUserId)
-        .single()
-      if (data) return data.id
+  // 1. Check whatsapp_sessions table (primary source for multi-instance)
+  const { data: session } = await supabase
+    .from('whatsapp_sessions')
+    .select('user_id')
+    .eq('instance_name', instanceName)
+    .single()
+
+  if (session?.user_id) {
+    log('DEBUG', 'User found via whatsapp_sessions', { instanceName, userId: session.user_id })
+    return session.user_id
+  }
+
+  // 2. Try to extract user_id from instance name pattern (aica_<user_id_prefix>)
+  // Format: aica_a1b2c3d4 where a1b2c3d4 is first 8 chars of user_id
+  if (instanceName.startsWith('aica_')) {
+    const prefix = instanceName.replace('aica_', '').split('_')[0]
+    if (prefix.length >= 8) {
+      const { data: sessions } = await supabase
+        .from('whatsapp_sessions')
+        .select('user_id')
+        .ilike('instance_name', `aica_${prefix}%`)
+        .limit(1)
+
+      if (sessions && sessions.length > 0) {
+        log('DEBUG', 'User found via instance prefix', { instanceName, userId: sessions[0].user_id })
+        return sessions[0].user_id
+      }
     }
   }
 
-  // Fallback: look for user with this instance_name in users table
-  const { data } = await supabase
+  // 3. Legacy fallback: check users table for instance_name column
+  const { data: legacyUser } = await supabase
     .from('users')
     .select('id')
     .eq('instance_name', instanceName)
     .single()
 
-  return data?.id || null
+  if (legacyUser?.id) {
+    log('DEBUG', 'User found via legacy users.instance_name', { instanceName })
+    return legacyUser.id
+  }
+
+  // 4. Check if this is the shared/legacy instance
+  const sharedInstanceName = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
+  if (instanceName === sharedInstanceName) {
+    log('WARN', 'Event from shared instance, cannot determine user', { instanceName })
+    // For shared instance, we cannot determine the user without additional context
+    return null
+  }
+
+  return null
+}
+
+/**
+ * Get session by instance name
+ */
+async function getSessionByInstance(
+  supabase: ReturnType<typeof createClient>,
+  instanceName: string
+): Promise<{ id: string; user_id: string; status: string } | null> {
+  const { data, error } = await supabase
+    .from('whatsapp_sessions')
+    .select('id, user_id, status')
+    .eq('instance_name', instanceName)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data
 }
 
 /**
@@ -581,6 +632,8 @@ async function handleMessagesUpsert(
 
 /**
  * Handle connection.update event
+ * Multi-instance: updates whatsapp_sessions table
+ * Epic #122: Multi-Instance WhatsApp Architecture
  */
 async function handleConnectionUpdate(
   supabase: ReturnType<typeof createClient>,
@@ -591,32 +644,71 @@ async function handleConnectionUpdate(
 
   log('INFO', 'Connection update', { instanceName, state, statusReason })
 
+  // Get session for this instance
+  const session = await getSessionByInstance(supabase, instanceName)
+
+  if (session) {
+    // Update whatsapp_sessions table (multi-instance architecture)
+    let newStatus: string
+    let errorMessage: string | null = null
+
+    switch (state) {
+      case 'open':
+        newStatus = 'connected'
+        break
+      case 'close':
+        newStatus = 'disconnected'
+        break
+      case 'connecting':
+        newStatus = 'connecting'
+        break
+      default:
+        newStatus = session.status // Keep current status
+    }
+
+    // Check for ban/error conditions
+    if (statusReason === 401 || statusReason === 403) {
+      newStatus = 'banned'
+      errorMessage = `Connection rejected with status ${statusReason}`
+    } else if (statusReason && statusReason >= 400) {
+      newStatus = 'error'
+      errorMessage = `Connection error: status ${statusReason}`
+    }
+
+    // Use the database function for proper status updates
+    const { error } = await supabase.rpc('update_whatsapp_session_status', {
+      p_session_id: session.id,
+      p_status: newStatus,
+      p_error_message: errorMessage,
+      p_error_code: statusReason ? `STATUS_${statusReason}` : null,
+    })
+
+    if (error) {
+      log('ERROR', 'Failed to update session status', error)
+    } else {
+      log('INFO', 'Session status updated', { instanceName, oldStatus: session.status, newStatus })
+    }
+  }
+
+  // Legacy: Also try to update users table for backward compatibility
   const userId = await findUserByInstance(supabase, instanceName)
-  if (!userId) {
-    log('WARN', 'No user found for connection update', { instanceName })
-    return
-  }
+  if (userId) {
+    const updates: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    }
 
-  // Update user's WhatsApp connection status
-  const updates: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  }
+    if (state === 'open') {
+      updates.whatsapp_connected = true
+      updates.whatsapp_connected_at = new Date().toISOString()
+    } else if (state === 'close' || state === 'connecting') {
+      updates.whatsapp_connected = false
+      updates.whatsapp_disconnected_at = new Date().toISOString()
+    }
 
-  if (state === 'open') {
-    updates.whatsapp_connected = true
-    updates.whatsapp_connected_at = new Date().toISOString()
-  } else if (state === 'close' || state === 'connecting') {
-    updates.whatsapp_connected = false
-    updates.whatsapp_disconnected_at = new Date().toISOString()
-  }
-
-  const { error } = await supabase
-    .from('users')
-    .update(updates)
-    .eq('id', userId)
-
-  if (error) {
-    log('ERROR', 'Failed to update user connection status', error)
+    await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', userId)
   }
 }
 

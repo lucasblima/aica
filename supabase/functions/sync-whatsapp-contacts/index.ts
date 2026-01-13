@@ -92,9 +92,47 @@ serve(async (req: Request) => {
 
     console.log(`[sync-whatsapp-contacts] Starting sync for user ${user.id}`)
 
-    // Parse request body
-    const body: SyncRequest = await req.json()
-    const instanceName = body.instanceName || Deno.env.get('EVOLUTION_INSTANCE_NAME')
+    // Parse request body (instanceName is now optional, we get it from whatsapp_sessions)
+    let body: SyncRequest = {}
+    try {
+      body = await req.json()
+    } catch {
+      // Empty body is OK
+    }
+
+    // Get user's WhatsApp session (multi-instance architecture)
+    // Epic #122: Multi-Instance WhatsApp Architecture
+    // Issue #127: Update sync-whatsapp-contacts for multi-instance
+    let instanceName = body.instanceName
+    let sessionId: string | null = null
+
+    if (!instanceName) {
+      const { data: session, error: sessionError } = await supabase
+        .from('whatsapp_sessions')
+        .select('id, instance_name, status')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (sessionError || !session) {
+        console.error('[sync-whatsapp-contacts] No session found:', sessionError?.message)
+        throw new Error('No WhatsApp session found. Please connect your WhatsApp first.')
+      }
+
+      if (session.status !== 'connected') {
+        throw new Error(`WhatsApp not connected. Current status: ${session.status}`)
+      }
+
+      instanceName = session.instance_name
+      sessionId = session.id
+      console.log(`[sync-whatsapp-contacts] Using session instance: ${instanceName}`)
+    }
+
+    if (!instanceName) {
+      // Fallback to legacy shared instance (for backward compatibility)
+      instanceName = Deno.env.get('EVOLUTION_INSTANCE_NAME')
+    }
 
     if (!instanceName) {
       throw new Error('Instance name is required')
@@ -160,6 +198,15 @@ serve(async (req: Request) => {
         },
       })
       .eq('id', syncLog.id)
+
+    // Update session sync stats (multi-instance architecture)
+    if (sessionId) {
+      await supabase.rpc('update_session_sync_stats', {
+        p_session_id: sessionId,
+        p_contacts_count: contactsSynced,
+      })
+      console.log(`[sync-whatsapp-contacts] Session sync stats updated: ${contactsSynced} contacts`)
+    }
 
     console.log(`[sync-whatsapp-contacts] Sync completed: ${contactsSynced} synced, ${contactsSkipped} skipped`)
 
