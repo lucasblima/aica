@@ -359,29 +359,47 @@ export async function rejectLinkSuggestion(suggestionId: string): Promise<void> 
 // SEMANTIC SEARCH
 // =============================================================================
 
+export interface SemanticSearchResult {
+  document_id: string;
+  chunk_id: string;
+  chunk_text: string;
+  similarity: number;
+  document_name: string;
+  detected_type: string | null;
+  organization_id?: string;
+  project_id?: string;
+}
+
+export interface SemanticSearchOptions {
+  organizationId?: string;
+  projectId?: string;
+  limit?: number;
+  threshold?: number;
+  documentTypes?: string[];
+}
+
+export interface SemanticSearchResponse {
+  success: boolean;
+  results: SemanticSearchResult[];
+  query: string;
+  total_results: number;
+  search_time_ms: number;
+  embedding_model: string;
+  error?: string;
+}
+
 /**
- * Search documents by semantic similarity
+ * Search documents by semantic similarity using RAG
+ * Issue #116 - Embeddings and Semantic Search
  */
 export async function searchDocuments(
   query: string,
-  options?: {
-    organizationId?: string;
-    projectId?: string;
-    limit?: number;
-    threshold?: number;
-  }
-): Promise<
-  Array<{
-    document_id: string;
-    chunk_text: string;
-    similarity: number;
-    document_type: string | null;
-  }>
-> {
+  options?: SemanticSearchOptions
+): Promise<SemanticSearchResult[]> {
   const { data: session } = await supabase.auth.getSession();
   if (!session.session) throw new Error('Sessão não encontrada');
 
-  // Call Edge Function for semantic search (needs embedding generation)
+  // Call Edge Function for semantic search with embedding generation
   const response = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-documents`,
     {
@@ -394,19 +412,25 @@ export async function searchDocuments(
         query,
         organization_id: options?.organizationId,
         project_id: options?.projectId,
-        limit: options?.limit || 5,
+        limit: options?.limit || 10,
         threshold: options?.threshold || 0.7,
+        document_types: options?.documentTypes,
       }),
     }
   );
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = await response.json().catch(() => ({})) as { error?: string };
     throw new Error(errorData.error || 'Erro na busca semântica');
   }
 
-  const data = await response.json();
-  return data.results || [];
+  const data = (await response.json()) as SemanticSearchResponse;
+
+  if (!data.success) {
+    throw new Error(data.error || 'Erro na busca semântica');
+  }
+
+  return data.results;
 }
 
 // =============================================================================
