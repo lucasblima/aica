@@ -233,26 +233,24 @@ export function useDocumentLinks(
 } {
   const baseSuggestions = useLinkSuggestions(documentId, options);
 
-  // Confirm all high-confidence suggestions
+  // Confirm all high-confidence suggestions (parallel processing for performance)
   const confirmAllHighConfidence = useCallback(
     async (threshold = 0.8) => {
       const highConfidence = baseSuggestions.suggestions.filter((s) => s.confidence >= threshold);
-
-      for (const suggestion of highConfidence) {
-        await baseSuggestions.confirmSuggestion(suggestion.id);
-      }
+      await Promise.all(
+        highConfidence.map((suggestion) => baseSuggestions.confirmSuggestion(suggestion.id))
+      );
     },
     [baseSuggestions]
   );
 
-  // Reject all low-confidence suggestions
+  // Reject all low-confidence suggestions (parallel processing for performance)
   const rejectAllLowConfidence = useCallback(
     async (threshold = 0.4) => {
       const lowConfidence = baseSuggestions.suggestions.filter((s) => s.confidence < threshold);
-
-      for (const suggestion of lowConfidence) {
-        await baseSuggestions.rejectSuggestion(suggestion.id);
-      }
+      await Promise.all(
+        lowConfidence.map((suggestion) => baseSuggestions.rejectSuggestion(suggestion.id))
+      );
     },
     [baseSuggestions]
   );

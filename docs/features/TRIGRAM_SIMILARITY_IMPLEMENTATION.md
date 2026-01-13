@@ -431,8 +431,8 @@ DROP INDEX IF EXISTS idx_grant_projects_project_name_trgm;
 
 ## Related Documentation
 
-- **Migration File:** `C:\Users\lucas\repos\Aica_frontend\Aica_frontend\supabase\migrations\20260114_add_trigram_similarity.sql`
-- **Edge Function:** `C:\Users\lucas\repos\Aica_frontend\Aica_frontend\supabase\functions\process-document\index.ts`
+- **Migration File:** `supabase/migrations/20260114_add_trigram_similarity.sql`
+- **Edge Function:** `supabase/functions/process-document/index.ts`
 - **Issue Tracker:** Epic #113, Issue #115
 - **PostgreSQL pg_trgm Docs:** https://www.postgresql.org/docs/current/pgtrgm.html
 
