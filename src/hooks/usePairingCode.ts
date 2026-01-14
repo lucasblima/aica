@@ -85,16 +85,26 @@ export function usePairingCode(): UsePairingCodeReturn {
       // Refresh session to ensure we have a valid token
       const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
 
-      if (sessionError || !session?.access_token) {
+      let accessToken = session?.access_token
+
+      if (sessionError || !accessToken) {
         // Fallback to getSession if refresh fails
         const { data: { session: fallbackSession } } = await supabase.auth.getSession()
         if (!fallbackSession?.access_token) {
           throw new Error('Usuário não autenticado. Por favor, faça login novamente.')
         }
+        accessToken = fallbackSession.access_token
       }
 
+      // CRITICAL FIX: @supabase/ssr with cookie-based auth does NOT automatically
+      // include user JWT in Edge Function calls. We MUST pass it explicitly.
+      // Without this, the request is sent with only the anon key (role: "anon")
+      // and the Edge Function returns 401 Unauthorized.
       const response = await supabase.functions.invoke('generate-pairing-code', {
         body: { phoneNumber },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       })
 
       if (response.error) {
