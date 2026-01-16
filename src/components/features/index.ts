@@ -39,5 +39,7 @@ export { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from './Next
 // prettier-ignore
 export { default as OnboardingWizard } from './OnboardingWizard';
 export { PomodoroTimer } from './PomodoroTimer';
+export { UnifiedChatInterface } from './UnifiedChatInterface';
+export type { UnifiedChatInterfaceProps, QuickAction } from './UnifiedChatInterface';
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';
 export { WeeklyCalendarView } from './WeeklyCalendarView';
