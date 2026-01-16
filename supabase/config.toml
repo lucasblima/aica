@@ -22,3 +22,19 @@ verify_jwt = true
 # for defense in depth
 [functions.sync-whatsapp-contacts]
 verify_jwt = true
+
+# generate-pairing-code: Generate WhatsApp pairing code via Evolution API
+# Function handles its own JWT validation for better error messages
+# Setting verify_jwt = false allows function to validate and log errors
+[functions.generate-pairing-code]
+verify_jwt = false
+
+# webhook-evolution: Receives webhooks from Evolution API
+# No JWT required - uses API key validation instead
+[functions.webhook-evolution]
+verify_jwt = false
+
+# create-user-instance: Creates Evolution API instance for new users
+# Function handles its own JWT validation
+[functions.create-user-instance]
+verify_jwt = false
