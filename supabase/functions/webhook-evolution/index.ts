@@ -518,6 +518,233 @@ async function processConsentKeyword(
 }
 
 /**
+ * Check for pending actions and process confirmation responses
+ * Issue #100: Organization document registration via WhatsApp
+ */
+async function checkPendingActionResponse(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  contactPhone: string,
+  remoteJid: string,
+  instanceName: string,
+  messageText: string
+): Promise<{ handled: boolean; response?: string }> {
+  try {
+    const normalizedText = messageText.trim().toUpperCase()
+
+    // Check for YES/NO responses
+    const isConfirmation = ['SIM', 'S', 'YES', 'Y', 'OK', 'CONFIRMO', 'PODE', 'CADASTRAR'].some(
+      k => normalizedText === k || normalizedText.startsWith(k + ' ')
+    )
+    const isRejection = ['NAO', 'NÃO', 'N', 'NO', 'CANCELAR', 'IGNORAR', 'DEPOIS'].some(
+      k => normalizedText === k || normalizedText.startsWith(k + ' ')
+    )
+
+    if (!isConfirmation && !isRejection) {
+      return { handled: false }
+    }
+
+    // Find pending action for this user/contact
+    const { data: pendingAction, error: fetchError } = await supabase
+      .from('whatsapp_pending_actions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('contact_phone', contactPhone)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (fetchError || !pendingAction) {
+      return { handled: false }
+    }
+
+    log('INFO', 'Found pending action for response', {
+      actionId: pendingAction.id,
+      actionType: pendingAction.action_type,
+      isConfirmation,
+    })
+
+    if (isRejection) {
+      // User rejected - update status
+      await supabase
+        .from('whatsapp_pending_actions')
+        .update({
+          status: 'rejected',
+          user_response: messageText,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', pendingAction.id)
+
+      return {
+        handled: true,
+        response: '✅ Entendido! O documento foi ignorado. Pode enviar outro documento quando quiser.',
+      }
+    }
+
+    // User confirmed - process the action
+    await supabase
+      .from('whatsapp_pending_actions')
+      .update({
+        status: 'processing',
+        user_response: messageText,
+        confirmed_at: new Date().toISOString(),
+      })
+      .eq('id', pendingAction.id)
+
+    // Process based on action type
+    if (pendingAction.action_type === 'register_organization') {
+      const result = await processOrganizationRegistration(
+        supabase,
+        userId,
+        pendingAction.id,
+        pendingAction.action_payload
+      )
+
+      return {
+        handled: true,
+        response: result.success
+          ? `🎉 *Organizacao cadastrada com sucesso!*\n\n${result.message}\n\nVoce pode completar o cadastro no app.`
+          : `❌ Erro ao cadastrar: ${result.error}`,
+      }
+    }
+
+    return { handled: false }
+  } catch (error) {
+    log('ERROR', 'Pending action check failed', (error as Error).message)
+    return { handled: false }
+  }
+}
+
+/**
+ * Process organization registration from confirmed pending action
+ */
+async function processOrganizationRegistration(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  pendingActionId: string,
+  payload: Record<string, unknown>
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const storageUrl = payload.storage_url as string | undefined
+
+    // If we have a storage URL, call the process-organization-document Edge Function
+    if (storageUrl) {
+      // Get session for auth
+      const { data: { session } } = await supabase.auth.getSession()
+
+      // Call the Edge Function to extract structured fields
+      const { data: processResult, error: processError } = await supabase.functions.invoke(
+        'process-organization-document',
+        {
+          body: {
+            storage_path: storageUrl,
+            document_type: payload.document_type || 'auto',
+          },
+        }
+      )
+
+      if (processError) {
+        throw new Error(`Processing failed: ${processError.message}`)
+      }
+
+      if (processResult?.success && processResult?.fields) {
+        // Create organization with extracted fields
+        const orgData = {
+          user_id: userId,
+          ...processResult.fields,
+          source: 'whatsapp',
+          source_document_url: storageUrl,
+          wizard_status: 'draft',
+        }
+
+        const { data: org, error: insertError } = await supabase
+          .from('organizations')
+          .insert(orgData)
+          .select('id, name, legal_name, document_number')
+          .single()
+
+        if (insertError) {
+          throw new Error(`Insert failed: ${insertError.message}`)
+        }
+
+        // Update pending action with success
+        await supabase
+          .from('whatsapp_pending_actions')
+          .update({
+            status: 'completed',
+            result_data: { organization_id: org.id, ...processResult.fields },
+            processed_at: new Date().toISOString(),
+          })
+          .eq('id', pendingActionId)
+
+        const orgName = org.name || org.legal_name || 'Nova Organizacao'
+        const cnpjFormatted = org.document_number
+          ? org.document_number.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+          : ''
+
+        return {
+          success: true,
+          message: `📌 *${orgName}*${cnpjFormatted ? `\n📄 CNPJ: ${cnpjFormatted}` : ''}`,
+        }
+      }
+    }
+
+    // Fallback: create organization with just the extracted OCR data
+    const orgData = {
+      user_id: userId,
+      document_number: payload.cnpj as string | undefined,
+      legal_name: payload.razao_social as string | undefined,
+      name: payload.nome_fantasia as string | undefined,
+      source: 'whatsapp',
+      wizard_status: 'draft',
+    }
+
+    const { data: org, error: insertError } = await supabase
+      .from('organizations')
+      .insert(orgData)
+      .select('id, name, legal_name, document_number')
+      .single()
+
+    if (insertError) {
+      throw new Error(`Insert failed: ${insertError.message}`)
+    }
+
+    // Update pending action with success
+    await supabase
+      .from('whatsapp_pending_actions')
+      .update({
+        status: 'completed',
+        result_data: { organization_id: org.id },
+        processed_at: new Date().toISOString(),
+      })
+      .eq('id', pendingActionId)
+
+    const orgName = org.name || org.legal_name || 'Nova Organizacao'
+    return {
+      success: true,
+      message: `📌 *${orgName}* (cadastro basico)`,
+    }
+  } catch (error) {
+    const errorMsg = (error as Error).message
+
+    // Update pending action with failure
+    await supabase
+      .from('whatsapp_pending_actions')
+      .update({
+        status: 'failed',
+        error_message: errorMsg,
+        processed_at: new Date().toISOString(),
+      })
+      .eq('id', pendingActionId)
+
+    log('ERROR', 'Organization registration failed', errorMsg)
+    return { success: false, error: errorMsg }
+  }
+}
+
+/**
  * Enqueue message for async processing (AI analysis, transcription, etc.)
  */
 async function enqueueForProcessing(
@@ -624,6 +851,22 @@ async function handleMessagesUpsert(
       // Send automatic response for consent keyword
       await sendWhatsAppMessage(instanceName, messageData.key.remoteJid, consentResult.response)
       return // Don't store consent keywords as regular messages
+    }
+
+    // Check for pending action responses (SIM/NAO confirmation)
+    const pendingActionResult = await checkPendingActionResponse(
+      supabase,
+      userId,
+      contactPhone,
+      messageData.key.remoteJid,
+      instanceName,
+      messageText
+    )
+    if (pendingActionResult.handled) {
+      if (pendingActionResult.response) {
+        await sendWhatsAppMessage(instanceName, messageData.key.remoteJid, pendingActionResult.response)
+      }
+      // Still store the message for record-keeping, but mark as processed
     }
   }
 
