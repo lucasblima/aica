@@ -222,8 +222,6 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         return content && content.trim().length > 0;
       });
 
-      console.log(`[Grants] Transferring ${fieldsToTransfer.length} fields from briefing to responses`);
-
       // Start loading state
       setIsTransferring(true);
       setTransferProgress({ current: 0, total: fieldsToTransfer.length, currentField: '' });
@@ -490,10 +488,6 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       const { allApproved, totalFields, approvedFields } = await checkAllResponsesApproved(selectedProject.id);
 
       if (!allApproved) {
-        console.warn('[GrantsModule] Attempted to complete project without all approvals', {
-          totalFields,
-          approvedFields
-        });
         return;
       }
 
@@ -517,12 +511,6 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         setProjects(projectsData);
       }
 
-      console.log('[GrantsModule] Project submitted:', {
-        status: 'submitted',
-        completion: completionPercentage,
-        totalFields,
-        approvedFields
-      });
     } catch (error) {
       console.error('Error updating project status to submitted:', error);
     }
@@ -933,7 +921,6 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         onClose={() => setIsApprovedProjectModalOpen(false)}
         onSave={async (data) => {
           // TODO: Implementar criação de projeto aprovado via lei de incentivo
-          console.log('[ApprovedProjectModal] Dados do projeto:', data);
           // Por enquanto apenas fecha o modal e recarrega dados
           loadOpportunitiesData();
         }}
@@ -944,8 +931,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
           <div className="w-full max-w-4xl my-8">
             <OrganizationWizard
-              onComplete={(organization) => {
-                console.log('[GrantsModule] Organization saved:', organization);
+              onComplete={() => {
                 setIsOrganizationWizardOpen(false);
                 // TODO: Refresh organizations list when implemented
               }}
