@@ -5,13 +5,14 @@
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical, Building2 } from 'lucide-react';
 import { EditalSetupWizard } from '../components/EditalSetupWizard';
 import { EditalDetailView } from '../components/EditalDetailView';
 import { ProjectBriefingView } from '../components/ProjectBriefingView';
 import { ProposalGeneratorView } from '../components/ProposalGeneratorView';
 import { EditalProjectWorkspace } from '../components/workspace/EditalProjectWorkspace';
 import { ApprovedProjectModal } from '../components/ApprovedProjectModal';
+import { OrganizationWizard } from '../components/wizard';
 import {
   createOpportunity,
   listOpportunities,
@@ -62,6 +63,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const [currentView, setCurrentView] = useState<ModuleView>('dashboard');
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [isApprovedProjectModalOpen, setIsApprovedProjectModalOpen] = useState(false);
+  const [isOrganizationWizardOpen, setIsOrganizationWizardOpen] = useState(false);
 
   // Data state
   const [opportunities, setOpportunities] = useState<OpportunityWithCount[]>([]);
@@ -720,18 +722,28 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsSetupModalOpen(true)}
-                className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform"
-              >
-                + Novo Edital
-              </button>
-              <button
-                onClick={() => setIsApprovedProjectModalOpen(true)}
-                className="ceramic-card px-6 py-3 rounded-full font-bold text-green-600 hover:scale-105 transition-transform"
-              >
-                + Projeto Aprovado
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsOrganizationWizardOpen(true)}
+                  className="ceramic-card px-4 py-3 rounded-full font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
+                  title="Cadastrar Organização"
+                >
+                  <Building2 className="w-5 h-5" />
+                  <span className="hidden sm:inline">Organização</span>
+                </button>
+                <button
+                  onClick={() => setIsSetupModalOpen(true)}
+                  className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform"
+                >
+                  + Novo Edital
+                </button>
+                <button
+                  onClick={() => setIsApprovedProjectModalOpen(true)}
+                  className="ceramic-card px-6 py-3 rounded-full font-bold text-green-600 hover:scale-105 transition-transform"
+                >
+                  + Projeto Aprovado
+                </button>
+              </div>
             </div>
 
             {/* Active Opportunities List */}
@@ -926,6 +938,22 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
           loadOpportunitiesData();
         }}
       />
+
+      {/* Organization Wizard Modal */}
+      {isOrganizationWizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl my-8">
+            <OrganizationWizard
+              onComplete={(organization) => {
+                console.log('[GrantsModule] Organization saved:', organization);
+                setIsOrganizationWizardOpen(false);
+                // TODO: Refresh organizations list when implemented
+              }}
+              onClose={() => setIsOrganizationWizardOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };
