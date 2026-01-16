@@ -114,15 +114,6 @@ export function useOrganizationDocumentUpload(
     // Clear processing state
     setIsProcessing(false);
     setError(null);
-
-    console.log('[useOrganizationDocumentUpload] Fields auto-filled:', {
-      totalExtracted: Object.keys(fields).length,
-      totalApplied: filledFields.length,
-      fields: filledFields.map(f => ({
-        field: f.fieldName,
-        confidence: f.confidence,
-      })),
-    });
   }, [confidenceThreshold]);
 
   /**

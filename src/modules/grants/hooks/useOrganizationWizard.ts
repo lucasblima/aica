@@ -5,7 +5,7 @@
  * State machine for the organization wizard with gamification.
  */
 
-import { useReducer, useCallback, useEffect, useRef } from 'react';
+import React, { useReducer, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import type { Organization } from '../types/organizations';
@@ -293,25 +293,17 @@ export function useOrganizationWizard(
       // Se for uma nova organizacao, criar Venture automaticamente
       if (isNewOrganization && result.data?.id) {
         const newOrgId = result.data.id as string;
-        console.log('[useOrganizationWizard] Creating venture for new organization:', newOrgId);
 
         const ventureResult = await createVentureFromOrganization(newOrgId);
 
-        if (ventureResult.success) {
-          console.log('[useOrganizationWizard] Venture created successfully:', {
-            ventures_entity_id: ventureResult.ventures_entity_id,
-            connection_space_id: ventureResult.connection_space_id,
-          });
-        } else {
-          // Log warning but don't fail the save
-          console.warn('[useOrganizationWizard] Failed to create venture:', ventureResult.error);
-        }
+        // Venture creation failure is non-blocking - operation continues
+        // Error details available in ventureResult.error if needed for debugging
+        void ventureResult;
       }
 
       dispatch({ type: 'SET_SAVED', timestamp: new Date().toISOString() });
       return true;
     } catch (err) {
-      console.error('[useOrganizationWizard] Save error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao salvar');
       dispatch({ type: 'SET_SAVING', isSaving: false });
       return false;
@@ -338,7 +330,6 @@ export function useOrganizationWizard(
         dispatch({ type: 'LOAD_DATA', data });
       }
     } catch (err) {
-      console.error('[useOrganizationWizard] Load error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar');
     } finally {
       setIsLoading(false);
@@ -396,8 +387,5 @@ export function useOrganizationWizard(
     error,
   };
 }
-
-// Need to import React for useState
-import React from 'react';
 
 export default useOrganizationWizard;
