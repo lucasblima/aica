@@ -68,10 +68,18 @@ serve(async (req: Request) => {
     })
 
     const token = authHeader.replace('Bearer ', '')
+    console.log(`[generate-pairing-code] Token received (first 50 chars): ${token.substring(0, 50)}...`)
+
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token)
 
-    if (authError || !user) {
-      throw new Error('Invalid authentication token')
+    if (authError) {
+      console.error(`[generate-pairing-code] Auth error: ${authError.message}`, authError)
+      throw new Error(`Invalid authentication token: ${authError.message}`)
+    }
+
+    if (!user) {
+      console.error('[generate-pairing-code] No user returned from getUser')
+      throw new Error('Invalid authentication token: no user')
     }
 
     // 4. Parse and validate request
