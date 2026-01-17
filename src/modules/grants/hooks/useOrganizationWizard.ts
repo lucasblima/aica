@@ -160,6 +160,7 @@ export interface UseOrganizationWizardReturn {
   // Form
   updateField: (field: keyof Organization, value: unknown) => void;
   awardFieldXp: (field: string, xp: number) => void;
+  completeStep: (stepId: WizardStepId) => void;
 
   // Persistence
   save: () => Promise<boolean>;
@@ -242,6 +243,10 @@ export function useOrganizationWizard(
 
   const awardFieldXp = useCallback((field: string, xp: number) => {
     dispatch({ type: 'AWARD_FIELD_XP', field, xp });
+  }, []);
+
+  const completeStep = useCallback((stepId: WizardStepId) => {
+    dispatch({ type: 'COMPLETE_STEP', stepId });
   }, []);
 
   // =============================================================================
@@ -381,6 +386,7 @@ export function useOrganizationWizard(
     goToPrevStep,
     updateField,
     awardFieldXp,
+    completeStep,
     save,
     load,
     isLoading,

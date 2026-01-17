@@ -17,6 +17,7 @@ export type WizardStepId =
   | 'address'
   | 'context'
   | 'branding'
+  | 'whatsapp'
   | 'review';
 
 export interface WizardStep {
@@ -242,6 +243,15 @@ export const WIZARD_STEPS: WizardStep[] = [
       { name: 'logo_url', label: 'Logo', type: 'image', required: false, xpValue: 25, placeholder: 'Upload do logo' },
       { name: 'cover_image_url', label: 'Imagem de Capa', type: 'image', required: false, xpValue: 15, placeholder: 'Upload da capa' },
     ],
+  },
+  {
+    id: 'whatsapp',
+    title: 'WhatsApp',
+    description: 'Conecte o WhatsApp da organizacao',
+    xpReward: STEP_COMPLETION_BONUS,
+    fields: [],
+    // Note: Este step usa um componente customizado (WhatsAppStepContent)
+    // em vez de campos padrao. O XP e concedido ao conectar com sucesso.
   },
   {
     id: 'review',
