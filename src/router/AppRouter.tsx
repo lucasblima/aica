@@ -446,8 +446,8 @@ export function AppRouter() {
       const isOnDetailRoute = location.pathname.match(/^\/connections\/[^/]+\/[^/]+/);
 
       const shouldShowGlobalNav = !isFocusedMode &&
-                                   !isInFocusedViewState &&
-                                   !isOnDetailRoute;
+         !isInFocusedViewState &&
+         !isOnDetailRoute;
 
       return (
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
@@ -523,102 +523,102 @@ export function AppRouter() {
       <XPNotificationProvider>
          <Suspense fallback={<LoadingScreen message="Carregando..." />}>
             <Routes>
-            {/* Guest Approval Page - Public route for podcast guests */}
-            <Route
-               path="/guest-approval/:episodeId/:approvalToken"
-               element={<GuestApprovalPage />}
-            />
-
-            {/* Landing Page - Official version (consolidated from V4) */}
-            <Route
-               path="/landing"
-               element={<LandingPage />}
-            />
-
-            {/* Privacy Policy - Public route */}
-            <Route
-               path="/privacy"
-               element={<PrivacyPolicyPage />}
-            />
-
-            {/* Terms of Service - Public route */}
-            <Route
-               path="/terms"
-               element={<TermsOfServicePage />}
-            />
-
-            {/* Onboarding Flow - Protected, for new users */}
-            {isAuthenticated && (
+               {/* Guest Approval Page - Public route for podcast guests */}
                <Route
-                  path="/onboarding"
-                  element={<OnboardingFlow />}
+                  path="/guest-approval/:episodeId/:approvalToken"
+                  element={<GuestApprovalPage />}
                />
-            )}
 
-            {/* Connections Module Routes - Protected */}
-            {isAuthenticated && (
-               <>
-                  {/* Global navigation visible on main connections views */}
-                  <Route path="/connections" element={<ConnectionsLayout><ConnectionsPage /></ConnectionsLayout>} />
-                  <Route path="/connections/:archetype" element={<ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout>} />
-
-                  {/* Contextual descent: Detail and section views have back button, no bottom nav */}
-                  <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
-                  <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
-
-                  {/* WhatsApp Analytics View - Emotional Intelligence Dashboard */}
-                  <Route path="/connections/analytics/whatsapp" element={<WhatsAppAnalyticsPage />} />
-               </>
-            )}
-
-            {/* Studio Module Routes - Protected */}
-            {isAuthenticated && (
-               <>
-                  {/* Main Studio route with new StudioMainView */}
-                  <Route
-                     path="/studio"
-                     element={
-                        <StudioProvider>
-                           <StudioMainView />
-                        </StudioProvider>
-                     }
-                  />
-               </>
-            )}
-
-            {/* Contacts Module Routes - Protected */}
-            {isAuthenticated && (
-               <>
-                  <Route
-                     path="/contacts"
-                     element={
-                        <ConnectionsLayout>
-                           <ContactsView />
-                        </ConnectionsLayout>
-                     }
-                  />
-               </>
-            )}
-
-            {/* Diagnostics Page - PUBLIC (needs to be accessible to fix auth issues) */}
-            <Route
-               path="/diagnostics"
-               element={<DiagnosticsPage />}
-            />
-
-            {/* Profile Page - Protected */}
-            {isAuthenticated && (
+               {/* Landing Page - Official version (consolidated from V4) */}
                <Route
-                  path="/profile"
-                  element={<ProfilePage />}
+                  path="/landing"
+                  element={<LandingPage />}
                />
-            )}
 
-            {/* Main App - Authenticated users */}
-            <Route
-               path="/*"
-               element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
-            />
+               {/* Privacy Policy - Public route */}
+               <Route
+                  path="/privacy"
+                  element={<PrivacyPolicyPage />}
+               />
+
+               {/* Terms of Service - Public route */}
+               <Route
+                  path="/terms"
+                  element={<TermsOfServicePage />}
+               />
+
+               {/* Onboarding Flow - Protected, for new users */}
+               {isAuthenticated && (
+                  <Route
+                     path="/onboarding"
+                     element={<OnboardingFlow />}
+                  />
+               )}
+
+               {/* Connections Module Routes - Protected */}
+               {isAuthenticated && (
+                  <>
+                     {/* Global navigation visible on main connections views */}
+                     <Route path="/connections" element={<ConnectionsLayout><ConnectionsPage /></ConnectionsLayout>} />
+                     <Route path="/connections/:archetype" element={<ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout>} />
+
+                     {/* Contextual descent: Detail and section views have back button, no bottom nav */}
+                     <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
+                     <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
+
+                     {/* WhatsApp Analytics View - Emotional Intelligence Dashboard */}
+                     <Route path="/connections/analytics/whatsapp" element={<WhatsAppAnalyticsPage />} />
+                  </>
+               )}
+
+               {/* Studio Module Routes - Protected */}
+               {isAuthenticated && (
+                  <>
+                     {/* Main Studio route with new StudioMainView */}
+                     <Route
+                        path="/studio"
+                        element={
+                           <StudioProvider>
+                              <StudioMainView />
+                           </StudioProvider>
+                        }
+                     />
+                  </>
+               )}
+
+               {/* Contacts Module Routes - Protected */}
+               {isAuthenticated && (
+                  <>
+                     <Route
+                        path="/contacts"
+                        element={
+                           <ConnectionsLayout>
+                              <ContactsView />
+                           </ConnectionsLayout>
+                        }
+                     />
+                  </>
+               )}
+
+               {/* Diagnostics Page - PUBLIC (needs to be accessible to fix auth issues) */}
+               <Route
+                  path="/diagnostics"
+                  element={<DiagnosticsPage />}
+               />
+
+               {/* Profile Page - Protected */}
+               {isAuthenticated && (
+                  <Route
+                     path="/profile"
+                     element={<ProfilePage />}
+                  />
+               )}
+
+               {/* Main App - Authenticated users */}
+               <Route
+                  path="/*"
+                  element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
+               />
             </Routes>
          </Suspense>
       </XPNotificationProvider>

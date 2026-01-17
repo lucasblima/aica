@@ -111,6 +111,7 @@ export function AuthSheet({ isOpen, onClose, onSuccess }: AuthSheetProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="auth-sheet-title"
+            data-testid="auth-sheet"
           >
             {/* Sheet with ceramic styling */}
             <div
