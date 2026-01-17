@@ -65,7 +65,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
   }
 
   return (
-    <div className="achievements-view">
+    <div className="achievements-view" data-testid="achievements-view">
       <div className="achievements-header">
         <h2>Achievements</h2>
         {onClose && <button onClick={onClose} className="close-btn">×</button>}
@@ -108,7 +108,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
       </div>
 
       {/* Achievements Grid */}
-      <div className="achievements-grid">
+      <div className="achievements-grid" data-testid="achievements-grid">
         {filteredBadges.map((badge) => {
           const isUnlocked = unlockedIds.has(badge.id);
           const unlockedAchievement = unlockedAchievements.find(
@@ -122,6 +122,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
               style={{
                 borderColor: isUnlocked ? getRarityColor(badge.rarity) : '#ccc',
               }}
+              data-testid="achievement-badge"
             >
               <div className="achievement-glow"></div>
 

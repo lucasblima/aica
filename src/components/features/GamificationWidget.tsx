@@ -72,10 +72,10 @@ export const GamificationWidget: React.FC<GamificationWidgetProps> = ({
   const xpToNextLevel = getXPToNextLevel(profile.total_xp);
 
   return (
-    <div className={`gamification-widget ${compact ? 'compact' : 'full'}`}>
+    <div className={`gamification-widget ${compact ? 'compact' : 'full'}`} data-testid="gamification-widget">
       {/* Level Section */}
       <div className="level-section">
-        <div className="level-badge">
+        <div className="level-badge" data-testid="level-badge">
           <div className="level-number">{profile.level}</div>
           <div className="level-label">LEVEL</div>
         </div>
@@ -87,16 +87,16 @@ export const GamificationWidget: React.FC<GamificationWidgetProps> = ({
               {formatXP(profile.current_xp)} / {formatXP(getXPToNextLevel(profile.current_xp))}
             </span>
           </div>
-          <div className="xp-bar">
+          <div className="xp-bar" data-testid="xp-progress-bar">
             <div className="xp-fill" style={{ width: `${levelProgress}%` }}></div>
           </div>
-          <div className="total-xp">{formatXP(profile.total_xp)} Total XP</div>
+          <div className="total-xp" data-testid="total-xp">{formatXP(profile.total_xp)} Total XP</div>
         </div>
       </div>
 
       {/* Streak Section */}
       {streak && (
-        <div className={`streak-section ${streak.active ? 'active' : 'inactive'}`}>
+        <div className={`streak-section ${streak.active ? 'active' : 'inactive'}`} data-testid="streak-counter">
           <div className="streak-icon">🔥</div>
           <div className="streak-info">
             <div className="streak-number">{streak.current}</div>

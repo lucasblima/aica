@@ -180,6 +180,8 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
             <button
               onClick={onClose}
               className="ceramic-concave w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform"
+              data-testid="close-wizard-btn"
+              aria-label="Fechar wizard"
             >
               <X className="w-5 h-5 text-ceramic-text-secondary" />
             </button>
