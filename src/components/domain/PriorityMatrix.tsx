@@ -59,6 +59,17 @@ const QUADRANTS: QuadrantConfig[] = [
     }
 ];
 
+// Map quadrant ID to tour target
+const getQuadrantTourTarget = (id: Quadrant): string => {
+    switch (id) {
+        case 'urgent-important': return 'quadrant-1';
+        case 'important': return 'quadrant-2';
+        case 'urgent': return 'quadrant-3';
+        case 'low': return 'quadrant-4';
+        default: return '';
+    }
+};
+
 // Droppable Quadrant Container Component
 const DroppableQuadrant: React.FC<{
     quadrant: QuadrantConfig;
@@ -76,6 +87,7 @@ const DroppableQuadrant: React.FC<{
         <div
             ref={setNodeRef}
             data-container-type="quadrant"
+            data-tour={getQuadrantTourTarget(quadrant.id)}
             className={`ceramic-tray p-4 min-h-[200px] rounded-2xl transition-all ${
                 isOver ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''
             }`}
@@ -391,7 +403,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
 
             {/* Filters Section */}
             {showFilters && (
-                <div className="mb-6 p-4 ceramic-tray rounded-2xl">
+                <div className="mb-6 p-4 ceramic-tray rounded-2xl" data-tour="task-filters">
                     <div className="flex items-center gap-4">
                         <label className="text-sm font-bold text-ceramic-text-secondary">
                             Associação:
