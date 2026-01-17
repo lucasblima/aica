@@ -80,6 +80,10 @@ export interface Organization {
   is_verified: boolean;
   profile_completeness: number;
 
+  // Vinculo com Ventures (Connections module)
+  connection_space_id?: string;
+  ventures_entity_id?: string;
+
   // Timestamps
   created_at: string;
   updated_at: string;

@@ -513,3 +513,30 @@ export {
   ACTIVITY_OUTCOME_COLORS,
   RECURRENCE_TYPE_LABELS,
 } from './prospect';
+
+// ============================================
+// WIZARD (Re-export from wizard.ts)
+// ============================================
+
+export type {
+  WizardStepId,
+  WizardStep,
+  WizardField,
+  CompletionLevel,
+  CompletionLevelConfig,
+  FieldXPCategory,
+  WizardState,
+  WizardProgress,
+  WizardAction,
+} from './wizard';
+
+export {
+  COMPLETION_LEVELS,
+  FIELD_XP_VALUES,
+  STEP_COMPLETION_BONUS,
+  WIZARD_COMPLETION_BONUS,
+  WIZARD_STEPS,
+  getCompletionLevel,
+  calculateCompletionPercentage,
+  calculateTotalXpPotential,
+} from './wizard';

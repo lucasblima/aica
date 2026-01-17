@@ -66,6 +66,17 @@ interface ProcessingResult {
   ocr_text?: string
   storage_url?: string
   error?: string
+  detected_document_type?: string
+  pending_action_id?: string
+}
+
+interface OrganizationDocumentDetection {
+  is_organization_document: boolean
+  document_type: 'cartao_cnpj' | 'estatuto' | 'comprovante_endereco' | 'unknown'
+  confidence: number
+  cnpj?: string
+  razao_social?: string
+  nome_fantasia?: string
 }
 
 // ============================================================================
@@ -251,6 +262,62 @@ Return the extracted text only, preserving the original language and formatting 
 }
 
 /**
+ * Extract text from PDF using Gemini
+ */
+async function extractPdfText(
+  pdfData: Uint8Array
+): Promise<string | null> {
+  try {
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
+
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 4096,
+      },
+    })
+
+    // Convert PDF to base64
+    const base64Pdf = btoa(String.fromCharCode(...pdfData))
+
+    const prompt = `Extract all text content from this PDF document.
+Include:
+- Main text content
+- Tables (formatted as text)
+- Headers and footers
+- Any visible text
+
+Focus on preserving:
+- Document structure
+- Field labels and values
+- Numbers (especially CNPJ, dates, phone numbers)
+
+Return the extracted text only, preserving the original language.
+If the PDF is a Brazilian business document (Cartao CNPJ, Estatuto), extract all fields carefully.`
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: 'application/pdf',
+          data: base64Pdf,
+        },
+      },
+    ])
+
+    const response = await result.response
+    const pdfText = response.text().trim()
+
+    log('INFO', 'PDF text extracted', { length: pdfText.length })
+    return pdfText || null
+  } catch (error) {
+    log('ERROR', 'PDF text extraction error', (error as Error).message)
+    return null
+  }
+}
+
+/**
  * Analyze image sentiment/content for context
  */
 async function analyzeImage(
@@ -296,6 +363,237 @@ Return ONLY valid JSON.`
   } catch (error) {
     log('WARN', 'Image analysis error', (error as Error).message)
     return null
+  }
+}
+
+/**
+ * Detect if OCR text contains organization document (Cartão CNPJ, etc.)
+ */
+function detectOrganizationDocument(ocrText: string): OrganizationDocumentDetection {
+  const text = ocrText.toUpperCase()
+
+  // CNPJ pattern: XX.XXX.XXX/XXXX-XX
+  const cnpjRegex = /(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/
+  const cnpjMatch = ocrText.match(cnpjRegex)
+
+  // Key indicators for Cartão CNPJ
+  const cnpjIndicators = [
+    'CNPJ',
+    'COMPROVANTE DE INSCRICAO',
+    'CADASTRO NACIONAL',
+    'RECEITA FEDERAL',
+    'NATUREZA JURIDICA',
+    'RAZAO SOCIAL',
+    'NOME FANTASIA',
+    'DATA DE ABERTURA',
+    'SITUACAO CADASTRAL',
+    'ATIVIDADE ECONOMICA',
+    'CNAE',
+  ]
+
+  const indicatorMatches = cnpjIndicators.filter(ind => text.includes(ind))
+  const indicatorScore = indicatorMatches.length / cnpjIndicators.length
+
+  // Check for Cartão CNPJ
+  if (cnpjMatch && indicatorScore >= 0.3) {
+    // Extract key fields from OCR text
+    const razaoSocialMatch = ocrText.match(/RAZ[AÃÂÄ]O SOCIAL[:\s]*([^\n]+)/i)
+    const nomeFantasiaMatch = ocrText.match(/NOME FANTASIA[:\s]*([^\n]+)/i)
+
+    return {
+      is_organization_document: true,
+      document_type: 'cartao_cnpj',
+      confidence: Math.min(0.5 + indicatorScore, 1.0),
+      cnpj: cnpjMatch[1].replace(/\D/g, ''),
+      razao_social: razaoSocialMatch?.[1]?.trim(),
+      nome_fantasia: nomeFantasiaMatch?.[1]?.trim(),
+    }
+  }
+
+  // Check for Estatuto (legal document)
+  const estatutoIndicators = ['ESTATUTO', 'CONTRATO SOCIAL', 'ATA DE CONSTITUICAO', 'REGISTRO CIVIL']
+  if (estatutoIndicators.some(ind => text.includes(ind)) && cnpjMatch) {
+    return {
+      is_organization_document: true,
+      document_type: 'estatuto',
+      confidence: 0.6,
+      cnpj: cnpjMatch[1].replace(/\D/g, ''),
+    }
+  }
+
+  // Check for address proof
+  const enderecoIndicators = ['COMPROVANTE DE ENDERECO', 'CONTA DE LUZ', 'CONTA DE AGUA', 'IPTU']
+  if (enderecoIndicators.some(ind => text.includes(ind))) {
+    return {
+      is_organization_document: true,
+      document_type: 'comprovante_endereco',
+      confidence: 0.5,
+    }
+  }
+
+  return {
+    is_organization_document: false,
+    document_type: 'unknown',
+    confidence: 0,
+  }
+}
+
+/**
+ * Create pending action for organization document
+ */
+async function createPendingOrganizationAction(
+  supabase: ReturnType<typeof createClient>,
+  message: MessageRecord,
+  detection: OrganizationDocumentDetection,
+  storageUrl: string | null
+): Promise<string | null> {
+  try {
+    // Get user info for message response
+    const { data: userData } = await supabase
+      .from('profiles')
+      .select('first_name')
+      .eq('id', message.user_id)
+      .single()
+
+    const userName = userData?.first_name || 'Usuario'
+
+    // Create pending action
+    const { data: pendingAction, error: insertError } = await supabase
+      .from('whatsapp_pending_actions')
+      .insert({
+        user_id: message.user_id,
+        contact_phone: (message as unknown as { contact_phone: string }).contact_phone,
+        remote_jid: (message as unknown as { remote_jid: string }).remote_jid,
+        instance_name: (message as unknown as { instance_name: string }).instance_name,
+        source_message_id: message.id,
+        action_type: 'register_organization',
+        action_payload: {
+          document_type: detection.document_type,
+          confidence: detection.confidence,
+          cnpj: detection.cnpj,
+          razao_social: detection.razao_social,
+          nome_fantasia: detection.nome_fantasia,
+          storage_url: storageUrl,
+        },
+        status: 'pending',
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      })
+      .select('id')
+      .single()
+
+    if (insertError) {
+      log('ERROR', 'Failed to create pending action', insertError)
+      return null
+    }
+
+    // Send confirmation message
+    const confirmationMessage = buildConfirmationMessage(userName, detection)
+    await sendWhatsAppConfirmation(
+      supabase,
+      (message as unknown as { instance_name: string }).instance_name,
+      (message as unknown as { remote_jid: string }).remote_jid,
+      confirmationMessage
+    )
+
+    log('INFO', 'Pending action created and confirmation sent', {
+      actionId: pendingAction.id,
+      documentType: detection.document_type,
+    })
+
+    return pendingAction.id
+  } catch (error) {
+    log('ERROR', 'Failed to create pending action', (error as Error).message)
+    return null
+  }
+}
+
+/**
+ * Build confirmation message for organization document
+ */
+function buildConfirmationMessage(userName: string, detection: OrganizationDocumentDetection): string {
+  const docTypeNames: Record<string, string> = {
+    'cartao_cnpj': 'Cartao CNPJ',
+    'estatuto': 'Estatuto Social',
+    'comprovante_endereco': 'Comprovante de Endereco',
+    'unknown': 'documento',
+  }
+
+  const docName = docTypeNames[detection.document_type] || 'documento'
+
+  let message = `Ola ${userName}! 👋\n\n`
+  message += `📄 Identifiquei um *${docName}*`
+
+  if (detection.document_type === 'cartao_cnpj' && detection.cnpj) {
+    const cnpjFormatted = detection.cnpj.replace(
+      /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+      '$1.$2.$3/$4-$5'
+    )
+    message += ` (CNPJ: ${cnpjFormatted})`
+  }
+
+  message += `.\n\n`
+
+  if (detection.razao_social) {
+    message += `📌 *Razao Social:* ${detection.razao_social}\n`
+  }
+  if (detection.nome_fantasia) {
+    message += `🏢 *Nome Fantasia:* ${detection.nome_fantasia}\n`
+  }
+
+  message += `\n*Deseja cadastrar esta organizacao?*\n\n`
+  message += `✅ Responda *SIM* para cadastrar\n`
+  message += `❌ Responda *NAO* para ignorar`
+
+  return message
+}
+
+/**
+ * Send WhatsApp confirmation message
+ */
+async function sendWhatsAppConfirmation(
+  supabase: ReturnType<typeof createClient>,
+  instanceName: string,
+  remoteJid: string,
+  message: string
+): Promise<boolean> {
+  try {
+    // Get Evolution API instance
+    const { data: instance } = await supabase
+      .from('whatsapp_sessions')
+      .select('evolution_api_url, evolution_api_key')
+      .eq('instance_name', instanceName)
+      .single()
+
+    const apiUrl = instance?.evolution_api_url || EVOLUTION_API_URL
+    const apiKey = instance?.evolution_api_key || EVOLUTION_API_KEY
+
+    if (!apiUrl || !apiKey) {
+      log('ERROR', 'Evolution API credentials not found')
+      return false
+    }
+
+    const response = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': apiKey,
+      },
+      body: JSON.stringify({
+        number: remoteJid,
+        text: message,
+      }),
+    })
+
+    if (!response.ok) {
+      log('ERROR', 'Failed to send confirmation message', { status: response.status })
+      return false
+    }
+
+    log('INFO', 'Confirmation message sent', { instanceName, remoteJid: remoteJid.substring(0, 10) })
+    return true
+  } catch (error) {
+    log('ERROR', 'Send confirmation exception', (error as Error).message)
+    return false
   }
 }
 
@@ -361,6 +659,26 @@ async function processMessage(
         media_mimetype || 'image/jpeg'
       )
       result.ocr_text = ocrText || undefined
+
+      // Detect organization documents from OCR
+      if (ocrText) {
+        const detection = detectOrganizationDocument(ocrText)
+        if (detection.is_organization_document && detection.confidence >= 0.5) {
+          result.detected_document_type = detection.document_type
+          const pendingActionId = await createPendingOrganizationAction(
+            supabase,
+            message,
+            detection,
+            storageUrl
+          )
+          result.pending_action_id = pendingActionId || undefined
+          log('INFO', 'Organization document detected', {
+            id,
+            type: detection.document_type,
+            confidence: detection.confidence,
+          })
+        }
+      }
       break
 
     case 'video':
@@ -370,8 +688,33 @@ async function processMessage(
       break
 
     case 'document':
-      // For documents, could extract text from PDFs
-      log('INFO', 'Document stored', { id })
+      // For PDF documents, extract text and detect organization docs
+      if (media_mimetype === 'application/pdf' || media_filename?.toLowerCase().endsWith('.pdf')) {
+        const pdfOcrText = await extractPdfText(mediaResult.data)
+        result.ocr_text = pdfOcrText || undefined
+
+        // Detect organization documents from PDF
+        if (pdfOcrText) {
+          const pdfDetection = detectOrganizationDocument(pdfOcrText)
+          if (pdfDetection.is_organization_document && pdfDetection.confidence >= 0.5) {
+            result.detected_document_type = pdfDetection.document_type
+            const pdfPendingActionId = await createPendingOrganizationAction(
+              supabase,
+              message,
+              pdfDetection,
+              storageUrl
+            )
+            result.pending_action_id = pdfPendingActionId || undefined
+            log('INFO', 'Organization PDF document detected', {
+              id,
+              type: pdfDetection.document_type,
+              confidence: pdfDetection.confidence,
+            })
+          }
+        }
+      } else {
+        log('INFO', 'Document stored', { id, mimetype: media_mimetype })
+      }
       break
 
     default:
@@ -408,6 +751,11 @@ async function updateMessageRecord(
 
   if (result.error) {
     updates.processing_error = result.error
+  }
+
+  // Set detected_intent for organization documents
+  if (result.detected_document_type) {
+    updates.detected_intent = `organization_document:${result.detected_document_type}`
   }
 
   const { error } = await supabase
