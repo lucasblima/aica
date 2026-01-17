@@ -80,44 +80,48 @@ BEGIN
   END IF;
 END $$;
 
--- Adicionar completed_at em work_items (se não existir)
+-- Adicionar completed_at em work_items (se tabela e coluna não existirem)
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'work_items'
-      AND column_name = 'completed_at'
-  ) THEN
-    ALTER TABLE public.work_items
-    ADD COLUMN completed_at TIMESTAMPTZ;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'work_items') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'work_items'
+        AND column_name = 'completed_at'
+    ) THEN
+      ALTER TABLE public.work_items
+      ADD COLUMN completed_at TIMESTAMPTZ;
+    END IF;
   END IF;
 END $$;
 
--- Garantir que work_items tem updated_at
+-- Garantir que work_items tem updated_at (se tabela existir)
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'work_items'
-      AND column_name = 'updated_at'
-  ) THEN
-    ALTER TABLE public.work_items
-    ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'work_items') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'work_items'
+        AND column_name = 'updated_at'
+    ) THEN
+      ALTER TABLE public.work_items
+      ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
 
-    CREATE OR REPLACE FUNCTION update_work_items_updated_at()
-    RETURNS TRIGGER AS $func$
-    BEGIN
-      NEW.updated_at = NOW();
-      RETURN NEW;
-    END;
-    $func$ LANGUAGE plpgsql;
+      CREATE OR REPLACE FUNCTION update_work_items_updated_at()
+      RETURNS TRIGGER AS $func$
+      BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+      END;
+      $func$ LANGUAGE plpgsql;
 
-    CREATE TRIGGER set_updated_at_work_items
-    BEFORE UPDATE ON public.work_items
-    FOR EACH ROW
-    EXECUTE FUNCTION update_work_items_updated_at();
+      CREATE TRIGGER set_updated_at_work_items
+      BEFORE UPDATE ON public.work_items
+      FOR EACH ROW
+      EXECUTE FUNCTION update_work_items_updated_at();
+    END IF;
   END IF;
 END $$;
 
@@ -126,7 +130,7 @@ END $$;
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS public.podcast_team_members (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   episode_id UUID REFERENCES public.podcast_episodes(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   role TEXT CHECK (role IN ('host', 'guest', 'producer', 'tech')),

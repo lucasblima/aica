@@ -64,12 +64,12 @@ COMMENT ON COLUMN public.ai_usage_analytics.request_metadata IS 'Additional cont
 -- INDEXES
 -- =====================================================
 
-CREATE INDEX idx_ai_usage_user ON public.ai_usage_analytics(user_id);
-CREATE INDEX idx_ai_usage_operation ON public.ai_usage_analytics(operation_type);
-CREATE INDEX idx_ai_usage_model ON public.ai_usage_analytics(ai_model);
-CREATE INDEX idx_ai_usage_created ON public.ai_usage_analytics(created_at DESC);
-CREATE INDEX idx_ai_usage_module ON public.ai_usage_analytics(module_type, module_id) WHERE module_type IS NOT NULL;
-CREATE INDEX idx_ai_usage_cost ON public.ai_usage_analytics(total_cost_usd DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON public.ai_usage_analytics(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_operation ON public.ai_usage_analytics(operation_type);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_model ON public.ai_usage_analytics(ai_model);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_created ON public.ai_usage_analytics(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_module ON public.ai_usage_analytics(module_type, module_id) WHERE module_type IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ai_usage_cost ON public.ai_usage_analytics(total_cost_usd DESC);
 
 -- =====================================================
 -- RLS POLICIES
@@ -77,10 +77,12 @@ CREATE INDEX idx_ai_usage_cost ON public.ai_usage_analytics(total_cost_usd DESC)
 
 ALTER TABLE public.ai_usage_analytics ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own usage" ON public.ai_usage_analytics;
 CREATE POLICY "Users can view own usage"
   ON public.ai_usage_analytics FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "System can insert usage" ON public.ai_usage_analytics;
 CREATE POLICY "System can insert usage"
   ON public.ai_usage_analytics FOR INSERT
   WITH CHECK (auth.uid() = user_id);

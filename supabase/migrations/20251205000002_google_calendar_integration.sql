@@ -5,7 +5,7 @@
 
 -- Create google_calendar_tokens table
 CREATE TABLE IF NOT EXISTS public.google_calendar_tokens (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     access_token TEXT NOT NULL,
     refresh_token TEXT,
@@ -34,27 +34,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_google_calendar_tokens_updated_at
-    BEFORE UPDATE ON public.google_calendar_tokens
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_google_calendar_tokens_updated_at();
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_google_calendar_tokens_updated_at') THEN
+        CREATE TRIGGER update_google_calendar_tokens_updated_at
+            BEFORE UPDATE ON public.google_calendar_tokens
+            FOR EACH ROW
+            EXECUTE FUNCTION public.update_google_calendar_tokens_updated_at();
+    END IF;
+END $$;
 
 -- Enable Row Level Security
 ALTER TABLE public.google_calendar_tokens ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Users can only view their own tokens
+DROP POLICY IF EXISTS "Users can view own Google Calendar tokens" ON public.google_calendar_tokens;
 CREATE POLICY "Users can view own Google Calendar tokens"
     ON public.google_calendar_tokens
     FOR SELECT
     USING (auth.uid() = user_id);
 
 -- RLS Policy: Users can only insert their own tokens
+DROP POLICY IF EXISTS "Users can insert own Google Calendar tokens" ON public.google_calendar_tokens;
 CREATE POLICY "Users can insert own Google Calendar tokens"
     ON public.google_calendar_tokens
     FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
 -- RLS Policy: Users can only update their own tokens
+DROP POLICY IF EXISTS "Users can update own Google Calendar tokens" ON public.google_calendar_tokens;
 CREATE POLICY "Users can update own Google Calendar tokens"
     ON public.google_calendar_tokens
     FOR UPDATE
@@ -62,6 +70,7 @@ CREATE POLICY "Users can update own Google Calendar tokens"
     WITH CHECK (auth.uid() = user_id);
 
 -- RLS Policy: Users can only delete their own tokens
+DROP POLICY IF EXISTS "Users can delete own Google Calendar tokens" ON public.google_calendar_tokens;
 CREATE POLICY "Users can delete own Google Calendar tokens"
     ON public.google_calendar_tokens
     FOR DELETE
@@ -78,4 +87,4 @@ CREATE INDEX IF NOT EXISTS idx_google_calendar_tokens_is_connected
 
 -- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.google_calendar_tokens TO authenticated;
-GRANT USAGE ON SEQUENCE google_calendar_tokens_id_seq TO authenticated;
+-- Note: No sequence grant needed - using gen_random_uuid() for UUIDs

@@ -21,8 +21,13 @@ FOR SELECT USING (owner_user_id = auth.uid() OR public.is_member_of(id));
 
 -- 2. Criar Colunas/Tabelas Faltantes
 
--- 2.1. Adicionar coluna completed_at em work_items (se não existir)
-ALTER TABLE public.work_items ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE;
+-- 2.1. Adicionar coluna completed_at em work_items (se a tabela existir)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'work_items' AND table_schema = 'public') THEN
+    ALTER TABLE public.work_items ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE;
+  END IF;
+END $$;
 
 -- 2.2. Criar tabela podcast_team_members (se não existir)
 CREATE TABLE IF NOT EXISTS public.podcast_team_members (
