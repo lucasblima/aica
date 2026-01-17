@@ -246,7 +246,7 @@ CREATE POLICY "Users can view own podcast topics"
   ON public.podcast_topics FOR SELECT
   USING (
     auth.uid() = user_id
-    OR public.is_podcast_episode_owner(episode_id)
+    OR (episode_id IS NOT NULL AND public.is_podcast_episode_owner(episode_id))
   );
 
 CREATE POLICY "Users can insert own podcast topics"
@@ -260,7 +260,7 @@ CREATE POLICY "Users can update own podcast topics"
   ON public.podcast_topics FOR UPDATE
   USING (
     auth.uid() = user_id
-    OR public.is_podcast_episode_owner(episode_id)
+    OR (episode_id IS NOT NULL AND public.is_podcast_episode_owner(episode_id))
   )
   WITH CHECK (
     auth.uid() = user_id
@@ -271,7 +271,7 @@ CREATE POLICY "Users can delete own podcast topics"
   ON public.podcast_topics FOR DELETE
   USING (
     auth.uid() = user_id
-    OR public.is_podcast_episode_owner(episode_id)
+    OR (episode_id IS NOT NULL AND public.is_podcast_episode_owner(episode_id))
   );
 
 -- Updated timestamp trigger

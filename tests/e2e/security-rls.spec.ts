@@ -21,8 +21,16 @@ import { test, expect } from '@playwright/test';
 // TEST CONFIGURATION
 // ============================================================================
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://uzywajqzbdbrfammshdg.supabase.co';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
+// Environment variables MUST be set - no fallbacks to prevent accidental misuse
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error(
+    'Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set for RLS tests. ' +
+    'This prevents accidentally running tests against production or incorrect databases.'
+  );
+}
 
 // Critical tables that MUST have RLS policies
 const CRITICAL_TABLES = [

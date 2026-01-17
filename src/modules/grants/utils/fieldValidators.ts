@@ -70,8 +70,9 @@ export function validateCNPJ(value: unknown): string | null {
   let sum = 0;
   let pos = size - 7;
 
-  for (let i = size; i >= 1; i--) {
-    sum += parseInt(numbers.charAt(size - i)) * pos--;
+  // Loop ascendente convencional (mais legível)
+  for (let i = 0; i < size; i++) {
+    sum += parseInt(numbers.charAt(i)) * pos--;
     if (pos < 2) pos = 9;
   }
 
@@ -86,8 +87,9 @@ export function validateCNPJ(value: unknown): string | null {
   sum = 0;
   pos = size - 7;
 
-  for (let i = size; i >= 1; i--) {
-    sum += parseInt(numbers.charAt(size - i)) * pos--;
+  // Loop ascendente convencional (mais legível)
+  for (let i = 0; i < size; i++) {
+    sum += parseInt(numbers.charAt(i)) * pos--;
     if (pos < 2) pos = 9;
   }
 
