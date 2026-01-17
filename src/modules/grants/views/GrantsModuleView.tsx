@@ -712,6 +712,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
 
               <div className="flex items-center gap-3">
                 <button
+                  data-testid="open-organization-wizard"
                   onClick={() => setIsOrganizationWizardOpen(true)}
                   className="ceramic-card px-4 py-3 rounded-full font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
                   title="Cadastrar Organização"
