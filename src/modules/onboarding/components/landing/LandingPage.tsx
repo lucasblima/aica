@@ -96,7 +96,7 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ceramic-base font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-ceramic-base font-sans overflow-x-hidden" data-testid="landing-page">
       {/* Skip to main content - Accessibility */}
       <a
         href="#main"

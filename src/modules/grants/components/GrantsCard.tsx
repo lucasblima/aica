@@ -64,6 +64,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
       initial="rest"
       whileHover="hover"
       whileTap="pressed"
+      data-testid="grants-card"
     >
       {/* Decorative Background Icon */}
       <FileText className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-200 opacity-10" />
@@ -211,6 +212,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
       <button
         onClick={onOpenModule}
         className="w-full ceramic-concave py-2 px-4 font-bold text-sm text-ceramic-text-primary hover:scale-[0.98] active:scale-95 transition-transform flex-shrink-0 mt-2 relative z-10"
+        data-testid="grants-open-button"
       >
         Abrir
       </button>
