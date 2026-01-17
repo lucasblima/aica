@@ -19,13 +19,13 @@ test.describe('Grants - Module Navigation and Dashboard', () => {
   });
 
   test('Test 1.1: Navigate to Grants module and verify dashboard', async ({ page }) => {
-    // Navigate to Grants module
+    // Navigate to Grants module - use specific data-testid selectors
     const grantsButton = page
-      .getByRole('button', { name: /grants|captação|editais/i })
-      .or(page.getByText(/grants|captação/i))
-      .or(page.locator('[data-testid="grants-button"]'));
+      .locator('[data-testid="grants-card"]')
+      .or(page.locator('[data-testid="grants-open-button"]'))
+      .or(page.getByRole('button', { name: /grants|captação|editais/i }));
 
-    await grantsButton.click();
+    await grantsButton.first().click();
     await page.waitForLoadState('networkidle');
 
     // Verify Grants dashboard loaded
@@ -34,13 +34,12 @@ test.describe('Grants - Module Navigation and Dashboard', () => {
         .or(page.getByText(/módulo.*captação/i))
     ).toBeVisible({ timeout: 10000 });
 
-    // Verify "Create New Edital" button exists
+    // Verify "Create New Edital" button exists - use specific selector
     const createButton = page
-      .getByRole('button', { name: /novo edital|create.*edital|criar edital/i })
-      .or(page.locator('[data-testid="create-edital-btn"]'))
-      .or(page.locator('button:has-text("+")', ));
+      .locator('[data-testid="create-edital-btn"]')
+      .or(page.getByRole('button', { name: /novo edital/i }));
 
-    await expect(createButton).toBeVisible();
+    await expect(createButton.first()).toBeVisible();
 
     // Verify opportunities list or empty state
     const opportunitiesList = page
@@ -52,12 +51,12 @@ test.describe('Grants - Module Navigation and Dashboard', () => {
   });
 
   test('Test 1.2: Verify Back button returns to main view', async ({ page }) => {
-    // Navigate to Grants
+    // Navigate to Grants - use specific data-testid selectors
     const grantsButton = page
-      .getByRole('button', { name: /grants|captação/i })
-      .or(page.getByText(/grants|captação/i));
+      .locator('[data-testid="grants-card"]')
+      .or(page.locator('[data-testid="grants-open-button"]'));
 
-    await grantsButton.click();
+    await grantsButton.first().click();
     await page.waitForLoadState('networkidle');
 
     // Click back button
@@ -81,12 +80,12 @@ test.describe('Grants - Edital Setup Wizard', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Navigate to Grants module
+    // Navigate to Grants module - use specific data-testid selectors
     const grantsButton = page
-      .getByRole('button', { name: /grants|captação/i })
-      .or(page.getByText(/grants|captação/i));
+      .locator('[data-testid="grants-card"]')
+      .or(page.locator('[data-testid="grants-open-button"]'));
 
-    await grantsButton.click();
+    await grantsButton.first().click();
     await page.waitForLoadState('networkidle');
   });
 
@@ -106,11 +105,11 @@ test.describe('Grants - Edital Setup Wizard', () => {
         .or(page.getByText(/upload.*pdf|faça upload/i))
     ).toBeVisible({ timeout: 5000 });
 
-    // Verify wizard steps indicator
+    // Verify wizard steps indicator - actual steps are: Upload, Revisar, Campos
     await expect(
-      page.getByText(/upload/i)
-        .and(page.locator('[class*="step"]'))
-        .or(page.locator('text=/step 1|passo 1/i'))
+      page.getByText('Upload')
+        .or(page.getByText('Revisar'))
+        .or(page.getByText('Campos'))
     ).toBeVisible();
 
     // Verify PDF upload zone exists
@@ -131,13 +130,14 @@ test.describe('Grants - Edital Setup Wizard', () => {
     await createButton.click();
     await page.waitForTimeout(500);
 
-    // Find and click close button
+    // Find and click close button - use data-testid first, then fallback to other selectors
     const closeButton = page
-      .getByRole('button', { name: /fechar|close|cancelar|cancel/i })
-      .or(page.locator('[aria-label*="close"]'))
-      .or(page.locator('[data-testid="close-wizard-btn"]'));
+      .locator('[data-testid="close-wizard-btn"]')
+      .or(page.locator('button[aria-label*="close"]'))
+      .or(page.locator('button[aria-label*="fechar"]'))
+      .or(page.getByRole('button', { name: /fechar|close|cancelar|cancel/i }));
 
-    await closeButton.click();
+    await closeButton.first().click();
     await page.waitForTimeout(500);
 
     // Verify wizard closed
@@ -178,11 +178,11 @@ test.describe('Grants - Edital Setup Wizard', () => {
         console.log('   To test PDF upload, create a test edital PDF file');
       });
 
-      // If file was uploaded, verify processing indicator
+      // If file was uploaded, verify processing indicator - use data-testid first
       const processingIndicator = page
-        .locator('text=/processando|processing|analisando|analyzing/i')
-        .or(page.locator('[class*="loading"]'))
-        .or(page.locator('[data-testid="processing-indicator"]'));
+        .locator('[data-testid="processing-indicator"]')
+        .or(page.locator('text=/processando|processing|analisando|analyzing/i'))
+        .or(page.locator('[class*="loading"]'));
 
       // Wait for processing (with long timeout for AI analysis)
       await expect(processingIndicator).toBeVisible({ timeout: 3000 }).catch(() => {
@@ -211,12 +211,12 @@ test.describe('Grants - Project Management', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Navigate to Grants module
+    // Navigate to Grants module - use specific data-testid selectors
     const grantsButton = page
-      .getByRole('button', { name: /grants|captação/i })
-      .or(page.getByText(/grants|captação/i));
+      .locator('[data-testid="grants-card"]')
+      .or(page.locator('[data-testid="grants-open-button"]'));
 
-    await grantsButton.click();
+    await grantsButton.first().click();
     await page.waitForLoadState('networkidle');
   });
 
@@ -439,12 +439,12 @@ test.describe('Grants - Briefing and Proposal Generation', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Navigate to Grants module
+    // Navigate to Grants module - use specific data-testid selectors
     const grantsButton = page
-      .getByRole('button', { name: /grants|captação/i })
-      .or(page.getByText(/grants|captação/i));
+      .locator('[data-testid="grants-card"]')
+      .or(page.locator('[data-testid="grants-open-button"]'));
 
-    await grantsButton.click();
+    await grantsButton.first().click();
     await page.waitForLoadState('networkidle');
   });
 

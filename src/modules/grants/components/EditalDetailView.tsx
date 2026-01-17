@@ -370,6 +370,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
               <button
                 onClick={onCreateProject}
                 className="ceramic-concave px-6 py-3 font-bold text-ceramic-accent hover:scale-95 active:scale-90 transition-transform flex items-center gap-2"
+                data-testid="create-project-btn"
               >
                 <Plus className="w-5 h-5" />
                 Novo Projeto
@@ -395,6 +396,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   className="ceramic-card p-6 hover:shadow-lg transition-shadow"
+                  data-testid="project-card"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">

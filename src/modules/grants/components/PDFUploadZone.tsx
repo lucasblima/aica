@@ -64,6 +64,7 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        data-testid="pdf-upload-zone"
         className={`
           relative ceramic-tray rounded-xl p-12 border-2 border-dashed transition-all duration-300
           ${isDragging ? 'border-ceramic-accent bg-ceramic-accent/5' : 'border-ceramic-text-secondary/20'}
@@ -88,6 +89,7 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
                 animate={{ scale: 1, rotate: 0 }}
                 exit={{ scale: 0, rotate: 180 }}
                 className="ceramic-concave w-20 h-20 flex items-center justify-center"
+                data-testid="processing-indicator"
               >
                 <Loader2 className="w-10 h-10 text-ceramic-accent animate-spin" />
               </motion.div>
