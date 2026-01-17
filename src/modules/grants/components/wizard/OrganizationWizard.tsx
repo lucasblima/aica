@@ -436,7 +436,7 @@ export function OrganizationWizard({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-4xl mx-auto">
+    <div data-testid="organization-wizard" className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-4xl mx-auto">
       {/* Header */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">

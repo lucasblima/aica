@@ -58,6 +58,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
 
   return (
     <motion.div
+      data-testid="grants-card"
       className="ceramic-card p-5 h-full min-h-[180px] flex flex-col cursor-pointer relative overflow-hidden"
       variants={cardElevationVariants}
       initial="rest"
