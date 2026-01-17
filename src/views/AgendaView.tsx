@@ -25,6 +25,7 @@ import { Task, Quadrant } from '../../types';
 // import { ProjectList } from '../modules/atlas/components/ProjectList';
 // import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
+import { useTourAutoStart } from '../hooks/useTourAutoStart';
 import { TimelineEvent } from '../services/googleCalendarService';
 import { disconnectGoogleCalendar } from '../services/googleAuthService';
 import { notificationService } from '../services/notificationService';
@@ -36,6 +37,9 @@ interface AgendaViewProps {
 }
 
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
+    // Auto-start tour on first visit
+    useTourAutoStart('atlas-first-visit');
+
     const [matrixTasks, setMatrixTasks] = useState<Record<Quadrant, Task[]>>({
         'urgent-important': [],
         'important': [],
@@ -703,7 +707,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     return (
         <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
             {/* Header com Sync Indicator */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-ceramic-text-secondary/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-ceramic-text-secondary/10" data-tour="atlas-header">
                 <div>
                     <h1 className="text-2xl font-black text-ceramic-text-primary">Meu Dia</h1>
                     <p className="text-sm text-ceramic-text-secondary">
@@ -743,7 +747,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     </section>
 
                     {/* Quick Add de Tarefas */}
-                    <section className="max-w-2xl mx-auto w-full">
+                    <section className="max-w-2xl mx-auto w-full" data-tour="add-task-button">
                         <TaskCreationQuickAdd
                             userId={userId}
                             onTaskCreated={loadAllTasks}
@@ -778,7 +782,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     )}
 
                     {/* Priority Matrix */}
-                    <div className="flex-none max-w-4xl mx-auto w-full">
+                    <div className="flex-none max-w-4xl mx-auto w-full" data-tour="eisenhower-matrix">
                         <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
                             Matriz de Prioridades
                         </h2>
