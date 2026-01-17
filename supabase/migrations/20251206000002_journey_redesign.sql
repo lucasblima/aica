@@ -5,7 +5,7 @@
 -- =====================================================
 -- 1. MOMENTS TABLE
 -- =====================================================
-CREATE TABLE moments (
+CREATE TABLE IF NOT EXISTS moments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
@@ -31,26 +31,30 @@ CREATE TABLE moments (
 );
 
 -- Indexes
-CREATE INDEX idx_moments_user_id ON moments(user_id);
-CREATE INDEX idx_moments_created_at ON moments(created_at DESC);
-CREATE INDEX idx_moments_tags ON moments USING GIN(tags);
-CREATE INDEX idx_moments_sentiment ON moments USING GIN(sentiment_data);
+CREATE INDEX IF NOT EXISTS idx_moments_user_id ON moments(user_id);
+CREATE INDEX IF NOT EXISTS idx_moments_created_at ON moments(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_moments_tags ON moments USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_moments_sentiment ON moments USING GIN(sentiment_data);
 
 -- RLS Policies
 ALTER TABLE moments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own moments" ON moments;
 CREATE POLICY "Users can view own moments"
   ON moments FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own moments" ON moments;
 CREATE POLICY "Users can insert own moments"
   ON moments FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own moments" ON moments;
 CREATE POLICY "Users can update own moments"
   ON moments FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own moments" ON moments;
 CREATE POLICY "Users can delete own moments"
   ON moments FOR DELETE
   USING (auth.uid() = user_id);
@@ -58,7 +62,7 @@ CREATE POLICY "Users can delete own moments"
 -- =====================================================
 -- 2. WEEKLY SUMMARIES TABLE
 -- =====================================================
-CREATE TABLE weekly_summaries (
+CREATE TABLE IF NOT EXISTS weekly_summaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
@@ -90,16 +94,18 @@ CREATE TABLE weekly_summaries (
 );
 
 -- Indexes
-CREATE INDEX idx_weekly_summaries_user_id ON weekly_summaries(user_id);
-CREATE INDEX idx_weekly_summaries_period ON weekly_summaries(period_start DESC);
+CREATE INDEX IF NOT EXISTS idx_weekly_summaries_user_id ON weekly_summaries(user_id);
+CREATE INDEX IF NOT EXISTS idx_weekly_summaries_period ON weekly_summaries(period_start DESC);
 
 -- RLS Policies
 ALTER TABLE weekly_summaries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own summaries" ON weekly_summaries;
 CREATE POLICY "Users can view own summaries"
   ON weekly_summaries FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own summaries" ON weekly_summaries;
 CREATE POLICY "Users can update own summaries"
   ON weekly_summaries FOR UPDATE
   USING (auth.uid() = user_id);
@@ -107,7 +113,7 @@ CREATE POLICY "Users can update own summaries"
 -- =====================================================
 -- 3. DAILY QUESTIONS TABLE
 -- =====================================================
-CREATE TABLE daily_questions (
+CREATE TABLE IF NOT EXISTS daily_questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- Question
@@ -121,30 +127,50 @@ CREATE TABLE daily_questions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Seed initial questions
-INSERT INTO daily_questions (question_text, category) VALUES
-  ('O que te trouxe energia essa semana?', 'energy'),
-  ('Se pudesse mudar uma coisa hoje, o que seria?', 'change'),
-  ('Qual foi seu maior aprendizado recente?', 'learning'),
-  ('Pelo que você é grato hoje?', 'gratitude'),
-  ('Como você está se sentindo neste momento?', 'reflection'),
-  ('Que desafio você superou recentemente?', 'reflection'),
-  ('O que te fez sorrir hoje?', 'gratitude'),
-  ('Qual seu maior objetivo para esta semana?', 'change'),
-  ('Que hábito você gostaria de criar?', 'change'),
-  ('Quem te inspirou recentemente?', 'gratitude');
+-- Seed initial questions (only if category column exists and table is empty)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'daily_questions' AND column_name = 'category' AND table_schema = 'public') THEN
+    IF NOT EXISTS (SELECT 1 FROM daily_questions LIMIT 1) THEN
+      INSERT INTO daily_questions (question_text, category) VALUES
+        ('O que te trouxe energia essa semana?', 'energy'),
+        ('Se pudesse mudar uma coisa hoje, o que seria?', 'change'),
+        ('Qual foi seu maior aprendizado recente?', 'learning'),
+        ('Pelo que você é grato hoje?', 'gratitude'),
+        ('Como você está se sentindo neste momento?', 'reflection'),
+        ('Que desafio você superou recentemente?', 'reflection'),
+        ('O que te fez sorrir hoje?', 'gratitude'),
+        ('Qual seu maior objetivo para esta semana?', 'change'),
+        ('Que hábito você gostaria de criar?', 'change'),
+        ('Quem te inspirou recentemente?', 'gratitude');
+    END IF;
+  END IF;
+END $$;
 
 -- No RLS needed (public read)
 ALTER TABLE daily_questions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can view active questions"
-  ON daily_questions FOR SELECT
-  USING (active = true);
+-- Policy with active column (only if column exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'daily_questions' AND column_name = 'active' AND table_schema = 'public') THEN
+    DROP POLICY IF EXISTS "Anyone can view active questions" ON daily_questions;
+    CREATE POLICY "Anyone can view active questions"
+      ON daily_questions FOR SELECT
+      USING (active = true);
+  ELSE
+    -- Fallback: allow all reads if active column doesn't exist
+    DROP POLICY IF EXISTS "Anyone can view questions" ON daily_questions;
+    CREATE POLICY "Anyone can view questions"
+      ON daily_questions FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
 -- =====================================================
 -- 4. QUESTION RESPONSES TABLE
 -- =====================================================
-CREATE TABLE question_responses (
+CREATE TABLE IF NOT EXISTS question_responses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   question_id UUID NOT NULL REFERENCES daily_questions(id) ON DELETE CASCADE,
@@ -160,16 +186,18 @@ CREATE TABLE question_responses (
 );
 
 -- Indexes
-CREATE INDEX idx_question_responses_user_id ON question_responses(user_id);
-CREATE INDEX idx_question_responses_responded_at ON question_responses(responded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_question_responses_user_id ON question_responses(user_id);
+CREATE INDEX IF NOT EXISTS idx_question_responses_responded_at ON question_responses(responded_at DESC);
 
 -- RLS Policies
 ALTER TABLE question_responses ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own responses" ON question_responses;
 CREATE POLICY "Users can view own responses"
   ON question_responses FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own responses" ON question_responses;
 CREATE POLICY "Users can insert own responses"
   ON question_responses FOR INSERT
   WITH CHECK (auth.uid() = user_id);
@@ -177,7 +205,7 @@ CREATE POLICY "Users can insert own responses"
 -- =====================================================
 -- 5. CONSCIOUSNESS POINTS LOG TABLE
 -- =====================================================
-CREATE TABLE consciousness_points_log (
+CREATE TABLE IF NOT EXISTS consciousness_points_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
@@ -194,12 +222,13 @@ CREATE TABLE consciousness_points_log (
 );
 
 -- Indexes
-CREATE INDEX idx_cp_log_user_id ON consciousness_points_log(user_id);
-CREATE INDEX idx_cp_log_created_at ON consciousness_points_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cp_log_user_id ON consciousness_points_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_cp_log_created_at ON consciousness_points_log(created_at DESC);
 
 -- RLS Policies
 ALTER TABLE consciousness_points_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own CP log" ON consciousness_points_log;
 CREATE POLICY "Users can view own CP log"
   ON consciousness_points_log FOR SELECT
   USING (auth.uid() = user_id);
@@ -207,7 +236,7 @@ CREATE POLICY "Users can view own CP log"
 -- =====================================================
 -- 6. USER CONSCIOUSNESS STATS (Aggregate View)
 -- =====================================================
-CREATE TABLE user_consciousness_stats (
+CREATE TABLE IF NOT EXISTS user_consciousness_stats (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
 
   -- Totals
@@ -232,10 +261,12 @@ CREATE TABLE user_consciousness_stats (
 -- RLS Policies
 ALTER TABLE user_consciousness_stats ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own stats" ON user_consciousness_stats;
 CREATE POLICY "Users can view own stats"
   ON user_consciousness_stats FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own stats" ON user_consciousness_stats;
 CREATE POLICY "Users can update own stats"
   ON user_consciousness_stats FOR UPDATE
   USING (auth.uid() = user_id);

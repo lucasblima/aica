@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test';
 // TEST CONFIGURATION
 // ============================================================================
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://gppebtrshbvuzatmebhr.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://uzywajqzbdbrfammshdg.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Critical tables that MUST have RLS policies
@@ -50,7 +50,7 @@ const CRITICAL_TABLES = [
 
 async function getAuthToken(page: any): Promise<string | null> {
   return await page.evaluate(() => {
-    const authData = sessionStorage.getItem('sb-gppebtrshbvuzatmebhr-auth-token');
+    const authData = localStorage.getItem('sb-uzywajqzbdbrfammshdg-auth-token');
     if (!authData) return null;
     const parsed = JSON.parse(authData);
     return parsed.access_token;
@@ -59,7 +59,7 @@ async function getAuthToken(page: any): Promise<string | null> {
 
 async function getUserId(page: any): Promise<string | null> {
   return await page.evaluate(() => {
-    const authData = sessionStorage.getItem('sb-gppebtrshbvuzatmebhr-auth-token');
+    const authData = localStorage.getItem('sb-uzywajqzbdbrfammshdg-auth-token');
     if (!authData) return null;
     const parsed = JSON.parse(authData);
     return parsed.user?.id;

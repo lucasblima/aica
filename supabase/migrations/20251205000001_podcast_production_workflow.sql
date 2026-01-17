@@ -155,21 +155,19 @@ COMMENT ON COLUMN public.podcast_episodes.recording_status IS
   'Current recording state: idle (not started), recording (active), paused, finished';
 
 -- ============================================================================
--- 3. ADD sponsor_script TO podcast_topics TABLE
+-- 3. ADD sponsor_script TO podcast_topics TABLE (if table exists)
 -- ============================================================================
 -- Supports teleprompter auto-scroll for sponsor reads
 
-ALTER TABLE public.podcast_topics
-  ADD COLUMN IF NOT EXISTS sponsor_script TEXT;
-
-ALTER TABLE public.podcast_topics
-  ADD COLUMN IF NOT EXISTS is_sponsor_topic BOOLEAN DEFAULT FALSE;
-
-COMMENT ON COLUMN public.podcast_topics.sponsor_script IS
-  'Full script text for sponsor reads. Displayed in teleprompter with auto-scroll.';
-
-COMMENT ON COLUMN public.podcast_topics.is_sponsor_topic IS
-  'TRUE if this topic is a sponsor read (triggers auto-scroll in teleprompter)';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'podcast_topics' AND table_schema = 'public') THEN
+    ALTER TABLE public.podcast_topics ADD COLUMN IF NOT EXISTS sponsor_script TEXT;
+    ALTER TABLE public.podcast_topics ADD COLUMN IF NOT EXISTS is_sponsor_topic BOOLEAN DEFAULT FALSE;
+    COMMENT ON COLUMN public.podcast_topics.sponsor_script IS 'Full script text for sponsor reads. Displayed in teleprompter with auto-scroll.';
+    COMMENT ON COLUMN public.podcast_topics.is_sponsor_topic IS 'TRUE if this topic is a sponsor read (triggers auto-scroll in teleprompter)';
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 4. CREATE RLS POLICIES

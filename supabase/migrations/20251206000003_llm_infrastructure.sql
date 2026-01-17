@@ -8,7 +8,7 @@
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS llm_cache (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cache_key TEXT UNIQUE NOT NULL,
   action TEXT NOT NULL,
   result JSONB NOT NULL,
@@ -46,7 +46,7 @@ CREATE TRIGGER trigger_llm_cache_updated_at
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS llm_metrics (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   action TEXT NOT NULL,
   model TEXT NOT NULL,

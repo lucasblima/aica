@@ -165,7 +165,14 @@ CREATE POLICY "association_members_select_v2"
 
 ALTER TABLE public.associations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.association_members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.work_items ENABLE ROW LEVEL SECURITY;
+
+-- Enable RLS on work_items only if table exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'work_items' AND table_schema = 'public') THEN
+    ALTER TABLE public.work_items ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
 -- ============================================================================
 -- VERIFICAÇÃO: Listar todas as políticas criadas
