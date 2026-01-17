@@ -5,9 +5,9 @@
  * Main compound component that orchestrates the entire wizard flow.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Building2, Sparkles } from 'lucide-react';
+import { X, Building2, Sparkles, AlertCircle } from 'lucide-react';
 import { useOrganizationWizard } from '../../hooks/useOrganizationWizard';
 import { useOrganizationDocumentUpload } from '../../hooks/useOrganizationDocumentUpload';
 import { WizardProgress } from './WizardProgress';
@@ -15,8 +15,10 @@ import { WizardStep } from './WizardStep';
 import { DocumentDropZone } from './DocumentDropZone';
 import { FieldReward, LevelUpCelebration, XPCounter } from './FieldReward';
 import { CompletionBadge, LevelProgressCard } from './CompletionBadge';
-import { WIZARD_STEPS, type WizardField, type CompletionLevelConfig } from '../../types/wizard';
+import { WIZARD_STEPS, STEP_COMPLETION_BONUS, type WizardField, type CompletionLevelConfig } from '../../types/wizard';
 import type { Organization } from '../../types/organizations';
+import { validateField, formatCNPJ, formatPhone, formatCEP } from '../../utils/fieldValidators';
+import { WhatsAppStepContent } from './WhatsAppStepContent';
 
 // =============================================================================
 // Types
@@ -35,6 +37,8 @@ interface FieldInputProps {
   onFocus?: () => void;
   showReward: boolean;
   onRewardComplete: () => void;
+  validationError?: string | null;
+  onBlur?: () => void;
 }
 
 // =============================================================================
@@ -48,13 +52,41 @@ function FieldInput({
   onFocus,
   showReward,
   onRewardComplete,
+  validationError,
+  onBlur,
 }: FieldInputProps) {
+  const hasError = !!validationError;
+
   const baseClasses = `
-    w-full px-4 py-3 border border-gray-200 rounded-xl
-    focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent
+    w-full px-4 py-3 border rounded-xl
+    focus:outline-none focus:ring-2 focus:border-transparent
     transition-all duration-200
     placeholder:text-gray-400
+    ${hasError
+      ? 'border-red-300 focus:ring-red-500 bg-red-50'
+      : 'border-gray-200 focus:ring-amber-500'
+    }
   `;
+
+  // Apply formatting on blur for specific fields
+  const handleBlur = useCallback(() => {
+    onBlur?.();
+
+    // Auto-format specific fields
+    if (value && typeof value === 'string') {
+      const fieldName = field.name as string;
+      if (fieldName === 'document_number') {
+        const formatted = formatCNPJ(value);
+        if (formatted !== value) onChange(formatted);
+      } else if (fieldName === 'phone') {
+        const formatted = formatPhone(value);
+        if (formatted !== value) onChange(formatted);
+      } else if (fieldName === 'address_zip') {
+        const formatted = formatCEP(value);
+        if (formatted !== value) onChange(formatted);
+      }
+    }
+  }, [field.name, value, onChange, onBlur]);
 
   const renderInput = () => {
     switch (field.type) {
@@ -64,6 +96,7 @@ function FieldInput({
             value={(value as string) || ''}
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
+            onBlur={handleBlur}
             className={baseClasses}
           >
             <option value="">Selecione...</option>
@@ -122,6 +155,7 @@ function FieldInput({
             value={(value as string) || ''}
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
+            onBlur={handleBlur}
             placeholder={field.placeholder}
             rows={4}
             className={`${baseClasses} resize-none`}
@@ -135,6 +169,7 @@ function FieldInput({
             value={(value as number) || ''}
             onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : null)}
             onFocus={onFocus}
+            onBlur={handleBlur}
             placeholder={field.placeholder}
             className={baseClasses}
           />
@@ -156,6 +191,7 @@ function FieldInput({
             value={(value as string) || ''}
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
+            onBlur={handleBlur}
             placeholder={field.placeholder}
             className={baseClasses}
           />
@@ -175,6 +211,22 @@ function FieldInput({
         </span>
       </label>
       {renderInput()}
+
+      {/* Validation Error */}
+      <AnimatePresence>
+        {hasError && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            className="flex items-center gap-1.5 mt-1.5 text-red-600"
+          >
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="text-xs">{validationError}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <FieldReward xp={field.xpValue} show={showReward} onComplete={onRewardComplete} />
     </div>
   );
@@ -194,6 +246,26 @@ interface StepContentProps {
 function StepContent({ fields, formData, fieldXpMap, onFieldChange }: StepContentProps) {
   const [rewardingField, setRewardingField] = useState<string | null>(null);
   const [previousValues, setPreviousValues] = useState<Record<string, unknown>>({});
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+
+  // Calculate validation errors for all fields
+  const validationErrors = useMemo(() => {
+    const errors: Record<string, string | null> = {};
+    fields.forEach(field => {
+      const fieldName = field.name as string;
+      // Only show error if field has been touched
+      if (touchedFields.has(fieldName)) {
+        errors[fieldName] = validateField(fieldName, formData[field.name]);
+      } else {
+        errors[fieldName] = null;
+      }
+    });
+    return errors;
+  }, [fields, formData, touchedFields]);
+
+  const handleFieldBlur = useCallback((fieldName: string) => {
+    setTouchedFields(prev => new Set(prev).add(fieldName));
+  }, []);
 
   const handleFieldChange = useCallback((field: WizardField, value: unknown) => {
     const fieldName = field.name as string;
@@ -229,7 +301,7 @@ function StepContent({ fields, formData, fieldXpMap, onFieldChange }: StepConten
           animate={{ scale: 1, opacity: 1 }}
           className="text-6xl mb-4"
         >
-          🎉
+          {String.fromCodePoint(0x1F389)}
         </motion.div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">
           Revisao Final
@@ -249,8 +321,10 @@ function StepContent({ fields, formData, fieldXpMap, onFieldChange }: StepConten
           field={field}
           value={formData[field.name]}
           onChange={(value) => handleFieldChange(field, value)}
+          onBlur={() => handleFieldBlur(field.name as string)}
           showReward={rewardingField === field.name}
           onRewardComplete={() => setRewardingField(null)}
+          validationError={validationErrors[field.name as string]}
         />
       ))}
     </div>
@@ -276,6 +350,8 @@ export function OrganizationWizard({
     goToNextStep,
     goToPrevStep,
     updateField,
+    awardFieldXp,
+    completeStep,
     save,
     isLoading,
     error,
@@ -453,12 +529,25 @@ export function OrganizationWizard({
             onPrev={handlePrev}
             onSave={save}
           >
-            <StepContent
-              fields={currentStep.fields}
-              formData={state.formData}
-              fieldXpMap={state.fieldXpMap}
-              onFieldChange={updateField}
-            />
+            {currentStep.id === 'whatsapp' ? (
+              <WhatsAppStepContent
+                organizationPhone={state.formData.phone as string | undefined}
+                onConnectionSuccess={() => {
+                  completeStep('whatsapp');
+                }}
+                onAwardXP={(xp) => {
+                  awardFieldXp('whatsapp_connected', xp);
+                }}
+                isAlreadyConnected={state.fieldXpMap['whatsapp_connected'] || false}
+              />
+            ) : (
+              <StepContent
+                fields={currentStep.fields}
+                formData={state.formData}
+                fieldXpMap={state.fieldXpMap}
+                onFieldChange={updateField}
+              />
+            )}
           </WizardStep>
 
           {/* Error Display */}
