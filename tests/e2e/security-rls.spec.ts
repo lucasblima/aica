@@ -31,14 +31,14 @@ const CRITICAL_TABLES = [
   'work_items',
   'moments',
   'podcast_episodes',
-  'podcast_workspaces',
+  'podcast_shows',
   'podcast_topics',
   'podcast_pautas',
-  'financial_transactions',
+  'finance_transactions',
   'budget_categories',
   'association_members',
-  'grants',
-  'grant_applications',
+  'grant_opportunities',
+  'grant_projects',
   'memories',
   'message_embeddings',
   'contact_network',
@@ -208,8 +208,8 @@ test.describe('RLS Policy Tests - User Data Isolation', () => {
   });
 
   // Test 5: Financial Transactions - Privacy
-  test('RLS-5.1: financial_transactions - Cannot read other users transactions', async ({ page }) => {
-    const result = await queryTable(page, 'financial_transactions', authToken, {
+  test('RLS-5.1: finance_transactions - Cannot read other users transactions', async ({ page }) => {
+    const result = await queryTable(page, 'finance_transactions', authToken, {
       'user_id': `neq.${userId}`,
     });
 
@@ -220,8 +220,8 @@ test.describe('RLS Policy Tests - User Data Isolation', () => {
     }
   });
 
-  test('RLS-5.2: financial_transactions - Can read own transactions', async ({ page }) => {
-    const result = await queryTable(page, 'financial_transactions', authToken);
+  test('RLS-5.2: finance_transactions - Can read own transactions', async ({ page }) => {
+    const result = await queryTable(page, 'finance_transactions', authToken);
 
     expect(result.status).toBe(200);
     result.data.forEach((transaction: any) => {
@@ -369,12 +369,12 @@ test.describe('RLS Policy Tests - Podcast Workspace Isolation', () => {
     userId = uid;
   });
 
-  // Test 10: Podcast Workspaces
-  test('RLS-10.1: podcast_workspaces - Association-scoped access', async ({ page }) => {
-    const result = await queryTable(page, 'podcast_workspaces', authToken);
+  // Test 10: Podcast Shows (formerly Workspaces)
+  test('RLS-10.1: podcast_shows - Association-scoped access', async ({ page }) => {
+    const result = await queryTable(page, 'podcast_shows', authToken);
 
     expect(result.status).toBe(200);
-    // User should only see workspaces from their associations
+    // User should only see shows from their associations
     // This test validates that RLS is active, even if no data exists
   });
 
@@ -445,16 +445,16 @@ test.describe('RLS Policy Tests - Association & Grant Isolation', () => {
     });
   });
 
-  // Test 16: Grants
-  test('RLS-16.1: grants - Association-scoped access', async ({ page }) => {
-    const result = await queryTable(page, 'grants', authToken);
+  // Test 16: Grant Opportunities
+  test('RLS-16.1: grant_opportunities - Association-scoped access', async ({ page }) => {
+    const result = await queryTable(page, 'grant_opportunities', authToken);
 
     expect(result.status).toBe(200);
   });
 
-  // Test 17: Grant Applications
-  test('RLS-17.1: grant_applications - Association-scoped access', async ({ page }) => {
-    const result = await queryTable(page, 'grant_applications', authToken);
+  // Test 17: Grant Projects
+  test('RLS-17.1: grant_projects - Association-scoped access', async ({ page }) => {
+    const result = await queryTable(page, 'grant_projects', authToken);
 
     expect(result.status).toBe(200);
   });

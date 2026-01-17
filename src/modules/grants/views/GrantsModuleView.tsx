@@ -697,6 +697,8 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                 <button
                   onClick={onBack}
                   className="ceramic-concave p-3 rounded-full hover:scale-105 transition-transform"
+                  data-testid="back-btn"
+                  aria-label="Voltar"
                 >
                   <ArrowLeft className="w-5 h-5 text-ceramic-text-primary" />
                 </button>
@@ -722,6 +724,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                 <button
                   onClick={() => setIsSetupModalOpen(true)}
                   className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform"
+                  data-testid="create-edital-btn"
                 >
                   + Novo Edital
                 </button>
@@ -749,6 +752,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                       <div
                         key={opportunity.id}
                         className="ceramic-card p-6"
+                        data-testid="opportunity-card"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div

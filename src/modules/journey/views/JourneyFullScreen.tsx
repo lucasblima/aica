@@ -188,11 +188,10 @@ export function JourneyFullScreen() {
               <button
                 onClick={() => setShowCapture(!showCapture)}
                 data-tour="add-moment-button"
-                className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${
-                  showCapture
-                    ? 'ceramic-pressed text-[#5C554B]'
-                    : 'ceramic-card hover:ceramic-elevated text-[#5C554B]'
-                }`}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${showCapture
+                  ? 'ceramic-pressed text-[#5C554B]'
+                  : 'ceramic-card hover:ceramic-elevated text-[#5C554B]'
+                  }`}
               >
                 {showCapture ? (
                   <>
@@ -238,7 +237,7 @@ export function JourneyFullScreen() {
               ) : (
                 <div className="space-y-6">
                   {/* CP Score detailed - Consciousness Points */}
-          {/* data-tour="consciousness-points" */}
+                  {/* data-tour="consciousness-points" */}
                   {stats && (
                     <ConsciousnessScore stats={stats} size="md" showDetails={true} />
                   )}
@@ -262,11 +261,10 @@ export function JourneyFullScreen() {
             <div className="ceramic-tray p-2 flex gap-2">
               <button
                 onClick={() => setActiveTab('timeline')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${
-                  activeTab === 'timeline'
-                    ? 'ceramic-card text-amber-700'
-                    : 'text-[#948D82] hover:text-[#5C554B]'
-                }`}
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${activeTab === 'timeline'
+                  ? 'ceramic-card text-amber-700'
+                  : 'text-[#948D82] hover:text-[#5C554B]'
+                  }`}
               >
                 <ClockIcon className="h-5 w-5" />
                 <span>Atividades</span>
@@ -274,11 +272,10 @@ export function JourneyFullScreen() {
 
               <button
                 onClick={() => setActiveTab('insights')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${
-                  activeTab === 'insights'
-                    ? 'ceramic-card text-amber-700'
-                    : 'text-[#948D82] hover:text-[#5C554B]'
-                }`}
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${activeTab === 'insights'
+                  ? 'ceramic-card text-amber-700'
+                  : 'text-[#948D82] hover:text-[#5C554B]'
+                  }`}
               >
                 <ChartBarIcon className="h-5 w-5" />
                 <span>Insights & Patterns</span>
@@ -286,11 +283,10 @@ export function JourneyFullScreen() {
 
               <button
                 onClick={() => setActiveTab('search')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${
-                  activeTab === 'search'
-                    ? 'ceramic-card text-amber-700'
-                    : 'text-[#948D82] hover:text-[#5C554B]'
-                }`}
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${activeTab === 'search'
+                  ? 'ceramic-card text-amber-700'
+                  : 'text-[#948D82] hover:text-[#5C554B]'
+                  }`}
               >
                 <MagnifyingGlassIcon className="h-5 w-5" />
                 <span>Busca</span>
@@ -404,9 +400,9 @@ export function JourneyFullScreen() {
             onViewSimilar={
               currentInsight.theme
                 ? () => {
-                    setActiveTab('search')
-                    findByTag(currentInsight.theme!, 10)
-                  }
+                  setActiveTab('search')
+                  findByTag(currentInsight.theme!, 10)
+                }
                 : undefined
             }
             onViewPatterns={() => {

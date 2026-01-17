@@ -76,6 +76,7 @@ export default function Login({ onLogin, variant = 'full-page' }: LoginProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{ transitionProperty: 'box-shadow' }}
+          data-testid="google-login-button"
         >
           {/* Button content with loading state */}
           <AnimatePresence mode="wait">
