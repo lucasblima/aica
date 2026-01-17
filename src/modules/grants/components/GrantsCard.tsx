@@ -64,7 +64,6 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
       initial="rest"
       whileHover="hover"
       whileTap="pressed"
-      data-testid="grants-card"
     >
       {/* Decorative Background Icon */}
       <FileText className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-200 opacity-10" />
