@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Sparkles, TrendingUp, MessageSquare } from 'lucide-react';
+import { Plus, Users, Sparkles, TrendingUp, MessageSquare, Building2 } from 'lucide-react';
 import { useConnectionSpaces } from '../hooks/useConnectionSpaces';
 import { SpaceCard } from '../components/SpaceCard';
 import { CeramicTabSelector } from '@/components';
 import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-motion';
 import type { Archetype } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';
+import { OrganizationWizard } from '@/modules/grants/components/wizard';
 
 interface ConnectionsViewProps {
   userId: string;
@@ -49,6 +50,7 @@ export function ConnectionsView({
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isOrganizationWizardOpen, setIsOrganizationWizardOpen] = useState(false);
 
   // Fetch connection spaces
   const {
@@ -264,13 +266,24 @@ export function ConnectionsView({
             </p>
           </div>
 
-          <button
-            onClick={onCreateSpace}
-            className="ceramic-card w-10 h-10 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-            aria-label="Criar novo espaço"
-          >
-            <Plus className="w-5 h-5 text-ceramic-accent" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsOrganizationWizardOpen(true)}
+              className="ceramic-card px-3 py-2 flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform"
+              aria-label="Cadastrar nova organização"
+              title="Cadastrar nova organização para participar de editais"
+            >
+              <Building2 className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-bold text-blue-600 hidden sm:inline">+ Organização</span>
+            </button>
+            <button
+              onClick={onCreateSpace}
+              className="ceramic-card w-10 h-10 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              aria-label="Criar novo espaço"
+            >
+              <Plus className="w-5 h-5 text-ceramic-accent" />
+            </button>
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -459,6 +472,21 @@ export function ConnectionsView({
         </section>
       </main>
 
+      {/* Organization Wizard Modal */}
+      {isOrganizationWizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl my-8">
+            <OrganizationWizard
+              onComplete={() => {
+                setIsOrganizationWizardOpen(false);
+                // Refresh spaces list to show new venture
+                refresh();
+              }}
+              onClose={() => setIsOrganizationWizardOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
