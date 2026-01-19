@@ -717,10 +717,10 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                   data-testid="open-organization-wizard"
                   onClick={() => setIsOrganizationWizardOpen(true)}
                   className="ceramic-card px-4 py-3 rounded-full font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
-                  title="Cadastrar Organização"
+                  title="Cadastrar nova organização para participar de editais"
                 >
                   <Building2 className="w-5 h-5" />
-                  <span className="hidden sm:inline">Organização</span>
+                  <span className="hidden sm:inline">+ Nova Organização</span>
                 </button>
                 <button
                   onClick={() => setIsSetupModalOpen(true)}
