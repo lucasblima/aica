@@ -1,0 +1,141 @@
+/**
+ * useWhatsAppSessionSubscription Hook
+ *
+ * Real-time subscription to whatsapp_sessions table changes via Supabase Realtime.
+ * Monitors connection status, profile updates, and disconnections.
+ *
+ * @example
+ * const { session, isConnected, status, error } = useWhatsAppSessionSubscription()
+ *
+ * Issue: #89 - Real-time Status Hook
+ * Epic: #122 - Multi-Instance WhatsApp Architecture
+ */
+
+import { useState, useEffect, useCallback } from 'react'
+import { RealtimeChannel } from '@supabase/supabase-js'
+import { supabase } from '@/services/supabaseClient'
+import type { WhatsAppSession, WhatsAppSessionStatus } from '@/types/whatsappSession'
+
+interface UseWhatsAppSessionSubscriptionReturn {
+  /** Current session data */
+  session: WhatsAppSession | null
+  /** Loading state for initial fetch */
+  isLoading: boolean
+  /** Error state */
+  error: Error | null
+  /** Whether user is connected (status === 'connected') */
+  isConnected: boolean
+  /** Current connection status */
+  status: WhatsAppSessionStatus | null
+  /** Manually refresh session data */
+  refresh: () => Promise<void>
+}
+
+export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscriptionReturn {
+  const [session, setSession] = useState<WhatsAppSession | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  // Fetch session data
+  const fetchSession = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+
+      const { data, error: fetchError } = await supabase
+        .from('whatsapp_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (fetchError) {
+        throw fetchError
+      }
+
+      setSession(data)
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error fetching session')
+      setError(error)
+      console.error('[useWhatsAppSessionSubscription] Fetch error:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Initial fetch
+  useEffect(() => {
+    fetchSession()
+  }, [fetchSession])
+
+  // Set up real-time subscription
+  useEffect(() => {
+    let channel: RealtimeChannel | null = null
+
+    const setupSubscription = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+          console.warn('[useWhatsAppSessionSubscription] No user for subscription')
+          return
+        }
+
+        console.log('[useWhatsAppSessionSubscription] Setting up subscription for user:', user.id)
+
+        channel = supabase
+          .channel(`whatsapp_sessions_${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'whatsapp_sessions',
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              console.log('[useWhatsAppSessionSubscription] Change detected:', payload)
+
+              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                setSession(payload.new as WhatsAppSession)
+              } else if (payload.eventType === 'DELETE') {
+                setSession(null)
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('[useWhatsAppSessionSubscription] Subscription status:', status)
+          })
+      } catch (err) {
+        console.error('[useWhatsAppSessionSubscription] Subscription setup error:', err)
+      }
+    }
+
+    setupSubscription()
+
+    return () => {
+      if (channel) {
+        console.log('[useWhatsAppSessionSubscription] Cleaning up subscription')
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [])
+
+  return {
+    session,
+    isLoading,
+    error,
+    isConnected: session?.status === 'connected',
+    status: session?.status ?? null,
+    refresh: fetchSession,
+  }
+}
+
+export default useWhatsAppSessionSubscription
