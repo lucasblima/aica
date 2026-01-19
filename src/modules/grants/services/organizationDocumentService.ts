@@ -165,6 +165,31 @@ export async function uploadOrganizationDocument(
     });
 
   if (uploadError) {
+    // Provide more specific error messages based on error type
+    console.error('[organizationDocumentService] Upload error:', uploadError);
+
+    if (uploadError.message?.includes('Bucket not found') ||
+        uploadError.message?.includes('bucket') ||
+        (uploadError as unknown as { statusCode?: number }).statusCode === 400) {
+      throw new Error(
+        'O bucket de armazenamento não está configurado. ' +
+        'Por favor, entre em contato com o suporte técnico. ' +
+        `(Detalhes: ${uploadError.message})`
+      );
+    }
+
+    if (uploadError.message?.includes('duplicate') || uploadError.message?.includes('already exists')) {
+      throw new Error('Um arquivo com este nome já existe. Tente renomear o arquivo.');
+    }
+
+    if (uploadError.message?.includes('size') || uploadError.message?.includes('limit')) {
+      throw new Error('O arquivo excede o tamanho máximo permitido de 20MB.');
+    }
+
+    if (uploadError.message?.includes('type') || uploadError.message?.includes('mime')) {
+      throw new Error('Tipo de arquivo não permitido. Use PDF, PNG, JPG ou WebP.');
+    }
+
     throw new Error(`Erro ao enviar arquivo: ${uploadError.message}`);
   }
 
