@@ -238,26 +238,28 @@ class OrganizationWizardPage {
     await this.page.goto('/');
     await this.page.waitForLoadState('networkidle');
 
-    // Navigate to Grants module
-    const grantsButton = this.page
-      .locator('[data-testid="grants-card"]')
-      .or(this.page.locator('[data-testid="grants-open-button"]'))
-      .or(this.page.getByRole('button', { name: /grants|captacao|editais/i }));
+    // Wait for Framer Motion animations to complete (~740ms for grants card)
+    await this.page.waitForTimeout(1000);
 
-    await grantsButton.first().click();
+    // Wait explicitly for grants card to be visible
+    const grantsCard = this.page.locator('[data-testid="grants-card"]');
+    await grantsCard.waitFor({ state: 'visible', timeout: 15000 });
+
+    // Click to navigate to Grants module
+    await grantsCard.click();
     await this.page.waitForLoadState('networkidle');
 
-    // Look for organization wizard or button to open it
-    const openWizardButton = this.page
-      .locator('[data-testid="open-organization-wizard"]')
-      .or(this.page.getByRole('button', { name: /cadastrar organizacao|nova organizacao/i }))
-      .or(this.page.locator('button').filter({ hasText: /organizacao/i }));
+    // Wait for GrantsModuleView lazy load
+    await this.page.waitForTimeout(1000);
 
-    if (await openWizardButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await openWizardButton.click();
-    }
+    // Wait for organization wizard button to be visible
+    const openWizardButton = this.page.locator('[data-testid="open-organization-wizard"]');
+    await openWizardButton.waitFor({ state: 'visible', timeout: 15000 });
+    await openWizardButton.click();
 
-    await this.page.waitForTimeout(500);
+    // Wait for wizard to appear
+    await this.page.locator('[data-testid="organization-wizard"]')
+      .waitFor({ state: 'visible', timeout: 10000 });
   }
 
   // Get field input by name
