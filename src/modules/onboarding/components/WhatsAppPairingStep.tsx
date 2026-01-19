@@ -14,6 +14,8 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
+import { supabase } from '@/services/supabaseClient';
+import type { CreateInstanceResponse } from '@/types/whatsappSession';
 
 interface WhatsAppPairingStepProps {
   /** Callback when pairing is successful */
@@ -34,6 +36,8 @@ export function WhatsAppPairingStep({
   const [state, setState] = useState<PairingState>('input');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [formattedPhone, setFormattedPhone] = useState('');
+  const [instanceName, setInstanceName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Format phone number as user types
   const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,10 +58,51 @@ export function WhatsAppPairingStep({
 
   // Handle form submit
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      if (phoneNumber.length >= 10) {
+      if (phoneNumber.length < 10) return;
+
+      try {
+        setError(null);
         setState('pairing');
+
+        console.log('[WhatsAppPairingStep] Creating user instance...');
+
+        // CRITICAL: Create instance BEFORE generating pairing code
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+
+        if (!authSession?.access_token) {
+          throw new Error('Usuário não autenticado. Por favor, faça login novamente.');
+        }
+
+        // Call create-user-instance Edge Function
+        const response = await supabase.functions.invoke('create-user-instance', {
+          body: {},
+          headers: {
+            Authorization: `Bearer ${authSession.access_token}`,
+          },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Falha ao criar instância WhatsApp');
+        }
+
+        const result = response.data as CreateInstanceResponse;
+
+        if (!result.success || !result.session) {
+          throw new Error(result.error || 'Falha ao criar instância WhatsApp');
+        }
+
+        console.log('[WhatsAppPairingStep] Instance created:', result.session.instance_name);
+        setInstanceName(result.session.instance_name);
+
+        // Now proceed to pairing code display
+        // PairingCodeDisplay will handle code generation
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+        setError(errorMessage);
+        setState('input');
+        console.error('[WhatsAppPairingStep] Error creating instance:', errorMessage);
       }
     },
     [phoneNumber]
@@ -98,13 +143,26 @@ export function WhatsAppPairingStep({
           Conectar WhatsApp
         </h2>
         <p className="text-ceramic-600 mt-1">
-          {state === 'input'
+          {error
+            ? 'Erro ao conectar - Tente novamente'
+            : state === 'input'
             ? 'Digite seu número de telefone para gerar o código'
             : state === 'pairing'
             ? 'Digite o código no WhatsApp do seu celular'
             : 'WhatsApp conectado com sucesso!'}
         </p>
       </motion.div>
+
+      {/* Error Display */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm"
+        >
+          {error}
+        </motion.div>
+      )}
 
       {/* Phone Input State */}
       {state === 'input' && (
@@ -155,7 +213,7 @@ export function WhatsAppPairingStep({
       )}
 
       {/* Pairing State */}
-      {state === 'pairing' && (
+      {state === 'pairing' && instanceName && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -166,7 +224,10 @@ export function WhatsAppPairingStep({
               <Phone className="w-5 h-5 text-ceramic-500" />
               <span className="text-ceramic-700">+55 {formattedPhone}</span>
               <button
-                onClick={() => setState('input')}
+                onClick={() => {
+                  setState('input');
+                  setError(null);
+                }}
                 className="ml-auto text-sm text-green-600 hover:text-green-500"
               >
                 Alterar
