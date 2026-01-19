@@ -1,6 +1,17 @@
 {
   "hooks": {
-    "UserPromptSubmit": [],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Analyze this user message and suggest the appropriate specialized agent. Available agents: backend-architect-supabase (database/migrations), testing-qa-playwright (E2E tests), gamification-engine (XP/achievements), podcast-production-copilot (podcast), calendar-executive (Google Calendar), gemini-integration-specialist (AI/Gemini), security-privacy-auditor (security/LGPD), ux-design-guardian (UI/UX), atlas-task-manager (tasks), master-architect-planner (multi-domain planning). If the task matches a specialized agent, respond with ONLY: 'Agent suggestion: [agent-name]'. If no specific agent matches or it's a simple question, respond with 'No delegation needed'. User message: $ARGUMENTS",
+            "model": "claude-haiku-4-20250514",
+            "statusMessage": "Analyzing task routing..."
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
