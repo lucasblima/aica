@@ -10,7 +10,7 @@
  * - Consent management
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { sendWhatsAppMessage as sendWhatsAppMessageEdge } from './edgeFunctionService';
 import {
   WhatsAppMessage,

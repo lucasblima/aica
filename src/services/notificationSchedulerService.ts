@@ -8,7 +8,7 @@
  * - View notification history
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import {
   ScheduledNotification,
   NotificationTemplate,
