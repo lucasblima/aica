@@ -110,29 +110,31 @@ export function ContactsView() {
   }, [user?.id]);
 
   // Auto-sync when session exists but status isn't connected
-  // Uses ref to prevent infinite re-triggering
-  useEffect(() => {
-    const shouldSync =
-      !isCheckingSession &&
-      whatsappSession &&
-      whatsappSession.status !== 'connected' &&
-      whatsappSession.instance_name &&
-      !isSyncingStatus &&
-      !hasAttemptedDatabaseSync.current; // Prevent re-trigger
-
-    if (shouldSync) {
-      hasAttemptedDatabaseSync.current = true;
-      syncDatabaseWithEvolutionAPI(whatsappSession.instance_name);
-    }
-  }, [isCheckingSession, whatsappSession?.status, whatsappSession?.instance_name, isSyncingStatus, syncDatabaseWithEvolutionAPI]);
+  // DISABLED: This was causing infinite loops due to real-time subscription updates
+  // The webhook should handle status updates automatically
+  // If manual sync is needed, user can trigger it via the UI
+  // useEffect(() => {
+  //   const shouldSync =
+  //     !isCheckingSession &&
+  //     whatsappSession &&
+  //     whatsappSession.status !== 'connected' &&
+  //     whatsappSession.instance_name &&
+  //     !isSyncingStatus &&
+  //     !hasAttemptedDatabaseSync.current;
+  //
+  //   if (shouldSync) {
+  //     hasAttemptedDatabaseSync.current = true;
+  //     syncDatabaseWithEvolutionAPI(whatsappSession.instance_name);
+  //   }
+  // }, [isCheckingSession, whatsappSession?.status, whatsappSession?.instance_name, isSyncingStatus, syncDatabaseWithEvolutionAPI]);
 
   // Load contacts from database
   useEffect(() => {
-    if (user && whatsappSession?.status === 'connected') {
+    if (user?.id && whatsappSession?.status === 'connected') {
       loadContacts();
       loadSyncStatus();
     }
-  }, [user, whatsappSession?.status]);
+  }, [user?.id, whatsappSession?.status]); // Use user?.id instead of user object to prevent re-renders
 
   // AUTO-SYNC: Only trigger when connected AND never synced before (lastSyncAt === null)
   useEffect(() => {
@@ -311,8 +313,8 @@ export function ContactsView() {
     }
   };
 
-  // Show loading while checking session, syncing status, or auto-syncing contacts
-  if (isCheckingSession || isSyncingStatus || isAutoSyncing) {
+  // Show loading while checking session or auto-syncing contacts
+  if (isCheckingSession || isAutoSyncing) {
     return (
       <div className="min-h-screen bg-ceramic-base flex items-center justify-center">
         <div className="text-center">
@@ -320,8 +322,6 @@ export function ContactsView() {
           <p className="text-ceramic-text-secondary">
             {isAutoSyncing
               ? 'Sincronizando contatos do WhatsApp...'
-              : isSyncingStatus
-              ? 'Sincronizando status com Evolution API...'
               : 'Verificando conexão WhatsApp...'}
           </p>
           {isAutoSyncing && (
