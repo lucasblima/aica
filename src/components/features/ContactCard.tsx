@@ -14,6 +14,9 @@ interface ContactCardProps {
 }
 
 export function ContactCard({ contact, onClick }: ContactCardProps) {
+  // Use WhatsApp profile pic as fallback for avatar
+  const avatarUrl = contact.avatar_url || contact.whatsapp_profile_pic_url || null;
+
   return (
     <motion.button
       onClick={() => onClick(contact)}
@@ -23,11 +26,21 @@ export function ContactCard({ contact, onClick }: ContactCardProps) {
     >
       <div className="flex items-start gap-4 mb-4">
         <div className="flex-shrink-0">
-          <img
-            src={contact.avatar_url || '/default-avatar.png'}
-            alt={contact.name}
-            className="w-14 h-14 rounded-full ceramic-inset object-cover"
-          />
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={contact.name}
+              className="w-14 h-14 rounded-full ceramic-inset object-cover"
+              onError={(e) => {
+                // Fallback to initials on image load error
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div className={`w-14 h-14 rounded-full ceramic-inset flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 text-white font-bold text-lg ${avatarUrl ? 'hidden' : ''}`}>
+            {contact.name?.charAt(0)?.toUpperCase() || '?'}
+          </div>
         </div>
 
         <div className="flex-1 min-w-0">
