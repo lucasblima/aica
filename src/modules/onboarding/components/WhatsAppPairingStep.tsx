@@ -10,11 +10,12 @@
  * @see PR #120 - WhatsApp Onboarding Flow
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
 import { supabase } from '@/services/supabaseClient';
+import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
 import type { CreateInstanceResponse } from '@/types/whatsappSession';
 
 interface WhatsAppPairingStepProps {
@@ -39,6 +40,21 @@ export function WhatsAppPairingStep({
   const [instanceName, setInstanceName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCreatingInstance, setIsCreatingInstance] = useState(false);
+
+  // Subscribe to session changes for automatic connection detection
+  const { isConnected, status: sessionStatus } = useWhatsAppSessionSubscription();
+
+  // Auto-detect when WhatsApp is connected via webhook
+  useEffect(() => {
+    if (isConnected && (state === 'pairing' || state === 'creating')) {
+      console.log('[WhatsAppPairingStep] Connection detected via realtime subscription!');
+      setState('connected');
+      // Delay before advancing to next step
+      setTimeout(() => {
+        onSuccess();
+      }, 1500);
+    }
+  }, [isConnected, state, onSuccess]);
 
   // Format phone number as user types
   const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,6 +288,14 @@ export function WhatsAppPairingStep({
             onCodeGenerated={handleCodeGenerated}
             onPairingSuccess={handlePairingSuccess}
           />
+
+          {/* Connection monitoring indicator */}
+          <div className="p-3 bg-blue-50 rounded-xl flex items-center gap-3">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <span className="text-sm text-blue-700">
+              Aguardando conexão... {sessionStatus && `(${sessionStatus})`}
+            </span>
+          </div>
 
           {/* Manual success button for testing */}
           <div className="pt-4 border-t border-ceramic-100">
