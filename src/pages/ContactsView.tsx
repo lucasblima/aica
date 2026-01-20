@@ -5,10 +5,10 @@
  * Shows WhatsApp pairing flow if user hasn't connected their WhatsApp yet.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Users, Search, MessageCircle, Loader2 } from 'lucide-react';
-import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
+import { RefreshCw, Users, Users2, Search, MessageCircle, Loader2, User, Briefcase, Heart, Home, GraduationCap, Package } from 'lucide-react';
+import { HeaderGlobal, ContactCard, ContactDetailModal, CreditBalanceWidget } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
 import { supabase } from '../services/supabaseClient';
@@ -17,6 +17,7 @@ import type { ContactNetwork } from '../types/memoryTypes';
 // WhatsApp Onboarding Components
 import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep';
 import { getWhatsAppSession } from '../modules/onboarding/services/onboardingService';
+import { useWhatsAppConnection } from '../modules/connections/hooks/useWhatsAppConnection';
 import type { WhatsAppSession } from '../modules/onboarding/types';
 
 export function ContactsView() {
@@ -25,6 +26,7 @@ export function ContactsView() {
   const [filteredContacts, setFilteredContacts] = useState<ContactNetwork[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSource, setFilterSource] = useState<'all' | 'google' | 'whatsapp'>('all');
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactNetwork | null>(null);
@@ -35,6 +37,39 @@ export function ContactsView() {
   // WhatsApp session state
   const [whatsappSession, setWhatsappSession] = useState<WhatsAppSession | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isSyncingStatus, setIsSyncingStatus] = useState(false);
+
+  // Auto-sync state
+  const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+
+  // Use WhatsApp connection hook for configureWebhook
+  const { configureWebhook, session: hookSession, isConnected } = useWhatsAppConnection();
+
+  // Sync database status with Evolution API if needed
+  const syncDatabaseWithEvolutionAPI = useCallback(async () => {
+    if (!whatsappSession?.instance_name) return false;
+
+    console.log('[ContactsView] Attempting to sync database status with Evolution API...');
+    setIsSyncingStatus(true);
+
+    try {
+      const result = await configureWebhook();
+      if (result?.success && result.connectionState === 'open') {
+        console.log('[ContactsView] Database synced! Evolution API reports connected.');
+        // Refresh the session after sync
+        const session = await getWhatsAppSession(user!.id);
+        setWhatsappSession(session);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[ContactsView] Error syncing with Evolution API:', err);
+      return false;
+    } finally {
+      setIsSyncingStatus(false);
+    }
+  }, [whatsappSession?.instance_name, configureWebhook, user]);
 
   // Check WhatsApp session status
   useEffect(() => {
@@ -47,6 +82,12 @@ export function ContactsView() {
       try {
         const session = await getWhatsAppSession(user.id);
         setWhatsappSession(session);
+
+        // If session exists but status isn't 'connected', try to sync with Evolution API
+        // This handles cases where the webhook didn't update the database properly
+        if (session && session.status !== 'connected' && session.instance_name) {
+          console.log('[ContactsView] Session exists but not connected. Checking Evolution API...');
+        }
       } catch (err) {
         console.error('[ContactsView] Error checking WhatsApp session:', err);
       } finally {
@@ -57,6 +98,13 @@ export function ContactsView() {
     checkWhatsAppSession();
   }, [user?.id]);
 
+  // Auto-sync when session exists but status isn't connected
+  useEffect(() => {
+    if (!isCheckingSession && whatsappSession && whatsappSession.status !== 'connected' && whatsappSession.instance_name && !isSyncingStatus) {
+      syncDatabaseWithEvolutionAPI();
+    }
+  }, [isCheckingSession, whatsappSession, isSyncingStatus, syncDatabaseWithEvolutionAPI]);
+
   // Load contacts from database
   useEffect(() => {
     if (user && whatsappSession?.status === 'connected') {
@@ -64,6 +112,51 @@ export function ContactsView() {
       loadSyncStatus();
     }
   }, [user, whatsappSession?.status]);
+
+  // AUTO-SYNC: Only trigger when connected AND never synced before (lastSyncAt === null)
+  useEffect(() => {
+    const shouldAutoSync =
+      whatsappSession?.status === 'connected' &&
+      !isLoading &&
+      !isCheckingSession &&
+      syncStatus !== null && // Wait until we know sync status
+      syncStatus.lastSyncAt === null && // Only if NEVER synced before
+      !hasAttemptedAutoSync &&
+      !isSyncing &&
+      !isAutoSyncing;
+
+    if (shouldAutoSync) {
+      console.log('[ContactsView] Auto-sync triggered: connected but never synced');
+      setHasAttemptedAutoSync(true);
+      setIsAutoSyncing(true);
+
+      syncWhatsAppContacts()
+        .then((result) => {
+          console.log('[ContactsView] Auto-sync result:', result);
+          if (result.success) {
+            loadContacts();
+            loadSyncStatus();
+          } else {
+            setError(`Erro ao sincronizar: ${result.errors.join(', ')}`);
+          }
+        })
+        .catch((err) => {
+          console.error('[ContactsView] Auto-sync error:', err);
+          setError(`Erro ao sincronizar: ${err.message}`);
+        })
+        .finally(() => {
+          setIsAutoSyncing(false);
+        });
+    }
+  }, [
+    whatsappSession?.status,
+    isLoading,
+    isCheckingSession,
+    syncStatus,
+    hasAttemptedAutoSync,
+    isSyncing,
+    isAutoSyncing,
+  ]);
 
   const loadContacts = async () => {
     setIsLoading(true);
@@ -128,12 +221,23 @@ export function ContactsView() {
     }
   };
 
-  // Filter contacts based on search and source
+  // Calculate category counts
+  const categoryCounts = contacts.reduce((acc, c) => {
+    const category = c.relationship_type || 'other';
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Filter contacts based on search, source, and category
   useEffect(() => {
     let filtered = contacts;
 
     if (filterSource !== 'all') {
       filtered = filtered.filter(c => c.sync_source === filterSource);
+    }
+
+    if (filterCategory) {
+      filtered = filtered.filter(c => c.relationship_type === filterCategory);
     }
 
     if (searchQuery.trim()) {
@@ -146,7 +250,7 @@ export function ContactsView() {
     }
 
     setFilteredContacts(filtered);
-  }, [contacts, searchQuery, filterSource]);
+  }, [contacts, searchQuery, filterSource, filterCategory]);
 
   const handleContactSelect = (contact: ContactNetwork) => {
     setSelectedContact(contact);
@@ -156,6 +260,20 @@ export function ContactsView() {
   const handleContactSave = async (updatedContact: Partial<ContactNetwork>) => {
     console.log('[ContactsView] Contact save:', updatedContact);
     setIsDetailModalOpen(false);
+  };
+
+  const handleContactUpdated = (contactId: string, healthScore: number) => {
+    console.log('[ContactsView] Contact updated with health score:', contactId, healthScore);
+    // Update the contact in the local state
+    setContacts(prev => prev.map(c =>
+      c.id === contactId
+        ? { ...c, health_score: healthScore, last_analyzed_at: new Date().toISOString() }
+        : c
+    ));
+    // Update selected contact if it's the same
+    if (selectedContact?.id === contactId) {
+      setSelectedContact(prev => prev ? { ...prev, health_score: healthScore, last_analyzed_at: new Date().toISOString() } : prev);
+    }
   };
 
   // Handle WhatsApp pairing success
@@ -172,29 +290,25 @@ export function ContactsView() {
     }
   };
 
-  const cardVariants = {
-    container: {
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: {
-          staggerChildren: 0.05,
-        },
-      },
-    },
-    item: {
-      hidden: { opacity: 0, y: 10 },
-      visible: { opacity: 1, y: 0 },
-    },
-  };
 
-  // Show loading while checking session
-  if (isCheckingSession) {
+  // Show loading while checking session, syncing status, or auto-syncing contacts
+  if (isCheckingSession || isSyncingStatus || isAutoSyncing) {
     return (
       <div className="min-h-screen bg-ceramic-base flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
-          <p className="text-ceramic-text-secondary">Verificando conexão WhatsApp...</p>
+          <p className="text-ceramic-text-secondary">
+            {isAutoSyncing
+              ? 'Sincronizando contatos do WhatsApp...'
+              : isSyncingStatus
+              ? 'Sincronizando status com Evolution API...'
+              : 'Verificando conexão WhatsApp...'}
+          </p>
+          {isAutoSyncing && (
+            <p className="text-ceramic-text-tertiary text-sm mt-2">
+              Primeira sincronização em andamento
+            </p>
+          )}
         </div>
       </div>
     );
@@ -234,6 +348,9 @@ export function ContactsView() {
 
       {/* Main Content */}
       <main className="p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Credit Balance Widget */}
+        <CreditBalanceWidget className="max-w-md" />
+
         {/* Search and Filter Bar */}
         <div className="flex gap-3 items-end">
           {/* Search Input */}
@@ -293,6 +410,56 @@ export function ContactsView() {
           </div>
         </div>
 
+        {/* Category Chips */}
+        {Object.keys(categoryCounts).length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFilterCategory(null)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                filterCategory === null
+                  ? 'bg-green-500 text-white'
+                  : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
+              }`}
+            >
+              <Users className="w-3 h-3" />
+              Todos ({contacts.length})
+            </button>
+            {Object.entries(categoryCounts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([category, count]) => {
+                const categoryConfig: Record<string, { icon: React.ElementType; label: string; color: string }> = {
+                  group: { icon: Users2, label: 'Grupos', color: 'bg-purple-500' },
+                  contact: { icon: User, label: 'Contatos', color: 'bg-blue-500' },
+                  colleague: { icon: Briefcase, label: 'Colegas', color: 'bg-amber-500' },
+                  client: { icon: Briefcase, label: 'Clientes', color: 'bg-emerald-500' },
+                  friend: { icon: Heart, label: 'Amigos', color: 'bg-pink-500' },
+                  family: { icon: Home, label: 'Família', color: 'bg-red-500' },
+                  mentor: { icon: GraduationCap, label: 'Mentores', color: 'bg-indigo-500' },
+                  mentee: { icon: GraduationCap, label: 'Mentorados', color: 'bg-cyan-500' },
+                  vendor: { icon: Package, label: 'Fornecedores', color: 'bg-orange-500' },
+                  other: { icon: User, label: 'Outros', color: 'bg-gray-500' },
+                };
+                const config = categoryConfig[category] || { icon: User, label: category, color: 'bg-gray-500' };
+                const Icon = config.icon;
+
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setFilterCategory(filterCategory === category ? null : category)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      filterCategory === category
+                        ? `${config.color} text-white`
+                        : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" />
+                    {config.label} ({count})
+                  </button>
+                );
+              })}
+          </div>
+        )}
+
         {/* Sync Status */}
         {syncStatus && syncStatus.contactCount > 0 && (
           <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
@@ -332,25 +499,16 @@ export function ContactsView() {
             </p>
           </motion.div>
         ) : (
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            variants={cardVariants.container}
-            initial="hidden"
-            animate="visible"
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredContacts.map((contact) => (
-              <motion.div
-                key={contact.id}
-                variants={cardVariants.item}
-                layout
-              >
+              <div key={contact.id}>
                 <ContactCard
                   contact={contact}
                   onClick={() => handleContactSelect(contact)}
                 />
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         )}
 
         {/* Results Counter */}
@@ -371,6 +529,7 @@ export function ContactsView() {
             isOpen={isDetailModalOpen}
             onClose={() => setIsDetailModalOpen(false)}
             onSave={handleContactSave}
+            onContactUpdated={handleContactUpdated}
           />
         )}
       </AnimatePresence>

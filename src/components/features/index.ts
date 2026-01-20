@@ -16,6 +16,11 @@ export { default as ContactCard } from './ContactCard';
 // prettier-ignore
 export { default as ContactDetailModal } from './ContactDetailModal';
 export { ContactProfileView } from './ContactProfileView';
+// Aica Processing Components
+export { CreditBalanceWidget } from './CreditBalanceWidget';
+export { ProcessWithAicaButton } from './ProcessWithAicaButton';
+export { ProcessingEstimateModal } from './ProcessingEstimateModal';
+export { AnalysisResultsPanel } from './AnalysisResultsPanel';
 export { DailyTimeline } from './DailyTimeline';
 export { DailySummaryView } from './DailySummaryView';
 // prettier-ignore
@@ -43,3 +48,6 @@ export { UnifiedChatInterface } from './UnifiedChatInterface';
 export type { UnifiedChatInterfaceProps, QuickAction } from './UnifiedChatInterface';
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';
 export { WeeklyCalendarView } from './WeeklyCalendarView';
+
+// Admin Components - Issue #129
+export { CapacityGauge, StatusPieChart, InstanceTable, ErrorsLog, HealthAlerts } from './admin';

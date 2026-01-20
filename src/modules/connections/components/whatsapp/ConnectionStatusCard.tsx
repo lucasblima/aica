@@ -107,6 +107,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   defaultMethod = 'pairing',
 }) => {
   const {
+    session,
     connectionState,
     qrCode,
     isLoading,
@@ -122,18 +123,18 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
   const [status, setStatus] = useState<ConnectionStatus>('unknown');
   const [connectionMethod, setConnectionMethod] = useState<ConnectionMethod>(defaultMethod);
 
-  // Determine connection status from connectionState
+  // Determine connection status from session (database) and connectionState (Evolution API)
   useEffect(() => {
-    if (!connectionState) {
+    if (!session) {
       setStatus('unknown');
-    } else if (connectionState.state === 'open') {
+    } else if (session.status === 'connected' && connectionState?.state === 'open') {
       setStatus('connected');
-    } else if (connectionState.state === 'connecting') {
+    } else if (session.status === 'connecting' || connectionState?.state === 'connecting') {
       setStatus('connecting');
     } else {
       setStatus('disconnected');
     }
-  }, [connectionState]);
+  }, [session, connectionState]);
 
   // Auto-refresh connection status
   useEffect(() => {
@@ -197,7 +198,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
               Conexão WhatsApp
             </h3>
             <p className="text-sm text-ceramic-text-secondary">
-              {process.env.VITE_EVOLUTION_INSTANCE_NAME || 'AI_Comtxae_4006'}
+              {session?.instance_name || 'Aguardando conexão...'}
             </p>
           </div>
         </div>
@@ -226,9 +227,9 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
               <p className="text-sm font-bold text-ceramic-text-primary">
                 {getStatusLabel(status)}
               </p>
-              {connectionState?.state && (
+              {session?.status && (
                 <p className="text-xs text-ceramic-text-secondary">
-                  Estado: {connectionState.state}
+                  Status: {session.status}
                 </p>
               )}
             </div>
@@ -387,8 +388,8 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
       </div>
 
       {/* Connection Info */}
-      {connectionState && status === 'connected' && (
-        <div className="ceramic-inset p-4 rounded-xl space-y-2">
+      {status === 'connected' && connectionState?.state === 'open' && (
+        <div className="ceramic-inset p-4 rounded-xl space-y-3">
           <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
             Informações da Conexão
           </p>
@@ -396,7 +397,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
             <div>
               <p className="text-xs text-ceramic-text-secondary">Instância</p>
               <p className="text-sm font-bold text-ceramic-text-primary">
-                {connectionState.instance || 'N/A'}
+                {connectionState.instance || connectionState?.state}
               </p>
             </div>
             <div>
@@ -404,6 +405,63 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
               <p className="text-sm font-bold text-ceramic-text-primary">
                 {connectionState.state}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Session Details (from whatsapp_sessions table) */}
+      {session && status === 'connected' && (
+        <div className="ceramic-inset p-4 rounded-xl space-y-3">
+          <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+            Detalhes da Sessão
+          </p>
+          <div className="space-y-2">
+            {session.phone_number && (
+              <div>
+                <p className="text-xs text-ceramic-text-secondary">Número</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">
+                  {session.phone_number}
+                </p>
+              </div>
+            )}
+            {session.profile_name && (
+              <div>
+                <p className="text-xs text-ceramic-text-secondary">Nome do Perfil</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">
+                  {session.profile_name}
+                </p>
+              </div>
+            )}
+            {session.connected_at && (
+              <div>
+                <p className="text-xs text-ceramic-text-secondary">Conectado em</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">
+                  {new Date(session.connected_at).toLocaleString('pt-BR')}
+                </p>
+              </div>
+            )}
+            {session.last_sync_at && (
+              <div>
+                <p className="text-xs text-ceramic-text-secondary">Última Sincronização</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">
+                  {new Date(session.last_sync_at).toLocaleString('pt-BR')}
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-xs text-ceramic-text-secondary">Contatos</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">
+                  {session.contacts_count}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-ceramic-text-secondary">Grupos</p>
+                <p className="text-sm font-bold text-ceramic-text-primary">
+                  {session.groups_count}
+                </p>
+              </div>
             </div>
           </div>
         </div>

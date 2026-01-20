@@ -164,9 +164,11 @@ serve(async (req: Request) => {
       }
 
       // Configure webhook
+      // CRITICAL: Evolution API v2 requires 'webhook' wrapper object with proper key names
+      // See: https://github.com/EvolutionAPI/evolution-api/issues/1220
       const webhookUrl = `${supabaseUrl}/functions/v1/webhook-evolution`
       try {
-        await fetch(
+        const webhookConfigResponse = await fetch(
           `${evolutionApiUrl}/webhook/set/${session.instance_name}`,
           {
             method: 'POST',
@@ -175,23 +177,37 @@ serve(async (req: Request) => {
               'apikey': evolutionApiKey,
             },
             body: JSON.stringify({
-              url: webhookUrl,
-              webhook_by_events: true,
-              webhook_base64: false,
-              events: ['CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'QRCODE_UPDATED', 'CONTACTS_UPDATE'],
+              webhook: {
+                enabled: true,
+                url: webhookUrl,
+                webhookByEvents: true,
+                webhookBase64: false,
+                events: ['CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'QRCODE_UPDATED', 'CONTACTS_UPDATE'],
+              },
             }),
           }
         )
+
+        if (webhookConfigResponse.ok) {
+          console.log(`[generate-pairing-code] Webhook configured for ${session.instance_name}`)
+        } else {
+          const webhookErrorText = await webhookConfigResponse.text()
+          console.warn(`[generate-pairing-code] Webhook config failed: ${webhookConfigResponse.status} - ${webhookErrorText}`)
+        }
       } catch (e) {
         console.warn('[generate-pairing-code] Webhook config failed:', e)
       }
     }
 
     // 9. Generate pairing code via Evolution API
-    console.log(`[generate-pairing-code] Requesting code for instance: ${session.instance_name}`)
+    // CORRECT: GET /instance/connect/{instance}?number={phoneNumber}
+    // The phone number MUST be passed as query parameter to get pairing code
+    // Without ?number=, it returns QR code only (pairingCode: null)
+    // See: https://github.com/EvolutionAPI/evolution-api/issues/1220
+    console.log(`[generate-pairing-code] Requesting code for instance: ${session.instance_name}, phone: ${cleanPhone}`)
 
     const pairingResponse = await fetch(
-      `${evolutionApiUrl}/instance/connect/${session.instance_name}`,
+      `${evolutionApiUrl}/instance/connect/${session.instance_name}?number=${cleanPhone}`,
       {
         method: 'GET',
         headers: {
