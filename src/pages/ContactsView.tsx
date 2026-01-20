@@ -290,7 +290,6 @@ export function ContactsView() {
     }
   };
 
-
   // Show loading while checking session, syncing status, or auto-syncing contacts
   if (isCheckingSession || isSyncingStatus || isAutoSyncing) {
     return (
