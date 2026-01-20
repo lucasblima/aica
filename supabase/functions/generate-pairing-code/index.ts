@@ -188,21 +188,20 @@ serve(async (req: Request) => {
     }
 
     // 9. Generate pairing code via Evolution API
-    // IMPORTANT: Use POST /instance/{name}/create-code endpoint (NOT GET /instance/connect)
-    // The /connect endpoint returns QR code data, not the 8-char pairing code
+    // CORRECT: GET /instance/connect/{instance}?number={phoneNumber}
+    // The phone number MUST be passed as query parameter to get pairing code
+    // Without ?number=, it returns QR code only (pairingCode: null)
+    // See: https://github.com/EvolutionAPI/evolution-api/issues/1220
     console.log(`[generate-pairing-code] Requesting code for instance: ${session.instance_name}, phone: ${cleanPhone}`)
 
     const pairingResponse = await fetch(
-      `${evolutionApiUrl}/instance/${session.instance_name}/create-code`,
+      `${evolutionApiUrl}/instance/connect/${session.instance_name}?number=${cleanPhone}`,
       {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'apikey': evolutionApiKey,
         },
-        body: JSON.stringify({
-          phoneNumber: cleanPhone,
-        }),
       }
     )
 
