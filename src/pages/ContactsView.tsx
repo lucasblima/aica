@@ -290,21 +290,6 @@ export function ContactsView() {
     }
   };
 
-  const cardVariants = {
-    container: {
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: {
-          staggerChildren: 0.05,
-        },
-      },
-    },
-    item: {
-      hidden: { opacity: 0, y: 10 },
-      visible: { opacity: 1, y: 0 },
-    },
-  };
 
   // Show loading while checking session, syncing status, or auto-syncing contacts
   if (isCheckingSession || isSyncingStatus || isAutoSyncing) {
@@ -363,8 +348,8 @@ export function ContactsView() {
 
       {/* Main Content */}
       <main className="p-6 space-y-6 max-w-7xl mx-auto">
-        {/* Credit Balance Widget - Temporarily disabled to debug */}
-        {/* <CreditBalanceWidget className="max-w-md" /> */}
+        {/* Credit Balance Widget */}
+        <CreditBalanceWidget className="max-w-md" />
 
         {/* Search and Filter Bar */}
         <div className="flex gap-3 items-end">
@@ -514,25 +499,16 @@ export function ContactsView() {
             </p>
           </motion.div>
         ) : (
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            variants={cardVariants.container}
-            initial="hidden"
-            animate="visible"
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredContacts.map((contact) => (
-              <motion.div
-                key={contact.id}
-                variants={cardVariants.item}
-                layout
-              >
+              <div key={contact.id}>
                 <ContactCard
                   contact={contact}
                   onClick={() => handleContactSelect(contact)}
                 />
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         )}
 
         {/* Results Counter */}
