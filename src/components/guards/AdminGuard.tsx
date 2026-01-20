@@ -18,19 +18,26 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children, fallbackPath = '/' }: AdminGuardProps) {
-  const { user, loading } = useAuth()
+  const { user, isLoading, isAuthenticated } = useAuth()
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingScreen message="Verificando permissões..." />
   }
 
   // Check if user is authenticated
-  if (!user) {
-    return <Navigate to="/login" replace />
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/landing" replace />
   }
 
   // Check if user has admin flag in metadata
   const isAdmin = user.user_metadata?.is_admin === true
+
+  console.log('[AdminGuard] Checking admin access:', {
+    userId: user.id,
+    email: user.email,
+    isAdmin,
+    metadata: user.user_metadata,
+  })
 
   if (!isAdmin) {
     console.warn('[AdminGuard] Access denied: user is not an admin')
