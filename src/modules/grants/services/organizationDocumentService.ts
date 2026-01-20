@@ -211,15 +211,124 @@ export async function uploadOrganizationDocument(
 }
 
 // =============================================================================
+// FILE TYPE DETECTION
+// =============================================================================
+
+type EdgeFunctionFileType = 'pdf' | 'pptx' | 'docx' | 'image';
+
+/**
+ * Map MIME type to Edge Function file_type parameter
+ */
+function getFileTypeFromMime(mimeType: string): EdgeFunctionFileType {
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (mimeType.includes('presentation') || mimeType.includes('pptx')) return 'pptx';
+  if (mimeType.includes('document') || mimeType.includes('docx')) return 'docx';
+  if (mimeType.startsWith('image/')) return 'image';
+  // Default to pdf for unknown types
+  return 'pdf';
+}
+
+// =============================================================================
+// FIELD MAPPING FROM process-document RESPONSE
+// =============================================================================
+
+/**
+ * Map extracted_fields from process-document to OrganizationFields
+ * The process-document function extracts different fields based on document type
+ */
+function mapExtractedFieldsToOrganizationFields(
+  extractedFields: Record<string, unknown>,
+  detectedType: string
+): { fields: OrganizationFields; fieldConfidence: Record<string, number> } {
+  const fields: OrganizationFields = {};
+  const fieldConfidence: Record<string, number> = {};
+
+  // Default confidence for mapped fields
+  const defaultConfidence = 0.75;
+
+  // CNPJ -> document_number
+  if (extractedFields.cnpj) {
+    fields.document_number = String(extractedFields.cnpj);
+    fieldConfidence.document_number = defaultConfidence;
+  }
+
+  // razao_social -> legal_name
+  if (extractedFields.razao_social) {
+    fields.legal_name = String(extractedFields.razao_social);
+    fieldConfidence.legal_name = defaultConfidence;
+  }
+
+  // nome_fantasia or proponente -> name
+  if (extractedFields.nome_fantasia) {
+    fields.name = String(extractedFields.nome_fantasia);
+    fieldConfidence.name = defaultConfidence;
+  } else if (extractedFields.proponente) {
+    fields.name = String(extractedFields.proponente);
+    fieldConfidence.name = defaultConfidence * 0.9;
+  } else if (extractedFields.nome_organizacao) {
+    fields.name = String(extractedFields.nome_organizacao);
+    fieldConfidence.name = defaultConfidence;
+  }
+
+  // objeto_social -> description
+  if (extractedFields.objeto_social) {
+    fields.description = String(extractedFields.objeto_social);
+    fieldConfidence.description = defaultConfidence;
+  }
+
+  // missao -> mission
+  if (extractedFields.missao) {
+    fields.mission = String(extractedFields.missao);
+    fieldConfidence.mission = defaultConfidence;
+  }
+
+  // areas_atuacao -> areas_of_activity
+  if (extractedFields.areas_atuacao && Array.isArray(extractedFields.areas_atuacao)) {
+    fields.areas_of_activity = extractedFields.areas_atuacao as string[];
+    fieldConfidence.areas_of_activity = defaultConfidence;
+  }
+
+  // data_constituicao -> foundation_year (extract year)
+  if (extractedFields.data_constituicao) {
+    const dateStr = String(extractedFields.data_constituicao);
+    const yearMatch = dateStr.match(/(\d{4})/);
+    if (yearMatch) {
+      fields.foundation_year = parseInt(yearMatch[1], 10);
+      fieldConfidence.foundation_year = defaultConfidence;
+    }
+  }
+
+  // Map organization type based on detected document type
+  if (detectedType === 'estatuto_social' || detectedType === 'estatuto') {
+    // Estatutos are typically for non-profits
+    fields.organization_type = 'associacao';
+    fieldConfidence.organization_type = 0.6;
+  }
+
+  // Email and phone if available
+  if (extractedFields.email) {
+    fields.email = String(extractedFields.email);
+    fieldConfidence.email = defaultConfidence;
+  }
+  if (extractedFields.telefone || extractedFields.phone) {
+    fields.phone = String(extractedFields.telefone || extractedFields.phone);
+    fieldConfidence.phone = defaultConfidence;
+  }
+
+  return { fields, fieldConfidence };
+}
+
+// =============================================================================
 // PROCESS DOCUMENT
 // =============================================================================
 
 /**
  * Process document with Edge Function to extract organization fields
+ * Uses the existing process-document function and maps fields for organization wizard
  */
 export async function processOrganizationDocument(
   storagePath: string,
-  documentType: DocumentType = 'auto',
+  mimeType: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<ProcessedDocumentResult> {
   onProgress?.({
@@ -240,11 +349,15 @@ export async function processOrganizationDocument(
     message: 'Extraindo informacoes...',
   });
 
-  // Call Edge Function
-  const { data, error } = await supabase.functions.invoke('process-organization-document', {
+  // Determine file_type from MIME type
+  const fileType = getFileTypeFromMime(mimeType);
+
+  // Call the existing process-document Edge Function
+  const { data, error } = await supabase.functions.invoke('process-document', {
     body: {
       storage_path: storagePath,
-      document_type: documentType,
+      file_type: fileType,
+      source: 'web',
     },
     headers: {
       Authorization: `Bearer ${session.access_token}`,
@@ -252,12 +365,26 @@ export async function processOrganizationDocument(
   });
 
   if (error) {
+    console.error('[organizationDocumentService] Edge function error:', error);
     throw new Error(`Erro ao processar documento: ${error.message}`);
   }
 
   if (!data.success) {
+    console.error('[organizationDocumentService] Processing failed:', data.error);
     throw new Error(data.error || 'Erro desconhecido ao processar documento');
   }
+
+  onProgress?.({
+    stage: 'processing',
+    progress: 90,
+    message: 'Mapeando campos...',
+  });
+
+  // Map the extracted_fields to OrganizationFields
+  const { fields, fieldConfidence } = mapExtractedFieldsToOrganizationFields(
+    data.extracted_fields || {},
+    data.detected_type || 'outro'
+  );
 
   onProgress?.({
     stage: 'completed',
@@ -265,12 +392,18 @@ export async function processOrganizationDocument(
     message: 'Documento processado com sucesso!',
   });
 
+  console.log('[organizationDocumentService] Processing completed:', {
+    detectedType: data.detected_type,
+    fieldsExtracted: Object.keys(fields).length,
+    processingTimeMs: data.processing_time_ms,
+  });
+
   return {
     success: true,
-    documentType: data.document_type,
-    fields: data.fields,
-    fieldConfidence: data.field_confidence,
-    processingTimeMs: data.processing_time_ms,
+    documentType: data.detected_type || 'outro',
+    fields,
+    fieldConfidence,
+    processingTimeMs: data.processing_time_ms || 0,
   };
 }
 
@@ -283,15 +416,15 @@ export async function processOrganizationDocument(
  */
 export async function uploadAndProcessOrganizationDocument(
   file: File,
-  documentType: DocumentType = 'auto',
+  _documentType: DocumentType = 'auto', // Kept for API compatibility, not used with process-document
   onProgress?: (progress: UploadProgress) => void
 ): Promise<ProcessedDocumentResult> {
   try {
     // Upload file
     const { storagePath } = await uploadOrganizationDocument(file, onProgress);
 
-    // Process document
-    const result = await processOrganizationDocument(storagePath, documentType, onProgress);
+    // Process document using the file's MIME type
+    const result = await processOrganizationDocument(storagePath, file.type, onProgress);
 
     return result;
   } catch (error) {

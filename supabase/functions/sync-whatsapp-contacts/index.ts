@@ -166,17 +166,25 @@ serve(async (req: Request) => {
 
     console.log(`[sync-whatsapp-contacts] Sync log created: ${syncLog.id}`)
 
-    // 7. Fetch contacts from Evolution API
+    // 7. Fetch contacts AND groups from Evolution API
     console.log(`[sync-whatsapp-contacts] Fetching contacts from Evolution API...`)
     const whatsappContacts = await fetchAllContacts(instanceName)
     console.log(`[sync-whatsapp-contacts] Found ${whatsappContacts.length} WhatsApp contacts`)
+
+    console.log(`[sync-whatsapp-contacts] Fetching groups from Evolution API...`)
+    const whatsappGroups = await fetchAllGroups(instanceName)
+    console.log(`[sync-whatsapp-contacts] Found ${whatsappGroups.length} WhatsApp groups`)
+
+    // Merge contacts and groups
+    const allEntries = [...whatsappContacts, ...whatsappGroups]
+    console.log(`[sync-whatsapp-contacts] Total entries to sync: ${allEntries.length}`)
 
     // 8. Sync contacts to database
     let contactsSynced = 0
     let contactsSkipped = 0
     const errors: string[] = []
 
-    for (const contact of whatsappContacts) {
+    for (const contact of allEntries) {
       try {
         await syncContactToDatabase(supabase, user.id, contact)
         contactsSynced++
@@ -200,6 +208,8 @@ serve(async (req: Request) => {
         metadata: {
           instanceName,
           totalContacts: whatsappContacts.length,
+          totalGroups: whatsappGroups.length,
+          totalEntries: allEntries.length,
           contactsSkipped,
           durationMs,
         },
@@ -301,6 +311,71 @@ async function fetchAllContacts(instanceName: string): Promise<WhatsAppContact[]
 }
 
 /**
+ * Fetch all groups from Evolution API
+ *
+ * Uses /group/fetchAllGroups endpoint to get WhatsApp groups
+ * Groups have JID format like "123456789@g.us"
+ *
+ * @param instanceName - The Evolution API instance name
+ * @returns Array of WhatsApp groups (as WhatsAppContact format)
+ */
+async function fetchAllGroups(instanceName: string): Promise<WhatsAppContact[]> {
+  const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL')
+  const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY')
+
+  if (!evolutionApiUrl || !evolutionApiKey) {
+    console.warn('[evolution-api] Evolution API credentials not configured, skipping groups fetch')
+    return []
+  }
+
+  const url = `${evolutionApiUrl}/group/fetchAllGroups/${instanceName}?getParticipants=false`
+
+  console.log(`[evolution-api] Fetching groups from: ${url}`)
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: evolutionApiKey,
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`[evolution-api] Groups fetch error response: ${errorText}`)
+      // Don't throw - just return empty array so contacts still sync
+      return []
+    }
+
+    const groups = await response.json()
+
+    if (!Array.isArray(groups)) {
+      console.error(`[evolution-api] Invalid groups response format:`, groups)
+      return []
+    }
+
+    console.log(`[evolution-api] Successfully fetched ${groups.length} groups`)
+
+    // Transform group data to WhatsAppContact format
+    return groups.map((group: any) => ({
+      id: group.id || group.jid,
+      remoteJid: group.id || group.jid,
+      pushName: group.subject || group.name,
+      name: group.subject || group.name,
+      profilePicUrl: group.pictureUrl || group.profilePicUrl,
+      isMyContact: false,
+      lastMessageTimestamp: group.creation || undefined,
+    }))
+  } catch (error) {
+    const err = error as Error
+    console.error(`[evolution-api] Error fetching groups: ${err.message}`)
+    // Don't throw - just return empty array so contacts still sync
+    return []
+  }
+}
+
+/**
  * Sync individual contact to contact_network table
  *
  * Upserts contact data using whatsapp_id as conflict key.
@@ -344,6 +419,8 @@ async function syncContactToDatabase(
       syncedAt: new Date().toISOString(),
     },
     tags: isGroup ? ['whatsapp', 'group'] : ['whatsapp'],
+    // Set relationship_type for categorization
+    relationship_type: isGroup ? 'group' : 'contact',
     // CRITICAL: Set sync_source so UI filtering works correctly
     sync_source: 'whatsapp',
     last_synced_at: new Date().toISOString(),

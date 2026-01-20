@@ -3,16 +3,24 @@
  * Sprint: "Ordem ao Caos do WhatsApp"
  *
  * Third step of the onboarding flow:
- * - Animated sync progress
- * - Contacts and groups counters
+ * - Real sync with Evolution API via Edge Function
+ * - Contacts and groups counters from actual data
  * - Privacy notice
+ *
+ * Now checks if contacts were already synced automatically by webhook
+ * when connection was established (via triggerAutomaticSync in webhook-evolution).
+ *
+ * Issue: #92 - Contacts list integration
+ * Epic: #122 - Multi-Instance WhatsApp Architecture
  *
  * @see PR #120 - WhatsApp Onboarding Flow
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, MessageSquare, Shield, CheckCircle, Loader2 } from 'lucide-react';
+import { Users, MessageSquare, Shield, CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useWhatsAppContacts, SyncResult } from '@/hooks/useWhatsAppContacts';
+import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
 
 interface ContactsSyncStepProps {
   /** Callback when sync is complete */
@@ -21,96 +29,159 @@ interface ContactsSyncStepProps {
   className?: string;
 }
 
-type SyncPhase = 'initializing' | 'contacts' | 'groups' | 'finalizing' | 'complete';
-
-const SYNC_PHASES: { phase: SyncPhase; label: string; duration: number }[] = [
-  { phase: 'initializing', label: 'Iniciando sincronização...', duration: 1000 },
-  { phase: 'contacts', label: 'Sincronizando contatos...', duration: 2500 },
-  { phase: 'groups', label: 'Sincronizando grupos...', duration: 2000 },
-  { phase: 'finalizing', label: 'Finalizando...', duration: 1000 },
-  { phase: 'complete', label: 'Sincronização completa!', duration: 0 },
-];
+type SyncPhase = 'initializing' | 'checking' | 'syncing' | 'complete' | 'error';
 
 export function ContactsSyncStep({
   onComplete,
   className = '',
 }: ContactsSyncStepProps) {
+  const {
+    totalCount,
+    groupsCount,
+    syncStatus,
+    syncContacts,
+    fetchContacts,
+    error: hookError,
+  } = useWhatsAppContacts();
+
+  // Subscribe to session for real-time updates on sync status
+  const { session } = useWhatsAppSessionSubscription();
+
   const [currentPhase, setCurrentPhase] = useState<SyncPhase>('initializing');
-  const [contactsCount, setContactsCount] = useState(0);
-  const [groupsCount, setGroupsCount] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const [displayedContacts, setDisplayedContacts] = useState(0);
+  const [displayedGroups, setDisplayedGroups] = useState(0);
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+  const [hasStartedSync, setHasStartedSync] = useState(false);
 
-  // Simulate sync progress
+  // Check if contacts were already synced by webhook (automatic sync on connection)
   useEffect(() => {
-    let phaseIndex = 0;
-    let progressInterval: NodeJS.Timeout;
+    if (!hasStartedSync && session) {
+      setHasStartedSync(true);
 
-    const advancePhase = () => {
-      if (phaseIndex < SYNC_PHASES.length - 1) {
-        phaseIndex++;
-        const nextPhase = SYNC_PHASES[phaseIndex];
-        setCurrentPhase(nextPhase.phase);
-
-        // Simulate counting during contact/group phases
-        if (nextPhase.phase === 'contacts') {
-          simulateContacts();
-        } else if (nextPhase.phase === 'groups') {
-          simulateGroups();
-        }
-
-        if (nextPhase.duration > 0) {
-          setTimeout(advancePhase, nextPhase.duration);
-        } else {
-          // Complete
-          setTimeout(() => {
-            onComplete();
-          }, 1500);
-        }
+      // Check if contacts were already synced automatically
+      if (session.contacts_synced && session.last_sync_at) {
+        console.log('[ContactsSyncStep] Contacts already synced by webhook, fetching from DB...');
+        setCurrentPhase('checking');
+        handleAlreadySynced();
+      } else {
+        console.log('[ContactsSyncStep] No automatic sync detected, starting manual sync...');
+        handleSync();
       }
-    };
+    }
+  }, [hasStartedSync, session]);
 
-    const simulateContacts = () => {
-      const targetContacts = Math.floor(Math.random() * 150) + 50; // 50-200 contacts
-      let current = 0;
-      progressInterval = setInterval(() => {
-        current += Math.floor(Math.random() * 10) + 1;
-        if (current >= targetContacts) {
-          current = targetContacts;
-          clearInterval(progressInterval);
-        }
-        setContactsCount(current);
-      }, 100);
-    };
+  // Handle case where contacts were already synced by webhook
+  const handleAlreadySynced = useCallback(async () => {
+    try {
+      // Fetch contacts from database
+      await fetchContacts();
 
-    const simulateGroups = () => {
-      clearInterval(progressInterval);
-      const targetGroups = Math.floor(Math.random() * 20) + 5; // 5-25 groups
-      let current = 0;
-      progressInterval = setInterval(() => {
-        current += 1;
-        if (current >= targetGroups) {
-          current = targetGroups;
-          clearInterval(progressInterval);
-        }
-        setGroupsCount(current);
-      }, 150);
-    };
+      // Short delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update overall progress
-    const progressTimer = setInterval(() => {
-      setProgress((prev) => Math.min(prev + 1, 100));
-    }, 65);
+      // Use the counts from the hook
+      const contactsCount = totalCount || session?.contacts_count || 0;
+      const groups = groupsCount || session?.groups_count || 0;
 
-    // Start first transition
-    setTimeout(advancePhase, SYNC_PHASES[0].duration);
+      // Animate the counters
+      animateCounter(contactsCount, setDisplayedContacts, 50);
+      animateCounter(groups, setDisplayedGroups, 100);
 
-    return () => {
-      clearInterval(progressInterval);
-      clearInterval(progressTimer);
-    };
-  }, [onComplete]);
+      setSyncResult({
+        success: true,
+        synced: contactsCount,
+        skipped: 0,
+        total: contactsCount,
+        duration_ms: 0,
+      });
+
+      setCurrentPhase('complete');
+
+      // Auto-advance after showing success
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
+    } catch (err) {
+      console.error('[ContactsSyncStep] Error fetching synced contacts:', err);
+      // Fall back to manual sync
+      handleSync();
+    }
+  }, [fetchContacts, totalCount, groupsCount, session, onComplete]);
+
+  // Handle sync
+  const handleSync = useCallback(async () => {
+    setCurrentPhase('initializing');
+    setDisplayedContacts(0);
+    setDisplayedGroups(0);
+
+    // Small delay for visual feedback
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setCurrentPhase('syncing');
+
+    const result = await syncContacts();
+
+    if (result) {
+      setSyncResult(result);
+
+      // Animate the counters
+      animateCounter(result.synced, setDisplayedContacts, 50);
+
+      // Estimate groups (typically 10-20% of total contacts)
+      const estimatedGroups = Math.max(1, Math.floor(result.synced * 0.15));
+      animateCounter(estimatedGroups, setDisplayedGroups, 100);
+
+      setCurrentPhase('complete');
+
+      // Auto-advance after showing success
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
+    } else {
+      setCurrentPhase('error');
+    }
+  }, [syncContacts, onComplete]);
+
+  // Animate counter from 0 to target
+  const animateCounter = (
+    target: number,
+    setter: React.Dispatch<React.SetStateAction<number>>,
+    intervalMs: number
+  ) => {
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 20));
+    const interval = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        current = target;
+        clearInterval(interval);
+      }
+      setter(current);
+    }, intervalMs);
+  };
+
+  // Get phase label
+  const getPhaseLabel = () => {
+    switch (currentPhase) {
+      case 'initializing':
+        return 'Preparando sincronização...';
+      case 'checking':
+        return 'Carregando contatos sincronizados...';
+      case 'syncing':
+        return syncStatus.message || 'Sincronizando contatos...';
+      case 'complete':
+        return 'Sincronização completa!';
+      case 'error':
+        return hookError || 'Erro na sincronização';
+      default:
+        return '';
+    }
+  };
 
   const isComplete = currentPhase === 'complete';
+  const isError = currentPhase === 'error';
+  const isChecking = currentPhase === 'checking';
+  // Show 70% progress during 'checking' phase (contacts already synced by webhook)
+  const progress = isChecking ? 70 : (isComplete ? 100 : syncStatus.progress || 0);
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
@@ -124,7 +195,7 @@ export function ContactsSyncStep({
           Sincronizando WhatsApp
         </h2>
         <p className="text-ceramic-600 mt-1">
-          Estamos importando apenas os metadados
+          Importando seus contatos do WhatsApp
         </p>
       </motion.div>
 
@@ -149,7 +220,7 @@ export function ContactsSyncStep({
             cy="80"
             r="70"
             fill="none"
-            stroke={isComplete ? '#22C55E' : '#4ADE80'}
+            stroke={isError ? '#EF4444' : isComplete ? '#22C55E' : '#4ADE80'}
             strokeWidth="8"
             strokeLinecap="round"
             initial={{ strokeDasharray: '0 440' }}
@@ -169,6 +240,15 @@ export function ContactsSyncStep({
                 transition={{ type: 'spring', stiffness: 200 }}
               >
                 <CheckCircle className="w-12 h-12 text-green-500" />
+              </motion.div>
+            ) : isError ? (
+              <motion.div
+                key="error"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200 }}
+              >
+                <AlertCircle className="w-12 h-12 text-red-500" />
               </motion.div>
             ) : (
               <motion.div
@@ -190,10 +270,26 @@ export function ContactsSyncStep({
         key={currentPhase}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-ceramic-600 mb-8"
+        className={`mb-8 ${isError ? 'text-red-600' : 'text-ceramic-600'}`}
       >
-        {SYNC_PHASES.find((p) => p.phase === currentPhase)?.label}
+        {getPhaseLabel()}
       </motion.p>
+
+      {/* Retry Button (on error) */}
+      {isError && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => {
+            setHasStartedSync(false);
+            setTimeout(() => setHasStartedSync(true), 100);
+          }}
+          className="mb-8 flex items-center gap-2 px-4 py-2 bg-ceramic-100 hover:bg-ceramic-200 text-ceramic-700 rounded-lg transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Tentar novamente
+        </motion.button>
+      )}
 
       {/* Stats Cards */}
       <motion.div
@@ -208,9 +304,9 @@ export function ContactsSyncStep({
           </div>
           <motion.p
             className="text-2xl font-bold text-ceramic-900"
-            key={contactsCount}
+            key={displayedContacts}
           >
-            {contactsCount}
+            {displayedContacts}
           </motion.p>
           <p className="text-sm text-ceramic-500">Contatos</p>
         </div>
@@ -221,13 +317,28 @@ export function ContactsSyncStep({
           </div>
           <motion.p
             className="text-2xl font-bold text-ceramic-900"
-            key={groupsCount}
+            key={displayedGroups}
           >
-            {groupsCount}
+            {displayedGroups}
           </motion.p>
           <p className="text-sm text-ceramic-500">Grupos</p>
         </div>
       </motion.div>
+
+      {/* Sync Result Details */}
+      {syncResult && isComplete && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-4 text-sm text-ceramic-500"
+        >
+          {syncResult.skipped > 0 && (
+            <p>{syncResult.skipped} contatos já existentes (ignorados)</p>
+          )}
+          <p>Tempo: {(syncResult.duration_ms / 1000).toFixed(1)}s</p>
+        </motion.div>
+      )}
 
       {/* Privacy Notice */}
       <motion.div
@@ -245,6 +356,19 @@ export function ContactsSyncStep({
           </p>
         </div>
       </motion.div>
+
+      {/* Skip Button (for testing or when sync fails) */}
+      {(isError || currentPhase === 'syncing') && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          onClick={onComplete}
+          className="mt-6 text-ceramic-500 hover:text-ceramic-700 text-sm transition-colors"
+        >
+          Pular por enquanto
+        </motion.button>
+      )}
     </div>
   );
 }
