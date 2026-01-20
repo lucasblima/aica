@@ -5,7 +5,7 @@
  * Shows WhatsApp pairing flow if user hasn't connected their WhatsApp yet.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Users, Search, MessageCircle, Loader2 } from 'lucide-react';
 import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
@@ -17,6 +17,7 @@ import type { ContactNetwork } from '../types/memoryTypes';
 // WhatsApp Onboarding Components
 import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep';
 import { getWhatsAppSession } from '../modules/onboarding/services/onboardingService';
+import { useWhatsAppConnection } from '../modules/connections/hooks/useWhatsAppConnection';
 import type { WhatsAppSession } from '../modules/onboarding/types';
 
 export function ContactsView() {
@@ -35,6 +36,35 @@ export function ContactsView() {
   // WhatsApp session state
   const [whatsappSession, setWhatsappSession] = useState<WhatsAppSession | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isSyncingStatus, setIsSyncingStatus] = useState(false);
+
+  // Use WhatsApp connection hook for configureWebhook
+  const { configureWebhook, session: hookSession, isConnected } = useWhatsAppConnection();
+
+  // Sync database status with Evolution API if needed
+  const syncDatabaseWithEvolutionAPI = useCallback(async () => {
+    if (!whatsappSession?.instance_name) return false;
+
+    console.log('[ContactsView] Attempting to sync database status with Evolution API...');
+    setIsSyncingStatus(true);
+
+    try {
+      const result = await configureWebhook();
+      if (result?.success && result.connectionState === 'open') {
+        console.log('[ContactsView] Database synced! Evolution API reports connected.');
+        // Refresh the session after sync
+        const session = await getWhatsAppSession(user!.id);
+        setWhatsappSession(session);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('[ContactsView] Error syncing with Evolution API:', err);
+      return false;
+    } finally {
+      setIsSyncingStatus(false);
+    }
+  }, [whatsappSession?.instance_name, configureWebhook, user]);
 
   // Check WhatsApp session status
   useEffect(() => {
@@ -47,6 +77,12 @@ export function ContactsView() {
       try {
         const session = await getWhatsAppSession(user.id);
         setWhatsappSession(session);
+
+        // If session exists but status isn't 'connected', try to sync with Evolution API
+        // This handles cases where the webhook didn't update the database properly
+        if (session && session.status !== 'connected' && session.instance_name) {
+          console.log('[ContactsView] Session exists but not connected. Checking Evolution API...');
+        }
       } catch (err) {
         console.error('[ContactsView] Error checking WhatsApp session:', err);
       } finally {
@@ -56,6 +92,13 @@ export function ContactsView() {
 
     checkWhatsAppSession();
   }, [user?.id]);
+
+  // Auto-sync when session exists but status isn't connected
+  useEffect(() => {
+    if (!isCheckingSession && whatsappSession && whatsappSession.status !== 'connected' && whatsappSession.instance_name && !isSyncingStatus) {
+      syncDatabaseWithEvolutionAPI();
+    }
+  }, [isCheckingSession, whatsappSession, isSyncingStatus, syncDatabaseWithEvolutionAPI]);
 
   // Load contacts from database
   useEffect(() => {
@@ -188,13 +231,15 @@ export function ContactsView() {
     },
   };
 
-  // Show loading while checking session
-  if (isCheckingSession) {
+  // Show loading while checking session or syncing status
+  if (isCheckingSession || isSyncingStatus) {
     return (
       <div className="min-h-screen bg-ceramic-base flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
-          <p className="text-ceramic-text-secondary">Verificando conexão WhatsApp...</p>
+          <p className="text-ceramic-text-secondary">
+            {isSyncingStatus ? 'Sincronizando status com Evolution API...' : 'Verificando conexão WhatsApp...'}
+          </p>
         </div>
       </div>
     );
