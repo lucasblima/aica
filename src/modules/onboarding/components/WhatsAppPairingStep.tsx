@@ -11,8 +11,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Phone, ArrowLeft, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Phone, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
 import { supabase } from '@/services/supabaseClient';
 import type { CreateInstanceResponse } from '@/types/whatsappSession';
@@ -26,7 +26,7 @@ interface WhatsAppPairingStepProps {
   className?: string;
 }
 
-type PairingState = 'input' | 'pairing' | 'connected';
+type PairingState = 'input' | 'creating' | 'pairing' | 'connected';
 
 export function WhatsAppPairingStep({
   onSuccess,
@@ -38,6 +38,7 @@ export function WhatsAppPairingStep({
   const [formattedPhone, setFormattedPhone] = useState('');
   const [instanceName, setInstanceName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isCreatingInstance, setIsCreatingInstance] = useState(false);
 
   // Format phone number as user types
   const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +65,8 @@ export function WhatsAppPairingStep({
 
       try {
         setError(null);
-        setState('pairing');
+        setIsCreatingInstance(true);
+        setState('creating');
 
         console.log('[WhatsAppPairingStep] Creating user instance...');
 
@@ -95,12 +97,15 @@ export function WhatsAppPairingStep({
 
         console.log('[WhatsAppPairingStep] Instance created:', result.session.instance_name);
         setInstanceName(result.session.instance_name);
+        setIsCreatingInstance(false);
+        setState('pairing');
 
         // Now proceed to pairing code display
         // PairingCodeDisplay will handle code generation
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
         setError(errorMessage);
+        setIsCreatingInstance(false);
         setState('input');
         console.error('[WhatsAppPairingStep] Error creating instance:', errorMessage);
       }
@@ -147,6 +152,8 @@ export function WhatsAppPairingStep({
             ? 'Erro ao conectar - Tente novamente'
             : state === 'input'
             ? 'Digite seu número de telefone para gerar o código'
+            : state === 'creating'
+            ? 'Preparando sua instância WhatsApp...'
             : state === 'pairing'
             ? 'Digite o código no WhatsApp do seu celular'
             : 'WhatsApp conectado com sucesso!'}
@@ -161,6 +168,31 @@ export function WhatsAppPairingStep({
           className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm"
         >
           {error}
+        </motion.div>
+      )}
+
+      {/* Creating Instance State */}
+      {state === 'creating' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center py-12"
+        >
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6">
+            <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
+          </div>
+          <h3 className="text-lg font-semibold text-ceramic-900 mb-2">
+            Criando instância...
+          </h3>
+          <p className="text-ceramic-500 text-sm text-center max-w-sm">
+            Aguarde enquanto preparamos sua conexão WhatsApp
+          </p>
+          <div className="mt-4 p-3 bg-ceramic-50 rounded-xl">
+            <div className="flex items-center gap-2 text-sm text-ceramic-600">
+              <Phone className="w-4 h-4" />
+              <span>+55 {formattedPhone}</span>
+            </div>
+          </div>
         </motion.div>
       )}
 
