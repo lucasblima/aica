@@ -363,8 +363,8 @@ export function ContactsView() {
 
       {/* Main Content */}
       <main className="p-6 space-y-6 max-w-7xl mx-auto">
-        {/* Credit Balance Widget */}
-        <CreditBalanceWidget className="max-w-md" />
+        {/* Credit Balance Widget - Temporarily disabled to debug */}
+        {/* <CreditBalanceWidget className="max-w-md" /> */}
 
         {/* Search and Filter Bar */}
         <div className="flex gap-3 items-end">
