@@ -622,6 +622,22 @@ export function AppRouter() {
                   />
                )}
 
+               {/* AI Cost Dashboard - Protected */}
+               {isAuthenticated && userId && (
+                  <Route
+                     path="/ai-cost"
+                     element={<AICostDashboard userId={userId} onBack={() => navigate('/')} />}
+                  />
+               )}
+
+               {/* File Search Analytics - Protected */}
+               {isAuthenticated && userId && (
+                  <Route
+                     path="/file-search"
+                     element={<FileSearchAnalyticsView userId={userId} onBack={() => navigate('/')} mode="fullpage" />}
+                  />
+               )}
+
                {/* Profile Page - Protected */}
                {isAuthenticated && (
                   <Route
