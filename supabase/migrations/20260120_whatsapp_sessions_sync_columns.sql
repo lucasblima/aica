@@ -29,15 +29,16 @@ BEGIN
 END $$;
 
 -- Add unique constraint for contact_network upserts if not exists
+-- Note: Using whatsapp_id (not whatsapp_jid) as per schema consolidation
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conname = 'contact_network_user_jid_unique'
+    WHERE conname = 'contact_network_user_whatsapp_id_unique'
   ) THEN
     ALTER TABLE contact_network
-      ADD CONSTRAINT contact_network_user_jid_unique
-      UNIQUE (user_id, whatsapp_jid);
+      ADD CONSTRAINT contact_network_user_whatsapp_id_unique
+      UNIQUE (user_id, whatsapp_id);
   END IF;
 END $$;
 
