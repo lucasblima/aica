@@ -51,6 +51,9 @@ export interface WhatsAppSession {
   contacts_count: number
   groups_count: number
   messages_synced_count: number
+  contacts_synced: boolean
+  last_history_sync_at: string | null
+  history_messages_synced: number
 
   // Error tracking
   error_message: string | null

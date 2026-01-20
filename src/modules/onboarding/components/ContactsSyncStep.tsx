@@ -7,6 +7,9 @@
  * - Contacts and groups counters from actual data
  * - Privacy notice
  *
+ * Now checks if contacts were already synced automatically by webhook
+ * when connection was established (via triggerAutomaticSync in webhook-evolution).
+ *
  * Issue: #92 - Contacts list integration
  * Epic: #122 - Multi-Instance WhatsApp Architecture
  *
@@ -17,6 +20,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, MessageSquare, Shield, CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useWhatsAppContacts, SyncResult } from '@/hooks/useWhatsAppContacts';
+import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
 
 interface ContactsSyncStepProps {
   /** Callback when sync is complete */
@@ -25,7 +29,7 @@ interface ContactsSyncStepProps {
   className?: string;
 }
 
-type SyncPhase = 'initializing' | 'syncing' | 'complete' | 'error';
+type SyncPhase = 'initializing' | 'checking' | 'syncing' | 'complete' | 'error';
 
 export function ContactsSyncStep({
   onComplete,
@@ -36,8 +40,12 @@ export function ContactsSyncStep({
     groupsCount,
     syncStatus,
     syncContacts,
+    fetchContacts,
     error: hookError,
   } = useWhatsAppContacts();
+
+  // Subscribe to session for real-time updates on sync status
+  const { session } = useWhatsAppSessionSubscription();
 
   const [currentPhase, setCurrentPhase] = useState<SyncPhase>('initializing');
   const [displayedContacts, setDisplayedContacts] = useState(0);
@@ -45,13 +53,60 @@ export function ContactsSyncStep({
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
   const [hasStartedSync, setHasStartedSync] = useState(false);
 
-  // Start sync on mount
+  // Check if contacts were already synced by webhook (automatic sync on connection)
   useEffect(() => {
-    if (!hasStartedSync) {
+    if (!hasStartedSync && session) {
       setHasStartedSync(true);
+
+      // Check if contacts were already synced automatically
+      if (session.contacts_synced && session.last_sync_at) {
+        console.log('[ContactsSyncStep] Contacts already synced by webhook, fetching from DB...');
+        setCurrentPhase('checking');
+        handleAlreadySynced();
+      } else {
+        console.log('[ContactsSyncStep] No automatic sync detected, starting manual sync...');
+        handleSync();
+      }
+    }
+  }, [hasStartedSync, session]);
+
+  // Handle case where contacts were already synced by webhook
+  const handleAlreadySynced = useCallback(async () => {
+    try {
+      // Fetch contacts from database
+      await fetchContacts();
+
+      // Short delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Use the counts from the hook
+      const contactsCount = totalCount || session?.contacts_count || 0;
+      const groups = groupsCount || session?.groups_count || 0;
+
+      // Animate the counters
+      animateCounter(contactsCount, setDisplayedContacts, 50);
+      animateCounter(groups, setDisplayedGroups, 100);
+
+      setSyncResult({
+        success: true,
+        synced: contactsCount,
+        skipped: 0,
+        total: contactsCount,
+        duration_ms: 0,
+      });
+
+      setCurrentPhase('complete');
+
+      // Auto-advance after showing success
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
+    } catch (err) {
+      console.error('[ContactsSyncStep] Error fetching synced contacts:', err);
+      // Fall back to manual sync
       handleSync();
     }
-  }, [hasStartedSync]);
+  }, [fetchContacts, totalCount, groupsCount, session, onComplete]);
 
   // Handle sync
   const handleSync = useCallback(async () => {
@@ -109,6 +164,8 @@ export function ContactsSyncStep({
     switch (currentPhase) {
       case 'initializing':
         return 'Preparando sincronização...';
+      case 'checking':
+        return 'Carregando contatos sincronizados...';
       case 'syncing':
         return syncStatus.message || 'Sincronizando contatos...';
       case 'complete':
@@ -122,7 +179,9 @@ export function ContactsSyncStep({
 
   const isComplete = currentPhase === 'complete';
   const isError = currentPhase === 'error';
-  const progress = syncStatus.progress || 0;
+  const isChecking = currentPhase === 'checking';
+  // Show 70% progress during 'checking' phase (contacts already synced by webhook)
+  const progress = isChecking ? 70 : (isComplete ? 100 : syncStatus.progress || 0);
 
   return (
     <div className={`flex flex-col items-center ${className}`}>

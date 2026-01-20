@@ -15,6 +15,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabaseClient'
 import type { WhatsAppSession, WhatsAppSessionStatus } from '@/types/whatsappSession'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('WhatsAppSession')
 
 interface UseWhatsAppSessionSubscriptionReturn {
   /** Current session data */
@@ -64,7 +67,7 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error fetching session')
       setError(error)
-      console.error('[useWhatsAppSessionSubscription] Fetch error:', error)
+      log.error('[useWhatsAppSessionSubscription] Fetch error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -88,7 +91,7 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
           return
         }
 
-        console.log('[useWhatsAppSessionSubscription] Setting up subscription for user:', user.id)
+        log.debug('[useWhatsAppSessionSubscription] Setting up subscription for user:', user.id)
 
         channel = supabase
           .channel(`whatsapp_sessions_${user.id}`)
@@ -101,7 +104,7 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
               filter: `user_id=eq.${user.id}`,
             },
             (payload) => {
-              console.log('[useWhatsAppSessionSubscription] Change detected:', payload)
+              log.debug('[useWhatsAppSessionSubscription] Change detected:', payload)
 
               if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                 setSession(payload.new as WhatsAppSession)
@@ -111,10 +114,10 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
             }
           )
           .subscribe((status) => {
-            console.log('[useWhatsAppSessionSubscription] Subscription status:', status)
+            log.debug('[useWhatsAppSessionSubscription] Subscription status:', status)
           })
       } catch (err) {
-        console.error('[useWhatsAppSessionSubscription] Subscription setup error:', err)
+        log.error('[useWhatsAppSessionSubscription] Subscription setup error:', err)
       }
     }
 
@@ -122,7 +125,7 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
 
     return () => {
       if (channel) {
-        console.log('[useWhatsAppSessionSubscription] Cleaning up subscription')
+        log.debug('[useWhatsAppSessionSubscription] Cleaning up subscription')
         supabase.removeChannel(channel)
       }
     }
