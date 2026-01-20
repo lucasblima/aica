@@ -12,6 +12,9 @@
 
 import { supabase } from './supabaseClient';
 import { notificationService } from './notificationService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GamificationService');
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -263,6 +266,59 @@ export const BADGES_CATALOG: Record<string, Badge> = {
     unlock_condition: 'analyzed_10_contacts',
     category: 'social',
   },
+  // ============================================================================
+  // AICA PROCESSING BADGES
+  // ============================================================================
+  'first_aica_analysis': {
+    id: 'first_aica_analysis',
+    name: 'Primeira Análise',
+    description: 'Processou seu primeiro contato com a Aica',
+    icon: '✨',
+    rarity: 'common',
+    xp_reward: 50,
+    unlock_condition: 'first_contact_analysis',
+    category: 'aica',
+  },
+  'aica_analyst_10': {
+    id: 'aica_analyst_10',
+    name: 'Analista Aica',
+    description: 'Analisou 10 contatos com a Aica',
+    icon: '📊',
+    rarity: 'rare',
+    xp_reward: 100,
+    unlock_condition: 'analyzed_10_contacts_aica',
+    category: 'aica',
+  },
+  'aica_analyst_25': {
+    id: 'aica_analyst_25',
+    name: 'Expert Aica',
+    description: 'Analisou 25 contatos com a Aica',
+    icon: '🏆',
+    rarity: 'epic',
+    xp_reward: 250,
+    unlock_condition: 'analyzed_25_contacts_aica',
+    category: 'aica',
+  },
+  'healthy_network': {
+    id: 'healthy_network',
+    name: 'Rede Saudável',
+    description: 'Alcançou health score 80+ em 5 contatos',
+    icon: '💚',
+    rarity: 'rare',
+    xp_reward: 150,
+    unlock_condition: 'five_high_health_scores',
+    category: 'aica',
+  },
+  'daily_claimer': {
+    id: 'daily_claimer',
+    name: 'Coletor Diário',
+    description: 'Resgatou créditos diários 7 dias seguidos',
+    icon: '🎁',
+    rarity: 'rare',
+    xp_reward: 100,
+    unlock_condition: 'daily_claim_streak_7',
+    category: 'aica',
+  },
 };
 
 // ============================================================================
@@ -285,6 +341,19 @@ export const WHATSAPP_XP_REWARDS = {
   analytics_view: 10,
   contact_analysis: 15,
   anomaly_check: 5,
+};
+
+// ============================================================================
+// AICA PROCESSING XP REWARDS
+// ============================================================================
+export const AICA_XP_REWARDS = {
+  daily_login: 10,
+  process_contact: 25,
+  first_process: 50,
+  high_health_score: 20, // When health score >= 80
+  claim_daily_credits: 10,
+  analyze_10_contacts: 100,
+  analyze_25_contacts: 250,
 };
 
 // ============================================================================
@@ -387,7 +456,7 @@ export async function addXP(userId: string, xpAmount: number): Promise<UserGameP
 
     return updated;
   } catch (error) {
-    console.error('Error adding XP:', error);
+    log.error('Error adding XP', { error });
     throw error;
   }
 }
@@ -408,7 +477,7 @@ export async function getUserGameProfile(userId: string): Promise<UserGameProfil
 
     return data;
   } catch (error) {
-    console.error('Error fetching user game profile:', error);
+    log.error('Error fetching user game profile', { error });
     throw error;
   }
 }
@@ -483,7 +552,7 @@ export async function updateStreakStatus(userId: string): Promise<StreakInfo> {
       active: streakActive,
     };
   } catch (error) {
-    console.error('Error updating streak:', error);
+    log.error('Error updating streak', { error });
     throw error;
   }
 }
@@ -509,7 +578,7 @@ export async function getUserStreak(userId: string): Promise<StreakInfo> {
       active: daysSinceLastActivity <= 1,
     };
   } catch (error) {
-    console.error('Error fetching user streak:', error);
+    log.error('Error fetching user streak', { error });
     return { current: 0, longest: 0, last_activity: '', active: false };
   }
 }
@@ -528,7 +597,7 @@ export async function awardAchievement(
   try {
     const badge = BADGES_CATALOG[badgeId];
     if (!badge) {
-      console.error(`Badge ${badgeId} not found`);
+      log.error(`Badge ${badgeId} not found`);
       return null;
     }
 
@@ -541,7 +610,7 @@ export async function awardAchievement(
       .single();
 
     if (existing) {
-      console.log(`User already has badge ${badgeId}`);
+      log.debug(`User already has badge ${badgeId}`);
       return null;
     }
 
@@ -584,7 +653,7 @@ export async function awardAchievement(
 
     return achievement;
   } catch (error) {
-    console.error('Error awarding achievement:', error);
+    log.error('Error awarding achievement', { error });
     throw error;
   }
 }
@@ -603,7 +672,7 @@ export async function getUserAchievements(userId: string): Promise<Achievement[]
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching achievements:', error);
+    log.error('Error fetching achievements', { error });
     return [];
   }
 }
@@ -660,7 +729,7 @@ export async function checkAndAwardAchievements(userId: string): Promise<Achieve
 
     return achievements;
   } catch (error) {
-    console.error('Error checking achievements:', error);
+    log.error('Error checking achievements', { error });
     return [];
   }
 }
@@ -696,7 +765,7 @@ export async function getLeaderboard(limit: number = 100): Promise<LeaderboardEn
       current_streak: stat.current_streak,
     }));
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
+    log.error('Error fetching leaderboard', { error });
     return [];
   }
 }
@@ -726,7 +795,7 @@ export async function getUserLeaderboardPosition(userId: string): Promise<number
 
     return higherRankedUsers.length + 1;
   } catch (error) {
-    console.error('Error fetching leaderboard position:', error);
+    log.error('Error fetching leaderboard position', { error });
     return -1;
   }
 }

@@ -95,6 +95,8 @@ export interface ContactNetwork {
   name: string;
   phone_number?: string; // E.164 format: +55 11 99999-9999
   email?: string;
+  avatar_url?: string;
+
   // Relationship metadata
   relationship_type?:
     | 'colleague'
@@ -134,16 +136,9 @@ export interface ContactNetwork {
   is_archived?: boolean;
   blocked?: boolean;
 
-  // Timestamps
-  created_at?: string;
-  updated_at?: string;
-  notes?: string;
-  preferences?: Record<string, any>;
-
-  // Status
-  is_active?: boolean;
-  is_archived?: boolean;
-  blocked?: boolean;
+  // Aica AI Analysis (Issue #100)
+  last_analysis_id?: string;
+  last_analyzed_at?: string;
 
   // Timestamps
   created_at?: string;
