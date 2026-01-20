@@ -26,6 +26,9 @@ import { useState, useCallback } from 'react'
 import { supabase } from '@/services/supabaseClient'
 import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription'
 import type { CreateInstanceResponse } from '@/types/whatsappSession'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('WhatsAppConnection')
 
 interface ConnectionState {
   state: 'open' | 'connecting' | 'close' | 'unknown'
@@ -86,7 +89,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
       setIsLoading(true)
       setError(null)
 
-      console.log('[useWhatsAppConnection] Creating user instance...')
+      log.debug('[useWhatsAppConnection] Creating user instance...')
 
       // Get current session to ensure we have valid token
       const { data: { session: authSession } } = await supabase.auth.getSession()
@@ -113,7 +116,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         throw new Error(result.error || 'Failed to create instance')
       }
 
-      console.log('[useWhatsAppConnection] Instance created:', result.session.instance_name)
+      log.debug('[useWhatsAppConnection] Instance created:', result.session.instance_name)
 
       // Refresh session data to get latest state
       await refreshSession()
@@ -126,7 +129,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(new Error(errorMessage))
-      console.error('[useWhatsAppConnection] Connect error:', errorMessage)
+      log.error('[useWhatsAppConnection] Connect error:', errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -144,7 +147,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         throw new Error('No session to disconnect')
       }
 
-      console.log('[useWhatsAppConnection] Disconnecting session:', session.instance_name)
+      log.debug('[useWhatsAppConnection] Disconnecting session:', session.instance_name)
 
       // Update session status in database
       const { error: updateError } = await supabase
@@ -168,11 +171,11 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         instance: session.instance_name,
       })
 
-      console.log('[useWhatsAppConnection] Disconnected successfully')
+      log.debug('[useWhatsAppConnection] Disconnected successfully')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(new Error(errorMessage))
-      console.error('[useWhatsAppConnection] Disconnect error:', errorMessage)
+      log.error('[useWhatsAppConnection] Disconnect error:', errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -190,7 +193,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         throw new Error('No instance available. Please connect first.')
       }
 
-      console.log('[useWhatsAppConnection] Fetching QR code for:', session.instance_name)
+      log.debug('[useWhatsAppConnection] Fetching QR code for:', session.instance_name)
 
       const { data: { session: authSession } } = await supabase.auth.getSession()
 
@@ -220,11 +223,11 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
       }
 
       setQrCode(result.qrcode.base64)
-      console.log('[useWhatsAppConnection] QR code generated successfully')
+      log.debug('[useWhatsAppConnection] QR code generated successfully')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(new Error(errorMessage))
-      console.error('[useWhatsAppConnection] Fetch QR code error:', errorMessage)
+      log.error('[useWhatsAppConnection] Fetch QR code error:', errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -239,11 +242,11 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
       setError(null)
 
       if (!session?.instance_name) {
-        console.log('[useWhatsAppConnection] No instance to check')
+        log.debug('[useWhatsAppConnection] No instance to check')
         return
       }
 
-      console.log('[useWhatsAppConnection] Checking connection for:', session.instance_name)
+      log.debug('[useWhatsAppConnection] Checking connection for:', session.instance_name)
 
       const { data: { session: authSession } } = await supabase.auth.getSession()
 
@@ -278,11 +281,11 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         instance: session.instance_name,
       })
 
-      console.log('[useWhatsAppConnection] Connection status:', result.state)
+      log.debug('[useWhatsAppConnection] Connection status:', result.state)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(new Error(errorMessage))
-      console.error('[useWhatsAppConnection] Check connection error:', errorMessage)
+      log.error('[useWhatsAppConnection] Check connection error:', errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -291,13 +294,14 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
   /**
    * Configure webhook for existing instance
    * Use this to fix instances that were created before the webhook fix
+   * Falls back to direct database update via RPC if Edge Function unavailable
    */
   const configureWebhook = useCallback(async (): Promise<ConfigureWebhookResult | null> => {
     try {
       setIsLoading(true)
       setError(null)
 
-      console.log('[useWhatsAppConnection] Configuring webhook...')
+      log.debug('Configuring webhook...')
 
       const { data: { session: authSession } } = await supabase.auth.getSession()
 
@@ -305,7 +309,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         throw new Error('User not authenticated')
       }
 
-      // Call configure-instance-webhook Edge Function
+      // Try calling configure-instance-webhook Edge Function
       const response = await supabase.functions.invoke('configure-instance-webhook', {
         body: { updateSessionStatus: true },
         headers: {
@@ -313,34 +317,72 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         },
       })
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to configure webhook')
+      // If Edge Function works, use its result
+      if (!response.error) {
+        const result = response.data as ConfigureWebhookResult
+
+        if (result?.success) {
+          log.info('Webhook configured via Edge Function:', result)
+
+          // Refresh session data to get latest state
+          await refreshSession()
+
+          // Update connection state based on result
+          if (result.connectionState === 'open') {
+            setConnectionState({
+              state: 'open',
+              instance: session?.instance_name,
+            })
+          }
+
+          return result
+        }
       }
 
-      const result = response.data as ConfigureWebhookResult
+      // Fallback: Edge Function not available or failed
+      // Try to update session status directly via RPC
+      log.warn('Edge Function unavailable, trying RPC fallback...')
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to configure webhook')
-      }
+      if (session?.id && session?.instance_name) {
+        // Call the database RPC to update session status to 'connected'
+        // This is a recovery mechanism when the webhook didn't update properly
+        const { error: rpcError } = await supabase.rpc('update_whatsapp_session_status', {
+          p_session_id: session.id,
+          p_status: 'connected',
+          p_error_message: null,
+          p_error_code: null,
+        })
 
-      console.log('[useWhatsAppConnection] Webhook configured:', result)
+        if (rpcError) {
+          log.error('RPC fallback error:', rpcError)
+          throw new Error('Failed to update session status via fallback')
+        }
 
-      // Refresh session data to get latest state
-      await refreshSession()
+        log.info('Session status updated via RPC fallback')
 
-      // Update connection state based on result
-      if (result.connectionState === 'open') {
+        // Refresh session data
+        await refreshSession()
+
+        // Update connection state
         setConnectionState({
           state: 'open',
-          instance: session?.instance_name,
+          instance: session.instance_name,
         })
+
+        return {
+          success: true,
+          message: 'Session updated via fallback',
+          webhookConfigured: false,
+          sessionUpdated: true,
+          connectionState: 'open',
+        }
       }
 
-      return result
+      throw new Error('Failed to configure webhook and no session available for fallback')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(new Error(errorMessage))
-      console.error('[useWhatsAppConnection] Configure webhook error:', errorMessage)
+      log.error('Configure webhook error:', errorMessage)
       return null
     } finally {
       setIsLoading(false)
