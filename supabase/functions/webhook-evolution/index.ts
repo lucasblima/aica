@@ -121,9 +121,9 @@ const EVOLUTION_WEBHOOK_SECRET = Deno.env.get('EVOLUTION_WEBHOOK_SECRET')
 const EVOLUTION_API_URL = Deno.env.get('EVOLUTION_API_URL')
 const EVOLUTION_API_KEY = Deno.env.get('EVOLUTION_API_KEY')
 
-// Instance configuration
-const AICA_INSTANCE_NAME = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
-const AICA_PHONE = Deno.env.get('AICA_WHATSAPP_PHONE') || '552196556400'
+// Legacy instance configuration (deprecated - multi-instance architecture uses whatsapp_sessions table)
+// Kept for backward compatibility during migration, should be removed after full migration
+const LEGACY_SHARED_INSTANCE = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
 
 // Rate limiting
 const RATE_LIMIT_WINDOW_MS = 60000 // 1 minute
@@ -380,14 +380,16 @@ async function findUserByInstance(supabase: ReturnType<typeof createClient>, ins
     return legacyUser.id
   }
 
-  // 4. Check if this is the shared/legacy instance
-  const sharedInstanceName = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
-  if (instanceName === sharedInstanceName) {
-    log('WARN', 'Event from shared instance, cannot determine user', { instanceName })
-    // For shared instance, we cannot determine the user without additional context
+  // 4. Check if this is the legacy shared instance (deprecated)
+  // Multi-instance architecture: each user has their own instance
+  if (instanceName === LEGACY_SHARED_INSTANCE) {
+    log('WARN', 'Event from legacy shared instance, cannot determine user', { instanceName })
+    // For legacy shared instance, we cannot determine the user without additional context
+    // This should become less common as users migrate to per-user instances
     return null
   }
 
+  log('WARN', 'No user found for instance', { instanceName })
   return null
 }
 

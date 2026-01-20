@@ -169,8 +169,10 @@ serve(async (req: Request) => {
         const webhookUrl = Deno.env.get('SUPABASE_URL') + '/functions/v1/webhook-evolution'
 
         // Configure webhook for the new instance
+        // CRITICAL: Evolution API v2 requires 'webhook' wrapper object with proper key names
+        // See: https://github.com/EvolutionAPI/evolution-api/issues/1220
         try {
-          await fetch(
+          const webhookConfigResponse = await fetch(
             `${evolutionApiUrl}/webhook/set/${session.instance_name}`,
             {
               method: 'POST',
@@ -179,19 +181,28 @@ serve(async (req: Request) => {
                 'apikey': evolutionApiKey,
               },
               body: JSON.stringify({
-                url: webhookUrl,
-                webhook_by_events: true,
-                webhook_base64: false,
-                events: [
-                  'CONNECTION_UPDATE',
-                  'MESSAGES_UPSERT',
-                  'QRCODE_UPDATED',
-                  'CONTACTS_UPDATE',
-                ],
+                webhook: {
+                  enabled: true,
+                  url: webhookUrl,
+                  webhookByEvents: true,
+                  webhookBase64: false,
+                  events: [
+                    'CONNECTION_UPDATE',
+                    'MESSAGES_UPSERT',
+                    'QRCODE_UPDATED',
+                    'CONTACTS_UPDATE',
+                  ],
+                },
               }),
             }
           )
-          console.log(`[create-user-instance] Webhook configured for ${session.instance_name}`)
+
+          if (webhookConfigResponse.ok) {
+            console.log(`[create-user-instance] Webhook configured for ${session.instance_name}`)
+          } else {
+            const webhookErrorText = await webhookConfigResponse.text()
+            console.warn(`[create-user-instance] Webhook config failed: ${webhookConfigResponse.status} - ${webhookErrorText}`)
+          }
         } catch (webhookError) {
           console.warn(`[create-user-instance] Failed to configure webhook:`, webhookError)
           // Non-fatal, continue
