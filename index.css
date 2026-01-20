@@ -1,6 +1,22 @@
 @import "tailwindcss";
 @config "./tailwind.config.js";
 
+/* Tailwind v4 Theme - Custom Colors */
+@theme {
+  --color-ceramic-base: #F0EFE9;
+  --color-ceramic-text-primary: #5C554B;
+  --color-ceramic-text-secondary: #948D82;
+  --color-ceramic-text-tertiary: #A39E95;
+  --color-ceramic-accent: #D97706;
+  --color-ceramic-accent-dark: #B45309;
+  --color-ceramic-highlight: #E6D5C3;
+  --color-ceramic-positive: #6B7B5C;
+  --color-ceramic-negative: #9B4D3A;
+  --color-ceramic-neutral: #8B8579;
+  --color-ceramic-cool: #E8EBE9;
+  --color-ceramic-warm: #F5E6D3;
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease-out forwards;
 }
