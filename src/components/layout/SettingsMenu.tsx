@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, LogOut, User, DollarSign, FileSearch, Wrench, MessageSquare } from 'lucide-react';
+import { Settings, LogOut, User, DollarSign, FileSearch, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,12 +13,8 @@ interface SettingsMenuProps {
 
 export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout, onNavigateToAICost, onNavigateToFileSearch }) => {
     const navigate = useNavigate();
-    const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-
-    // Check if user is admin
-    const isAdmin = user?.user_metadata?.is_admin === true;
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -120,75 +116,61 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout,
 
                     {/* Menu Items */}
                     <div className="p-2">
-                        {/* AI Cost Dashboard Button */}
-                        {onNavigateToAICost && (
-                            <button
-                                onClick={() => {
-                                    onNavigateToAICost();
-                                    setIsOpen(false);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
-                            >
-                                <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <DollarSign className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-accent" />
-                                </div>
-                                <span className="font-bold text-sm transition-colors">
-                                    Custos de IA
-                                </span>
-                            </button>
-                        )}
-
-                        {/* File Search Analytics Button */}
-                        {onNavigateToFileSearch && (
-                            <button
-                                onClick={() => {
-                                    onNavigateToFileSearch();
-                                    setIsOpen(false);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
-                            >
-                                <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <FileSearch className="w-4 h-4 text-ceramic-text-secondary group-hover:text-blue-600" />
-                                </div>
-                                <span className="font-bold text-sm transition-colors">
-                                    File Search Analytics
-                                </span>
-                            </button>
-                        )}
-
-                        {/* Diagnostics Button */}
+                        {/* AI Cost Dashboard Button - Always visible */}
                         <button
                             onClick={() => {
-                                navigate('/diagnostics');
+                                if (onNavigateToAICost) {
+                                    onNavigateToAICost();
+                                } else {
+                                    navigate('/ai-cost');
+                                }
                                 setIsOpen(false);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
                         >
                             <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Wrench className="w-4 h-4 text-ceramic-text-secondary group-hover:text-orange-600" />
+                                <DollarSign className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-accent" />
                             </div>
                             <span className="font-bold text-sm transition-colors">
-                                Diagnósticos
+                                Custos de IA
                             </span>
                         </button>
 
-                        {/* WhatsApp Monitoring Button - Admin Only */}
-                        {isAdmin && (
-                            <button
-                                onClick={() => {
-                                    navigate('/admin/whatsapp-monitoring');
-                                    setIsOpen(false);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
-                            >
-                                <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <MessageSquare className="w-4 h-4 text-ceramic-text-secondary group-hover:text-green-600" />
-                                </div>
-                                <span className="font-bold text-sm transition-colors">
-                                    WhatsApp Monitoring
-                                </span>
-                            </button>
-                        )}
+                        {/* File Search Analytics Button - Always visible */}
+                        <button
+                            onClick={() => {
+                                if (onNavigateToFileSearch) {
+                                    onNavigateToFileSearch();
+                                } else {
+                                    navigate('/file-search');
+                                }
+                                setIsOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                        >
+                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <FileSearch className="w-4 h-4 text-ceramic-text-secondary group-hover:text-blue-600" />
+                            </div>
+                            <span className="font-bold text-sm transition-colors">
+                                File Search Analytics
+                            </span>
+                        </button>
+
+                        {/* WhatsApp Monitoring Button - Admin only */}
+                        <button
+                            onClick={() => {
+                                navigate('/admin/whatsapp-monitoring');
+                                setIsOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                        >
+                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Activity className="w-4 h-4 text-ceramic-text-secondary group-hover:text-green-600" />
+                            </div>
+                            <span className="font-bold text-sm transition-colors">
+                                WhatsApp Monitor
+                            </span>
+                        </button>
 
                         {/* Logout Button */}
                         <button
