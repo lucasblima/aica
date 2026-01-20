@@ -43,3 +43,6 @@ export { UnifiedChatInterface } from './UnifiedChatInterface';
 export type { UnifiedChatInterfaceProps, QuickAction } from './UnifiedChatInterface';
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';
 export { WeeklyCalendarView } from './WeeklyCalendarView';
+
+// Admin Components - Issue #129
+export { CapacityGauge, StatusPieChart, InstanceTable, ErrorsLog, HealthAlerts } from './admin';
