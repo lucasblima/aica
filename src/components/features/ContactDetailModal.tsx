@@ -44,7 +44,7 @@ export function ContactDetailModal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/10 backdrop-blur-[4px]"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={onClose}
           onKeyDown={handleKeyDown}
         >
@@ -58,11 +58,20 @@ export function ContactDetailModal({
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
               <div className="flex items-center gap-4">
-                <img
-                  src={contact.avatar_url || '/default-avatar.png'}
-                  alt={contact.name}
-                  className="w-16 h-16 rounded-full ceramic-inset object-cover"
-                />
+                {(contact.avatar_url || contact.whatsapp_profile_pic_url) ? (
+                  <img
+                    src={contact.avatar_url || contact.whatsapp_profile_pic_url || ''}
+                    alt={contact.name}
+                    className="w-16 h-16 rounded-full ceramic-inset object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`w-16 h-16 rounded-full ceramic-inset flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 text-white font-bold text-xl ${(contact.avatar_url || contact.whatsapp_profile_pic_url) ? 'hidden' : ''}`}>
+                  {contact.name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
                 <div>
                   <h2 className="text-2xl font-bold text-ceramic-text-primary">
                     {contact.name}
@@ -150,7 +159,7 @@ export function ContactDetailModal({
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex-1 px-8 py-3 rounded-xl bg-ceramic-text-primary text-ceramic-base font-bold shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-8 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
               >
                 {isSaving ? (
                   <>
