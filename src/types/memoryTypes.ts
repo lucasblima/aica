@@ -104,6 +104,8 @@ export interface ContactNetwork {
     | 'mentor'
     | 'mentee'
     | 'vendor'
+    | 'contact'  // Generic WhatsApp contact
+    | 'group'    // WhatsApp group
     | 'other';
   tags?: string[];
 

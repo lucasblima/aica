@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Users, Search, MessageCircle, Loader2 } from 'lucide-react';
+import { RefreshCw, Users, Users2, Search, MessageCircle, Loader2, User, Briefcase, Heart, Home, GraduationCap, Package } from 'lucide-react';
 import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
@@ -26,6 +26,7 @@ export function ContactsView() {
   const [filteredContacts, setFilteredContacts] = useState<ContactNetwork[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSource, setFilterSource] = useState<'all' | 'google' | 'whatsapp'>('all');
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactNetwork | null>(null);
@@ -112,19 +113,20 @@ export function ContactsView() {
     }
   }, [user, whatsappSession?.status]);
 
-  // AUTO-SYNC: Detect when connected but no contacts, and trigger sync automatically
+  // AUTO-SYNC: Only trigger when connected AND never synced before (lastSyncAt === null)
   useEffect(() => {
     const shouldAutoSync =
       whatsappSession?.status === 'connected' &&
       !isLoading &&
       !isCheckingSession &&
-      contacts.length === 0 &&
+      syncStatus !== null && // Wait until we know sync status
+      syncStatus.lastSyncAt === null && // Only if NEVER synced before
       !hasAttemptedAutoSync &&
       !isSyncing &&
       !isAutoSyncing;
 
     if (shouldAutoSync) {
-      console.log('[ContactsView] Auto-sync triggered: connected but no contacts');
+      console.log('[ContactsView] Auto-sync triggered: connected but never synced');
       setHasAttemptedAutoSync(true);
       setIsAutoSyncing(true);
 
@@ -150,7 +152,7 @@ export function ContactsView() {
     whatsappSession?.status,
     isLoading,
     isCheckingSession,
-    contacts.length,
+    syncStatus,
     hasAttemptedAutoSync,
     isSyncing,
     isAutoSyncing,
@@ -219,12 +221,23 @@ export function ContactsView() {
     }
   };
 
-  // Filter contacts based on search and source
+  // Calculate category counts
+  const categoryCounts = contacts.reduce((acc, c) => {
+    const category = c.relationship_type || 'other';
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Filter contacts based on search, source, and category
   useEffect(() => {
     let filtered = contacts;
 
     if (filterSource !== 'all') {
       filtered = filtered.filter(c => c.sync_source === filterSource);
+    }
+
+    if (filterCategory) {
+      filtered = filtered.filter(c => c.relationship_type === filterCategory);
     }
 
     if (searchQuery.trim()) {
@@ -237,7 +250,7 @@ export function ContactsView() {
     }
 
     setFilteredContacts(filtered);
-  }, [contacts, searchQuery, filterSource]);
+  }, [contacts, searchQuery, filterSource, filterCategory]);
 
   const handleContactSelect = (contact: ContactNetwork) => {
     setSelectedContact(contact);
@@ -394,6 +407,56 @@ export function ContactsView() {
             </button>
           </div>
         </div>
+
+        {/* Category Chips */}
+        {Object.keys(categoryCounts).length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFilterCategory(null)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                filterCategory === null
+                  ? 'bg-green-500 text-white'
+                  : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
+              }`}
+            >
+              <Users className="w-3 h-3" />
+              Todos ({contacts.length})
+            </button>
+            {Object.entries(categoryCounts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([category, count]) => {
+                const categoryConfig: Record<string, { icon: React.ElementType; label: string; color: string }> = {
+                  group: { icon: Users2, label: 'Grupos', color: 'bg-purple-500' },
+                  contact: { icon: User, label: 'Contatos', color: 'bg-blue-500' },
+                  colleague: { icon: Briefcase, label: 'Colegas', color: 'bg-amber-500' },
+                  client: { icon: Briefcase, label: 'Clientes', color: 'bg-emerald-500' },
+                  friend: { icon: Heart, label: 'Amigos', color: 'bg-pink-500' },
+                  family: { icon: Home, label: 'Família', color: 'bg-red-500' },
+                  mentor: { icon: GraduationCap, label: 'Mentores', color: 'bg-indigo-500' },
+                  mentee: { icon: GraduationCap, label: 'Mentorados', color: 'bg-cyan-500' },
+                  vendor: { icon: Package, label: 'Fornecedores', color: 'bg-orange-500' },
+                  other: { icon: User, label: 'Outros', color: 'bg-gray-500' },
+                };
+                const config = categoryConfig[category] || { icon: User, label: category, color: 'bg-gray-500' };
+                const Icon = config.icon;
+
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setFilterCategory(filterCategory === category ? null : category)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      filterCategory === category
+                        ? `${config.color} text-white`
+                        : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" />
+                    {config.label} ({count})
+                  </button>
+                );
+              })}
+          </div>
+        )}
 
         {/* Sync Status */}
         {syncStatus && syncStatus.contactCount > 0 && (
