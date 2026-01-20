@@ -22,9 +22,14 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "jsr:@supabase/supabase-js@2"
-import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
-import { encodeHex } from "https://deno.land/std@0.168.0/encoding/hex.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
+
+// Helper function to convert ArrayBuffer to hex string
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
 
 // ============================================================================
 // TYPES
@@ -195,7 +200,7 @@ async function validateHmacSignature(body: string, signature: string | null): Pr
     )
 
     const signatureBuffer = await crypto.subtle.sign('HMAC', key, messageData)
-    const computedSignature = encodeHex(new Uint8Array(signatureBuffer))
+    const computedSignature = arrayBufferToHex(signatureBuffer)
 
     // Constant-time comparison to prevent timing attacks
     if (computedSignature.length !== signatureValue.length) {
@@ -889,6 +894,10 @@ async function handleMessagesUpsert(
  * Handle connection.update event
  * Multi-instance: updates whatsapp_sessions table
  * Epic #122: Multi-Instance WhatsApp Architecture
+ *
+ * When connection becomes 'open', automatically triggers:
+ * 1. Contact sync (via sync-whatsapp-contacts)
+ * 2. Message history sync (via sync-message-history)
  */
 async function handleConnectionUpdate(
   supabase: ReturnType<typeof createClient>,
@@ -906,6 +915,7 @@ async function handleConnectionUpdate(
     // Update whatsapp_sessions table (multi-instance architecture)
     let newStatus: string
     let errorMessage: string | null = null
+    const wasDisconnected = session.status !== 'connected'
 
     switch (state) {
       case 'open':
@@ -943,6 +953,16 @@ async function handleConnectionUpdate(
     } else {
       log('INFO', 'Session status updated', { instanceName, oldStatus: session.status, newStatus })
     }
+
+    // AUTOMATIC SYNC: Trigger sync when newly connected
+    if (state === 'open' && wasDisconnected) {
+      log('INFO', 'Connection established, triggering automatic sync', { instanceName, userId: session.user_id })
+
+      // Fire and forget - don't block webhook response
+      triggerAutomaticSync(supabase, instanceName, session.user_id).catch(err => {
+        log('ERROR', 'Automatic sync failed', (err as Error).message)
+      })
+    }
   }
 
   // Legacy: Also try to update users table for backward compatibility
@@ -964,6 +984,161 @@ async function handleConnectionUpdate(
       .from('users')
       .update(updates)
       .eq('id', userId)
+  }
+}
+
+/**
+ * Trigger automatic sync after connection is established
+ * This runs asynchronously to not block the webhook response
+ *
+ * Sync order:
+ * 1. Contacts and groups (fast)
+ * 2. Message history (batch, background)
+ */
+async function triggerAutomaticSync(
+  supabase: ReturnType<typeof createClient>,
+  instanceName: string,
+  userId: string
+): Promise<void> {
+  if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY) {
+    log('WARN', 'Evolution API credentials not configured, skipping sync')
+    return
+  }
+
+  try {
+    // 1. Sync contacts from Evolution API
+    log('INFO', 'Syncing contacts...', { instanceName })
+
+    const contactsResponse = await fetch(
+      `${EVOLUTION_API_URL}/chat/findContacts/${instanceName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': EVOLUTION_API_KEY,
+        },
+        body: JSON.stringify({}),
+      }
+    )
+
+    if (contactsResponse.ok) {
+      const contacts = await contactsResponse.json()
+      const contactsArray = Array.isArray(contacts) ? contacts : []
+
+      log('INFO', `Found ${contactsArray.length} contacts`, { instanceName })
+
+      // Store contacts in contact_network table
+      // Schema uses: whatsapp_id, name, phone_number, whatsapp_phone, whatsapp_name, whatsapp_profile_pic_url
+      for (const contact of contactsArray.slice(0, 500)) { // Limit to 500 contacts
+        const phone = contact.id?.replace('@s.whatsapp.net', '').replace('@g.us', '')
+        if (!phone) continue
+
+        // Skip groups - only sync individual contacts here
+        if (contact.id?.includes('@g.us')) continue
+
+        await supabase
+          .from('contact_network')
+          .upsert({
+            user_id: userId,
+            whatsapp_id: contact.id,
+            whatsapp_phone: phone,
+            phone_number: phone,
+            name: contact.pushName || contact.name || null,
+            whatsapp_name: contact.pushName || contact.name || null,
+            whatsapp_profile_pic_url: contact.profilePictureUrl || null,
+            sync_source: 'whatsapp',
+            last_synced_at: new Date().toISOString(),
+            whatsapp_synced_at: new Date().toISOString(),
+            whatsapp_sync_status: 'synced',
+          }, {
+            onConflict: 'user_id,whatsapp_id',
+            ignoreDuplicates: false,
+          })
+      }
+
+      log('INFO', 'Contacts synced successfully', { instanceName, count: Math.min(contactsArray.length, 500) })
+    } else {
+      log('WARN', 'Failed to fetch contacts', { status: contactsResponse.status })
+    }
+
+    // 2. Fetch groups
+    log('INFO', 'Syncing groups...', { instanceName })
+
+    const groupsResponse = await fetch(
+      `${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}?getParticipants=false`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': EVOLUTION_API_KEY,
+        },
+      }
+    )
+
+    if (groupsResponse.ok) {
+      const groups = await groupsResponse.json()
+      const groupsArray = Array.isArray(groups) ? groups : []
+
+      log('INFO', `Found ${groupsArray.length} groups`, { instanceName })
+
+      // Store groups in contact_network table
+      // Groups use whatsapp_id with @g.us suffix to distinguish from contacts
+      for (const group of groupsArray.slice(0, 100)) { // Limit to 100 groups
+        await supabase
+          .from('contact_network')
+          .upsert({
+            user_id: userId,
+            whatsapp_id: group.id,
+            whatsapp_phone: group.id?.replace('@g.us', ''),
+            name: group.subject || group.name || 'Group',
+            whatsapp_name: group.subject || group.name || 'Group',
+            whatsapp_profile_pic_url: group.pictureUrl || null,
+            sync_source: 'whatsapp',
+            last_synced_at: new Date().toISOString(),
+            whatsapp_synced_at: new Date().toISOString(),
+            whatsapp_sync_status: 'synced',
+          }, {
+            onConflict: 'user_id,whatsapp_id',
+            ignoreDuplicates: false,
+          })
+      }
+
+      log('INFO', 'Groups synced successfully', { instanceName, count: Math.min(groupsArray.length, 100) })
+    } else {
+      log('WARN', 'Failed to fetch groups', { status: groupsResponse.status })
+    }
+
+    // 3. Update session with sync timestamp
+    await supabase
+      .from('whatsapp_sessions')
+      .update({
+        last_sync_at: new Date().toISOString(),
+        contacts_synced: true,
+      })
+      .eq('instance_name', instanceName)
+
+    // 4. Queue message history sync (async, batch processing)
+    // This will be handled by a separate Edge Function
+    try {
+      await supabase.rpc('pgmq_send', {
+        queue_name: 'whatsapp_sync_history',
+        message: JSON.stringify({
+          instance_name: instanceName,
+          user_id: userId,
+          action: 'sync_message_history',
+          queued_at: new Date().toISOString(),
+        }),
+      })
+      log('INFO', 'Message history sync queued', { instanceName })
+    } catch (queueError) {
+      // Queue might not exist yet, that's OK
+      log('WARN', 'Could not queue history sync', (queueError as Error).message)
+    }
+
+    log('INFO', 'Automatic sync completed', { instanceName, userId })
+  } catch (error) {
+    log('ERROR', 'Automatic sync error', (error as Error).message)
+    throw error
   }
 }
 
