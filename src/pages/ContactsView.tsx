@@ -38,6 +38,10 @@ export function ContactsView() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isSyncingStatus, setIsSyncingStatus] = useState(false);
 
+  // Auto-sync state
+  const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+
   // Use WhatsApp connection hook for configureWebhook
   const { configureWebhook, session: hookSession, isConnected } = useWhatsAppConnection();
 
@@ -107,6 +111,50 @@ export function ContactsView() {
       loadSyncStatus();
     }
   }, [user, whatsappSession?.status]);
+
+  // AUTO-SYNC: Detect when connected but no contacts, and trigger sync automatically
+  useEffect(() => {
+    const shouldAutoSync =
+      whatsappSession?.status === 'connected' &&
+      !isLoading &&
+      !isCheckingSession &&
+      contacts.length === 0 &&
+      !hasAttemptedAutoSync &&
+      !isSyncing &&
+      !isAutoSyncing;
+
+    if (shouldAutoSync) {
+      console.log('[ContactsView] Auto-sync triggered: connected but no contacts');
+      setHasAttemptedAutoSync(true);
+      setIsAutoSyncing(true);
+
+      syncWhatsAppContacts()
+        .then((result) => {
+          console.log('[ContactsView] Auto-sync result:', result);
+          if (result.success) {
+            loadContacts();
+            loadSyncStatus();
+          } else {
+            setError(`Erro ao sincronizar: ${result.errors.join(', ')}`);
+          }
+        })
+        .catch((err) => {
+          console.error('[ContactsView] Auto-sync error:', err);
+          setError(`Erro ao sincronizar: ${err.message}`);
+        })
+        .finally(() => {
+          setIsAutoSyncing(false);
+        });
+    }
+  }, [
+    whatsappSession?.status,
+    isLoading,
+    isCheckingSession,
+    contacts.length,
+    hasAttemptedAutoSync,
+    isSyncing,
+    isAutoSyncing,
+  ]);
 
   const loadContacts = async () => {
     setIsLoading(true);
@@ -231,15 +279,24 @@ export function ContactsView() {
     },
   };
 
-  // Show loading while checking session or syncing status
-  if (isCheckingSession || isSyncingStatus) {
+  // Show loading while checking session, syncing status, or auto-syncing contacts
+  if (isCheckingSession || isSyncingStatus || isAutoSyncing) {
     return (
       <div className="min-h-screen bg-ceramic-base flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
           <p className="text-ceramic-text-secondary">
-            {isSyncingStatus ? 'Sincronizando status com Evolution API...' : 'Verificando conexão WhatsApp...'}
+            {isAutoSyncing
+              ? 'Sincronizando contatos do WhatsApp...'
+              : isSyncingStatus
+              ? 'Sincronizando status com Evolution API...'
+              : 'Verificando conexão WhatsApp...'}
           </p>
+          {isAutoSyncing && (
+            <p className="text-ceramic-text-tertiary text-sm mt-2">
+              Primeira sincronização em andamento
+            </p>
+          )}
         </div>
       </div>
     );
