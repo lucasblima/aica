@@ -5,14 +5,16 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, Mail, MessageSquare } from 'lucide-react';
+import { X, Phone, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import type { ContactNetwork } from '../../types/memoryTypes';
+import { ProcessWithAicaButton } from './ProcessWithAicaButton';
 
 interface ContactDetailModalProps {
   contact: ContactNetwork;
   isOpen: boolean;
   onClose: () => void;
   onSave: (contact: Partial<ContactNetwork>) => Promise<void>;
+  onContactUpdated?: (contactId: string, healthScore: number) => void;
 }
 
 export function ContactDetailModal({
@@ -20,6 +22,7 @@ export function ContactDetailModal({
   isOpen,
   onClose,
   onSave,
+  onContactUpdated,
 }: ContactDetailModalProps) {
   const [notes, setNotes] = useState(contact.notes || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -124,6 +127,39 @@ export function ContactDetailModal({
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* AI Analysis Section */}
+              <div className="space-y-3 border-t border-ceramic-text-secondary/10 pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-purple-500" />
+                      Análise Aica
+                    </h3>
+                    {contact.health_score !== undefined && contact.health_score !== null && (
+                      <p className="text-sm text-ceramic-text-secondary mt-1">
+                        Health Score atual: <span className="font-bold text-purple-600">{contact.health_score}</span>
+                        {contact.last_analyzed_at && (
+                          <span className="text-xs ml-2">
+                            ({new Date(contact.last_analyzed_at).toLocaleDateString('pt-BR')})
+                          </span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <ProcessWithAicaButton
+                    contactId={contact.id}
+                    contactName={contact.name}
+                    hasExistingAnalysis={!!contact.last_analysis_id}
+                    onProcessComplete={(analysisId, healthScore) => {
+                      if (onContactUpdated) {
+                        onContactUpdated(contact.id, healthScore);
+                      }
+                    }}
+                    size="md"
+                  />
+                </div>
               </div>
 
               {/* Notes Section */}

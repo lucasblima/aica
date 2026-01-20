@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Users, Users2, Search, MessageCircle, Loader2, User, Briefcase, Heart, Home, GraduationCap, Package } from 'lucide-react';
-import { HeaderGlobal, ContactCard, ContactDetailModal } from '../components';
+import { HeaderGlobal, ContactCard, ContactDetailModal, CreditBalanceWidget } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
 import { supabase } from '../services/supabaseClient';
@@ -262,6 +262,20 @@ export function ContactsView() {
     setIsDetailModalOpen(false);
   };
 
+  const handleContactUpdated = (contactId: string, healthScore: number) => {
+    console.log('[ContactsView] Contact updated with health score:', contactId, healthScore);
+    // Update the contact in the local state
+    setContacts(prev => prev.map(c =>
+      c.id === contactId
+        ? { ...c, health_score: healthScore, last_analyzed_at: new Date().toISOString() }
+        : c
+    ));
+    // Update selected contact if it's the same
+    if (selectedContact?.id === contactId) {
+      setSelectedContact(prev => prev ? { ...prev, health_score: healthScore, last_analyzed_at: new Date().toISOString() } : prev);
+    }
+  };
+
   // Handle WhatsApp pairing success
   const handlePairingSuccess = async () => {
     // Refresh session status
@@ -349,6 +363,9 @@ export function ContactsView() {
 
       {/* Main Content */}
       <main className="p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Credit Balance Widget */}
+        <CreditBalanceWidget className="max-w-md" />
+
         {/* Search and Filter Bar */}
         <div className="flex gap-3 items-end">
           {/* Search Input */}
@@ -536,6 +553,7 @@ export function ContactsView() {
             isOpen={isDetailModalOpen}
             onClose={() => setIsDetailModalOpen(false)}
             onSave={handleContactSave}
+            onContactUpdated={handleContactUpdated}
           />
         )}
       </AnimatePresence>

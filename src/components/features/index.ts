@@ -16,6 +16,11 @@ export { default as ContactCard } from './ContactCard';
 // prettier-ignore
 export { default as ContactDetailModal } from './ContactDetailModal';
 export { ContactProfileView } from './ContactProfileView';
+// Aica Processing Components
+export { CreditBalanceWidget } from './CreditBalanceWidget';
+export { ProcessWithAicaButton } from './ProcessWithAicaButton';
+export { ProcessingEstimateModal } from './ProcessingEstimateModal';
+export { AnalysisResultsPanel } from './AnalysisResultsPanel';
 export { DailyTimeline } from './DailyTimeline';
 export { DailySummaryView } from './DailySummaryView';
 // prettier-ignore
