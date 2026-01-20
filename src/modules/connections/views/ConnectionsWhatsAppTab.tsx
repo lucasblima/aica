@@ -5,14 +5,16 @@
  * LGPD consent management, and connection status.
  *
  * Features:
- * - Tab navigation (Overview, Consent, Analytics)
+ * - Tab navigation (Overview, Contacts, Consent, Analytics)
  * - Connection status with QR code
+ * - Synced contacts list from Evolution API
  * - LGPD consent management
  * - Emotional thermometer visualization
  * - Contact insights and sentiment scores
  * - Topic clustering and anomaly alerts
  *
  * Related: Issue #12 - Privacy-First WhatsApp Integration, Task 3.4
+ * Updated: Issue #92 - Contacts list integration
  */
 
 import React, { useState, useEffect } from 'react';
@@ -26,6 +28,10 @@ import {
   Loader2,
   AlertTriangle,
   Sparkles,
+  RefreshCw,
+  Phone,
+  UserCircle,
+  Clock,
 } from 'lucide-react';
 import { CeramicTabSelector } from '@/components/ui';
 import {
@@ -39,12 +45,13 @@ import whatsappAnalyticsService, {
 } from '@/services/whatsappAnalyticsService';
 import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion';
 import { useWhatsAppGamification } from '../hooks/useWhatsAppGamification';
+import { useWhatsAppContacts, WhatsAppContact } from '@/hooks/useWhatsAppContacts';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-type TabId = 'overview' | 'consent' | 'analytics';
+type TabId = 'overview' | 'contacts' | 'consent' | 'analytics';
 
 interface ConnectionsWhatsAppTabProps {
   userId?: string;
@@ -197,6 +204,88 @@ const AnomalyAlertCard: React.FC<AnomalyAlertCardProps> = ({ alert }) => {
 };
 
 // ============================================================================
+// WHATSAPP CONTACT CARD COMPONENT (Issue #92)
+// ============================================================================
+
+interface WhatsAppContactCardProps {
+  contact: WhatsAppContact;
+  onClick?: () => void;
+}
+
+const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onClick }) => {
+  // Format phone number for display
+  const formatPhone = (phone: string): string => {
+    if (!phone) return '';
+    // Remove +55 prefix and format
+    const cleaned = phone.replace(/^\+?55/, '');
+    if (cleaned.length === 11) {
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+    }
+    return phone;
+  };
+
+  // Get display name (prefer whatsapp_name, fallback to name)
+  const displayName = contact.whatsapp_name || contact.name || 'Contato';
+
+  // Check if it's a group (WhatsApp groups have @g.us in their ID)
+  const isGroup = contact.whatsapp_id?.includes('@g.us') || contact.whatsapp_id?.includes('-');
+
+  return (
+    <motion.div
+      className="ceramic-card p-4 rounded-xl cursor-pointer hover:scale-[1.02] transition-transform"
+      onClick={onClick}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="flex items-center gap-3">
+        {/* Profile Picture or Avatar */}
+        {contact.whatsapp_profile_pic_url ? (
+          <img
+            src={contact.whatsapp_profile_pic_url}
+            alt={displayName}
+            className="w-12 h-12 rounded-full object-cover"
+            onError={(e) => {
+              // Fallback to icon on error
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <div
+            className={`w-12 h-12 rounded-full flex items-center justify-center ceramic-concave ${
+              isGroup ? 'bg-purple-100' : 'bg-blue-100'
+            }`}
+          >
+            {isGroup ? (
+              <Users className="w-6 h-6 text-purple-600" />
+            ) : (
+              <UserCircle className="w-6 h-6 text-blue-600" />
+            )}
+          </div>
+        )}
+
+        {/* Contact Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-ceramic-text-primary truncate">
+            {displayName}
+          </p>
+          <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
+            <Phone className="w-3 h-3" />
+            <span>{formatPhone(contact.whatsapp_phone || contact.phone)}</span>
+          </div>
+        </div>
+
+        {/* Sync Source Badge */}
+        {contact.sync_source && (
+          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+            {contact.sync_source}
+          </span>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -215,9 +304,22 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   // Gamification tracking
   const { trackAnalyticsView, trackContactAnalysis } = useWhatsAppGamification();
 
+  // WhatsApp contacts from sync (Issue #92)
+  const {
+    contacts: syncedContacts,
+    totalCount: syncedTotalCount,
+    groupsCount: syncedGroupsCount,
+    syncStatus,
+    syncContacts,
+    isLoading: isSyncLoading,
+    error: syncError,
+    lastSyncAt,
+  } = useWhatsAppContacts();
+
   // Tab configuration
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
+    { id: 'contacts', label: 'Contatos' },
     { id: 'consent', label: 'Consentimento' },
     { id: 'analytics', label: 'Analytics' },
   ];
@@ -387,6 +489,150 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     </div>
   );
 
+  // Render Contacts Tab (Issue #92)
+  const renderContactsTab = () => {
+    // Format last sync time
+    const formatLastSync = (timestamp: string | null): string => {
+      if (!timestamp) return 'Nunca sincronizado';
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+
+      if (minutes < 1) return 'Agora mesmo';
+      if (minutes < 60) return `Há ${minutes} min`;
+      if (hours < 24) return `Há ${hours}h`;
+      return `Há ${days} dias`;
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Header with Sync Status */}
+        <div className="ceramic-card p-6 rounded-3xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-ceramic-accent" />
+              <div>
+                <h2 className="text-xl font-bold text-ceramic-text-primary">
+                  Contatos Sincronizados
+                </h2>
+                <p className="text-sm text-ceramic-text-secondary">
+                  {syncedTotalCount} contatos • {syncedGroupsCount} grupos
+                </p>
+              </div>
+            </div>
+
+            {/* Sync Button */}
+            <button
+              onClick={() => syncContacts()}
+              disabled={isSyncLoading || syncStatus.status === 'syncing'}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all ${
+                isSyncLoading || syncStatus.status === 'syncing'
+                  ? 'bg-ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-500 text-white'
+              }`}
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${
+                  isSyncLoading || syncStatus.status === 'syncing' ? 'animate-spin' : ''
+                }`}
+              />
+              {syncStatus.status === 'syncing' ? 'Sincronizando...' : 'Sincronizar'}
+            </button>
+          </div>
+
+          {/* Last Sync Info */}
+          <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary">
+            <Clock className="w-4 h-4" />
+            <span>Última sincronização: {formatLastSync(lastSyncAt)}</span>
+          </div>
+
+          {/* Sync Progress */}
+          {syncStatus.status === 'syncing' && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-ceramic-text-secondary">{syncStatus.message}</span>
+                <span className="font-bold text-ceramic-accent">{syncStatus.progress}%</span>
+              </div>
+              <div className="w-full h-2 bg-ceramic-inset rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-green-500 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${syncStatus.progress}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Sync Error */}
+          {syncError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
+                <p className="text-sm text-red-800">{syncError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Sync Result */}
+          {syncStatus.status === 'completed' && syncStatus.result && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-sm text-green-800">
+                ✓ {syncStatus.result.synced} contatos sincronizados
+                {syncStatus.result.skipped > 0 && ` • ${syncStatus.result.skipped} ignorados`}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Contacts List */}
+        <div className="ceramic-card p-6 rounded-3xl space-y-4">
+          {isSyncLoading && syncedContacts.length === 0 ? (
+            renderLoading()
+          ) : syncedContacts.length === 0 ? (
+            <motion.div
+              className="text-center py-12"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <div className="w-20 h-20 rounded-full bg-ceramic-inset flex items-center justify-center mx-auto mb-4">
+                <Users className="w-10 h-10 text-ceramic-text-secondary" />
+              </div>
+              <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
+                Nenhum contato sincronizado
+              </h3>
+              <p className="text-sm text-ceramic-text-secondary max-w-sm mx-auto mb-4">
+                Clique em "Sincronizar" para importar seus contatos do WhatsApp.
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
+              {syncedContacts.map((contact) => (
+                <motion.div key={contact.id} variants={staggerItem}>
+                  <WhatsAppContactCard
+                    contact={contact}
+                    onClick={() => {
+                      // Could navigate to contact details or select for analysis
+                      console.log('Selected contact:', contact);
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Render Consent Tab
   const renderConsentTab = () => (
     <div className="space-y-6">
@@ -553,11 +799,12 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {error && activeTab !== 'overview' ? (
+            {error && activeTab !== 'overview' && activeTab !== 'contacts' ? (
               renderError()
             ) : (
               <>
                 {activeTab === 'overview' && renderOverviewTab()}
+                {activeTab === 'contacts' && renderContactsTab()}
                 {activeTab === 'consent' && renderConsentTab()}
                 {activeTab === 'analytics' && renderAnalyticsTab()}
               </>
