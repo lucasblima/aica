@@ -5,7 +5,7 @@
  * Shows WhatsApp pairing flow if user hasn't connected their WhatsApp yet.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Users, Users2, Search, MessageCircle, Loader2, User, Briefcase, Heart, Home, GraduationCap, Package } from 'lucide-react';
 import { HeaderGlobal, ContactCard, ContactDetailModal, CreditBalanceWidget } from '../components';
@@ -43,22 +43,33 @@ export function ContactsView() {
   const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
+  // Refs to prevent infinite loops
+  const hasAttemptedDatabaseSync = useRef(false);
+  const configureWebhookRef = useRef<typeof configureWebhook | null>(null);
+
   // Use WhatsApp connection hook for configureWebhook
   const { configureWebhook, session: hookSession, isConnected } = useWhatsAppConnection();
 
+  // Keep configureWebhook ref updated without causing re-renders
+  useEffect(() => {
+    configureWebhookRef.current = configureWebhook;
+  }, [configureWebhook]);
+
   // Sync database status with Evolution API if needed
-  const syncDatabaseWithEvolutionAPI = useCallback(async () => {
-    if (!whatsappSession?.instance_name) return false;
+  // Uses refs to avoid dependency chain that causes infinite loops
+  const syncDatabaseWithEvolutionAPI = useCallback(async (instanceName: string) => {
+    if (!instanceName || !user?.id) return false;
 
     console.log('[ContactsView] Attempting to sync database status with Evolution API...');
     setIsSyncingStatus(true);
 
     try {
-      const result = await configureWebhook();
+      // Use ref to avoid recreating callback when configureWebhook changes
+      const result = await configureWebhookRef.current?.();
       if (result?.success && result.connectionState === 'open') {
         console.log('[ContactsView] Database synced! Evolution API reports connected.');
         // Refresh the session after sync
-        const session = await getWhatsAppSession(user!.id);
+        const session = await getWhatsAppSession(user.id);
         setWhatsappSession(session);
         return true;
       }
@@ -69,7 +80,7 @@ export function ContactsView() {
     } finally {
       setIsSyncingStatus(false);
     }
-  }, [whatsappSession?.instance_name, configureWebhook, user]);
+  }, [user?.id]); // Minimal dependencies - only user.id which rarely changes
 
   // Check WhatsApp session status
   useEffect(() => {
@@ -99,11 +110,21 @@ export function ContactsView() {
   }, [user?.id]);
 
   // Auto-sync when session exists but status isn't connected
+  // Uses ref to prevent infinite re-triggering
   useEffect(() => {
-    if (!isCheckingSession && whatsappSession && whatsappSession.status !== 'connected' && whatsappSession.instance_name && !isSyncingStatus) {
-      syncDatabaseWithEvolutionAPI();
+    const shouldSync =
+      !isCheckingSession &&
+      whatsappSession &&
+      whatsappSession.status !== 'connected' &&
+      whatsappSession.instance_name &&
+      !isSyncingStatus &&
+      !hasAttemptedDatabaseSync.current; // Prevent re-trigger
+
+    if (shouldSync) {
+      hasAttemptedDatabaseSync.current = true;
+      syncDatabaseWithEvolutionAPI(whatsappSession.instance_name);
     }
-  }, [isCheckingSession, whatsappSession, isSyncingStatus, syncDatabaseWithEvolutionAPI]);
+  }, [isCheckingSession, whatsappSession?.status, whatsappSession?.instance_name, isSyncingStatus, syncDatabaseWithEvolutionAPI]);
 
   // Load contacts from database
   useEffect(() => {
