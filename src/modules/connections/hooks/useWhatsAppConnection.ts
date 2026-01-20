@@ -32,6 +32,14 @@ interface ConnectionState {
   instance?: string
 }
 
+interface ConfigureWebhookResult {
+  success: boolean
+  webhookConfigured?: boolean
+  sessionUpdated?: boolean
+  connectionState?: string
+  error?: string
+}
+
 interface UseWhatsAppConnectionReturn {
   /** Current session data from database */
   session: ReturnType<typeof useWhatsAppSessionSubscription>['session']
@@ -53,6 +61,8 @@ interface UseWhatsAppConnectionReturn {
   fetchQRCode: () => Promise<void>
   /** Check current connection status */
   checkConnection: () => Promise<void>
+  /** Configure webhook for existing instance (fixes broken instances) */
+  configureWebhook: () => Promise<ConfigureWebhookResult | null>
 }
 
 export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
@@ -278,6 +288,65 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
     }
   }, [session])
 
+  /**
+   * Configure webhook for existing instance
+   * Use this to fix instances that were created before the webhook fix
+   */
+  const configureWebhook = useCallback(async (): Promise<ConfigureWebhookResult | null> => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      console.log('[useWhatsAppConnection] Configuring webhook...')
+
+      const { data: { session: authSession } } = await supabase.auth.getSession()
+
+      if (!authSession?.access_token) {
+        throw new Error('User not authenticated')
+      }
+
+      // Call configure-instance-webhook Edge Function
+      const response = await supabase.functions.invoke('configure-instance-webhook', {
+        body: { updateSessionStatus: true },
+        headers: {
+          Authorization: `Bearer ${authSession.access_token}`,
+        },
+      })
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to configure webhook')
+      }
+
+      const result = response.data as ConfigureWebhookResult
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to configure webhook')
+      }
+
+      console.log('[useWhatsAppConnection] Webhook configured:', result)
+
+      // Refresh session data to get latest state
+      await refreshSession()
+
+      // Update connection state based on result
+      if (result.connectionState === 'open') {
+        setConnectionState({
+          state: 'open',
+          instance: session?.instance_name,
+        })
+      }
+
+      return result
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(new Error(errorMessage))
+      console.error('[useWhatsAppConnection] Configure webhook error:', errorMessage)
+      return null
+    } finally {
+      setIsLoading(false)
+    }
+  }, [session, refreshSession])
+
   return {
     session,
     connectionState,
@@ -289,6 +358,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
     disconnect,
     fetchQRCode,
     checkConnection,
+    configureWebhook,
   }
 }
 
