@@ -1315,7 +1315,7 @@ export async function deleteEditalPDF(
 
     if (error) throw error;
 
-    log.debug(Edital PDF deleted:', { opportunityId });
+    log.debug('Edital PDF deleted:', { opportunityId });
 
     return data as GrantOpportunity;
   } catch (error) {
