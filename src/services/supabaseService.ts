@@ -113,19 +113,33 @@ export const updateAssociationSyncStatus = async (
     }
 };
 
-// Get user profile
+// Get user profile from user_profiles table
+// This is used to check onboarding status and other profile data
 export const getUserProfile = async (userId: string) => {
     try {
-        // Use RPC function to ensure profile exists before querying
-        // This prevents 406 errors by auto-creating the profile if missing
-        const { data, error } = await supabase
-            .rpc('ensure_user_profile_exists', { p_user_id: userId });
+        // First ensure user exists in public.users table
+        await supabase.rpc('ensure_user_profile_exists', { p_user_id: userId });
 
-        if (error) throw error;
+        // Then query the user_profiles table for onboarding status
+        const { data, error } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error) {
+            // PGRST116 = no rows returned - user hasn't started onboarding yet
+            if (error.code === 'PGRST116') {
+                return null;
+            }
+            throw error;
+        }
+
         return data;
     } catch (error) {
         log.error(`Error fetching profile for user ${userId}:`, { error: error });
-        throw error;
+        // Return null instead of throwing to avoid redirect loop on errors
+        return null;
     }
 };
 
