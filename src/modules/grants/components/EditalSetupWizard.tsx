@@ -58,12 +58,12 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
       setError(null);
 
       // 1. Upload e extrair texto
-      log.debug(Processando PDF...');
+      log.debug('Processando PDF...');
       const processed = await processEditalPDF(file);
       setPdfData(processed);
 
       // 2. Analisar com IA
-      log.debug(Analisando edital...');
+      log.debug('Analisando edital...');
       const analyzed = await analyzeEditalStructure(processed.text);
       setExtractedData(analyzed);
 
