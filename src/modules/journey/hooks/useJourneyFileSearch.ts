@@ -9,7 +9,10 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { useModuleFileSearch } from '../../../hooks/useFileSearch';
+
+const log = createNamespacedLogger('JourneyFileSearch');
 import type {
   FileSearchCorpus,
   FileSearchDocument,
@@ -105,7 +108,7 @@ export function useJourneyFileSearch(options: UseJourneyFileSearchOptions = {}) 
       setCorpus(newCorpus);
       return newCorpus;
     } catch (error) {
-      console.error('[useJourneyFileSearch] ensureCorpus error:', error);
+      log.error('[useJourneyFileSearch] ensureCorpus error:', error);
       throw error;
     }
   }, [userId, momentId, baseHook]);
@@ -178,10 +181,10 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
           },
         });
 
-        console.log('[useJourneyFileSearch] Momento indexado:', document.id);
+        log.debug('[useJourneyFileSearch] Momento indexado:', document.id);
         return document;
       } catch (error) {
-        console.error('[useJourneyFileSearch] indexMoment error:', error);
+        log.error('[useJourneyFileSearch] indexMoment error:', error);
         throw error;
       } finally {
         setIsIndexing(false);
@@ -207,15 +210,15 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
             const doc = await indexMoment(moment);
             results.push(doc);
           } catch (error) {
-            console.error(`[useJourneyFileSearch] Erro ao indexar momento ${moment.id}:`, error);
+            log.error(`[useJourneyFileSearch] Erro ao indexar momento ${moment.id}:`, error);
             // Continua com próximo momento
           }
         }
 
-        console.log(`[useJourneyFileSearch] ${results.length}/${moments.length} momentos indexados`);
+        log.debug(`[useJourneyFileSearch] ${results.length}/${moments.length} momentos indexados`);
         return results;
       } catch (error) {
-        console.error('[useJourneyFileSearch] indexMoments error:', error);
+        log.error('[useJourneyFileSearch] indexMoments error:', error);
         throw error;
       } finally {
         setIsIndexing(false);
@@ -245,7 +248,7 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
 
         return results;
       } catch (error) {
-        console.error('[useJourneyFileSearch] searchInMoments error:', error);
+        log.error('[useJourneyFileSearch] searchInMoments error:', error);
         throw error;
       }
     },
@@ -285,7 +288,7 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
 
         return await searchInMoments(enrichedQuery, resultCount);
       } catch (error) {
-        console.error('[useJourneyFileSearch] searchWithContext error:', error);
+        log.error('[useJourneyFileSearch] searchWithContext error:', error);
         throw error;
       }
     },
@@ -412,7 +415,7 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
       }
       return await baseHook.loadDocuments(corpus?.id);
     } catch (error) {
-      console.error('[useJourneyFileSearch] loadMoments error:', error);
+      log.error('[useJourneyFileSearch] loadMoments error:', error);
       throw error;
     }
   }, [corpus, ensureCorpus, baseHook]);
@@ -425,7 +428,7 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
       try {
         await baseHook.removeDocument(documentId);
       } catch (error) {
-        console.error('[useJourneyFileSearch] removeMoment error:', error);
+        log.error('[useJourneyFileSearch] removeMoment error:', error);
         throw error;
       }
     },
@@ -445,7 +448,7 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
   useEffect(() => {
     if (autoLoad && (userId || momentId)) {
       ensureCorpus().catch((error) => {
-        console.warn('[useJourneyFileSearch] Auto-load failed:', error);
+        log.warn('[useJourneyFileSearch] Auto-load failed:', error);
       });
     }
   }, [autoLoad, userId, momentId, ensureCorpus]);
@@ -509,7 +512,7 @@ export function useJourneyQuickSearch(userId: string) {
         await ensureCorpus();
         return await searchInMoments(query, resultCount);
       } catch (error) {
-        console.error('[useJourneyQuickSearch] error:', error);
+        log.error('[useJourneyQuickSearch] error:', error);
         throw error;
       }
     },

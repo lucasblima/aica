@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/lib/supabase'
+import { createNamespacedLogger } from '@/lib/logger'
 import {
   DailyQuestion,
   QuestionResponse,
@@ -11,6 +12,8 @@ import {
   AnswerQuestionInput,
   AnswerQuestionResult,
 } from '../types/dailyQuestion'
+
+const log = createNamespacedLogger('QuestionService')
 
 /**
  * Get daily question for user
@@ -56,7 +59,7 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
       user_response: userResponse ? (userResponse as QuestionResponse) : undefined,
     }
   } catch (error) {
-    console.error('Error fetching daily question:', error)
+    log.error('Error fetching daily question:', error)
     return null
   }
 }
@@ -89,7 +92,7 @@ export async function getAllQuestionsWithResponses(
       user_response: responses?.find(r => r.question_id === q.id),
     }))
   } catch (error) {
-    console.error('Error fetching questions with responses:', error)
+    log.error('Error fetching questions with responses:', error)
     return []
   }
 }
@@ -134,7 +137,7 @@ export async function answerQuestion(
     )
 
     if (cpError) {
-      console.error('Error awarding CP:', cpError)
+      log.error('Error awarding CP:', cpError)
     }
 
     // Update stats
@@ -151,7 +154,7 @@ export async function answerQuestion(
       leveled_up: cpResult?.leveled_up || false,
     }
   } catch (error) {
-    console.error('Error answering question:', error)
+    log.error('Error answering question:', error)
     throw error
   }
 }
@@ -178,7 +181,7 @@ export async function getQuestionResponse(
 
     return data
   } catch (error) {
-    console.error('Error fetching question response:', error)
+    log.error('Error fetching question response:', error)
     return null
   }
 }
@@ -202,7 +205,7 @@ export async function getResponseHistory(
 
     return data || []
   } catch (error) {
-    console.error('Error fetching response history:', error)
+    log.error('Error fetching response history:', error)
     return []
   }
 }
@@ -261,7 +264,7 @@ export async function getQuestionStats(userId: string): Promise<{
       recent_streak,
     }
   } catch (error) {
-    console.error('Error fetching question stats:', error)
+    log.error('Error fetching question stats:', error)
     return {
       total_answered: 0,
       total_available: 0,

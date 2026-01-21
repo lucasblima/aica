@@ -5,7 +5,10 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
+
+const log = createNamespacedLogger('StatementUpload');
 import { pdfProcessingService } from '../services/pdfProcessingService';
 import { statementService } from '../services/statementService';
 import { addXP, awardAchievement } from '../../../services/gamificationService';
@@ -240,7 +243,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           )
         );
       } catch (error) {
-        console.error(`Error analyzing ${fileWithMeta.file.name}:`, error);
+        log.error(`Error analyzing ${fileWithMeta.file.name}:`, error);
         // Leave as not analyzed so user can fill manually
         setFiles((prev) =>
           prev.map((f) =>
@@ -313,7 +316,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           const storagePath = await statementService.uploadPDF(userId, fileWithMeta.file);
           await statementService.updateStatement(statement.id, { storage_path: storagePath });
         } catch (uploadError) {
-          console.warn('Storage upload failed:', uploadError);
+          log.warn('Storage upload failed:', uploadError);
         }
 
         // Step 4: Extract and parse PDF
@@ -358,7 +361,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           onUploadComplete(updatedStatement);
         }
       } catch (error) {
-        console.error(`Error processing file ${i}:`, error);
+        log.error(`Error processing file ${i}:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Erro';
         updateFileProgress(i, { stage: 'error', progress: 0, message: errorMessage });
       }

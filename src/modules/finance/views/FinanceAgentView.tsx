@@ -5,7 +5,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { ArrowLeft, Sparkles, RefreshCw, Eye, EyeOff } from 'lucide-react';
+
+const log = createNamespacedLogger('FinanceAgentView');
 import { AgentChat } from '../components/FinanceAgent/AgentChat';
 import { financeAgentService } from '../services/financeAgentService';
 import type { AgentContext } from '../types';
@@ -41,7 +44,7 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
       const ctx = await financeAgentService.buildContext(userId);
       setContext(ctx);
     } catch (err) {
-      console.error('Error loading context:', err);
+      log.error('Error loading context:', err);
       setError('Erro ao carregar dados financeiros');
     } finally {
       setLoading(false);

@@ -10,8 +10,11 @@
 import { supabase } from '@/lib/supabase'
 import { GeminiClient } from '@/lib/gemini'
 import type { GeminiChatResponse } from '@/lib/gemini'
+import { createNamespacedLogger } from '@/lib/logger'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'
 import { QuestionWithResponse, DailyQuestion } from '../types/dailyQuestion'
+
+const log = createNamespacedLogger('DailyQuestion')
 
 interface UserContext {
   healthStatus: {
@@ -215,7 +218,7 @@ async function getUserContext(userId: string): Promise<UserContext> {
       })),
     }
   } catch (error) {
-    console.error('Error fetching user context:', error)
+    log.error('Error fetching user context:', error)
     return {
       healthStatus: {
         burnoutCount: 0,
@@ -315,7 +318,7 @@ Gere uma pergunta reflexiva e apropriada:
             }
           }).catch(error => {
             // Non-blocking: log error but don't throw
-            console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+            log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
           });
 
           return question
@@ -372,7 +375,7 @@ async function getJourneyQuestion(
       }
     }
   } catch (error) {
-    console.error('Error getting journey question:', error)
+    log.error('Error getting journey question:', error)
   }
 
   return null
@@ -416,9 +419,9 @@ export async function getDailyQuestionWithContext(
       }
     }
 
-    console.log('AI-driven question failed, trying journey fallback')
+    log.debug('AI-driven question failed, trying journey fallback')
   } catch (error) {
-    console.warn('Level 1 (AI-Driven) failed:', error)
+    log.warn('Level 1 (AI-Driven) failed:', error)
   }
 
   try {
@@ -434,9 +437,9 @@ export async function getDailyQuestionWithContext(
       }
     }
 
-    console.log('Journey question unavailable, using pool fallback')
+    log.debug('Journey question unavailable, using pool fallback')
   } catch (error) {
-    console.warn('Level 2 (Journey) failed:', error)
+    log.warn('Level 2 (Journey) failed:', error)
   }
 
   // LEVEL 3: Pool Fixo
@@ -461,7 +464,7 @@ export async function saveDailyResponse(
     // Para perguntas AI, não temos registro persistente, apenas logs
     if (source === 'ai') {
       // Log para análise futura
-      console.log(`AI Question Response: ${responseText.substring(0, 50)}...`)
+      log.debug(`AI Question Response: ${responseText.substring(0, 50)}...`)
       return true
     }
 
@@ -474,13 +477,13 @@ export async function saveDailyResponse(
     })
 
     if (error) {
-      console.error('Error saving response:', error)
+      log.error('Error saving response:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('Error saving daily response:', error)
+    log.error('Error saving daily response:', error)
     return false
   }
 }
@@ -504,6 +507,6 @@ export async function logDailyQuestionUsage(
       created_at: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('Error logging usage:', error)
+    log.error('Error logging usage:', error)
   }
 }

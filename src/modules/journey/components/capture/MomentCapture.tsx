@@ -4,7 +4,10 @@
  */
 
 import React, { useState } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { EmotionPicker } from './EmotionPicker'
+
+const log = createNamespacedLogger('MomentCapture')
 import { AudioRecorder } from './AudioRecorder'
 import { TagInput } from './TagInput'
 import { MomentType, EmotionValue, CreateMomentInput } from '../../types/moment'
@@ -58,7 +61,7 @@ export function MomentCapture({ onSubmit, onCancel }: MomentCaptureProps) {
       setEmotion(undefined)
       setTags([])
     } catch (error) {
-      console.error('Error submitting moment:', error)
+      log.error('Error submitting moment:', error)
       alert('Erro ao salvar momento. Tente novamente.')
     } finally {
       setIsSubmitting(false)

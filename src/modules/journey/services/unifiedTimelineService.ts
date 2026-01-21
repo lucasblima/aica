@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger'
 import {
   UnifiedEvent,
   EventSource,
@@ -18,6 +19,8 @@ import {
   ActivityEvent,
   DEFAULT_TIMELINE_FILTERS,
 } from '../types/unifiedEvent'
+
+const log = createNamespacedLogger('UnifiedTimeline')
 
 /**
  * Date range to SQL date filter
@@ -184,7 +187,7 @@ async function fetchWhatsAppEvents(
     const { data, error } = await query
 
     if (error) {
-      console.warn('[UnifiedTimeline] WhatsApp fetch error:', error.message)
+      log.warn('[UnifiedTimeline] WhatsApp fetch error:', error.message)
       return []
     }
 
@@ -205,7 +208,7 @@ async function fetchWhatsAppEvents(
 
     return events.map(enrichEventWithDisplayData) as WhatsAppEvent[]
   } catch (err) {
-    console.error('[UnifiedTimeline] WhatsApp fetch failed:', err)
+    log.error('[UnifiedTimeline] WhatsApp fetch failed:', err)
     if (typeof window !== 'undefined' && (window as any).Sentry) {
       (window as any).Sentry.captureException(err)
     }
@@ -237,7 +240,7 @@ async function fetchMomentEvents(
     const { data, error } = await query
 
     if (error) {
-      console.warn('[UnifiedTimeline] Moments fetch error:', error.message)
+      log.warn('[UnifiedTimeline] Moments fetch error:', error.message)
       return []
     }
 
@@ -259,7 +262,7 @@ async function fetchMomentEvents(
 
     return events.map(enrichEventWithDisplayData) as MomentEvent[]
   } catch (err) {
-    console.error('[UnifiedTimeline] Moments fetch failed:', err)
+    log.error('[UnifiedTimeline] Moments fetch failed:', err)
     if (typeof window !== 'undefined' && (window as any).Sentry) {
       (window as any).Sentry.captureException(err)
     }
@@ -291,7 +294,7 @@ async function fetchTaskEvents(
     const { data, error } = await query
 
     if (error) {
-      console.warn('[UnifiedTimeline] Tasks fetch error:', error.message)
+      log.warn('[UnifiedTimeline] Tasks fetch error:', error.message)
       return []
     }
 
@@ -312,7 +315,7 @@ async function fetchTaskEvents(
 
     return events.map(enrichEventWithDisplayData) as TaskEvent[]
   } catch (err) {
-    console.error('[UnifiedTimeline] Tasks fetch failed:', err)
+    log.error('[UnifiedTimeline] Tasks fetch failed:', err)
     if (typeof window !== 'undefined' && (window as any).Sentry) {
       (window as any).Sentry.captureException(err)
     }
@@ -344,7 +347,7 @@ async function fetchQuestionEvents(
     const { data, error } = await query
 
     if (error) {
-      console.warn('[UnifiedTimeline] Questions fetch error:', error.message)
+      log.warn('[UnifiedTimeline] Questions fetch error:', error.message)
       return []
     }
 
@@ -363,7 +366,7 @@ async function fetchQuestionEvents(
 
     return events.map(enrichEventWithDisplayData) as QuestionEvent[]
   } catch (err) {
-    console.error('[UnifiedTimeline] Questions fetch failed:', err)
+    log.error('[UnifiedTimeline] Questions fetch failed:', err)
     if (typeof window !== 'undefined' && (window as any).Sentry) {
       (window as any).Sentry.captureException(err)
     }
@@ -395,7 +398,7 @@ async function fetchSummaryEvents(
     const { data, error } = await query
 
     if (error) {
-      console.warn('[UnifiedTimeline] Summaries fetch error:', error.message)
+      log.warn('[UnifiedTimeline] Summaries fetch error:', error.message)
       return []
     }
 
@@ -416,7 +419,7 @@ async function fetchSummaryEvents(
 
     return events.map(enrichEventWithDisplayData) as SummaryEvent[]
   } catch (err) {
-    console.error('[UnifiedTimeline] Summaries fetch failed:', err)
+    log.error('[UnifiedTimeline] Summaries fetch failed:', err)
     if (typeof window !== 'undefined' && (window as any).Sentry) {
       (window as any).Sentry.captureException(err)
     }
@@ -448,7 +451,7 @@ async function fetchActivityEvents(
     const { data, error } = await query
 
     if (error) {
-      console.warn('[UnifiedTimeline] Activities fetch error:', error.message)
+      log.warn('[UnifiedTimeline] Activities fetch error:', error.message)
       return []
     }
 
@@ -466,7 +469,7 @@ async function fetchActivityEvents(
 
     return events.map(enrichEventWithDisplayData) as ActivityEvent[]
   } catch (err) {
-    console.error('[UnifiedTimeline] Activities fetch failed:', err)
+    log.error('[UnifiedTimeline] Activities fetch failed:', err)
     if (typeof window !== 'undefined' && (window as any).Sentry) {
       (window as any).Sentry.captureException(err)
     }

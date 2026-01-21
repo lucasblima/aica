@@ -4,7 +4,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
+
+const log = createNamespacedLogger('useWeeklySummary')
 import { WeeklySummary, WeeklySummaryWithReflection } from '../types/weeklySummary'
 import {
   getCurrentWeeklySummary,
@@ -43,7 +46,7 @@ export function useCurrentWeeklySummary() {
       }
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching current summary:', err)
+      log.error('Error fetching current summary:', err)
     } finally {
       setIsLoading(false)
     }
@@ -139,7 +142,7 @@ export function useWeeklySummaries(limit: number = 20) {
       setSummaries(fetchedSummaries)
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching summaries:', err)
+      log.error('Error fetching summaries:', err)
     } finally {
       setIsLoading(false)
     }
@@ -180,7 +183,7 @@ export function useSpecificWeeklySummary(year: number, weekNumber: number) {
       setSummary(fetchedSummary)
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching summary:', err)
+      log.error('Error fetching summary:', err)
     } finally {
       setIsLoading(false)
     }
