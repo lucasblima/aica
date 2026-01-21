@@ -20,6 +20,9 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { supabase } from '@/services/supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('useWhatsAppContacts')
 
 export interface WhatsAppContact {
   id: string
@@ -136,7 +139,7 @@ export function useWhatsAppContacts(): UseWhatsAppContactsReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch contacts'
       setError(errorMessage)
-      console.error('[useWhatsAppContacts] Fetch error:', errorMessage)
+      log.error('Fetch error:', { error: errorMessage })
     } finally {
       setIsLoading(false)
     }
@@ -224,7 +227,7 @@ export function useWhatsAppContacts(): UseWhatsAppContactsReturn {
         progress: 0,
         message: errorMessage,
       })
-      console.error('[useWhatsAppContacts] Sync error:', errorMessage)
+      log.error('Sync error:', { error: errorMessage })
       return null
     }
   }, [fetchContacts])

@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { ConnectionEvent, CreateEventPayload, ConnectionSpace } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('EventService');
 
 /**
  * Date range filter for event queries
@@ -56,13 +59,13 @@ export const eventService = {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching events:', error);
+        log.error('Error fetching events:', { error, spaceId, dateRange });
         throw new Error(`Failed to fetch events: ${error.message}`);
       }
 
       return data as ConnectionEvent[];
     } catch (error) {
-      console.error('Error in getEvents:', error);
+      log.error('Error in getEvents:', { error });
       throw error;
     }
   },
@@ -87,7 +90,7 @@ export const eventService = {
         .single();
 
       if (error) {
-        console.error('Error fetching event:', error);
+        log.error('Error fetching event:', { error, id });
         throw new Error(`Failed to fetch event: ${error.message}`);
       }
 
@@ -97,7 +100,7 @@ export const eventService = {
 
       return data as ConnectionEvent;
     } catch (error) {
-      console.error('Error in getEventById:', error);
+      log.error('Error in getEventById:', { error });
       throw error;
     }
   },
@@ -162,13 +165,13 @@ export const eventService = {
         .single();
 
       if (error) {
-        console.error('Error creating event:', error);
+        log.error('Error creating event:', { error, spaceId, payload });
         throw new Error(`Failed to create event: ${error.message}`);
       }
 
       return eventData as ConnectionEvent;
     } catch (error) {
-      console.error('Error in createEvent:', error);
+      log.error('Error in createEvent:', { error });
       throw error;
     }
   },
@@ -228,7 +231,7 @@ export const eventService = {
         .single();
 
       if (error) {
-        console.error('Error updating event:', error);
+        log.error('Error updating event:', { error, id, payload });
         throw new Error(`Failed to update event: ${error.message}`);
       }
 
@@ -238,7 +241,7 @@ export const eventService = {
 
       return eventData as ConnectionEvent;
     } catch (error) {
-      console.error('Error in updateEvent:', error);
+      log.error('Error in updateEvent:', { error });
       throw error;
     }
   },
@@ -289,11 +292,11 @@ export const eventService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting event:', error);
+        log.error('Error deleting event:', { error, id });
         throw new Error(`Failed to delete event: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteEvent:', error);
+      log.error('Error in deleteEvent:', { error });
       throw error;
     }
   },
@@ -335,7 +338,7 @@ export const eventService = {
         .eq('is_active', true);
 
       if (spacesError) {
-        console.error('Error fetching spaces:', spacesError);
+        log.error('Error fetching spaces:', { error: spacesError });
         throw new Error(`Failed to fetch spaces: ${spacesError.message}`);
       }
 
@@ -359,7 +362,7 @@ export const eventService = {
         .limit(limit);
 
       if (eventsError) {
-        console.error('Error fetching upcoming events:', eventsError);
+        log.error('Error fetching upcoming events:', { error: eventsError });
         throw new Error(`Failed to fetch upcoming events: ${eventsError.message}`);
       }
 
@@ -372,7 +375,7 @@ export const eventService = {
         } as ConnectionEvent & { space: ConnectionSpace };
       });
     } catch (error) {
-      console.error('Error in getUpcomingEvents:', error);
+      log.error('Error in getUpcomingEvents:', { error });
       throw error;
     }
   },

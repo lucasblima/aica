@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { ConnectionMember, AddMemberPayload, MemberRole } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('MemberService');
 
 /**
  * Member Service
@@ -31,13 +34,13 @@ export const memberService = {
         .order('joined_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching members:', error);
+        log.error('Error fetching members:', { error, spaceId });
         throw new Error(`Failed to fetch members: ${error.message}`);
       }
 
       return data as ConnectionMember[];
     } catch (error) {
-      console.error('Error in getMembers:', error);
+      log.error('Error in getMembers:', { error });
       throw error;
     }
   },
@@ -63,7 +66,7 @@ export const memberService = {
         .single();
 
       if (error) {
-        console.error('Error fetching member:', error);
+        log.error('Error fetching member:', { error, id });
         throw new Error(`Failed to fetch member: ${error.message}`);
       }
 
@@ -73,7 +76,7 @@ export const memberService = {
 
       return data as ConnectionMember;
     } catch (error) {
-      console.error('Error in getMemberById:', error);
+      log.error('Error in getMemberById:', { error });
       throw error;
     }
   },
@@ -152,13 +155,13 @@ export const memberService = {
         .single();
 
       if (error) {
-        console.error('Error adding member:', error);
+        log.error('Error adding member:', { error, spaceId, data });
         throw new Error(`Failed to add member: ${error.message}`);
       }
 
       return memberData as ConnectionMember;
     } catch (error) {
-      console.error('Error in addMember:', error);
+      log.error('Error in addMember:', { error });
       throw error;
     }
   },
@@ -209,7 +212,7 @@ export const memberService = {
         .single();
 
       if (error) {
-        console.error('Error updating member:', error);
+        log.error('Error updating member:', { error, id, data });
         throw new Error(`Failed to update member: ${error.message}`);
       }
 
@@ -219,7 +222,7 @@ export const memberService = {
 
       return memberData as ConnectionMember;
     } catch (error) {
-      console.error('Error in updateMember:', error);
+      log.error('Error in updateMember:', { error });
       throw error;
     }
   },
@@ -269,11 +272,11 @@ export const memberService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Error removing member:', error);
+        log.error('Error removing member:', { error, id });
         throw new Error(`Failed to remove member: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in removeMember:', error);
+      log.error('Error in removeMember:', { error });
       throw error;
     }
   },
@@ -332,7 +335,7 @@ export const memberService = {
         .single();
 
       if (error) {
-        console.error('Error updating role:', error);
+        log.error('Error updating role:', { error, id, role });
         throw new Error(`Failed to update role: ${error.message}`);
       }
 
@@ -342,7 +345,7 @@ export const memberService = {
 
       return memberData as ConnectionMember;
     } catch (error) {
-      console.error('Error in updateRole:', error);
+      log.error('Error in updateRole:', { error });
       throw error;
     }
   },
@@ -376,7 +379,7 @@ export const memberService = {
         .single();
 
       if (spaceError) {
-        console.error('Error checking space ownership:', spaceError);
+        log.error('Error checking space ownership:', { error: spaceError, spaceId });
         return false;
       }
 
@@ -400,7 +403,7 @@ export const memberService = {
 
       return member ? (member.role === 'owner' || member.role === 'admin') : false;
     } catch (error) {
-      console.error('Error in isAdmin:', error);
+      log.error('Error in isAdmin:', { error });
       return false;
     }
   },

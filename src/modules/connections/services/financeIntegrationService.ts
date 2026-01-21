@@ -8,6 +8,9 @@
 import { supabase } from '../../../services/supabaseClient';
 import type { ConnectionTransaction, TransactionSplit } from '../types';
 import type { FinanceTransaction } from '../../finance/types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FinanceIntegrationService');
 
 // ============================================================================
 // TYPES
@@ -107,7 +110,7 @@ export async function syncToPersonalFinance(
 
     return createdTx.id;
   } catch (error) {
-    console.error('Error syncing to personal finance:', error);
+    log.error('Error syncing to personal finance:', error);
     throw error;
   }
 }
@@ -159,7 +162,7 @@ export async function importFromPersonalFinance(
 
     return created as ConnectionTransaction[];
   } catch (error) {
-    console.error('Error importing from personal finance:', error);
+    log.error('Error importing from personal finance:', error);
     throw error;
   }
 }
@@ -248,7 +251,7 @@ export async function getSpaceFinanceSummary(
       byMember,
     };
   } catch (error) {
-    console.error('Error fetching space finance summary:', error);
+    log.error('Error fetching space finance summary:', error);
     throw error;
   }
 }
@@ -320,7 +323,7 @@ export async function getUserBalance(
       ),
     };
   } catch (error) {
-    console.error('Error calculating user balance:', error);
+    log.error('Error calculating user balance:', error);
     throw error;
   }
 }
@@ -369,7 +372,7 @@ export async function markSplitAsPaid(
 
     if (updateError) throw updateError;
   } catch (error) {
-    console.error('Error marking split as paid:', error);
+    log.error('Error marking split as paid:', error);
     throw error;
   }
 }
@@ -427,7 +430,7 @@ export async function getSplitPaymentStatus(
       members,
     };
   } catch (error) {
-    console.error('Error getting split payment status:', error);
+    log.error('Error getting split payment status:', error);
     throw error;
   }
 }
