@@ -124,7 +124,7 @@ export const ContextStage: React.FC = () => {
         },
       });
     } catch (error) {
-      log.error(PDF upload error:', error);
+      log.error('PDF upload error:', error);
       dispatch({
         type: 'UPDATE_PDF',
         payload: {
@@ -156,7 +156,7 @@ export const ContextStage: React.FC = () => {
 
       dispatch({ type: 'RESET_PDF' });
     } catch (error) {
-      log.error(Delete error:', error);
+      log.error('Delete error:', error);
       alert('Erro ao remover PDF');
     }
   };

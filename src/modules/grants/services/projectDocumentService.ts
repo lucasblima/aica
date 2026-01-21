@@ -65,7 +65,7 @@ export async function uploadProjectDocument(
       throw new Error('Falha ao salvar documento no banco de dados');
     }
 
-    log.debug(Document uploaded:', {
+    log.debug('Document uploaded:', {
       id: data.id,
       file_name: file.name,
       type: processed.type,
@@ -74,7 +74,7 @@ export async function uploadProjectDocument(
 
     return data;
   } catch (error) {
-    log.error(Upload error:', error);
+    log.error('Upload error:', error);
     throw error;
   }
 }
@@ -118,7 +118,7 @@ export async function deleteProjectDocument(documentId: string): Promise<void> {
     throw new Error('Falha ao remover documento');
   }
 
-  log.debug(Document deleted:', documentId);
+  log.debug('Document deleted:', documentId);
 }
 
 /**

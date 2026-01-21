@@ -74,7 +74,7 @@ export function useOrganizations(
       const message =
         err instanceof Error ? err.message : 'Erro ao carregar organizacoes';
       setError(message);
-      log.error(Erro:', err);
+      log.error('Erro:', err);
     } finally {
       setIsLoading(false);
     }

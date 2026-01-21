@@ -77,14 +77,14 @@ export async function generateFieldContent(
           criteria_count: context.evaluation_criteria?.length || 0
         }
       }).catch(error => {
-        log.warn(Non-blocking error:', error)
+        log.warn('Non-blocking error:', error)
       })
     }
     // ========================================
 
     return result.generatedText
   } catch (error) {
-    log.error(Erro ao gerar conteúdo:', error)
+    log.error('Erro ao gerar conteúdo:', error)
     throw new Error(
       `Falha na geração de conteúdo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
     )
@@ -138,7 +138,7 @@ export async function analyzeEditalStructure(editalText: string): Promise<{
   try {
     const data = await EdgeFunctionService.analyzeEditalStructure({ editalText })
 
-    log.debug(Análise do edital concluída:', {
+    log.debug('Análise do edital concluída:', {
       title: data.title,
       criteriaCount: data.evaluation_criteria?.length || 0,
       fieldsCount: data.form_fields?.length || 0
@@ -164,14 +164,14 @@ export async function analyzeEditalStructure(editalText: string): Promise<{
           has_funding_info: !!(data.min_funding || data.max_funding)
         }
       }).catch(error => {
-        log.warn(Non-blocking error:', error)
+        log.warn('Non-blocking error:', error)
       })
     }
     // ========================================
 
     return data
   } catch (error) {
-    log.error(Erro ao analisar edital:', error)
+    log.error('Erro ao analisar edital:', error)
     throw new Error('Falha ao analisar o edital. Verifique o conteúdo do PDF.')
   }
 }
@@ -209,7 +209,7 @@ export async function parseFormFieldsFromText(pastedText: string): Promise<Array
   try {
     const result = await EdgeFunctionService.parseFormFields({ text: pastedText })
 
-    log.debug(Campos do formulário parseados:', {
+    log.debug('Campos do formulário parseados:', {
       count: result.fields.length,
       fields: result.fields.map((f) => ({ label: f.label, max_chars: f.max_chars }))
     })
@@ -232,14 +232,14 @@ export async function parseFormFieldsFromText(pastedText: string): Promise<Array
           fields_parsed: result.fields.length
         }
       }).catch(error => {
-        log.warn(Non-blocking error:', error)
+        log.warn('Non-blocking error:', error)
       })
     }
     // ========================================
 
     return result.fields
   } catch (error) {
-    log.error(Erro ao parsear campos do formulário:', error)
+    log.error('Erro ao parsear campos do formulário:', error)
     throw new Error('Falha ao analisar os campos. Verifique o formato do texto.')
   }
 }

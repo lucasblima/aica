@@ -65,7 +65,7 @@ export function useAutoSave({
         JSON.stringify(previousState.briefingContext) !== JSON.stringify(stateToSave.briefingContext)
       ) {
         await saveBriefing(projectId, { briefing_data: stateToSave.briefingContext });
-        log.debug(Briefing saved');
+        log.debug('Briefing saved');
       }
 
       // Save responses if changed
@@ -90,14 +90,14 @@ export function useAutoSave({
         await updateOpportunity(opportunityId, {
           form_fields: stateToSave.formFields.fields,
         });
-        log.debug(Form fields saved');
+        log.debug('Form fields saved');
       }
 
       lastSavedRef.current = new Date();
       previousStateRef.current = stateToSave;
       onSaveSuccess?.();
     } catch (error) {
-      log.error(Error saving:', error);
+      log.error('Error saving:', error);
       onSaveError?.(error instanceof Error ? error : new Error('Erro ao salvar'));
     } finally {
       isSavingRef.current = false;

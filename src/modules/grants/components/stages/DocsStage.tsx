@@ -77,7 +77,7 @@ export const DocsStage: React.FC = () => {
 
       dispatch({ type: 'SET_REQUIRED_DOCS', payload: requiredDocs });
     } catch (error) {
-      log.error(Extract error:', error);
+      log.error('Extract error:', error);
       alert('Erro ao extrair documentos. Adicione manualmente.');
     } finally {
       setIsExtracting(false);
@@ -159,7 +159,7 @@ export const DocsStage: React.FC = () => {
         payload: uploadedDoc,
       });
     } catch (error) {
-      log.error(Upload error:', error);
+      log.error('Upload error:', error);
       alert('Erro ao fazer upload do documento. Tente novamente.');
     } finally {
       // Remove from uploading set
