@@ -9,6 +9,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { VirtualList } from '../../components/VirtualList';
 import type { Discussion, DiscussionReply } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('DiscussionThreadOptimized');
 
 interface DiscussionThreadProps {
   discussion: Discussion;
@@ -62,7 +64,7 @@ export const DiscussionThreadOptimized: React.FC<DiscussionThreadProps> = ({
       setReplyContent('');
       setReplyingTo(null);
     } catch (error) {
-      console.error('Error submitting reply:', error);
+      log.error('Error submitting reply:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -73,7 +75,7 @@ export const DiscussionThreadOptimized: React.FC<DiscussionThreadProps> = ({
     try {
       await onReact(replyId, emoji);
     } catch (error) {
-      console.error('Error adding reaction:', error);
+      log.error('Error adding reaction:', error);
     }
   };
 

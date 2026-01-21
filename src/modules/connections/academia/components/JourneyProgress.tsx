@@ -7,6 +7,8 @@
 
 import React, { useState } from 'react';
 import { AcademiaJourney, UpdateJourneyPayload } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('JourneyProgress');
 
 interface JourneyProgressProps {
   journey: AcademiaJourney;
@@ -33,7 +35,7 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
       await onLogTime(hours);
       setTimeToLog('');
     } catch (error) {
-      console.error('Error logging time:', error);
+      log.error('Error logging time:', error);
     } finally {
       setIsLoggingTime(false);
     }
@@ -50,7 +52,7 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
     try {
       await onUpdateProgress(newCompleted);
     } catch (error) {
-      console.error('Error updating progress:', error);
+      log.error('Error updating progress:', error);
     }
   };
 

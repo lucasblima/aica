@@ -15,6 +15,8 @@ import { useNotes } from '../hooks/useNotes';
 import { journeyService } from '../services/journeyService';
 import { cardElevationVariants, staggerContainer, staggerItem } from '../../../../lib/animations/ceramic-motion';
 import type { JourneyType, CreateJourneyPayload, AcademiaJourney } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('AcademiaHome');
 
 interface AcademiaHomeProps {
   spaceId?: string;
@@ -50,7 +52,7 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
       await createJourney(data);
       setShowCreateModal(false);
     } catch (error) {
-      console.error('Erro ao criar jornada:', error);
+      log.error('Erro ao criar jornada:', error);
     } finally {
       setIsCreating(false);
     }
@@ -63,7 +65,7 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
       await deleteJourney(journeyId);
       setShowDeleteConfirm(null);
     } catch (error) {
-      console.error('Erro ao deletar jornada:', error);
+      log.error('Erro ao deletar jornada:', error);
     } finally {
       setIsDeleting(false);
     }

@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('noteService');
   AcademiaNote,
   CreateNotePayload,
   UpdateNotePayload,
@@ -27,13 +29,13 @@ export const noteService = {
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching notes:', error);
+        log.error('Error fetching notes:', error);
         throw new Error(`Failed to fetch notes: ${error.message}`);
       }
 
       return data as AcademiaNote[];
     } catch (error) {
-      console.error('Error in getNotes:', error);
+      log.error('Error in getNotes:', error);
       throw error;
     }
   },
@@ -51,13 +53,13 @@ export const noteService = {
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching notes by type:', error);
+        log.error('Error fetching notes by type:', error);
         throw new Error(`Failed to fetch ${noteType} notes: ${error.message}`);
       }
 
       return data as AcademiaNote[];
     } catch (error) {
-      console.error('Error in getNotesByType:', error);
+      log.error('Error in getNotesByType:', error);
       throw error;
     }
   },
@@ -74,13 +76,13 @@ export const noteService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching notes by journey:', error);
+        log.error('Error fetching notes by journey:', error);
         throw new Error(`Failed to fetch journey notes: ${error.message}`);
       }
 
       return data as AcademiaNote[];
     } catch (error) {
-      console.error('Error in getNotesByJourney:', error);
+      log.error('Error in getNotesByJourney:', error);
       throw error;
     }
   },
@@ -98,13 +100,13 @@ export const noteService = {
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching notes by tag:', error);
+        log.error('Error fetching notes by tag:', error);
         throw new Error(`Failed to fetch notes with tag "${tag}": ${error.message}`);
       }
 
       return data as AcademiaNote[];
     } catch (error) {
-      console.error('Error in getNotesByTag:', error);
+      log.error('Error in getNotesByTag:', error);
       throw error;
     }
   },
@@ -121,7 +123,7 @@ export const noteService = {
         .single();
 
       if (error) {
-        console.error('Error fetching note:', error);
+        log.error('Error fetching note:', error);
         throw new Error(`Failed to fetch note: ${error.message}`);
       }
 
@@ -131,7 +133,7 @@ export const noteService = {
 
       return data as AcademiaNote;
     } catch (error) {
-      console.error('Error in getNoteById:', error);
+      log.error('Error in getNoteById:', error);
       throw error;
     }
   },
@@ -153,13 +155,13 @@ export const noteService = {
         .in('id', note.linked_note_ids);
 
       if (error) {
-        console.error('Error fetching linked notes:', error);
+        log.error('Error fetching linked notes:', error);
         throw new Error(`Failed to fetch linked notes: ${error.message}`);
       }
 
       return data as AcademiaNote[];
     } catch (error) {
-      console.error('Error in getLinkedNotes:', error);
+      log.error('Error in getLinkedNotes:', error);
       throw error;
     }
   },
@@ -175,13 +177,13 @@ export const noteService = {
         .contains('linked_note_ids', [noteId]);
 
       if (error) {
-        console.error('Error fetching backlinks:', error);
+        log.error('Error fetching backlinks:', error);
         throw new Error(`Failed to fetch backlinks: ${error.message}`);
       }
 
       return data as AcademiaNote[];
     } catch (error) {
-      console.error('Error in getBacklinks:', error);
+      log.error('Error in getBacklinks:', error);
       throw error;
     }
   },
@@ -207,13 +209,13 @@ export const noteService = {
         .single();
 
       if (error) {
-        console.error('Error creating note:', error);
+        log.error('Error creating note:', error);
         throw new Error(`Failed to create note: ${error.message}`);
       }
 
       return data as AcademiaNote;
     } catch (error) {
-      console.error('Error in createNote:', error);
+      log.error('Error in createNote:', error);
       throw error;
     }
   },
@@ -236,7 +238,7 @@ export const noteService = {
         .single();
 
       if (error) {
-        console.error('Error updating note:', error);
+        log.error('Error updating note:', error);
         throw new Error(`Failed to update note: ${error.message}`);
       }
 
@@ -246,7 +248,7 @@ export const noteService = {
 
       return data as AcademiaNote;
     } catch (error) {
-      console.error('Error in updateNote:', error);
+      log.error('Error in updateNote:', error);
       throw error;
     }
   },
@@ -269,7 +271,7 @@ export const noteService = {
 
       return note;
     } catch (error) {
-      console.error('Error in linkNote:', error);
+      log.error('Error in linkNote:', error);
       throw error;
     }
   },
@@ -287,7 +289,7 @@ export const noteService = {
         linked_note_ids: updatedLinks,
       });
     } catch (error) {
-      console.error('Error in unlinkNote:', error);
+      log.error('Error in unlinkNote:', error);
       throw error;
     }
   },
@@ -310,7 +312,7 @@ export const noteService = {
 
       return note;
     } catch (error) {
-      console.error('Error in addTag:', error);
+      log.error('Error in addTag:', error);
       throw error;
     }
   },
@@ -328,7 +330,7 @@ export const noteService = {
         tags: updatedTags,
       });
     } catch (error) {
-      console.error('Error in removeTag:', error);
+      log.error('Error in removeTag:', error);
       throw error;
     }
   },
@@ -351,7 +353,7 @@ export const noteService = {
         });
 
       if (error) {
-        console.error('Error searching notes:', error);
+        log.error('Error searching notes:', error);
         throw new Error(`Failed to search notes: ${error.message}`);
       }
 
@@ -369,7 +371,7 @@ export const noteService = {
 
       return results;
     } catch (error) {
-      console.error('Error in searchNotes:', error);
+      log.error('Error in searchNotes:', error);
       throw error;
     }
   },
@@ -382,11 +384,11 @@ export const noteService = {
       const { error } = await supabase.from('academia_notes').delete().eq('id', id);
 
       if (error) {
-        console.error('Error deleting note:', error);
+        log.error('Error deleting note:', error);
         throw new Error(`Failed to delete note: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteNote:', error);
+      log.error('Error in deleteNote:', error);
       throw error;
     }
   },
@@ -403,7 +405,7 @@ export const noteService = {
 
       return uniqueTags;
     } catch (error) {
-      console.error('Error in getAllTags:', error);
+      log.error('Error in getAllTags:', error);
       throw error;
     }
   },
@@ -445,7 +447,7 @@ export const noteService = {
         mostLinkedNote,
       };
     } catch (error) {
-      console.error('Error in getNoteStats:', error);
+      log.error('Error in getNoteStats:', error);
       throw error;
     }
   },

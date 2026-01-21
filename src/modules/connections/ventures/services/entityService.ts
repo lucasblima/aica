@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('entityService');
   VenturesEntity,
   CreateEntityPayload,
   UpdateEntityPayload,
@@ -24,13 +26,13 @@ export const entityService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching ventures entities:', error);
+        log.error('Error fetching ventures entities:', error);
         throw new Error(`Failed to fetch entities: ${error.message}`);
       }
 
       return data as VenturesEntity[];
     } catch (error) {
-      console.error('Error in getEntitiesBySpace:', error);
+      log.error('Error in getEntitiesBySpace:', error);
       throw error;
     }
   },
@@ -48,7 +50,7 @@ export const entityService = {
         .single();
 
       if (error) {
-        console.error('Error fetching entity:', error);
+        log.error('Error fetching entity:', error);
         throw new Error(`Failed to fetch entity: ${error.message}`);
       }
 
@@ -58,7 +60,7 @@ export const entityService = {
 
       return data as VenturesEntity;
     } catch (error) {
-      console.error('Error in getEntityById:', error);
+      log.error('Error in getEntityById:', error);
       throw error;
     }
   },
@@ -78,13 +80,13 @@ export const entityService = {
         .single();
 
       if (error) {
-        console.error('Error creating entity:', error);
+        log.error('Error creating entity:', error);
         throw new Error(`Failed to create entity: ${error.message}`);
       }
 
       return data as VenturesEntity;
     } catch (error) {
-      console.error('Error in createEntity:', error);
+      log.error('Error in createEntity:', error);
       throw error;
     }
   },
@@ -108,7 +110,7 @@ export const entityService = {
         .single();
 
       if (error) {
-        console.error('Error updating entity:', error);
+        log.error('Error updating entity:', error);
         throw new Error(`Failed to update entity: ${error.message}`);
       }
 
@@ -118,7 +120,7 @@ export const entityService = {
 
       return data as VenturesEntity;
     } catch (error) {
-      console.error('Error in updateEntity:', error);
+      log.error('Error in updateEntity:', error);
       throw error;
     }
   },
@@ -137,11 +139,11 @@ export const entityService = {
         .eq('id', entityId);
 
       if (error) {
-        console.error('Error deleting entity:', error);
+        log.error('Error deleting entity:', error);
         throw new Error(`Failed to delete entity: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteEntity:', error);
+      log.error('Error in deleteEntity:', error);
       throw error;
     }
   },

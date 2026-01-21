@@ -5,6 +5,8 @@ import { EventTimelineMini } from '../../components/EventTimelineMini';
 import { SpaceCalendarSettings } from '../../components/SpaceCalendarSettings';
 import { eventService } from '../../services/eventService';
 import { ConnectionEvent } from '../../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('MaintenanceCalendarView');
 
 /**
  * Props for MaintenanceCalendarView component
@@ -77,7 +79,7 @@ export function MaintenanceCalendarView({
 
         setEvents(fetchedEvents);
       } catch (error) {
-        console.error('[MaintenanceCalendarView] Error fetching events:', error);
+        log.error('[MaintenanceCalendarView] Error fetching events:', error);
       } finally {
         setIsLoading(false);
       }
@@ -149,7 +151,7 @@ export function MaintenanceCalendarView({
     try {
       await syncEvent.mutateAsync(eventId);
     } catch (error) {
-      console.error('[MaintenanceCalendarView] Error syncing event:', error);
+      log.error('[MaintenanceCalendarView] Error syncing event:', error);
     }
   };
 
@@ -158,7 +160,7 @@ export function MaintenanceCalendarView({
     try {
       await enableAutoSync(60); // 1 hour interval
     } catch (error) {
-      console.error('[MaintenanceCalendarView] Error enabling auto-sync:', error);
+      log.error('[MaintenanceCalendarView] Error enabling auto-sync:', error);
     }
   };
 

@@ -9,6 +9,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { spaceService } from '../services/spaceService';
 import type { ConnectionSpace, CreateSpacePayload, Archetype } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useSpaces');
 
 interface UseSpacesOptions {
   archetype?: Archetype;
@@ -65,7 +67,7 @@ export function useSpaces(options: UseSpacesOptions = {}): UseSpacesReturn {
       setSpaces(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching spaces:', err);
+      log.error('Error fetching spaces:', err);
     } finally {
       setLoading(false);
     }

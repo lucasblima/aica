@@ -8,6 +8,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { journeyService } from '../services/journeyService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useJourneys');
   AcademiaJourney,
   CreateJourneyPayload,
   UpdateJourneyPayload,
@@ -81,7 +83,7 @@ export function useJourneys(options: UseJourneysOptions): UseJourneysReturn {
       setJourneys(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching journeys:', err);
+      log.error('Error fetching journeys:', err);
     } finally {
       setLoading(false);
     }

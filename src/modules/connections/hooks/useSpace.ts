@@ -9,6 +9,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { spaceService } from '../services/spaceService';
 import type { ConnectionSpace, UpdateSpacePayload, ConnectionMember } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useSpace');
 
 interface UseSpaceReturn {
   space: (ConnectionSpace & { members: ConnectionMember[] }) | null;
@@ -55,7 +57,7 @@ export function useSpace(spaceId: string | undefined): UseSpaceReturn {
       setSpace(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching space:', err);
+      log.error('Error fetching space:', err);
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ export function useSpace(spaceId: string | undefined): UseSpaceReturn {
     try {
       await spaceService.updateLastAccessed(spaceId);
     } catch (err) {
-      console.error('Error updating last accessed:', err);
+      log.error('Error updating last accessed:', err);
       // Don't throw - this is a background operation
     }
   }, [spaceId]);

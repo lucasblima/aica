@@ -3,6 +3,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { RitualOccurrence } from '../types';
 import { useRSVP } from '../hooks/useRituals';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('RitualCard');
 
 interface RitualCardProps {
   occurrence: RitualOccurrence;
@@ -40,7 +42,7 @@ export const RitualCard: React.FC<RitualCardProps> = ({
         status,
       });
     } catch (error) {
-      console.error('Error updating RSVP:', error);
+      log.error('Error updating RSVP:', error);
     }
   };
 

@@ -9,6 +9,8 @@ import { useStakeholders } from '../hooks/useStakeholders';
 import { VenturesEntity } from '../types';
 import { cardElevationVariants } from '../../../../lib/animations/ceramic-motion';
 import { MRRChart, FinanceOverviewCard, MilestoneTimeline, StakeholderGrid } from '../components';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('EntityDetail');
 
 /**
  * EntityDetail View
@@ -49,7 +51,7 @@ export function EntityDetail() {
       await updateEntity(entity.id, formData);
       setIsEditing(false);
     } catch (err) {
-      console.error('Error updating entity:', err);
+      log.error('Error updating entity:', err);
     }
   };
 

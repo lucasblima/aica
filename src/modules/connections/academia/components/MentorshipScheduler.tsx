@@ -3,6 +3,8 @@ import { useCalendarSync } from '../../hooks/useCalendarSync';
 import { CalendarSyncButton } from '../../components/CalendarSyncButton';
 import { CalendarConflictAlert, CalendarConflict } from '../../components/CalendarConflictAlert';
 import { eventService } from '../../services/eventService';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('MentorshipScheduler');
 
 /**
  * Props for MentorshipScheduler component
@@ -130,7 +132,7 @@ export function MentorshipScheduler({
       try {
         await syncEvent.mutateAsync(createdEvent.id);
       } catch (syncError) {
-        console.warn('[MentorshipScheduler] Warning: Could not sync to Google Calendar:', syncError);
+        log.warn('[MentorshipScheduler] Warning: Could not sync to Google Calendar:', syncError);
         // Don't fail if sync fails, the event is created locally
       }
 

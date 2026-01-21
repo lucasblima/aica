@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('milestoneService');
   VenturesMilestone,
   CreateMilestonePayload,
   UpdateMilestonePayload,
@@ -26,13 +28,13 @@ export const milestoneService = {
         .order('priority', { ascending: false });
 
       if (error) {
-        console.error('Error fetching milestones:', error);
+        log.error('Error fetching milestones:', error);
         throw new Error(`Failed to fetch milestones: ${error.message}`);
       }
 
       return data as VenturesMilestone[];
     } catch (error) {
-      console.error('Error in getMilestonesByEntity:', error);
+      log.error('Error in getMilestonesByEntity:', error);
       throw error;
     }
   },
@@ -53,13 +55,13 @@ export const milestoneService = {
         .order('target_date', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching milestones by status:', error);
+        log.error('Error fetching milestones by status:', error);
         throw new Error(`Failed to fetch milestones: ${error.message}`);
       }
 
       return data as VenturesMilestone[];
     } catch (error) {
-      console.error('Error in getMilestonesByStatus:', error);
+      log.error('Error in getMilestonesByStatus:', error);
       throw error;
     }
   },
@@ -80,13 +82,13 @@ export const milestoneService = {
         .order('target_date', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching milestones by category:', error);
+        log.error('Error fetching milestones by category:', error);
         throw new Error(`Failed to fetch milestones: ${error.message}`);
       }
 
       return data as VenturesMilestone[];
     } catch (error) {
-      console.error('Error in getMilestonesByCategory:', error);
+      log.error('Error in getMilestonesByCategory:', error);
       throw error;
     }
   },
@@ -105,13 +107,13 @@ export const milestoneService = {
         .order('target_date', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching active milestones:', error);
+        log.error('Error fetching active milestones:', error);
         throw new Error(`Failed to fetch active milestones: ${error.message}`);
       }
 
       return data as VenturesMilestone[];
     } catch (error) {
-      console.error('Error in getActiveMilestones:', error);
+      log.error('Error in getActiveMilestones:', error);
       throw error;
     }
   },
@@ -128,7 +130,7 @@ export const milestoneService = {
         .single();
 
       if (error) {
-        console.error('Error fetching milestone:', error);
+        log.error('Error fetching milestone:', error);
         throw new Error(`Failed to fetch milestone: ${error.message}`);
       }
 
@@ -138,7 +140,7 @@ export const milestoneService = {
 
       return data as VenturesMilestone;
     } catch (error) {
-      console.error('Error in getMilestoneById:', error);
+      log.error('Error in getMilestoneById:', error);
       throw error;
     }
   },
@@ -160,13 +162,13 @@ export const milestoneService = {
         .single();
 
       if (error) {
-        console.error('Error creating milestone:', error);
+        log.error('Error creating milestone:', error);
         throw new Error(`Failed to create milestone: ${error.message}`);
       }
 
       return data as VenturesMilestone;
     } catch (error) {
-      console.error('Error in createMilestone:', error);
+      log.error('Error in createMilestone:', error);
       throw error;
     }
   },
@@ -196,7 +198,7 @@ export const milestoneService = {
         .single();
 
       if (error) {
-        console.error('Error updating milestone:', error);
+        log.error('Error updating milestone:', error);
         throw new Error(`Failed to update milestone: ${error.message}`);
       }
 
@@ -206,7 +208,7 @@ export const milestoneService = {
 
       return data as VenturesMilestone;
     } catch (error) {
-      console.error('Error in updateMilestone:', error);
+      log.error('Error in updateMilestone:', error);
       throw error;
     }
   },
@@ -250,7 +252,7 @@ export const milestoneService = {
         .single();
 
       if (error) {
-        console.error('Error updating milestone progress:', error);
+        log.error('Error updating milestone progress:', error);
         throw new Error(`Failed to update milestone progress: ${error.message}`);
       }
 
@@ -260,7 +262,7 @@ export const milestoneService = {
 
       return data as VenturesMilestone;
     } catch (error) {
-      console.error('Error in updateProgress:', error);
+      log.error('Error in updateProgress:', error);
       throw error;
     }
   },
@@ -276,11 +278,11 @@ export const milestoneService = {
         .eq('id', milestoneId);
 
       if (error) {
-        console.error('Error deleting milestone:', error);
+        log.error('Error deleting milestone:', error);
         throw new Error(`Failed to delete milestone: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteMilestone:', error);
+      log.error('Error in deleteMilestone:', error);
       throw error;
     }
   },
@@ -297,13 +299,13 @@ export const milestoneService = {
         .order('target_date', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching dependent milestones:', error);
+        log.error('Error fetching dependent milestones:', error);
         throw new Error(`Failed to fetch dependent milestones: ${error.message}`);
       }
 
       return data as VenturesMilestone[];
     } catch (error) {
-      console.error('Error in getDependentMilestones:', error);
+      log.error('Error in getDependentMilestones:', error);
       throw error;
     }
   },

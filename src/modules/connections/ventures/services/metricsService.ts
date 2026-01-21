@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('metricsService');
   VenturesMetrics,
   CreateMetricsPayload,
   UpdateMetricsPayload,
@@ -24,13 +26,13 @@ export const metricsService = {
         .order('period_start', { ascending: false });
 
       if (error) {
-        console.error('Error fetching metrics:', error);
+        log.error('Error fetching metrics:', error);
         throw new Error(`Failed to fetch metrics: ${error.message}`);
       }
 
       return data as VenturesMetrics[];
     } catch (error) {
-      console.error('Error in getMetricsByEntity:', error);
+      log.error('Error in getMetricsByEntity:', error);
       throw error;
     }
   },
@@ -51,13 +53,13 @@ export const metricsService = {
         .order('period_start', { ascending: false });
 
       if (error) {
-        console.error('Error fetching metrics by period type:', error);
+        log.error('Error fetching metrics by period type:', error);
         throw new Error(`Failed to fetch metrics: ${error.message}`);
       }
 
       return data as VenturesMetrics[];
     } catch (error) {
-      console.error('Error in getMetricsByPeriodType:', error);
+      log.error('Error in getMetricsByPeriodType:', error);
       throw error;
     }
   },
@@ -75,13 +77,13 @@ export const metricsService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching current metrics:', error);
+        log.error('Error fetching current metrics:', error);
         throw new Error(`Failed to fetch current metrics: ${error.message}`);
       }
 
       return data as VenturesMetrics | null;
     } catch (error) {
-      console.error('Error in getCurrentMetrics:', error);
+      log.error('Error in getCurrentMetrics:', error);
       throw error;
     }
   },
@@ -98,7 +100,7 @@ export const metricsService = {
         .single();
 
       if (error) {
-        console.error('Error fetching metrics:', error);
+        log.error('Error fetching metrics:', error);
         throw new Error(`Failed to fetch metrics: ${error.message}`);
       }
 
@@ -108,7 +110,7 @@ export const metricsService = {
 
       return data as VenturesMetrics;
     } catch (error) {
-      console.error('Error in getMetricsById:', error);
+      log.error('Error in getMetricsById:', error);
       throw error;
     }
   },
@@ -137,13 +139,13 @@ export const metricsService = {
         .single();
 
       if (error) {
-        console.error('Error creating metrics:', error);
+        log.error('Error creating metrics:', error);
         throw new Error(`Failed to create metrics: ${error.message}`);
       }
 
       return data as VenturesMetrics;
     } catch (error) {
-      console.error('Error in createMetrics:', error);
+      log.error('Error in createMetrics:', error);
       throw error;
     }
   },
@@ -185,7 +187,7 @@ export const metricsService = {
         .single();
 
       if (error) {
-        console.error('Error updating metrics:', error);
+        log.error('Error updating metrics:', error);
         throw new Error(`Failed to update metrics: ${error.message}`);
       }
 
@@ -195,7 +197,7 @@ export const metricsService = {
 
       return data as VenturesMetrics;
     } catch (error) {
-      console.error('Error in updateMetrics:', error);
+      log.error('Error in updateMetrics:', error);
       throw error;
     }
   },
@@ -211,11 +213,11 @@ export const metricsService = {
         .eq('id', metricsId);
 
       if (error) {
-        console.error('Error deleting metrics:', error);
+        log.error('Error deleting metrics:', error);
         throw new Error(`Failed to delete metrics: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteMetrics:', error);
+      log.error('Error in deleteMetrics:', error);
       throw error;
     }
   },
@@ -239,14 +241,14 @@ export const metricsService = {
         .limit(limit);
 
       if (error) {
-        console.error('Error fetching metrics history:', error);
+        log.error('Error fetching metrics history:', error);
         throw new Error(`Failed to fetch metrics history: ${error.message}`);
       }
 
       // Return in chronological order (oldest first)
       return (data as VenturesMetrics[]).reverse();
     } catch (error) {
-      console.error('Error in getMetricsHistory:', error);
+      log.error('Error in getMetricsHistory:', error);
       throw error;
     }
   },

@@ -4,6 +4,8 @@ import { X, ChevronLeft, ChevronRight, Check, Home, Briefcase, GraduationCap, Us
 import { Archetype, ConnectionSpace, ARCHETYPE_CONFIG, CreateSpacePayload } from '../types';
 import { useCardSelection } from '@/hooks/useCardSelection';
 import { spaceService } from '../services/spaceService';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('CreateSpaceWizard');
 
 interface CreateSpaceWizardProps {
   /** Whether the wizard is open */
@@ -38,7 +40,7 @@ interface InviteMember {
  *   isOpen={showWizard}
  *   onClose={() => setShowWizard(false)}
  *   onComplete={(space) => {
- *     console.log('Created space:', space);
+ *     log.debug('Created space:', space);
  *     navigate(`/connections/${space.id}`);
  *   }}
  *   initialArchetype="habitat"
@@ -177,7 +179,7 @@ export function CreateSpaceWizard({
         handleClose();
       }, 1000);
     } catch (error) {
-      console.error('Error creating space:', error);
+      log.error('Error creating space:', error);
       setIsLoading(false);
     }
   };

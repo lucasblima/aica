@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useResources, useCheckoutResource, useReturnResource } from '../hooks/useResources';
 import { SharedResourceCard } from '../components/SharedResourceCard';
 import type { ResourceCategory } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('ResourcesView');
 
 interface ResourcesViewProps {
   memberId?: string;
@@ -33,7 +35,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
         returnDate: returnDate || undefined,
       });
     } catch (error) {
-      console.error('Error reserving resource:', error);
+      log.error('Error reserving resource:', error);
       alert('Erro ao reservar recurso');
     }
   };
@@ -44,7 +46,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
     try {
       await returnMutation.mutateAsync(resourceId);
     } catch (error) {
-      console.error('Error returning resource:', error);
+      log.error('Error returning resource:', error);
       alert('Erro ao devolver recurso');
     }
   };

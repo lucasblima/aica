@@ -13,6 +13,8 @@ import { supabase } from '@/services/supabaseClient';
 import { addXP, awardAchievement, WHATSAPP_XP_REWARDS, BADGES_CATALOG } from '@/services/gamificationService';
 import { notificationService } from '@/services/notificationService';
 import { useXPNotifications } from '@/contexts/XPNotificationContext';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useWhatsAppGamification');
 
 // ============================================================================
 // TYPES
@@ -62,7 +64,7 @@ async function insertActivity(
       metadata: metadata || {},
     });
   } catch (error) {
-    console.error('[useWhatsAppGamification] Error inserting activity:', error);
+    log.error('[useWhatsAppGamification] Error inserting activity:', error);
     // Don't throw - activity tracking is nice-to-have, not critical
   }
 }
@@ -100,12 +102,12 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
         showBadgeUnlock(badge as any);
       }
 
-      console.log('[useWhatsAppGamification] Connection tracked:', {
+      log.debug('[useWhatsAppGamification] Connection tracked:', {
         xp: WHATSAPP_XP_REWARDS.connection,
         badge: 'first_whatsapp_connect',
       });
     } catch (error) {
-      console.error('[useWhatsAppGamification] trackConnection error:', error);
+      log.error('[useWhatsAppGamification] trackConnection error:', error);
     }
   }, [showXPGain, showBadgeUnlock]);
 
@@ -137,16 +139,16 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
           showBadgeUnlock(badge as any);
         }
 
-        console.log('[useWhatsAppGamification] Consent Champion badge unlocked!');
+        log.debug('[useWhatsAppGamification] Consent Champion badge unlocked!');
       }
 
-      console.log('[useWhatsAppGamification] Consent grant tracked:', {
+      log.debug('[useWhatsAppGamification] Consent grant tracked:', {
         consentType,
         xp: WHATSAPP_XP_REWARDS.consent_grant,
         allGranted,
       });
     } catch (error) {
-      console.error('[useWhatsAppGamification] trackConsentGrant error:', error);
+      log.error('[useWhatsAppGamification] trackConsentGrant error:', error);
     }
   }, [showXPGain, showBadgeUnlock]);
 
@@ -179,7 +181,7 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
           showBadgeUnlock(badge as any);
         }
 
-        console.log('[useWhatsAppGamification] Emotional Awareness (Beginner) badge unlocked!');
+        log.debug('[useWhatsAppGamification] Emotional Awareness (Beginner) badge unlocked!');
       } else if (viewCount === 20) {
         await awardAchievement(userId, 'emotional_awareness_master');
 
@@ -189,15 +191,15 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
           showBadgeUnlock(badge as any);
         }
 
-        console.log('[useWhatsAppGamification] Emotional Awareness (Master) badge unlocked!');
+        log.debug('[useWhatsAppGamification] Emotional Awareness (Master) badge unlocked!');
       }
 
-      console.log('[useWhatsAppGamification] Analytics view tracked:', {
+      log.debug('[useWhatsAppGamification] Analytics view tracked:', {
         xp: WHATSAPP_XP_REWARDS.analytics_view,
         viewCount,
       });
     } catch (error) {
-      console.error('[useWhatsAppGamification] trackAnalyticsView error:', error);
+      log.error('[useWhatsAppGamification] trackAnalyticsView error:', error);
     }
   }, [showXPGain, showBadgeUnlock]);
 
@@ -230,16 +232,16 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
           showBadgeUnlock(badge as any);
         }
 
-        console.log('[useWhatsAppGamification] Sentiment Explorer badge unlocked!');
+        log.debug('[useWhatsAppGamification] Sentiment Explorer badge unlocked!');
       }
 
-      console.log('[useWhatsAppGamification] Contact analysis tracked:', {
+      log.debug('[useWhatsAppGamification] Contact analysis tracked:', {
         contactHash: contactHash.substring(0, 8) + '...',
         xp: WHATSAPP_XP_REWARDS.contact_analysis,
         uniqueCount,
       });
     } catch (error) {
-      console.error('[useWhatsAppGamification] trackContactAnalysis error:', error);
+      log.error('[useWhatsAppGamification] trackContactAnalysis error:', error);
     }
   }, [showXPGain, showBadgeUnlock]);
 
@@ -257,11 +259,11 @@ export function useWhatsAppGamification(): WhatsAppGamificationHook {
       // Insert activity
       await insertActivity(userId, 'anomaly_check');
 
-      console.log('[useWhatsAppGamification] Anomaly check tracked:', {
+      log.debug('[useWhatsAppGamification] Anomaly check tracked:', {
         xp: WHATSAPP_XP_REWARDS.anomaly_check,
       });
     } catch (error) {
-      console.error('[useWhatsAppGamification] trackAnomalyCheck error:', error);
+      log.error('[useWhatsAppGamification] trackAnomalyCheck error:', error);
     }
   }, [showXPGain]);
 
