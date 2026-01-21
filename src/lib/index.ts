@@ -18,5 +18,8 @@ export * from './animations';
 // Haptics
 export * from './haptics';
 
+// Utils
+export { cn } from './utils';
+
 // NOTE: Supabase client is NOT exported from lib to avoid circular dependencies
 // Import directly from '@/services/supabaseClient' instead
