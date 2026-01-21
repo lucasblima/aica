@@ -8,6 +8,8 @@
 -- Health Score Formula:
 --   health_score = frequency (0-25) + recency (0-25) + sentiment (0-20)
 --                + reciprocity (0-15) + depth (0-15) = 0-100
+--
+-- APPLIED TO STAGING: 2026-01-21 via Supabase Management API
 -- ============================================================================
 
 -- ============================================================================
@@ -180,10 +182,10 @@ COMMENT ON COLUMN contact_network.health_score_components IS
 COMMENT ON COLUMN contact_network.health_score_trend IS
   'Cached trend direction from recent health score history';
 
--- Index for health-based sorting on dashboard
+-- Index for health-based sorting on dashboard (adapted to actual schema)
 CREATE INDEX IF NOT EXISTS idx_contact_network_health_updated
   ON contact_network(user_id, health_score DESC NULLS LAST, health_score_updated_at DESC)
-  WHERE is_active = true AND is_archived = false;
+  WHERE deleted_at IS NULL;
 
 
 -- ============================================================================
@@ -193,11 +195,14 @@ CREATE INDEX IF NOT EXISTS idx_contact_network_health_updated
 -- Formula:
 --   health_score = frequency (0-25) + recency (0-25) + sentiment (0-20)
 --                + reciprocity (0-15) + depth (0-15) = 0-100
+--
+-- NOTE: Adapted to use contact_id instead of contact_phone to match actual schema.
+--       Sentiment defaults to neutral (10) until sentiment analysis is implemented.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION calculate_health_score_components(
   _user_id UUID,
-  _contact_phone TEXT,
+  _contact_id UUID,
   _lookback_days INTEGER DEFAULT 30
 )
 RETURNS JSONB
@@ -211,8 +216,6 @@ DECLARE
   _incoming_count INTEGER := 0;
   _outgoing_count INTEGER := 0;
   _days_since_last_message NUMERIC;
-  _avg_sentiment NUMERIC;
-  _unique_topics INTEGER := 0;
   _frequency_score NUMERIC;
   _recency_score NUMERIC;
   _sentiment_score NUMERIC;
@@ -224,37 +227,23 @@ BEGIN
   -- Get message statistics from whatsapp_messages for the lookback period
   SELECT
     COUNT(*),
-    COUNT(*) FILTER (WHERE direction = 'incoming'),
-    COUNT(*) FILTER (WHERE direction = 'outgoing'),
-    AVG(sentiment_score)
+    COUNT(*) FILTER (WHERE message_direction = 'incoming'),
+    COUNT(*) FILTER (WHERE message_direction = 'outgoing')
   INTO
     _message_count,
     _incoming_count,
-    _outgoing_count,
-    _avg_sentiment
+    _outgoing_count
   FROM whatsapp_messages wm
   WHERE wm.user_id = _user_id
-    AND wm.contact_phone = _contact_phone
-    AND wm.message_timestamp >= (now() - make_interval(days => _lookback_days))
-    AND wm.deleted_at IS NULL;
-
-  -- Get unique topics count separately
-  SELECT COUNT(DISTINCT topic)
-  INTO _unique_topics
-  FROM whatsapp_messages wm,
-       LATERAL unnest(COALESCE(wm.detected_topics, ARRAY[]::TEXT[])) AS topic
-  WHERE wm.user_id = _user_id
-    AND wm.contact_phone = _contact_phone
-    AND wm.message_timestamp >= (now() - make_interval(days => _lookback_days))
-    AND wm.deleted_at IS NULL;
+    AND wm.contact_id = _contact_id
+    AND wm.message_timestamp >= (now() - make_interval(days => _lookback_days));
 
   -- Get days since last message (for recency calculation)
   SELECT EXTRACT(EPOCH FROM (now() - MAX(message_timestamp))) / 86400.0
   INTO _days_since_last_message
   FROM whatsapp_messages
   WHERE user_id = _user_id
-    AND contact_phone = _contact_phone
-    AND deleted_at IS NULL;
+    AND contact_id = _contact_id;
 
   -- Handle NULL case (no messages)
   IF _days_since_last_message IS NULL THEN
@@ -264,7 +253,7 @@ BEGIN
   -- ========================================================================
   -- COMPONENT 1: Frequency Score (0-25 points)
   -- Based on message count in lookback period
-  -- Scale: 0 msgs = 0pts, 30 msgs = 15pts, 100+ msgs = 25pts
+  -- Scale: 0 msgs = 0pts, 100 msgs = 25pts
   -- ========================================================================
   _frequency_score := LEAST(25, (_message_count::NUMERIC / 4));
 
@@ -277,15 +266,9 @@ BEGIN
 
   -- ========================================================================
   -- COMPONENT 3: Sentiment Score (0-20 points)
-  -- Based on average sentiment (-1 to +1) normalized to 0-20
+  -- Placeholder: defaults to neutral (10) until sentiment analysis is implemented
   -- ========================================================================
-  IF _avg_sentiment IS NOT NULL THEN
-    -- Normalize from [-1, 1] to [0, 20]
-    _sentiment_score := ((_avg_sentiment + 1) / 2) * 20;
-  ELSE
-    -- Neutral default if no sentiment data
-    _sentiment_score := 10;
-  END IF;
+  _sentiment_score := 10;
 
   -- ========================================================================
   -- COMPONENT 4: Reciprocity Score (0-15 points)
@@ -302,11 +285,10 @@ BEGIN
 
   -- ========================================================================
   -- COMPONENT 5: Depth Score (0-15 points)
-  -- Based on topic diversity in conversations
-  -- Scale: 0 topics = 0pts, 3 topics = 9pts, 5+ topics = 15pts
+  -- Based on message volume as proxy for conversation depth
+  -- Scale: 0 msgs = 0pts, 50 msgs = 15pts
   -- ========================================================================
-  _unique_topics := COALESCE(_unique_topics, 0);
-  _depth_score := LEAST(15, _unique_topics * 3);
+  _depth_score := LEAST(15, _message_count / 10 * 3);
 
   -- ========================================================================
   -- Calculate total score
@@ -332,8 +314,6 @@ BEGIN
     'total_score', _total_score,
     'messages_analyzed', _message_count,
     'days_since_last_message', ROUND(_days_since_last_message::NUMERIC, 1),
-    'avg_sentiment', _avg_sentiment,
-    'unique_topics', _unique_topics,
     'calculated_at', now()
   );
 
@@ -351,13 +331,14 @@ GRANT EXECUTE ON FUNCTION calculate_health_score_components TO service_role;
 -- ============================================================================
 -- TASK #144-1.6: Create v_contacts_at_risk View
 -- Purpose: Quick access to contacts needing attention (health_score < 40)
+-- NOTE: Adapted to actual contact_network schema (no is_active/is_archived columns)
 -- ============================================================================
 
 CREATE OR REPLACE VIEW v_contacts_at_risk AS
 SELECT
   cn.id AS contact_id,
   cn.user_id,
-  COALESCE(cn.name, cn.contact_name, cn.phone_number) AS contact_name,
+  COALESCE(cn.name, cn.whatsapp_name, cn.phone_number) AS contact_name,
   cn.phone_number,
   cn.profile_picture_url,
   cn.relationship_type,
@@ -376,9 +357,7 @@ SELECT
   (cn.health_score_components->>'depth_score')::NUMERIC AS depth_score,
 
   -- Interaction metadata
-  cn.last_interaction_at,
-  cn.interaction_count,
-  cn.engagement_level,
+  cn.last_contact_at AS last_interaction_at,
 
   -- Risk indicators
   CASE
@@ -388,27 +367,16 @@ SELECT
   END AS risk_level,
 
   -- Days since last interaction
-  EXTRACT(DAY FROM (now() - COALESCE(cn.last_interaction_at, cn.created_at))) AS days_inactive,
-
-  -- Suggestion based on lowest component
-  CASE
-    WHEN (cn.health_score_components->>'recency_score')::NUMERIC < 5 THEN 'Envie uma mensagem - faz tempo que nao conversam'
-    WHEN (cn.health_score_components->>'frequency_score')::NUMERIC < 5 THEN 'Aumente a frequencia de contato'
-    WHEN (cn.health_score_components->>'sentiment_score')::NUMERIC < 5 THEN 'Conversas recentes foram negativas - reconecte positivamente'
-    WHEN (cn.health_score_components->>'reciprocity_score')::NUMERIC < 5 THEN 'Conversa esta unilateral - equilibre o dialogo'
-    WHEN (cn.health_score_components->>'depth_score')::NUMERIC < 5 THEN 'Diversifique os topicos de conversa'
-    ELSE 'Manutencao regular'
-  END AS suggested_action
+  EXTRACT(DAY FROM (now() - COALESCE(cn.last_contact_at, cn.created_at))) AS days_inactive
 
 FROM contact_network cn
 WHERE cn.health_score IS NOT NULL
   AND cn.health_score < 40
-  AND cn.is_active = true
-  AND cn.is_archived = false
-ORDER BY cn.health_score ASC, cn.last_interaction_at ASC;
+  AND cn.deleted_at IS NULL
+ORDER BY cn.health_score ASC, cn.last_contact_at ASC;
 
 COMMENT ON VIEW v_contacts_at_risk IS
-  'Contacts with health_score < 40 requiring attention. Includes risk level and suggested actions.';
+  'Contacts with health_score < 40 requiring attention. Includes risk level and days inactive.';
 
 -- Grant select to authenticated users (RLS on underlying table handles row filtering)
 GRANT SELECT ON v_contacts_at_risk TO authenticated;
@@ -417,12 +385,12 @@ GRANT SELECT ON v_contacts_at_risk TO authenticated;
 -- ============================================================================
 -- TASK #144-1.7: Create record_health_score Function
 -- Purpose: Record a health score calculation to history and update contact cache
+-- NOTE: Adapted to use contact_id instead of contact_phone
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION record_health_score(
   _user_id UUID,
-  _contact_id UUID,
-  _contact_phone TEXT
+  _contact_id UUID
 )
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -437,11 +405,10 @@ DECLARE
   _trend TEXT;
   _alert_type TEXT := NULL;
   _alert_generated BOOLEAN := false;
-  _history_id UUID;
   _avg_recent_score NUMERIC;
 BEGIN
   -- Calculate components
-  _components := calculate_health_score_components(_user_id, _contact_phone);
+  _components := calculate_health_score_components(_user_id, _contact_id);
   _new_score := (_components->>'total_score')::INTEGER;
 
   -- Get previous score from history
@@ -494,9 +461,6 @@ BEGIN
   ELSIF (_components->>'days_since_last_message')::NUMERIC > 30 THEN
     _alert_type := 'no_interaction';
     _alert_generated := true;
-  ELSIF (_components->>'sentiment_score')::NUMERIC < 5 THEN
-    _alert_type := 'sentiment_negative';
-    _alert_generated := true;
   END IF;
 
   -- Insert into history
@@ -526,8 +490,7 @@ BEGIN
     'automated',
     (_components->>'messages_analyzed')::INTEGER,
     now()
-  )
-  RETURNING id INTO _history_id;
+  );
 
   -- Update contact_network cache
   UPDATE contact_network
@@ -551,11 +514,11 @@ GRANT EXECUTE ON FUNCTION record_health_score TO service_role;
 
 
 -- ============================================================================
--- TASK #144-1.8: Batch Processing Function & pg_cron Job
--- Purpose: Schedule daily health score recalculation
+-- TASK #144-1.8: Batch Processing Function
+-- Purpose: Batch recalculate health scores for contacts with stale data
+-- NOTE: pg_cron not available on Supabase - will use Edge Function for scheduling
 -- ============================================================================
 
--- Create batch processing function
 CREATE OR REPLACE FUNCTION batch_recalculate_health_scores()
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -569,17 +532,15 @@ BEGIN
   -- Process contacts that have had recent message activity
   -- or haven't been calculated in 7+ days
   FOR _contact IN
-    SELECT DISTINCT cn.id, cn.user_id, cn.phone_number AS phone
+    SELECT DISTINCT cn.id, cn.user_id
     FROM contact_network cn
-    WHERE cn.is_active = true
-      AND cn.is_archived = false
-      AND cn.phone_number IS NOT NULL
+    WHERE cn.deleted_at IS NULL
       AND (
         cn.health_score_updated_at IS NULL
         OR cn.health_score_updated_at < now() - INTERVAL '7 days'
         OR EXISTS (
           SELECT 1 FROM whatsapp_messages wm
-          WHERE wm.contact_phone = cn.phone_number
+          WHERE wm.contact_id = cn.id
             AND wm.user_id = cn.user_id
             AND wm.message_timestamp > COALESCE(cn.health_score_updated_at, '1970-01-01'::TIMESTAMPTZ)
         )
@@ -587,7 +548,7 @@ BEGIN
     LIMIT 1000  -- Process in batches to avoid timeout
   LOOP
     BEGIN
-      PERFORM record_health_score(_contact.user_id, _contact.id, _contact.phone);
+      PERFORM record_health_score(_contact.user_id, _contact.id);
       _processed := _processed + 1;
     EXCEPTION WHEN OTHERS THEN
       -- Log error but continue processing
@@ -603,32 +564,6 @@ COMMENT ON FUNCTION batch_recalculate_health_scores IS
   'Batch recalculates health scores for contacts with recent activity or stale scores. Returns count processed.';
 
 GRANT EXECUTE ON FUNCTION batch_recalculate_health_scores TO service_role;
-
--- Schedule the cron job (daily at 3 AM UTC)
--- Note: Wrap in DO block to handle case where pg_cron is not available
-DO $$
-BEGIN
-  -- Check if pg_cron extension exists
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
-    -- Remove existing job if present
-    BEGIN
-      PERFORM cron.unschedule('health-score-daily-calculation');
-    EXCEPTION WHEN OTHERS THEN
-      NULL; -- Job doesn't exist, that's fine
-    END;
-
-    -- Schedule new job
-    PERFORM cron.schedule(
-      'health-score-daily-calculation',
-      '0 3 * * *',  -- 3 AM UTC daily
-      $$SELECT batch_recalculate_health_scores();$$
-    );
-
-    RAISE NOTICE 'pg_cron job scheduled: health-score-daily-calculation at 3 AM UTC daily';
-  ELSE
-    RAISE NOTICE 'pg_cron extension not available - health scores will need to be calculated via Edge Function';
-  END IF;
-END $$;
 
 
 -- ============================================================================
