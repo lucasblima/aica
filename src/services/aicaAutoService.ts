@@ -12,6 +12,10 @@
 
 import { supabase } from './supabaseClient';
 import { calculateSimilarity } from './geminiMemoryService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AicaAutoService');
+
 
 // ============================================================================
 // TYPES
@@ -87,7 +91,7 @@ export async function getTaskPrioritySuggestions(
 
     return recommendation;
   } catch (error) {
-    console.error('Error getting task priority suggestions:', error);
+    log.error('Error getting task priority suggestions:', { error: error });
     throw error;
   }
 }
@@ -127,7 +131,7 @@ async function analyzeSingleTask(
       factors,
     };
   } catch (error) {
-    console.error(`Error analyzing task ${task.id}:`, error);
+    log.error(`Error analyzing task ${task.id}:`, { error: error });
     return {
       task_id: task.id,
       suggested_quadrant: task.priority_quadrant || 'low',
@@ -204,7 +208,7 @@ async function calculateContextualImportance(
 
     return Math.min(1, importance);
   } catch (error) {
-    console.error('Error calculating contextual importance:', error);
+    log.error('Error calculating contextual importance:', { error: error });
     return 0.5;
   }
 }
@@ -233,7 +237,7 @@ async function findRelatedMemories(
     // Filter by relevance (would need to check summary/subjects in real implementation)
     return memories.map((m) => m.id);
   } catch (error) {
-    console.error('Error finding related memories:', error);
+    log.error('Error finding related memories:', { error: error });
     return [];
   }
 }
@@ -270,7 +274,7 @@ async function findMatchingPatterns(
 
     return 'Mixed completion history on similar tasks';
   } catch (error) {
-    console.error('Error finding patterns:', error);
+    log.error('Error finding patterns:', { error: error });
     return 'Unable to analyze patterns';
   }
 }
@@ -524,7 +528,7 @@ export async function getDailyExecutionPlan(
       rationale: suggestions.overall_recommendation,
     };
   } catch (error) {
-    console.error('Error generating daily execution plan:', error);
+    log.error('Error generating daily execution plan:', { error: error });
     throw error;
   }
 }

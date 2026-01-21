@@ -10,6 +10,10 @@
  */
 
 import { DailyReport } from '../types/memoryTypes';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('NotificationService');
+
 
 // ============================================================================
 // TYPES
@@ -258,7 +262,7 @@ export const notificationService = new NotificationManager();
  */
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!('Notification' in window)) {
-    console.log('This browser does not support notifications');
+    log.debug('This browser does not support notifications');
     return false;
   }
 

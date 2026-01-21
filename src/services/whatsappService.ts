@@ -10,8 +10,11 @@
  * - Consent management
  */
 
+import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '@/services/supabaseClient';
 import { sendWhatsAppMessage as sendWhatsAppMessageEdge } from './edgeFunctionService';
+
+const log = createNamespacedLogger('WhatsAppService');
 import {
   WhatsAppMessage,
   WhatsAppConversation,
@@ -113,7 +116,7 @@ export async function getMessages(
   const { data, error, count } = await query;
 
   if (error) {
-    console.error('[whatsappService] getMessages error:', error);
+    log.error('getMessages error:', { error });
     throw error;
   }
 
@@ -139,7 +142,7 @@ export async function getMessage(messageId: string): Promise<WhatsAppMessage | n
 
   if (error) {
     if (error.code === 'PGRST116') return null; // Not found
-    console.error('[whatsappService] getMessage error:', error);
+    log.error('getMessage error:', { error });
     throw error;
   }
 
@@ -173,7 +176,7 @@ export async function deleteMessage(
     .eq('id', messageId);
 
   if (error) {
-    console.error('[whatsappService] deleteMessage error:', error);
+    log.error('deleteMessage error:', { error });
     throw error;
   }
 
@@ -199,7 +202,7 @@ export async function getConversations(
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error('[whatsappService] getConversations error:', error);
+    log.error('getConversations error:', { error });
     throw error;
   }
 
@@ -224,7 +227,7 @@ export async function getConversation(contactPhone: string): Promise<WhatsAppCon
 
   if (error) {
     if (error.code === 'PGRST116') return null;
-    console.error('[whatsappService] getConversation error:', error);
+    log.error('getConversation error:', { error });
     throw error;
   }
 
@@ -255,7 +258,7 @@ export async function sendMessage(request: SendMessageRequest): Promise<SendMess
     };
   } catch (err) {
     const error = err as Error;
-    console.error('[whatsappService] sendMessage exception:', error);
+    log.error('sendMessage exception:', { error });
     return { success: false, error: error.message };
   }
 }
@@ -290,7 +293,7 @@ export async function getConnectionStatus(): Promise<WhatsAppConnectionStatus> {
       .single();
 
     if (error) {
-      console.error('[whatsappService] getConnectionStatus error:', error);
+      log.error('getConnectionStatus error:', { error });
       return {
         isConnected: false,
         state: 'disconnected',
@@ -312,7 +315,7 @@ export async function getConnectionStatus(): Promise<WhatsAppConnectionStatus> {
       phone: null,
     };
   } catch (err) {
-    console.error('[whatsappService] getConnectionStatus exception:', err);
+    log.error('getConnectionStatus exception:', { error: err });
     return {
       isConnected: false,
       state: 'disconnected',
@@ -347,7 +350,7 @@ export async function getConsentRecords(
   const { data, error } = await query;
 
   if (error) {
-    console.error('[whatsappService] getConsentRecords error:', error);
+    log.error('getConsentRecords error:', { error });
     throw error;
   }
 
@@ -368,7 +371,7 @@ export async function checkConsent(
   });
 
   if (error) {
-    console.error('[whatsappService] checkConsent error:', error);
+    log.error('checkConsent error:', { error });
     return false;
   }
 
@@ -398,7 +401,7 @@ export async function requestDataDeletion(
     .single();
 
   if (error) {
-    console.error('[whatsappService] requestDataDeletion error:', error);
+    log.error('requestDataDeletion error:', { error });
     throw error;
   }
 
@@ -422,7 +425,7 @@ export async function getMediaMetadata(messageId: string): Promise<MediaMetadata
 
   if (error) {
     if (error.code === 'PGRST116') return null;
-    console.error('[whatsappService] getMediaMetadata error:', error);
+    log.error('getMediaMetadata error:', { error });
     throw error;
   }
 
@@ -438,7 +441,7 @@ export async function getMediaStats(): Promise<MediaStats[]> {
     .select('*');
 
   if (error) {
-    console.error('[whatsappService] getMediaStats error:', error);
+    log.error('getMediaStats error:', { error });
     throw error;
   }
 
@@ -454,7 +457,7 @@ export async function getMediaSignedUrl(storagePath: string): Promise<string | n
     .createSignedUrl(storagePath, 3600); // 1 hour
 
   if (error) {
-    console.error('[whatsappService] getMediaSignedUrl error:', error);
+    log.error('getMediaSignedUrl error:', { error });
     return null;
   }
 
@@ -483,7 +486,7 @@ export async function getMessageStats(): Promise<{
     .is('deleted_at', null);
 
   if (error) {
-    console.error('[whatsappService] getMessageStats error:', error);
+    log.error('getMessageStats error:', { error });
     throw error;
   }
 
@@ -522,7 +525,7 @@ export async function getConversationStats(): Promise<{
     .select('average_sentiment, last_message_at');
 
   if (error) {
-    console.error('[whatsappService] getConversationStats error:', error);
+    log.error('getConversationStats error:', { error });
     throw error;
   }
 
@@ -560,7 +563,7 @@ export async function getPurgeStats(days = 30): Promise<PrivacyPurgeStats[]> {
     .limit(days);
 
   if (error) {
-    console.error('[whatsappService] getPurgeStats error:', error);
+    log.error('getPurgeStats error:', { error });
     throw error;
   }
 
@@ -579,7 +582,7 @@ export async function getPurgeLogs(limit = 50): Promise<PrivacyPurgeLog[]> {
     .limit(limit);
 
   if (error) {
-    console.error('[whatsappService] getPurgeLogs error:', error);
+    log.error('getPurgeLogs error:', { error });
     throw error;
   }
 
@@ -604,7 +607,7 @@ export async function getPurgePendingCount(): Promise<{
     .limit(1);
 
   if (error) {
-    console.error('[whatsappService] getPurgePendingCount error:', error);
+    log.error('getPurgePendingCount error:', { error });
     throw error;
   }
 

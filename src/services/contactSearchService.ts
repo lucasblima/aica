@@ -8,6 +8,10 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ContactSearchService');
+
 
 // ============================================================================
 // TYPES
@@ -124,7 +128,7 @@ export async function searchContacts(
     })
 
     if (error) {
-      console.error('[contactSearchService] searchContacts error:', error)
+      log.error('[contactSearchService] searchContacts error:', { error: error })
       return {
         success: false,
         results: [],
@@ -137,7 +141,7 @@ export async function searchContacts(
     return data as ContactSearchResponse
   } catch (err) {
     const error = err as Error
-    console.error('[contactSearchService] searchContacts exception:', error)
+    log.error('[contactSearchService] searchContacts exception:', { error: error })
     return {
       success: false,
       results: [],
@@ -167,7 +171,7 @@ export async function getContactInsights(
     .limit(limit)
 
   if (error) {
-    console.error('[contactSearchService] getContactInsights error:', error)
+    log.error('[contactSearchService] getContactInsights error:', { error: error })
     throw error
   }
 
@@ -190,7 +194,7 @@ export async function getLatestContactInsight(
 
   if (error) {
     if (error.code === 'PGRST116') return null // Not found
-    console.error('[contactSearchService] getLatestContactInsight error:', error)
+    log.error('[contactSearchService] getLatestContactInsight error:', { error: error })
     throw error
   }
 
@@ -212,7 +216,7 @@ export async function getContactsByTopic(
     .limit(limit)
 
   if (error) {
-    console.error('[contactSearchService] getContactsByTopic error:', error)
+    log.error('[contactSearchService] getContactsByTopic error:', { error: error })
     throw error
   }
 
@@ -233,7 +237,7 @@ export async function getContactsWithActionItems(
     .limit(limit)
 
   if (error) {
-    console.error('[contactSearchService] getContactsWithActionItems error:', error)
+    log.error('[contactSearchService] getContactsWithActionItems error:', { error: error })
     throw error
   }
 
@@ -254,7 +258,7 @@ export async function getAIPipelineStats(days = 7): Promise<AIPipelineStats[]> {
     .limit(days)
 
   if (error) {
-    console.error('[contactSearchService] getAIPipelineStats error:', error)
+    log.error('[contactSearchService] getAIPipelineStats error:', { error: error })
     throw error
   }
 
@@ -278,7 +282,7 @@ export async function getTopRelationships(limit = 10): Promise<{
     .limit(limit)
 
   if (error) {
-    console.error('[contactSearchService] getTopRelationships error:', error)
+    log.error('[contactSearchService] getTopRelationships error:', { error: error })
     throw error
   }
 

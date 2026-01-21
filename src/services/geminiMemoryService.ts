@@ -17,6 +17,10 @@
 
 import { GeminiClient } from '@/lib/gemini';
 import { ExtractedInsight } from '../types/memoryTypes';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GeminiMemoryService');
+
 
 // Initialize Gemini client
 const geminiClient = GeminiClient.getInstance();
@@ -92,7 +96,7 @@ export async function extractMessageInsights(
     );
     return insight;
   } catch (error) {
-    console.error('Error extracting message insights:', error);
+    log.error('Error extracting message insights:', { error: error });
     throw new Error(
       `Failed to extract insights from message: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -120,7 +124,7 @@ function parseInsightResponse(response: string): ExtractedInsight {
     // Validate and sanitize
     return validateInsight(insight);
   } catch (error) {
-    console.error('Error parsing insight response:', error);
+    log.error('Error parsing insight response:', { error: error });
     throw new Error(
       `Failed to parse Gemini response: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -208,7 +212,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
     return embedding;
   } catch (error) {
-    console.error('Error generating embedding:', error);
+    log.error('Error generating embedding:', { error: error });
     throw new Error(
       `Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -297,7 +301,7 @@ export async function generateDailyReportInsights(input: DailyReportInput): Prom
         : [],
     };
   } catch (error) {
-    console.error('Error generating daily report insights:', error);
+    log.error('Error generating daily report insights:', { error: error });
     throw new Error(
       `Failed to generate daily report: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -358,7 +362,7 @@ export async function extractContactContext(
         : [],
     };
   } catch (error) {
-    console.error('Error extracting contact context:', error);
+    log.error('Error extracting contact context:', { error: error });
     return {
       relationship_status: 'unknown',
       key_topics: [],
@@ -402,7 +406,7 @@ export async function extractSuggestedWorkItems(
 
     return items.filter((item) => item.title && item.priority).slice(0, 5);
   } catch (error) {
-    console.error('Error extracting work items:', error);
+    log.error('Error extracting work items:', { error: error });
     return [];
   }
 }

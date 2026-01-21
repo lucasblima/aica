@@ -1,3 +1,4 @@
+import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from './supabaseClient';
 import {
     saveGoogleCalendarTokens,
@@ -8,6 +9,8 @@ import {
     updateLastSyncTime,
     getGoogleUserInfo,
 } from './googleCalendarTokenService';
+
+const log = createNamespacedLogger('GoogleAuthService');
 
 /**
  * DEPRECATED: Estas chaves foram substituídas por armazenamento no banco de dados
@@ -61,12 +64,12 @@ export async function connectGoogleCalendar(): Promise<void> {
     try {
         // Debug logs para diagnosticar server_error
         const redirectUrl = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
-        console.log('[OAuth Debug] Iniciando OAuth...');
-        console.log('[OAuth Debug] Redirect URL:', redirectUrl);
-        console.log('[OAuth Debug] Window origin:', window.location.origin);
-        console.log('[OAuth Debug] VITE_FRONTEND_URL:', import.meta.env.VITE_FRONTEND_URL);
-        console.log('[connectGoogleCalendar] 🔐 Solicitando escopos OAuth:', ALL_GOOGLE_SCOPES);
-        console.log('[connectGoogleCalendar] 🔑 Escopos concatenados:', ALL_GOOGLE_SCOPES.join(' '));
+        log.debug('[OAuth Debug] Iniciando OAuth...');
+        log.debug('[OAuth Debug] Redirect URL:', redirectUrl);
+        log.debug('[OAuth Debug] Window origin:', window.location.origin);
+        log.debug('[OAuth Debug] VITE_FRONTEND_URL:', import.meta.env.VITE_FRONTEND_URL);
+        log.debug('[connectGoogleCalendar] 🔐 Solicitando escopos OAuth:', ALL_GOOGLE_SCOPES);
+        log.debug('[connectGoogleCalendar] 🔑 Escopos concatenados:', ALL_GOOGLE_SCOPES.join(' '));
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
@@ -87,7 +90,7 @@ export async function connectGoogleCalendar(): Promise<void> {
         // Após o OAuth ser concluído com sucesso, a sessão será atualizada
         // Use handleOAuthCallback() para processar os tokens
     } catch (error) {
-        console.error('Erro ao conectar Google Calendar:', error);
+        log.error('Erro ao conectar Google Calendar:', error);
         throw error;
     }
 }
@@ -98,12 +101,12 @@ export async function connectGoogleCalendar(): Promise<void> {
  */
 export async function handleOAuthCallback(): Promise<void> {
     try {
-        console.log('[handleOAuthCallback] 🔄 Iniciando processamento do callback OAuth...');
+        log.debug('[handleOAuthCallback] 🔄 Iniciando processamento do callback OAuth...');
 
         // Obter a sessão atual (que agora contém o provider_token)
         const { data } = await supabase.auth.getSession();
 
-        console.log('[handleOAuthCallback] 📋 Session data:', {
+        log.debug('[handleOAuthCallback] 📋 Session data:', {
             hasSession: !!data.session,
             hasProviderToken: !!data.session?.provider_token,
             hasProviderRefreshToken: !!data.session?.provider_refresh_token,
@@ -114,12 +117,12 @@ export async function handleOAuthCallback(): Promise<void> {
             throw new Error('Token do Google não encontrado na sessão');
         }
 
-        console.log('[handleOAuthCallback] ✅ Provider token encontrado!');
+        log.debug('[handleOAuthCallback] ✅ Provider token encontrado!');
 
         // Obter informações do usuário Google (opcional, para melhor UX)
         let userInfo: any = {};
         try {
-            console.log('[handleOAuthCallback] 🔍 Buscando informações do usuário Google...');
+            log.debug('[handleOAuthCallback] 🔍 Buscando informações do usuário Google...');
             const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: {
                     'Authorization': `Bearer ${data.session.provider_token}`,
@@ -128,16 +131,16 @@ export async function handleOAuthCallback(): Promise<void> {
 
             if (userInfoResponse.ok) {
                 userInfo = await userInfoResponse.json();
-                console.log('[handleOAuthCallback] ✅ Informações do usuário obtidas:', {
+                log.debug('[handleOAuthCallback] ✅ Informações do usuário obtidas:', {
                     email: userInfo.email,
                     name: userInfo.name,
                 });
             }
         } catch (err) {
-            console.warn('[handleOAuthCallback] ⚠️ Não foi possível obter informações do usuário Google:', err);
+            log.warn('[handleOAuthCallback] ⚠️ Não foi possível obter informações do usuário Google:', err);
         }
 
-        console.log('[handleOAuthCallback] 💾 Salvando tokens no banco de dados...');
+        log.debug('[handleOAuthCallback] 💾 Salvando tokens no banco de dados...');
 
         // Salvar tokens no banco de dados associados ao usuário
         await saveGoogleCalendarTokens(
@@ -151,9 +154,9 @@ export async function handleOAuthCallback(): Promise<void> {
             }
         );
 
-        console.log('[handleOAuthCallback] ✅ Tokens salvos com sucesso!');
+        log.debug('[handleOAuthCallback] ✅ Tokens salvos com sucesso!');
     } catch (error) {
-        console.error('[handleOAuthCallback] ❌ Erro ao processar callback OAuth:', error);
+        log.error('[handleOAuthCallback] ❌ Erro ao processar callback OAuth:', error);
         throw error;
     }
 }
@@ -166,7 +169,7 @@ export async function disconnectGoogleCalendar(): Promise<void> {
         // Usar a nova função de desconexão do banco de dados
         await disconnectFromDB();
     } catch (error) {
-        console.error('Erro ao desconectar Google Calendar:', error);
+        log.error('Erro ao desconectar Google Calendar:', error);
         throw error;
     }
 }
@@ -179,7 +182,7 @@ export async function isGoogleCalendarConnected(): Promise<boolean> {
         // Verificar se há tokens no banco de dados para o usuário
         return await isConnectedInDB();
     } catch (error) {
-        console.error('Erro ao verificar conexão:', error);
+        log.error('Erro ao verificar conexão:', error);
         return false;
     }
 }
@@ -193,7 +196,7 @@ export async function getValidAccessToken(): Promise<string | null> {
         // Usar a função do banco de dados que gerencia renovação automática
         return await getValidAccessTokenFromDB();
     } catch (error) {
-        console.error('Erro ao obter token válido:', error);
+        log.error('Erro ao obter token válido:', error);
         return null;
     }
 }

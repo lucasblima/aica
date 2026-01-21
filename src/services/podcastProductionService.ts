@@ -10,6 +10,10 @@
 
 import { supabase } from './supabaseClient';
 import { performDeepResearch, mockDeepResearch } from '../api/geminiDeepResearch';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PodcastProductionService');
+
 
 // ============================================================================
 // TYPES
@@ -155,7 +159,7 @@ export const getGuestResearch = async (episodeId: string): Promise<GuestResearch
 
     return data;
   } catch (error) {
-    console.error(`Error fetching guest research for episode ${episodeId}:`, error);
+    log.error(`Error fetching guest research for episode ${episodeId}:`, { error: error });
     return null;
   }
 };
@@ -176,7 +180,7 @@ export const createGuestResearch = async (
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error creating guest research:', error);
+    log.error('Error creating guest research:', { error: error });
     return null;
   }
 };
@@ -199,7 +203,7 @@ export const updateGuestResearch = async (
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error(`Error updating guest research ${id}:`, error);
+    log.error(`Error updating guest research ${id}:`, { error: error });
     return null;
   }
 };
@@ -228,7 +232,7 @@ export const searchGuestProfile = async (
       query,
       include_sources: true,
     }).catch(() => {
-      console.warn('Gemini API failed, using mock data');
+      log.warn('Gemini API failed, using mock data');
       return mockDeepResearch(query);
     });
 
@@ -262,7 +266,7 @@ export const searchGuestProfile = async (
       data: guestData,
     };
   } catch (error) {
-    console.error('Error searching guest profile:', error);
+    log.error('Error searching guest profile:', { error: error });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -299,7 +303,7 @@ export const addCustomSource = async (
     if (updateError) throw updateError;
     return true;
   } catch (error) {
-    console.error('Error adding custom source:', error);
+    log.error('Error adding custom source:', { error: error });
     return false;
   }
 };
@@ -336,7 +340,7 @@ export const addChatMessage = async (
     if (updateError) throw updateError;
     return true;
   } catch (error) {
-    console.error('Error adding chat message:', error);
+    log.error('Error adding chat message:', { error: error });
     return false;
   }
 };
@@ -361,7 +365,7 @@ export const updateEpisodeProduction = async (
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error updating episode production ${episodeId}:`, error);
+    log.error(`Error updating episode production ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -382,7 +386,7 @@ export const startRecording = async (episodeId: string): Promise<boolean> => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error starting recording for episode ${episodeId}:`, error);
+    log.error(`Error starting recording for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -402,7 +406,7 @@ export const pauseRecording = async (episodeId: string): Promise<boolean> => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error pausing recording for episode ${episodeId}:`, error);
+    log.error(`Error pausing recording for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -422,7 +426,7 @@ export const resumeRecording = async (episodeId: string): Promise<boolean> => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error resuming recording for episode ${episodeId}:`, error);
+    log.error(`Error resuming recording for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -469,7 +473,7 @@ export const finishRecording = async (
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error finishing recording for episode ${episodeId}:`, error);
+    log.error(`Error finishing recording for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -497,7 +501,7 @@ export const getRecordingStatus = async (episodeId: string): Promise<{
       startedAt: data.recording_started_at,
     };
   } catch (error) {
-    console.error(`Error fetching recording status for episode ${episodeId}:`, error);
+    log.error(`Error fetching recording status for episode ${episodeId}:`, { error: error });
     return null;
   }
 };
@@ -526,7 +530,7 @@ export const updateTopicSponsorScript = async (
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error updating topic sponsor script ${topicId}:`, error);
+    log.error(`Error updating topic sponsor script ${topicId}:`, { error: error });
     return false;
   }
 };
@@ -548,7 +552,7 @@ export const getTopicsForTeleprompter = async (
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error(`Error fetching topics for episode ${episodeId}:`, error);
+    log.error(`Error fetching topics for episode ${episodeId}:`, { error: error });
     return [];
   }
 };
@@ -575,7 +579,7 @@ export const generateTranscript = async (episodeId: string): Promise<boolean> =>
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error generating transcript for episode ${episodeId}:`, error);
+    log.error(`Error generating transcript for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -602,7 +606,7 @@ export const generateCuts = async (episodeId: string): Promise<boolean> => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error generating cuts for episode ${episodeId}:`, error);
+    log.error(`Error generating cuts for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -626,7 +630,7 @@ export const generateBlogPost = async (episodeId: string): Promise<boolean> => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error generating blog post for episode ${episodeId}:`, error);
+    log.error(`Error generating blog post for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -655,7 +659,7 @@ export const publishToSocial = async (
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error(`Error publishing to social for episode ${episodeId}:`, error);
+    log.error(`Error publishing to social for episode ${episodeId}:`, { error: error });
     return false;
   }
 };
@@ -676,7 +680,7 @@ export const calculateRecordingDuration = async (episodeId: string): Promise<num
     if (error) throw error;
     return data || 0;
   } catch (error) {
-    console.error(`Error calculating recording duration for episode ${episodeId}:`, error);
+    log.error(`Error calculating recording duration for episode ${episodeId}:`, { error: error });
     return 0;
   }
 };

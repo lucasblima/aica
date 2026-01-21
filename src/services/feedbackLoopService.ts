@@ -17,6 +17,10 @@
 import { supabase } from './supabaseClient';
 import { gamificationService } from './gamificationService';
 import { notificationService } from './notificationService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FeedbackLoopService');
+
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -148,11 +152,11 @@ const ACHIEVEMENTS_CONDITIONS = {
 
 export class FeedbackLoopService {
   private logger = {
-    log: (msg: string, data?: any) => console.log(`[FeedbackLoopService] ${msg}`, data),
-    error: (msg: string, error?: any) => console.error(`[FeedbackLoopService] ${msg}`, error),
+    log: (msg: string, data?: any) => log.debug(`[FeedbackLoopService] ${msg}`, data),
+    error: (msg: string, error?: any) => log.error(`[FeedbackLoopService] ${msg}`, { error: error }),
     debug: (msg: string, data?: any) => {
       if (process.env.DEBUG_FEEDBACK) {
-        console.debug(`[FeedbackLoopService] ${msg}`, data);
+        log.debug(`[FeedbackLoopService] ${msg}`, data);
       }
     },
   };

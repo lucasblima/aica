@@ -1,4 +1,8 @@
 import { supabase } from './supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('SupabaseService');
+
 
 // Fetch all associations from Supabase
 export const getAssociations = async () => {
@@ -21,7 +25,7 @@ export const getAssociations = async () => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error('Error fetching associations from Supabase:', error);
+        log.error('Error fetching associations from Supabase:', { error: error });
         return []; // Return empty array instead of throwing
     }
 };
@@ -38,7 +42,7 @@ export const getAssociationById = async (id: string) => {
         if (error) throw error;
         return data;
     } catch (error) {
-        console.error(`Error fetching association ${id}:`, error);
+        log.error(`Error fetching association ${id}:`, { error: error });
         return null; // Return null for single item queries
     }
 };
@@ -56,7 +60,7 @@ export const getStatesByAssociation = async (associationId: string) => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error(`Error fetching states for association ${associationId}:`, error);
+        log.error(`Error fetching states for association ${associationId}:`, { error: error });
         return []; // Return empty array instead of throwing
     }
 };
@@ -80,7 +84,7 @@ export const getWorkItemsByAssociation = async (associationId: string) => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error(`Error fetching work items for association ${associationId}:`, error);
+        log.error(`Error fetching work items for association ${associationId}:`, { error: error });
         return []; // Return empty array instead of throwing
     }
 };
@@ -104,7 +108,7 @@ export const updateAssociationSyncStatus = async (
         if (error) throw error;
         return data;
     } catch (error) {
-        console.error(`Error updating association ${associationId} sync status:`, error);
+        log.error(`Error updating association ${associationId} sync status:`, { error: error });
         throw error;
     }
 };
@@ -120,7 +124,7 @@ export const getUserProfile = async (userId: string) => {
         if (error) throw error;
         return data;
     } catch (error) {
-        console.error(`Error fetching profile for user ${userId}:`, error);
+        log.error(`Error fetching profile for user ${userId}:`, { error: error });
         throw error;
     }
 };
@@ -143,7 +147,7 @@ export const getDailyAgenda = async () => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error('Error fetching daily agenda:', error);
+        log.error('Error fetching daily agenda:', { error: error });
         return []; // Return empty array instead of throwing
     }
 };
@@ -163,7 +167,7 @@ export const getLifeAreas = async () => {
 
         return modules || [];
     } catch (error) {
-        console.error('Error fetching life areas:', error);
+        log.error('Error fetching life areas:', { error: error });
         return []; // Return empty array instead of throwing
     }
 };
@@ -183,7 +187,7 @@ export const getWorkItems = async () => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error('Error fetching work items:', error);
+        log.error('Error fetching work items:', { error: error });
         return []; // Retorna array vazio para não quebrar a UI
     }
 };
@@ -212,7 +216,7 @@ export const createWorkItem = async (item: {
             .limit(1);
 
         if (statesError) {
-            console.warn('[createWorkItem] Could not fetch states:', statesError);
+            log.warn('[createWorkItem] Could not fetch states:', statesError);
         }
 
         const state_id = states?.[0]?.id;
@@ -240,13 +244,13 @@ export const createWorkItem = async (item: {
             .single();
 
         if (error) {
-            console.error('[createWorkItem] Insert error:', error);
+            log.error('[createWorkItem] Insert error:', { error: error });
             throw error;
         }
 
         return data;
     } catch (error) {
-        console.error('Error creating work item:', error);
+        log.error('Error creating work item:', { error: error });
         throw error;
     }
 };
@@ -268,7 +272,7 @@ export const createModule = async (module: {
         if (error) throw error;
         return data;
     } catch (error) {
-        console.error('Error creating module:', error);
+        log.error('Error creating module:', { error: error });
         throw error;
     }
 };
@@ -322,7 +326,7 @@ export const createAssociation = async (association: {
 
         return data;
     } catch (error) {
-        console.error('Error creating association:', error);
+        log.error('Error creating association:', { error: error });
         throw error;
     }
 };
@@ -340,7 +344,7 @@ export const getAssociationModules = async (associationId: string) => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error(`Error fetching modules for association ${associationId}:`, error);
+        log.error(`Error fetching modules for association ${associationId}:`, { error: error });
         throw error;
     }
 };
@@ -365,7 +369,7 @@ export const sendMessage = async (content: string, senderId: string, matchId: st
         if (error) throw error;
         return data;
     } catch (error) {
-        console.error('Error sending message:', error);
+        log.error('Error sending message:', { error: error });
         throw error;
     }
 };
@@ -445,7 +449,7 @@ export const getUserBirthdate = async (userId: string): Promise<Date | null> => 
         if (error) throw error;
         return data?.birthdate ? new Date(data.birthdate) : null;
     } catch (error) {
-        console.error('Error fetching user birthdate:', error);
+        log.error('Error fetching user birthdate:', { error: error });
         return null;
     }
 };
@@ -541,7 +545,7 @@ export const getLifeWeeksData = async (userId: string): Promise<WeekBlock[]> => 
 
         return weeks;
     } catch (error) {
-        console.error('Error fetching life weeks data:', error);
+        log.error('Error fetching life weeks data:', { error: error });
         throw error;
     }
 };
@@ -577,7 +581,7 @@ export const getWeekMetrics = async (userId: string, weekNumber: number): Promis
             achievements: [] // TODO: fetch from activity_log
         };
     } catch (error) {
-        console.error('Error fetching week metrics:', error);
+        log.error('Error fetching week metrics:', { error: error });
         throw error;
     }
 };
@@ -605,7 +609,7 @@ export const calculateTaskDifficulty = async (taskId: string): Promise<number> =
 
         return difficulty;
     } catch (error) {
-        console.error('Error calculating task difficulty:', error);
+        log.error('Error calculating task difficulty:', { error: error });
         return 3;
     }
 };
@@ -625,7 +629,7 @@ export const updateTaskMetrics = async (taskId: string, metrics: Partial<TaskMet
 
         if (error) throw error;
     } catch (error) {
-        console.error('Error updating task metrics:', error);
+        log.error('Error updating task metrics:', { error: error });
         throw error;
     }
 };
@@ -670,7 +674,7 @@ export const getModuleTasks = async (moduleId: string, limit: number = 3) => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error(`Error fetching tasks for module ${moduleId}:`, error);
+        log.error(`Error fetching tasks for module ${moduleId}:`, { error: error });
         return [];
     }
 };
@@ -725,7 +729,7 @@ export const getProductivityStats = async (userId: string, period: 'week' | 'mon
             efficiencyScore: totalHours > 0 ? (totalTasks / totalHours) * 10 : 0
         };
     } catch (error) {
-        console.error('Error fetching productivity stats:', error);
+        log.error('Error fetching productivity stats:', { error: error });
         return { totalTasks: 0, totalHours: 0, avgTasksPerDay: 0, efficiencyScore: 0 };
     }
 };
@@ -760,7 +764,7 @@ export const getUserLevel = async (userId: string): Promise<UserStats> => {
             achievements: data.achievements
         };
     } catch (error) {
-        console.error('Error fetching user level:', error);
+        log.error('Error fetching user level:', { error: error });
         throw error;
     }
 };
@@ -771,7 +775,7 @@ export const getAchievements = async (userId: string): Promise<any[]> => {
         const stats = await getUserLevel(userId);
         return stats.achievements || [];
     } catch (error) {
-        console.error('Error fetching achievements:', error);
+        log.error('Error fetching achievements:', { error: error });
         return [];
     }
 };
@@ -801,7 +805,7 @@ export const awardAchievement = async (userId: string, achievementId: string): P
 
         if (error) throw error;
     } catch (error) {
-        console.error('Error awarding achievement:', error);
+        log.error('Error awarding achievement:', { error: error });
         throw error;
     }
 };
@@ -825,7 +829,7 @@ export const updateUserProfile = async (userId: string, updates: any) => {
         }
 
         // 3. If no row updated, user might not exist in public.users. Let's create them.
-        console.log('User not found in public.users, creating...');
+        log.debug('User not found in public.users, creating...');
 
         // Get auth user details to populate required fields (like name)
         const { data: { user } } = await supabase.auth.getUser();
@@ -854,7 +858,7 @@ export const updateUserProfile = async (userId: string, updates: any) => {
         return newData;
 
     } catch (error) {
-        console.error('Error updating user profile:', error);
+        log.error('Error updating user profile:', { error: error });
         throw error;
     }
 };
@@ -870,7 +874,7 @@ export const getLifeEvents = async () => {
         if (error) throw error;
         return data || [];
     } catch (error) {
-        console.error('Error fetching life events:', error);
+        log.error('Error fetching life events:', { error: error });
         throw error;
     }
 };
@@ -901,7 +905,7 @@ export const createLifeEvent = async (event: {
         if (error) throw error;
         return data;
     } catch (error) {
-        console.error('Error creating life event:', error);
+        log.error('Error creating life event:', { error: error });
         throw error;
     }
 };
@@ -941,13 +945,13 @@ export const hasCompletedOnboarding = async (userId: string): Promise<boolean> =
 
         // If user's version is less than current, they need to see new onboarding
         if (userVersion < CURRENT_ONBOARDING_VERSION) {
-            console.log(`[Onboarding] User ${userId} has version ${userVersion}, current is ${CURRENT_ONBOARDING_VERSION}. Showing onboarding.`);
+            log.debug(`[Onboarding] User ${userId} has version ${userVersion}, current is ${CURRENT_ONBOARDING_VERSION}. Showing onboarding.`);
             return false;
         }
 
         return hasCompleted;
     } catch (error) {
-        console.error('Error checking onboarding status:', error);
+        log.error('Error checking onboarding status:', { error: error });
         return false;
     }
 };
@@ -988,9 +992,9 @@ export const completeOnboarding = async (userId: string, connectedCalendar: bool
         }
 
         // Log onboarding completion
-        console.log(`[Onboarding] User ${userId} completed onboarding v${CURRENT_ONBOARDING_VERSION}. Calendar connected: ${connectedCalendar}`);
+        log.debug(`[Onboarding] User ${userId} completed onboarding v${CURRENT_ONBOARDING_VERSION}. Calendar connected: ${connectedCalendar}`);
     } catch (error) {
-        console.error('Error completing onboarding:', error);
+        log.error('Error completing onboarding:', { error: error });
         throw error;
     }
 };

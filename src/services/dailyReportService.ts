@@ -15,6 +15,10 @@ import { supabase } from './supabaseClient';
 import { DailyReport, DailyReportCreateInput } from '../types/memoryTypes';
 import { generateDailyReportInsights } from './geminiMemoryService';
 import { notificationService, sendDailyReportNotification } from './notificationService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('DailyReportService');
+
 
 // ============================================================================
 // DAILY REPORT GENERATION
@@ -44,18 +48,18 @@ export async function generateDailyReport(
   try {
     const date = reportDate || new Date().toISOString().split('T')[0];
 
-    console.log(`🔄 Generating daily report for user ${userId} on ${date}`);
+    log.debug(`🔄 Generating daily report for user ${userId} on ${date}`);
 
     // Step 1: Check if report already exists
     const existingReport = await getDailyReport(userId, date);
     if (existingReport) {
-      console.log(`⚠️  Report already exists for ${date}, skipping generation`);
+      log.debug(`⚠️  Report already exists for ${date}, skipping generation`);
       return existingReport;
     }
 
     // Step 2: Aggregate metrics
     const metrics = await aggregateDailyMetrics(userId, date);
-    console.log('✅ Metrics aggregated', metrics);
+    log.debug('✅ Metrics aggregated', metrics);
 
     // Step 3: Fetch memories for insights generation
     const { data: memories } = await supabase
@@ -79,22 +83,22 @@ export async function generateDailyReport(
       contacts_interacted: metrics.topContacts
     };
     const insights = await generateDailyReportInsights(insightsInput);
-    console.log('✅ Insights generated via Gemini');
+    log.debug('✅ Insights generated via Gemini');
 
     // Step 6: Create report object
     const report = buildReportObject(userId, date, metrics, insights);
 
     // Step 7: Insert into Supabase
     const savedReport = await insertDailyReport(report, userId);
-    console.log('✅ Report saved to Supabase');
+    log.debug('✅ Report saved to Supabase');
 
     // Step 8: Send notifications
     await notifyUserOfReport(userId, savedReport);
-    console.log('✅ Notifications sent');
+    log.debug('✅ Notifications sent');
 
     return savedReport;
   } catch (error) {
-    console.error(`❌ Error generating daily report: ${error}`);
+    log.error(`❌ Error generating daily report: ${error}`);
     throw error;
   }
 }
@@ -186,7 +190,7 @@ export async function aggregateDailyMetrics(
       topContacts,
     };
   } catch (error) {
-    console.error('Error aggregating daily metrics:', error);
+    log.error('Error aggregating daily metrics:', { error: error });
     throw error;
   }
 }
@@ -260,7 +264,7 @@ export async function getDailyReport(
 
     return data;
   } catch (error) {
-    console.error(`Error fetching daily report: ${error}`);
+    log.error(`Error fetching daily report: ${error}`);
     throw error;
   }
 }
@@ -282,7 +286,7 @@ async function insertDailyReport(
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error inserting daily report:', error);
+    log.error('Error inserting daily report:', { error: error });
     throw error;
   }
 }
@@ -307,7 +311,7 @@ export async function updateDailyReport(
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error updating daily report:', error);
+    log.error('Error updating daily report:', { error: error });
     throw error;
   }
 }
@@ -333,7 +337,7 @@ async function notifyUserOfReport(
     // Optional: Send email notification (implement via your backend)
     // await sendEmailNotification(userId, report);
   } catch (error) {
-    console.error('Error sending notifications:', error);
+    log.error('Error sending notifications:', { error: error });
     // Don't throw - notifications are nice-to-have
   }
 }
@@ -402,7 +406,7 @@ export async function getReportStatistics(
       dateRange: { start: startDate, end: endDate },
     };
   } catch (error) {
-    console.error('Error getting report statistics:', error);
+    log.error('Error getting report statistics:', { error: error });
     throw error;
   }
 }
@@ -427,7 +431,7 @@ export async function getReportsForRange(
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching reports for range:', error);
+    log.error('Error fetching reports for range:', { error: error });
     throw error;
   }
 }
@@ -466,7 +470,7 @@ export async function generateReportsForAllUsers(
           userId: user.id,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
-        console.error(`Failed to generate report for user ${user.id}:`, error);
+        log.error(`Failed to generate report for user ${user.id}:`, { error: error });
       }
 
       // Rate limiting: wait 1 second between users
@@ -475,7 +479,7 @@ export async function generateReportsForAllUsers(
 
     return results;
   } catch (error) {
-    console.error('Error in batch report generation:', error);
+    log.error('Error in batch report generation:', { error: error });
     throw error;
   }
 }
@@ -513,7 +517,7 @@ export async function getLastReport(userId: string): Promise<DailyReport | null>
 
     return data;
   } catch (error) {
-    console.error('Error fetching last report:', error);
+    log.error('Error fetching last report:', { error: error });
     throw error;
   }
 }
@@ -531,7 +535,7 @@ export async function deleteReport(userId: string, date: string): Promise<void> 
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error deleting report:', error);
+    log.error('Error deleting report:', { error: error });
     throw error;
   }
 }
@@ -542,7 +546,7 @@ export async function deleteReport(userId: string, date: string): Promise<void> 
  */
 export async function generateMissingDailyReports(userId: string): Promise<void> {
   try {
-    console.log(`🔄 Checking for missing daily reports for user ${userId}`);
+    log.debug(`🔄 Checking for missing daily reports for user ${userId}`);
 
     // Get the last report date
     const lastReport = await getLastReport(userId);
@@ -576,7 +580,7 @@ export async function generateMissingDailyReports(userId: string): Promise<void>
         // Check if report already exists
         const exists = await reportExists(userId, dateStr);
         if (!exists) {
-          console.log(`📝 Generating missing report for ${dateStr}`);
+          log.debug(`📝 Generating missing report for ${dateStr}`);
           await generateDailyReport(userId, dateStr);
           reportsGenerated.push(dateStr);
 
@@ -584,23 +588,23 @@ export async function generateMissingDailyReports(userId: string): Promise<void>
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
       } catch (error) {
-        console.error(`❌ Failed to generate report for ${dateStr}:`, error);
+        log.error(`❌ Failed to generate report for ${dateStr}:`, { error: error });
         reportsFailed.push(dateStr);
         // Continue with next date even if this one fails
       }
     }
 
     if (reportsGenerated.length > 0) {
-      console.log(`✅ Generated ${reportsGenerated.length} missing daily reports:`, reportsGenerated);
+      log.debug(`✅ Generated ${reportsGenerated.length} missing daily reports:`, reportsGenerated);
     } else {
-      console.log(`✅ No missing daily reports to generate`);
+      log.debug(`✅ No missing daily reports to generate`);
     }
 
     if (reportsFailed.length > 0) {
-      console.warn(`⚠️  Failed to generate ${reportsFailed.length} reports:`, reportsFailed);
+      log.warn(`⚠️  Failed to generate ${reportsFailed.length} reports:`, reportsFailed);
     }
   } catch (error) {
-    console.error('❌ Error in generateMissingDailyReports:', error);
+    log.error('❌ Error in generateMissingDailyReports:', { error: error });
     // Don't throw - this is a background operation that shouldn't block user flow
   }
 }

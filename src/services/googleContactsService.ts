@@ -6,6 +6,10 @@
 
 import { supabase } from './supabaseClient';
 import { getValidAccessToken } from './googleCalendarTokenService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GoogleContactsService');
+
 
 /**
  * Google Person structure from People API
@@ -114,11 +118,11 @@ export async function syncGoogleContacts(): Promise<SyncReport> {
         pageToken = data.nextPageToken;
         pageCount++;
 
-        console.log(
+        log.debug(
           `[googleContactsService] Fetched page ${pageCount}: ${(data.connections || []).length} contacts`
         );
       } catch (pageError) {
-        console.error('[googleContactsService] Error fetching page:', pageError);
+        log.error('[googleContactsService] Error fetching page:', { error: pageError });
         report.errorDetails.push(`Page fetch error: ${String(pageError)}`);
         report.errors++;
         break;
@@ -126,7 +130,7 @@ export async function syncGoogleContacts(): Promise<SyncReport> {
     } while (pageToken);
 
     report.total = allPeople.length;
-    console.log(`[googleContactsService] Total contacts fetched: ${report.total}`);
+    log.debug(`[googleContactsService] Total contacts fetched: ${report.total}`);
 
     // Process each contact
     for (const person of allPeople) {
@@ -191,18 +195,18 @@ export async function syncGoogleContacts(): Promise<SyncReport> {
           }
         }
       } catch (contactError) {
-        console.error('[googleContactsService] Error processing contact:', contactError);
+        log.error('[googleContactsService] Error processing contact:', { error: contactError });
         report.errorDetails.push(`Contact processing error: ${String(contactError)}`);
         report.errors++;
       }
     }
 
     report.duration = Date.now() - startTime;
-    console.log('[googleContactsService] Sync complete:', report);
+    log.debug('[googleContactsService] Sync complete:', report);
 
     return report;
   } catch (error) {
-    console.error('[googleContactsService] Sync failed:', error);
+    log.error('[googleContactsService] Sync failed:', { error: error });
     report.duration = Date.now() - startTime;
     report.errors++;
     report.errorDetails.push(`Sync failed: ${String(error)}`);
@@ -221,7 +225,7 @@ export async function getUserContacts(userId: string) {
     .order('name', { ascending: true });
 
   if (error) {
-    console.error('[googleContactsService] Error fetching contacts:', error);
+    log.error('[googleContactsService] Error fetching contacts:', { error: error });
     throw error;
   }
 
@@ -242,7 +246,7 @@ export async function searchContacts(query: string, userId: string) {
     .order('name', { ascending: true });
 
   if (error) {
-    console.error('[googleContactsService] Error searching contacts:', error);
+    log.error('[googleContactsService] Error searching contacts:', { error: error });
     throw error;
   }
 
@@ -260,7 +264,7 @@ export async function getContact(contactId: string) {
     .single();
 
   if (error) {
-    console.error('[googleContactsService] Error fetching contact:', error);
+    log.error('[googleContactsService] Error fetching contact:', { error: error });
     throw error;
   }
 
@@ -279,7 +283,7 @@ export async function updateContact(contactId: string, updates: Record<string, a
     .single();
 
   if (error) {
-    console.error('[googleContactsService] Error updating contact:', error);
+    log.error('[googleContactsService] Error updating contact:', { error: error });
     throw error;
   }
 
@@ -296,7 +300,7 @@ export async function deleteContact(contactId: string) {
     .eq('id', contactId);
 
   if (error) {
-    console.error('[googleContactsService] Error deleting contact:', error);
+    log.error('[googleContactsService] Error deleting contact:', { error: error });
     throw error;
   }
 }
@@ -315,7 +319,7 @@ export async function getContactsNeedingSync(userId: string) {
     .lt('last_synced_at', oneDayAgo);
 
   if (error) {
-    console.error('[googleContactsService] Error fetching contacts to sync:', error);
+    log.error('[googleContactsService] Error fetching contacts to sync:', { error: error });
     throw error;
   }
 

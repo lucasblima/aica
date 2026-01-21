@@ -9,6 +9,10 @@
  */
 
 import { supabase } from './supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('UnifiedChatService');
+
 
 // =============================================================================
 // TYPES
@@ -111,7 +115,7 @@ class UnifiedChatService {
 
       return data as RateLimitStatus;
     } catch (error) {
-      console.error('[UnifiedChatService] Rate limit check failed:', error);
+      log.error('[UnifiedChatService] Rate limit check failed:', { error: error });
       // Default to allowed if rate limit check fails (fail open for UX)
       return {
         allowed: true,
@@ -387,7 +391,7 @@ ${context ? `Contexto adicional: ${context}` : ''}`;
         p_request_type: 'chat',
       });
     } catch (error) {
-      console.error('[UnifiedChatService] Failed to record token usage:', error);
+      log.error('[UnifiedChatService] Failed to record token usage:', { error: error });
       // Non-blocking - don't throw
     }
   }

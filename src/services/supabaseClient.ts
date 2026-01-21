@@ -1,18 +1,21 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { createNamespacedLogger } from '@/lib/logger';
 import { createCookieHandlers } from '../lib/supabase/cookieStorageAdapter';
+
+const log = createNamespacedLogger('SupabaseClient');
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.warn('Supabase URL or Key is missing in environment variables.');
+    log.warn('Supabase URL or Key is missing in environment variables.');
 }
 
 const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
 
 function authLog(message: string, data?: unknown) {
     if (DEBUG) {
-        console.log(`[Supabase Auth] ${message}`, data ?? '');
+        log.debug(`[Supabase Auth] ${message}`, data);
     }
 }
 
