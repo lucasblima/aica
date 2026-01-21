@@ -27,6 +27,36 @@ import {
 } from '@/types/whatsapp';
 
 // ============================================================================
+// PRIVACY PURGE TYPES (LGPD/GDPR Compliance)
+// ============================================================================
+
+export interface PrivacyPurgeStats {
+  purge_date: string;
+  executions: number;
+  total_messages_purged: number;
+  total_bytes_freed: number;
+  total_users_affected: number;
+  avg_duration_ms: number;
+  failed_executions: number;
+  first_execution: string;
+  last_execution: string;
+}
+
+export interface PrivacyPurgeLog {
+  id: string;
+  execution_id: string;
+  executed_at: string;
+  messages_purged: number;
+  bytes_freed_estimate: number;
+  users_affected: number;
+  user_counts: Record<string, number>;
+  retention_hours: number;
+  duration_ms: number | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 
@@ -516,6 +546,75 @@ export async function getConversationStats(): Promise<{
 }
 
 // ============================================================================
+// PRIVACY PURGE (LGPD/GDPR COMPLIANCE)
+// ============================================================================
+
+/**
+ * Get privacy purge statistics (daily aggregated)
+ * Used for LGPD/GDPR compliance monitoring dashboard
+ */
+export async function getPurgeStats(days = 30): Promise<PrivacyPurgeStats[]> {
+  const { data, error } = await supabase
+    .from('privacy_purge_stats')
+    .select('*')
+    .limit(days);
+
+  if (error) {
+    console.error('[whatsappService] getPurgeStats error:', error);
+    throw error;
+  }
+
+  return data as PrivacyPurgeStats[];
+}
+
+/**
+ * Get recent purge execution logs
+ * For detailed audit trail and debugging
+ */
+export async function getPurgeLogs(limit = 50): Promise<PrivacyPurgeLog[]> {
+  const { data, error } = await supabase
+    .from('privacy_purge_log')
+    .select('*')
+    .order('executed_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[whatsappService] getPurgeLogs error:', error);
+    throw error;
+  }
+
+  return data as PrivacyPurgeLog[];
+}
+
+/**
+ * Get count of messages pending purge
+ * Useful for monitoring backlog
+ */
+export async function getPurgePendingCount(): Promise<{
+  count: number;
+  oldestPending: string | null;
+}> {
+  const { data, error, count } = await supabase
+    .from('whatsapp_messages')
+    .select('created_at', { count: 'exact', head: false })
+    .eq('processing_status', 'completed')
+    .is('purged_at', null)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true })
+    .limit(1);
+
+  if (error) {
+    console.error('[whatsappService] getPurgePendingCount error:', error);
+    throw error;
+  }
+
+  return {
+    count: count || 0,
+    oldestPending: data && data.length > 0 ? data[0].created_at : null,
+  };
+}
+
+// ============================================================================
 // EXPORT DEFAULT
 // ============================================================================
 
@@ -547,4 +646,9 @@ export default {
   // Statistics
   getMessageStats,
   getConversationStats,
+
+  // Privacy Purge (LGPD/GDPR)
+  getPurgeStats,
+  getPurgeLogs,
+  getPurgePendingCount,
 };
