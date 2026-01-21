@@ -105,10 +105,22 @@ serve(async (req: Request) => {
       return jsonResponse({ success: false, error: 'Missing authorization header' }, 401)
     }
 
-    const token = authHeader.replace('Bearer ', '')
+    const token = authHeader.replace('Bearer ', '').trim()
 
-    // Check if it's the service role key (for cron jobs)
-    const isServiceRole = token === supabaseServiceKey
+    // Check if it's the service role key by decoding the JWT and checking the role claim
+    // This is more reliable than comparing raw tokens
+    let isServiceRole = false
+    try {
+      // Decode JWT payload (base64url decode the second part)
+      const parts = token.split('.')
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+        isServiceRole = payload.role === 'service_role'
+        console.log(`[calculate-health-scores] JWT role: ${payload.role}`)
+      }
+    } catch (e) {
+      console.log(`[calculate-health-scores] Could not decode JWT: ${e}`)
+    }
 
     // Parse request body
     let body: Partial<SingleCalculateRequest> = {}
