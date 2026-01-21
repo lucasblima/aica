@@ -6,6 +6,9 @@
  */
 
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('DocumentProcessingService');
 
 // =============================================================================
 // TYPES
@@ -253,7 +256,7 @@ export async function deleteProcessedDocument(documentId: string): Promise<void>
     .remove([doc.storage_path]);
 
   if (storageError) {
-    console.error('Error deleting from storage:', storageError);
+    log.error('Error deleting from storage:', { error: storageError });
   }
 
   // Delete from database (cascades to chunks and embeddings)

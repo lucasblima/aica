@@ -21,6 +21,9 @@
 import { supabase } from '@/services/supabaseClient'
 import type { GeneratedPauta, PautaQuestion, OutlineSection, SourceCitation, Controversy } from './pautaGeneratorService'
 import type { SavedPauta } from '../types'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('pautaPersistenceService');
 
 // =====================================================
 // TYPES
@@ -110,7 +113,7 @@ class PautaPersistenceService {
     depth?: string,
     focusAreas?: string[]
   ): Promise<{ success: boolean; pautaId?: string; error?: string }> {
-    console.log('[savePauta] Starting pauta save:', {
+    log.debug('[savePauta] Starting pauta save:', {
       episodeId,
       userId,
       guestName,
@@ -122,7 +125,7 @@ class PautaPersistenceService {
 
     try {
       // 1. Insert main pauta record
-      console.log('[savePauta] Step 1: Inserting main record...')
+      log.debug('[savePauta] Step 1: Inserting main record...')
       const { data: pautaRecord, error: pautaError } = await supabase
         .from('podcast_generated_pautas')
         .insert([
@@ -151,8 +154,8 @@ class PautaPersistenceService {
         .single()
 
       if (pautaError) {
-        console.error('[savePauta] ERROR inserting pauta:', pautaError)
-        console.error('[savePauta] Error details:', {
+        log.error('[savePauta] ERROR inserting pauta:', pautaError)
+        log.error('[savePauta] Error details:', {
           code: pautaError.code,
           message: pautaError.message,
           details: pautaError.details,
@@ -162,24 +165,24 @@ class PautaPersistenceService {
       }
 
       if (!pautaRecord) {
-        console.error('[savePauta] ERROR: pautaRecord is null after insert')
+        log.error('[savePauta] ERROR: pautaRecord is null after insert')
         return { success: false, error: 'Failed to create pauta record' }
       }
 
-      console.log('[savePauta] ✅ Main record created with ID:', pautaRecord.id)
+      log.debug('[savePauta] ✅ Main record created with ID:', pautaRecord.id)
       const pautaId = pautaRecord.id
 
       // 2. Insert outline sections
-      console.log('[savePauta] Step 2: Inserting outline sections...')
+      log.debug('[savePauta] Step 2: Inserting outline sections...')
       const outlineSections = this.buildOutlineSections(pauta.outline, pautaId)
-      console.log('[savePauta] Sections to insert:', outlineSections.length)
+      log.debug('[savePauta] Sections to insert:', outlineSections.length)
       if (outlineSections.length > 0) {
         const { error: sectionsError } = await supabase
           .from('podcast_pauta_outline_sections')
           .insert(outlineSections)
 
         if (sectionsError) {
-          console.error('Error inserting outline sections:', sectionsError)
+          log.error('Error inserting outline sections:', sectionsError)
           // Continue even with error - outline is not critical
         }
       }
@@ -192,7 +195,7 @@ class PautaPersistenceService {
           .insert(questions)
 
         if (questionsError) {
-          console.error('Error inserting questions:', questionsError)
+          log.error('Error inserting questions:', questionsError)
           // Continue even with error
         }
       }
@@ -205,16 +208,16 @@ class PautaPersistenceService {
           .insert(sources)
 
         if (sourcesError) {
-          console.error('Error inserting sources:', sourcesError)
+          log.error('Error inserting sources:', sourcesError)
           // Continue even with error
         }
       }
 
-      console.log('[savePauta] ✅✅✅ SUCCESS! Pauta saved with ID:', pautaId)
+      log.debug('[savePauta] ✅✅✅ SUCCESS! Pauta saved with ID:', pautaId)
       return { success: true, pautaId }
     } catch (error) {
-      console.error('[savePauta] ❌❌❌ FATAL ERROR saving pauta:', error)
-      console.error('[savePauta] Stack trace:', error instanceof Error ? error.stack : 'No stack')
+      log.error('[savePauta] ❌❌❌ FATAL ERROR saving pauta:', error)
+      log.error('[savePauta] Stack trace:', error instanceof Error ? error.stack : 'No stack')
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -249,7 +252,7 @@ class PautaPersistenceService {
         .order('section_order', { ascending: true })
 
       if (sectionsError) {
-        console.error('Error fetching sections:', sectionsError)
+        log.error('Error fetching sections:', sectionsError)
       }
 
       // Fetch questions
@@ -260,7 +263,7 @@ class PautaPersistenceService {
         .order('category, question_order', { ascending: true })
 
       if (questionsError) {
-        console.error('Error fetching questions:', questionsError)
+        log.error('Error fetching questions:', questionsError)
       }
 
       // Fetch sources
@@ -271,7 +274,7 @@ class PautaPersistenceService {
         .order('id', { ascending: true })
 
       if (sourcesError) {
-        console.error('Error fetching sources:', sourcesError)
+        log.error('Error fetching sources:', sourcesError)
       }
 
       return {
@@ -281,7 +284,7 @@ class PautaPersistenceService {
         sources: (sources || []) as SourceRow[],
       }
     } catch (error) {
-      console.error('Error getting active pauta:', error)
+      log.error('Error getting active pauta:', error)
       return null
     }
   }
@@ -328,7 +331,7 @@ class PautaPersistenceService {
         sources: (sources || []) as SourceRow[],
       }
     } catch (error) {
-      console.error('Error getting pauta by ID:', error)
+      log.error('Error getting pauta by ID:', error)
       return null
     }
   }
@@ -345,13 +348,13 @@ class PautaPersistenceService {
         .order('version', { ascending: false })
 
       if (error) {
-        console.error('Error listing pauta versions:', error)
+        log.error('Error listing pauta versions:', error)
         return []
       }
 
       return (data || []) as PautaVersion[]
     } catch (error) {
-      console.error('Error listing pauta versions:', error)
+      log.error('Error listing pauta versions:', error)
       return []
     }
   }
@@ -368,7 +371,7 @@ class PautaPersistenceService {
         .eq('episode_id', episodeId)
 
       if (deactivateError) {
-        console.error('Error deactivating pautas:', deactivateError)
+        log.error('Error deactivating pautas:', deactivateError)
         return false
       }
 
@@ -379,13 +382,13 @@ class PautaPersistenceService {
         .eq('id', pautaId)
 
       if (activateError) {
-        console.error('Error activating pauta:', activateError)
+        log.error('Error activating pauta:', activateError)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error setting active pauta:', error)
+      log.error('Error setting active pauta:', error)
       return false
     }
   }
@@ -402,13 +405,13 @@ class PautaPersistenceService {
         .eq('id', pautaId)
 
       if (error) {
-        console.error('Error deleting pauta:', error)
+        log.error('Error deleting pauta:', error)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error deleting pauta:', error)
+      log.error('Error deleting pauta:', error)
       return false
     }
   }

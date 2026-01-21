@@ -16,6 +16,10 @@ import { processEditalPDF } from '../services/pdfService';
 import { analyzeEditalStructure, parseFormFieldsFromText } from '../services/grantAIService';
 import type { CreateOpportunityPayload } from '../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Editalsetupwizard');
+
 interface EditalSetupWizardProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,12 +58,12 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
       setError(null);
 
       // 1. Upload e extrair texto
-      console.log('[Wizard] Processando PDF...');
+      log.debug(Processando PDF...');
       const processed = await processEditalPDF(file);
       setPdfData(processed);
 
       // 2. Analisar com IA
-      console.log('[Wizard] Analisando edital...');
+      log.debug(Analisando edital...');
       const analyzed = await analyzeEditalStructure(processed.text);
       setExtractedData(analyzed);
 
@@ -67,7 +71,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
       setCurrentStep('review');
       setIsProcessing(false);
     } catch (err) {
-      console.error('Erro ao processar PDF:', err);
+      log.error('Erro ao processar PDF:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
       setIsProcessing(false);
     }
@@ -90,7 +94,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
       setParsedFields(fields);
       setIsParsing(false);
     } catch (err) {
-      console.error('Erro ao parsear campos:', err);
+      log.error('Erro ao parsear campos:', err);
       setError(err instanceof Error ? err.message : 'Erro ao parsear campos');
       setIsParsing(false);
     }
@@ -119,7 +123,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
       await onSave(payload);
       onClose();
     } catch (err) {
-      console.error('Erro ao salvar edital:', err);
+      log.error('Erro ao salvar edital:', err);
       setError(err instanceof Error ? err.message : 'Erro ao salvar');
       setIsSaving(false);
     }

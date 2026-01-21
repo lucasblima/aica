@@ -19,6 +19,9 @@ import type {
   UpdateBriefingPayload,
   BriefingData
 } from '../types'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GrantService');
 
 // ============================================
 // GRANT OPPORTUNITIES (Editais)
@@ -67,7 +70,7 @@ export async function createOpportunity(
     if (error) throw error
     return data as GrantOpportunity
   } catch (error) {
-    console.error('Erro ao criar oportunidade:', error)
+    log.error('Erro ao criar oportunidade:', error)
     throw new Error(`Falha ao criar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -92,7 +95,7 @@ export async function getOpportunity(id: string): Promise<GrantOpportunity> {
 
     return data as GrantOpportunity
   } catch (error) {
-    console.error('Erro ao buscar oportunidade:', error)
+    log.error('Erro ao buscar oportunidade:', error)
     throw new Error(`Falha ao buscar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -126,7 +129,7 @@ export async function listOpportunities(
     if (error) throw error
     return data as GrantOpportunity[]
   } catch (error) {
-    console.error('Erro ao listar oportunidades:', error)
+    log.error('Erro ao listar oportunidades:', error)
     throw new Error(`Falha ao listar oportunidades: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -157,7 +160,7 @@ export async function updateOpportunity(
     if (error) throw error
     return data as GrantOpportunity
   } catch (error) {
-    console.error('Erro ao atualizar oportunidade:', error)
+    log.error('Erro ao atualizar oportunidade:', error)
     throw new Error(`Falha ao atualizar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -177,7 +180,7 @@ export async function deleteOpportunity(id: string): Promise<void> {
 
     if (error) throw error
   } catch (error) {
-    console.error('Erro ao deletar oportunidade:', error)
+    log.error('Erro ao deletar oportunidade:', error)
     throw new Error(`Falha ao deletar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -242,7 +245,7 @@ export async function getUpcomingDeadlines(
 
     return deadlines
   } catch (error) {
-    console.error('Erro ao buscar deadlines:', error)
+    log.error('Erro ao buscar deadlines:', error)
     throw new Error(`Falha ao buscar deadlines: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -280,7 +283,7 @@ export async function createProject(
     if (error) throw error
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao criar projeto:', error)
+    log.error('Erro ao criar projeto:', error)
     throw new Error(`Falha ao criar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -310,7 +313,7 @@ export async function getProject(id: string): Promise<GrantProject> {
 
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao buscar projeto:', error)
+    log.error('Erro ao buscar projeto:', error)
     throw new Error(`Falha ao buscar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -351,7 +354,7 @@ export async function listProjects(
     if (error) throw error
     return data as GrantProject[]
   } catch (error) {
-    console.error('Erro ao listar projetos:', error)
+    log.error('Erro ao listar projetos:', error)
     throw new Error(`Falha ao listar projetos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -386,7 +389,7 @@ export async function updateProjectName(
     if (error) throw error
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao atualizar nome do projeto:', error)
+    log.error('Erro ao atualizar nome do projeto:', error)
     throw new Error(`Falha ao atualizar nome: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -424,7 +427,7 @@ export async function updateProjectStatus(
     if (error) throw error
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao atualizar status do projeto:', error)
+    log.error('Erro ao atualizar status do projeto:', error)
     throw new Error(`Falha ao atualizar status: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -444,7 +447,7 @@ export async function deleteProject(id: string): Promise<void> {
 
     if (error) throw error
   } catch (error) {
-    console.error('Erro ao deletar projeto:', error)
+    log.error('Erro ao deletar projeto:', error)
     throw new Error(`Falha ao deletar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -497,7 +500,7 @@ export async function checkAllResponsesApproved(projectId: string): Promise<{
 
     return { allApproved, totalFields, approvedFields }
   } catch (error) {
-    console.error('Erro ao verificar aprovações:', error)
+    log.error('Erro ao verificar aprovações:', error)
     throw new Error(`Falha ao verificar aprovações: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -550,7 +553,7 @@ export async function calculateCompletion(projectId: string): Promise<number> {
 
     return percentage
   } catch (error) {
-    console.error('Erro ao calcular completude:', error)
+    log.error('Erro ao calcular completude:', error)
     throw new Error(`Falha ao calcular completude: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -613,7 +616,7 @@ export async function saveBriefing(
       return data as GrantBriefing
     }
   } catch (error) {
-    console.error('Erro ao salvar briefing:', error)
+    log.error('Erro ao salvar briefing:', error)
     throw new Error(`Falha ao salvar briefing: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -636,7 +639,7 @@ export async function getBriefing(projectId: string): Promise<GrantBriefing | nu
     if (error) throw error
     return data as GrantBriefing | null
   } catch (error) {
-    console.error('Erro ao buscar briefing:', error)
+    log.error('Erro ao buscar briefing:', error)
     throw new Error(`Falha ao buscar briefing: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -723,7 +726,7 @@ export async function saveResponse(
       return data as GrantResponse
     }
   } catch (error) {
-    console.error('Erro ao salvar resposta:', error)
+    log.error('Erro ao salvar resposta:', error)
     throw new Error(`Falha ao salvar resposta: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -751,7 +754,7 @@ export async function getResponse(
     if (error) throw error
     return data as GrantResponse | null
   } catch (error) {
-    console.error('Erro ao buscar resposta:', error)
+    log.error('Erro ao buscar resposta:', error)
     throw new Error(`Falha ao buscar resposta: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -774,7 +777,7 @@ export async function listResponses(projectId: string): Promise<GrantResponse[]>
     if (error) throw error
     return data as GrantResponse[]
   } catch (error) {
-    console.error('Erro ao listar respostas:', error)
+    log.error('Erro ao listar respostas:', error)
     throw new Error(`Falha ao listar respostas: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -805,7 +808,7 @@ export async function updateResponseStatus(
     if (error) throw error
     return data as GrantResponse
   } catch (error) {
-    console.error('Erro ao atualizar status da resposta:', error)
+    log.error('Erro ao atualizar status da resposta:', error)
     throw new Error(`Falha ao atualizar status: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -825,7 +828,7 @@ export async function deleteResponse(responseId: string): Promise<void> {
 
     if (error) throw error
   } catch (error) {
-    console.error('Erro ao deletar resposta:', error)
+    log.error('Erro ao deletar resposta:', error)
     throw new Error(`Falha ao deletar resposta: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -860,7 +863,7 @@ export async function archiveProject(projectId: string): Promise<GrantProject> {
     if (error) throw error
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao arquivar projeto:', error)
+    log.error('Erro ao arquivar projeto:', error)
     throw new Error(`Falha ao arquivar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -890,7 +893,7 @@ export async function unarchiveProject(projectId: string): Promise<GrantProject>
     if (error) throw error
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao restaurar projeto:', error)
+    log.error('Erro ao restaurar projeto:', error)
     throw new Error(`Falha ao restaurar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -931,7 +934,7 @@ export async function deleteArchivedProject(
         .remove([pdfPathToDelete])
 
       if (storageError) {
-        console.warn('Erro ao deletar PDF (continuando):', storageError)
+        log.warn('Erro ao deletar PDF (continuando):', storageError)
         // Não interrompe a deleção do projeto se o PDF falhar
       }
     }
@@ -944,11 +947,11 @@ export async function deleteArchivedProject(
 
     if (deleteError) throw deleteError
 
-    console.log(`[Grants] Projeto ${projectId} deletado permanentemente`, {
+    log.debug(`[Grants] Projeto ${projectId} deletado permanentemente`, {
       pdfDeleted: !!pdfPathToDelete
     })
   } catch (error) {
-    console.error('Erro ao deletar projeto:', error)
+    log.error('Erro ao deletar projeto:', error)
     throw new Error(`Falha ao deletar projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -975,7 +978,7 @@ export async function archiveOpportunity(opportunityId: string): Promise<GrantOp
     if (error) throw error
     return data as GrantOpportunity
   } catch (error) {
-    console.error('Erro ao arquivar oportunidade:', error)
+    log.error('Erro ao arquivar oportunidade:', error)
     throw new Error(`Falha ao arquivar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1002,7 +1005,7 @@ export async function unarchiveOpportunity(opportunityId: string): Promise<Grant
     if (error) throw error
     return data as GrantOpportunity
   } catch (error) {
-    console.error('Erro ao restaurar oportunidade:', error)
+    log.error('Erro ao restaurar oportunidade:', error)
     throw new Error(`Falha ao restaurar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1037,7 +1040,7 @@ export async function deleteArchivedOpportunity(opportunityId: string): Promise<
         .remove([opportunity.edital_pdf_path])
 
       if (storageError) {
-        console.warn('Erro ao deletar PDF (continuando):', storageError)
+        log.warn('Erro ao deletar PDF (continuando):', storageError)
         // Não interrompe a deleção se o PDF falhar
       }
     }
@@ -1050,11 +1053,11 @@ export async function deleteArchivedOpportunity(opportunityId: string): Promise<
 
     if (deleteError) throw deleteError
 
-    console.log(`[Grants] Oportunidade ${opportunityId} deletada permanentemente`, {
+    log.debug(`[Grants] Oportunidade ${opportunityId} deletada permanentemente`, {
       pdfDeleted: !!opportunity.edital_pdf_path
     })
   } catch (error) {
-    console.error('Erro ao deletar oportunidade:', error)
+    log.error('Erro ao deletar oportunidade:', error)
     throw new Error(`Falha ao deletar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1077,7 +1080,7 @@ export async function countActiveProjects(opportunityId: string): Promise<number
     if (error) throw error
     return count || 0
   } catch (error) {
-    console.error('Erro ao contar projetos:', error)
+    log.error('Erro ao contar projetos:', error)
     throw new Error(`Falha ao contar projetos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1102,7 +1105,7 @@ export async function countAllActiveProjects(): Promise<number> {
     if (error) throw error
     return count || 0
   } catch (error) {
-    console.error('Erro ao contar todos os projetos ativos:', error)
+    log.error('Erro ao contar todos os projetos ativos:', error)
     throw new Error(`Falha ao contar projetos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1133,7 +1136,7 @@ export async function getRecentProjects(limit: number = 5): Promise<GrantProject
     if (error) throw error
     return data as GrantProject[]
   } catch (error) {
-    console.error('Erro ao buscar projetos recentes:', error)
+    log.error('Erro ao buscar projetos recentes:', error)
     throw new Error(`Falha ao buscar projetos recentes: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1178,7 +1181,7 @@ export async function saveSourceDocument(
     if (error) throw error
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao salvar documento fonte:', error)
+    log.error('Erro ao salvar documento fonte:', error)
     throw new Error(`Falha ao salvar documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1211,7 +1214,7 @@ export async function removeSourceDocument(projectId: string): Promise<GrantProj
     if (error) throw error
     return data as GrantProject
   } catch (error) {
-    console.error('Erro ao remover documento fonte:', error)
+    log.error('Erro ao remover documento fonte:', error)
     throw new Error(`Falha ao remover documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
   }
 }
@@ -1253,7 +1256,7 @@ export async function uploadEditalPDF(
 
     if (error) throw error;
 
-    console.log('[GrantService] Edital PDF uploaded:', {
+    log.debug('Edital PDF uploaded:', {
       opportunityId,
       path: processed.path,
       contentLength: processed.content.length
@@ -1261,7 +1264,7 @@ export async function uploadEditalPDF(
 
     return data as GrantOpportunity;
   } catch (error) {
-    console.error('Erro ao fazer upload do PDF do edital:', error);
+    log.error('Erro ao fazer upload do PDF do edital:', error);
     throw new Error(`Falha ao fazer upload do PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
@@ -1293,7 +1296,7 @@ export async function deleteEditalPDF(
         .remove([opportunity.edital_pdf_path]);
 
       if (storageError) {
-        console.error('Error deleting file from storage:', storageError);
+        log.error('Error deleting file from storage:', storageError);
         // Continue even if storage deletion fails
       }
     }
@@ -1312,11 +1315,11 @@ export async function deleteEditalPDF(
 
     if (error) throw error;
 
-    console.log('[GrantService] Edital PDF deleted:', { opportunityId });
+    log.debug('Edital PDF deleted:', { opportunityId });
 
     return data as GrantOpportunity;
   } catch (error) {
-    console.error('Erro ao deletar PDF do edital:', error);
+    log.error('Erro ao deletar PDF do edital:', error);
     throw new Error(`Falha ao deletar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }

@@ -9,6 +9,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { indexDocument } from '../../../services/fileSearchApiClient';
 import type { FileSearchDocument } from '../../../types/fileSearch';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('DocumentService');
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -108,7 +111,7 @@ export async function uploadSourceDocument(
     const timestamp = Date.now();
     const fileName = `${user.id}/${projectId}/${timestamp}_${sanitizedName}`;
 
-    console.log('[Document] Uploading:', fileName, 'to bucket:', bucket);
+    log.debug('Uploading:', { fileName, bucket });
 
     const { data, error } = await supabase.storage
       .from(bucket)
@@ -118,13 +121,13 @@ export async function uploadSourceDocument(
       });
 
     if (error) {
-      console.error('[Document] Upload error:', error);
+      log.error('Upload error:', { error });
       throw new Error(`Falha no upload: ${error.message}`);
     }
 
     return data.path;
   } catch (error) {
-    console.error('[Document] Upload failed:', error);
+    log.error('Upload failed:', { error });
     throw error;
   }
 }
@@ -196,7 +199,7 @@ async function extractTextFromCSV(file: File): Promise<string> {
 
     return output;
   } catch (error) {
-    console.error('[Document] CSV extraction error:', error);
+    log.error('CSV extraction error:', { error });
     throw new Error('Falha ao processar arquivo CSV');
   }
 }
@@ -233,7 +236,7 @@ async function extractTextFromPDF(file: File): Promise<string> {
 
     return fullText.trim();
   } catch (error) {
-    console.error('[Document] PDF extraction error:', error);
+    log.error('PDF extraction error:', { error });
     throw new Error('Falha ao processar PDF');
   }
 }
@@ -247,12 +250,12 @@ async function extractTextFromDocx(file: File): Promise<string> {
     const result = await mammoth.extractRawText({ arrayBuffer });
 
     if (result.messages && result.messages.length > 0) {
-      console.warn('[Document] DOCX extraction warnings:', result.messages);
+      log.warn('DOCX extraction warnings:', { messages: result.messages });
     }
 
     return result.value.trim();
   } catch (error) {
-    console.error('[Document] DOCX extraction error:', error);
+    log.error('DOCX extraction error:', { error });
     throw new Error('Falha ao processar arquivo DOCX');
   }
 }
@@ -261,7 +264,7 @@ async function extractTextFromDocx(file: File): Promise<string> {
  * Extrai texto do documento baseado no tipo
  */
 export async function extractTextFromDocument(file: File, type: DocumentType): Promise<string> {
-  console.log('[Document] Extracting text from:', type);
+  log.debug('Extracting text from:', { type });
 
   switch (type) {
     case 'txt':
@@ -306,17 +309,17 @@ export async function processSourceDocument(
     }
 
     // 2. Fazer upload
-    console.log('[Document] Uploading to storage...');
+    log.debug('Uploading to storage...');
     const path = await uploadSourceDocument(file, projectId, bucket);
 
     // 3. Extrair texto
-    console.log('[Document] Extracting text...');
+    log.debug('Extracting text...');
     const content = await extractTextFromDocument(file, validation.type);
 
     // 4. Obter URL
     const url = await getDocumentUrl(path);
 
-    console.log('[Document] Processing complete:', {
+    log.debug('Processing complete:', {
       path,
       type: validation.type,
       contentLength: content.length
@@ -329,7 +332,7 @@ export async function processSourceDocument(
       url
     };
   } catch (error) {
-    console.error('[Document] Processing failed:', error);
+    log.error('Processing failed:', { error });
     throw error;
   }
 }
@@ -358,7 +361,7 @@ export async function uploadAndIndexEditalPDF(
   indexed: FileSearchDocument;
 }> {
   try {
-    console.log('[Document] Starting upload and indexing for:', file.name);
+    log.debug('Starting upload and indexing for:', { fileName: file.name });
 
     // Validar que é PDF
     if (file.type !== 'application/pdf') {
@@ -366,11 +369,11 @@ export async function uploadAndIndexEditalPDF(
     }
 
     // 1. Upload e processamento padrão (Supabase Storage + extração de texto)
-    console.log('[Document] Step 1: Upload to Supabase Storage...');
+    log.debug('Step 1: Upload to Supabase Storage...');
     const processed = await processSourceDocument(file, projectId);
 
     // 2. Indexação no File Search (Gemini)
-    console.log('[Document] Step 2: Indexing in File Search...');
+    log.debug('Step 2: Indexing in File Search...');
     const indexed = await indexDocument({
       file,
       corpus_id: corpusId,
@@ -386,7 +389,7 @@ export async function uploadAndIndexEditalPDF(
       },
     });
 
-    console.log('[Document] Upload and indexing complete!', {
+    log.debug('Upload and indexing complete!', {
       storagePath: processed.path,
       fileSearchDocId: indexed.id,
     });
@@ -396,7 +399,7 @@ export async function uploadAndIndexEditalPDF(
       indexed,
     };
   } catch (error) {
-    console.error('[Document] Upload and indexing failed:', error);
+    log.error('Upload and indexing failed:', { error });
     throw error;
   }
 }
@@ -411,13 +414,13 @@ export async function deleteSourceDocument(path: string): Promise<void> {
       .remove([path]);
 
     if (error) {
-      console.error('[Document] Delete error:', error);
+      log.error('Delete error:', { error });
       throw error;
     }
 
-    console.log('[Document] Deleted:', path);
+    log.debug('Deleted:', { path });
   } catch (error) {
-    console.error('[Document] Delete failed:', error);
+    log.error('Delete failed:', { error });
     throw error;
   }
 }

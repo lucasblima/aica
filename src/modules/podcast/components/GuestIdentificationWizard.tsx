@@ -27,6 +27,9 @@ import { GuestTypeSelector, GuestManualForm, GuestNameSearchForm, GuestProfileCo
 import { createEpisode, type PodcastEpisode } from '../services/episodeService';
 import { searchGuestProfile } from '../services/guestResearchService';
 import { useXPNotifications } from '@/contexts/XPNotificationContext';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GuestIdentificationWizard');
 
 // Component Props
 export interface GuestIdentificationWizardProps {
@@ -150,7 +153,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
     setIsSaving(true);
 
     try {
-      console.log('[GuestIdentificationWizard] Starting episode creation...');
+      log.debug('[GuestIdentificationWizard] Starting episode creation...');
 
       // Merge final episode data
       const completeData: EpisodeCreationData = {
@@ -173,7 +176,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
         status: 'draft',
       };
 
-      console.log('[GuestIdentificationWizard] Episode data prepared:', completeData);
+      log.debug('[GuestIdentificationWizard] Episode data prepared:', completeData);
 
       // Save episode to Supabase
       const { data: episode, error } = await createEpisode({
@@ -183,17 +186,17 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
       });
 
       if (error || !episode) {
-        console.error('[GuestIdentificationWizard] Error creating episode:', error);
+        log.error('[GuestIdentificationWizard] Error creating episode:', error);
         setSaveError(error?.message || 'Erro ao salvar episódio. Tente novamente.');
         return;
       }
 
-      console.log('[GuestIdentificationWizard] Episode created successfully:', episode.id);
+      log.debug('[GuestIdentificationWizard] Episode created successfully:', episode.id);
 
       // Call parent completion handler with the created episode
       onComplete(episode);
     } catch (error) {
-      console.error('[GuestIdentificationWizard] Unexpected error:', error);
+      log.error('[GuestIdentificationWizard] Unexpected error:', error);
       setSaveError('Erro inesperado ao salvar episódio. Tente novamente.');
     } finally {
       setIsSaving(false);
@@ -235,7 +238,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
 
   // Handler for guest search (Public Figure flow)
   const handleGuestSearch = async (data: { name: string; reference: string }) => {
-    console.log('[GuestIdentificationWizard] Starting guest research...', data);
+    log.debug('[GuestIdentificationWizard] Starting guest research...', data);
 
     // Clear any previous search error
     setSearchError(null);
@@ -245,7 +248,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
       // Call Gemini API to research the guest
       const profile = await searchGuestProfile(data.name, data.reference);
 
-      console.log('[GuestIdentificationWizard] Guest research completed', {
+      log.debug('[GuestIdentificationWizard] Guest research completed', {
         name: profile.name,
         confidence: profile.confidence_score,
         isReliable: profile.is_reliable,
@@ -266,13 +269,13 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
       // Only award if the research was reliable and has good confidence
       if (profile.is_reliable && profile.confidence_score && profile.confidence_score >= 30) {
         showXPGain(50);
-        console.log('[GuestIdentificationWizard] Awarded 50 XP for successful guest research');
+        log.debug('[GuestIdentificationWizard] Awarded 50 XP for successful guest research');
       }
 
       // Advance to Step 2 (Profile Confirmation)
       handleNext();
     } catch (error) {
-      console.error('[GuestIdentificationWizard] Error searching for guest:', error);
+      log.error('[GuestIdentificationWizard] Error searching for guest:', error);
 
       // Show user-friendly error message
       const errorMessage =

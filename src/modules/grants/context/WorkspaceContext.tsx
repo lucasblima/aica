@@ -16,6 +16,10 @@ import type {
 } from '../types/workspace';
 import type { GrantResponse, ProjectDocument, FormField } from '../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Workspacecontext');
+
 // ============================================
 // REDUCER
 // ============================================
@@ -421,7 +425,7 @@ export function WorkspaceProvider({
           dispatch({ type: 'SET_RESPONSE', payload: { fieldId, response } });
         }
       } catch (error) {
-        console.error('Error generating field:', error);
+        log.error('Error generating field:', error);
         dispatch({ type: 'SET_ERROR', payload: 'Erro ao gerar campo' });
       } finally {
         dispatch({ type: 'FINISH_GENERATION' });
@@ -443,7 +447,7 @@ export function WorkspaceProvider({
             dispatch({ type: 'SET_RESPONSE', payload: { fieldId, response } });
           }
         } catch (error) {
-          console.error(`Error generating field ${fieldId}:`, error);
+          log.error(`Error generating field ${fieldId}:`, error);
         }
       }
 
@@ -499,7 +503,7 @@ export function WorkspaceProvider({
           await onSave(state);
           dispatch({ type: 'MARK_SAVED' });
         } catch (error) {
-          console.error('Error saving workspace:', error);
+          log.error('Error saving workspace:', error);
           dispatch({ type: 'SET_ERROR', payload: 'Erro ao salvar' });
         } finally {
           dispatch({ type: 'SET_LOADING', payload: false });

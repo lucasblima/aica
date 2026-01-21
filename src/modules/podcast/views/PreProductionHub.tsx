@@ -27,6 +27,9 @@ import {
 import { supabase } from '@/services/supabaseClient';
 import { GuestApprovalLinkDialog } from '../components/GuestApprovalLinkDialog';
 import type { Dossier, Topic } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PreProductionHub');
 
 // ============================================================================
 // TYPES
@@ -98,7 +101,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
 
       setGuestResearch(researchData);
     } catch (error) {
-      console.error('Error loading episode data:', error);
+      log.error('Error loading episode data:', error);
     } finally {
       setIsLoadingEpisode(false);
     }

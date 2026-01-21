@@ -31,6 +31,10 @@ import { InteractiveSummaryCard } from './InteractiveSummaryCard';
 import { PdfPreviewModal } from './PdfPreviewModal';
 import { uploadEditalPDF, deleteEditalPDF, updateProjectName } from '../services/grantService';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Editaldetailview');
+
 interface EditalDetailViewProps {
   opportunity: GrantOpportunity;
   projects: GrantProject[];
@@ -78,7 +82,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
       const updatedOpportunity = await uploadEditalPDF(opportunity.id, file);
       onUpdateOpportunity(updatedOpportunity);
     } catch (error) {
-      console.error('Error uploading edital PDF:', error);
+      log.error('Error uploading edital PDF:', error);
       throw error;
     }
   };
@@ -91,7 +95,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
       const updatedOpportunity = await deleteEditalPDF(opportunity.id);
       onUpdateOpportunity(updatedOpportunity);
     } catch (error) {
-      console.error('Error deleting edital PDF:', error);
+      log.error('Error deleting edital PDF:', error);
       throw error;
     }
   };
@@ -248,7 +252,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
       setEditingProjectId(null);
       setEditingProjectName('');
     } catch (error) {
-      console.error('Error updating project name:', error);
+      log.error('Error updating project name:', error);
       alert('Erro ao atualizar nome do projeto. Tente novamente.');
     }
   };

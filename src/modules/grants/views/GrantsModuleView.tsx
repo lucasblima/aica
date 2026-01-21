@@ -38,6 +38,10 @@ import {
   checkAllResponsesApproved
 } from '../services/grantService';
 import { generateFieldContent } from '../services/grantAIService';
+
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Grantsmoduleview');
 import type {
   GrantProject,
   GrantOpportunity,
@@ -107,7 +111,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
             const count = await countActiveProjects(opp.id);
             return { ...opp, projectCount: count };
           } catch (error) {
-            console.error(`Error counting projects for ${opp.id}:`, error);
+            log.error(`Error counting projects for ${opp.id}:`, error);
             return { ...opp, projectCount: 0 };
           }
         })
@@ -115,7 +119,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
 
       setOpportunities(dataWithCounts);
     } catch (error) {
-      console.error('Error loading opportunities:', error);
+      log.error('Error loading opportunities:', error);
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +134,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       const data = await listProjects({ opportunity_id: opportunityId });
       setProjects(data);
     } catch (error) {
-      console.error('Error loading projects:', error);
+      log.error('Error loading projects:', error);
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +164,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
 
       setIsLoading(false);
     } catch (error) {
-      console.error('Error loading project details:', error);
+      log.error('Error loading project details:', error);
       setIsLoading(false);
     }
   };
@@ -188,7 +192,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       // Refresh opportunities list
       await loadOpportunitiesData();
     } catch (error) {
-      console.error('Error creating opportunity:', error);
+      log.error('Error creating opportunity:', error);
       throw error;
     }
   };
@@ -203,7 +207,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       await saveBriefing(selectedProject.id, { briefing_data: briefing });
       setCurrentBriefing(briefing);
     } catch (error) {
-      console.error('Error saving briefing:', error);
+      log.error('Error saving briefing:', error);
       throw error;
     }
   };
@@ -268,7 +272,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       setIsTransferring(false);
       setCurrentView('generation');
     } catch (error) {
-      console.error('Error transferring briefing to generation:', error);
+      log.error('Error transferring briefing to generation:', error);
       setIsTransferring(false);
       alert('Erro ao transferir campos do briefing. Tente novamente.');
     }
@@ -310,7 +314,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
 
       return content;
     } catch (error) {
-      console.error('Error generating field:', error);
+      log.error('Error generating field:', error);
       throw error;
     }
   };
@@ -338,7 +342,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         [fieldId]: response
       }));
     } catch (error) {
-      console.error('Error saving response:', error);
+      log.error('Error saving response:', error);
       throw error;
     }
   };
@@ -376,7 +380,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         await loadProjectsForOpportunity(selectedOpportunity.id); // Refresh list
       }
     } catch (error) {
-      console.error('Error archiving project:', error);
+      log.error('Error archiving project:', error);
       alert('Erro ao arquivar projeto');
     }
   };
@@ -391,7 +395,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         await loadProjectsForOpportunity(selectedOpportunity.id); // Refresh list
       }
     } catch (error) {
-      console.error('Error unarchiving project:', error);
+      log.error('Error unarchiving project:', error);
       alert('Erro ao restaurar projeto');
     }
   };
@@ -412,7 +416,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
         await loadProjectsForOpportunity(selectedOpportunity.id); // Refresh list
       }
     } catch (error) {
-      console.error('Error deleting project:', error);
+      log.error('Error deleting project:', error);
       alert(error instanceof Error ? error.message : 'Erro ao deletar projeto');
     }
   };
@@ -436,7 +440,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       // Refresh the opportunities list in background
       loadOpportunitiesData();
     } catch (error) {
-      console.error('Error updating form fields:', error);
+      log.error('Error updating form fields:', error);
       throw error;
     }
   };
@@ -512,7 +516,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       }
 
     } catch (error) {
-      console.error('Error updating project status to submitted:', error);
+      log.error('Error updating project status to submitted:', error);
     }
   };
 
@@ -544,7 +548,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       await loadProjectsForOpportunity(selectedOpportunity.id);
       handleSelectProjectFromEdital(newProject);
     } catch (error) {
-      console.error('Error creating project:', error);
+      log.error('Error creating project:', error);
       alert('Erro ao criar projeto. Tente novamente.');
     }
   };
@@ -568,7 +572,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       await archiveOpportunity(opportunityId);
       await loadOpportunitiesData(); // Refresh list
     } catch (error) {
-      console.error('Error archiving opportunity:', error);
+      log.error('Error archiving opportunity:', error);
       alert('Erro ao arquivar edital');
     }
   };
@@ -581,7 +585,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       await unarchiveOpportunity(opportunityId);
       await loadOpportunitiesData(); // Refresh list
     } catch (error) {
-      console.error('Error unarchiving opportunity:', error);
+      log.error('Error unarchiving opportunity:', error);
       alert('Erro ao restaurar edital');
     }
   };
@@ -600,7 +604,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       await deleteArchivedOpportunity(opportunityId);
       await loadOpportunitiesData(); // Refresh list
     } catch (error) {
-      console.error('Error deleting opportunity:', error);
+      log.error('Error deleting opportunity:', error);
       alert(error instanceof Error ? error.message : 'Erro ao deletar edital');
     }
   };

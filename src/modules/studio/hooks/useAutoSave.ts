@@ -6,6 +6,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import type { PodcastWorkspaceState } from '@/modules/studio/types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useAutoSave');
 
 interface UseAutoSaveOptions {
   state: PodcastWorkspaceState;
@@ -55,7 +58,7 @@ function sanitizePayload(data: Record<string, any>): Record<string, any> {
 
   // Log de debug mostrando quais campos foram convertidos
   if (convertedFields.length > 0) {
-    console.log('[sanitizePayload] Fields converted from "" to null:', convertedFields);
+    log.debug('[sanitizePayload] Fields converted from "" to null:', convertedFields);
   }
 
   return sanitized;
@@ -75,7 +78,7 @@ export function useAutoSave({
 
   const saveToDatabase = useCallback(async (currentState: PodcastWorkspaceState) => {
     if (isSavingRef.current) {
-      console.log('[useAutoSave] Save already in progress, skipping');
+      log.debug('[useAutoSave] Save already in progress, skipping');
       return;
     }
 
@@ -83,7 +86,7 @@ export function useAutoSave({
     onSaveStart?.();
 
     try {
-      console.log('[useAutoSave] Saving workspace state for episode:', currentState.episodeId);
+      log.debug('[useAutoSave] Saving workspace state for episode:', currentState.episodeId);
 
       // Save episode data (setup + production ONLY)
       // Note: Research data (biography, technical_sheet, etc.) belongs in podcast_guest_research table
@@ -107,11 +110,11 @@ export function useAutoSave({
         updated_at: new Date().toISOString(),
       };
 
-      console.log('[useAutoSave] Updating episode with data (before sanitization):', episodeUpdate);
+      log.debug('[useAutoSave] Updating episode with data (before sanitization):', episodeUpdate);
 
       // Sanitize payload to convert empty strings to null for TIME/DATE/INTEGER fields
       const sanitizedUpdate = sanitizePayload(episodeUpdate);
-      console.log('[useAutoSave] Sanitized payload:', sanitizedUpdate);
+      log.debug('[useAutoSave] Sanitized payload:', sanitizedUpdate);
 
       const { error: episodeError } = await supabase
         .from('podcast_episodes')
@@ -119,11 +122,11 @@ export function useAutoSave({
         .eq('id', currentState.episodeId);
 
       if (episodeError) {
-        console.error('[useAutoSave] Episode update failed:', episodeError);
+        log.error('[useAutoSave] Episode update failed:', episodeError);
         throw episodeError;
       }
 
-      console.log('[useAutoSave] Episode update successful');
+      log.debug('[useAutoSave] Episode update successful');
 
       // Save topics (if changed)
       const topicsChanged =
@@ -133,7 +136,7 @@ export function useAutoSave({
         );
 
       if (topicsChanged) {
-        console.log('[useAutoSave] Topics changed, updating...');
+        log.debug('[useAutoSave] Topics changed, updating...');
 
         // Delete all existing topics for this episode (simpler than selective update)
         const { error: deleteError } = await supabase
@@ -142,7 +145,7 @@ export function useAutoSave({
           .eq('episode_id', currentState.episodeId);
 
         if (deleteError) {
-          console.error('[useAutoSave] Topics delete failed:', deleteError);
+          log.error('[useAutoSave] Topics delete failed:', deleteError);
           throw deleteError;
         }
 
@@ -172,22 +175,22 @@ export function useAutoSave({
             }
             // ID inválido (ex: "topic_1766361842098"), remover e deixar DB gerar UUID
             const { id, ...rest } = topic;
-            console.log(`[useAutoSave] Removing non-UUID topic ID: "${id}" - database will generate UUID`);
+            log.debug(`[useAutoSave] Removing non-UUID topic ID: "${id}" - database will generate UUID`);
             return rest;
           });
 
-          console.log('[useAutoSave] Inserting topics:', cleanedTopics);
+          log.debug('[useAutoSave] Inserting topics:', cleanedTopics);
 
           const { error: insertError } = await supabase
             .from('podcast_topics')
             .insert(cleanedTopics);
 
           if (insertError) {
-            console.error('[useAutoSave] Topics insert failed:', insertError);
+            log.error('[useAutoSave] Topics insert failed:', insertError);
             throw insertError;
           }
 
-          console.log('[useAutoSave] Topics insert successful');
+          log.debug('[useAutoSave] Topics insert successful');
         }
       }
 
@@ -199,7 +202,7 @@ export function useAutoSave({
         );
 
       if (categoriesChanged) {
-        console.log('[useAutoSave] Categories changed, updating...');
+        log.debug('[useAutoSave] Categories changed, updating...');
 
         // Delete existing categories
         const { error: deleteCatError } = await supabase
@@ -208,7 +211,7 @@ export function useAutoSave({
           .eq('episode_id', currentState.episodeId);
 
         if (deleteCatError) {
-          console.error('[useAutoSave] Categories delete failed:', deleteCatError);
+          log.error('[useAutoSave] Categories delete failed:', deleteCatError);
           throw deleteCatError;
         }
 
@@ -237,32 +240,32 @@ export function useAutoSave({
             }
             // ID inválido (ex: "quebra-gelo"), remover e deixar DB gerar UUID
             const { id, ...rest } = cat;
-            console.log(`[useAutoSave] Removing non-UUID category ID: "${id}" - database will generate UUID`);
+            log.debug(`[useAutoSave] Removing non-UUID category ID: "${id}" - database will generate UUID`);
             return rest;
           });
 
-          console.log('[useAutoSave] Inserting categories:', cleanedCategories);
+          log.debug('[useAutoSave] Inserting categories:', cleanedCategories);
 
           const { error: insertCatError } = await supabase
             .from('podcast_topic_categories')
             .insert(cleanedCategories);
 
           if (insertCatError) {
-            console.error('[useAutoSave] Categories insert failed:', insertCatError);
+            log.error('[useAutoSave] Categories insert failed:', insertCatError);
             throw insertCatError;
           }
 
-          console.log('[useAutoSave] Categories insert successful');
+          log.debug('[useAutoSave] Categories insert successful');
         }
       }
 
-      console.log('[useAutoSave] Save successful');
+      log.debug('[useAutoSave] Save successful');
       previousStateRef.current = currentState;
       onSaveSuccess?.();
 
     } catch (error: any) {
-      console.error('[useAutoSave] Save failed:', error);
-      console.error('[useAutoSave] Error details:', {
+      log.error('[useAutoSave] Save failed:', error);
+      log.error('[useAutoSave] Error details:', {
         message: error?.message,
         code: error?.code,
         details: error?.details,

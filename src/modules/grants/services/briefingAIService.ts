@@ -7,6 +7,9 @@
 import type { BriefingData, FormField } from '../types'
 import * as EdgeFunctionService from '../../../services/edgeFunctionService'
 import { trackAIUsage } from '../../../services/aiUsageTrackingService'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('BriefingAIService');
 
 /**
  * Contexto para geração de briefing
@@ -45,18 +48,18 @@ export async function generateAutoBriefing(context: BriefingGenerationContext): 
       formFields: context.formFields,
     })
 
-    console.log('[BriefingAI] Briefing gerado com sucesso:', {
+    log.debug('Briefing gerado com sucesso:', {
       fields: Object.keys(result.briefing).length,
       totalChars: JSON.stringify(result.briefing).length
     })
 
     // Log detalhado de cada campo para debug
-    console.log('[BriefingAI] Campos extraídos:')
+    log.debug('Campos extraídos:')
     Object.entries(result.briefing).forEach(([key, value]) => {
       const preview = typeof value === 'string'
         ? value.substring(0, 100) + (value.length > 100 ? '...' : '')
         : `[TIPO INVÁLIDO: ${typeof value}]`
-      console.log(`  - ${key}: ${preview}`)
+      log.debug(`  - ${key}: ${preview}`)
     })
 
     // ========================================
@@ -79,14 +82,14 @@ export async function generateAutoBriefing(context: BriefingGenerationContext): 
           fields_extracted: Object.keys(result.briefing).length
         }
       }).catch(error => {
-        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+        log.warn('Grants AI Tracking - Non-blocking error:', { error })
       })
     }
     // ========================================
 
     return result.briefing
   } catch (error) {
-    console.error('[BriefingAI] Erro ao gerar briefing automático:', error)
+    log.error('Erro ao gerar briefing automático:', { error })
     throw new Error('Falha ao gerar briefing. Tente preencher manualmente.')
   }
 }
@@ -127,14 +130,14 @@ export async function improveBriefingField(
           improved_length: result.improvedText.length
         }
       }).catch(error => {
-        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+        log.warn('Grants AI Tracking - Non-blocking error:', { error })
       })
     }
     // ========================================
 
     return result.improvedText
   } catch (error) {
-    console.error('[BriefingAI] Erro ao melhorar campo:', error)
+    log.error('Erro ao melhorar campo:', { error })
     throw new Error('Falha ao melhorar o texto.')
   }
 }
@@ -159,7 +162,7 @@ export async function parseFormFieldsFromText(text: string): Promise<ParsedFormF
   try {
     const result = await EdgeFunctionService.parseFormFields({ text })
 
-    console.log('[BriefingAI] Parsed form fields:', result.fields.length)
+    log.debug('Parsed form fields:', { count: result.fields.length })
 
     // Convert Edge Function format to ParsedFormField format
     return result.fields.map(f => ({
@@ -170,7 +173,7 @@ export async function parseFormFieldsFromText(text: string): Promise<ParsedFormF
       placeholder: f.placeholder,
     }))
   } catch (error) {
-    console.error('[BriefingAI] Erro ao extrair campos do formulário:', error)
+    log.error('Erro ao extrair campos do formulário:', { error })
     throw new Error('Falha ao extrair campos. Tente adicionar manualmente.')
   }
 }
@@ -194,7 +197,7 @@ export async function extractRequiredDocuments(pdfContent: string): Promise<Extr
   try {
     const result = await EdgeFunctionService.extractRequiredDocuments({ pdfContent })
 
-    console.log('[BriefingAI] Extracted required documents:', result.documents.length)
+    log.debug('Extracted required documents:', { count: result.documents.length })
 
     // ========================================
     // TRACKING DE CUSTO - AI Usage Analytics
@@ -214,14 +217,14 @@ export async function extractRequiredDocuments(pdfContent: string): Promise<Extr
           documents_extracted: result.documents.length
         }
       }).catch(error => {
-        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+        log.warn('Grants AI Tracking - Non-blocking error:', { error })
       })
     }
     // ========================================
 
     return result.documents
   } catch (error) {
-    console.error('[BriefingAI] Erro ao extrair documentos do edital:', error)
+    log.error('Erro ao extrair documentos do edital:', { error })
     throw new Error('Falha ao extrair documentos. Adicione manualmente.')
   }
 }
@@ -245,7 +248,7 @@ export async function extractTimelinePhases(pdfContent: string): Promise<Extract
   try {
     const result = await EdgeFunctionService.extractTimelinePhases({ pdfContent })
 
-    console.log('[BriefingAI] Extracted timeline phases:', result.phases.length)
+    log.debug('Extracted timeline phases:', { count: result.phases.length })
 
     // ========================================
     // TRACKING DE CUSTO - AI Usage Analytics
@@ -265,14 +268,14 @@ export async function extractTimelinePhases(pdfContent: string): Promise<Extract
           phases_extracted: result.phases.length
         }
       }).catch(error => {
-        console.warn('[Grants AI Tracking] Non-blocking error:', error)
+        log.warn('Grants AI Tracking - Non-blocking error:', { error })
       })
     }
     // ========================================
 
     return result.phases
   } catch (error) {
-    console.error('[BriefingAI] Erro ao extrair cronograma do edital:', error)
+    log.error('Erro ao extrair cronograma do edital:', { error })
     throw new Error('Falha ao extrair cronograma. Adicione manualmente.')
   }
 }

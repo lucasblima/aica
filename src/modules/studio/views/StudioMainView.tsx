@@ -15,6 +15,9 @@ import { useStudio } from '../context/StudioContext';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabaseClient';
 import type { StudioProject } from '../types/studio';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('StudioMainView');
 
 // Lazy load views for better performance
 const StudioLibrary = React.lazy(() => import('./StudioLibrary'));
@@ -181,7 +184,7 @@ export default function StudioMainView() {
       // Navigate to workspace
       actions.goToWorkspace(project);
     } catch (error) {
-      console.error('[StudioMainView] Error selecting episode:', error);
+      log.error('[StudioMainView] Error selecting episode:', error);
       actions.setError('Erro ao carregar episódio');
     }
   }, [actions, state.currentShowTitle]);
@@ -205,7 +208,7 @@ export default function StudioMainView() {
     case 'WORKSPACE':
       // CRITICAL: Ensure currentProject exists before rendering
       if (!state.currentProject) {
-        console.error('[StudioMainView] In WORKSPACE mode but no currentProject!');
+        log.error('[StudioMainView] In WORKSPACE mode but no currentProject!');
         actions.setError('Projeto não encontrado');
         return null;
       }
@@ -222,7 +225,7 @@ export default function StudioMainView() {
     case 'SHOW_PAGE':
       // CRITICAL: Show page requires showId and showTitle
       if (!state.currentShowId || !state.currentShowTitle) {
-        console.error('[StudioMainView] In SHOW_PAGE mode but no currentShowId/currentShowTitle!');
+        log.error('[StudioMainView] In SHOW_PAGE mode but no currentShowId/currentShowTitle!');
         actions.setError('Podcast não encontrado');
         return null;
       }
@@ -238,7 +241,7 @@ export default function StudioMainView() {
             userEmail={user?.email || ''}
             onLogout={() => {
               // TODO: Implement logout
-              console.log('[StudioMainView] Logout clicked');
+              log.debug('[StudioMainView] Logout clicked');
             }}
           />
         </React.Suspense>
@@ -247,7 +250,7 @@ export default function StudioMainView() {
     case 'WIZARD':
       // CRITICAL: Wizard requires showId for podcasts
       if (!state.currentShowId) {
-        console.warn('[StudioMainView] In WIZARD mode but no currentShowId');
+        log.warn('[StudioMainView] In WIZARD mode but no currentShowId');
         // For now, allow wizard to handle this case
       }
 
@@ -273,7 +276,7 @@ export default function StudioMainView() {
             userEmail={user?.email}
             onLogout={() => {
               // TODO: Implement logout
-              console.log('[StudioMainView] Logout clicked');
+              log.debug('[StudioMainView] Logout clicked');
             }}
           />
         </React.Suspense>

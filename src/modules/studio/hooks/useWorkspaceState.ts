@@ -8,6 +8,9 @@ import { supabase } from '@/services/supabaseClient';
 import type { PodcastWorkspaceState, WorkspaceLoadResult } from '@/modules/studio/types';
 import { createInitialState } from '@/modules/studio/context/PodcastWorkspaceContext';
 import type { Topic, TopicCategory } from '@/modules/studio/types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useWorkspaceState');
 
 interface UseWorkspaceStateOptions {
   episodeId: string;
@@ -34,7 +37,7 @@ export function useWorkspaceState({
         setIsLoading(true);
         setError(null);
 
-        console.log('[useWorkspaceState] Loading episode:', episodeId);
+        log.debug('[useWorkspaceState] Loading episode:', episodeId);
 
         // Load episode data
         const { data: episode, error: episodeError } = await supabase
@@ -43,9 +46,9 @@ export function useWorkspaceState({
           .eq('id', episodeId)
           .single();
 
-        console.log('[useWorkspaceState] Episode query result:', { episode, episodeError });
-        console.log('[useWorkspaceState] Episode biography:', episode?.biography);
-        console.log('[useWorkspaceState] Episode data:', JSON.stringify(episode, null, 2));
+        log.debug('[useWorkspaceState] Episode query result:', { episode, episodeError });
+        log.debug('[useWorkspaceState] Episode biography:', episode?.biography);
+        log.debug('[useWorkspaceState] Episode data:', JSON.stringify(episode, null, 2));
 
         if (episodeError) throw episodeError;
         if (!episode) throw new Error('Episode not found');
@@ -149,20 +152,20 @@ export function useWorkspaceState({
           visitedStages: determineVisitedStages(episode, topics),
         };
 
-        console.log('[useWorkspaceState] Hydrated state:', {
+        log.debug('[useWorkspaceState] Hydrated state:', {
           currentStage: hydratedState.currentStage,
           visitedStages: hydratedState.visitedStages,
           hasDossier: !!hydratedState.research.dossier,
           hasTopics: hydratedState.pauta.topics.length,
           isLoading: false
         });
-        console.log('[useWorkspaceState] Should transition to:', episode?.biography ? 'research' : 'setup');
+        log.debug('[useWorkspaceState] Should transition to:', episode?.biography ? 'research' : 'setup');
 
         setState(hydratedState);
         onLoad?.(hydratedState);
 
       } catch (err: any) {
-        console.error('[useWorkspaceState] Error loading episode:', err);
+        log.error('[useWorkspaceState] Error loading episode:', err);
         setError(err.message || 'Failed to load episode data');
       } finally {
         setIsLoading(false);

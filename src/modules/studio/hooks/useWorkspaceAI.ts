@@ -20,6 +20,9 @@ import { GeminiClient } from '@/lib/gemini'
 import * as podcastAIService from '../services/podcastAIService'
 import type { Dossier, WorkspaceCustomSource } from '../types'
 import type { GuestSearchResult } from '../services/podcastAIService'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useWorkspaceAI');
 
 // Re-export types for convenience
 export type { Dossier, GuestSearchResult, WorkspaceCustomSource as CustomSource }
@@ -150,7 +153,7 @@ export interface UseWorkspaceAI {
  *
  *   const handleGenerateDossier = async () => {
  *     const dossier = await ai.generateDossier('Elon Musk', 'Inovação')
- *     console.log(dossier)
+ *     log.debug(dossier)
  *   }
  *
  *   const handleDeepResearch = async () => {
@@ -158,7 +161,7 @@ export interface UseWorkspaceAI {
  *       include_sources: true,
  *       max_depth: 3
  *     })
- *     console.log(result)
+ *     log.debug(result)
  *   }
  * }
  * ```
@@ -307,7 +310,7 @@ export function useWorkspaceAI(): UseWorkspaceAI {
       setError(null)
 
       try {
-        console.log('[useWorkspaceAI] Deep research:', { query, options })
+        log.debug('[useWorkspaceAI] Deep research:', { query, options })
 
         // SECURE: Use GeminiClient → Edge Function (API key in backend)
         const response = await geminiClient.call({
@@ -326,7 +329,7 @@ export function useWorkspaceAI(): UseWorkspaceAI {
             ? JSON.parse(response.result)
             : response.result
 
-        console.log('[useWorkspaceAI] Deep research completed:', {
+        log.debug('[useWorkspaceAI] Deep research completed:', {
           success: result.success,
           confidence: result.confidence_score,
           quality: result.quality_score
@@ -336,7 +339,7 @@ export function useWorkspaceAI(): UseWorkspaceAI {
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to perform deep research')
         setError(error)
-        console.error('[useWorkspaceAI] Deep research error:', error)
+        log.error('[useWorkspaceAI] Deep research error:', error)
 
         // Return error result
         return {
