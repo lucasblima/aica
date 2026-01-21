@@ -427,14 +427,76 @@ async function getSessionByInstance(
 }
 
 /**
+ * Get or create contact_id from contact_network table
+ * Required because whatsapp_messages uses contact_id FK
+ */
+async function getOrCreateContactId(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  contactPhone: string,
+  contactName: string | null
+): Promise<string | null> {
+  try {
+    // Normalize phone number (remove + if present, ensure format)
+    const normalizedPhone = contactPhone.startsWith('+') ? contactPhone : `+${contactPhone}`
+
+    // Try to find existing contact by phone
+    const { data: existingContact, error: findError } = await supabase
+      .from('contact_network')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('phone_number', normalizedPhone)
+      .maybeSingle()
+
+    if (findError) {
+      log('ERROR', 'Failed to find contact', findError.message)
+      return null
+    }
+
+    if (existingContact) {
+      return existingContact.id
+    }
+
+    // Create new contact if not found
+    const { data: newContact, error: createError } = await supabase
+      .from('contact_network')
+      .insert({
+        user_id: userId,
+        phone_number: normalizedPhone,
+        name: contactName || `WhatsApp ${contactPhone}`,
+        source: 'whatsapp',
+        // Initialize health score fields
+        health_score: 10,
+        health_score_trend: 'stable',
+      })
+      .select('id')
+      .single()
+
+    if (createError) {
+      log('ERROR', 'Failed to create contact', createError.message)
+      return null
+    }
+
+    log('INFO', 'Created new contact from WhatsApp message', { contactId: newContact.id, phone: normalizedPhone })
+    return newContact.id
+  } catch (error) {
+    log('ERROR', 'getOrCreateContactId failed', (error as Error).message)
+    return null
+  }
+}
+
+/**
  * Store incoming message
+ * Updated to use current whatsapp_messages schema with contact_id FK
+ *
+ * @returns Object with messageId and contactId, or null on failure
  */
 async function storeMessage(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   instanceName: string,
   messageData: MessageData
-): Promise<string | null> {
+): Promise<{ messageId: string; contactId: string } | null> {
   try {
     const messageId = messageData.key.id
     const remoteJid = messageData.key.remoteJid
@@ -442,7 +504,25 @@ async function storeMessage(
     const contactPhone = jidToPhone(remoteJid)
     const messageText = extractMessageText(messageData.message)
     const messageType = getMessageType(messageData.message)
-    const mediaInfo = getMediaInfo(messageData.message)
+
+    // Skip non-text messages for now (schema doesn't support media)
+    if (!messageText) {
+      log('DEBUG', 'Skipping non-text message', { messageId, type: messageType })
+      return null
+    }
+
+    // Get or create contact_id (required FK)
+    const contactId = await getOrCreateContactId(
+      supabase,
+      userId,
+      contactPhone,
+      messageData.pushName || null
+    )
+
+    if (!contactId) {
+      log('ERROR', 'Could not get/create contact for message', { contactPhone })
+      return null
+    }
 
     // Timestamp handling
     let messageTimestamp: Date
@@ -455,31 +535,21 @@ async function storeMessage(
       messageTimestamp = new Date()
     }
 
+    // Insert using current schema: contact_id, message_text, message_direction
     const { data, error } = await supabase
       .from('whatsapp_messages')
       .insert({
         user_id: userId,
-        instance_name: instanceName,
-        message_id: messageId,
-        remote_jid: remoteJid,
-        contact_name: messageData.pushName || null,
-        contact_phone: contactPhone,
-        direction: fromMe ? 'outgoing' : 'incoming',
-        message_type: messageType,
-        content_text: messageText || null,
-        media_url: mediaInfo?.url || null,
-        media_mimetype: mediaInfo?.mimetype || null,
-        media_filename: mediaInfo?.filename || null,
-        media_size_bytes: mediaInfo?.size || null,
-        media_duration_seconds: mediaInfo?.duration || null,
-        processing_status: messageType === 'text' ? 'completed' : 'pending',
+        contact_id: contactId,
+        message_text: messageText,
+        message_direction: fromMe ? 'outgoing' : 'incoming',
         message_timestamp: messageTimestamp.toISOString(),
       })
       .select('id')
       .single()
 
     if (error) {
-      // Check if it's a duplicate
+      // Check if it's a duplicate (unlikely without message_id unique constraint)
       if (error.code === '23505') {
         log('DEBUG', 'Duplicate message, skipping', { messageId })
         return null
@@ -487,8 +557,13 @@ async function storeMessage(
       throw error
     }
 
-    log('INFO', 'Message stored', { id: data.id, messageId, type: messageType })
-    return data.id
+    log('INFO', 'Message stored', {
+      id: data.id,
+      contactId,
+      direction: fromMe ? 'outgoing' : 'incoming',
+      textLength: messageText.length
+    })
+    return { messageId: data.id, contactId }
   } catch (error) {
     log('ERROR', 'Failed to store message', (error as Error).message)
     return null
@@ -795,23 +870,23 @@ async function enqueueForProcessing(
  *
  * Uses debouncing to avoid excessive recalculations when multiple
  * messages arrive in quick succession.
+ *
+ * @param contactId - The contact_network.id to recalculate (already resolved by storeMessage)
  */
 async function triggerHealthScoreRecalculation(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-  contactPhone: string
+  contactId: string
 ): Promise<void> {
   if (!HEALTH_SCORE_REALTIME_ENABLED) {
     return
   }
 
-  const debounceKey = `${userId}_${contactPhone}`
+  const debounceKey = contactId
   const now = Date.now()
   const lastTrigger = healthScoreDebounceMap.get(debounceKey) || 0
 
   // Skip if within debounce window
   if (now - lastTrigger < HEALTH_SCORE_DEBOUNCE_MS) {
-    log('DEBUG', 'Health score recalc debounced', { userId, contactPhone })
+    log('DEBUG', 'Health score recalc debounced', { contactId })
     return
   }
 
@@ -819,20 +894,6 @@ async function triggerHealthScoreRecalculation(
   healthScoreDebounceMap.set(debounceKey, now)
 
   try {
-    // Find contact_id by phone number
-    const { data: contact, error: contactError } = await supabase
-      .from('contact_network')
-      .select('id')
-      .eq('user_id', userId)
-      .or(`phone_number.eq.${contactPhone},whatsapp_phone.eq.${contactPhone}`)
-      .limit(1)
-      .single()
-
-    if (contactError || !contact) {
-      log('DEBUG', 'Contact not found for health score recalc', { userId, contactPhone })
-      return
-    }
-
     // Call calculate-health-scores Edge Function via internal HTTP
     // Using service role to allow batch operations
     const response = await fetch(`${SUPABASE_URL}/functions/v1/calculate-health-scores`, {
@@ -841,7 +902,7 @@ async function triggerHealthScoreRecalculation(
         'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ contactId: contact.id }),
+      body: JSON.stringify({ contactId }),
     })
 
     if (!response.ok) {
@@ -852,7 +913,7 @@ async function triggerHealthScoreRecalculation(
 
     const result = await response.json()
     log('INFO', 'Health score recalculated', {
-      contactId: contact.id,
+      contactId,
       score: result.healthScore,
       trend: result.trend,
     })
@@ -959,19 +1020,20 @@ async function handleMessagesUpsert(
   }
 
   // Store the message
-  const messageDbId = await storeMessage(supabase, userId, instanceName, messageData)
+  const result = await storeMessage(supabase, userId, instanceName, messageData)
 
-  if (messageDbId) {
+  if (result) {
     const messageType = getMessageType(messageData.message)
 
     // Queue for async processing if needed (audio transcription, OCR, etc.)
+    // Note: Currently skipped since schema doesn't support media
     if (messageType !== 'text') {
-      await enqueueForProcessing(supabase, messageDbId, messageType, userId)
+      await enqueueForProcessing(supabase, result.messageId, messageType, userId)
     }
 
     // Trigger health score recalculation (Issue #144)
     // Fire and forget - don't block webhook response
-    triggerHealthScoreRecalculation(supabase, userId, contactPhone).catch(err => {
+    triggerHealthScoreRecalculation(result.contactId).catch(err => {
       log('WARN', 'Health score trigger failed', (err as Error).message)
     })
   }
