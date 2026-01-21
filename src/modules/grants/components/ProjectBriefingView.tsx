@@ -34,6 +34,10 @@ import {
 } from '../services/projectDocumentService';
 import { ContextChip } from './ContextChip';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Projectbriefingview');
+
 /**
  * ProjectBriefingView Component
  * Full-screen view for collecting project context with collapsible sections
@@ -200,9 +204,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       setIsLoadingDocuments(true);
       const docs = await listProjectDocuments(projectId);
       setDocuments(docs);
-      console.log('[ProjectBriefing] Loaded documents:', docs.length);
+      log.debug(Loaded documents:', docs.length);
     } catch (error) {
-      console.error('[ProjectBriefing] Error loading documents:', error);
+      log.error(Error loading documents:', error);
     } finally {
       setIsLoadingDocuments(false);
     }
@@ -221,7 +225,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
         setLastSaved(new Date());
         setSavePending(false);
       } catch (error) {
-        console.error('Error auto-saving briefing:', error);
+        log.error('Error auto-saving briefing:', error);
       } finally {
         setIsSaving(false);
       }
@@ -310,7 +314,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       setGenerationProgress('Briefing extraido com sucesso!');
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
-      console.error('Error generating briefing:', error);
+      log.error('Error generating briefing:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       setGenerationProgress(`Erro: ${errorMessage}`);
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -344,14 +348,14 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       // Add to local state
       setDocuments(prev => [...prev, newDoc]);
 
-      console.log('[ProjectBriefing] Document uploaded:', {
+      log.debug(Document uploaded:', {
         id: newDoc.id,
         file_name: newDoc.file_name,
         type: newDoc.document_type,
         contentLength: newDoc.document_content?.length || 0
       });
     } catch (error) {
-      console.error('[ProjectBriefing] Upload error:', error);
+      log.error(Upload error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       alert(`Erro ao fazer upload do documento: ${errorMessage}`);
     } finally {
@@ -373,9 +377,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
     try {
       await deleteProjectDocument(documentId);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      console.log('[ProjectBriefing] Document removed:', documentId);
+      log.debug(Document removed:', documentId);
     } catch (error) {
-      console.error('[ProjectBriefing] Remove error:', error);
+      log.error(Remove error:', error);
       alert('Erro ao remover documento. Tente novamente.');
     }
   };

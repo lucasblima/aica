@@ -25,6 +25,10 @@ import { StageDependencyHint } from '../shared/StageDependencyHint';
 import { uploadProjectDocument } from '../../services/projectDocumentService';
 import { uploadOpportunityDocument } from '../../services/opportunityDocumentService';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Contextstage');
+
 // ============================================
 // CONSTANTS
 // ============================================
@@ -120,7 +124,7 @@ export const ContextStage: React.FC = () => {
         },
       });
     } catch (error) {
-      console.error('[ContextStage] PDF upload error:', error);
+      log.error(PDF upload error:', error);
       dispatch({
         type: 'UPDATE_PDF',
         payload: {
@@ -152,7 +156,7 @@ export const ContextStage: React.FC = () => {
 
       dispatch({ type: 'RESET_PDF' });
     } catch (error) {
-      console.error('[ContextStage] Delete error:', error);
+      log.error(Delete error:', error);
       alert('Erro ao remover PDF');
     }
   };
@@ -192,7 +196,7 @@ export const ContextStage: React.FC = () => {
       const isSupported = supportedMimes.includes(file.type) ||
         SUPPORTED_PROJECT_DOCS.some(doc => file.name.toLowerCase().endsWith(doc.ext));
       if (!isSupported) {
-        console.warn(`File ${file.name} is not supported`);
+        log.warn(`File ${file.name} is not supported`);
       }
       return isSupported;
     });
@@ -227,7 +231,7 @@ export const ContextStage: React.FC = () => {
           prev.map(d => d.id === doc.id ? { ...d, status: 'done' } : d)
         );
       } catch (error) {
-        console.error(`[ContextStage] Error uploading ${doc.name}:`, error);
+        log.error(`[ContextStage] Error uploading ${doc.name}:`, error);
         setOpportunityDocs(prev =>
           prev.map(d =>
             d.id === doc.id
@@ -278,7 +282,7 @@ export const ContextStage: React.FC = () => {
       const isSupported = supportedMimes.includes(file.type) ||
         SUPPORTED_PROJECT_DOCS.some(doc => file.name.toLowerCase().endsWith(doc.ext));
       if (!isSupported) {
-        console.warn(`File ${file.name} is not supported`);
+        log.warn(`File ${file.name} is not supported`);
       }
       return isSupported;
     });
@@ -313,7 +317,7 @@ export const ContextStage: React.FC = () => {
           prev.map(d => d.id === doc.id ? { ...d, status: 'done' } : d)
         );
       } catch (error) {
-        console.error(`[ContextStage] Error uploading ${doc.name}:`, error);
+        log.error(`[ContextStage] Error uploading ${doc.name}:`, error);
         setProjectDocs(prev =>
           prev.map(d =>
             d.id === doc.id

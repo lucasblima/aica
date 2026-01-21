@@ -8,6 +8,10 @@
 
 import { supabase } from '@/services/supabaseClient';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Organizationventuresservice');
+
 interface VentureCreationResult {
   success: boolean;
   organization_id?: string;
@@ -27,7 +31,7 @@ export async function createVentureFromOrganization(
   organizationId: string
 ): Promise<{ success: boolean; ventureId?: string; error?: string }> {
   try {
-    console.log('[organizationVenturesService] Creating venture from organization:', organizationId);
+    log.debug(Creating venture from organization:', organizationId);
 
     // Call the RPC function defined in migration 20260114000002
     const { data, error } = await supabase.rpc('create_venture_from_organization', {
@@ -35,7 +39,7 @@ export async function createVentureFromOrganization(
     });
 
     if (error) {
-      console.error('[organizationVenturesService] RPC error:', error);
+      log.error(RPC error:', error);
       return {
         success: false,
         error: error.message,
@@ -46,14 +50,14 @@ export async function createVentureFromOrganization(
     const result = data as VentureCreationResult;
 
     if (!result.success) {
-      console.warn('[organizationVenturesService] Venture creation failed:', result.error);
+      log.warn(Venture creation failed:', result.error);
       return {
         success: false,
         error: result.error || 'Unknown error creating venture',
       };
     }
 
-    console.log('[organizationVenturesService] Venture created successfully:', {
+    log.debug(Venture created successfully:', {
       organizationId: result.organization_id,
       connectionSpaceId: result.connection_space_id,
       venturesEntityId: result.ventures_entity_id,
@@ -64,7 +68,7 @@ export async function createVentureFromOrganization(
       ventureId: result.ventures_entity_id,
     };
   } catch (error) {
-    console.error('[organizationVenturesService] Error creating venture:', error);
+    log.error(Error creating venture:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -80,14 +84,14 @@ export async function syncOrganizationToVenture(
   organizationId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log('[organizationVenturesService] Syncing organization to venture:', organizationId);
+    log.debug(Syncing organization to venture:', organizationId);
 
     const { data, error } = await supabase.rpc('sync_organization_to_venture', {
       p_organization_id: organizationId,
     });
 
     if (error) {
-      console.error('[organizationVenturesService] Sync RPC error:', error);
+      log.error(Sync RPC error:', error);
       return {
         success: false,
         error: error.message,
@@ -103,10 +107,10 @@ export async function syncOrganizationToVenture(
       };
     }
 
-    console.log('[organizationVenturesService] Venture synced successfully');
+    log.debug(Venture synced successfully');
     return { success: true };
   } catch (error) {
-    console.error('[organizationVenturesService] Error syncing venture:', error);
+    log.error(Error syncing venture:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

@@ -9,6 +9,10 @@
 import { supabase } from '@/services/supabaseClient';
 import type { Organization } from '../types/organizations';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Organizationdocumentservice');
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -166,7 +170,7 @@ export async function uploadOrganizationDocument(
 
   if (uploadError) {
     // Provide more specific error messages based on error type
-    console.error('[organizationDocumentService] Upload error:', uploadError);
+    log.error(Upload error:', uploadError);
 
     if (uploadError.message?.includes('Bucket not found') ||
         uploadError.message?.includes('bucket') ||
@@ -365,12 +369,12 @@ export async function processOrganizationDocument(
   });
 
   if (error) {
-    console.error('[organizationDocumentService] Edge function error:', error);
+    log.error(Edge function error:', error);
     throw new Error(`Erro ao processar documento: ${error.message}`);
   }
 
   if (!data.success) {
-    console.error('[organizationDocumentService] Processing failed:', data.error);
+    log.error(Processing failed:', data.error);
     throw new Error(data.error || 'Erro desconhecido ao processar documento');
   }
 
@@ -392,7 +396,7 @@ export async function processOrganizationDocument(
     message: 'Documento processado com sucesso!',
   });
 
-  console.log('[organizationDocumentService] Processing completed:', {
+  log.debug(Processing completed:', {
     detectedType: data.detected_type,
     fieldsExtracted: Object.keys(fields).length,
     processingTimeMs: data.processing_time_ms,

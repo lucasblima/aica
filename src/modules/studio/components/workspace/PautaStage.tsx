@@ -60,6 +60,9 @@ import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceCo
 import { useAutoSave } from '@/modules/studio/hooks/useAutoSave';
 import { useSavedPauta } from '@/modules/studio/hooks/useSavedPauta';
 import type { Topic, TopicCategory } from '@/modules/studio/types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PautaStage');
 
 // ============================================
 // CATEGORY COLORS & ICONS
@@ -402,7 +405,7 @@ export default function PautaStage() {
 
             {/* AI Generator Button - TODO: Integrate PautaGeneratorPanel */}
             <button
-              onClick={() => console.log('TODO: Integrate PautaGeneratorPanel')}
+              onClick={() => log.debug('TODO: Integrate PautaGeneratorPanel')}
               className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-bold flex items-center gap-2 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
               title="Gerar Pauta com IA (estilo NotebookLM)"
               aria-label={pauta.topics.length > 0 ? 'Regenerar pauta com IA' : 'Gerar pauta com IA'}
@@ -506,7 +509,7 @@ export default function PautaStage() {
                 Comece adicionando tópicos manualmente ou use IA para gerar uma pauta completa
               </p>
               <button
-                onClick={() => console.log('TODO: Show PautaGeneratorPanel')}
+                onClick={() => log.debug('TODO: Show PautaGeneratorPanel')}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 aria-label="Gerar pauta com inteligência artificial"
               >

@@ -17,6 +17,10 @@ import { EditalSearchBar, QuickSearchExamples } from './EditalSearchBar';
 import { useGrantsFileSearch } from '../hooks/useGrantsFileSearch';
 import type { FileSearchResult } from '../../../types/fileSearch';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Editaldocumentsection');
+
 interface EditalDocumentSectionProps {
   opportunityId: string;
   opportunityTitle: string;
@@ -80,7 +84,7 @@ export function EditalDocumentSection({
         fileInputRef.current.value = '';
       }
     } catch (error) {
-      console.error('Error uploading edital PDF:', error);
+      log.error('Error uploading edital PDF:', error);
       alert('Erro ao fazer upload do PDF. Tente novamente.');
     } finally {
       setIsUploading(false);
@@ -102,7 +106,7 @@ export function EditalDocumentSection({
       setIsDeleting(true);
       await onDelete();
     } catch (error) {
-      console.error('Error deleting edital PDF:', error);
+      log.error('Error deleting edital PDF:', error);
       alert('Erro ao deletar o PDF. Tente novamente.');
     } finally {
       setIsDeleting(false);
@@ -118,7 +122,7 @@ export function EditalDocumentSection({
       setSearchResults(results);
       return results;
     } catch (error) {
-      console.error('[EditalDocumentSection] Search error:', error);
+      log.error(Search error:', error);
       throw error;
     }
   };

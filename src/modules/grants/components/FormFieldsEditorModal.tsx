@@ -4,6 +4,10 @@ import { X, Save, Plus, Trash2, AlertCircle, GripVertical, Wand2, ChevronDown, C
 import type { FormField } from '../types';
 import { parseFormFieldsFromText } from '../services/grantAIService';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Formfieldseditormodal');
+
 interface FormFieldsEditorModalProps {
   isOpen: boolean;
   opportunityTitle: string;
@@ -146,7 +150,7 @@ export const FormFieldsEditorModal: React.FC<FormFieldsEditorModalProps> = ({
 
       alert(`${extractedFields.length} campos extraídos com sucesso!`);
     } catch (error) {
-      console.error('Error processing with AI:', error);
+      log.error('Error processing with AI:', error);
       alert('Erro ao processar texto com IA. Tente novamente ou cole em formato diferente.');
     } finally {
       setIsProcessing(false);
@@ -183,7 +187,7 @@ export const FormFieldsEditorModal: React.FC<FormFieldsEditorModalProps> = ({
       await onSave(cleanFields);
       onClose();
     } catch (error) {
-      console.error('Error saving fields:', error);
+      log.error('Error saving fields:', error);
       alert('Erro ao salvar campos. Tente novamente.');
     } finally {
       setIsSaving(false);

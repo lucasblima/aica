@@ -18,6 +18,10 @@ import { GrantTaskGenerator } from './grantTaskGenerator';
 import type { GrantTask, TaskPriority, TaskStatus } from './grantTaskGenerator';
 import type { GrantProject, GrantOpportunity } from '../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Granttasksync');
+
 /**
  * Mapeia prioridade Grant → Atlas
  * Grant: low/medium/high/critical
@@ -90,7 +94,7 @@ async function getOrCreateCaptacaoLifeArea(userId: string): Promise<string> {
     .single();
 
   if (createError) {
-    console.error('[grantTaskSync] Error creating Captação life area:', createError);
+    log.error(Error creating Captação life area:', createError);
     throw createError;
   }
 
@@ -209,10 +213,10 @@ export async function syncGrantTasksToAtlas(
       }
     }
 
-    console.log('[grantTaskSync] Sync completed:', result);
+    log.debug(Sync completed:', result);
     return result;
   } catch (error) {
-    console.error('[grantTaskSync] Error syncing tasks:', error);
+    log.error(Error syncing tasks:', error);
     result.errors.push(`Erro geral: ${error}`);
     return result;
   }
@@ -303,7 +307,7 @@ export async function syncAtlasTaskToGrant(
 
     return { updated: false };
   } catch (error) {
-    console.error('[grantTaskSync] Error syncing Atlas task to Grant:', error);
+    log.error(Error syncing Atlas task to Grant:', error);
     return { updated: false, error: String(error) };
   }
 }
@@ -329,7 +333,7 @@ export async function deleteGrantTasksFromAtlas(
 
     return { deleted: data?.length || 0 };
   } catch (error) {
-    console.error('[grantTaskSync] Error deleting tasks:', error);
+    log.error(Error deleting tasks:', error);
     return { deleted: 0, error: String(error) };
   }
 }

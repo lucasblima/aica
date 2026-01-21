@@ -10,6 +10,10 @@
  */
 
 import { supabase } from '../../../services/supabaseClient';
+
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Organizationservice');
 import type {
   Organization,
   OrganizationRelationship,
@@ -38,7 +42,7 @@ export async function getOrganizations(): Promise<Organization[]> {
     .order('name');
 
   if (error) {
-    console.error('[getOrganizations] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -61,7 +65,7 @@ export async function getOrganizationById(id: string): Promise<Organization | nu
 
   if (error) {
     if (error.code === 'PGRST116') return null; // Not found
-    console.error('[getOrganizationById] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -96,7 +100,7 @@ export async function createOrganization(
     .single();
 
   if (error) {
-    console.error('[createOrganization] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -123,7 +127,7 @@ export async function updateOrganization(
     .single();
 
   if (error) {
-    console.error('[updateOrganization] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -143,7 +147,7 @@ export async function deleteOrganization(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) {
-    console.error('[deleteOrganization] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 }
@@ -177,7 +181,7 @@ export async function getOrganizationRelationships(
     .eq('is_active', true);
 
   if (error) {
-    console.error('[getOrganizationRelationships] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -201,7 +205,7 @@ export async function createRelationship(
     .single();
 
   if (error) {
-    console.error('[createRelationship] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -228,7 +232,7 @@ export async function updateRelationship(
     .single();
 
   if (error) {
-    console.error('[updateRelationship] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -248,7 +252,7 @@ export async function deleteRelationship(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) {
-    console.error('[deleteRelationship] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 }
@@ -279,7 +283,7 @@ export async function getOrganizationMembers(
     .eq('is_active', true);
 
   if (error) {
-    console.error('[getOrganizationMembers] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -303,7 +307,7 @@ export async function addOrganizationMember(
     .single();
 
   if (error) {
-    console.error('[addOrganizationMember] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -330,7 +334,7 @@ export async function updateOrganizationMember(
     .single();
 
   if (error) {
-    console.error('[updateOrganizationMember] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -350,7 +354,7 @@ export async function removeOrganizationMember(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) {
-    console.error('[removeOrganizationMember] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 }
@@ -398,7 +402,7 @@ export async function searchOrganizations(
   const { data, error } = await queryBuilder.order('name');
 
   if (error) {
-    console.error('[searchOrganizations] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -421,7 +425,7 @@ export async function getOrganizationsByArea(area: string): Promise<Organization
     .order('name');
 
   if (error) {
-    console.error('[getOrganizationsByArea] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -444,7 +448,7 @@ export async function getOrganizationsByType(type: string): Promise<Organization
     .order('name');
 
   if (error) {
-    console.error('[getOrganizationsByType] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -464,7 +468,7 @@ export async function countOrganizations(): Promise<number> {
     .eq('is_active', true);
 
   if (error) {
-    console.error('[countOrganizations] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 
@@ -496,7 +500,7 @@ export async function checkDuplicateDocument(
   const { data, error } = await queryBuilder.limit(1);
 
   if (error) {
-    console.error('[checkDuplicateDocument] Erro:', error);
+    log.error(Erro:', error);
     throw error;
   }
 

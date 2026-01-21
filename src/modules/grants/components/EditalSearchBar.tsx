@@ -10,6 +10,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Loader2, FileSearch, AlertCircle, X, Sparkles } from 'lucide-react';
 import type { FileSearchResult } from '../../../types/fileSearch';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Editalsearchbar');
+
 export interface EditalSearchBarProps {
   /** Callback quando busca é realizada */
   onSearch: (query: string) => Promise<FileSearchResult[]>;
@@ -51,7 +55,7 @@ export const EditalSearchBar: React.FC<EditalSearchBarProps> = ({
       setShowResults(true);
       await onSearch(query.trim());
     } catch (err) {
-      console.error('[EditalSearchBar] Search error:', err);
+      log.error(Search error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar');
     }
   };

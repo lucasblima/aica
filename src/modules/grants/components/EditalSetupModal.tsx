@@ -9,6 +9,10 @@ import type {
 } from '../types';
 import { FUNDING_AGENCIES, ELIGIBLE_THEMES } from '../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Editalsetupmodal');
+
 /**
  * EditalSetupModal Component
  * Modal for creating or editing grant opportunities (editais)
@@ -215,7 +219,7 @@ export const EditalSetupModal: React.FC<EditalSetupModalProps> = ({
       await onSave(payload);
       onClose();
     } catch (error) {
-      console.error('Error saving opportunity:', error);
+      log.error('Error saving opportunity:', error);
       alert('Erro ao salvar edital');
     } finally {
       setIsSubmitting(false);

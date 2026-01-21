@@ -5,6 +5,10 @@
 import { supabase } from '../../../services/supabaseClient';
 import * as pdfjsLib from 'pdfjs-dist';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Pdfservice');
+
 // Configure o worker do PDF.js usando jsDelivr CDN
 // NOTA: CloudFlare CDN (cdnjs) só tem versões até 4.x 
 // jsDelivr suporta todas as versões do pdfjs-dist incluindo 5.x
@@ -38,8 +42,8 @@ export async function uploadEditalPDF(file: File): Promise<string> {
     const timestamp = Date.now();
     const fileName = `${user.id}/${timestamp}_${sanitizedName}`;
 
-    console.log('[PDF] Nome original:', file.name);
-    console.log('[PDF] Nome sanitizado:', fileName);
+    log.debug(Nome original:', file.name);
+    log.debug(Nome sanitizado:', fileName);
 
     // Upload para o bucket 'editais'
     const { data, error } = await supabase.storage
@@ -50,14 +54,14 @@ export async function uploadEditalPDF(file: File): Promise<string> {
       });
 
     if (error) {
-      console.error('Erro no upload:', error);
+      log.error('Erro no upload:', error);
       throw new Error(`Falha no upload: ${error.message}`);
     }
 
     // Retornar o path do arquivo
     return data.path;
   } catch (error) {
-    console.error('Erro em uploadEditalPDF:', error);
+    log.error('Erro em uploadEditalPDF:', error);
     throw error;
   }
 }
@@ -73,7 +77,7 @@ export async function getEditalPDFUrl(path: string): Promise<string> {
 
     return data.publicUrl;
   } catch (error) {
-    console.error('Erro em getEditalPDFUrl:', error);
+    log.error('Erro em getEditalPDFUrl:', error);
     throw error;
   }
 }
@@ -107,7 +111,7 @@ export async function extractTextFromPDF(file: File): Promise<string> {
 
     return fullText.trim();
   } catch (error) {
-    console.error('Erro ao extrair texto do PDF:', error);
+    log.error('Erro ao extrair texto do PDF:', error);
     throw new Error('Falha ao processar o PDF. Verifique se o arquivo está correto.');
   }
 }
@@ -122,17 +126,17 @@ export async function processEditalPDF(file: File): Promise<{
 }> {
   try {
     // 1. Fazer upload
-    console.log('[PDF] Fazendo upload do arquivo...');
+    log.debug(Fazendo upload do arquivo...');
     const path = await uploadEditalPDF(file);
 
     // 2. Extrair texto
-    console.log('[PDF] Extraindo texto...');
+    log.debug(Extraindo texto...');
     const text = await extractTextFromPDF(file);
 
     // 3. Obter URL pública
     const url = await getEditalPDFUrl(path);
 
-    console.log('[PDF] Processamento concluído:', {
+    log.debug(Processamento concluído:', {
       path,
       textLength: text.length,
       url
@@ -140,7 +144,7 @@ export async function processEditalPDF(file: File): Promise<{
 
     return { path, text, url };
   } catch (error) {
-    console.error('Erro em processEditalPDF:', error);
+    log.error('Erro em processEditalPDF:', error);
     throw error;
   }
 }
@@ -155,11 +159,11 @@ export async function deleteEditalPDF(path: string): Promise<void> {
       .remove([path]);
 
     if (error) {
-      console.error('Erro ao deletar PDF:', error);
+      log.error('Erro ao deletar PDF:', error);
       throw error;
     }
   } catch (error) {
-    console.error('Erro em deleteEditalPDF:', error);
+    log.error('Erro em deleteEditalPDF:', error);
     throw error;
   }
 }

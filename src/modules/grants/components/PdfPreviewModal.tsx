@@ -10,6 +10,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/services/supabaseClient';
 import type { GrantOpportunity } from '../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Pdfpreviewmodal');
+
 interface PdfPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,7 +59,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
       setIsUploading(true);
       await onUpload(file);
     } catch (error) {
-      console.error('Upload error:', error);
+      log.error('Upload error:', error);
       alert('Erro ao fazer upload do PDF.');
     } finally {
       setIsUploading(false);
@@ -70,7 +74,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
       await onDelete();
       onClose();
     } catch (error) {
-      console.error('Delete error:', error);
+      log.error('Delete error:', error);
       alert('Erro ao remover o PDF.');
     } finally {
       setIsDeleting(false);

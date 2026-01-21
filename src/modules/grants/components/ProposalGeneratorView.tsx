@@ -25,6 +25,10 @@ import { RESPONSE_STATUS_LABELS } from '../types';
 import { ContextSourcesIndicator } from './ContextSourcesIndicator';
 import { GRANTS_GRADIENTS, GRANTS_SHADOWS } from '../constants/gradients';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Proposalgeneratorview');
+
 /**
  * ProposalGeneratorView Component
  * Full-screen view for generating and reviewing proposal fields
@@ -144,7 +148,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
         setSubmissionPhase('idle');
       }, 3000);
     } catch (error) {
-      console.error('Error submitting proposal:', error);
+      log.error('Error submitting proposal:', error);
       setSubmissionPhase('error');
       setErrorMessage(error instanceof Error ? error.message : 'Erro ao submeter proposta');
     }
@@ -219,7 +223,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
       // Auto-expand after generation
       setExpandedFields(prev => new Set(prev).add(fieldId));
     } catch (error) {
-      console.error('Error generating field:', error);
+      log.error('Error generating field:', error);
       setFieldStates(prev => ({
         ...prev,
         [fieldId]: {
@@ -255,7 +259,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
       await navigator.clipboard.writeText(content);
       // Could add toast notification here
     } catch (error) {
-      console.error('Failed to copy:', error);
+      log.error('Failed to copy:', error);
     }
   };
 
@@ -297,7 +301,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
         } as FieldState
       }));
     } catch (error) {
-      console.error('Error saving edit:', error);
+      log.error('Error saving edit:', error);
     }
   };
 
@@ -334,7 +338,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
         } as FieldState
       }));
     } catch (error) {
-      console.error('Error approving field:', error);
+      log.error('Error approving field:', error);
     }
   };
 
@@ -410,9 +414,9 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      console.log('Proposal exported successfully');
+      log.debug('Proposal exported successfully');
     } catch (error) {
-      console.error('Error exporting proposal:', error);
+      log.error('Error exporting proposal:', error);
       alert('Erro ao exportar proposta. Tente novamente.');
     }
   };
