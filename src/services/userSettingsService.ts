@@ -7,6 +7,10 @@
 
 import { supabase } from './supabaseClient';
 import type { UserAIBudget } from '../types/aiCost';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('UserSettingsService');
+
 
 // =====================================================
 // AI Budget Management
@@ -46,7 +50,7 @@ export async function getUserAIBudget(): Promise<number> {
 
     return data?.ai_budget_monthly_usd || 10.00;
   } catch (error) {
-    console.error('[userSettings] Error getting AI budget:', error);
+    log.error('[userSettings] Error getting AI budget:', { error: error });
     return 10.00; // Default budget
   }
 }
@@ -75,11 +79,11 @@ export async function updateUserAIBudget(budget: number): Promise<void> {
     });
 
   if (error) {
-    console.error('[userSettings] Error updating AI budget:', error);
+    log.error('[userSettings] Error updating AI budget:', { error: error });
     throw error;
   }
 
-  console.log('[userSettings] AI budget updated to:', budget);
+  log.debug('[userSettings] AI budget updated to:', budget);
 }
 
 /**
@@ -123,7 +127,7 @@ export async function getAIBudgetSettings(): Promise<UserAIBudget> {
       updated_at: data?.updated_at
     };
   } catch (error) {
-    console.error('[userSettings] Error getting AI budget settings:', error);
+    log.error('[userSettings] Error getting AI budget settings:', { error: error });
     return {
       monthly_ai_budget_usd: 10.00,
       created_at: undefined,
@@ -155,7 +159,7 @@ export async function getUserMetadata(): Promise<Record<string, any>> {
 
     return data.user.user_metadata || {};
   } catch (error) {
-    console.error('[userSettings] Error getting user metadata:', error);
+    log.error('[userSettings] Error getting user metadata:', { error: error });
     return {};
   }
 }
@@ -169,11 +173,11 @@ export async function updateUserMetadata(metadata: Record<string, any>): Promise
   });
 
   if (error) {
-    console.error('[userSettings] Error updating user metadata:', error);
+    log.error('[userSettings] Error updating user metadata:', { error: error });
     throw error;
   }
 
-  console.log('[userSettings] User metadata updated');
+  log.debug('[userSettings] User metadata updated');
 }
 
 // =====================================================

@@ -28,6 +28,10 @@
 
 import { supabase } from './supabaseClient';
 import type { AIOperationType, ModuleType } from '../types/aiCost';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AIUsageTrackingService');
+
 
 // =====================================================
 // TYPES
@@ -112,15 +116,15 @@ export async function getModelPricing(modelName: string): Promise<ModelPricing |
     // Fallback to local cache
     const cached = LOCAL_PRICING_CACHE[modelName];
     if (cached) {
-      console.warn(`[aiUsageTracking] Using local pricing for ${modelName} (DB failed)`);
+      log.warn(`[aiUsageTracking] Using local pricing for ${modelName} (DB failed)`);
       return cached;
     }
 
-    console.error(`[aiUsageTracking] No pricing found for model: ${modelName}`);
+    log.error(`[aiUsageTracking] No pricing found for model: ${modelName}`);
     return null;
 
   } catch (err) {
-    console.error('[aiUsageTracking] Error fetching pricing:', err);
+    log.error('[aiUsageTracking] Error fetching pricing:', { error: err });
     // Final fallback: use local cache
     return LOCAL_PRICING_CACHE[modelName] || null;
   }
@@ -160,7 +164,7 @@ export async function calculateCostFromDB(
     });
 
     if (error) {
-      console.error('[aiUsageTracking] DB cost calculation failed:', error);
+      log.error('[aiUsageTracking] DB cost calculation failed:', { error: error });
       return null;
     }
 
@@ -175,7 +179,7 @@ export async function calculateCostFromDB(
     };
 
   } catch (err) {
-    console.error('[aiUsageTracking] Error calculating cost from DB:', err);
+    log.error('[aiUsageTracking] Error calculating cost from DB:', { error: err });
     return null;
   }
 }
@@ -196,7 +200,7 @@ export async function trackAIUsage(params: TrackAIUsageParams): Promise<void> {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.warn('[aiUsageTracking] No authenticated user - skipping tracking');
+      log.warn('[aiUsageTracking] No authenticated user - skipping tracking');
       return;
     }
 
@@ -228,7 +232,7 @@ export async function trackAIUsage(params: TrackAIUsageParams): Promise<void> {
     }
 
     if (!costs) {
-      console.warn('[aiUsageTracking] Cannot calculate costs - insufficient data');
+      log.warn('[aiUsageTracking] Cannot calculate costs - insufficient data');
       costs = { input_cost_usd: 0, output_cost_usd: 0, total_cost_usd: 0 };
     }
 
@@ -251,7 +255,7 @@ export async function trackAIUsage(params: TrackAIUsageParams): Promise<void> {
     });
 
     if (error) {
-      console.error('[aiUsageTracking] Failed to log usage:', error);
+      log.error('[aiUsageTracking] Failed to log usage:', { error: error });
 
       // Log the error to tracking_errors table
       await logTrackingError(
@@ -265,15 +269,15 @@ export async function trackAIUsage(params: TrackAIUsageParams): Promise<void> {
     }
 
     if (!recordId) {
-      console.warn('[aiUsageTracking] log_ai_usage returned NULL (silent failure)');
+      log.warn('[aiUsageTracking] log_ai_usage returned NULL (silent failure)');
       return;
     }
 
-    console.debug('[aiUsageTracking] Successfully logged usage:', recordId);
+    log.debug('[aiUsageTracking] Successfully logged usage:', recordId);
 
   } catch (err) {
     // CRITICAL: Never propagate errors from tracking
-    console.error('[aiUsageTracking] Unexpected error in trackAIUsage:', err);
+    log.error('[aiUsageTracking] Unexpected error in trackAIUsage:', { error: err });
   }
 }
 
@@ -297,7 +301,7 @@ async function logTrackingError(
     });
   } catch (err) {
     // If we can't log the error, just warn in console
-    console.warn('[aiUsageTracking] Failed to log tracking error:', err);
+    log.warn('[aiUsageTracking] Failed to log tracking error:', err);
   }
 }
 
@@ -315,10 +319,10 @@ export async function trackAIUsageBatch(operations: TrackAIUsageParams[]): Promi
     const promises = operations.map(op => trackAIUsage(op));
     await Promise.allSettled(promises); // Never throw even if some fail
 
-    console.debug(`[aiUsageTracking] Batch tracked ${operations.length} operations`);
+    log.debug(`[aiUsageTracking] Batch tracked ${operations.length} operations`);
 
   } catch (err) {
-    console.error('[aiUsageTracking] Error in batch tracking:', err);
+    log.error('[aiUsageTracking] Error in batch tracking:', { error: err });
   }
 }
 
@@ -354,11 +358,11 @@ export function extractGeminiUsageMetadata(response: any): {
       };
     }
 
-    console.warn('[aiUsageTracking] No usage metadata found in response');
+    log.warn('[aiUsageTracking] No usage metadata found in response');
     return null;
 
   } catch (err) {
-    console.error('[aiUsageTracking] Error extracting usage metadata:', err);
+    log.error('[aiUsageTracking] Error extracting usage metadata:', { error: err });
     return null;
   }
 }
@@ -400,7 +404,7 @@ export async function withAITracking<T>(
       duration_seconds: duration
     }).catch(err => {
       // Silently catch tracking errors - already logged internally
-      console.debug('[aiUsageTracking] Tracking error caught in wrapper:', err);
+      log.debug('[aiUsageTracking] Tracking error caught in wrapper:', err);
     });
 
     return response;

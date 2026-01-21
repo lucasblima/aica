@@ -6,6 +6,10 @@
  */
 
 import { supabase } from './supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('MediaUploadService');
+
 
 export type AssetType = 'document' | 'image' | 'video' | 'audio' | 'transcript' | 'thumbnail' | 'music';
 export type SourceType = 'upload' | 'ai_generated' | 'ai_extracted' | 'external_link';
@@ -237,15 +241,15 @@ export async function uploadMedia(params: UploadMediaParams): Promise<MediaAsset
             media_metadata: { width: 300, height: 300 }
           });
       } catch (thumbError) {
-        console.warn('[MediaUpload] Failed to generate thumbnail:', thumbError);
+        log.warn('[MediaUpload] Failed to generate thumbnail:', thumbError);
         // Não falha o upload principal se thumbnail falhar
       }
     }
 
-    console.log('[MediaUpload] Upload successful:', asset);
+    log.debug('[MediaUpload] Upload successful:', asset);
     return asset;
   } catch (error) {
-    console.error('[MediaUpload] Upload failed:', error);
+    log.error('[MediaUpload] Upload failed:', { error: error });
     throw error;
   }
 }
@@ -318,7 +322,7 @@ export async function deleteAsset(assetId: string): Promise<void> {
       .remove([asset.storage_path]);
 
     if (storageError) {
-      console.warn('[MediaUpload] Failed to delete from storage:', storageError);
+      log.warn('[MediaUpload] Failed to delete from storage:', storageError);
       // Continua mesmo se falhar no storage
     }
   }

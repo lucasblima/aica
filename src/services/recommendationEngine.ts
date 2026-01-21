@@ -22,6 +22,10 @@ import {
 import { MODULE_CATALOG, getModuleById } from '../data/moduleDefinitions';
 import { CONTEXTUAL_TRAILS } from '../data/contextualTrails';
 import { StoredContextCapture } from '../types/onboardingTypes';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('RecommendationEngine');
+
 
 /**
  * Default algorithm configuration
@@ -52,11 +56,11 @@ const DEFAULT_CONFIG: RecommendationAlgorithmConfig = {
 export class RecommendationEngine {
   private config: RecommendationAlgorithmConfig;
   private logger = {
-    log: (msg: string, data?: any) => console.log(`[RecommendationEngine] ${msg}`, data),
-    error: (msg: string, error?: any) => console.error(`[RecommendationEngine] ${msg}`, error),
+    log: (msg: string, data?: any) => log.debug(`[RecommendationEngine] ${msg}`, data),
+    error: (msg: string, error?: any) => log.error(`[RecommendationEngine] ${msg}`, { error: error }),
     debug: (msg: string, data?: any) => {
       if (process.env.DEBUG_RECOMMENDATIONS) {
-        console.debug(`[RecommendationEngine] ${msg}`, data);
+        log.debug(`[RecommendationEngine] ${msg}`, data);
       }
     },
   };

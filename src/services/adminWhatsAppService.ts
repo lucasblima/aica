@@ -8,7 +8,10 @@
  * Epic: #122 - Multi-Instance WhatsApp Architecture
  */
 
-import { supabase } from './supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger';
+import { supabase } from './supabaseClient';
+
+const log = createNamespacedLogger('AdminWhatsAppService');
 import type {
   AdminInstanceStats,
   AdminInstanceRow,
@@ -143,8 +146,8 @@ export async function checkIsAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc('is_admin')
 
   if (error) {
-    console.error('[adminWhatsAppService] Error checking admin status:', error)
-    return false
+    log.error('Error checking admin status:', { error });
+    return false;
   }
 
   return data === true

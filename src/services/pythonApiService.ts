@@ -1,3 +1,7 @@
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PythonApiService');
+
 /**
  * Service to interact with the Aica Python Backend API.
  * This API runs on localhost:8000 by default.
@@ -25,7 +29,7 @@ export const pythonApiService = {
             const response = await fetch(`${API_BASE_URL}/health`);
             return response.ok;
         } catch (error) {
-            console.warn('Python API unavailable:', error);
+            log.warn('Python API unavailable:', error);
             return false;
         }
     },
@@ -50,7 +54,7 @@ export const pythonApiService = {
 
             return await response.json();
         } catch (error) {
-            console.error('Failed to generate report:', error);
+            log.error('Failed to generate report:', { error: error });
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error',
@@ -85,7 +89,7 @@ export const pythonApiService = {
 
             return await response.json();
         } catch (error) {
-            console.error('Failed to process message:', error);
+            log.error('Failed to process message:', { error: error });
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error',
