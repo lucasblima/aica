@@ -24,6 +24,9 @@ import type {
   AdminHealthAlert,
   AdminInstanceFilters,
 } from '@/types/adminWhatsApp'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('useAdminInstanceStats')
 
 interface UseAdminInstanceStatsReturn {
   /** Aggregated statistics */
@@ -82,7 +85,7 @@ export function useAdminInstanceStats(): UseAdminInstanceStatsReturn {
     } catch (err) {
       const errorObj = err instanceof Error ? err : new Error('Unknown error')
       setError(errorObj)
-      console.error('[useAdminInstanceStats] Fetch error:', errorObj)
+      log.error('Fetch error:', { error: errorObj })
     } finally {
       setIsLoading(false)
     }
@@ -108,16 +111,16 @@ export function useAdminInstanceStats(): UseAdminInstanceStatsReturn {
               table: 'whatsapp_sessions',
             },
             (payload) => {
-              console.log('[useAdminInstanceStats] Real-time update:', payload.eventType)
+              log.debug('Real-time update:', payload.eventType)
               // Refresh data on any change
               fetchData(filters)
             }
           )
           .subscribe((status) => {
-            console.log('[useAdminInstanceStats] Subscription status:', status)
+            log.debug('Subscription status:', status)
           })
       } catch (err) {
-        console.error('[useAdminInstanceStats] Subscription error:', err)
+        log.error('Subscription error:', { error: err })
       }
     }
 

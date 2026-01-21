@@ -20,6 +20,9 @@ import {
   ConnectionState,
   EvolutionInstance,
 } from '@/types/whatsapp';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useWhatsAppConnection');
 
 // ============================================================================
 // CONSTANTS
@@ -120,7 +123,7 @@ export function useWhatsAppConnection(
         .single();
 
       if (fetchError) {
-        console.error('[useWhatsAppConnection] fetchStatus error:', fetchError);
+        log.error('fetchStatus error:', { error: fetchError });
         throw fetchError;
       }
 
@@ -137,7 +140,7 @@ export function useWhatsAppConnection(
       return newStatus;
     } catch (err) {
       const error = err as Error;
-      console.error('[useWhatsAppConnection] fetchStatus exception:', error);
+      log.error('fetchStatus exception:', { error });
       throw error;
     }
   }, []);
@@ -288,7 +291,7 @@ export function useWhatsAppConnection(
       const response = await disconnectWhatsAppEdge(status.instanceName);
 
       if (!response.success) {
-        console.warn('[useWhatsAppConnection] disconnect warning:', response.error);
+        log.warn('disconnect warning:', response.error);
       }
 
       // Update local state

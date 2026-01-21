@@ -3,6 +3,9 @@ import { eventService, DateRange } from './eventService';
 import { getValidAccessToken } from '@/services/googleCalendarTokenService';
 import { fetchCalendarEvents, transformGoogleEvent } from '@/services/googleCalendarService';
 import { ConnectionEvent } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('CalendarSyncService');
 
 /**
  * Calendar conflict detection result
@@ -75,7 +78,7 @@ export const calendarSyncService = {
    */
   async syncEventToGoogle(eventId: string): Promise<string> {
     try {
-      console.log('[calendarSyncService] 📤 Starting sync for event:', { eventId });
+      log.debug('[calendarSyncService] 📤 Starting sync for event:', { eventId });
 
       // Check authentication
       const token = await getValidAccessToken();
@@ -118,7 +121,7 @@ export const calendarSyncService = {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('[calendarSyncService] ❌ Google Calendar API error:', error);
+        log.error('[calendarSyncService] ❌ Google Calendar API error:', error);
 
         // Handle rate limiting
         if (response.status === 429) {
@@ -131,7 +134,7 @@ export const calendarSyncService = {
       const googleEvent = await response.json();
       const googleEventId = googleEvent.id;
 
-      console.log('[calendarSyncService] ✅ Event synced to Google Calendar:', { googleEventId });
+      log.debug('[calendarSyncService] ✅ Event synced to Google Calendar:', { googleEventId });
 
       // Update Connection Event with google_event_id
       const updatedEvent = await eventService.updateEvent(eventId, {
@@ -145,13 +148,13 @@ export const calendarSyncService = {
         .eq('id', eventId);
 
       if (updateError) {
-        console.error('[calendarSyncService] ⚠️ Error storing google_event_id:', updateError);
+        log.error('[calendarSyncService] ⚠️ Error storing google_event_id:', updateError);
         throw new Error(`Failed to store Google event ID: ${updateError.message}`);
       }
 
       return googleEventId;
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error syncing event to Google:', error);
+      log.error('[calendarSyncService] ❌ Error syncing event to Google:', error);
       throw error;
     }
   },
@@ -177,7 +180,7 @@ export const calendarSyncService = {
     const results = new Map<string, string>();
     const errors: Array<{ eventId: string; error: Error }> = [];
 
-    console.log('[calendarSyncService] 📤 Syncing multiple events:', { count: eventIds.length });
+    log.debug('[calendarSyncService] 📤 Syncing multiple events:', { count: eventIds.length });
 
     for (const eventId of eventIds) {
       try {
@@ -192,10 +195,10 @@ export const calendarSyncService = {
     }
 
     if (errors.length > 0) {
-      console.warn('[calendarSyncService] ⚠️ Some events failed to sync:', errors);
+      log.warn('[calendarSyncService] ⚠️ Some events failed to sync:', errors);
     }
 
-    console.log('[calendarSyncService] ✅ Bulk sync complete:', {
+    log.debug('[calendarSyncService] ✅ Bulk sync complete:', {
       successful: results.size,
       failed: errors.length,
     });
@@ -219,7 +222,7 @@ export const calendarSyncService = {
    */
   async updateGoogleEvent(eventId: string): Promise<string> {
     try {
-      console.log('[calendarSyncService] 🔄 Updating Google Calendar event:', { eventId });
+      log.debug('[calendarSyncService] 🔄 Updating Google Calendar event:', { eventId });
 
       const token = await getValidAccessToken();
       if (!token) {
@@ -257,16 +260,16 @@ export const calendarSyncService = {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('[calendarSyncService] ❌ Update failed:', error);
+        log.error('[calendarSyncService] ❌ Update failed:', error);
         throw new Error(`Failed to update Google Calendar event: ${error.error?.message}`);
       }
 
       const updatedEvent = await response.json();
-      console.log('[calendarSyncService] ✅ Google event updated:', { googleEventId: updatedEvent.id });
+      log.debug('[calendarSyncService] ✅ Google event updated:', { googleEventId: updatedEvent.id });
 
       return updatedEvent.id;
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error updating Google event:', error);
+      log.error('[calendarSyncService] ❌ Error updating Google event:', error);
       throw error;
     }
   },
@@ -286,18 +289,18 @@ export const calendarSyncService = {
    */
   async removeFromGoogle(eventId: string): Promise<void> {
     try {
-      console.log('[calendarSyncService] 🗑️ Removing event from Google Calendar:', { eventId });
+      log.debug('[calendarSyncService] 🗑️ Removing event from Google Calendar:', { eventId });
 
       const token = await getValidAccessToken();
       if (!token) {
-        console.warn('[calendarSyncService] ⚠️ Google Calendar not authorized, skipping removal');
+        log.warn('[calendarSyncService] ⚠️ Google Calendar not authorized, skipping removal');
         return;
       }
 
       const event = await eventService.getEventById(eventId);
 
       if (!event.google_event_id) {
-        console.log('[calendarSyncService] ℹ️ Event not synced to Google Calendar');
+        log.debug('[calendarSyncService] ℹ️ Event not synced to Google Calendar');
         return;
       }
 
@@ -321,9 +324,9 @@ export const calendarSyncService = {
         .update({ google_event_id: null })
         .eq('id', eventId);
 
-      console.log('[calendarSyncService] ✅ Event removed from Google Calendar');
+      log.debug('[calendarSyncService] ✅ Event removed from Google Calendar');
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error removing from Google:', error);
+      log.error('[calendarSyncService] ❌ Error removing from Google:', error);
       throw error;
     }
   },
@@ -353,7 +356,7 @@ export const calendarSyncService = {
     dateRange: { start: string; end: string }
   ): Promise<ConnectionEvent[]> {
     try {
-      console.log('[calendarSyncService] 📥 Importing events from Google Calendar:', {
+      log.debug('[calendarSyncService] 📥 Importing events from Google Calendar:', {
         spaceId,
         dateRange,
       });
@@ -384,7 +387,7 @@ export const calendarSyncService = {
             .single();
 
           if (existingEvent) {
-            console.log('[calendarSyncService] ℹ️ Event already imported:', { googleEventId: googleEvent.id });
+            log.debug('[calendarSyncService] ℹ️ Event already imported:', { googleEventId: googleEvent.id });
             continue;
           }
 
@@ -409,17 +412,17 @@ export const calendarSyncService = {
             .eq('id', newEvent.id);
 
           importedEvents.push(newEvent);
-          console.log('[calendarSyncService] ✅ Event imported:', { eventId: newEvent.id, googleEventId: googleEvent.id });
+          log.debug('[calendarSyncService] ✅ Event imported:', { eventId: newEvent.id, googleEventId: googleEvent.id });
         } catch (error) {
-          console.warn('[calendarSyncService] ⚠️ Failed to import single event:', error);
+          log.warn('[calendarSyncService] ⚠️ Failed to import single event:', error);
           continue;
         }
       }
 
-      console.log('[calendarSyncService] ✅ Import complete:', { count: importedEvents.length });
+      log.debug('[calendarSyncService] ✅ Import complete:', { count: importedEvents.length });
       return importedEvents;
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error importing from Google:', error);
+      log.error('[calendarSyncService] ❌ Error importing from Google:', error);
       throw error;
     }
   },
@@ -460,7 +463,7 @@ export const calendarSyncService = {
     excludeEventId?: string
   ): Promise<CalendarConflict[]> {
     try {
-      console.log('[calendarSyncService] 🔍 Checking for conflicts:', {
+      log.debug('[calendarSyncService] 🔍 Checking for conflicts:', {
         starts_at,
         ends_at,
         excludeEventId,
@@ -471,7 +474,7 @@ export const calendarSyncService = {
       const cached = conflictCache.get(cacheKey);
 
       if (cached && Date.now() - cached.timestamp < CONFLICT_CACHE_TTL) {
-        console.log('[calendarSyncService] 💾 Returning cached conflicts');
+        log.debug('[calendarSyncService] 💾 Returning cached conflicts');
         return cached.data;
       }
 
@@ -505,7 +508,7 @@ export const calendarSyncService = {
         );
 
       if (error) {
-        console.error('[calendarSyncService] ❌ Error fetching events:', error);
+        log.error('[calendarSyncService] ❌ Error fetching events:', error);
         throw error;
       }
 
@@ -539,10 +542,10 @@ export const calendarSyncService = {
       // Cache the results
       conflictCache.set(cacheKey, { data: conflicts, timestamp: Date.now() });
 
-      console.log('[calendarSyncService] ✅ Conflict check complete:', { count: conflicts.length });
+      log.debug('[calendarSyncService] ✅ Conflict check complete:', { count: conflicts.length });
       return conflicts;
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error checking conflicts:', error);
+      log.error('[calendarSyncService] ❌ Error checking conflicts:', error);
       throw error;
     }
   },
@@ -568,7 +571,7 @@ export const calendarSyncService = {
    */
   async enableAutoSync(spaceId: string, syncIntervalMinutes: number = 30): Promise<void> {
     try {
-      console.log('[calendarSyncService] 🔄 Enabling auto-sync for space:', {
+      log.debug('[calendarSyncService] 🔄 Enabling auto-sync for space:', {
         spaceId,
         syncIntervalMinutes,
       });
@@ -616,9 +619,9 @@ export const calendarSyncService = {
         }
       }
 
-      console.log('[calendarSyncService] ✅ Auto-sync enabled');
+      log.debug('[calendarSyncService] ✅ Auto-sync enabled');
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error enabling auto-sync:', error);
+      log.error('[calendarSyncService] ❌ Error enabling auto-sync:', error);
       throw error;
     }
   },
@@ -637,7 +640,7 @@ export const calendarSyncService = {
    */
   async disableAutoSync(spaceId: string): Promise<void> {
     try {
-      console.log('[calendarSyncService] 🛑 Disabling auto-sync for space:', { spaceId });
+      log.debug('[calendarSyncService] 🛑 Disabling auto-sync for space:', { spaceId });
 
       const { error } = await supabase
         .from('connection_space_sync_config')
@@ -651,9 +654,9 @@ export const calendarSyncService = {
         throw new Error(`Failed to disable auto-sync: ${error.message}`);
       }
 
-      console.log('[calendarSyncService] ✅ Auto-sync disabled');
+      log.debug('[calendarSyncService] ✅ Auto-sync disabled');
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error disabling auto-sync:', error);
+      log.error('[calendarSyncService] ❌ Error disabling auto-sync:', error);
       throw error;
     }
   },
@@ -686,7 +689,7 @@ export const calendarSyncService = {
 
       return data as SpaceSyncConfig | null;
     } catch (error) {
-      console.error('[calendarSyncService] ❌ Error getting sync status:', error);
+      log.error('[calendarSyncService] ❌ Error getting sync status:', error);
       throw error;
     }
   },
@@ -719,6 +722,6 @@ export const calendarSyncService = {
    */
   clearConflictCache(): void {
     conflictCache.clear();
-    console.log('[calendarSyncService] 💾 Conflict cache cleared');
+    log.debug('[calendarSyncService] 💾 Conflict cache cleared');
   },
 };
