@@ -6,6 +6,7 @@
 import { supabase } from '@/lib/supabase'
 import { GeminiClient } from '@/lib/gemini'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'
+import { createNamespacedLogger } from '@/lib/logger'
 import {
   Moment,
   CreateMomentInput,
@@ -15,6 +16,7 @@ import {
 import { SentimentAnalysis } from '../types/sentiment'
 
 const geminiClient = GeminiClient.getInstance()
+const log = createNamespacedLogger('MomentService')
 
 /**
  * Create a new moment
@@ -81,7 +83,7 @@ export async function createMoment(
     )
 
     if (cpError) {
-      console.error('Error awarding CP:', cpError)
+      log.error('Error awarding CP:', cpError)
     }
 
     // Update streak
@@ -91,7 +93,7 @@ export async function createMoment(
     )
 
     if (streakError) {
-      console.error('Error updating streak:', streakError)
+      log.error('Error updating streak:', streakError)
     }
 
     return {
@@ -100,7 +102,7 @@ export async function createMoment(
       leveled_up: cpResult?.leveled_up || false,
     }
   } catch (error) {
-    console.error('Error creating moment:', error)
+    log.error('Error creating moment:', error)
     throw error
   }
 }
@@ -146,7 +148,7 @@ export async function getMoments(
 
     return data || []
   } catch (error) {
-    console.error('Error fetching moments:', error)
+    log.error('Error fetching moments:', error)
     throw error
   }
 }
@@ -167,7 +169,7 @@ export async function getMoment(userId: string, momentId: string): Promise<Momen
 
     return data
   } catch (error) {
-    console.error('Error fetching moment:', error)
+    log.error('Error fetching moment:', error)
     return null
   }
 }
@@ -193,7 +195,7 @@ export async function updateMoment(
 
     return data
   } catch (error) {
-    console.error('Error updating moment:', error)
+    log.error('Error updating moment:', error)
     throw error
   }
 }
@@ -217,7 +219,7 @@ export async function deleteMoment(userId: string, momentId: string): Promise<vo
 
     if (error) throw error
   } catch (error) {
-    console.error('Error deleting moment:', error)
+    log.error('Error deleting moment:', error)
     throw error
   }
 }
@@ -252,7 +254,7 @@ export async function getMomentsCount(userId: string, filter?: MomentFilter): Pr
 
     return count || 0
   } catch (error) {
-    console.error('Error counting moments:', error)
+    log.error('Error counting moments:', error)
     return 0
   }
 }
@@ -283,7 +285,7 @@ async function uploadAudio(userId: string, audioBlob: Blob): Promise<string> {
 
     return urlData.publicUrl
   } catch (error) {
-    console.error('Error uploading audio:', error)
+    log.error('Error uploading audio:', error)
     throw error
   }
 }
@@ -300,7 +302,7 @@ async function deleteAudio(audioUrl: string): Promise<void> {
 
     if (error) throw error
   } catch (error) {
-    console.error('Error deleting audio:', error)
+    log.error('Error deleting audio:', error)
   }
 }
 
@@ -341,12 +343,12 @@ async function analyzeMomentSentiment(content: string): Promise<SentimentAnalysi
       }
     }).catch(error => {
       // Non-blocking: log error but don't throw
-      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     return response.result as SentimentAnalysis
   } catch (error) {
-    console.error('Error analyzing sentiment:', error)
+    log.error('Error analyzing sentiment:', error)
     // Return neutral sentiment as fallback
     return {
       timestamp: new Date(),
