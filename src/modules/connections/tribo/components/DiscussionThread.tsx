@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Discussion, DiscussionReply } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('DiscussionThread');
 
 interface DiscussionThreadProps {
   discussion: Discussion;
@@ -51,7 +53,7 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
       setReplyContent('');
       setReplyingTo(null);
     } catch (error) {
-      console.error('Error submitting reply:', error);
+      log.error('Error submitting reply:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -62,7 +64,7 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
     try {
       await onReact(replyId, emoji);
     } catch (error) {
-      console.error('Error adding reaction:', error);
+      log.error('Error adding reaction:', error);
     }
   };
 

@@ -8,6 +8,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { mentorshipService } from '../services/mentorshipService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useMentorships');
   AcademiaMentorship,
   CreateMentorshipPayload,
   UpdateMentorshipPayload,
@@ -80,7 +82,7 @@ export function useMentorships(options: UseMentorshipsOptions): UseMentorshipsRe
       setMentorships(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching mentorships:', err);
+      log.error('Error fetching mentorships:', err);
     } finally {
       setLoading(false);
     }

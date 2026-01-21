@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('journeyService');
   AcademiaJourney,
   CreateJourneyPayload,
   UpdateJourneyPayload,
@@ -27,13 +29,13 @@ export const journeyService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching journeys:', error);
+        log.error('Error fetching journeys:', error);
         throw new Error(`Failed to fetch journeys: ${error.message}`);
       }
 
       return data as AcademiaJourney[];
     } catch (error) {
-      console.error('Error in getJourneys:', error);
+      log.error('Error in getJourneys:', error);
       throw error;
     }
   },
@@ -54,13 +56,13 @@ export const journeyService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching journeys by status:', error);
+        log.error('Error fetching journeys by status:', error);
         throw new Error(`Failed to fetch ${status} journeys: ${error.message}`);
       }
 
       return data as AcademiaJourney[];
     } catch (error) {
-      console.error('Error in getJourneysByStatus:', error);
+      log.error('Error in getJourneysByStatus:', error);
       throw error;
     }
   },
@@ -84,7 +86,7 @@ export const journeyService = {
         .single();
 
       if (error) {
-        console.error('Error fetching journey:', error);
+        log.error('Error fetching journey:', error);
         throw new Error(`Failed to fetch journey: ${error.message}`);
       }
 
@@ -94,7 +96,7 @@ export const journeyService = {
 
       return data as AcademiaJourney;
     } catch (error) {
-      console.error('Error in getJourneyById:', error);
+      log.error('Error in getJourneyById:', error);
       throw error;
     }
   },
@@ -123,13 +125,13 @@ export const journeyService = {
         .single();
 
       if (error) {
-        console.error('Error creating journey:', error);
+        log.error('Error creating journey:', error);
         throw new Error(`Failed to create journey: ${error.message}`);
       }
 
       return data as AcademiaJourney;
     } catch (error) {
-      console.error('Error in createJourney:', error);
+      log.error('Error in createJourney:', error);
       throw error;
     }
   },
@@ -155,7 +157,7 @@ export const journeyService = {
         .single();
 
       if (error) {
-        console.error('Error updating journey:', error);
+        log.error('Error updating journey:', error);
         throw new Error(`Failed to update journey: ${error.message}`);
       }
 
@@ -165,7 +167,7 @@ export const journeyService = {
 
       return data as AcademiaJourney;
     } catch (error) {
-      console.error('Error in updateJourney:', error);
+      log.error('Error in updateJourney:', error);
       throw error;
     }
   },
@@ -205,7 +207,7 @@ export const journeyService = {
 
       return this.updateJourney(id, updateData);
     } catch (error) {
-      console.error('Error in updateProgress:', error);
+      log.error('Error in updateProgress:', error);
       throw error;
     }
   },
@@ -221,7 +223,7 @@ export const journeyService = {
         logged_hours: journey.logged_hours + hoursToAdd,
       });
     } catch (error) {
-      console.error('Error in logTime:', error);
+      log.error('Error in logTime:', error);
       throw error;
     }
   },
@@ -236,7 +238,7 @@ export const journeyService = {
         started_at: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error in startJourney:', error);
+      log.error('Error in startJourney:', error);
       throw error;
     }
   },
@@ -252,7 +254,7 @@ export const journeyService = {
         progress_pct: 100,
       });
     } catch (error) {
-      console.error('Error in completeJourney:', error);
+      log.error('Error in completeJourney:', error);
       throw error;
     }
   },
@@ -266,7 +268,7 @@ export const journeyService = {
         status: 'paused',
       });
     } catch (error) {
-      console.error('Error in pauseJourney:', error);
+      log.error('Error in pauseJourney:', error);
       throw error;
     }
   },
@@ -280,7 +282,7 @@ export const journeyService = {
         status: 'active',
       });
     } catch (error) {
-      console.error('Error in resumeJourney:', error);
+      log.error('Error in resumeJourney:', error);
       throw error;
     }
   },
@@ -296,11 +298,11 @@ export const journeyService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting journey:', error);
+        log.error('Error deleting journey:', error);
         throw new Error(`Failed to delete journey: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteJourney:', error);
+      log.error('Error in deleteJourney:', error);
       throw error;
     }
   },
@@ -333,7 +335,7 @@ export const journeyService = {
 
       return stats;
     } catch (error) {
-      console.error('Error in getJourneyStats:', error);
+      log.error('Error in getJourneyStats:', error);
       throw error;
     }
   },

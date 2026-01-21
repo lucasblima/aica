@@ -22,6 +22,8 @@
  */
 
 import { useRef, useEffect } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('performanceMonitor');
 
 const isDev = import.meta.env.DEV;
 
@@ -45,7 +47,7 @@ class PerformanceMonitor {
     this.marks.set(name, performance.now());
 
     if (isDev) {
-      console.log(`[Performance] Mark: ${name}`);
+      log.debug(`[Performance] Mark: ${name}`);
     }
   }
 
@@ -57,13 +59,13 @@ class PerformanceMonitor {
 
     const startTime = this.marks.get(startMark);
     if (!startTime) {
-      console.warn(`[Performance] Start mark not found: ${startMark}`);
+      log.warn(`[Performance] Start mark not found: ${startMark}`);
       return 0;
     }
 
     const endTime = endMark ? this.marks.get(endMark) : performance.now();
     if (!endTime) {
-      console.warn(`[Performance] End mark not found: ${endMark}`);
+      log.warn(`[Performance] End mark not found: ${endMark}`);
       return 0;
     }
 
@@ -76,7 +78,7 @@ class PerformanceMonitor {
     });
 
     if (isDev) {
-      console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
+      log.debug(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
     }
 
     return duration;
@@ -131,7 +133,7 @@ class PerformanceMonitor {
       const min = Math.min(...durations);
       const max = Math.max(...durations);
 
-      console.log(`${name}:`, {
+      log.debug(`${name}:`, {
         count: durations.length,
         avg: `${avg.toFixed(2)}ms`,
         min: `${min.toFixed(2)}ms`,
@@ -207,7 +209,7 @@ export function useRenderCount(componentName: string): number {
   renderCount.current++;
 
   if (isDev) {
-    console.log(`[${componentName}] Render #${renderCount.current}`);
+    log.debug(`[${componentName}] Render #${renderCount.current}`);
   }
 
   return renderCount.current;
@@ -222,7 +224,7 @@ export function useMountTime(componentName: string): void {
     performanceMonitor.mark(`${componentName}-mount`);
 
     if (isDev) {
-      console.log(`[${componentName}] Mounted in ${mountTime.toFixed(2)}ms`);
+      log.debug(`[${componentName}] Mounted in ${mountTime.toFixed(2)}ms`);
     }
 
     return () => {
@@ -230,7 +232,7 @@ export function useMountTime(componentName: string): void {
       const lifetime = unmountTime - mountTime;
 
       if (isDev) {
-        console.log(`[${componentName}] Unmounted after ${lifetime.toFixed(2)}ms`);
+        log.debug(`[${componentName}] Unmounted after ${lifetime.toFixed(2)}ms`);
       }
     };
   }, [componentName]);
@@ -257,7 +259,7 @@ export function useWhyDidYouUpdate(name: string, props: Record<string, any>): vo
       });
 
       if (Object.keys(changedProps).length > 0) {
-        console.log(`[${name}] Props changed:`, changedProps);
+        log.debug(`[${name}] Props changed:`, changedProps);
       }
     }
 
@@ -318,21 +320,21 @@ export function reportWebVitals(): void {
     // Largest Contentful Paint (LCP)
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        console.log('[Web Vitals] LCP:', entry);
+        log.debug('[Web Vitals] LCP:', entry);
       }
     }).observe({ type: 'largest-contentful-paint', buffered: true });
 
     // First Input Delay (FID)
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        console.log('[Web Vitals] FID:', entry);
+        log.debug('[Web Vitals] FID:', entry);
       }
     }).observe({ type: 'first-input', buffered: true });
 
     // Cumulative Layout Shift (CLS)
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        console.log('[Web Vitals] CLS:', entry);
+        log.debug('[Web Vitals] CLS:', entry);
       }
     }).observe({ type: 'layout-shift', buffered: true });
   }

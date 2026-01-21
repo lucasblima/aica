@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { entityService } from '../services';
 import type { VenturesEntity, CreateEntityPayload, UpdateEntityPayload } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useEntity');
 
 interface UseEntityReturn {
   entity: VenturesEntity | null;
@@ -38,7 +40,7 @@ export function useEntity(entityId: string | undefined): UseEntityReturn {
       setEntity(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching entity:', err);
+      log.error('Error fetching entity:', err);
     } finally {
       setLoading(false);
     }
@@ -145,7 +147,7 @@ export function useEntitiesBySpace(spaceId: string | undefined): UseEntitiesBySp
       setEntities(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching entities:', err);
+      log.error('Error fetching entities:', err);
       // On error, ensure entities is still a valid empty array
       setEntities([]);
     } finally {

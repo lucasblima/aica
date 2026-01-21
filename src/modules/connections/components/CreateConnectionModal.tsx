@@ -19,6 +19,8 @@ import type {
   MemberRole
 } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('CreateConnectionModal');
 
 /**
  * CreateConnectionModal Component
@@ -247,7 +249,7 @@ export const CreateConnectionModal: React.FC<CreateConnectionModalProps> = ({
       await onComplete(payload, invites.length > 0 ? invites : undefined);
       onClose();
     } catch (error) {
-      console.error('Error creating connection space:', error);
+      log.error('Error creating connection space:', error);
       alert('Erro ao criar espaço de conexão');
     } finally {
       setIsSubmitting(false);

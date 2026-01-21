@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import * as memberService from '../services/connectionMemberService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useConnectionMembers');
   ConnectionMember,
   AddMemberPayload,
   MemberRole
@@ -53,7 +55,7 @@ export function useConnectionMembers(
       setMembers(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch members'));
-      console.error('[useConnectionMembers] Error:', err);
+      log.error('[useConnectionMembers] Error:', err);
     } finally {
       setIsLoading(false);
     }

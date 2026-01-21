@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('mentorshipService');
   AcademiaMentorship,
   CreateMentorshipPayload,
   UpdateMentorshipPayload,
@@ -27,13 +29,13 @@ export const mentorshipService = {
         .order('next_session_at', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching mentorships:', error);
+        log.error('Error fetching mentorships:', error);
         throw new Error(`Failed to fetch mentorships: ${error.message}`);
       }
 
       return data as AcademiaMentorship[];
     } catch (error) {
-      console.error('Error in getMentorships:', error);
+      log.error('Error in getMentorships:', error);
       throw error;
     }
   },
@@ -54,13 +56,13 @@ export const mentorshipService = {
         .order('next_session_at', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching mentorships by type:', error);
+        log.error('Error fetching mentorships by type:', error);
         throw new Error(`Failed to fetch ${relationType} mentorships: ${error.message}`);
       }
 
       return data as AcademiaMentorship[];
     } catch (error) {
-      console.error('Error in getMentorshipsByType:', error);
+      log.error('Error in getMentorshipsByType:', error);
       throw error;
     }
   },
@@ -78,13 +80,13 @@ export const mentorshipService = {
         .order('next_session_at', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching active mentorships:', error);
+        log.error('Error fetching active mentorships:', error);
         throw new Error(`Failed to fetch active mentorships: ${error.message}`);
       }
 
       return data as AcademiaMentorship[];
     } catch (error) {
-      console.error('Error in getActiveMentorships:', error);
+      log.error('Error in getActiveMentorships:', error);
       throw error;
     }
   },
@@ -107,13 +109,13 @@ export const mentorshipService = {
         .order('next_session_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching upcoming sessions:', error);
+        log.error('Error fetching upcoming sessions:', error);
         throw new Error(`Failed to fetch upcoming sessions: ${error.message}`);
       }
 
       return data as AcademiaMentorship[];
     } catch (error) {
-      console.error('Error in getUpcomingSessions:', error);
+      log.error('Error in getUpcomingSessions:', error);
       throw error;
     }
   },
@@ -130,7 +132,7 @@ export const mentorshipService = {
         .single();
 
       if (error) {
-        console.error('Error fetching mentorship:', error);
+        log.error('Error fetching mentorship:', error);
         throw new Error(`Failed to fetch mentorship: ${error.message}`);
       }
 
@@ -140,7 +142,7 @@ export const mentorshipService = {
 
       return data as AcademiaMentorship;
     } catch (error) {
-      console.error('Error in getMentorshipById:', error);
+      log.error('Error in getMentorshipById:', error);
       throw error;
     }
   },
@@ -168,13 +170,13 @@ export const mentorshipService = {
         .single();
 
       if (error) {
-        console.error('Error creating mentorship:', error);
+        log.error('Error creating mentorship:', error);
         throw new Error(`Failed to create mentorship: ${error.message}`);
       }
 
       return data as AcademiaMentorship;
     } catch (error) {
-      console.error('Error in createMentorship:', error);
+      log.error('Error in createMentorship:', error);
       throw error;
     }
   },
@@ -200,7 +202,7 @@ export const mentorshipService = {
         .single();
 
       if (error) {
-        console.error('Error updating mentorship:', error);
+        log.error('Error updating mentorship:', error);
         throw new Error(`Failed to update mentorship: ${error.message}`);
       }
 
@@ -210,7 +212,7 @@ export const mentorshipService = {
 
       return data as AcademiaMentorship;
     } catch (error) {
-      console.error('Error in updateMentorship:', error);
+      log.error('Error in updateMentorship:', error);
       throw error;
     }
   },
@@ -224,7 +226,7 @@ export const mentorshipService = {
         next_session_at: sessionDate,
       });
     } catch (error) {
-      console.error('Error in scheduleNextSession:', error);
+      log.error('Error in scheduleNextSession:', error);
       throw error;
     }
   },
@@ -241,7 +243,7 @@ export const mentorshipService = {
         next_session_at: nextSessionDate,
       });
     } catch (error) {
-      console.error('Error in completeSession:', error);
+      log.error('Error in completeSession:', error);
       throw error;
     }
   },
@@ -255,7 +257,7 @@ export const mentorshipService = {
         status: 'paused',
       });
     } catch (error) {
-      console.error('Error in pauseMentorship:', error);
+      log.error('Error in pauseMentorship:', error);
       throw error;
     }
   },
@@ -269,7 +271,7 @@ export const mentorshipService = {
         status: 'active',
       });
     } catch (error) {
-      console.error('Error in resumeMentorship:', error);
+      log.error('Error in resumeMentorship:', error);
       throw error;
     }
   },
@@ -284,7 +286,7 @@ export const mentorshipService = {
         ended_at: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error in completeMentorship:', error);
+      log.error('Error in completeMentorship:', error);
       throw error;
     }
   },
@@ -300,11 +302,11 @@ export const mentorshipService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting mentorship:', error);
+        log.error('Error deleting mentorship:', error);
         throw new Error(`Failed to delete mentorship: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteMentorship:', error);
+      log.error('Error in deleteMentorship:', error);
       throw error;
     }
   },
@@ -331,7 +333,7 @@ export const mentorshipService = {
         upcomingSessions: upcomingSessions.length,
       };
     } catch (error) {
-      console.error('Error in getMentorshipStats:', error);
+      log.error('Error in getMentorshipStats:', error);
       throw error;
     }
   },

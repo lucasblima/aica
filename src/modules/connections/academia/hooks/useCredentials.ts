@@ -8,6 +8,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { credentialService } from '../services/credentialService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useCredentials');
   AcademiaCredential,
   CreateCredentialPayload,
   UpdateCredentialPayload,
@@ -85,7 +87,7 @@ export function useCredentials(options: UseCredentialsOptions): UseCredentialsRe
       setCredentials(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching credentials:', err);
+      log.error('Error fetching credentials:', err);
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,8 @@
 
 import React from 'react';
 import { useSplitPaymentStatus, useMarkSplitAsPaid } from '../hooks/useFinanceIntegration';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('SplitPaymentTracker');
 
 interface SplitPaymentTrackerProps {
   transactionId: string;
@@ -25,7 +27,7 @@ export const SplitPaymentTracker: React.FC<SplitPaymentTrackerProps> = ({
     try {
       await markAsPaid.mutateAsync({ transactionId, memberId });
     } catch (error) {
-      console.error('Error marking split as paid:', error);
+      log.error('Error marking split as paid:', error);
     }
   };
 

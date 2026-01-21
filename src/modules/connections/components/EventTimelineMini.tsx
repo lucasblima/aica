@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { eventService } from '../services/eventService';
 import { ConnectionEvent } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('EventTimelineMini');
 
 /**
  * Props for EventTimelineMini component
@@ -69,7 +71,7 @@ export function EventTimelineMini({
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error);
-        console.error('[EventTimelineMini] Error fetching events:', error);
+        log.error('[EventTimelineMini] Error fetching events:', error);
       } finally {
         setIsLoading(false);
       }

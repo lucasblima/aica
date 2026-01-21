@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('stakeholderService');
   VenturesStakeholder,
   CreateStakeholderPayload,
   UpdateStakeholderPayload,
@@ -26,13 +28,13 @@ export const stakeholderService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching stakeholders:', error);
+        log.error('Error fetching stakeholders:', error);
         throw new Error(`Failed to fetch stakeholders: ${error.message}`);
       }
 
       return data as VenturesStakeholder[];
     } catch (error) {
-      console.error('Error in getStakeholdersByEntity:', error);
+      log.error('Error in getStakeholdersByEntity:', error);
       throw error;
     }
   },
@@ -54,13 +56,13 @@ export const stakeholderService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching stakeholders by type:', error);
+        log.error('Error fetching stakeholders by type:', error);
         throw new Error(`Failed to fetch stakeholders: ${error.message}`);
       }
 
       return data as VenturesStakeholder[];
     } catch (error) {
-      console.error('Error in getStakeholdersByType:', error);
+      log.error('Error in getStakeholdersByType:', error);
       throw error;
     }
   },
@@ -79,13 +81,13 @@ export const stakeholderService = {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching founders:', error);
+        log.error('Error fetching founders:', error);
         throw new Error(`Failed to fetch founders: ${error.message}`);
       }
 
       return data as VenturesStakeholder[];
     } catch (error) {
-      console.error('Error in getFounders:', error);
+      log.error('Error in getFounders:', error);
       throw error;
     }
   },
@@ -105,13 +107,13 @@ export const stakeholderService = {
         .order('investment_amount', { ascending: false, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching investors:', error);
+        log.error('Error fetching investors:', error);
         throw new Error(`Failed to fetch investors: ${error.message}`);
       }
 
       return data as VenturesStakeholder[];
     } catch (error) {
-      console.error('Error in getInvestors:', error);
+      log.error('Error in getInvestors:', error);
       throw error;
     }
   },
@@ -130,13 +132,13 @@ export const stakeholderService = {
         .order('start_date', { ascending: false, nullsFirst: false });
 
       if (error) {
-        console.error('Error fetching team members:', error);
+        log.error('Error fetching team members:', error);
         throw new Error(`Failed to fetch team members: ${error.message}`);
       }
 
       return data as VenturesStakeholder[];
     } catch (error) {
-      console.error('Error in getTeamMembers:', error);
+      log.error('Error in getTeamMembers:', error);
       throw error;
     }
   },
@@ -153,7 +155,7 @@ export const stakeholderService = {
         .single();
 
       if (error) {
-        console.error('Error fetching stakeholder:', error);
+        log.error('Error fetching stakeholder:', error);
         throw new Error(`Failed to fetch stakeholder: ${error.message}`);
       }
 
@@ -163,7 +165,7 @@ export const stakeholderService = {
 
       return data as VenturesStakeholder;
     } catch (error) {
-      console.error('Error in getStakeholderById:', error);
+      log.error('Error in getStakeholderById:', error);
       throw error;
     }
   },
@@ -185,13 +187,13 @@ export const stakeholderService = {
         .single();
 
       if (error) {
-        console.error('Error creating stakeholder:', error);
+        log.error('Error creating stakeholder:', error);
         throw new Error(`Failed to create stakeholder: ${error.message}`);
       }
 
       return data as VenturesStakeholder;
     } catch (error) {
-      console.error('Error in createStakeholder:', error);
+      log.error('Error in createStakeholder:', error);
       throw error;
     }
   },
@@ -215,7 +217,7 @@ export const stakeholderService = {
         .single();
 
       if (error) {
-        console.error('Error updating stakeholder:', error);
+        log.error('Error updating stakeholder:', error);
         throw new Error(`Failed to update stakeholder: ${error.message}`);
       }
 
@@ -225,7 +227,7 @@ export const stakeholderService = {
 
       return data as VenturesStakeholder;
     } catch (error) {
-      console.error('Error in updateStakeholder:', error);
+      log.error('Error in updateStakeholder:', error);
       throw error;
     }
   },
@@ -244,11 +246,11 @@ export const stakeholderService = {
         .eq('id', stakeholderId);
 
       if (error) {
-        console.error('Error deleting stakeholder:', error);
+        log.error('Error deleting stakeholder:', error);
         throw new Error(`Failed to delete stakeholder: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteStakeholder:', error);
+      log.error('Error in deleteStakeholder:', error);
       throw error;
     }
   },
@@ -290,7 +292,7 @@ export const stakeholderService = {
         stakeholders: stakeholderEquity,
       };
     } catch (error) {
-      console.error('Error calculating equity distribution:', error);
+      log.error('Error calculating equity distribution:', error);
       throw error;
     }
   },
@@ -320,7 +322,7 @@ export const stakeholderService = {
 
       return { total, byRound };
     } catch (error) {
-      console.error('Error calculating capital raised:', error);
+      log.error('Error calculating capital raised:', error);
       throw error;
     }
   },

@@ -9,6 +9,8 @@ import { useStakeholders } from '../hooks/useStakeholders';
 import { entityService } from '../services/entityService';
 import { formatCurrency, formatPercentage, calculateHealthStatus, type EntityType, type CreateEntityPayload } from '../types';
 import { cardElevationVariants, staggerContainer, staggerItem } from '../../../../lib/animations/ceramic-motion';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('VenturesHome');
 
 /**
  * VenturesHome View
@@ -41,7 +43,7 @@ export function VenturesHome() {
       await createEntity(data);
       setShowCreateModal(false);
     } catch (error) {
-      console.error('Erro ao criar venture:', error);
+      log.error('Erro ao criar venture:', error);
     } finally {
       setIsCreating(false);
     }
@@ -55,7 +57,7 @@ export function VenturesHome() {
       await refresh();
       setShowDeleteConfirm(null);
     } catch (error) {
-      console.error('Erro ao deletar venture:', error);
+      log.error('Erro ao deletar venture:', error);
     } finally {
       setIsDeleting(false);
     }

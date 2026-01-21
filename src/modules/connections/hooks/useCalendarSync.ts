@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarSyncService, CalendarConflict, SpaceSyncConfig } from '../services/calendarSyncService';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useCalendarSync');
 
 /**
  * Configuration options for the useCalendarSync hook.
@@ -131,63 +133,63 @@ export function useCalendarSync(options: UseCalendarSyncOptions): UseCalendarSyn
   // Sync single event mutation
   const syncEventMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      console.log('[useCalendarSync] Syncing event:', { eventId });
+      log.debug('[useCalendarSync] Syncing event:', { eventId });
       return await calendarSyncService.syncEventToGoogle(eventId);
     },
     onSuccess: () => {
-      console.log('[useCalendarSync] Event synced successfully');
+      log.debug('[useCalendarSync] Event synced successfully');
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['space-events', spaceId] });
       queryClient.invalidateQueries({ queryKey: ['connection-events'] });
     },
     onError: (error) => {
-      console.error('[useCalendarSync] Error syncing event:', error);
+      log.error('[useCalendarSync] Error syncing event:', error);
     },
   });
 
   // Sync multiple events mutation
   const syncMultipleEventsMutation = useMutation({
     mutationFn: async (eventIds: string[]) => {
-      console.log('[useCalendarSync] Syncing multiple events:', { count: eventIds.length });
+      log.debug('[useCalendarSync] Syncing multiple events:', { count: eventIds.length });
       return await calendarSyncService.syncMultipleEvents(eventIds);
     },
     onSuccess: () => {
-      console.log('[useCalendarSync] Multiple events synced');
+      log.debug('[useCalendarSync] Multiple events synced');
       queryClient.invalidateQueries({ queryKey: ['space-events', spaceId] });
       queryClient.invalidateQueries({ queryKey: ['connection-events'] });
     },
     onError: (error) => {
-      console.error('[useCalendarSync] Error syncing multiple events:', error);
+      log.error('[useCalendarSync] Error syncing multiple events:', error);
     },
   });
 
   // Update event in Google Calendar mutation
   const updateEventMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      console.log('[useCalendarSync] Updating Google event:', { eventId });
+      log.debug('[useCalendarSync] Updating Google event:', { eventId });
       return await calendarSyncService.updateGoogleEvent(eventId);
     },
     onSuccess: () => {
-      console.log('[useCalendarSync] Event updated in Google Calendar');
+      log.debug('[useCalendarSync] Event updated in Google Calendar');
       queryClient.invalidateQueries({ queryKey: ['space-events', spaceId] });
     },
     onError: (error) => {
-      console.error('[useCalendarSync] Error updating event:', error);
+      log.error('[useCalendarSync] Error updating event:', error);
     },
   });
 
   // Remove from Google Calendar mutation
   const removeFromGoogleMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      console.log('[useCalendarSync] Removing event from Google Calendar:', { eventId });
+      log.debug('[useCalendarSync] Removing event from Google Calendar:', { eventId });
       return await calendarSyncService.removeFromGoogle(eventId);
     },
     onSuccess: () => {
-      console.log('[useCalendarSync] Event removed from Google Calendar');
+      log.debug('[useCalendarSync] Event removed from Google Calendar');
       queryClient.invalidateQueries({ queryKey: ['space-events', spaceId] });
     },
     onError: (error) => {
-      console.error('[useCalendarSync] Error removing event:', error);
+      log.error('[useCalendarSync] Error removing event:', error);
     },
   });
 
@@ -202,7 +204,7 @@ export function useCalendarSync(options: UseCalendarSyncOptions): UseCalendarSyn
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         setConflictErrors(err);
-        console.error('[useCalendarSync] Error checking conflicts:', err);
+        log.error('[useCalendarSync] Error checking conflicts:', err);
         throw err;
       } finally {
         setConflictLoading(false);
@@ -215,11 +217,11 @@ export function useCalendarSync(options: UseCalendarSyncOptions): UseCalendarSyn
   const enableAutoSync = useCallback(
     async (intervalMinutes: number = 30) => {
       try {
-        console.log('[useCalendarSync] Enabling auto-sync:', { intervalMinutes });
+        log.debug('[useCalendarSync] Enabling auto-sync:', { intervalMinutes });
         await calendarSyncService.enableAutoSync(spaceId, intervalMinutes);
         await refetchSyncStatus();
       } catch (error) {
-        console.error('[useCalendarSync] Error enabling auto-sync:', error);
+        log.error('[useCalendarSync] Error enabling auto-sync:', error);
         throw error;
       }
     },
@@ -230,11 +232,11 @@ export function useCalendarSync(options: UseCalendarSyncOptions): UseCalendarSyn
   const disableAutoSync = useCallback(
     async () => {
       try {
-        console.log('[useCalendarSync] Disabling auto-sync');
+        log.debug('[useCalendarSync] Disabling auto-sync');
         await calendarSyncService.disableAutoSync(spaceId);
         await refetchSyncStatus();
       } catch (error) {
-        console.error('[useCalendarSync] Error disabling auto-sync:', error);
+        log.error('[useCalendarSync] Error disabling auto-sync:', error);
         throw error;
       }
     },
@@ -246,12 +248,12 @@ export function useCalendarSync(options: UseCalendarSyncOptions): UseCalendarSyn
     async () => {
       try {
         setIsManualSyncing(true);
-        console.log('[useCalendarSync] Starting manual sync');
+        log.debug('[useCalendarSync] Starting manual sync');
         await refetchSyncStatus();
         // Note: In a real scenario, this would fetch and sync events
         // For now, just refresh the status
       } catch (error) {
-        console.error('[useCalendarSync] Error during manual sync:', error);
+        log.error('[useCalendarSync] Error during manual sync:', error);
         throw error;
       } finally {
         setIsManualSyncing(false);
@@ -262,7 +264,7 @@ export function useCalendarSync(options: UseCalendarSyncOptions): UseCalendarSyn
 
   // Clear the sync cache
   const clearCache = useCallback(() => {
-    console.log('[useCalendarSync] Clearing conflict cache');
+    log.debug('[useCalendarSync] Clearing conflict cache');
     calendarSyncService.clearConflictCache();
   }, []);
 
@@ -272,13 +274,13 @@ export function useCalendarSync(options: UseCalendarSyncOptions): UseCalendarSyn
       return;
     }
 
-    console.log('[useCalendarSync] Setting up auto-sync interval:', {
+    log.debug('[useCalendarSync] Setting up auto-sync interval:', {
       interval: syncInterval,
     });
 
     const interval = setInterval(() => {
       refetchSyncStatus().catch((error) => {
-        console.error('[useCalendarSync] Auto-sync error:', error);
+        log.error('[useCalendarSync] Auto-sync error:', error);
       });
     }, syncInterval * 1000);
 
