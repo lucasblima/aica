@@ -72,7 +72,7 @@ export function FloatingTaskPanel({
         onTaskComplete(taskId);
       }
     } catch (error) {
-      log.error(Error completing task:', error);
+      log.error('Error completing task:', error);
     } finally {
       setCompletingTask(null);
     }

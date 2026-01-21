@@ -55,7 +55,7 @@ export const EditalSearchBar: React.FC<EditalSearchBarProps> = ({
       setShowResults(true);
       await onSearch(query.trim());
     } catch (err) {
-      log.error(Search error:', err);
+      log.error('Search error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar');
     }
   };

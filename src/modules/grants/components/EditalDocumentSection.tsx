@@ -122,7 +122,7 @@ export function EditalDocumentSection({
       setSearchResults(results);
       return results;
     } catch (error) {
-      log.error(Search error:', error);
+      log.error('Search error:', error);
       throw error;
     }
   };

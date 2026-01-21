@@ -254,7 +254,7 @@ export function useSponsorDeck({ projectId }: UseSponsorDeckOptions): UseSponsor
           setUsageMetadata(result.usageMetadata);
         }
       } catch (err) {
-        log.error(Generation failed:', err);
+        log.error('Generation failed:', err);
         setError(err instanceof Error ? err.message : 'Erro desconhecido ao gerar deck');
         setProgress(0);
         setProgressStep('');

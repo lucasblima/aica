@@ -153,7 +153,7 @@ export function useWorkspaceState({
 
       setInitialState(hydratedState);
     } catch (err) {
-      log.error(Error loading workspace:', err);
+      log.error('Error loading workspace:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar workspace');
     } finally {
       setIsLoading(false);

@@ -503,7 +503,7 @@ export function SponsorDeckGenerator({
         setCurrentStep('done');
       }).catch((err) => {
         // Error is handled in the hook, but log for debugging
-        log.error(Generation failed:', err);
+        log.error('Generation failed:', err);
         setCurrentStep('options');
       });
     } else if (currentStepIndex < DECK_WIZARD_STEPS.length - 3) {

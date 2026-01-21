@@ -170,7 +170,7 @@ export async function uploadOrganizationDocument(
 
   if (uploadError) {
     // Provide more specific error messages based on error type
-    log.error(Upload error:', uploadError);
+    log.error('Upload error:', uploadError);
 
     if (uploadError.message?.includes('Bucket not found') ||
         uploadError.message?.includes('bucket') ||
@@ -369,12 +369,12 @@ export async function processOrganizationDocument(
   });
 
   if (error) {
-    log.error(Edge function error:', error);
+    log.error('Edge function error:', error);
     throw new Error(`Erro ao processar documento: ${error.message}`);
   }
 
   if (!data.success) {
-    log.error(Processing failed:', data.error);
+    log.error('Processing failed:', data.error);
     throw new Error(data.error || 'Erro desconhecido ao processar documento');
   }
 
@@ -396,7 +396,7 @@ export async function processOrganizationDocument(
     message: 'Documento processado com sucesso!',
   });
 
-  log.debug(Processing completed:', {
+  log.debug('Processing completed:', {
     detectedType: data.detected_type,
     fieldsExtracted: Object.keys(fields).length,
     processingTimeMs: data.processing_time_ms,

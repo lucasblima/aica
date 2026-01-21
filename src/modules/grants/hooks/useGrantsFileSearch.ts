@@ -142,7 +142,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
           },
         });
 
-        log.debug(PDF indexado com sucesso:', document.id);
+        log.debug('PDF indexado com sucesso:', document.id);
         return document;
       } catch (error) {
         log.error(indexEditalPDF error:', error);
@@ -260,7 +260,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
   useEffect(() => {
     if (autoLoad && projectId) {
       ensureCorpus().catch((error) => {
-        log.warn(Auto-load failed:', error);
+        log.warn('Auto-load failed:', error);
       });
     }
   }, [autoLoad, projectId, ensureCorpus]);

@@ -42,8 +42,8 @@ export async function uploadEditalPDF(file: File): Promise<string> {
     const timestamp = Date.now();
     const fileName = `${user.id}/${timestamp}_${sanitizedName}`;
 
-    log.debug(Nome original:', file.name);
-    log.debug(Nome sanitizado:', fileName);
+    log.debug('Nome original:', file.name);
+    log.debug('Nome sanitizado:', fileName);
 
     // Upload para o bucket 'editais'
     const { data, error } = await supabase.storage
@@ -126,17 +126,17 @@ export async function processEditalPDF(file: File): Promise<{
 }> {
   try {
     // 1. Fazer upload
-    log.debug(Fazendo upload do arquivo...');
+    log.debug('Fazendo upload do arquivo...');
     const path = await uploadEditalPDF(file);
 
     // 2. Extrair texto
-    log.debug(Extraindo texto...');
+    log.debug('Extraindo texto...');
     const text = await extractTextFromPDF(file);
 
     // 3. Obter URL pública
     const url = await getEditalPDFUrl(path);
 
-    log.debug(Processamento concluído:', {
+    log.debug('Processamento concluído:', {
       path,
       textLength: text.length,
       url

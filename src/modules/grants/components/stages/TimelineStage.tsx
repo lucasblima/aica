@@ -71,7 +71,7 @@ export const TimelineStage: React.FC = () => {
 
       dispatch({ type: 'SET_TIMELINE_PHASES', payload: phases });
     } catch (error) {
-      log.error(Extract error:', error);
+      log.error('Extract error:', error);
       dispatch({ type: 'UPDATE_TIMELINE', payload: { extractionStatus: 'error' } });
       alert('Erro ao extrair cronograma. Adicione manualmente.');
     } finally {

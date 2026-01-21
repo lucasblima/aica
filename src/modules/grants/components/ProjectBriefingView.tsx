@@ -204,9 +204,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       setIsLoadingDocuments(true);
       const docs = await listProjectDocuments(projectId);
       setDocuments(docs);
-      log.debug(Loaded documents:', docs.length);
+      log.debug('Loaded documents:', docs.length);
     } catch (error) {
-      log.error(Error loading documents:', error);
+      log.error('Error loading documents:', error);
     } finally {
       setIsLoadingDocuments(false);
     }
@@ -348,14 +348,14 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
       // Add to local state
       setDocuments(prev => [...prev, newDoc]);
 
-      log.debug(Document uploaded:', {
+      log.debug('Document uploaded:', {
         id: newDoc.id,
         file_name: newDoc.file_name,
         type: newDoc.document_type,
         contentLength: newDoc.document_content?.length || 0
       });
     } catch (error) {
-      log.error(Upload error:', error);
+      log.error('Upload error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       alert(`Erro ao fazer upload do documento: ${errorMessage}`);
     } finally {
@@ -377,9 +377,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
     try {
       await deleteProjectDocument(documentId);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      log.debug(Document removed:', documentId);
+      log.debug('Document removed:', documentId);
     } catch (error) {
-      log.error(Remove error:', error);
+      log.error('Remove error:', error);
       alert('Erro ao remover documento. Tente novamente.');
     }
   };
