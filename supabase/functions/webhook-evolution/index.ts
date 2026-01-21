@@ -126,6 +126,10 @@ const EVOLUTION_WEBHOOK_SECRET = Deno.env.get('EVOLUTION_WEBHOOK_SECRET')
 const EVOLUTION_API_URL = Deno.env.get('EVOLUTION_API_URL')
 const EVOLUTION_API_KEY = Deno.env.get('EVOLUTION_API_KEY')
 
+// Health Score real-time configuration (Issue #144)
+const HEALTH_SCORE_REALTIME_ENABLED = Deno.env.get('HEALTH_SCORE_REALTIME_ENABLED') === 'true'
+const HEALTH_SCORE_DEBOUNCE_MS = parseInt(Deno.env.get('HEALTH_SCORE_DEBOUNCE_MS') || '60000') // 1 minute default
+
 // Legacy instance configuration (deprecated - multi-instance architecture uses whatsapp_sessions table)
 // Kept for backward compatibility during migration, should be removed after full migration
 const LEGACY_SHARED_INSTANCE = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
@@ -134,6 +138,10 @@ const LEGACY_SHARED_INSTANCE = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Co
 const RATE_LIMIT_WINDOW_MS = 60000 // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100 // Max 100 requests per minute per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+// Health Score debounce map (Issue #144)
+// Key: `${userId}_${contactPhone}`, Value: last trigger timestamp
+const healthScoreDebounceMap = new Map<string, number>()
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = [
@@ -782,6 +790,79 @@ async function enqueueForProcessing(
 }
 
 /**
+ * Trigger health score recalculation for a contact
+ * Issue #144: Real-time health score updates
+ *
+ * Uses debouncing to avoid excessive recalculations when multiple
+ * messages arrive in quick succession.
+ */
+async function triggerHealthScoreRecalculation(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  contactPhone: string
+): Promise<void> {
+  if (!HEALTH_SCORE_REALTIME_ENABLED) {
+    return
+  }
+
+  const debounceKey = `${userId}_${contactPhone}`
+  const now = Date.now()
+  const lastTrigger = healthScoreDebounceMap.get(debounceKey) || 0
+
+  // Skip if within debounce window
+  if (now - lastTrigger < HEALTH_SCORE_DEBOUNCE_MS) {
+    log('DEBUG', 'Health score recalc debounced', { userId, contactPhone })
+    return
+  }
+
+  // Update debounce timestamp
+  healthScoreDebounceMap.set(debounceKey, now)
+
+  try {
+    // Find contact_id by phone number
+    const { data: contact, error: contactError } = await supabase
+      .from('contact_network')
+      .select('id')
+      .eq('user_id', userId)
+      .or(`phone_number.eq.${contactPhone},whatsapp_phone.eq.${contactPhone}`)
+      .limit(1)
+      .single()
+
+    if (contactError || !contact) {
+      log('DEBUG', 'Contact not found for health score recalc', { userId, contactPhone })
+      return
+    }
+
+    // Call calculate-health-scores Edge Function via internal HTTP
+    // Using service role to allow batch operations
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/calculate-health-scores`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ contactId: contact.id }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      log('WARN', 'Health score recalc failed', { status: response.status, error: errorText })
+      return
+    }
+
+    const result = await response.json()
+    log('INFO', 'Health score recalculated', {
+      contactId: contact.id,
+      score: result.healthScore,
+      trend: result.trend,
+    })
+  } catch (error) {
+    log('ERROR', 'Health score recalc error', (error as Error).message)
+    // Don't throw - this is a non-critical operation
+  }
+}
+
+/**
  * Send response message via Evolution API
  */
 async function sendWhatsAppMessage(
@@ -887,6 +968,12 @@ async function handleMessagesUpsert(
     if (messageType !== 'text') {
       await enqueueForProcessing(supabase, messageDbId, messageType, userId)
     }
+
+    // Trigger health score recalculation (Issue #144)
+    // Fire and forget - don't block webhook response
+    triggerHealthScoreRecalculation(supabase, userId, contactPhone).catch(err => {
+      log('WARN', 'Health score trigger failed', (err as Error).message)
+    })
   }
 }
 
