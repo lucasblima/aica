@@ -5,6 +5,9 @@ import { PodcastShow } from '../types/podcast';
 import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
 import { HeaderGlobal } from '@/components/layout';
 import type { StudioLibraryProps } from '../types/studio';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('StudioLibrary');
 
 /**
  * StudioLibrary Component
@@ -52,7 +55,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       if (error) throw error;
       setShows(data || []);
     } catch (error) {
-      console.error('Error loading podcast shows:', error);
+      log.error('Error loading podcast shows:', error);
     } finally {
       setLoading(false);
     }
@@ -83,11 +86,11 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
         .single();
 
       if (error) {
-        console.error('Supabase error details:', error);
+        log.error('Supabase error details:', error);
         throw error;
       }
 
-      console.log('Show created successfully:', data);
+      log.debug('Show created successfully:', data);
       setShowModal(false);
       loadShows();
 
@@ -97,7 +100,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       // Note: Don't call onCreateNew() here - let user manually click "Criar Episódio"
       // This ensures the show ID is properly set before opening the wizard
     } catch (error) {
-      console.error('Error creating show:', error);
+      log.error('Error creating show:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       alert(`Erro ao criar podcast: ${errorMessage}`);
     } finally {

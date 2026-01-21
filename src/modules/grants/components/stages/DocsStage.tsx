@@ -27,6 +27,10 @@ import { StageDependencyHint } from '../shared/StageDependencyHint';
 import type { RequiredDocument } from '../../types/workspace';
 import { uploadProjectDocument } from '../../services/projectDocumentService';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Docsstage');
+
 // Unique ID generator
 const generateId = () => `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -73,7 +77,7 @@ export const DocsStage: React.FC = () => {
 
       dispatch({ type: 'SET_REQUIRED_DOCS', payload: requiredDocs });
     } catch (error) {
-      console.error('[DocsStage] Extract error:', error);
+      log.error(Extract error:', error);
       alert('Erro ao extrair documentos. Adicione manualmente.');
     } finally {
       setIsExtracting(false);
@@ -155,7 +159,7 @@ export const DocsStage: React.FC = () => {
         payload: uploadedDoc,
       });
     } catch (error) {
-      console.error('[DocsStage] Upload error:', error);
+      log.error(Upload error:', error);
       alert('Erro ao fazer upload do documento. Tente novamente.');
     } finally {
       // Remove from uploading set

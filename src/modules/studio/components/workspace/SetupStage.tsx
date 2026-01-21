@@ -18,6 +18,9 @@ import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceCo
 import { User, Users, UserCircle, Sparkles, Calendar, MapPin, Clock, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { searchGuestProfile } from '@/services/podcastProductionService';
 import { GeminiClient } from '@/lib/gemini/client';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('SetupStage');
 
 export default function SetupStage() {
   const { state, actions } = usePodcastWorkspace();
@@ -78,7 +81,7 @@ export default function SetupStage() {
         setProfileData(null);
       }
     } catch (error) {
-      console.error('Error searching profile:', error);
+      log.error('Error searching profile:', error);
       setSearchError('Erro ao buscar perfil. Tente novamente.');
       setProfileData(null);
     } finally {
@@ -170,7 +173,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
       setThemeSuggestions(suggestions);
       setThemeError(null);
     } catch (error: any) {
-      console.error('Error generating theme suggestions:', error);
+      log.error('Error generating theme suggestions:', error);
       setThemeError(error.message || 'Erro ao gerar sugestões de tema. Tente novamente.');
       setThemeSuggestions([]);
     } finally {

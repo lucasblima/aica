@@ -21,6 +21,10 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { StageDependencyHint } from '../shared/StageDependencyHint';
 import type { FormField } from '../../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Structurestage');
+
 // Unique ID generator
 const generateId = () => `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -66,7 +70,7 @@ export const StructureStage: React.FC = () => {
       dispatch({ type: 'SET_FORM_FIELDS', payload: fields });
       dispatch({ type: 'UPDATE_FORM_FIELDS', payload: { parsingStatus: 'done', sourceText } });
     } catch (error) {
-      console.error('[StructureStage] Parse error:', error);
+      log.error(Parse error:', error);
       dispatch({ type: 'UPDATE_FORM_FIELDS', payload: { parsingStatus: 'error' } });
       alert('Erro ao extrair perguntas. Tente novamente ou adicione manualmente.');
     } finally {
@@ -103,7 +107,7 @@ export const StructureStage: React.FC = () => {
       dispatch({ type: 'SET_FORM_FIELDS', payload: fields });
       dispatch({ type: 'UPDATE_FORM_FIELDS', payload: { parsingStatus: 'done' } });
     } catch (error) {
-      console.error('[StructureStage] Extract from PDF error:', error);
+      log.error(Extract from PDF error:', error);
       dispatch({ type: 'UPDATE_FORM_FIELDS', payload: { parsingStatus: 'error' } });
       alert('Erro ao extrair perguntas do PDF. Tente colar o texto manualmente.');
     } finally {

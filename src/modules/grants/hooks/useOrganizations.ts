@@ -8,6 +8,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import * as orgService from '../services/organizationService';
+
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Useorganizations');
 import type {
   Organization,
   CreateOrganizationDTO,
@@ -70,7 +74,7 @@ export function useOrganizations(
       const message =
         err instanceof Error ? err.message : 'Erro ao carregar organizacoes';
       setError(message);
-      console.error('[useOrganizations] Erro:', err);
+      log.error(Erro:', err);
     } finally {
       setIsLoading(false);
     }

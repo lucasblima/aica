@@ -29,6 +29,10 @@ import type {
 } from '../types/incentiveLaws';
 import { toCardData, toSummary } from '../types/incentiveLaws';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Useincentivelaws');
+
 // =============================================================================
 // HOOK OPTIONS
 // =============================================================================
@@ -123,7 +127,7 @@ export function useIncentiveLaws(
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao carregar leis de incentivo';
       setError(message);
-      console.error('[useIncentiveLaws] Erro:', err);
+      log.error(Erro:', err);
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +149,7 @@ export function useIncentiveLaws(
     try {
       return await lawService.getIncentiveLawById(id);
     } catch (err) {
-      console.error('[useIncentiveLaws] Erro ao buscar por ID:', err);
+      log.error(Erro ao buscar por ID:', err);
       return null;
     }
   }, []);
@@ -155,7 +159,7 @@ export function useIncentiveLaws(
     try {
       return await lawService.getIncentiveLawByShortName(shortName);
     } catch (err) {
-      console.error('[useIncentiveLaws] Erro ao buscar por short_name:', err);
+      log.error(Erro ao buscar por short_name:', err);
       return null;
     }
   }, []);
@@ -165,7 +169,7 @@ export function useIncentiveLaws(
     try {
       return await lawService.getIncentiveLawAIContext(lawId);
     } catch (err) {
-      console.error('[useIncentiveLaws] Erro ao buscar contexto AI:', err);
+      log.error(Erro ao buscar contexto AI:', err);
       return null;
     }
   }, []);
@@ -278,7 +282,7 @@ export function useIncentiveLaw(id: string | null): UseIncentiveLawReturn {
       const context = await lawService.getIncentiveLawAIContext(id);
       setAIContext(context);
     } catch (err) {
-      console.error('[useIncentiveLaw] Erro ao carregar contexto AI:', err);
+      log.error(Erro ao carregar contexto AI:', err);
     }
   }, [id]);
 

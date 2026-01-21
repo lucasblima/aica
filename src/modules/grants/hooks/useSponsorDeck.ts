@@ -19,6 +19,10 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import type { DeckOptions, GenerateDeckResponse } from '../types/sponsorDeck';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Usesponsordeck');
+
 // Edge Function endpoint - uses same Supabase URL as main client
 const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
@@ -250,7 +254,7 @@ export function useSponsorDeck({ projectId }: UseSponsorDeckOptions): UseSponsor
           setUsageMetadata(result.usageMetadata);
         }
       } catch (err) {
-        console.error('[useSponsorDeck] Generation failed:', err);
+        log.error(Generation failed:', err);
         setError(err instanceof Error ? err.message : 'Erro desconhecido ao gerar deck');
         setProgress(0);
         setProgressStep('');

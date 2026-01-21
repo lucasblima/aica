@@ -10,6 +10,10 @@ import { supabase } from '@/services/supabaseClient';
 import type { OpportunityDocument } from '../types';
 import { processSourceDocument } from './documentService';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Opportunitydocumentservice');
+
 /**
  * Lista todos os documentos de um edital (opportunity)
  */
@@ -21,7 +25,7 @@ export async function listOpportunityDocuments(opportunityId: string): Promise<O
     .order('uploaded_at', { ascending: true });
 
   if (error) {
-    console.error('[OpportunityDocumentService] Error listing documents:', error);
+    log.error(Error listing documents:', error);
     throw new Error('Falha ao carregar documentos do edital');
   }
 
@@ -62,11 +66,11 @@ export async function uploadOpportunityDocument(
       .single();
 
     if (error) {
-      console.error('[OpportunityDocumentService] Error creating document record:', error);
+      log.error(Error creating document record:', error);
       throw new Error('Falha ao salvar documento no banco de dados');
     }
 
-    console.log('[OpportunityDocumentService] Document uploaded:', {
+    log.debug(Document uploaded:', {
       id: data.id,
       file_name: file.name,
       type: processed.type,
@@ -75,7 +79,7 @@ export async function uploadOpportunityDocument(
 
     return data;
   } catch (error) {
-    console.error('[OpportunityDocumentService] Upload error:', error);
+    log.error(Upload error:', error);
     throw error;
   }
 }
@@ -92,7 +96,7 @@ export async function deleteOpportunityDocument(documentId: string): Promise<voi
     .single();
 
   if (fetchError) {
-    console.error('[OpportunityDocumentService] Error fetching document:', fetchError);
+    log.error(Error fetching document:', fetchError);
     throw new Error('Falha ao buscar documento');
   }
 
@@ -103,7 +107,7 @@ export async function deleteOpportunityDocument(documentId: string): Promise<voi
       .remove([doc.document_path]);
 
     if (storageError) {
-      console.warn('[OpportunityDocumentService] Error deleting from storage:', storageError);
+      log.warn(Error deleting from storage:', storageError);
       // Continue anyway - database deletion is more important
     }
   }
@@ -115,11 +119,11 @@ export async function deleteOpportunityDocument(documentId: string): Promise<voi
     .eq('id', documentId);
 
   if (deleteError) {
-    console.error('[OpportunityDocumentService] Error deleting document:', deleteError);
+    log.error(Error deleting document:', deleteError);
     throw new Error('Falha ao remover documento');
   }
 
-  console.log('[OpportunityDocumentService] Document deleted:', documentId);
+  log.debug(Document deleted:', documentId);
 }
 
 /**
@@ -131,7 +135,7 @@ export async function getCombinedOpportunityDocumentsContent(opportunityId: stri
     .rpc('get_opportunity_documents_content', { opportunity_uuid: opportunityId });
 
   if (error) {
-    console.error('[OpportunityDocumentService] Error getting combined content:', error);
+    log.error(Error getting combined content:', error);
     return null;
   }
 
@@ -146,7 +150,7 @@ export async function countOpportunityDocuments(opportunityId: string): Promise<
     .rpc('count_opportunity_documents', { opportunity_uuid: opportunityId });
 
   if (error) {
-    console.error('[OpportunityDocumentService] Error counting documents:', error);
+    log.error(Error counting documents:', error);
     return 0;
   }
 
@@ -172,7 +176,7 @@ export async function getFullGrantContext(
     });
 
   if (error) {
-    console.error('[OpportunityDocumentService] Error getting full context:', error);
+    log.error(Error getting full context:', error);
     return {
       editalContent: null,
       opportunityDocumentsContent: null,

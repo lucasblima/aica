@@ -19,6 +19,9 @@
 import { supabase } from '@/services/supabaseClient'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { Topic, TopicCategory } from '../types'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('workspaceDatabaseService');
 
 // =====================================================
 // TYPES
@@ -108,7 +111,7 @@ export async function getEpisode(id: string): Promise<Episode | null> {
     .single()
 
   if (error) {
-    console.error('Failed to get episode:', error)
+    log.error('Failed to get episode:', error)
     return null
   }
   return data

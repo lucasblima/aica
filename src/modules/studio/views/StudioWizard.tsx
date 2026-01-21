@@ -31,6 +31,9 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import type { StudioWizardProps, StudioProject } from '../types/studio';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('StudioWizard');
 
 // ============================================================================
 // TYPES
@@ -234,7 +237,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(message);
-      console.error('Error creating project:', err);
+      log.error('Error creating project:', err);
     } finally {
       setIsCreatingProject(false);
     }

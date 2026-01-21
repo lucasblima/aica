@@ -26,6 +26,9 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import {
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GuestApprovalLinkDialog');
   sendApprovalLink,
   getOrCreateApprovalToken,
   validateEmail,
@@ -118,7 +121,7 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
         });
       }
     } catch (error) {
-      console.error('Error loading approval token:', error);
+      log.error('Error loading approval token:', error);
       setSubmitState({
         isSubmitting: false,
         success: false,
@@ -223,7 +226,7 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
         });
       }
     } catch (error) {
-      console.error('Error sending approval link:', error);
+      log.error('Error sending approval link:', error);
       setSubmitState({
         isSubmitting: false,
         success: false,
@@ -239,7 +242,7 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
         setCopiedUrl(true);
         setTimeout(() => setCopiedUrl(false), 2000);
       } catch (error) {
-        console.error('Failed to copy URL:', error);
+        log.error('Failed to copy URL:', error);
       }
     }
   };

@@ -35,6 +35,9 @@ import {
   Check,
 } from 'lucide-react';
 import type { WorkspaceCustomSource } from '@/modules/studio/types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ResearchStage');
 
 type ResearchTab = 'bio' | 'ficha' | 'noticias';
 
@@ -80,7 +83,7 @@ export default function ResearchStage() {
       setSourceUrl('');
       setSourceFile(null);
     } catch (error) {
-      console.error('Error adding custom source:', error);
+      log.error('Error adding custom source:', error);
     } finally {
       setIsProcessingSources(false);
     }
@@ -120,7 +123,7 @@ export default function ResearchStage() {
       };
       setChatMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error:', error);
+      log.error('Error:', error);
     } finally {
       setIsChatLoading(false);
     }
