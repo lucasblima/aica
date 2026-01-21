@@ -7,6 +7,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { financeAgentService } from '../services/financeAgentService';
 import type { AgentContext, FinanceAgentMessage, DateRange } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useFinanceAgent');
 
 interface Message {
   id: string;

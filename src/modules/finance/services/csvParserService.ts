@@ -4,6 +4,10 @@
  * Suporta: Nubank, Inter, Itaú
  */
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('CSVParserService');
+
 // =====================================================
 // Types
 // =====================================================
@@ -119,7 +123,7 @@ export class CSVParserService {
         const transaction = this.parseTransaction(row, colIndices, format, i + 2);
         transactions.push(transaction);
       } catch (error) {
-        console.warn(`Linha ${i + 2} ignorada:`, error);
+        log.warn(`Linha ${i + 2} ignorada:`, error);
         // Continue processing other rows
       }
     }
