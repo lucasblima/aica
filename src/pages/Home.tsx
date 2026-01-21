@@ -12,6 +12,9 @@ import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from 
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
 import { ViewState } from '../../types';
 import { supabase } from '../lib/supabase';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Home');
 
 // Types
 type TabState = 'personal' | 'network';
@@ -111,7 +114,7 @@ export default function Home({
          await supabase.auth.signOut();
          window.location.href = '/';
       } catch (error) {
-         console.error('Error deleting account:', error);
+         log.error('Error deleting account:', error);
          throw error;
       }
    };
@@ -146,9 +149,9 @@ export default function Home({
             const recent = await getRecentProjects(2);
             setGrantsRecentProjects(recent);
 
-            console.log('[Home] Grants data loaded:', { activeCount, deadlines: deadlines.length, recent: recent.length });
+            log.debug(' Grants data loaded:', { activeCount, deadlines: deadlines.length, recent: recent.length });
          } catch (error) {
-            console.error('Error loading grants data:', error);
+            log.error('Error loading grants data:', error);
          }
       };
 
@@ -184,7 +187,7 @@ export default function Home({
                   <IdentityPassport
                      userId={userId}
                      onOpenProfile={() => {
-                        console.log('[Home] IdentityPassport onOpenProfile clicked');
+                        log.debug(' IdentityPassport onOpenProfile clicked');
                         setProfileModalOpen(true);
                      }}
                   />
@@ -343,7 +346,7 @@ export default function Home({
                >
                   <RecentContactsWidget
                      onViewAllClick={() => navigate('/contacts')}
-                     onContactClick={(contact) => console.log('Contact clicked:', contact)}
+                     onContactClick={(contact) => log.debug('Contact clicked:', contact)}
                   />
                </motion.div>
 
@@ -462,11 +465,11 @@ export default function Home({
                   <ConnectionArchetypes
                      multiSelect={false}
                      onSelectArchetype={(archetypeId) => {
-                        console.log('[Home] Arquétipo selecionado:', archetypeId);
+                        log.debug(' Arquétipo selecionado:', archetypeId);
                         onSelectArchetype(archetypeId);
                      }}
                      onCreateCustom={() => {
-                        console.log('[Home] Criar espaço personalizado');
+                        log.debug(' Criar espaço personalizado');
                         onSelectArchetype(null);
                      }}
                   />

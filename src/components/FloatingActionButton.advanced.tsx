@@ -1,6 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusIcon } from '@heroicons/react/24/solid';
 import { springElevation } from '../lib/animations/ceramic-motion';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FloatingActionButtonAdvanced');
 
 interface FloatingActionButtonAdvancedProps {
   isActive: boolean;
@@ -137,7 +140,7 @@ export function FloatingActionButtonAdvancedExample() {
       {/* Com contagem */}
       <FloatingActionButtonAdvanced
         isActive={hasSelection}
-        onClick={() => console.log('Criar')}
+        onClick={() => log.debug('Criar')}
         count={selectedIds.length}
         label="Criar"
       />
@@ -145,7 +148,7 @@ export function FloatingActionButtonAdvancedExample() {
       {/* Posição central, variante verde */}
       <FloatingActionButtonAdvanced
         isActive={hasSelection}
-        onClick={() => console.log('Confirmar')}
+        onClick={() => log.debug('Confirmar')}
         position="bottom-center"
         variant="green"
         label="Confirmar"
@@ -154,7 +157,7 @@ export function FloatingActionButtonAdvancedExample() {
       {/* Ícone customizado, variante azul */}
       <FloatingActionButtonAdvanced
         isActive={hasSelection}
-        onClick={() => console.log('Salvar')}
+        onClick={() => log.debug('Salvar')}
         icon={SaveIcon}
         variant="blue"
         label="Salvar"

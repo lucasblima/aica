@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, RotateCcw } from 'lucide-react';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PomodoroTimer');
 
 interface PomodoroTimerProps {
     initialMinutes?: number;
@@ -37,7 +40,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             if (onComplete) onComplete();
             // Play sound or notification here
             const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-            audio.play().catch(e => console.log('Audio play failed', e));
+            audio.play().catch(e => log.debug('Audio play failed', e));
         }
 
         return () => clearInterval(interval);

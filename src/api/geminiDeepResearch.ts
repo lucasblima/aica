@@ -12,7 +12,9 @@
  */
 
 import { GeminiClient } from '@/lib/gemini'
+import { createNamespacedLogger } from '@/lib/logger'
 
+const log = createNamespacedLogger('GeminiDeepResearch')
 const geminiClient = GeminiClient.getInstance()
 
 /**
@@ -84,8 +86,8 @@ export interface DeepResearchResponse {
 export async function performDeepResearch(
   request: DeepResearchRequest
 ): Promise<DeepResearchResponse> {
-  console.warn(
-    '⚠️  performDeepResearch() is deprecated. Use useWorkspaceAI().deepResearch() instead.'
+  log.warn(
+    'performDeepResearch() is deprecated. Use useWorkspaceAI().deepResearch() instead.'
   )
 
   try {
@@ -111,7 +113,7 @@ export async function performDeepResearch(
       ...result
     }
   } catch (error) {
-    console.error('Error in Gemini Deep Research:', error)
+    log.error('Error in Gemini Deep Research:', error)
 
     return {
       success: false,

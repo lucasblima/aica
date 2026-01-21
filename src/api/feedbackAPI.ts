@@ -13,6 +13,9 @@ import {
   ModuleCompletionResult,
   UserModuleWeight,
 } from '@/services/feedbackLoopService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FeedbackAPI');
 
 // ============================================================================
 // API ENDPOINTS
@@ -69,7 +72,7 @@ export async function submitModuleFeedback(
     const data = await response.json();
     return { success: true, data };
   } catch (error) {
-    console.error('submitModuleFeedback error:', error);
+    log.error('submitModuleFeedback error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -118,7 +121,7 @@ export async function completeModule(
 
     return await response.json();
   } catch (error) {
-    console.error('completeModule error:', error);
+    log.error('completeModule error:', error);
     return null;
   }
 }
@@ -148,7 +151,7 @@ export async function getUserModulePreferences(): Promise<UserModulePreferences 
 
     return await response.json();
   } catch (error) {
-    console.error('getUserModulePreferences error:', error);
+    log.error('getUserModulePreferences error:', error);
     return null;
   }
 }
@@ -178,7 +181,7 @@ export async function getUpdatedRecommendations(): Promise<any | null> {
 
     return await response.json();
   } catch (error) {
-    console.error('getUpdatedRecommendations error:', error);
+    log.error('getUpdatedRecommendations error:', error);
     return null;
   }
 }
@@ -215,7 +218,7 @@ export async function getUserModuleWeights(): Promise<Map<string, number>> {
 
     return weights;
   } catch (error) {
-    console.error('getUserModuleWeights error:', error);
+    log.error('getUserModuleWeights error:', error);
     return new Map();
   }
 }
@@ -247,7 +250,7 @@ export async function getModuleStatus(moduleId: string): Promise<any | null> {
 
     return await response.json();
   } catch (error) {
-    console.error('getModuleStatus error:', error);
+    log.error('getModuleStatus error:', error);
     return null;
   }
 }
@@ -283,7 +286,7 @@ export async function getUserFeedbackHistory(
 
     return await response.json();
   } catch (error) {
-    console.error('getUserFeedbackHistory error:', error);
+    log.error('getUserFeedbackHistory error:', error);
     return null;
   }
 }
@@ -313,7 +316,7 @@ export async function getModuleAnalytics(moduleId: string): Promise<any | null> 
 
     return await response.json();
   } catch (error) {
-    console.error('getModuleAnalytics error:', error);
+    log.error('getModuleAnalytics error:', error);
     return null;
   }
 }
@@ -345,7 +348,7 @@ export async function adminRebuildWeights(): Promise<{ success: boolean; message
 
     return await response.json();
   } catch (error) {
-    console.error('adminRebuildWeights error:', error);
+    log.error('adminRebuildWeights error:', error);
     return { success: false, message: 'Failed to rebuild weights' };
   }
 }
@@ -389,7 +392,7 @@ export async function updateModuleProgress(
     const data = await response.json();
     return { success: true, data };
   } catch (error) {
-    console.error('updateModuleProgress error:', error);
+    log.error('updateModuleProgress error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -459,7 +462,7 @@ export async function recalculateUserWeights(): Promise<{ success: boolean; weig
 
     return { success: true, weights };
   } catch (error) {
-    console.error('recalculateUserWeights error:', error);
+    log.error('recalculateUserWeights error:', error);
     return { success: false };
   }
 }

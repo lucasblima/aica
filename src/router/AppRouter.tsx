@@ -12,6 +12,9 @@ import { StudioProvider } from '../modules/studio/context/StudioContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { AdminGuard } from '../components/guards/AdminGuard';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AppRouter');
 
 // ==================== LAZY LOADED MODULES ====================
 // Heavy modules are loaded on-demand to reduce initial bundle size
@@ -174,7 +177,7 @@ export function AppRouter() {
          try {
             const { data } = await supabase.auth.getSession();
 
-            console.log('[App] DEBUG OAuth Session:', {
+            log.debug(' DEBUG OAuth Session:', {
                hasSession: !!data.session,
                hasProviderToken: !!data.session?.provider_token,
                hasProviderRefreshToken: !!data.session?.provider_refresh_token,
@@ -184,17 +187,17 @@ export function AppRouter() {
 
             // Se há provider_token, significa que o OAuth foi concluído recentemente
             if (data.session?.provider_token) {
-               console.log('[App] Google OAuth callback detected! Saving tokens to database...');
-               console.log('[App] Provider Token presente:', data.session.provider_token.substring(0, 20) + '...');
+               log.debug(' Google OAuth callback detected! Saving tokens to database...');
+               log.debug(' Provider Token presente:', data.session.provider_token.substring(0, 20) + '...');
 
                await handleOAuthCallback();
 
-               console.log('[App] Google Calendar tokens saved successfully!');
+               log.debug(' Google Calendar tokens saved successfully!');
             } else {
-               console.log('[App] No provider_token found in session');
+               log.debug(' No provider_token found in session');
             }
          } catch (error) {
-            console.error('[App] Erro ao processar callback do Google Calendar:', error);
+            log.error(' Erro ao processar callback do Google Calendar:', error);
          }
       };
 
@@ -216,11 +219,11 @@ export function AppRouter() {
 
             // Redirect to onboarding if needed and not already there
             if (needsOnboard && location.pathname !== '/onboarding' && location.pathname !== '/landing') {
-               console.log('[AppRouter] User needs onboarding, redirecting...');
+               log.debug(' User needs onboarding, redirecting...');
                navigate('/onboarding', { replace: true });
             }
          } catch (error) {
-            console.error('[AppRouter] Error checking onboarding status:', error);
+            log.error(' Error checking onboarding status:', error);
             setNeedsOnboarding(false); // Assume completed on error
          }
       };
@@ -231,7 +234,7 @@ export function AppRouter() {
    // Navigate from landing to home or onboarding when auth completes
    useEffect(() => {
       if (isAuthenticated && location.pathname === '/landing') {
-         console.log('[AppRouter] Auth completed, checking onboarding status...');
+         log.debug(' Auth completed, checking onboarding status...');
          if (needsOnboarding === false) {
             navigate('/', { replace: true });
          } else if (needsOnboarding === true) {
@@ -249,7 +252,7 @@ export function AppRouter() {
 
             // Bootstrap: Create "Vida Pessoal" if no associations exist
             if (assocs.length === 0) {
-               console.log('Bootstrapping: Creating Vida Pessoal...');
+               log.debug('Bootstrapping: Creating Vida Pessoal...');
                try {
                   await createAssociation({
                      name: 'Vida Pessoal',
@@ -258,7 +261,7 @@ export function AppRouter() {
                   });
                   assocs = await getAssociations();
                } catch (err) {
-                  console.error('Bootstrap failed (likely missing type column):', err);
+                  log.error('Bootstrap failed (likely missing type column):', err);
                }
             }
 
@@ -271,7 +274,7 @@ export function AppRouter() {
             setAgenda(daily as any);
             setLifeAreas(areas as any);
          } catch (error) {
-            console.error('Error fetching data:', error);
+            log.error('Error fetching data:', error);
          }
       };
 
@@ -288,13 +291,13 @@ export function AppRouter() {
    };
 
    const handleSelectArchetype = (archetypeId: string | null) => {
-      console.log('[App] Arquétipo selecionado:', archetypeId);
+      log.debug(' Arquétipo selecionado:', archetypeId);
       setSelectedArchetype(archetypeId);
       setShowCreateModal(true);
    };
 
    const handleCreateAssociation = () => {
-      console.log('[App] Criar espaço personalizado');
+      log.debug(' Criar espaço personalizado');
       setSelectedArchetype(null);
       setShowCreateModal(true);
    };

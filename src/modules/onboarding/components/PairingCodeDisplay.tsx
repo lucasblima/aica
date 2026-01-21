@@ -17,6 +17,9 @@ import { useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Copy, RefreshCw, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { usePairingCode } from '@/hooks/usePairingCode';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PairingCodeDisplay');
 
 interface PairingCodeDisplayProps {
   /** Phone number to generate code for */
@@ -74,7 +77,7 @@ export function PairingCodeDisplay({
         await navigator.clipboard.writeText(code.replace('-', ''));
         // Could add toast notification here
       } catch (err) {
-        console.error('Failed to copy code:', err);
+        log.error('Failed to copy code:', err);
       }
     }
   }, [code]);

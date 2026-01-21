@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Calendar, CheckCircle, X, ArrowRight, Sparkles } from 'lucide-react';
 import { connectGoogleCalendar } from '@/services/googleAuthService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('OnboardingWizard');
 
 interface OnboardingWizardProps {
     onComplete: (connectedCalendar: boolean) => void;
@@ -17,7 +20,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
             await connectGoogleCalendar();
             // O OAuth redirecionará - a conclusão será tratada no callback
         } catch (error) {
-            console.error('Erro ao conectar Calendar:', error);
+            log.error('Erro ao conectar Calendar:', error);
             setLoading(false);
         }
     };

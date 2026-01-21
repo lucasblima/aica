@@ -14,6 +14,9 @@
  */
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ErrorBoundary');
 
 interface Props {
   children: ReactNode;
@@ -44,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log do erro para monitoramento
-    console.error('🔴 ErrorBoundary caught an error:', error, errorInfo);
+    log.error('ErrorBoundary caught an error:', error, errorInfo);
 
     this.setState({
       error,

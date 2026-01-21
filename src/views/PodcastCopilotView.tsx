@@ -31,6 +31,9 @@
 
 import React, { useState, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PodcastCopilotView');
 import PodcastLibrary from '../modules/podcast/views/PodcastLibrary';
 import PodcastDashboard from '../modules/podcast/views/PodcastDashboard';
 import PreparationMode from '../modules/podcast/views/PreparationMode';
@@ -128,7 +131,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         const getCurrentUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                console.log('[PodcastCopilot] Initial user loaded:', user.id);
+                log.debug(' Initial user loaded:', user.id);
                 setUserId(user.id);
             }
         };
@@ -137,7 +140,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         // Subscribe to auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                console.log('[PodcastCopilot] Auth state changed:', event, session?.user?.id);
+                log.debug(' Auth state changed:', event, session?.user?.id);
                 if (session?.user) {
                     setUserId(session.user.id);
                 } else {
@@ -151,7 +154,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     // Debug: Log view state changes
     React.useEffect(() => {
-        console.log('[PodcastCopilot] View changed to:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
+        log.debug(' View changed to:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
     }, [view, currentShowId, userId, currentGuestData, currentProjectId]);
 
     // Update nav visibility when view changes
@@ -166,7 +169,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     React.useEffect(() => {
         if (view === 'wizard' && (!userId || !currentShowId)) {
             const timeout = setTimeout(() => {
-                console.log('[PodcastCopilot] Wizard loading timeout reached');
+                log.debug(' Wizard loading timeout reached');
                 setWizardLoadingTimeout(true);
             }, 5000);
             return () => clearTimeout(timeout);
@@ -181,35 +184,35 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         // PROTECTION 0: If a transition is in progress, skip ALL checks
         // This prevents the guard from firing during state updates
         if (isTransitioningRef.current) {
-            console.log('[PodcastCopilot] Guard: Transition in progress, skipping ALL checks');
+            log.debug(' Guard: Transition in progress, skipping ALL checks');
             return;
         }
 
         // PROTECTION 1: If userId is still loading (null), do nothing yet
         // The auth state may not be resolved on initial render
         if (!userId) {
-            console.log('[PodcastCopilot] Guard: userId not ready, skipping redirect check');
+            log.debug(' Guard: userId not ready, skipping redirect check');
             return;
         }
 
         // PROTECTION 2: If we're in 'wizard' mode, don't redirect automatically
         // The user intentionally navigated here; we should wait for dependencies
         if (view === 'wizard') {
-            console.log('[PodcastCopilot] Guard: In wizard mode, skipping redirect');
+            log.debug(' Guard: In wizard mode, skipping redirect');
             return;
         }
 
         // PROTECTION 3: If we're in workspace or any production flow, don't redirect
         // These views have their own loading states and should handle missing data gracefully
         if (view === 'workspace' || view === 'preproduction' || view === 'production' || view === 'postproduction') {
-            console.log('[PodcastCopilot] Guard: In workspace/production flow, skipping redirect');
+            log.debug(' Guard: In workspace/production flow, skipping redirect');
             return;
         }
 
         // Original redirect logic: Only redirect if on dashboard/preparation without required data
         // This catches edge cases where the user somehow got to a view without proper navigation
         if (!currentShowId && view !== 'library') {
-            console.log('[PodcastCopilot] Guard: No showId and not in library, redirecting to library');
+            log.debug(' Guard: No showId and not in library, redirecting to library');
             setView('library');
         }
     }, [currentShowId, userId, view]);
@@ -230,7 +233,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     // Dashboard -> Select Existing Episode (NEW FLOW)
     const handleSelectEpisode = async (episodeId: string) => {
-        console.log('[PodcastCopilot] handleSelectEpisode called', { episodeId, view });
+        log.debug(' handleSelectEpisode called', { episodeId, view });
 
         // Set transition flag to prevent guard from interfering
         isTransitioningRef.current = true;
@@ -240,7 +243,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         setLoadingEpisodeId(episodeId);
 
         try {
-            console.log('[PodcastCopilot] Fetching episode from Supabase...');
+            log.debug(' Fetching episode from Supabase...');
             const { data: episode, error } = await supabase
                 .from('podcast_episodes')
                 .select('*')
@@ -248,18 +251,18 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 .single();
 
             if (error) {
-                console.error('[PodcastCopilot] Supabase error:', error);
+                log.error(' Supabase error:', error);
                 alert('Erro ao carregar episódio: ' + error.message);
                 return; // Stay on dashboard
             }
 
             if (!episode) {
-                console.error('[PodcastCopilot] Episode not found');
+                log.error(' Episode not found');
                 alert('Episódio não encontrado.');
                 return; // Stay on dashboard
             }
 
-            console.log('[PodcastCopilot] Episode loaded:', episode.id, episode.guest_name);
+            log.debug(' Episode loaded:', episode.id, episode.guest_name);
 
             // Prepare ALL data BEFORE updating any state
             let dossier: Dossier | null = null;
@@ -282,7 +285,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             };
 
             // Update ALL episode state atomically using unified state
-            console.log('[PodcastCopilot] Updating episode state atomically');
+            log.debug(' Updating episode state atomically');
             setEpisodeState({
                 episodeId,
                 projectId: episodeId,
@@ -290,10 +293,10 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 guestData
             });
 
-            console.log('[PodcastCopilot] Setting view to workspace');
+            log.debug(' Setting view to workspace');
             setView('workspace');
         } catch (error) {
-            console.error('[PodcastCopilot] Error loading episode:', error);
+            log.error(' Error loading episode:', error);
             alert('Erro ao carregar episódio. Tente novamente.');
             // Don't change view - stay on dashboard
         } finally {
@@ -303,14 +306,14 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             // Clear transition flag after a short delay to ensure state is settled
             setTimeout(() => {
                 isTransitioningRef.current = false;
-                console.log('[PodcastCopilot] Transition complete');
+                log.debug(' Transition complete');
             }, 100);
         }
     };
 
     // Dashboard -> Create New Episode -> Workspace (NEW FLOW)
     const handleCreateEpisode = async () => {
-        console.log('[PodcastCopilot] handleCreateEpisode called', { currentShowId, userId, view });
+        log.debug(' handleCreateEpisode called', { currentShowId, userId, view });
 
         // Set transition flag IMMEDIATELY to prevent guard from interfering during async operations
         isTransitioningRef.current = true;
@@ -318,7 +321,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         try {
             // Validate currentShowId
             if (!currentShowId) {
-                console.error('[PodcastCopilot] No currentShowId, showing error');
+                log.error(' No currentShowId, showing error');
                 alert('Erro: Nenhum podcast selecionado. Volte e selecione um podcast.');
                 return;
             }
@@ -326,21 +329,21 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             // If userId is null, try to re-fetch it
             let currentUserId = userId;
             if (!currentUserId) {
-                console.log('[PodcastCopilot] userId is null, attempting to re-fetch...');
+                log.debug(' userId is null, attempting to re-fetch...');
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    console.log('[PodcastCopilot] User re-fetched successfully:', user.id);
+                    log.debug(' User re-fetched successfully:', user.id);
                     setUserId(user.id);
                     currentUserId = user.id;
                 } else {
-                    console.error('[PodcastCopilot] Failed to get user, showing error');
+                    log.error(' Failed to get user, showing error');
                     alert('Sessão expirada. Por favor, faça login novamente.');
                     return;
                 }
             }
 
             // Create empty episode
-            console.log('[PodcastCopilot] Creating empty episode...');
+            log.debug(' Creating empty episode...');
             const { data: newEpisode, error } = await supabase
                 .from('podcast_episodes')
                 .insert({
@@ -355,12 +358,12 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                 .single();
 
             if (error) {
-                console.error('[PodcastCopilot] Failed to create episode:', error);
+                log.error(' Failed to create episode:', error);
                 alert('Erro ao criar episódio: ' + error.message);
                 return;
             }
 
-            console.log('[PodcastCopilot] Episode created:', newEpisode.id);
+            log.debug(' Episode created:', newEpisode.id);
 
             // Update episode state
             setEpisodeState({
@@ -371,23 +374,23 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
             });
 
             // Navigate to workspace
-            console.log('[PodcastCopilot] Setting view to workspace');
+            log.debug(' Setting view to workspace');
             setView('workspace');
         } catch (error) {
-            console.error('[PodcastCopilot] Error creating episode:', error);
+            log.error(' Error creating episode:', error);
             alert('Erro ao criar episódio. Tente novamente.');
         } finally {
             // Clear transition flag after state is settled
             setTimeout(() => {
                 isTransitioningRef.current = false;
-                console.log('[PodcastCopilot] Transition to workspace complete');
+                log.debug(' Transition to workspace complete');
             }, 100);
         }
     };
 
     // Wizard -> Pre-Production
     const handleWizardComplete = async (episode: any) => {
-        console.log('[PodcastCopilot] handleWizardComplete called', { episode });
+        log.debug(' handleWizardComplete called', { episode });
 
         // Set transition flag
         isTransitioningRef.current = true;
@@ -413,19 +416,19 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         });
 
         // Navigate to workspace instead of preproduction
-        console.log('[PodcastCopilot] Navigating to workspace with episode:', episode.id);
+        log.debug(' Navigating to workspace with episode:', episode.id);
         setView('workspace');
 
         // Clear transition flag after state is settled
         setTimeout(() => {
             isTransitioningRef.current = false;
-            console.log('[PodcastCopilot] Transition to workspace complete');
+            log.debug(' Transition to workspace complete');
         }, 100);
     };
 
     // Pre-Production -> Production
     const handleGoToProduction = (dossier: Dossier, projectId: string, topics: Topic[]) => {
-        console.log('[PodcastCopilot] handleGoToProduction called', { projectId });
+        log.debug(' handleGoToProduction called', { projectId });
 
         // Set transition flag
         isTransitioningRef.current = true;
@@ -510,13 +513,13 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     // ================== VIEW RENDERS ==================
     // CRITICAL: Priority order matters! Wizard and PreProduction must be checked FIRST
     // to prevent visual redirect when currentShowId temporarily becomes null
-    console.log('[PodcastCopilot] Rendering, view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
+    log.debug(' Rendering, view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId });
 
     // 0. PRIORITY: Workspace (NEW unified interface)
     // CRITICAL: Workspace has highest priority - render it BEFORE any currentShowId checks
     // This prevents redirects when currentShowId temporarily becomes null during transitions
     if (view === 'workspace') {
-        console.log('[PodcastCopilot] Rendering Workspace view', {
+        log.debug(' Rendering Workspace view', {
             currentEpisodeId,
             currentShowId,
             isTransitioning: isTransitioningRef.current
@@ -537,7 +540,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
         // Only show loading if we genuinely don't have the required data
         if (!currentEpisodeId || !currentShowId) {
-            console.log('[PodcastCopilot] Workspace waiting for data', { currentEpisodeId, currentShowId });
+            log.debug(' Workspace waiting for data', { currentEpisodeId, currentShowId });
             return (
                 <div className="flex items-center justify-center h-screen bg-gray-50">
                     <div className="flex flex-col items-center gap-3">
@@ -561,11 +564,11 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     // 1. PRIORITY: Guest Identification Wizard (checked FIRST!)
     // The wizard has absolute priority - if view is 'wizard', render it regardless of other state
     if (view === 'wizard') {
-        console.log('[PodcastCopilot] Rendering Wizard view', { userId, currentShowId, wizardLoadingTimeout });
+        log.debug(' Rendering Wizard view', { userId, currentShowId, wizardLoadingTimeout });
 
         // Show loading while dependencies are being resolved
         if (!userId || !currentShowId) {
-            console.log('[PodcastCopilot] Wizard loading - waiting for dependencies', { userId: !!userId, currentShowId: !!currentShowId });
+            log.debug(' Wizard loading - waiting for dependencies', { userId: !!userId, currentShowId: !!currentShowId });
 
             // If timeout reached, show retry option
             if (wizardLoadingTimeout) {
@@ -789,11 +792,11 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     // Dashboard - only render if view is explicitly 'dashboard'
     if (view === 'dashboard') {
-        console.log('[PodcastCopilot] Rendering Dashboard view', { currentShowId });
+        log.debug(' Rendering Dashboard view', { currentShowId });
 
         // Show loading while showId is being resolved (but don't redirect!)
         if (!currentShowId) {
-            console.log('[PodcastCopilot] Dashboard loading - waiting for showId');
+            log.debug(' Dashboard loading - waiting for showId');
             return (
                 <div className="flex items-center justify-center h-screen bg-ceramic-base">
                     <div className="flex flex-col items-center gap-3">
@@ -819,7 +822,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
 
     // Library - default view when no other view matches
     if (view === 'library') {
-        console.log('[PodcastCopilot] Rendering Library view');
+        log.debug(' Rendering Library view');
         return (
             <PodcastLibrary
                 onSelectShow={handleSelectShow}
@@ -831,7 +834,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
     }
 
     // Fallback - should rarely be reached
-    console.warn('[PodcastCopilot] Falling through to fallback! view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId, currentDossier: !!currentDossier });
+    log.warn(' Falling through to fallback! view:', view, { currentShowId, userId, currentGuestData: !!currentGuestData, currentProjectId, currentDossier: !!currentDossier });
     return (
         <div className="flex items-center justify-center h-screen bg-[#F0EFE9]">
             <p className="text-[#5C554B]">Carregando...</p>

@@ -56,7 +56,7 @@ export function useFinanceAgent(userId: string): UseFinanceAgentReturn {
         const ctx = await financeAgentService.buildContext(userId, dateRange);
         setContext(ctx);
       } catch (err) {
-        console.error('Error loading context:', err);
+        log.error('Error loading context:', err);
         setError('Erro ao carregar dados financeiros');
       } finally {
         setContextLoading(false);
@@ -103,7 +103,7 @@ export function useFinanceAgent(userId: string): UseFinanceAgentReturn {
 
         setMessages((prev) => [...prev, assistantMessage]);
       } catch (err) {
-        console.error('Chat error:', err);
+        log.error('Chat error:', err);
         setError('Erro ao enviar mensagem');
 
         const errorMessage: Message = {
@@ -150,7 +150,7 @@ export function useFinanceAgent(userId: string): UseFinanceAgentReturn {
         },
       ]);
     } catch (err) {
-      console.error('Analyze spending error:', err);
+      log.error('Analyze spending error:', err);
       setError('Erro ao analisar gastos');
     } finally {
       setLoading(false);
@@ -180,7 +180,7 @@ export function useFinanceAgent(userId: string): UseFinanceAgentReturn {
         },
       ]);
     } catch (err) {
-      console.error('Suggest savings error:', err);
+      log.error('Suggest savings error:', err);
       setError('Erro ao sugerir economia');
     } finally {
       setLoading(false);
@@ -210,7 +210,7 @@ export function useFinanceAgent(userId: string): UseFinanceAgentReturn {
         },
       ]);
     } catch (err) {
-      console.error('Identify anomalies error:', err);
+      log.error('Identify anomalies error:', err);
       setError('Erro ao identificar anomalias');
     } finally {
       setLoading(false);

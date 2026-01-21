@@ -11,6 +11,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp } from 'lucide-react'
 import { DangerZone } from './DangerZone'
 import { EfficiencyFlowCard } from '../EfficiencyFlowCard'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('ProfileModal')
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -57,7 +60,7 @@ export function ProfileModal({
       setIsDeleting(true)
       await onDeleteAccount()
     } catch (error) {
-      console.error('Error deleting account:', error)
+      log.error('Error deleting account:', error)
       setIsDeleting(false)
     }
   }

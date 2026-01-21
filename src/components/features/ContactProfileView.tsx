@@ -15,6 +15,9 @@ import { ContactNetwork } from '@/types/memoryTypes';
 import { getContactById } from '@/services/contactNetworkService';
 import { supabase } from '@/services/supabaseClient';
 import './ContactProfileView.css';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ContactProfileView');
 
 interface ContactProfileProps {
   contactId: string;
@@ -100,7 +103,7 @@ export const ContactProfileView: React.FC<ContactProfileProps> = ({
       setTasks([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load contact data');
-      console.error('Error loading contact:', err);
+      log.error('Error loading contact:', err);
     } finally {
       setLoading(false);
     }

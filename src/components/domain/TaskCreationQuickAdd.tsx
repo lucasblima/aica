@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('TaskCreationQuickAdd');
 
 interface TaskCreationQuickAddProps {
   userId: string;
@@ -38,7 +41,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
         });
 
       if (insertError) {
-        console.error('[TaskCreationQuickAdd] Insert error:', insertError);
+        log.error('Insert error:', insertError);
         setError('Erro ao criar tarefa. Tente novamente.');
         return;
       }
@@ -48,7 +51,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
       setIsOpen(false);
       onTaskCreated();
     } catch (err) {
-      console.error('[TaskCreationQuickAdd] Unexpected error:', err);
+      log.error('Unexpected error:', err);
       setError('Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);

@@ -15,6 +15,9 @@ import type {
   GeminiChatResponse,
   StreamOptions
 } from './types'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('GeminiClient')
 
 /**
  * URLs dos backends
@@ -236,9 +239,9 @@ export class GeminiClient {
 
     // Log critico para API_KEY_EXPIRED para facilitar diagnostico
     if (code === 'API_KEY_EXPIRED') {
-      console.error(
-        '[GeminiClient] CRITICAL: Gemini API key is expired or invalid!\n' +
-        'See docs/GEMINI_API_SETUP.md for renewal instructions.\n' +
+      log.error(
+        'CRITICAL: Gemini API key is expired or invalid! ' +
+        'See docs/GEMINI_API_SETUP.md for renewal instructions. ' +
         'Quick fix: npx supabase secrets set GEMINI_API_KEY=<new-key>'
       )
     }

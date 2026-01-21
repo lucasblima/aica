@@ -4,6 +4,10 @@
  * Implementa exponential backoff e lida com rate limiting
  */
 
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('GeminiRetry')
+
 export interface RetryOptions {
   maxRetries?: number
   baseDelay?: number
@@ -114,7 +118,7 @@ export async function retryAfterRateLimit<T>(
 ): Promise<T> {
   const delay = (retryAfterSeconds || 60) * 1000
 
-  console.warn(`Rate limited. Retrying after ${retryAfterSeconds}s...`)
+  log.warn(`Rate limited. Retrying after ${retryAfterSeconds}s...`)
 
   await sleep(delay)
 

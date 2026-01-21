@@ -13,6 +13,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useOnboarding');
 import {
   getUserProfile,
   getWhatsAppSession,
@@ -79,7 +82,7 @@ export function useOnboarding(): UseOnboardingReturn {
 
       setProfile(userProfile);
     } catch (err) {
-      console.error('Error loading onboarding data:', err);
+      log.error('Error loading onboarding data:', err);
       setError('Falha ao carregar dados. Tente novamente.');
     } finally {
       setIsLoading(false);

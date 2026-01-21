@@ -23,6 +23,9 @@ import type {
   TopExpensiveOperation,
   MonthlyCostSummary
 } from '../../types/aiCost';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AICostDashboard');
 
 interface AICostDashboardProps {
   userId: string;
@@ -71,7 +74,7 @@ export const AICostDashboard: React.FC<AICostDashboardProps> = ({ userId, onBack
       setModelBreakdown(models);
       setTopOperations(top);
     } catch (error) {
-      console.error('[AICostDashboard] Error loading data:', error);
+      log.error('Error loading data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

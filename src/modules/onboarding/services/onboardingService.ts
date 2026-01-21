@@ -12,6 +12,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type {
   UserProfile,
   WhatsAppSession,
@@ -19,6 +20,8 @@ import type {
   OnboardingStep,
   OnboardingData,
 } from '../types';
+
+const log = createNamespacedLogger('OnboardingService');
 
 // =============================================================================
 // USER PROFILE
@@ -39,7 +42,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       // No profile found - this is expected for new users
       return null;
     }
-    console.error('Error fetching user profile:', error);
+    log.error('Error fetching user profile:', error);
     return null;
   }
 
@@ -67,7 +70,7 @@ export async function initializeUserProfile(userId: string): Promise<UserProfile
     .single();
 
   if (error) {
-    console.error('Error creating user profile:', error);
+    log.error('Error creating user profile:', error);
     return null;
   }
 
@@ -90,7 +93,7 @@ export async function updateOnboardingStep(
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error updating onboarding step:', error);
+    log.error('Error updating onboarding step:', error);
     return false;
   }
 
@@ -111,7 +114,7 @@ export async function completeOnboarding(userId: string): Promise<boolean> {
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Error completing onboarding:', error);
+    log.error('Error completing onboarding:', error);
     return false;
   }
 
@@ -138,7 +141,7 @@ export async function getWhatsAppSession(userId: string): Promise<WhatsAppSessio
     if (error.code === 'PGRST116') {
       return null;
     }
-    console.error('Error fetching WhatsApp session:', error);
+    log.error('Error fetching WhatsApp session:', error);
     return null;
   }
 
@@ -163,7 +166,7 @@ export async function createWhatsAppSession(
     .single();
 
   if (error) {
-    console.error('Error creating WhatsApp session:', error);
+    log.error('Error creating WhatsApp session:', error);
     return null;
   }
 
@@ -188,7 +191,7 @@ export async function updateWhatsAppSessionStatus(
     .eq('id', sessionId);
 
   if (error) {
-    console.error('Error updating WhatsApp session:', error);
+    log.error('Error updating WhatsApp session:', error);
     return false;
   }
 
@@ -213,7 +216,7 @@ export async function getUserCredits(userId: string): Promise<UserCredits | null
     if (error.code === 'PGRST116') {
       return null;
     }
-    console.error('Error fetching user credits:', error);
+    log.error('Error fetching user credits:', error);
     return null;
   }
 
@@ -230,7 +233,7 @@ export async function initializeUserCredits(userId: string): Promise<UserCredits
   });
 
   if (error) {
-    console.error('Error initializing user credits:', error);
+    log.error('Error initializing user credits:', error);
     return null;
   }
 

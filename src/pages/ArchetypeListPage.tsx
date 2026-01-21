@@ -16,6 +16,9 @@ import { useSpaces } from '../modules/connections/hooks/useSpaces';
 import { useConnectionNavigation } from '../modules/connections/hooks/useConnectionNavigation';
 import { ARCHETYPE_METADATA, type ArchetypeType, type ConnectionSpace } from '../modules/connections/types';
 import { staggerContainer, staggerItem } from '../lib/animations/ceramic-motion';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ArchetypeListPage');
 
 /**
  * Page showing all spaces for a specific archetype
@@ -55,7 +58,7 @@ export function ArchetypeListPage() {
   };
 
   const handleSpaceCreated = (space: ConnectionSpace) => {
-    console.log('[ArchetypeListPage] Space created:', space);
+    log.debug(' Space created:', space);
     navigateToSpace(space.id, space.archetype);
   };
 
@@ -63,7 +66,7 @@ export function ArchetypeListPage() {
     try {
       await toggleFavorite(spaceId);
     } catch (err) {
-      console.error('[ArchetypeListPage] Error toggling favorite:', err);
+      log.error(' Error toggling favorite:', err);
     }
   };
 

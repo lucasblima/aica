@@ -18,6 +18,9 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, CheckCircle, AlertCircle, SkipForward } from 'lucide-react';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('TrailSelectionFlow');
 import { CONTEXTUAL_TRAILS, ALL_TRAILS } from '../../../data/contextualTrails';
 import {
   ContextualTrail,
@@ -280,7 +283,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
         ...prev,
         error: `Complete pelo menos ${minTrailsRequired} trilhas antes de finalizar. Respondidas: ${state.completedTrails.length}/${minTrailsRequired}`,
       }));
-      console.warn('[Onboarding] Attempt to finalize with insufficient completed trails', {
+      log.warn('Attempt to finalize with insufficient completed trails', {
         completed: state.completedTrails.length,
         required: minTrailsRequired,
       });

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, LogOut, Loader2, Info, RefreshCw } from 'lucide-react';
 import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '@/services/googleAuthService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GoogleCalendarConnect');
 
 interface GoogleCalendarConnectProps {
     onSync?: () => void | Promise<void>;
@@ -20,7 +23,7 @@ export default function GoogleCalendarConnect({
     const [error, setError] = useState<string | null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
-    console.log('[GoogleCalendarConnect] Component rendered', {
+    log.debug('Component rendered', {
         connected,
         loading,
         error,
@@ -30,14 +33,14 @@ export default function GoogleCalendarConnect({
 
     // Verificar se já está conectado ao carregar
     useEffect(() => {
-        console.log('[GoogleCalendarConnect] useEffect: Checking connection...');
+        log.debug('useEffect: Checking connection...');
         const checkConnection = async () => {
             try {
                 const isConnected = await isGoogleCalendarConnected();
-                console.log('[GoogleCalendarConnect] Connection status:', isConnected);
+                log.debug('Connection status:', isConnected);
                 setConnected(isConnected);
             } catch (err) {
-                console.error('[GoogleCalendarConnect] Erro ao verificar conexão:', err);
+                log.error('Erro ao verificar conexão:', err);
             }
         };
 
@@ -73,7 +76,7 @@ export default function GoogleCalendarConnect({
 
     const handleSync = async () => {
         if (onSync) {
-            console.log('[GoogleCalendarConnect] 🔄 Sincronização manual solicitada');
+            log.debug('Sincronização manual solicitada');
             await onSync();
         }
     };

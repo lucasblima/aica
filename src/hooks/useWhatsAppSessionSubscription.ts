@@ -87,7 +87,7 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
         const { data: { user } } = await supabase.auth.getUser()
 
         if (!user) {
-          console.warn('[useWhatsAppSessionSubscription] No user for subscription')
+          log.warn('[useWhatsAppSessionSubscription] No user for subscription')
           return
         }
 

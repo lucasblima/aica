@@ -9,6 +9,9 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, AlertTriangle, CheckCircle, XCircle, TrendingUp, Settings } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('BudgetMonitor');
 
 export interface BudgetStatus {
   total_spend_usd: number;
@@ -65,7 +68,7 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
         setBudgetStatus(data[0]);
       }
     } catch (err) {
-      console.error('Error loading budget status:', err);
+      log.error('Error loading budget status:', err);
     } finally {
       setLoading(false);
     }
@@ -85,7 +88,7 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
 
       setAlerts(data || []);
     } catch (err) {
-      console.error('Error loading alerts:', err);
+      log.error('Error loading alerts:', err);
     }
   }
 
@@ -101,7 +104,7 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
       // Remove from local state
       setAlerts(prev => prev.filter(a => a.id !== alertId));
     } catch (err) {
-      console.error('Error acknowledging alert:', err);
+      log.error('Error acknowledging alert:', err);
     }
   }
 

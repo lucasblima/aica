@@ -21,6 +21,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, MessageSquare, Shield, CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useWhatsAppContacts, SyncResult } from '@/hooks/useWhatsAppContacts';
 import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ContactsSyncStep');
 
 interface ContactsSyncStepProps {
   /** Callback when sync is complete */
@@ -60,11 +63,11 @@ export function ContactsSyncStep({
 
       // Check if contacts were already synced automatically
       if (session.contacts_synced && session.last_sync_at) {
-        console.log('[ContactsSyncStep] Contacts already synced by webhook, fetching from DB...');
+        log.debug(' Contacts already synced by webhook, fetching from DB...');
         setCurrentPhase('checking');
         handleAlreadySynced();
       } else {
-        console.log('[ContactsSyncStep] No automatic sync detected, starting manual sync...');
+        log.debug(' No automatic sync detected, starting manual sync...');
         handleSync();
       }
     }
@@ -102,7 +105,7 @@ export function ContactsSyncStep({
         onComplete();
       }, 2000);
     } catch (err) {
-      console.error('[ContactsSyncStep] Error fetching synced contacts:', err);
+      log.error(' Error fetching synced contacts:', err);
       // Fall back to manual sync
       handleSync();
     }

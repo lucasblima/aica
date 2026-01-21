@@ -12,6 +12,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Cog, ChevronLeft, Lightbulb } from 'lucide-react';
 import TrailSelectionFlow from '@/modules/onboarding/components/TrailSelectionFlow';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ProfilePage');
 
 interface ProfilePageProps {
   userId: string;
@@ -26,12 +29,12 @@ export function ProfilePage({ userId, userEmail }: ProfilePageProps) {
 
   const handleTrailsComplete = () => {
     // When user completes trails from profile, just stay on page
-    console.log('[Profile] User completed trails from optional section');
+    log.debug(' User completed trails from optional section');
     setActiveTab('profile');
   };
 
   const handleTrailsError = (error: string) => {
-    console.error('[Profile] Trail error:', error);
+    log.error(' Trail error:', error);
   };
 
   return (

@@ -13,6 +13,10 @@
  * - Force fresh PKCE flow on next login
  */
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('OAuthCleanup');
+
 const AUTH_COOKIE_PATTERNS = [
   /^sb-.*-auth-token.*$/,           // All Supabase auth tokens
   /^sb-.*-code-verifier.*$/,        // PKCE code verifiers
@@ -34,7 +38,7 @@ function deleteCookie(name: string): void {
     document.cookie = strategy;
   });
 
-  console.log(`[OAuth Cleanup] Deleted cookie: ${name}`);
+  log.debug(`Deleted cookie: ${name}`);
 }
 
 /**
@@ -69,23 +73,23 @@ function getOAuthCookies(): string[] {
  * ```
  */
 export function cleanupOAuthCookies(): void {
-  console.log('[OAuth Cleanup] Starting cookie cleanup...');
+  log.debug('Starting cookie cleanup...');
 
   const oauthCookies = getOAuthCookies();
 
   if (oauthCookies.length === 0) {
-    console.log('[OAuth Cleanup] No OAuth cookies found to clean');
+    log.debug('No OAuth cookies found to clean');
     return;
   }
 
-  console.log(`[OAuth Cleanup] Found ${oauthCookies.length} OAuth cookies:`, oauthCookies);
+  log.debug(`Found ${oauthCookies.length} OAuth cookies:`, oauthCookies);
 
   oauthCookies.forEach(cookieName => {
     deleteCookie(cookieName);
   });
 
-  console.log('[OAuth Cleanup] ✅ Cleanup complete! Refresh the page and try logging in again.');
-  console.log('[OAuth Cleanup] TIP: Clear browser cache (Ctrl+Shift+Delete) for best results');
+  log.debug('Cleanup complete! Refresh the page and try logging in again.');
+  log.debug('TIP: Clear browser cache (Ctrl+Shift+Delete) for best results');
 }
 
 /**
@@ -99,16 +103,9 @@ export function debugOAuthCookies(): void {
 
   const oauthCookies = getOAuthCookies();
 
-  console.group('[OAuth Debug] Cookie Status');
-  console.log('Total cookies:', allCookies.length);
-  console.log('OAuth cookies:', oauthCookies.length);
-  console.table(
-    oauthCookies.map(name => ({
-      name,
-      length: document.cookie.match(new RegExp(`${name}=([^;]*)`))??[1]?.length ?? 0,
-    }))
-  );
-  console.groupEnd();
+  log.debug('[Cookie Status] Total cookies:', allCookies.length);
+  log.debug('[Cookie Status] OAuth cookies:', oauthCookies.length);
+  log.debug('[Cookie Status] OAuth cookie names:', oauthCookies);
 }
 
 // Expose to window for console debugging

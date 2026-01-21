@@ -12,7 +12,10 @@ import { HeaderGlobal, ContactCardGrid, ContactDetailModal, CreditBalanceWidget 
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
 import { supabase } from '../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { ContactNetwork } from '../types/memoryTypes';
+
+const log = createNamespacedLogger('ContactsView');
 
 // WhatsApp Onboarding Components
 import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep';
@@ -60,14 +63,14 @@ export function ContactsView() {
   const syncDatabaseWithEvolutionAPI = useCallback(async (instanceName: string) => {
     if (!instanceName || !user?.id) return false;
 
-    console.log('[ContactsView] Attempting to sync database status with Evolution API...');
+    log.debug(' Attempting to sync database status with Evolution API...');
     setIsSyncingStatus(true);
 
     try {
       // Use ref to avoid recreating callback when configureWebhook changes
       const result = await configureWebhookRef.current?.();
       if (result?.success && result.connectionState === 'open') {
-        console.log('[ContactsView] Database synced! Evolution API reports connected.');
+        log.debug(' Database synced! Evolution API reports connected.');
         // Refresh the session after sync
         const session = await getWhatsAppSession(user.id);
         setWhatsappSession(session);
@@ -75,7 +78,7 @@ export function ContactsView() {
       }
       return false;
     } catch (err) {
-      console.error('[ContactsView] Error syncing with Evolution API:', err);
+      log.error(' Error syncing with Evolution API:', err);
       return false;
     } finally {
       setIsSyncingStatus(false);
@@ -97,10 +100,10 @@ export function ContactsView() {
         // If session exists but status isn't 'connected', try to sync with Evolution API
         // This handles cases where the webhook didn't update the database properly
         if (session && session.status !== 'connected' && session.instance_name) {
-          console.log('[ContactsView] Session exists but not connected. Checking Evolution API...');
+          log.debug(' Session exists but not connected. Checking Evolution API...');
         }
       } catch (err) {
-        console.error('[ContactsView] Error checking WhatsApp session:', err);
+        log.error(' Error checking WhatsApp session:', err);
       } finally {
         setIsCheckingSession(false);
       }
@@ -149,13 +152,13 @@ export function ContactsView() {
       !isAutoSyncing;
 
     if (shouldAutoSync) {
-      console.log('[ContactsView] Auto-sync triggered: connected but never synced');
+      log.debug(' Auto-sync triggered: connected but never synced');
       setHasAttemptedAutoSync(true);
       setIsAutoSyncing(true);
 
       syncWhatsAppContacts()
         .then((result) => {
-          console.log('[ContactsView] Auto-sync result:', result);
+          log.debug(' Auto-sync result:', result);
           if (result.success) {
             loadContacts();
             loadSyncStatus();
@@ -164,7 +167,7 @@ export function ContactsView() {
           }
         })
         .catch((err) => {
-          console.error('[ContactsView] Auto-sync error:', err);
+          log.error(' Auto-sync error:', err);
           setError(`Erro ao sincronizar: ${err.message}`);
         })
         .finally(() => {
@@ -197,7 +200,7 @@ export function ContactsView() {
       setContacts(data || []);
     } catch (err) {
       const error = err as Error;
-      console.error('[ContactsView] Error loading contacts:', error);
+      log.error(' Error loading contacts:', error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -212,7 +215,7 @@ export function ContactsView() {
         contactCount: status.contactCount,
       });
     } catch (err) {
-      console.error('[ContactsView] Error loading sync status:', err);
+      log.error(' Error loading sync status:', err);
     }
   };
 
@@ -224,7 +227,7 @@ export function ContactsView() {
       const result = await syncWhatsAppContacts();
 
       if (result.success) {
-        console.log('[ContactsView] WhatsApp sync completed:', result);
+        log.debug(' WhatsApp sync completed:', result);
         // Reload contacts after sync
         await loadContacts();
         await loadSyncStatus();
@@ -236,7 +239,7 @@ export function ContactsView() {
       }
     } catch (err) {
       const error = err as Error;
-      console.error('[ContactsView] WhatsApp sync error:', error);
+      log.error(' WhatsApp sync error:', error);
       setError(`Erro ao sincronizar: ${error.message}`);
       alert(`❌ Erro ao sincronizar:\n\n${error.message}`);
     } finally {
@@ -281,12 +284,12 @@ export function ContactsView() {
   };
 
   const handleContactSave = async (updatedContact: Partial<ContactNetwork>) => {
-    console.log('[ContactsView] Contact save:', updatedContact);
+    log.debug(' Contact save:', updatedContact);
     setIsDetailModalOpen(false);
   };
 
   const handleContactUpdated = (contactId: string, healthScore: number) => {
-    console.log('[ContactsView] Contact updated with health score:', contactId, healthScore);
+    log.debug(' Contact updated with health score:', contactId, healthScore);
     // Update the contact in the local state
     setContacts(prev => prev.map(c =>
       c.id === contactId

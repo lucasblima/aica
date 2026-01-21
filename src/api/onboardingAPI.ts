@@ -17,6 +17,9 @@ import {
   ContextualTrail,
   FinalizeOnboardingResponse,
 } from '../types/onboardingTypes';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('OnboardingAPI');
 import {
   getCourseTrails,
   getTrailById_API,
@@ -43,7 +46,7 @@ export async function listAllTrails(): Promise<{
       trails,
     };
   } catch (error) {
-    console.error('Error listing trails:', error);
+    log.error('Error listing trails:', error);
     return {
       success: false,
       trails: [],
@@ -74,7 +77,7 @@ export async function getTrailDetails(trailId: string): Promise<{
       trail,
     };
   } catch (error) {
-    console.error(`Error getting trail ${trailId}:`, error);
+    log.error(`Error getting trail ${trailId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get trail details',
@@ -173,7 +176,7 @@ export async function captureContextualTrail(
       message: `Trail "${trailId}" completed successfully`,
     };
   } catch (error) {
-    console.error('Error capturing trail context:', error);
+    log.error('Error capturing trail context:', error);
     return {
       success: false,
       trailId: request.trailId,
@@ -222,7 +225,7 @@ export async function getOnboardingStatusEndpoint(userId: string): Promise<{
       isComplete,
     };
   } catch (error) {
-    console.error('Error getting onboarding status:', error);
+    log.error('Error getting onboarding status:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get status',
@@ -285,7 +288,7 @@ export async function finalizeOnboarding(userId: string): Promise<FinalizeOnboar
       message: `Onboarding completed! You have ${recommendations.length} personalized module recommendations.`,
     };
   } catch (error) {
-    console.error('Error finalizing onboarding:', error);
+    log.error('Error finalizing onboarding:', error);
     return {
       success: false,
       nextStep: 'step_3_recommendations',
@@ -318,7 +321,7 @@ export async function getUserRecommendations(userId: string): Promise<{
       modules: recommendations,
     };
   } catch (error) {
-    console.error('Error getting recommendations:', error);
+    log.error('Error getting recommendations:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get recommendations',
@@ -333,7 +336,7 @@ export async function checkOnboardingCompletion(userId: string): Promise<boolean
   try {
     return await isOnboardingComplete(userId);
   } catch (error) {
-    console.error('Error checking onboarding completion:', error);
+    log.error('Error checking onboarding completion:', error);
     return false;
   }
 }
@@ -345,7 +348,7 @@ export async function getOnboardingProgress(userId: string): Promise<number> {
   try {
     return await getOnboardingProgressPercentage(userId);
   } catch (error) {
-    console.error('Error getting progress:', error);
+    log.error('Error getting progress:', error);
     return 0;
   }
 }
