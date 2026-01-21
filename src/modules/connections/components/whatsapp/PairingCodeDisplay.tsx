@@ -7,7 +7,7 @@
  * @example
  * <PairingCodeDisplay
  *   phoneNumber="5511987654321"
- *   onConnected={() => console.log('Connected!')}
+ *   onConnected={() => log.debug('Connected!')}
  * />
  *
  * Issue: #86
@@ -26,6 +26,8 @@ import {
   Check,
 } from 'lucide-react';
 import { usePairingCode } from '@/hooks/usePairingCode';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('PairingCodeDisplay');
 
 // ============================================================================
 // CONSTANTS
@@ -250,7 +252,7 @@ export function PairingCodeDisplay({
       setCopied(true);
       setTimeout(() => setCopied(false), COPIED_STATE_RESET_DELAY_MS);
     } catch (err) {
-      console.error('[PairingCodeDisplay] Copy failed:', err);
+      log.error('[PairingCodeDisplay] Copy failed:', err);
     }
   }, [code]);
 

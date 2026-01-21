@@ -15,6 +15,10 @@
  */
 
 import { FileSearchResult, FileSearchQuery } from '../types/fileSearch';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FileSearchCacheService');
+
 
 // =====================================================
 // TYPES
@@ -193,7 +197,7 @@ class FileSearchCacheService {
 
       return cached;
     } catch (error) {
-      console.error('[fileSearchCache] Error reading from localStorage:', error);
+      log.error('[fileSearchCache] Error reading from localStorage:', { error: error });
       return null;
     }
   }
@@ -213,7 +217,7 @@ class FileSearchCacheService {
 
       // Don't cache if result is too large (> 500KB)
       if (resultSize > 500) {
-        console.warn('[fileSearchCache] Result too large to cache:', resultSize, 'KB');
+        log.warn('[fileSearchCache] Result too large to cache:', resultSize, 'KB');
         return;
       }
 
@@ -224,11 +228,11 @@ class FileSearchCacheService {
 
       localStorage.setItem(key, JSON.stringify(result));
     } catch (error) {
-      console.error('[fileSearchCache] Error writing to localStorage:', error);
+      log.error('[fileSearchCache] Error writing to localStorage:', { error: error });
 
       // If quota exceeded, clear old cache entries
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        console.warn('[fileSearchCache] Storage quota exceeded, clearing old entries');
+        log.warn('[fileSearchCache] Storage quota exceeded, clearing old entries');
         this.clearOldStorageEntries();
       }
     }
@@ -339,7 +343,7 @@ class FileSearchCacheService {
     const memoryResult = this.getFromMemory(key);
     if (memoryResult) {
       this.stats.hits++;
-      console.debug('[fileSearchCache] Memory cache HIT:', key, `(${memoryResult.hits} hits)`);
+      log.debug('[fileSearchCache] Memory cache HIT:', key, `(${memoryResult.hits} hits)`);
       return memoryResult.data;
     }
 
@@ -347,7 +351,7 @@ class FileSearchCacheService {
     const storageResult = this.getFromStorage(key);
     if (storageResult) {
       this.stats.hits++;
-      console.debug('[fileSearchCache] Storage cache HIT:', key, `(${storageResult.hits} hits)`);
+      log.debug('[fileSearchCache] Storage cache HIT:', key, `(${storageResult.hits} hits)`);
 
       // Promote to memory cache for faster future access
       this.setToMemory(key, storageResult);
@@ -357,7 +361,7 @@ class FileSearchCacheService {
 
     // Cache miss
     this.stats.misses++;
-    console.debug('[fileSearchCache] Cache MISS:', key);
+    log.debug('[fileSearchCache] Cache MISS:', key);
     return null;
   }
 
@@ -388,7 +392,7 @@ class FileSearchCacheService {
     };
     this.setToStorage(key, storageCached);
 
-    console.debug('[fileSearchCache] Cached:', key, `(${results.length} results)`);
+    log.debug('[fileSearchCache] Cached:', key, `(${results.length} results)`);
   }
 
   /**
@@ -415,7 +419,7 @@ class FileSearchCacheService {
       }
     }
 
-    console.log('[fileSearchCache] Invalidated module:', moduleType, moduleId || 'global');
+    log.debug('[fileSearchCache] Invalidated module:', moduleType, moduleId || 'global');
   }
 
   /**
@@ -430,7 +434,7 @@ class FileSearchCacheService {
       localStorage.removeItem(key);
     }
 
-    console.log('[fileSearchCache] Invalidated query:', key);
+    log.debug('[fileSearchCache] Invalidated query:', key);
   }
 
   /**
@@ -451,7 +455,7 @@ class FileSearchCacheService {
     // Reset stats
     this.stats = { hits: 0, misses: 0 };
 
-    console.log('[fileSearchCache] Cleared all cache');
+    log.debug('[fileSearchCache] Cleared all cache');
   }
 
   /**
@@ -486,7 +490,7 @@ class FileSearchCacheService {
    */
   updateConfig(newConfig: Partial<CacheConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    console.log('[fileSearchCache] Config updated:', this.config);
+    log.debug('[fileSearchCache] Config updated:', this.config);
   }
 
   /**
@@ -498,7 +502,7 @@ class FileSearchCacheService {
     // Check if storage is approaching limits
     const storageLimit = 5000; // 5MB soft limit
     if (stats.storageUsageKB > storageLimit) {
-      console.warn('[fileSearchCache] Storage usage exceeds soft limit:', stats.storageUsageKB, 'KB');
+      log.warn('[fileSearchCache] Storage usage exceeds soft limit:', stats.storageUsageKB, 'KB');
       return false;
     }
 
@@ -525,11 +529,11 @@ class FileSearchCacheService {
 
     // Check health
     if (!this.isHealthy()) {
-      console.warn('[fileSearchCache] Unhealthy state detected, performing cleanup');
+      log.warn('[fileSearchCache] Unhealthy state detected, performing cleanup');
       this.evictOldestStorageEntry();
     }
 
-    console.log('[fileSearchCache] Maintenance complete:', this.getStats());
+    log.debug('[fileSearchCache] Maintenance complete:', this.getStats());
   }
 }
 

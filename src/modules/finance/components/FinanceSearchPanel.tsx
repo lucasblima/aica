@@ -6,7 +6,10 @@
  */
 
 import React, { useState } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const log = createNamespacedLogger('FinanceSearchPanel');
 import {
   Search,
   Loader2,
@@ -113,7 +116,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           break;
       }
     } catch (err) {
-      console.error('[FinanceSearchPanel] Search error:', err);
+      log.error('[FinanceSearchPanel] Search error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar');
     }
   };

@@ -7,6 +7,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AcademiaNote, NoteType, CreateNotePayload, UpdateNotePayload } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('NoteEditor');
 
 interface NoteEditorProps {
   note?: AcademiaNote;
@@ -69,7 +71,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           setTags(draft.tags || []);
           setSourceReference(draft.sourceReference || '');
         } catch (error) {
-          console.error('Error loading draft:', error);
+          log.error('Error loading draft:', error);
         }
       }
     }
@@ -109,7 +111,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         localStorage.removeItem('academia-note-draft');
       }
     } catch (error) {
-      console.error('Error saving note:', error);
+      log.error('Error saving note:', error);
     } finally {
       setIsSaving(false);
     }

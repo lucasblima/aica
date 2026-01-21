@@ -5,14 +5,14 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.warn('Supabase URL or Key is missing in environment variables.');
+    console.warn('[SupabaseClient] Supabase URL or Key is missing in environment variables.');
 }
 
 const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
 
 function authLog(message: string, data?: unknown) {
     if (DEBUG) {
-        console.log(`[Supabase Auth] ${message}`, data ?? '');
+        console.debug(`[SupabaseClient] [Supabase Auth] ${message}`, data);
     }
 }
 

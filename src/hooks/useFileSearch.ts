@@ -14,6 +14,9 @@ import type {
   FileSearchResult,
   IndexDocumentRequest,
 } from '../types/fileSearch';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useFileSearch');
 
 /**
  * Hook genérico para File Search com gerenciamento de estado
@@ -74,7 +77,7 @@ export function useFileSearch() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load corpora';
       setError(errorMsg);
-      console.error('[useFileSearch] loadCorpora error:', err);
+      log.error('loadCorpora error:', { error: err });
       // Return empty array instead of throwing to prevent UI crashes
       return [];
     } finally {
@@ -117,13 +120,13 @@ export function useFileSearch() {
                                errorMsg.includes('23505');
 
       if (isDuplicateError) {
-        console.log('[useFileSearch] Corpus already exists, fetching existing...');
+        log.debug('Corpus already exists, fetching existing...');
         try {
           // Fetch existing corpus instead of failing
           const existingCorpora = await listCorpora(module_type, module_id);
           const existingCorpus = existingCorpora.find(c => c.name === name);
           if (existingCorpus) {
-            console.log('[useFileSearch] Found existing corpus:', existingCorpus.name);
+            log.debug('Found existing corpus:', existingCorpus.name);
             setCorpora((prev) => {
               const exists = prev.some(c => c.id === existingCorpus.id);
               return exists ? prev : [...prev, existingCorpus];
@@ -131,12 +134,12 @@ export function useFileSearch() {
             return existingCorpus;
           }
         } catch (listErr) {
-          console.error('[useFileSearch] Failed to list corpora after duplicate error:', listErr);
+          log.error('Failed to list corpora after duplicate error:', { error: listErr });
         }
       }
 
       setError(errorMsg);
-      console.error('[useFileSearch] createNewCorpus error:', err);
+      log.error('createNewCorpus error:', { error: err });
       throw err;
     } finally {
       setIsLoading(false);
@@ -157,7 +160,7 @@ export function useFileSearch() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to upload document';
       setError(errorMsg);
-      console.error('[useFileSearch] uploadDocument error:', err);
+      log.error('uploadDocument error:', { error: err });
       throw err;
     } finally {
       setIsLoading(false);
@@ -178,7 +181,7 @@ export function useFileSearch() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Search failed';
       setError(errorMsg);
-      console.error('[useFileSearch] search error:', err);
+      log.error('search error:', { error: err });
       throw err;
     } finally {
       setIsSearching(false);
@@ -207,7 +210,7 @@ export function useFileSearch() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load documents';
       setError(errorMsg);
-      console.error('[useFileSearch] loadDocuments error:', err);
+      log.error('loadDocuments error:', { error: err });
       // Return empty array instead of throwing to prevent UI crashes
       return [];
     } finally {
@@ -228,7 +231,7 @@ export function useFileSearch() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to delete document';
       setError(errorMsg);
-      console.error('[useFileSearch] removeDocument error:', err);
+      log.error('removeDocument error:', { error: err });
       throw err;
     } finally {
       setIsLoading(false);

@@ -10,6 +10,10 @@
  */
 
 import { supabase } from './supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('EfficiencyService');
+
 
 // ============================================================================
 // TYPES
@@ -129,7 +133,7 @@ export async function calculateDailyEfficiency(
       trend,
     };
   } catch (error) {
-    console.error('Error calculating daily efficiency:', error);
+    log.error('Error calculating daily efficiency:', { error: error });
     return {
       overall: 0,
       productivity: 0,
@@ -259,7 +263,7 @@ export async function calculateModuleEfficiency(
 
     return moduleEfficiencies;
   } catch (error) {
-    console.error('Error calculating module efficiency:', error);
+    log.error('Error calculating module efficiency:', { error: error });
     return [];
   }
 }
@@ -294,7 +298,7 @@ export async function getEfficiencyTrends(
       productivityLevel: getProductivityLevel(report.productivity_score || 0),
     }));
   } catch (error) {
-    console.error('Error fetching efficiency trends:', error);
+    log.error('Error fetching efficiency trends:', { error: error });
     return [];
   }
 }
@@ -371,7 +375,7 @@ export async function getEfficiencyMetrics(
       consistencyDays,
     };
   } catch (error) {
-    console.error('Error getting efficiency metrics:', error);
+    log.error('Error getting efficiency metrics:', { error: error });
     return {
       date,
       score: { overall: 0, productivity: 0, focus: 0, consistency: 0, trend: 'stable' },

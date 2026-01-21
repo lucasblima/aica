@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import {
   UnifiedEvent,
   TimelineFilters,
@@ -15,6 +16,7 @@ import {
   fetchTimelineStats,
 } from '../services/unifiedTimelineService'
 
+const log = createNamespacedLogger('useUnifiedTimeline')
 const PAGE_SIZE = 20
 
 export interface UseUnifiedTimelineResult {
@@ -71,7 +73,7 @@ export function useUnifiedTimeline(userId?: string): UseUnifiedTimelineResult {
         }
         setTotal(result.total)
       } catch (err) {
-        console.error('[useUnifiedTimeline] Fetch error:', err)
+        log.error('[useUnifiedTimeline] Fetch error:', err)
         setError(err instanceof Error ? err : new Error('Failed to fetch timeline events'))
       } finally {
         setIsLoading(false)
@@ -160,7 +162,7 @@ export function useTimelineStats(
       const result = await fetchTimelineStats(userId, dateRange)
       setStats(result)
     } catch (err) {
-      console.error('[useTimelineStats] Fetch error:', err)
+      log.error('[useTimelineStats] Fetch error:', err)
       setError(err instanceof Error ? err : new Error('Failed to fetch timeline stats'))
     } finally {
       setIsLoading(false)

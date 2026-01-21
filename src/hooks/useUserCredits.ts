@@ -15,6 +15,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/services/supabaseClient'
 import { useAuth } from '@/hooks/useAuth'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('useUserCredits')
 
 interface UserCredits {
   balance: number
@@ -121,7 +124,7 @@ export function useUserCredits(): UseUserCreditsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load credits'
       setError(message)
-      console.error('[useUserCredits] Error:', message)
+      log.error('Error:', { error: message })
     } finally {
       setIsLoading(false)
     }
@@ -242,7 +245,7 @@ export function useUserCredits(): UseUserCreditsReturn {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('[useUserCredits] Real-time update:', payload)
+          log.debug('Real-time update:', payload)
           if (payload.new) {
             const newData = payload.new as Record<string, unknown>
             setCredits({

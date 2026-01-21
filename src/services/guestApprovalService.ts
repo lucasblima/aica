@@ -7,6 +7,10 @@
 
 import { supabase } from './supabaseClient';
 import { sendGuestApprovalLink as sendApprovalLinkEdge } from './edgeFunctionService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GuestApprovalService');
+
 
 // ============================================================================
 // TYPES
@@ -87,7 +91,7 @@ export const generateApprovalToken = async (
       expiresAt: expiresAt.toISOString(),
     };
   } catch (error) {
-    console.error('Error generating approval token:', error);
+    log.error('Error generating approval token:', { error: error });
     return null;
   }
 };
@@ -134,7 +138,7 @@ export const getApprovalToken = async (
       expiresAt: expiresAt.toISOString(),
     };
   } catch (error) {
-    console.error('Error getting approval token:', error);
+    log.error('Error getting approval token:', { error: error });
     return null;
   }
 };
@@ -213,7 +217,7 @@ export const sendApprovalLink = async (
       message: response.message || `Link enviado com sucesso via ${request.method}`,
     };
   } catch (error) {
-    console.error('Error sending approval link:', error);
+    log.error('Error sending approval link:', { error: error });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro ao enviar link de aprovação',
@@ -243,7 +247,7 @@ export const getApprovalStatus = async (
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching approval status:', error);
+      log.error('Error fetching approval status:', { error: error });
       return null;
     }
 
@@ -257,7 +261,7 @@ export const getApprovalStatus = async (
       notes: data.approval_notes,
     };
   } catch (error) {
-    console.error('Error getting approval status:', error);
+    log.error('Error getting approval status:', { error: error });
     return null;
   }
 };

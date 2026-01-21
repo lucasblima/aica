@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { format, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Discussion, PollOption } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('PollVoting');
 
 interface PollVotingProps {
   discussion: Discussion;
@@ -45,7 +47,7 @@ export const PollVoting: React.FC<PollVotingProps> = ({
     try {
       await onVote(optionId);
     } catch (error) {
-      console.error('Error voting:', error);
+      log.error('Error voting:', error);
     }
   };
 

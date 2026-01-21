@@ -9,6 +9,8 @@ import { staggerContainer, staggerItem } from '../../../lib/animations/ceramic-m
 import type { Archetype } from '../types';
 import { ARCHETYPE_CONFIG } from '../types';
 import { OrganizationWizard } from '@/modules/grants/components/wizard';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('ConnectionsView');
 
 interface ConnectionsViewProps {
   userId: string;
@@ -98,7 +100,7 @@ export function ConnectionsView({
     try {
       await refresh();
     } catch (err) {
-      console.error('[ConnectionsView] Refresh error:', err);
+      log.error('[ConnectionsView] Refresh error:', err);
     } finally {
       setIsRefreshing(false);
     }
@@ -109,7 +111,7 @@ export function ConnectionsView({
     try {
       await toggleFavorite(spaceId, !isFavorite);
     } catch (err) {
-      console.error('[ConnectionsView] Toggle favorite error:', err);
+      log.error('[ConnectionsView] Toggle favorite error:', err);
     }
   };
 

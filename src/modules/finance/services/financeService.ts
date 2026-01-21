@@ -5,6 +5,9 @@ import type {
     BurnRateData,
     CategoryBreakdown
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FinanceService');
 
 // =====================================================
 // Finance Service - Privacy-First Financial Analytics

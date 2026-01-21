@@ -1,4 +1,7 @@
+import { createNamespacedLogger } from '@/lib/logger';
 import { getValidAccessToken, GoogleCalendarEvent } from './googleAuthService';
+
+const log = createNamespacedLogger('GoogleCalendarService');
 
 /**
  * Opções para buscar eventos
@@ -27,15 +30,15 @@ export async function fetchCalendarEvents(
     retryCount: number = 0
 ): Promise<GoogleCalendarEvent[]> {
     try {
-        console.log('[fetchCalendarEvents] 🔍 Iniciando busca de eventos:', { calendarId, options, retryCount });
+        log.debug('[fetchCalendarEvents] 🔍 Iniciando busca de eventos:', { calendarId, options, retryCount });
 
         const token = await getValidAccessToken();
         if (!token) {
-            console.error('[fetchCalendarEvents] ❌ Token não disponível');
+            log.error('[fetchCalendarEvents] ❌ Token não disponível');
             throw new Error('Token de acesso não disponível. Autorize o Google Calendar primeiro.');
         }
 
-        console.log('[fetchCalendarEvents] ✅ Token obtido com sucesso');
+        log.debug('[fetchCalendarEvents] ✅ Token obtido com sucesso');
 
         // Montar query parameters
         const params = new URLSearchParams();
@@ -49,7 +52,7 @@ export async function fetchCalendarEvents(
 
         const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
 
-        console.log('[fetchCalendarEvents] 🌐 Fazendo requisição para:', url);
+        log.debug('[fetchCalendarEvents] 🌐 Fazendo requisição para:', url);
 
         const response = await fetch(url, {
             method: 'GET',
@@ -59,7 +62,7 @@ export async function fetchCalendarEvents(
             }
         });
 
-        console.log('[fetchCalendarEvents] 📡 Resposta recebida:', {
+        log.debug('[fetchCalendarEvents] 📡 Resposta recebida:', {
             status: response.status,
             ok: response.ok
         });
@@ -67,7 +70,7 @@ export async function fetchCalendarEvents(
         if (!response.ok) {
             // 401 = Token expirado
             if (response.status === 401 && retryCount === 0) {
-                console.warn('[fetchCalendarEvents] ⚠️ Token expirado (401) - tentando renovar e fazer retry...');
+                log.warn('[fetchCalendarEvents] ⚠️ Token expirado (401) - tentando renovar e fazer retry...');
 
                 // Forçar renovação do token e tentar novamente
                 try {
@@ -76,28 +79,28 @@ export async function fetchCalendarEvents(
                     const tokens = await getGoogleCalendarTokens();
 
                     if (tokens?.refresh_token) {
-                        console.log('[fetchCalendarEvents] 🔄 Renovando token...');
+                        log.debug('[fetchCalendarEvents] 🔄 Renovando token...');
                         const newToken = await refreshAccessToken(tokens.refresh_token);
 
                         if (newToken) {
-                            console.log('[fetchCalendarEvents] ✅ Token renovado - retrying...');
+                            log.debug('[fetchCalendarEvents] ✅ Token renovado - retrying...');
                             // Retry uma vez com o novo token
                             return await fetchCalendarEvents(calendarId, options, retryCount + 1);
                         }
                     }
                 } catch (refreshError) {
-                    console.error('[fetchCalendarEvents] ❌ Erro ao renovar token:', refreshError);
+                    log.error('[fetchCalendarEvents] ❌ Erro ao renovar token:', refreshError);
                 }
 
                 // Se chegou aqui, a renovação falhou
-                console.error('[fetchCalendarEvents] ❌ Falha ao renovar token');
+                log.error('[fetchCalendarEvents] ❌ Falha ao renovar token');
                 throw new Error('Token expirado. Reconecte ao Google Calendar.');
             }
 
             // 403 = Permissões insuficientes
             if (response.status === 403) {
                 const errorData = await response.json().catch(() => ({}));
-                console.error('[fetchCalendarEvents] ❌ Erro 403 - Permissões insuficientes:', errorData);
+                log.error('[fetchCalendarEvents] ❌ Erro 403 - Permissões insuficientes:', errorData);
 
                 // Verificar se é problema de scopes
                 if (errorData.error?.message?.includes('insufficient') ||
@@ -108,18 +111,18 @@ export async function fetchCalendarEvents(
                 throw new Error('Acesso negado ao Google Calendar. Verifique suas permissões.');
             }
 
-            console.error('[fetchCalendarEvents] ❌ Erro na resposta:', response.status, response.statusText);
+            log.error('[fetchCalendarEvents] ❌ Erro na resposta:', response.status, response.statusText);
             throw new Error(`Erro ao buscar eventos: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log('[fetchCalendarEvents] ✅ Dados processados:', {
+        log.debug('[fetchCalendarEvents] ✅ Dados processados:', {
             itemsCount: data.items?.length || 0
         });
 
         return data.items || [];
     } catch (error) {
-        console.error('Erro ao buscar eventos do Google Calendar:', error);
+        log.error('Erro ao buscar eventos do Google Calendar:', { error });
         throw error;
     }
 }
@@ -133,7 +136,7 @@ export async function fetchTodayEvents(): Promise<GoogleCalendarEvent[]> {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    console.log('[fetchTodayEvents] 📅 Buscando eventos de hoje:', {
+    log.debug('[fetchTodayEvents] 📅 Buscando eventos de hoje:', {
         timeMin: today.toISOString(),
         timeMax: tomorrow.toISOString()
     });
@@ -146,7 +149,7 @@ export async function fetchTodayEvents(): Promise<GoogleCalendarEvent[]> {
         maxResults: 50,
     });
 
-    console.log('[fetchTodayEvents] ✅ Eventos recebidos:', {
+    log.debug('[fetchTodayEvents] ✅ Eventos recebidos:', {
         count: events.length,
         events: events.map(e => ({
             summary: e.summary,
@@ -247,7 +250,7 @@ export async function fetchAndTransformEvents(
     startDate?: Date,
     endDate?: Date
 ): Promise<TimelineEvent[]> {
-    console.log('[fetchAndTransformEvents] 🔄 Iniciando busca e transformação:', {
+    log.debug('[fetchAndTransformEvents] 🔄 Iniciando busca e transformação:', {
         startDate: startDate?.toISOString(),
         endDate: endDate?.toISOString()
     });
@@ -255,19 +258,19 @@ export async function fetchAndTransformEvents(
     let events: GoogleCalendarEvent[];
 
     if (startDate && endDate) {
-        console.log('[fetchAndTransformEvents] 📆 Modo: Data range');
+        log.debug('[fetchAndTransformEvents] 📆 Modo: Data range');
         events = await fetchDateRangeEvents(startDate, endDate);
     } else if (startDate) {
-        console.log('[fetchAndTransformEvents] 📆 Modo: Week events');
+        log.debug('[fetchAndTransformEvents] 📆 Modo: Week events');
         events = await fetchWeekEvents(startDate);
     } else {
-        console.log('[fetchAndTransformEvents] 📆 Modo: Today events');
+        log.debug('[fetchAndTransformEvents] 📆 Modo: Today events');
         events = await fetchTodayEvents();
     }
 
     const transformedEvents = events.map(transformGoogleEvent);
 
-    console.log('[fetchAndTransformEvents] ✅ Transformação concluída:', {
+    log.debug('[fetchAndTransformEvents] ✅ Transformação concluída:', {
         originalCount: events.length,
         transformedCount: transformedEvents.length,
         transformedEvents
@@ -306,7 +309,7 @@ export async function fetchAvailableCalendars(): Promise<Array<{
         const data = await response.json();
         return data.items || [];
     } catch (error) {
-        console.error('Erro ao buscar calendários:', error);
+        log.error('Erro ao buscar calendários:', { error });
         throw error;
     }
 }
@@ -338,7 +341,7 @@ export async function fetchGoogleUserInfo(): Promise<{
 
         return await response.json();
     } catch (error) {
-        console.error('Erro ao buscar informações do usuário:', error);
+        log.error('Erro ao buscar informações do usuário:', { error });
         throw error;
     }
 }

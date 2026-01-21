@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/lib/supabase'
+import { createNamespacedLogger } from '@/lib/logger'
 import {
   UserConsciousnessStats,
   ConsciousnessPointsLog,
@@ -11,6 +12,8 @@ import {
   CPReason,
   getProgressToNextLevel,
 } from '../types/consciousnessPoints'
+
+const log = createNamespacedLogger('ConsciousnessPoints')
 
 /**
  * Get user consciousness stats
@@ -35,7 +38,7 @@ export async function getUserConsciousnessStats(
 
     return data
   } catch (error) {
-    console.error('Error fetching consciousness stats:', error)
+    log.error('Error fetching consciousness stats:', error)
     return null
   }
 }
@@ -65,7 +68,7 @@ async function initializeUserStats(userId: string): Promise<UserConsciousnessSta
 
     return data
   } catch (error) {
-    console.error('Error initializing stats:', error)
+    log.error('Error initializing stats:', error)
     throw error
   }
 }
@@ -89,7 +92,7 @@ export async function getCPLog(
 
     return data || []
   } catch (error) {
-    console.error('Error fetching CP log:', error)
+    log.error('Error fetching CP log:', error)
     return []
   }
 }
@@ -146,7 +149,7 @@ export async function getRecentAchievements(userId: string): Promise<{
         : [],
     }
   } catch (error) {
-    console.error('Error fetching achievements:', error)
+    log.error('Error fetching achievements:', error)
     return { level_ups: [], streaks: [] }
   }
 }
@@ -179,7 +182,7 @@ export async function getLeaderboard(limit: number = 10): Promise<
       })) || []
     )
   } catch (error) {
-    console.error('Error fetching leaderboard:', error)
+    log.error('Error fetching leaderboard:', error)
     return []
   }
 }

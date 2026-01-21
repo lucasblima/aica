@@ -18,6 +18,8 @@ import {
   getMaintenanceByItem,
 } from '../services/maintenanceService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useMaintenance');
   MaintenanceRecord,
   CreateMaintenanceRecordPayload,
   UpdateMaintenanceRecordPayload,
@@ -61,7 +63,7 @@ export function useMaintenance(propertyId: string): UseMaintenanceReturn {
       setRecords(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading maintenance:', err);
+      log.error('Error loading maintenance:', err);
     } finally {
       setLoading(false);
     }
@@ -181,7 +183,7 @@ export function useMaintenanceById(recordId: string | null) {
       setRecord(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading maintenance record:', err);
+      log.error('Error loading maintenance record:', err);
     } finally {
       setLoading(false);
     }
@@ -221,7 +223,7 @@ export function useMaintenanceSummary(propertyId: string) {
       setSummary(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading maintenance summary:', err);
+      log.error('Error loading maintenance summary:', err);
     } finally {
       setLoading(false);
     }
@@ -261,7 +263,7 @@ export function useMaintenanceByItem(itemId: string | null) {
       setRecords(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading maintenance by item:', err);
+      log.error('Error loading maintenance by item:', err);
     } finally {
       setLoading(false);
     }

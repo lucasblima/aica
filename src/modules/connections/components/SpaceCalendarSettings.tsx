@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useCalendarSync } from '../hooks/useCalendarSync';
 import { SpaceSyncConfig } from '../services/calendarSyncService';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('SpaceCalendarSettings');
 
 /**
  * Props for SpaceCalendarSettings component
@@ -25,7 +27,7 @@ interface SpaceCalendarSettingsProps {
  * ```tsx
  * <SpaceCalendarSettings
  *   spaceId="habitat-123"
- *   onSave={(config) => console.log('Settings saved:', config)}
+ *   onSave={(config) => log.debug('Settings saved:', config)}
  * />
  * ```
  */
@@ -77,7 +79,7 @@ export function SpaceCalendarSettings({
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       setErrorMessage(message);
-      console.error('[SpaceCalendarSettings] Error toggling auto-sync:', error);
+      log.error('[SpaceCalendarSettings] Error toggling auto-sync:', error);
     }
   };
 
@@ -96,7 +98,7 @@ export function SpaceCalendarSettings({
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       setErrorMessage(message);
-      console.error('[SpaceCalendarSettings] Error updating interval:', error);
+      log.error('[SpaceCalendarSettings] Error updating interval:', error);
     } finally {
       setIsSaving(false);
     }

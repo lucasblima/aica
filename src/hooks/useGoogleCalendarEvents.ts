@@ -5,6 +5,9 @@ import {
     fetchAvailableCalendars,
 } from '../services/googleCalendarService';
 import { isGoogleCalendarConnected } from '../services/googleAuthService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useGoogleCalendarEvents');
 
 export interface UseGoogleCalendarEventsOptions {
     /** Sincronizar automaticamente ao conectar */
@@ -38,12 +41,12 @@ export function useGoogleCalendarEvents(
     useEffect(() => {
         const checkConnection = async () => {
             try {
-                console.log('[useGoogleCalendarEvents] 🔍 Verificando conexão...');
+                log.debug('🔍 Verificando conexão...');
                 const connected = await isGoogleCalendarConnected();
-                console.log('[useGoogleCalendarEvents] 📡 Status de conexão:', connected);
+                log.debug('📡 Status de conexão:', connected);
                 setIsConnected(connected);
             } catch (err) {
-                console.error('[useGoogleCalendarEvents] ❌ Erro ao verificar conexão:', err);
+                log.error('❌ Erro ao verificar conexão:', { error: err });
             }
         };
 
@@ -59,7 +62,7 @@ export function useGoogleCalendarEvents(
         start?: Date,
         end?: Date
     ) => {
-        console.log('[useGoogleCalendarEvents] 🔄 fetchEvents chamado:', {
+        log.debug('🔄 fetchEvents chamado:', {
             isConnected,
             start: start?.toISOString(),
             end: end?.toISOString(),
@@ -68,7 +71,7 @@ export function useGoogleCalendarEvents(
         });
 
         if (!isConnected) {
-            console.log('[useGoogleCalendarEvents] ⚠️ Não conectado - limpando eventos');
+            log.debug('⚠️ Não conectado - limpando eventos');
             setEvents([]);
             return;
         }
@@ -77,14 +80,14 @@ export function useGoogleCalendarEvents(
             setIsLoading(true);
             setError(null);
 
-            console.log('[useGoogleCalendarEvents] 📥 Buscando eventos...');
+            log.debug('📥 Buscando eventos...');
 
             const fetchedEvents = await fetchAndTransformEvents(
                 start || startDate,
                 end || endDate
             );
 
-            console.log('[useGoogleCalendarEvents] ✅ Eventos recebidos:', {
+            log.debug('✅ Eventos recebidos:', {
                 count: fetchedEvents.length,
                 events: fetchedEvents
             });
@@ -93,11 +96,11 @@ export function useGoogleCalendarEvents(
             setLastSyncTime(new Date());
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao sincronizar eventos';
-            console.error('[useGoogleCalendarEvents] ❌ Erro ao buscar eventos:', err);
+            log.error('❌ Erro ao buscar eventos:', { error: err });
 
             // Detectar token expirado e parar auto-sync
             if (errorMessage.includes('Token expirado') || errorMessage.includes('401')) {
-                console.warn('[useGoogleCalendarEvents] 🚨 Token expirado detectado - parando auto-sync');
+                log.warn('🚨 Token expirado detectado - parando auto-sync');
                 setIsTokenExpired(true);
                 setIsConnected(false);
             }
@@ -110,7 +113,7 @@ export function useGoogleCalendarEvents(
 
     // Auto-sync quando conectado
     useEffect(() => {
-        console.log('[useGoogleCalendarEvents] 🔄 Auto-sync effect:', {
+        log.debug('🔄 Auto-sync effect:', {
             isConnected,
             autoSync,
             syncInterval,
@@ -118,21 +121,21 @@ export function useGoogleCalendarEvents(
         });
 
         if (!isConnected || !autoSync || isTokenExpired) {
-            console.log('[useGoogleCalendarEvents] ⏸️ Auto-sync desabilitado (não conectado, desabilitado, ou token expirado)');
+            log.debug('⏸️ Auto-sync desabilitado (não conectado, desabilitado, ou token expirado)');
             return;
         }
 
         // Sincronizar imediatamente
-        console.log('[useGoogleCalendarEvents] 🚀 Iniciando sincronização imediata...');
+        log.debug('🚀 Iniciando sincronização imediata...');
         fetchEvents();
 
         // Sincronizar periodicamente
         if (syncInterval > 0) {
-            console.log('[useGoogleCalendarEvents] ⏰ Configurando sincronização periódica:', {
+            log.debug('⏰ Configurando sincronização periódica:', {
                 intervalSeconds: syncInterval
             });
             const interval = setInterval(() => {
-                console.log('[useGoogleCalendarEvents] 🔁 Sincronização periódica disparada');
+                log.debug('🔁 Sincronização periódica disparada');
                 fetchEvents();
             }, syncInterval * 1000);
 

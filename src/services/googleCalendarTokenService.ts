@@ -1,4 +1,8 @@
 import { supabase } from './supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GoogleCalendarTokenService');
+
 
 /**
  * Serviço de gerenciamento de tokens Google Calendar
@@ -97,7 +101,7 @@ export async function saveGoogleCalendarTokens(
 
         return result.data as GoogleCalendarToken;
     } catch (error) {
-        console.error('Erro ao salvar tokens Google Calendar:', error);
+        log.error('Erro ao salvar tokens Google Calendar:', { error: error });
         throw error;
     }
 }
@@ -109,7 +113,7 @@ export async function getGoogleCalendarTokens(): Promise<GoogleCalendarToken | n
     try {
         const { data: session } = await supabase.auth.getSession();
         if (!session?.session?.user?.id) {
-            console.warn('Usuário não autenticado');
+            log.warn('Usuário não autenticado');
             return null;
         }
 
@@ -120,13 +124,13 @@ export async function getGoogleCalendarTokens(): Promise<GoogleCalendarToken | n
             .maybeSingle();
 
         if (error) {
-            console.error('Erro ao buscar tokens:', error);
+            log.error('Erro ao buscar tokens:', { error: error });
             return null;
         }
 
         return data as GoogleCalendarToken | null;
     } catch (error) {
-        console.error('Erro ao obter tokens Google Calendar:', error);
+        log.error('Erro ao obter tokens Google Calendar:', { error: error });
         return null;
     }
 }
@@ -157,7 +161,7 @@ export async function isGoogleCalendarConnected(): Promise<boolean> {
 
         return true;
     } catch (error) {
-        console.error('Erro ao verificar conexão Google Calendar:', error);
+        log.error('Erro ao verificar conexão Google Calendar:', { error: error });
         return false;
     }
 }
@@ -168,19 +172,19 @@ export async function isGoogleCalendarConnected(): Promise<boolean> {
  */
 export async function getValidAccessToken(): Promise<string | null> {
     try {
-        console.log('[getValidAccessToken] 🔑 Obtendo token válido...');
+        log.debug('[getValidAccessToken] 🔑 Obtendo token válido...');
 
         // Primeiro: tentar obter token atualizado da sessão Supabase
         // O Supabase automaticamente renova tokens expirados
-        console.log('[getValidAccessToken] 📡 Buscando token da sessão Supabase...');
+        log.debug('[getValidAccessToken] 📡 Buscando token da sessão Supabase...');
         const { data: session } = await supabase.auth.getSession();
 
         if (session?.session?.provider_token) {
-            console.log('[getValidAccessToken] ✅ Token obtido da sessão Supabase');
+            log.debug('[getValidAccessToken] ✅ Token obtido da sessão Supabase');
 
             // Atualizar token no banco de dados
             if (session.session.user?.id) {
-                console.log('[getValidAccessToken] 💾 Atualizando token no banco...');
+                log.debug('[getValidAccessToken] 💾 Atualizando token no banco...');
                 await supabase
                     .from('google_calendar_tokens')
                     .update({
@@ -193,17 +197,17 @@ export async function getValidAccessToken(): Promise<string | null> {
             return session.session.provider_token;
         }
 
-        console.log('[getValidAccessToken] ⚠️ Sem provider_token na sessão, buscando do banco...');
+        log.debug('[getValidAccessToken] ⚠️ Sem provider_token na sessão, buscando do banco...');
 
         // Fallback: buscar do banco de dados
         const tokens = await getGoogleCalendarTokens();
 
         if (!tokens) {
-            console.error('[getValidAccessToken] ❌ Token não encontrado');
+            log.error('[getValidAccessToken] ❌ Token não encontrado');
             throw new Error('Token não encontrado. Autorize o Google Calendar primeiro.');
         }
 
-        console.log('[getValidAccessToken] 📋 Token info:', {
+        log.debug('[getValidAccessToken] 📋 Token info:', {
             hasAccessToken: !!tokens.access_token,
             hasRefreshToken: !!tokens.refresh_token,
             tokenExpiry: tokens.token_expiry,
@@ -215,36 +219,36 @@ export async function getValidAccessToken(): Promise<string | null> {
             const expiryTime = new Date(tokens.token_expiry).getTime();
             const timeUntilExpiry = expiryTime - Date.now();
 
-            console.log('[getValidAccessToken] ⏰ Tempo até expiração:', {
+            log.debug('[getValidAccessToken] ⏰ Tempo até expiração:', {
                 expiryTime: new Date(tokens.token_expiry).toISOString(),
                 timeUntilExpiryMinutes: Math.round(timeUntilExpiry / 60000)
             });
 
             // Se expirou, tentar renovar automaticamente
             if (timeUntilExpiry < 0) {
-                console.warn('[getValidAccessToken] ⚠️ Token expirado. Tentando renovar...');
+                log.warn('[getValidAccessToken] ⚠️ Token expirado. Tentando renovar...');
 
                 if (tokens.refresh_token) {
-                    console.log('[getValidAccessToken] 🔄 Refresh token disponível, renovando...');
+                    log.debug('[getValidAccessToken] 🔄 Refresh token disponível, renovando...');
                     const newAccessToken = await refreshAccessToken(tokens.refresh_token);
 
                     if (newAccessToken) {
-                        console.log('[getValidAccessToken] ✅ Token renovado com sucesso');
+                        log.debug('[getValidAccessToken] ✅ Token renovado com sucesso');
                         return newAccessToken;
                     }
 
-                    console.error('[getValidAccessToken] ❌ Falha ao renovar token');
+                    log.error('[getValidAccessToken] ❌ Falha ao renovar token');
                 }
 
-                console.error('[getValidAccessToken] ❌ Sem refresh token disponível');
+                log.error('[getValidAccessToken] ❌ Sem refresh token disponível');
                 throw new Error('Token expirado. Reconecte ao Google Calendar.');
             }
         }
 
-        console.log('[getValidAccessToken] ✅ Retornando access_token do banco');
+        log.debug('[getValidAccessToken] ✅ Retornando access_token do banco');
         return tokens.access_token;
     } catch (error) {
-        console.error('[getValidAccessToken] ❌ Erro ao obter token válido:', error);
+        log.error('[getValidAccessToken] ❌ Erro ao obter token válido:', { error: error });
         return null;
     }
 }
@@ -257,8 +261,8 @@ export async function getValidAccessToken(): Promise<string | null> {
  */
 export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
     try {
-        console.log('[refreshAccessToken] 🔄 Iniciando renovação do token via Edge Function...');
-        console.log('[refreshAccessToken] 🔑 Refresh token presente:', !!refreshToken);
+        log.debug('[refreshAccessToken] 🔄 Iniciando renovação do token via Edge Function...');
+        log.debug('[refreshAccessToken] 🔑 Refresh token presente:', !!refreshToken);
 
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -279,18 +283,18 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
             }),
         });
 
-        console.log('[refreshAccessToken] 📡 Resposta recebida da Edge Function:', {
+        log.debug('[refreshAccessToken] 📡 Resposta recebida da Edge Function:', {
             status: response.status,
             ok: response.ok
         });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            console.error('[refreshAccessToken] ❌ Erro na resposta:', errorData);
+            log.error('[refreshAccessToken] ❌ Erro na resposta:', { error: errorData });
 
             // Se o erro for invalid_grant (token revogado ou expirado), desconectar para evitar loops
             if (response.status === 400 && JSON.stringify(errorData).includes('invalid_grant')) {
-                console.warn('[refreshAccessToken] 🚨 Refresh token inválido/revogado. Desconectando Google Calendar...');
+                log.warn('[refreshAccessToken] 🚨 Refresh token inválido/revogado. Desconectando Google Calendar...');
                 await disconnectGoogleCalendar();
                 throw new Error('Conexão com Google Calendar expirou. Por favor, reconecte.');
             }
@@ -302,7 +306,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
         const newAccessToken = data.access_token;
         const expiresIn = data.expires_in;
 
-        console.log('[refreshAccessToken] ✅ Novo token recebido:', {
+        log.debug('[refreshAccessToken] ✅ Novo token recebido:', {
             hasAccessToken: !!newAccessToken,
             expiresIn
         });
@@ -312,7 +316,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
         if (session?.session?.user?.id) {
             const newExpiry = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-            console.log('[refreshAccessToken] 💾 Salvando novo token no banco...', {
+            log.debug('[refreshAccessToken] 💾 Salvando novo token no banco...', {
                 userId: session.session.user.id,
                 newExpiry
             });
@@ -327,15 +331,15 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
                 .eq('user_id', session.session.user.id);
 
             if (error) {
-                console.error('[refreshAccessToken] ❌ Erro ao salvar token:', error);
+                log.error('[refreshAccessToken] ❌ Erro ao salvar token:', { error: error });
             } else {
-                console.log('[refreshAccessToken] ✅ Token salvo com sucesso');
+                log.debug('[refreshAccessToken] ✅ Token salvo com sucesso');
             }
         }
 
         return newAccessToken;
     } catch (error) {
-        console.error('[refreshAccessToken] ❌ Erro ao renovar token de acesso:', error);
+        log.error('[refreshAccessToken] ❌ Erro ao renovar token de acesso:', { error: error });
         return null;
     }
 }
@@ -365,7 +369,7 @@ export async function disconnectGoogleCalendar(): Promise<void> {
                     }).toString(),
                 });
             } catch (err) {
-                console.warn('Aviso: Não foi possível revogar token com Google:', err);
+                log.warn('Aviso: Não foi possível revogar token com Google:', err);
             }
         }
 
@@ -375,7 +379,7 @@ export async function disconnectGoogleCalendar(): Promise<void> {
             .update({ is_connected: false })
             .eq('user_id', session.session.user.id);
     } catch (error) {
-        console.error('Erro ao desconectar Google Calendar:', error);
+        log.error('Erro ao desconectar Google Calendar:', { error: error });
         throw error;
     }
 }
@@ -395,7 +399,7 @@ export async function updateLastSyncTime(): Promise<void> {
             .update({ last_sync: new Date().toISOString() })
             .eq('user_id', session.session.user.id);
     } catch (error) {
-        console.error('Erro ao atualizar último sync:', error);
+        log.error('Erro ao atualizar último sync:', { error: error });
     }
 }
 
@@ -420,7 +424,7 @@ export async function getGoogleUserInfo(): Promise<{
             picture: tokens.picture_url || undefined,
         };
     } catch (error) {
-        console.error('Erro ao obter informações do usuário Google:', error);
+        log.error('Erro ao obter informações do usuário Google:', { error: error });
         return null;
     }
 }

@@ -10,7 +10,10 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const log = createNamespacedLogger('QuickCapture');
 import {
   SparklesIcon,
   LightBulbIcon,
@@ -71,7 +74,7 @@ export function QuickCapture({ onSubmit, onCancel }: QuickCaptureProps) {
         const suggestion = await analyzeContentRealtime(content);
         setAiSuggestion(suggestion);
       } catch (error) {
-        console.error('Error analyzing content:', error);
+        log.error('Error analyzing content:', error);
       } finally {
         setIsAnalyzing(false);
       }
@@ -109,7 +112,7 @@ export function QuickCapture({ onSubmit, onCancel }: QuickCaptureProps) {
       setShowAdvanced(false);
       setAiSuggestion(null);
     } catch (error) {
-      console.error('Error submitting moment:', error);
+      log.error('Error submitting moment:', error);
       alert('Erro ao salvar momento. Tente novamente.');
     } finally {
       setIsSubmitting(false);

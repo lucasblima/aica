@@ -9,7 +9,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
+
+const log = createNamespacedLogger('useDailyQuestionAI')
 import { QuestionWithResponse, AnswerQuestionResult } from '../types/dailyQuestion'
 import {
   getDailyQuestionWithContext,
@@ -75,7 +78,7 @@ export function useDailyQuestionAI() {
       }))
 
       // Log which level was used
-      console.log(`Daily Question (${result.source}): "${result.question.question_text}" (${responseTime}ms)`)
+      log.debug(`Daily Question (${result.source}): "${result.question.question_text}" (${responseTime}ms)`)
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to fetch question')
 
@@ -85,7 +88,7 @@ export function useDailyQuestionAI() {
         error,
       }))
 
-      console.error('Error fetching daily question:', error)
+      log.error('Error fetching daily question:', error)
     }
   }, [user?.id])
 
@@ -205,11 +208,11 @@ export function useDailyQuestionAICached() {
         // Cache valid for 24 hours
         if (cacheAge < 24 * 60 * 60 * 1000) {
           // Use cached question
-          console.log('Using cached daily question')
+          log.debug('Using cached daily question')
           return
         }
       } catch (e) {
-        console.error('Error parsing cached question:', e)
+        log.error('Error parsing cached question:', e)
       }
     }
   }, [user?.id, hook.question])

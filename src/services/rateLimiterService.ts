@@ -15,6 +15,10 @@
  */
 
 import { supabase } from '@/services/supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('RateLimiterService');
+
 
 // ============================================================================
 // TYPES
@@ -111,7 +115,7 @@ export async function getCurrentWindow(): Promise<TokenWindow | null> {
   const { data, error } = await supabase.rpc('get_or_create_current_window')
 
   if (error) {
-    console.error('[rateLimiterService] getCurrentWindow error:', error)
+    log.error('[rateLimiterService] getCurrentWindow error:', { error: error })
     return null
   }
 
@@ -137,7 +141,7 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
 
   if (error) {
     if (error.code === 'PGRST116') return null // Not found
-    console.error('[rateLimiterService] getUserSubscription error:', error)
+    log.error('[rateLimiterService] getUserSubscription error:', { error: error })
     return null
   }
 
@@ -159,7 +163,7 @@ export async function getCreditBalance(): Promise<number> {
 
   if (error) {
     if (error.code === 'PGRST116') return 0 // Not found - no credits
-    console.error('[rateLimiterService] getCreditBalance error:', error)
+    log.error('[rateLimiterService] getCreditBalance error:', { error: error })
     return 0
   }
 
@@ -288,7 +292,7 @@ export async function consumeTokens(
   })
 
   if (error) {
-    console.error('[rateLimiterService] consumeTokens error:', error)
+    log.error('[rateLimiterService] consumeTokens error:', { error: error })
     return { success: false, error: error.message }
   }
 
@@ -316,7 +320,7 @@ export async function useCreditsForBypass(
   })
 
   if (error) {
-    console.error('[rateLimiterService] useCreditsForBypass error:', error)
+    log.error('[rateLimiterService] useCreditsForBypass error:', { error: error })
     return { success: false, cost, error: error.message }
   }
 
@@ -375,7 +379,7 @@ export async function queueMessage(
     .single()
 
   if (error) {
-    console.error('[rateLimiterService] queueMessage error:', error)
+    log.error('[rateLimiterService] queueMessage error:', { error: error })
     return { success: false, error: error.message }
   }
 
@@ -397,7 +401,7 @@ export async function getQueuedMessages(): Promise<QueuedMessage[]> {
     .order('queued_at', { ascending: true })
 
   if (error) {
-    console.error('[rateLimiterService] getQueuedMessages error:', error)
+    log.error('[rateLimiterService] getQueuedMessages error:', { error: error })
     return []
   }
 
@@ -419,7 +423,7 @@ export async function getQueuePosition(messageId: string): Promise<number> {
     .order('queued_at', { ascending: true })
 
   if (error) {
-    console.error('[rateLimiterService] getQueuePosition error:', error)
+    log.error('[rateLimiterService] getQueuePosition error:', { error: error })
     return -1
   }
 
@@ -440,7 +444,7 @@ export async function cancelQueuedMessage(
     .eq('status', 'queued')
 
   if (error) {
-    console.error('[rateLimiterService] cancelQueuedMessage error:', error)
+    log.error('[rateLimiterService] cancelQueuedMessage error:', { error: error })
     return { success: false, error: error.message }
   }
 
@@ -468,7 +472,7 @@ export async function getCreditTransactions(
     .limit(limit)
 
   if (error) {
-    console.error('[rateLimiterService] getCreditTransactions error:', error)
+    log.error('[rateLimiterService] getCreditTransactions error:', { error: error })
     return []
   }
 
@@ -497,7 +501,7 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
     .order('price_brl_monthly', { ascending: true })
 
   if (error) {
-    console.error('[rateLimiterService] getPricingPlans error:', error)
+    log.error('[rateLimiterService] getPricingPlans error:', { error: error })
     return []
   }
 
@@ -542,7 +546,7 @@ export async function getUsageStats(days = 30): Promise<UsageStats> {
     .gte('window_start', startDate.toISOString())
 
   if (usageError) {
-    console.error('[rateLimiterService] getUsageStats error:', usageError)
+    log.error('[rateLimiterService] getUsageStats error:', { error: usageError })
   }
 
   // Get credit transactions
@@ -554,7 +558,7 @@ export async function getUsageStats(days = 30): Promise<UsageStats> {
     .gte('created_at', startDate.toISOString())
 
   if (transactionsError) {
-    console.error('[rateLimiterService] getUsageStats transactions error:', transactionsError)
+    log.error('[rateLimiterService] getUsageStats transactions error:', { error: transactionsError })
   }
 
   const windows = usageData || []

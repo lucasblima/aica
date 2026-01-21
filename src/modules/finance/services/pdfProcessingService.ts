@@ -8,7 +8,10 @@
  */
 
 import * as pdfjsLib from 'pdfjs-dist'
+import { createNamespacedLogger } from '@/lib/logger'
 import { PDF_EXTRACTOR_URL } from '@/config/api'
+
+const log = createNamespacedLogger('PDFProcessing')
 import { supabase } from '@/services/supabaseClient'
 import * as EdgeFunctionService from '@/services/edgeFunctionService'
 import type {
@@ -53,7 +56,7 @@ export class PDFProcessingService {
         extractedAt: new Date().toISOString(),
       }
     } catch (error) {
-      console.error('[PDFProcessingService] PDF extraction failed:', error)
+      log.error('[PDFProcessingService] PDF extraction failed:', error)
       throw new Error('Falha ao extrair texto do PDF. Verifique se o arquivo não está corrompido.')
     }
   }
@@ -80,7 +83,7 @@ export class PDFProcessingService {
 
       if (!healthCheck || !healthCheck.ok) {
         // Fallback to client-side processing
-        console.warn('[PDFProcessingService] Python server not available, using client-side fallback')
+        log.warn('[PDFProcessingService] Python server not available, using client-side fallback')
         const extraction = await this.extractTextFromPDF(file)
         return await this.parseStatementWithGeminiFallback(extraction.rawText)
       }
@@ -109,14 +112,14 @@ export class PDFProcessingService {
       const textToParse = data.text || data.markdown || data.raw_text
 
       if (textToParse) {
-        console.log('[PDFProcessingService] Parsing extracted text with Gemini fallback...')
+        log.debug('[PDFProcessingService] Parsing extracted text with Gemini fallback...')
         return await this.parseStatementWithGeminiFallback(textToParse)
       }
 
       throw new Error('Servidor não retornou texto extraído (text, markdown, ou raw_text)')
 
     } catch (error) {
-      console.error('[PDFProcessingService] PDF processing failed:', error)
+      log.error('[PDFProcessingService] PDF processing failed:', error)
       // Fallback to client-side if server fails
       const extraction = await this.extractTextFromPDF(file)
       return await this.parseStatementWithGeminiFallback(extraction.rawText)
@@ -130,7 +133,7 @@ export class PDFProcessingService {
    * This method is kept for backwards compatibility and always uses Gemini fallback
    */
   async parseStatementWithAI(rawText: string): Promise<ParsedStatement> {
-    console.warn(
+    log.warn(
       '[PDFProcessingService] parseStatementWithAI is deprecated. Use processPDFFile instead.'
     )
 
@@ -147,12 +150,12 @@ export class PDFProcessingService {
    */
   async parseStatementWithGeminiFallback(rawText: string): Promise<ParsedStatement> {
     try {
-      console.log('[PDFProcessingService] Calling Edge Function for AI parsing...')
+      log.debug('[PDFProcessingService] Calling Edge Function for AI parsing...')
 
       const parsed = await EdgeFunctionService.parseStatement({ rawText })
 
       if (!parsed || typeof parsed !== 'object') {
-        console.error('[PDFProcessingService] Edge Function returned invalid data:', parsed)
+        log.error('[PDFProcessingService] Edge Function returned invalid data:', parsed)
         throw new Error('Não foi possível extrair dados válidos da resposta')
       }
 
@@ -176,7 +179,7 @@ export class PDFProcessingService {
         piiSanitized: false // Direct Gemini parsing doesn't sanitize PII
       }
     } catch (error) {
-      console.error('[PDFProcessingService] Gemini fallback parsing failed:', error)
+      log.error('[PDFProcessingService] Gemini fallback parsing failed:', error)
       throw new Error('Falha ao processar extrato com IA. Tente novamente.')
     }
   }

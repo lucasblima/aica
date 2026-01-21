@@ -9,6 +9,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { memberService } from '../services/memberService';
 import type { ConnectionMember, AddMemberPayload, MemberRole } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useSpaceMembers');
 
 interface UseSpaceMembersReturn {
   members: ConnectionMember[];
@@ -63,7 +65,7 @@ export function useSpaceMembers(spaceId: string | undefined): UseSpaceMembersRet
       setMembers(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching members:', err);
+      log.error('Error fetching members:', err);
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ export function useSpaceMembers(spaceId: string | undefined): UseSpaceMembersRet
       const adminStatus = await memberService.isAdmin(spaceId);
       setIsAdmin(adminStatus);
     } catch (err) {
-      console.error('Error checking admin status:', err);
+      log.error('Error checking admin status:', err);
       setIsAdmin(false);
     } finally {
       setIsAdminLoading(false);

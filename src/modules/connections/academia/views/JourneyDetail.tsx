@@ -14,6 +14,8 @@ import { JourneyProgress } from '../components/JourneyProgress';
 import { NoteEditor } from '../components/NoteEditor';
 import { CreateNotePayload } from '../types';
 import { cardElevationVariants, staggerContainer, staggerItem } from '../../../../lib/animations/ceramic-motion';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('JourneyDetail');
 
 interface JourneyDetailProps {
   spaceId: string;
@@ -62,7 +64,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
       await createNote({ ...payload, journey_id: journeyId });
       setShowNoteEditor(false);
     } catch (error) {
-      console.error('Error creating note:', error);
+      log.error('Error creating note:', error);
     }
   };
 

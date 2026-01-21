@@ -4,6 +4,10 @@
  */
 
 import { RRuleSet } from 'rrule';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('TaskRecurrenceService');
+
 
 /**
  * Interface for recurring task patterns
@@ -116,7 +120,7 @@ export function generateNextOccurrence(
 
     return nextOccurrence;
   } catch (error) {
-    console.error('[taskRecurrenceService] Error generating next occurrence:', error);
+    log.error('[taskRecurrenceService] Error generating next occurrence:', { error: error });
     return null;
   }
 }
@@ -143,7 +147,7 @@ export function generateUpcomingOccurrences(
     const now = new Date();
     return rruleSet.all().filter(date => date > now);
   } catch (error) {
-    console.error('[taskRecurrenceService] Error generating upcoming occurrences:', error);
+    log.error('[taskRecurrenceService] Error generating upcoming occurrences:', { error: error });
     return [];
   }
 }

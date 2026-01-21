@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('credentialService');
   AcademiaCredential,
   CreateCredentialPayload,
   UpdateCredentialPayload,
@@ -26,13 +28,13 @@ export const credentialService = {
         .order('issued_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching credentials:', error);
+        log.error('Error fetching credentials:', error);
         throw new Error(`Failed to fetch credentials: ${error.message}`);
       }
 
       return data as AcademiaCredential[];
     } catch (error) {
-      console.error('Error in getCredentials:', error);
+      log.error('Error in getCredentials:', error);
       throw error;
     }
   },
@@ -53,7 +55,7 @@ export const credentialService = {
         .order('issued_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching credentials by type:', error);
+        log.error('Error fetching credentials by type:', error);
         throw new Error(
           `Failed to fetch ${credentialType} credentials: ${error.message}`
         );
@@ -61,7 +63,7 @@ export const credentialService = {
 
       return data as AcademiaCredential[];
     } catch (error) {
-      console.error('Error in getCredentialsByType:', error);
+      log.error('Error in getCredentialsByType:', error);
       throw error;
     }
   },
@@ -78,13 +80,13 @@ export const credentialService = {
         .order('issued_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching credentials by journey:', error);
+        log.error('Error fetching credentials by journey:', error);
         throw new Error(`Failed to fetch journey credentials: ${error.message}`);
       }
 
       return data as AcademiaCredential[];
     } catch (error) {
-      console.error('Error in getCredentialsByJourney:', error);
+      log.error('Error in getCredentialsByJourney:', error);
       throw error;
     }
   },
@@ -106,13 +108,13 @@ export const credentialService = {
         .order('expires_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching expiring credentials:', error);
+        log.error('Error fetching expiring credentials:', error);
         throw new Error(`Failed to fetch expiring credentials: ${error.message}`);
       }
 
       return data as AcademiaCredential[];
     } catch (error) {
-      console.error('Error in getExpiringCredentials:', error);
+      log.error('Error in getExpiringCredentials:', error);
       throw error;
     }
   },
@@ -129,7 +131,7 @@ export const credentialService = {
         .single();
 
       if (error) {
-        console.error('Error fetching credential:', error);
+        log.error('Error fetching credential:', error);
         throw new Error(`Failed to fetch credential: ${error.message}`);
       }
 
@@ -139,7 +141,7 @@ export const credentialService = {
 
       return data as AcademiaCredential;
     } catch (error) {
-      console.error('Error in getCredentialById:', error);
+      log.error('Error in getCredentialById:', error);
       throw error;
     }
   },
@@ -164,13 +166,13 @@ export const credentialService = {
         .single();
 
       if (error) {
-        console.error('Error creating credential:', error);
+        log.error('Error creating credential:', error);
         throw new Error(`Failed to create credential: ${error.message}`);
       }
 
       return data as AcademiaCredential;
     } catch (error) {
-      console.error('Error in createCredential:', error);
+      log.error('Error in createCredential:', error);
       throw error;
     }
   },
@@ -196,7 +198,7 @@ export const credentialService = {
         .single();
 
       if (error) {
-        console.error('Error updating credential:', error);
+        log.error('Error updating credential:', error);
         throw new Error(`Failed to update credential: ${error.message}`);
       }
 
@@ -206,7 +208,7 @@ export const credentialService = {
 
       return data as AcademiaCredential;
     } catch (error) {
-      console.error('Error in updateCredential:', error);
+      log.error('Error in updateCredential:', error);
       throw error;
     }
   },
@@ -222,11 +224,11 @@ export const credentialService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting credential:', error);
+        log.error('Error deleting credential:', error);
         throw new Error(`Failed to delete credential: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteCredential:', error);
+      log.error('Error in deleteCredential:', error);
       throw error;
     }
   },
@@ -296,7 +298,7 @@ export const credentialService = {
         expired,
       };
     } catch (error) {
-      console.error('Error in getCredentialStats:', error);
+      log.error('Error in getCredentialStats:', error);
       throw error;
     }
   },

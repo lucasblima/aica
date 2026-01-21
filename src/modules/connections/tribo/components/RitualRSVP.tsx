@@ -3,6 +3,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { RitualOccurrence, RSVPStatus } from '../types';
 import { useRSVP } from '../hooks/useRituals';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('RitualRSVP');
 
 interface RitualRSVPProps {
   occurrence: RitualOccurrence;
@@ -33,7 +35,7 @@ export const RitualRSVP: React.FC<RitualRSVPProps> = ({
         onClose();
       }
     } catch (error) {
-      console.error('Error updating RSVP:', error);
+      log.error('Error updating RSVP:', error);
     }
   };
 

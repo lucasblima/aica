@@ -6,6 +6,8 @@
 
 import React, { useState } from 'react';
 import { useSyncToPersonalFinance } from '../hooks/useFinanceIntegration';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('SyncToFinanceButton');
 
 interface SyncToFinanceButtonProps {
   transactionId: string;
@@ -38,7 +40,7 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
       });
       setShowModal(false);
     } catch (error) {
-      console.error('Error syncing to personal finance:', error);
+      log.error('Error syncing to personal finance:', error);
     }
   };
 

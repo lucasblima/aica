@@ -22,6 +22,10 @@ import {
   TRAIL_TO_MODULES_MAP,
   ALL_TRAILS,
 } from '../data/contextualTrails';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('OnboardingService');
+
 
 // =====================================================
 // PUBLIC API FUNCTIONS
@@ -43,7 +47,7 @@ export async function getCourseTrails(): Promise<ContextualTrail[]> {
 export async function getTrailById_API(trailId: string): Promise<ContextualTrail | undefined> {
   const trail = getTrailById(trailId);
   if (!trail) {
-    console.warn(`Trail not found: ${trailId}`);
+    log.warn(`Trail not found: ${trailId}`);
     return undefined;
   }
   return trail;
@@ -121,7 +125,7 @@ export async function captureTrailResponses(
       );
 
     if (dbError) {
-      console.error('Database error saving trail responses:', dbError);
+      log.error('Database error saving trail responses:', { error: dbError });
       return {
         success: false,
         trailScore: 0,
@@ -141,7 +145,7 @@ export async function captureTrailResponses(
       pointsAwarded,
     };
   } catch (error) {
-    console.error('Error capturing trail responses:', error);
+    log.error('Error capturing trail responses:', { error: error });
     return {
       success: false,
       trailScore: 0,
@@ -204,7 +208,7 @@ export async function getUserOnboardingStatus(userId: string): Promise<Onboardin
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching onboarding status:', error);
+      log.error('Error fetching onboarding status:', { error: error });
       return null;
     }
 
@@ -243,7 +247,7 @@ export async function getUserOnboardingStatus(userId: string): Promise<Onboardin
       lastCompletedTrailAt: new Date(captures[0].created_at),
     };
   } catch (error) {
-    console.error('Error in getUserOnboardingStatus:', error);
+    log.error('Error in getUserOnboardingStatus:', { error: error });
     return null;
   }
 }
@@ -262,13 +266,13 @@ export async function getUserCompletedTrials(userId: string): Promise<StoredCont
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching user trials:', error);
+      log.error('Error fetching user trials:', { error: error });
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getUserCompletedTrials:', error);
+    log.error('Error in getUserCompletedTrials:', { error: error });
     return [];
   }
 }
@@ -458,13 +462,13 @@ export async function resetUserOnboarding(userId: string): Promise<boolean> {
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error resetting onboarding:', error);
+      log.error('Error resetting onboarding:', { error: error });
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in resetUserOnboarding:', error);
+    log.error('Error in resetUserOnboarding:', { error: error });
     return false;
   }
 }

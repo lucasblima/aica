@@ -8,6 +8,10 @@ import type {
 import { trackAIUsage } from './aiUsageTrackingService';
 import { fileSearchCache } from './fileSearchCacheService';
 import { supabase } from './supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FileSearchApiClient');
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -26,7 +30,7 @@ async function getAuthToken(): Promise<string | null> {
     const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token || null;
   } catch (error) {
-    console.error('[fileSearchApiClient] Error getting auth token:', error);
+    log.error('[fileSearchApiClient] Error getting auth token:', { error: error });
     return null;
   }
 }
@@ -68,7 +72,7 @@ export async function listCorpora(
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.warn('[fileSearchApiClient] No authenticated user');
+        log.warn('[fileSearchApiClient] No authenticated user');
         return [];
       }
 
@@ -88,7 +92,7 @@ export async function listCorpora(
       const { data, error } = await query;
 
       if (error) {
-        console.error('[fileSearchApiClient] Supabase error:', error);
+        log.error('[fileSearchApiClient] Supabase error:', { error: error });
         return [];
       }
 
@@ -102,7 +106,7 @@ export async function listCorpora(
         moduleId: row.module_id,
       }));
     } catch (error) {
-      console.error('[fileSearchApiClient] Error listing corpora from Supabase:', error);
+      log.error('[fileSearchApiClient] Error listing corpora from Supabase:', { error: error });
       return [];
     }
   }
@@ -124,7 +128,7 @@ export async function listCorpora(
 
     return await response.json();
   } catch (error) {
-    console.error('Error listing corpora:', error);
+    log.error('Error listing corpora:', { error: error });
     throw error;
   }
 }
@@ -160,7 +164,7 @@ export async function createCorpus(
         .single();
 
       if (existingCorpus) {
-        console.log('[fileSearchApiClient] Corpus already exists, returning existing:', name);
+        log.debug('[fileSearchApiClient] Corpus already exists, returning existing:', name);
         return {
           id: existingCorpus.id,
           name: existingCorpus.corpus_name,
@@ -189,7 +193,7 @@ export async function createCorpus(
       if (error) {
         // Handle race condition - if duplicate key error, fetch existing
         if (error.code === '23505' || error.message.includes('duplicate key')) {
-          console.log('[fileSearchApiClient] Duplicate detected, fetching existing corpus');
+          log.debug('[fileSearchApiClient] Duplicate detected, fetching existing corpus');
           const { data: existing } = await supabase
             .from('file_search_corpora')
             .select('*')
@@ -222,7 +226,7 @@ export async function createCorpus(
         moduleId: data.module_id,
       };
     } catch (error) {
-      console.error('[fileSearchApiClient] Error creating corpus in Supabase:', error);
+      log.error('[fileSearchApiClient] Error creating corpus in Supabase:', { error: error });
       throw error;
     }
   }
@@ -250,7 +254,7 @@ export async function createCorpus(
 
     return await response.json();
   } catch (error) {
-    console.error('Error creating corpus:', error);
+    log.error('Error creating corpus:', { error: error });
     throw error;
   }
 }
@@ -325,7 +329,7 @@ export async function indexDocument(
 
     // ✅ CACHE: Invalidate module cache (new document changes search results)
     fileSearchCache.invalidateModule(request.moduleType, request.moduleId);
-    console.log('[fileSearchApiClient] Cache invalidated for module:', request.moduleType, request.moduleId);
+    log.debug('[fileSearchApiClient] Cache invalidated for module:', request.moduleType, request.moduleId);
 
     // Track AI usage for document indexing (fire-and-forget, non-blocking)
     const duration = (Date.now() - startTime) / 1000;
@@ -343,7 +347,7 @@ export async function indexDocument(
       },
     }).catch(err => {
       // Silently catch tracking errors - never block main flow
-      console.debug('[fileSearchApiClient] Tracking error:', err);
+      log.debug('[fileSearchApiClient] Tracking error:', err);
     });
 
     // Convert Edge Function response to FileSearchDocument format
@@ -361,7 +365,7 @@ export async function indexDocument(
       metadata: request.metadata,
     };
   } catch (error) {
-    console.error('Error indexing document:', error);
+    log.error('Error indexing document:', { error: error });
     throw error;
   }
 }
@@ -379,7 +383,7 @@ export async function queryFileSearch(
   // ✅ CACHE: Check if results are already cached
   const cachedResults = fileSearchCache.get(query);
   if (cachedResults) {
-    console.log('[fileSearchApiClient] Cache HIT - returning cached results');
+    log.debug('[fileSearchApiClient] Cache HIT - returning cached results');
     return cachedResults;
   }
 
@@ -453,12 +457,12 @@ export async function queryFileSearch(
       },
     }).catch(err => {
       // Silently catch tracking errors - never block main flow
-      console.debug('[fileSearchApiClient] Tracking error:', err);
+      log.debug('[fileSearchApiClient] Tracking error:', err);
     });
 
     return results;
   } catch (error) {
-    console.error('Error querying file search:', error);
+    log.error('Error querying file search:', { error: error });
     throw error;
   }
 }
@@ -480,7 +484,7 @@ export async function listDocuments(
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.warn('[fileSearchApiClient] No authenticated user');
+        log.warn('[fileSearchApiClient] No authenticated user');
         return [];
       }
 
@@ -503,7 +507,7 @@ export async function listDocuments(
       const { data, error } = await query;
 
       if (error) {
-        console.error('[fileSearchApiClient] Supabase error:', error);
+        log.error('[fileSearchApiClient] Supabase error:', { error: error });
         return [];
       }
 
@@ -521,7 +525,7 @@ export async function listDocuments(
         metadata: row.custom_metadata,
       }));
     } catch (error) {
-      console.error('[fileSearchApiClient] Error listing documents from Supabase:', error);
+      log.error('[fileSearchApiClient] Error listing documents from Supabase:', { error: error });
       return [];
     }
   }
@@ -551,7 +555,7 @@ export async function listDocuments(
 
     return await response.json();
   } catch (error) {
-    console.error('Error listing documents:', error);
+    log.error('Error listing documents:', { error: error });
     throw error;
   }
 }
@@ -597,14 +601,14 @@ export async function deleteDocument(
     // ✅ CACHE: Invalidate cache (document deletion changes search results)
     if (moduleType) {
       fileSearchCache.invalidateModule(moduleType, moduleId);
-      console.log('[fileSearchApiClient] Cache invalidated for module:', moduleType, moduleId);
+      log.debug('[fileSearchApiClient] Cache invalidated for module:', moduleType, moduleId);
     } else {
       // If module info not provided, clear all cache to be safe
       fileSearchCache.clearAll();
-      console.log('[fileSearchApiClient] All cache cleared after document deletion');
+      log.debug('[fileSearchApiClient] All cache cleared after document deletion');
     }
   } catch (error) {
-    console.error('Error deleting document:', error);
+    log.error('Error deleting document:', { error: error });
     throw error;
   }
 }

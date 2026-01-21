@@ -7,7 +7,10 @@
  */
 
 import React, { useEffect, useState } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { Zap, Clock, TrendingUp, AlertTriangle } from 'lucide-react'
+
+const log = createNamespacedLogger('TokenMeter')
 import { cn } from '@/lib/utils'
 import rateLimiterService, { RateLimitStatus, ModelTier } from '@/services/rateLimiterService'
 import './TokenMeter.css'
@@ -113,7 +116,7 @@ export function TokenMeter({
         onLimitReached()
       }
     } catch (error) {
-      console.error('[TokenMeter] Error fetching status:', error)
+      log.error('[TokenMeter] Error fetching status:', error)
     } finally {
       setLoading(false)
     }

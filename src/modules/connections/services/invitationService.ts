@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('InvitationService');
 
 /**
  * Invitation Service
@@ -149,7 +152,7 @@ export async function createInvitation(
       .single();
 
     if (invitationError) {
-      console.error('Error creating invitation:', invitationError);
+      log.error('Error creating invitation:', invitationError);
       return {
         success: false,
         error: `Failed to create invitation: ${invitationError.message}`
@@ -176,7 +179,7 @@ export async function createInvitation(
       inviteLink
     };
   } catch (error) {
-    console.error('Error in createInvitation:', error);
+    log.error('Error in createInvitation:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -203,13 +206,13 @@ export async function getInvitationByToken(token: string): Promise<Invitation | 
       .single();
 
     if (error) {
-      console.error('Error fetching invitation by token:', error);
+      log.error('Error fetching invitation by token:', error);
       return null;
     }
 
     return data as Invitation;
   } catch (error) {
-    console.error('Error in getInvitationByToken:', error);
+    log.error('Error in getInvitationByToken:', error);
     return null;
   }
 }
@@ -312,7 +315,7 @@ export async function acceptInvitation(token: string, userId: string): Promise<I
       .insert(memberPayload);
 
     if (memberError) {
-      console.error('Error adding member:', memberError);
+      log.error('Error adding member:', memberError);
       return {
         success: false,
         error: `Failed to add member: ${memberError.message}`
@@ -331,7 +334,7 @@ export async function acceptInvitation(token: string, userId: string): Promise<I
       .single();
 
     if (updateError) {
-      console.error('Error updating invitation status:', updateError);
+      log.error('Error updating invitation status:', updateError);
       // Don't fail since member was added successfully
     }
 
@@ -340,7 +343,7 @@ export async function acceptInvitation(token: string, userId: string): Promise<I
       invitation: updatedInvitation as Invitation || invitation
     };
   } catch (error) {
-    console.error('Error in acceptInvitation:', error);
+    log.error('Error in acceptInvitation:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -388,7 +391,7 @@ export async function rejectInvitation(token: string): Promise<InviteResult> {
       .single();
 
     if (error) {
-      console.error('Error rejecting invitation:', error);
+      log.error('Error rejecting invitation:', error);
       return {
         success: false,
         error: `Failed to reject invitation: ${error.message}`
@@ -400,7 +403,7 @@ export async function rejectInvitation(token: string): Promise<InviteResult> {
       invitation: updatedInvitation as Invitation
     };
   } catch (error) {
-    console.error('Error in rejectInvitation:', error);
+    log.error('Error in rejectInvitation:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -442,13 +445,13 @@ export async function getSpaceInvitations(spaceId: string): Promise<Invitation[]
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching space invitations:', error);
+      log.error('Error fetching space invitations:', error);
       throw new Error(`Failed to fetch invitations: ${error.message}`);
     }
 
     return data as Invitation[];
   } catch (error) {
-    console.error('Error in getSpaceInvitations:', error);
+    log.error('Error in getSpaceInvitations:', error);
     throw error;
   }
 }
@@ -475,7 +478,7 @@ export async function cancelInvitation(invitationId: string): Promise<void> {
       .single();
 
     if (fetchError) {
-      console.error('Error fetching invitation:', fetchError);
+      log.error('Error fetching invitation:', fetchError);
       throw new Error(`Failed to fetch invitation: ${fetchError.message}`);
     }
 
@@ -496,11 +499,11 @@ export async function cancelInvitation(invitationId: string): Promise<void> {
       .eq('id', invitationId);
 
     if (deleteError) {
-      console.error('Error canceling invitation:', deleteError);
+      log.error('Error canceling invitation:', deleteError);
       throw new Error(`Failed to cancel invitation: ${deleteError.message}`);
     }
   } catch (error) {
-    console.error('Error in cancelInvitation:', error);
+    log.error('Error in cancelInvitation:', error);
     throw error;
   }
 }
@@ -558,7 +561,7 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
       7 // Reset to 7 days expiration
     );
   } catch (error) {
-    console.error('Error in resendInvitation:', error);
+    log.error('Error in resendInvitation:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'An unexpected error occurred'

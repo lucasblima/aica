@@ -19,6 +19,9 @@ import { Task, Quadrant } from '@/types';
 import { TaskEditModal } from '@/components/domain';
 import { ConfirmationModal } from '@/components/ui';
 import { EmptyQuadrantState } from '@/components/domain';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PriorityMatrix');
 
 interface QuadrantConfig {
     id: Quadrant;
@@ -241,10 +244,10 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
 
             if (error) throw error;
 
-            console.log('[PriorityMatrix] Task updated:', taskId, updates);
+            log.debug('Task updated:', taskId, updates);
             onRefresh();
         } catch (error) {
-            console.error('[PriorityMatrix] Error updating task:', error);
+            log.error('Error updating task:', { error });
             throw error;
         }
     };
@@ -271,12 +274,12 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
 
             if (error) throw error;
 
-            console.log('[PriorityMatrix] Task deleted:', deletingTask.id);
+            log.debug('Task deleted:', deletingTask.id);
             onRefresh();
             setIsDeleteModalOpen(false);
             setDeletingTask(null);
         } catch (error) {
-            console.error('[PriorityMatrix] Error deleting task:', error);
+            log.error('Error deleting task:', { error });
         } finally {
             setIsDeleting(false);
         }
@@ -364,7 +367,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
 
             onRefresh();
         } catch (error) {
-            console.error('[PriorityMatrix] AICA Auto error:', error);
+            log.error('AICA Auto error:', { error });
         } finally {
             setIsAicaWorking(false);
         }

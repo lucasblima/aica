@@ -14,10 +14,13 @@
  */
 
 import { supabase } from '@/lib/supabase'
+import { createNamespacedLogger } from '@/lib/logger'
 import {
   CreateMomentEntryInput,
   MomentEntryResult,
 } from '@/modules/journey/types/persistenceTypes'
+
+const log = createNamespacedLogger('JourneyAPI')
 
 import {
   createMomentEntry,
@@ -154,7 +157,7 @@ export async function apiGetMomentsCount() {
 
     return { count: count || 0 }
   } catch (error) {
-    console.error('[journeyAPI] Error counting moments:', error)
+    log.error('[journeyAPI] Error counting moments:', error)
     return { count: 0 }
   }
 }
@@ -245,7 +248,7 @@ export async function apiSearchMoments(query: string) {
       total: data?.length || 0,
     }
   } catch (error) {
-    console.error('[journeyAPI] Error searching moments:', error)
+    log.error('[journeyAPI] Error searching moments:', error)
     return { moments: [], total: 0 }
   }
 }
@@ -420,7 +423,7 @@ export async function apiExportMoments() {
       },
     }
   } catch (error) {
-    console.error('[journeyAPI] Error exporting moments:', error)
+    log.error('[journeyAPI] Error exporting moments:', error)
     throw error
   }
 }

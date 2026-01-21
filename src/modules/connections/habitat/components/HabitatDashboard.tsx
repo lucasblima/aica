@@ -15,6 +15,8 @@ import { MaintenanceTracker } from './MaintenanceTracker';
 import { WarrantyAlertsCard } from './WarrantyAlertsCard';
 import { SpaceFinanceSummary } from '../../components/SpaceFinanceSummary';
 import { MemberBalanceCard } from '../../components/MemberBalanceCard';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('HabitatDashboard');
 
 interface HabitatDashboardProps {
   spaceId: string;
@@ -60,7 +62,7 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
       });
       setNewPropertyName('');
     } catch (error) {
-      console.error('Erro ao criar propriedade:', error);
+      log.error('Erro ao criar propriedade:', error);
     } finally {
       setIsCreating(false);
     }

@@ -5,7 +5,10 @@
  */
 
 import React, { useState, useRef } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { Upload, X, CheckCircle, AlertCircle, FileText, Loader2 } from 'lucide-react';
+
+const log = createNamespacedLogger('CSVUpload');
 import { statementService } from '../services/statementService';
 
 interface CSVUploadProps {
@@ -64,7 +67,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
         onClose();
       }, 2000);
     } catch (err: any) {
-      console.error('Upload error:', err);
+      log.error('Upload error:', err);
       setError(err.message || 'Erro ao processar CSV. Verifique o formato do arquivo.');
     } finally {
       setUploading(false);

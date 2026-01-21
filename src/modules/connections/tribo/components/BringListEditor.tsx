@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { BringListItem } from '../types';
 import { useUpdateBringList, useAssignBringListItem, useToggleBringListItem } from '../hooks/useRituals';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('BringListEditor');
 
 interface BringListEditorProps {
   occurrenceId: string;
@@ -47,7 +49,7 @@ export const BringListEditor: React.FC<BringListEditorProps> = ({
       });
       setNewItem('');
     } catch (error) {
-      console.error('Error adding item:', error);
+      log.error('Error adding item:', error);
     }
   };
 
@@ -60,7 +62,7 @@ export const BringListEditor: React.FC<BringListEditorProps> = ({
         bringList: updatedList,
       });
     } catch (error) {
-      console.error('Error removing item:', error);
+      log.error('Error removing item:', error);
     }
   };
 
@@ -71,7 +73,7 @@ export const BringListEditor: React.FC<BringListEditorProps> = ({
         itemId,
       });
     } catch (error) {
-      console.error('Error toggling item:', error);
+      log.error('Error toggling item:', error);
     }
   };
 
@@ -84,7 +86,7 @@ export const BringListEditor: React.FC<BringListEditorProps> = ({
       });
       setEditingId(null);
     } catch (error) {
-      console.error('Error assigning item:', error);
+      log.error('Error assigning item:', error);
     }
   };
 

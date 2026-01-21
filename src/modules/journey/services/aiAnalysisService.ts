@@ -10,7 +10,10 @@
  */
 
 import { GeminiClient } from '@/lib/gemini/client';
+import { createNamespacedLogger } from '@/lib/logger';
 import { trackAIUsage } from '@/services/aiUsageTrackingService';
+
+const log = createNamespacedLogger('AIAnalysis');
 
 export interface AISuggestion {
   type: 'reflection' | 'question' | 'pattern';
@@ -72,7 +75,7 @@ Seja conciso e empático. Máximo 2 linhas.`,
       }
     }).catch(error => {
       // Non-blocking: log error but don't throw
-      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     // Parse JSON response
@@ -94,7 +97,7 @@ Seja conciso e empático. Máximo 2 linhas.`,
       message: parsed.message || 'Continue refletindo sobre isso.',
     };
   } catch (error) {
-    console.error('[aiAnalysisService] Error analyzing content:', error);
+    log.error('[aiAnalysisService] Error analyzing content:', error);
 
     // Fallback suggestions based on content length and keywords
     return generateFallbackSuggestion(content);
@@ -173,7 +176,7 @@ Retorne um JSON:
       }
     }).catch(error => {
       // Non-blocking: log error but don't throw
-      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     const text = response.result?.text || JSON.stringify(response.result);
@@ -195,7 +198,7 @@ Retorne um JSON:
       action: parsed.action || 'view_patterns',
     };
   } catch (error) {
-    console.error('[aiAnalysisService] Error generating insight:', error);
+    log.error('[aiAnalysisService] Error generating insight:', error);
 
     // Fallback based on tags
     if (topTags.length > 0) {
@@ -280,7 +283,7 @@ Máximo 5 temas. Seja específico e empático.`,
       }
     }).catch(error => {
       // Non-blocking: log error but don't throw
-      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     const text = response.result?.text || JSON.stringify(response.result);
@@ -300,7 +303,7 @@ Máximo 5 temas. Seja específico e empático.`,
       description: cluster.description,
     }));
   } catch (error) {
-    console.error('[aiAnalysisService] Error clustering moments:', error);
+    log.error('[aiAnalysisService] Error clustering moments:', error);
     return [];
   }
 }

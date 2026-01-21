@@ -4,7 +4,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
+
+const log = createNamespacedLogger('useDailyQuestion')
 import {
   QuestionWithResponse,
   AnswerQuestionResult,
@@ -40,7 +43,7 @@ export function useDailyQuestion() {
       setQuestion(fetchedQuestion)
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching daily question:', err)
+      log.error('Error fetching daily question:', err)
     } finally {
       setIsLoading(false)
     }
@@ -123,7 +126,7 @@ export function useAllQuestions() {
       setQuestions(fetchedQuestions)
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching questions:', err)
+      log.error('Error fetching questions:', err)
     } finally {
       setIsLoading(false)
     }
@@ -174,7 +177,7 @@ export function useQuestionStats() {
       setStats(fetchedStats)
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching question stats:', err)
+      log.error('Error fetching question stats:', err)
     } finally {
       setIsLoading(false)
     }
@@ -215,7 +218,7 @@ export function useResponseHistory(limit: number = 50) {
       setResponses(fetchedResponses)
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching response history:', err)
+      log.error('Error fetching response history:', err)
     } finally {
       setIsLoading(false)
     }

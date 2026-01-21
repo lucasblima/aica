@@ -6,7 +6,10 @@
  */
 
 import React, { useState } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const log = createNamespacedLogger('JourneySearchPanel');
 import {
   Search,
   Loader2,
@@ -105,7 +108,7 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
           break;
       }
     } catch (err) {
-      console.error('[JourneySearchPanel] Search error:', err);
+      log.error('[JourneySearchPanel] Search error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar');
     }
   };

@@ -10,6 +10,8 @@ import { KnowledgeSearch } from '../components/KnowledgeSearch';
 import { NoteGraph } from '../components/NoteGraph';
 import { NoteEditor } from '../components/NoteEditor';
 import { CreateNotePayload } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('NotesView');
 
 interface NotesViewProps {
   spaceId: string;
@@ -28,7 +30,7 @@ export const NotesView: React.FC<NotesViewProps> = ({ spaceId }) => {
       await createNote(payload);
       setShowEditor(false);
     } catch (error) {
-      console.error('Error creating note:', error);
+      log.error('Error creating note:', error);
     }
   };
 

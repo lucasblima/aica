@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import * as spaceService from '../services/connectionSpaceService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useConnectionSpaces');
   ConnectionSpace,
   CreateSpacePayload,
   UpdateSpacePayload,
@@ -109,7 +111,7 @@ export function useConnectionSpaces(
       setSpaces(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch spaces'));
-      console.error('[useConnectionSpaces] Error:', err);
+      log.error('[useConnectionSpaces] Error:', err);
     } finally {
       setIsLoading(false);
     }
