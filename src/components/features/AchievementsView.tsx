@@ -16,7 +16,10 @@ import {
   getBadgesCatalog,
   getRarityColor,
 } from '@/services/gamificationService';
+import { createNamespacedLogger } from '@/lib/logger';
 import './AchievementsView.css';
+
+const log = createNamespacedLogger('AchievementsView');
 
 interface AchievementsViewProps {
   userId: string;
@@ -45,7 +48,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
       setUnlockedAchievements(achievements);
       setAllBadges(badges);
     } catch (error) {
-      console.error('Error loading achievements:', error);
+      log.error('Error loading achievements', { error });
     } finally {
       setLoading(false);
     }

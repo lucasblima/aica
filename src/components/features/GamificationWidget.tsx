@@ -21,7 +21,10 @@ import {
   formatXP,
   getRarityColor,
 } from '@/services/gamificationService';
+import { createNamespacedLogger } from '@/lib/logger';
 import './GamificationWidget.css';
+
+const log = createNamespacedLogger('GamificationWidget');
 
 interface GamificationWidgetProps {
   userId: string;
@@ -54,7 +57,7 @@ export const GamificationWidget: React.FC<GamificationWidgetProps> = ({
       setAchievements(userAchievements.slice(0, 6)); // Last 6 achievements
       setStreak(userStreak);
     } catch (error) {
-      console.error('Error loading game data:', error);
+      log.error('Error loading game data', { error });
     } finally {
       setLoading(false);
     }
