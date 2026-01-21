@@ -1256,7 +1256,7 @@ export async function uploadEditalPDF(
 
     if (error) throw error;
 
-    log.debug(Edital PDF uploaded:', {
+    log.debug('Edital PDF uploaded:', {
       opportunityId,
       path: processed.path,
       contentLength: processed.content.length
