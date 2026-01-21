@@ -8,6 +8,10 @@
  * Calls will silently fail on unsupported devices.
  */
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Haptics');
+
 type VibrationPattern = number | number[];
 
 /**
@@ -27,7 +31,7 @@ export const vibrate = (pattern: VibrationPattern): boolean => {
   try {
     return navigator.vibrate(pattern);
   } catch (e) {
-    console.warn('Haptic feedback failed:', e);
+    log.warn('Haptic feedback failed:', e);
     return false;
   }
 };

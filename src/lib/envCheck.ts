@@ -43,6 +43,10 @@ export interface EnvValidationResult {
  * Validates that required environment variables are set.
  * Logs errors/warnings to console and returns validation result.
  */
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('EnvCheck');
+
 export function validateEnv(): EnvValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -106,26 +110,17 @@ export function validateEnv(): EnvValidationResult {
   const isValid = errors.length === 0;
 
   if (errors.length > 0) {
-    console.error(
-      '%c[ENV] CRITICAL ERRORS - Application may not function correctly:',
-      'color: red; font-weight: bold'
-    );
-    errors.forEach((err, i) => console.error(`  ${i + 1}. ${err}`));
+    log.error('CRITICAL ERRORS - Application may not function correctly:');
+    errors.forEach((err, i) => log.error(`  ${i + 1}. ${err}`));
   }
 
   if (warnings.length > 0) {
-    console.warn(
-      '%c[ENV] Warnings - Some features may be limited:',
-      'color: orange; font-weight: bold'
-    );
-    warnings.forEach((warn, i) => console.warn(`  ${i + 1}. ${warn}`));
+    log.warn('Warnings - Some features may be limited:');
+    warnings.forEach((warn, i) => log.warn(`  ${i + 1}. ${warn}`));
   }
 
   if (isValid && warnings.length === 0) {
-    console.log(
-      '%c[ENV] All environment variables are properly configured.',
-      'color: green'
-    );
+    log.info('All environment variables are properly configured.');
   }
 
   return {
@@ -146,36 +141,18 @@ export function logEnvStatus(): void {
   const mode = import.meta.env.MODE;
   const isProd = import.meta.env.PROD;
 
-  console.log('%c[ENV] Environment Configuration Status:', 'font-weight: bold');
-  console.log(`  Mode: ${mode} (${isProd ? 'PRODUCTION' : 'DEVELOPMENT'})`);
-  console.log('');
-  console.log('  Required Variables:');
-  console.log(
-    `    VITE_SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING'}`
-  );
-  console.log(
-    `    VITE_SUPABASE_ANON_KEY: ${import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'}`
-  );
-  console.log('');
-  console.log('  Optional Variables:');
-  console.log(
-    `    VITE_GEMINI_API_KEY: ${import.meta.env.VITE_GEMINI_API_KEY ? 'SET (DEPRECATED)' : 'NOT SET (OK - uses Edge Functions)'}`
-  );
-  console.log(
-    `    VITE_FRONTEND_URL: ${import.meta.env.VITE_FRONTEND_URL || 'NOT SET'}`
-  );
-  console.log(
-    `    VITE_GOOGLE_OAUTH_CLIENT_ID: ${import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ? 'SET' : 'NOT SET'}`
-  );
-  console.log(
-    `    VITE_PDF_EXTRACTOR_URL: ${import.meta.env.VITE_PDF_EXTRACTOR_URL || 'NOT SET'}`
-  );
-  console.log(
-    `    VITE_N8N_WEBHOOK_URL: ${import.meta.env.VITE_N8N_WEBHOOK_URL ? 'SET' : 'NOT SET'}`
-  );
-  console.log(
-    `    VITE_EVOLUTION_INSTANCE_NAME: ${import.meta.env.VITE_EVOLUTION_INSTANCE_NAME || 'NOT SET'}`
-  );
+  log.info('Environment Configuration Status:');
+  log.info(`  Mode: ${mode} (${isProd ? 'PRODUCTION' : 'DEVELOPMENT'})`);
+  log.info('  Required Variables:');
+  log.info(`    VITE_SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING'}`);
+  log.info(`    VITE_SUPABASE_ANON_KEY: ${import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'}`);
+  log.info('  Optional Variables:');
+  log.info(`    VITE_GEMINI_API_KEY: ${import.meta.env.VITE_GEMINI_API_KEY ? 'SET (DEPRECATED)' : 'NOT SET (OK - uses Edge Functions)'}`);
+  log.info(`    VITE_FRONTEND_URL: ${import.meta.env.VITE_FRONTEND_URL || 'NOT SET'}`);
+  log.info(`    VITE_GOOGLE_OAUTH_CLIENT_ID: ${import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ? 'SET' : 'NOT SET'}`);
+  log.info(`    VITE_PDF_EXTRACTOR_URL: ${import.meta.env.VITE_PDF_EXTRACTOR_URL || 'NOT SET'}`);
+  log.info(`    VITE_N8N_WEBHOOK_URL: ${import.meta.env.VITE_N8N_WEBHOOK_URL ? 'SET' : 'NOT SET'}`);
+  log.info(`    VITE_EVOLUTION_INSTANCE_NAME: ${import.meta.env.VITE_EVOLUTION_INSTANCE_NAME || 'NOT SET'}`);
 }
 
 /**

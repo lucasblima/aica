@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import JoyRide from 'react-joyride';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('TourContext');
 
 /**
  * Tour step configuration matching react-joyride format
@@ -66,7 +69,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
           .select('tour_key');
 
         if (fetchError) {
-          console.error('[TourProvider] Failed to load completed tours:', fetchError);
+          log.error(' Failed to load completed tours:', fetchError);
           setError(fetchError.message);
           return;
         }
@@ -76,7 +79,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
           setCompletedTours(completed);
         }
       } catch (err) {
-        console.error('[TourProvider] Unexpected error loading tours:', err);
+        log.error(' Unexpected error loading tours:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setIsLoading(false);
@@ -129,7 +132,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       if (insertError) {
         // Handle unique constraint violation (already completed)
         if (insertError.code === '23505') {
-          console.debug('[TourProvider] Tour already completed:', tourKey);
+          log.debug(' Tour already completed:', tourKey);
         } else {
           throw insertError;
         }
@@ -140,7 +143,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       setActiveTourKey(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save tour progress';
-      console.error('[TourProvider] Error completing tour:', message);
+      log.error(' Error completing tour:', message);
       setError(message);
     }
   }, []);

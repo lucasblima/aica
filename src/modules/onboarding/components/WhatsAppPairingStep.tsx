@@ -16,7 +16,10 @@ import { Phone, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
 import { supabase } from '@/services/supabaseClient';
 import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { CreateInstanceResponse } from '@/types/whatsappSession';
+
+const log = createNamespacedLogger('WhatsAppPairingStep');
 
 interface WhatsAppPairingStepProps {
   /** Callback when pairing is successful */
@@ -51,7 +54,7 @@ export function WhatsAppPairingStep({
 
     // If there's an existing session in connecting/pairing state, skip to pairing
     if (session && (session.status === 'connecting' || session.status === 'pairing')) {
-      console.log('[WhatsAppPairingStep] Found existing session in connecting state:', session.instance_name);
+      log.debug(' Found existing session in connecting state:', session.instance_name);
       setInstanceName(session.instance_name);
       // Extract phone from session if available
       if (session.phone_number) {
@@ -70,7 +73,7 @@ export function WhatsAppPairingStep({
   // Auto-detect when WhatsApp is connected via webhook
   useEffect(() => {
     if (isConnected && (state === 'pairing' || state === 'creating')) {
-      console.log('[WhatsAppPairingStep] Connection detected via realtime subscription!');
+      log.debug(' Connection detected via realtime subscription!');
       setState('connected');
       // Delay before advancing to next step
       setTimeout(() => {
@@ -107,7 +110,7 @@ export function WhatsAppPairingStep({
         setIsCreatingInstance(true);
         setState('creating');
 
-        console.log('[WhatsAppPairingStep] Creating user instance...');
+        log.debug(' Creating user instance...');
 
         // CRITICAL: Create instance BEFORE generating pairing code
         const { data: { session: authSession } } = await supabase.auth.getSession();
@@ -134,7 +137,7 @@ export function WhatsAppPairingStep({
           throw new Error(result.error || 'Falha ao criar instância WhatsApp');
         }
 
-        console.log('[WhatsAppPairingStep] Instance created:', result.session.instance_name);
+        log.debug(' Instance created:', result.session.instance_name);
         setInstanceName(result.session.instance_name);
         setIsCreatingInstance(false);
         setState('pairing');
@@ -146,7 +149,7 @@ export function WhatsAppPairingStep({
         setError(errorMessage);
         setIsCreatingInstance(false);
         setState('input');
-        console.error('[WhatsAppPairingStep] Error creating instance:', errorMessage);
+        log.error(' Error creating instance:', errorMessage);
       }
     },
     [phoneNumber]
@@ -163,7 +166,7 @@ export function WhatsAppPairingStep({
 
   // Handle code generated
   const handleCodeGenerated = useCallback((code: string) => {
-    console.log('Pairing code generated:', code);
+    log.debug('Pairing code generated:', code);
     // Could poll for connection status here
   }, []);
 

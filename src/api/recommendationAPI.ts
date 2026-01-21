@@ -23,11 +23,9 @@ import {
 } from '@/types/recommendationTypes';
 import { MODULE_CATALOG, getModuleById, getModulesByCategory } from '@/data/moduleDefinitions';
 import { StoredContextCapture } from '@/types/onboardingTypes';
+import { createNamespacedLogger } from '@/lib/logger';
 
-const logger = {
-  log: (msg: string, data?: any) => console.log(`[RecommendationAPI] ${msg}`, data),
-  error: (msg: string, error?: any) => console.error(`[RecommendationAPI] ${msg}`, error),
-};
+const logger = createNamespacedLogger('RecommendationAPI');
 
 // =====================================================
 // GENERATE RECOMMENDATIONS ENDPOINT
@@ -41,13 +39,13 @@ export async function generateRecommendations(
   request: GenerateRecommendationsRequest
 ): Promise<GenerateRecommendationsResponse> {
   try {
-    logger.log(`Generating recommendations for user: ${request.userId}`);
+    logger.debug(`Generating recommendations for user: ${request.userId}`);
 
     // Check cache first (if not forcing refresh)
     if (!request.forceRefresh) {
       const cachedRecs = await getCachedRecommendations(request.userId);
       if (cachedRecs) {
-        logger.log('Returning cached recommendations');
+        logger.debug('Returning cached recommendations');
         return {
           success: true,
           data: cachedRecs,
@@ -160,7 +158,7 @@ async function cacheRecommendations(userId: string, result: RecommendationResult
       );
 
     if (error) throw error;
-    logger.log('Recommendations cached successfully');
+    logger.debug('Recommendations cached successfully');
   } catch (error) {
     logger.error('Error caching recommendations', error);
     // Don't throw - caching failure shouldn't block recommendation delivery
@@ -179,7 +177,7 @@ export async function submitRecommendationFeedback(
   request: SubmitFeedbackRequest
 ): Promise<SubmitFeedbackResponse> {
   try {
-    logger.log(`Recording feedback: user ${request.userId}, module ${request.moduleId}, action ${request.action}`);
+    logger.debug(`Recording feedback: user ${request.userId}, module ${request.moduleId}, action ${request.action}`);
 
     // Validate request
     if (!request.userId || !request.moduleId) {
@@ -203,7 +201,7 @@ export async function submitRecommendationFeedback(
     // Update user recommendations to trigger refresh if appropriate
     const shouldRefresh = ['completed', 'rejected'].includes(request.action);
 
-    logger.log('Feedback recorded successfully', {
+    logger.debug('Feedback recorded successfully', {
       moduleId: request.moduleId,
       action: request.action,
       refreshTriggered: shouldRefresh,
@@ -431,7 +429,7 @@ async function getUserFeedback(userId: string): Promise<Record<string, any>> {
 async function logAnalyticsEvent(eventName: string, eventData: any): Promise<void> {
   try {
     // Would integrate with analytics service
-    logger.log(`Analytics event: ${eventName}`, eventData);
+    logger.debug(`Analytics event: ${eventName}`, eventData);
   } catch (error) {
     logger.error('Error logging analytics event', error);
   }

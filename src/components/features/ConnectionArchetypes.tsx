@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Briefcase, GraduationCap, Users, Plus } from 'lucide-react';
 import { useCardSelection } from '@/hooks/useCardSelection';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ConnectionArchetypes');
 
 interface Archetype {
   id: string;
@@ -74,7 +77,7 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
       // Se não for multi-select e houver seleção, navega para a página do arquétipo
       if (!multiSelect && ids.length > 0) {
         const archetypeId = ids[0];
-        console.log('[ConnectionArchetypes] Navegando para:', `/connections/${archetypeId}`);
+        log.debug('Navegando para:', `/connections/${archetypeId}`);
         navigate(`/connections/${archetypeId}`);
         // Não chama callback - navegação é suficiente (evita abrir modal)
       }
@@ -85,7 +88,7 @@ export const ConnectionArchetypes: React.FC<ConnectionArchetypesProps> = ({
   const handleCardClick = (archetypeId: string) => {
     if (!multiSelect) {
       // Modo single-select: navega diretamente (não chama callback para evitar abrir modal)
-      console.log('[ConnectionArchetypes] Navegando para:', `/connections/${archetypeId}`);
+      log.debug('Navegando para:', `/connections/${archetypeId}`);
       navigate(`/connections/${archetypeId}`);
     } else {
       // Modo multi-select: usa o toggle

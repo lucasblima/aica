@@ -12,6 +12,9 @@
 import { GeminiClient } from '@/lib/gemini'
 import { SentimentAnalysisResult } from '@/modules/journey/types/persistenceTypes'
 
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('GeminiSentimentAnalysis')
 const geminiClient = GeminiClient.getInstance()
 
 /**
@@ -66,7 +69,7 @@ Diretrizes:
       generatedAt: new Date(),
     }
   } catch (error) {
-    console.error('[geminiSentimentAnalysis] Error analyzing sentiment:', error)
+    log.error('Error analyzing sentiment:', error)
     return getDefaultSentimentResult()
   }
 }
@@ -193,7 +196,7 @@ Retorne um insight em 2-3 frases que seja:
 
     return response.result?.text || 'Reflexão completa para seu momento.'
   } catch (error) {
-    console.error('[geminiSentimentAnalysis] Error generating insights:', error)
+    log.error('Error generating insights:', error)
     return 'Reflexão completa para seu momento.'
   }
 }
@@ -240,7 +243,7 @@ function parseGeminiSentimentResponse(responseText: string): {
       keywords: keywords.filter((k: any) => typeof k === 'string'),
     }
   } catch (error) {
-    console.error('[geminiSentimentAnalysis] Error parsing response:', error)
+    log.error('Error parsing response:', error)
     return getDefaultSentimentParsed()
   }
 }

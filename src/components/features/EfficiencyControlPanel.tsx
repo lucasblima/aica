@@ -36,6 +36,9 @@ import {
   getLevelProgress,
   formatXP,
 } from '@/services/gamificationService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('EfficiencyControlPanel');
 
 interface EfficiencyControlPanelProps {
   userId: string;
@@ -71,7 +74,7 @@ export const EfficiencyControlPanel: React.FC<EfficiencyControlPanelProps> = ({
       setGameProfile(gameData);
       setStreak(streakData);
     } catch (error) {
-      console.error('Error loading dashboard metrics:', error);
+      log.error('Error loading dashboard metrics:', error);
     } finally {
       setLoading(false);
     }

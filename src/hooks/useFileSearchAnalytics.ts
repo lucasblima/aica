@@ -7,6 +7,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useFileSearchAnalytics');
 
 /**
  * Estatísticas por módulo
@@ -153,7 +156,7 @@ export function useFileSearchAnalytics(options: UseFileSearchAnalyticsOptions = 
 
       setStats(fileSearchStats);
     } catch (err) {
-      console.error('[useFileSearchAnalytics] fetchStats error:', err);
+      log.error('fetchStats error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar estatísticas');
     } finally {
       setIsLoading(false);
@@ -194,7 +197,7 @@ export function useFileSearchAnalytics(options: UseFileSearchAnalyticsOptions = 
 
         setRecentDocuments(documents);
       } catch (err) {
-        console.error('[useFileSearchAnalytics] fetchRecentDocuments error:', err);
+        log.error('fetchRecentDocuments error:', err);
         setError(err instanceof Error ? err.message : 'Erro ao buscar documentos recentes');
       }
     },

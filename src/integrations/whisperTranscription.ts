@@ -12,6 +12,9 @@
 import { supabase } from '@/lib/supabase'
 import { EDGE_FUNCTIONS_URL } from '@/config/api'
 import { TranscriptionResult } from '@/modules/journey/types/persistenceTypes'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('WhisperTranscription')
 
 /**
  * Transcribe audio using Whisper API
@@ -34,7 +37,7 @@ export async function transcribeAudioWithWhisper(
   }
 
   // Try direct API call as fallback
-  console.warn('[whisperTranscription] Edge Function failed, trying direct API')
+  log.warn('Edge Function failed, trying direct API')
   const directResult = await transcribeDirectly(audioFile, language)
   if (directResult.success) {
     return directResult
@@ -78,7 +81,7 @@ async function transcribeViaEdgeFunction(audioFile: Blob, language?: string): Pr
       transcribedAt: new Date(),
     }
   } catch (error) {
-    console.error('[whisperTranscription] Edge Function error:', error)
+    log.error('Edge Function error:', error)
     return getFailedTranscriptionResult(`Edge Function error: ${error}`)
   }
 }
@@ -99,7 +102,7 @@ async function transcribeDirectly(audioFile: Blob, language?: string): Promise<T
     // For now, we'll use a simpler fallback approach
     return getFailedTranscriptionResult('Direct transcription not configured')
   } catch (error) {
-    console.error('[whisperTranscription] Direct transcription error:', error)
+    log.error('Direct transcription error:', error)
     return getFailedTranscriptionResult(`Transcription error: ${error}`)
   }
 }
@@ -149,7 +152,7 @@ export async function detectAudioLanguage(audioFile: Blob): Promise<{ language: 
       confidence: result.confidence || 0.5,
     }
   } catch (error) {
-    console.error('[whisperTranscription] Language detection error:', error)
+    log.error('Language detection error:', error)
     return { language: 'pt', confidence: 0 } // Default to Portuguese
   }
 }
@@ -187,7 +190,7 @@ export async function transcribeWithSpeakers(audioFile: Blob): Promise<{
       success: true,
     }
   } catch (error) {
-    console.error('[whisperTranscription] Speaker diarization error:', error)
+    log.error('Speaker diarization error:', error)
     return { segments: [], success: false }
   }
 }
@@ -242,14 +245,14 @@ export async function getAudioDuration(audioFile: Blob): Promise<number> {
           resolve(audioBuffer.duration)
         },
         (error) => {
-          console.error('[whisperTranscription] Error decoding audio:', error)
+          log.error('Error decoding audio:', error)
           resolve(0)
         }
       )
     }
 
     reader.onerror = () => {
-      console.error('[whisperTranscription] Error reading file')
+      log.error('Error reading file')
       resolve(0)
     }
 

@@ -19,6 +19,9 @@ import {
 } from '@/services/efficiencyService';
 import { EmptyState } from '@/components/ui';
 import './EfficiencyTrendChart.css';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('EfficiencyTrendChart');
 
 interface EfficiencyTrendChartProps {
   userId: string;
@@ -161,7 +164,7 @@ export const EfficiencyTrendChart: React.FC<EfficiencyTrendChartProps> = ({
       const data = await getEfficiencyTrends(userId, selectedRange);
       setTrends(data);
     } catch (error) {
-      console.error('Error loading efficiency trends:', error);
+      log.error('Error loading efficiency trends:', error);
     } finally {
       setLoading(false);
     }
@@ -186,7 +189,7 @@ export const EfficiencyTrendChart: React.FC<EfficiencyTrendChartProps> = ({
         customMessage="Seus dados de produtividade aparecerão aqui após alguns dias de uso. Continue registrando seus momentos e tarefas para visualizar tendências e insights sobre seu desempenho."
         onPrimaryAction={() => {
           // Add navigation to moment registration if needed
-          console.log('Navigate to register moment');
+          log.debug('Navigate to register moment');
         }}
       />
     );

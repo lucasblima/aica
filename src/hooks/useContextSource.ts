@@ -22,6 +22,9 @@ import {
 } from '@/modules/journey/services/dailyQuestionService';
 import { useJourneyValidation } from '@/modules/journey/hooks/useJourneyValidation';
 import { getJourneySchema } from '@/data/journeySchemas';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useContextSource');
 
 // =====================================================
 // TYPES
@@ -84,7 +87,7 @@ async function checkUpcomingEvents(
   hoursAhead: number
 ): Promise<ContextSource | null> {
   try {
-    console.log('[useContextSource] Checking upcoming events...');
+    log.debug(' Checking upcoming events...');
 
     const now = new Date();
     const futureTime = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
@@ -102,7 +105,7 @@ async function checkUpcomingEvents(
     if (error) {
       // Table might not exist - graceful fallback
       if (error.message.includes('does not exist') || error.code === '42P01') {
-        console.log('[useContextSource] calendar_events table not found - skipping event check');
+        log.debug(' calendar_events table not found - skipping event check');
         return null;
       }
       throw error;
@@ -113,7 +116,7 @@ async function checkUpcomingEvents(
       const eventTime = new Date(event.start_time);
       const minutesUntil = Math.round((eventTime.getTime() - now.getTime()) / (60 * 1000));
 
-      console.log('[useContextSource] Upcoming event found:', {
+      log.debug(' Upcoming event found:', {
         title: event.title,
         minutesUntil,
       });
@@ -127,7 +130,7 @@ async function checkUpcomingEvents(
           eventTime,
         },
         onRespond: async (response: string) => {
-          console.log('[useContextSource] Event response:', response);
+          log.debug(' Event response:', response);
           // Save response to event_responses table
           await supabase.from('event_responses').insert({
             user_id: userId,
@@ -137,14 +140,14 @@ async function checkUpcomingEvents(
           });
         },
         onDismiss: () => {
-          console.log('[useContextSource] Event context dismissed');
+          log.debug(' Event context dismissed');
         },
       };
     }
 
     return null;
   } catch (error) {
-    console.error('[useContextSource] Error checking upcoming events:', error);
+    log.error(' Error checking upcoming events:', error);
     return null;
   }
 }
@@ -164,7 +167,7 @@ function createJourneyContext(
     }
 
     const field = validation.nextRequiredField;
-    console.log('[useContextSource] Creating journey context:', {
+    log.debug(' Creating journey context:', {
       journeyId: journey.id,
       field: field.key,
     });
@@ -182,7 +185,7 @@ function createJourneyContext(
         journeyId: journey.id,
       },
       onRespond: async (response: string) => {
-        console.log('[useContextSource] Journey response:', {
+        log.debug(' Journey response:', {
           journeyId: journey.id,
           fieldKey: field.key,
           response,
@@ -215,16 +218,16 @@ function createJourneyContext(
           });
 
         if (error) {
-          console.error('[useContextSource] Error saving journey context:', error);
+          log.error(' Error saving journey context:', error);
           throw error;
         }
       },
       onDismiss: () => {
-        console.log('[useContextSource] Journey context dismissed');
+        log.debug(' Journey context dismissed');
       },
     };
   } catch (error) {
-    console.error('[useContextSource] Error creating journey context:', error);
+    log.error(' Error creating journey context:', error);
     return null;
   }
 }
@@ -238,11 +241,11 @@ async function fetchDailyQuestion(
   enableAI: boolean
 ): Promise<ContextSource | null> {
   try {
-    console.log('[useContextSource] Fetching daily question...');
+    log.debug(' Fetching daily question...');
 
     const result = await getDailyQuestionWithContext(userId);
 
-    console.log('[useContextSource] Daily question received:', {
+    log.debug(' Daily question received:', {
       source: result.source,
       question: result.question.question_text,
     });
@@ -255,7 +258,7 @@ async function fetchDailyQuestion(
         questionId: result.question.id,
       },
       onRespond: async (response: string) => {
-        console.log('[useContextSource] Daily question response:', response);
+        log.debug(' Daily question response:', response);
         await saveDailyResponse(
           userId,
           result.question.id,
@@ -264,11 +267,11 @@ async function fetchDailyQuestion(
         );
       },
       onDismiss: () => {
-        console.log('[useContextSource] Daily question dismissed');
+        log.debug(' Daily question dismissed');
       },
     };
   } catch (error) {
-    console.error('[useContextSource] Error fetching daily question:', error);
+    log.error(' Error fetching daily question:', error);
     return null;
   }
 }
@@ -298,7 +301,7 @@ export function useContextSource({
   // Main fetch function - implements 3-tier priority cascade
   const fetchContext = useCallback(async () => {
     if (!userId) {
-      console.log('[useContextSource] No userId provided');
+      log.debug(' No userId provided');
       setContext(null);
       setIsLoading(false);
       return;
@@ -308,12 +311,12 @@ export function useContextSource({
       setIsLoading(true);
       setError(null);
 
-      console.log('[useContextSource] Fetching context with priority cascade...');
+      log.debug(' Fetching context with priority cascade...');
 
       // PRIORITY 1: Check calendar events
       const eventContext = await checkUpcomingEvents(userId, eventLookahead);
       if (eventContext && !dismissed.includes(getContextId(eventContext))) {
-        console.log('[useContextSource] Using event-based context');
+        log.debug(' Using event-based context');
         setContext({
           ...eventContext,
           onDismiss: () => {
@@ -336,7 +339,7 @@ export function useContextSource({
         );
 
         if (journeyContext && !dismissed.includes(getContextId(journeyContext))) {
-          console.log('[useContextSource] Using journey-based context');
+          log.debug(' Using journey-based context');
           setContext({
             ...journeyContext,
             onDismiss: () => {
@@ -353,7 +356,7 @@ export function useContextSource({
       // PRIORITY 3: Daily question
       const dailyContext = await fetchDailyQuestion(userId, enableAI);
       if (dailyContext && !dismissed.includes(getContextId(dailyContext))) {
-        console.log('[useContextSource] Using daily question context');
+        log.debug(' Using daily question context');
         setContext({
           ...dailyContext,
           onDismiss: () => {
@@ -366,11 +369,11 @@ export function useContextSource({
       }
 
       // No context available
-      console.log('[useContextSource] No context available');
+      log.debug(' No context available');
       setContext(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error fetching context';
-      console.error('[useContextSource] Error:', err);
+      log.error(' Error:', err);
       setError(errorMessage);
       setContext(null);
     } finally {
@@ -380,13 +383,13 @@ export function useContextSource({
 
   // Fetch context on mount and when dependencies change
   useEffect(() => {
-    console.log('[useContextSource] Effect triggered - fetching context');
+    log.debug(' Effect triggered - fetching context');
     fetchContext();
   }, [fetchContext]);
 
   // Refresh function for manual re-fetch
   const refresh = useCallback(async () => {
-    console.log('[useContextSource] Manual refresh triggered');
+    log.debug(' Manual refresh triggered');
     setDismissed([]); // Clear dismissed list on manual refresh
     await fetchContext();
   }, [fetchContext]);

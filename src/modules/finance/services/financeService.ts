@@ -61,7 +61,7 @@ export async function getAllTimeSummary(userId: string): Promise<FinanceSummary>
             transactionCount: txList.length
         };
     } catch (error) {
-        console.error('Error fetching all-time summary:', error);
+        log.error('Error fetching all-time summary:', error);
         throw error;
     }
 }
@@ -107,7 +107,7 @@ export async function getCurrentMonthSummary(userId: string): Promise<FinanceSum
             transactionCount: transactions.length
         };
     } catch (error) {
-        console.error('Error fetching current month summary:', error);
+        log.error('Error fetching current month summary:', error);
         throw error;
     }
 }
@@ -184,7 +184,7 @@ export async function getBurnRate(userId: string): Promise<BurnRateData> {
             percentageChange
         };
     } catch (error) {
-        console.error('Error calculating burn rate:', error);
+        log.error('Error calculating burn rate:', error);
         throw error;
     }
 }
@@ -232,7 +232,7 @@ export async function getAllTimeCategoryBreakdown(userId: string): Promise<Categ
 
         return breakdown;
     } catch (error) {
-        console.error('Error fetching all-time category breakdown:', error);
+        log.error('Error fetching all-time category breakdown:', error);
         throw error;
     }
 }
@@ -289,7 +289,7 @@ export async function getCategoryBreakdown(userId: string): Promise<CategoryBrea
 
         return breakdown;
     } catch (error) {
-        console.error('Error fetching category breakdown:', error);
+        log.error('Error fetching category breakdown:', error);
         throw error;
     }
 }
@@ -313,7 +313,7 @@ export async function getTransactions(
 
         return data || [];
     } catch (error) {
-        console.error('Error fetching transactions:', error);
+        log.error('Error fetching transactions:', error);
         throw error;
     }
 }
@@ -339,7 +339,7 @@ export async function getTransactionsByDateRange(
 
         return data || [];
     } catch (error) {
-        console.error('Error fetching transactions by date range:', error);
+        log.error('Error fetching transactions by date range:', error);
         throw error;
     }
 }

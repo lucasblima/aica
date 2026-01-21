@@ -32,6 +32,9 @@ import {
 } from '../../services/aiCostAnalyticsService';
 import { getUserAIBudget } from '../../services/userSettingsService';
 import type { DailyCostSummary, MonthlyCostSummary } from '../../types/aiCost';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AdminMonitoringDashboard');
 
 interface AdminMonitoringDashboardProps {
   userId: string;
@@ -69,7 +72,7 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
       setSummary(monthlySummary);
       setDailyCosts(daily);
     } catch (error) {
-      console.error('[AdminMonitoringDashboard] Error loading data:', error);
+      log.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }

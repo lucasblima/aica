@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { X, DollarSign, Save } from 'lucide-react';
 import { updateUserAIBudget } from '../../services/userSettingsService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('BudgetSettingsModal');
 
 interface BudgetSettingsModalProps {
   currentBudget: number;
@@ -32,7 +35,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
       onSave(budgetValue);
     } catch (err) {
       setError('Erro ao salvar orçamento');
-      console.error(err);
+      log.error('Error saving budget:', err);
     } finally {
       setSaving(false);
     }

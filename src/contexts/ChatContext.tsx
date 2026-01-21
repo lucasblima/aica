@@ -8,11 +8,14 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
 import { supabase } from '@/services/supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger'
 import rateLimiterService, {
   RateLimitStatus,
   QueuedMessage,
   ModelTier,
 } from '@/services/rateLimiterService'
+
+const log = createNamespacedLogger('ChatContext')
 
 // ============================================================================
 // TYPES
@@ -197,7 +200,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       .limit(50)
 
     if (error) {
-      console.error('[ChatContext] loadSessions error:', error)
+      log.error(' loadSessions error:', error)
       return
     }
 
@@ -230,7 +233,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       dispatch({ type: 'SET_MESSAGES', messages: messages || [] })
     } catch (err) {
-      console.error('[ChatContext] loadSession error:', err)
+      log.error(' loadSession error:', err)
       dispatch({ type: 'SET_ERROR', error: 'Failed to load chat session' })
     } finally {
       dispatch({ type: 'SET_LOADING', isLoading: false })
@@ -251,7 +254,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       .single()
 
     if (error) {
-      console.error('[ChatContext] createSession error:', error)
+      log.error(' createSession error:', error)
       return null
     }
 
@@ -405,7 +408,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       await rateLimiterService.consumeTokens(tierToUse, data.tokens_used || estimatedTokens)
     } catch (err) {
       const error = err as Error
-      console.error('[ChatContext] sendMessage error:', error)
+      log.error(' sendMessage error:', error)
       dispatch({ type: 'SET_ERROR', error: error.message })
     } finally {
       dispatch({ type: 'SET_SENDING', isSending: false })

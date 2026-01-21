@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Calendar, Brain, ChevronDown, ChevronUp, X, Sparkles, CheckCircle2, AlertCircle, Wallet, Heart, Users, Building2, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { updateUserProfile, getLifeEvents, createLifeEvent, getUserProfile } from '@/services/supabaseService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('LifeWeeksGrid');
 
 interface LifeWeeksGridProps {
     userId: string;
@@ -58,29 +61,29 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
     const loadData = async () => {
         try {
             setIsLoading(true);
-            console.log('[LifeWeeks] Loading data for user:', userId);
+            log.debug('Loading data for user:', userId);
 
             // Fetch profile first
             const profile = await getUserProfile(userId).catch(err => {
-                console.error('[LifeWeeks] Error fetching profile:', err);
+                log.error('Error fetching profile:', err);
                 return null;
             });
 
             // Try to fetch events, but don't block if it fails
             const events = await getLifeEvents().catch(err => {
-                console.warn('[LifeWeeks] Could not load life events (table might be missing):', err);
+                log.warn('Could not load life events (table might be missing):', err);
                 return [];
             });
 
-            console.log('[LifeWeeks] Profile loaded:', profile);
-            console.log('[LifeWeeks] Events loaded:', events);
+            log.debug('Profile loaded:', profile);
+            log.debug('Events loaded:', events);
 
             if (profile?.birth_date) {
                 setBirthDate(profile.birth_date);
             }
             setLifeEvents(events || []);
         } catch (error) {
-            console.error('[LifeWeeks] Critical error loading data:', error);
+            log.error('Critical error loading data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -88,14 +91,14 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
 
     const handleSaveBirthDate = async (date: string) => {
         try {
-            console.log('[LifeWeeks] Saving birth date:', date);
+            log.debug('Saving birth date:', date);
             await updateUserProfile(userId, { birth_date: date });
             setBirthDate(date);
-            console.log('[LifeWeeks] Birth date saved successfully');
+            log.debug('Birth date saved successfully');
             // Reload data to ensure component re-renders with the new birth date
             await loadData();
         } catch (error: any) {
-            console.error('[LifeWeeks] Error saving birth date:', error);
+            log.error('Error saving birth date:', error);
             alert(`Erro ao salvar data de nascimento:\n${error.message || JSON.stringify(error)}`);
         }
     };
@@ -114,7 +117,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
         if (!selectedWeek || !eventTitle) return;
         setAiProcessing(true);
 
-        console.log('[LifeWeeks] Planning event for week:', selectedWeek);
+        log.debug('Planning event for week:', selectedWeek);
 
         // Simulate AI planning with smarter heuristics
         setTimeout(() => {
@@ -207,7 +210,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
 
             setGeneratedTasks(tasks);
             setAiProcessing(false);
-            console.log('[LifeWeeks] AI planning completed');
+            log.debug('AI planning completed');
         }, 1500);
     };
 
@@ -236,7 +239,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
             const eventDateObj = new Date(birth.getTime() + (selectedWeek * 7 * 24 * 60 * 60 * 1000));
             const eventDateISO = eventDateObj.toISOString().split('T')[0]; // YYYY-MM-DD
 
-            console.log('[LifeWeeks] Creating milestone:', {
+            log.debug('Creating milestone:', {
                 title: eventTitle,
                 description: eventDescription,
                 week_number: selectedWeek,
@@ -256,7 +259,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                 module: selectedModule || undefined
             });
 
-            console.log('[LifeWeeks] Milestone created successfully:', newEvent);
+            log.debug('Milestone created successfully:', newEvent);
 
             // Update local state
             setLifeEvents([...lifeEvents, {
@@ -277,8 +280,8 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
 
             alert('✅ Marco criado com sucesso!');
         } catch (error: any) {
-            console.error('[LifeWeeks] Error creating milestone:', error);
-            console.error('[LifeWeeks] Error details:', {
+            log.error('Error creating milestone:', error);
+            log.error('Error details:', {
                 message: error?.message,
                 code: error?.code,
                 details: error?.details,

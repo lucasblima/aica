@@ -14,6 +14,9 @@ import React, { useState, useEffect } from 'react';
 import { DailyReport } from '@/types/memoryTypes';
 import { supabase } from '@/services/supabaseClient';
 import './DailySummaryView.css';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('DailySummaryView');
 
 interface DailySummaryProps {
   userId: string;
@@ -59,7 +62,7 @@ export const DailySummaryView: React.FC<DailySummaryProps> = ({
       setReport(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load daily report');
-      console.error('Error loading daily report:', err);
+      log.error('Error loading daily report:', err);
     } finally {
       setLoading(false);
     }

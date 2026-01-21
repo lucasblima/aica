@@ -6,6 +6,9 @@ import { Accordion } from '@/components/ui';
 import { SubtaskList, Subtask } from '@/components/ui';
 import { RecurrencePicker } from '@/components/ui';
 import { TagInput } from '@/components/ui';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('TaskEditModal');
 
 interface TaskEditModalProps {
     taskId: string;
@@ -109,7 +112,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             await onSave(taskId, updates);
             onCancel();
         } catch (error) {
-            console.error('[TaskEditModal] Error saving task:', error);
+            log.error('Error saving task:', error);
         } finally {
             setIsSaving(false);
         }

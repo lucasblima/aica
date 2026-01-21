@@ -33,6 +33,9 @@ import {
 } from '@/services/efficiencyService';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 import './EfficiencyScoreCard.css';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('EfficiencyScoreCard');
 
 interface EfficiencyScoreCardProps {
   userId: string;
@@ -58,7 +61,7 @@ export const EfficiencyScoreCard: React.FC<EfficiencyScoreCardProps> = ({
       const data = await getEfficiencyMetrics(userId, today);
       setMetrics(data);
     } catch (error) {
-      console.error('Error loading efficiency metrics:', error);
+      log.error('Error loading efficiency metrics:', error);
     } finally {
       setLoading(false);
     }

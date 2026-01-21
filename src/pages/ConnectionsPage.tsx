@@ -10,7 +10,10 @@ import { ConnectionsView } from '../modules/connections/views/ConnectionsView';
 import { CreateSpaceWizard } from '../modules/connections/components/CreateSpaceWizard';
 import { useConnectionNavigation } from '../modules/connections/hooks/useConnectionNavigation';
 import { useAuth } from '../hooks/useAuth';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { ConnectionSpace, Archetype } from '../modules/connections/types';
+
+const log = createNamespacedLogger('ConnectionsPage');
 
 /**
  * Main Connections page
@@ -42,7 +45,7 @@ export function ConnectionsPage() {
   };
 
   const handleSpaceCreated = (space: ConnectionSpace) => {
-    console.log('[ConnectionsPage] Space created:', space);
+    log.debug(' Space created:', space);
     // Navigate to the newly created space
     navigateToSpace(space.id, space.archetype);
   };

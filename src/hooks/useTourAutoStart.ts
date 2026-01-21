@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import { useTour } from '@/contexts/TourContext';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useTourAutoStart');
 
 /**
  * Hook to auto-start a tour if the user hasn't seen it before
@@ -18,7 +21,7 @@ export const useTourAutoStart = (tourKey: string): void => {
     // Only auto-start if tour is enabled and user hasn't completed it
     if (!isLoading && !hasTourCompleted(tourKey)) {
       startTour(tourKey).catch(err => {
-        console.error(`[useTourAutoStart] Failed to start tour ${tourKey}:`, err);
+        log.error(`Failed to start tour ${tourKey}:`, err);
       });
     }
   }, [tourKey, startTour, hasTourCompleted, isLoading]);

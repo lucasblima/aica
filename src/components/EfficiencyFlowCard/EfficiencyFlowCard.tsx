@@ -15,6 +15,9 @@ import {
   EfficiencyTrend,
 } from '@/services/efficiencyService'
 import { EmptyState } from '@/components/ui'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('EfficiencyFlowCard')
 
 interface EfficiencyFlowCardProps {
   userId: string
@@ -206,7 +209,7 @@ export function EfficiencyFlowCard({
       const data = await getEfficiencyTrends(userId, selectedRange)
       setTrends(data)
     } catch (error) {
-      console.error('Error loading efficiency trends:', error)
+      log.error('Error loading efficiency trends:', error)
     } finally {
       setLoading(false)
     }

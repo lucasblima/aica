@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useFileSearch } from '../../hooks/useFileSearch';
 import { Upload, Search, FileText, Loader2, AlertCircle } from 'lucide-react';
 import { SearchResult } from '../../types/fileSearch';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('DocumentSearch');
 
 export function DocumentSearch() {
     const { uploadDocument, searchDocuments, isUploading, isSearching, error } = useFileSearch();
@@ -15,7 +18,7 @@ export function DocumentSearch() {
             const response = await searchDocuments(query);
             setResult(response);
         } catch (e) {
-            console.error("Search failed", e);
+            log.error("Search failed", e);
         }
     };
 

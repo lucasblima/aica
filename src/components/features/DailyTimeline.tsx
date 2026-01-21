@@ -5,6 +5,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '@/services/supabaseClient';
 import { PomodoroTimer } from '@/components/features';
 import { Task } from '@/types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('DailyTimeline');
 
 interface DailyTimelineProps {
     userId: string;
@@ -179,7 +182,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                             key={idx}
                             onClick={() => {
                                 if (onDateChange) {
-                                    console.log('[DailyTimeline] 📅 Data selecionada:', day.date.toDateString());
+                                    log.debug('Data selecionada:', day.date.toDateString());
                                     onDateChange(day.date);
                                 } else {
                                     setInternalSelectedDate(day.date);

@@ -4,6 +4,10 @@
  * para evitar erros de "Session as retrieved from URL expires in -XXXs"
  */
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AuthUrlCleaner');
+
 export function cleanExpiredOAuthParams(): void {
     try {
         // Verifica se há parâmetros de autenticação na URL
@@ -20,7 +24,7 @@ export function cleanExpiredOAuthParams(): void {
 
         if (!hasAuthParams) return;
 
-        console.log('[AuthCleaner] 🔍 Detectados parâmetros OAuth na URL');
+        log.debug('Detectados parametros OAuth na URL');
 
         // Verifica se a sessão está expirada analisando expires_at ou expires_in
         const expiresIn = params.get('expires_in');
@@ -33,7 +37,7 @@ export function cleanExpiredOAuthParams(): void {
             const expiryTimestamp = parseInt(expiresAt, 10);
             const timeUntilExpiry = expiryTimestamp - now;
 
-            console.log('[AuthCleaner] ⏰ Verificando expiração:', {
+            log.debug('Verificando expiracao:', {
                 expiresAt: new Date(expiryTimestamp * 1000).toISOString(),
                 timeUntilExpiry: `${timeUntilExpiry}s`,
                 isExpired: timeUntilExpiry < 0
@@ -47,21 +51,21 @@ export function cleanExpiredOAuthParams(): void {
 
         // Se há erro na URL, considera como expirado
         if (params.has('error')) {
-            console.log('[AuthCleaner] ❌ Erro detectado na URL:', params.get('error'));
+            log.debug('Erro detectado na URL:', params.get('error'));
             isExpired = true;
         }
 
         // Se está expirado, limpa a URL imediatamente
         if (isExpired) {
-            console.log('[AuthCleaner] 🧹 Limpando parâmetros OAuth expirados');
+            log.debug('Limpando parametros OAuth expirados');
             window.history.replaceState(null, '', window.location.pathname);
             return;
         }
 
-        console.log('[AuthCleaner] ✅ Parâmetros OAuth parecem válidos, permitindo processamento normal');
+        log.debug('Parametros OAuth parecem validos, permitindo processamento normal');
 
     } catch (error) {
-        console.error('[AuthCleaner] ❌ Erro ao verificar parâmetros OAuth:', error);
+        log.error('Erro ao verificar parametros OAuth:', error);
     }
 }
 

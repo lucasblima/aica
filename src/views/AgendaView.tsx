@@ -15,6 +15,9 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { supabase } from '../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AgendaView');
 import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
 import { Task, Quadrant } from '../../types';
@@ -132,7 +135,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Log Google Calendar events for debugging
     useEffect(() => {
-        console.log('[AgendaView] 📅 Google Calendar status:', {
+        log.debug(' 📅 Google Calendar status:', {
             isConnected: isCalendarConnected,
             isLoading: isLoadingCalendar,
             eventsCount: calendarEvents.length,
@@ -145,11 +148,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible' && isCalendarConnected && !isTokenExpired) {
-                console.log('[AgendaView] 👁️ Aba visível - sincronizando Google Calendar...');
+                log.debug(' 👁️ Aba visível - sincronizando Google Calendar...');
                 try {
                     await syncCalendar();
                 } catch (error) {
-                    console.warn('[AgendaView] ⚠️ Erro ao sincronizar (visibility change):', error);
+                    log.warn(' ⚠️ Erro ao sincronizar (visibility change):', error);
                     // Erro já tratado pelo hook, não precisa fazer nada
                 }
             }
@@ -169,7 +172,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
         // Validate if date is valid
         if (isNaN(startDate.getTime())) {
-            console.warn('[AgendaView] Invalid startTime:', event.startTime);
+            log.warn(' Invalid startTime:', event.startTime);
             return {
                 id: event.id,
                 title: event.title,
@@ -214,7 +217,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             return a.scheduled_time.localeCompare(b.scheduled_time);
         });
 
-        console.log('[AgendaView] 🔀 Merged timeline tasks:', {
+        log.debug(' 🔀 Merged timeline tasks:', {
             selectedDate: dateStr,
             supabaseTasks: timelineTasks.length,
             calendarEvents: selectedDateCalendarEvents.length,
@@ -329,7 +332,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const threeDaysFromNow = new Date(today);
         threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
-        console.log('[AgendaView] 📅 Filtrando eventos dos próximos 2 dias:', {
+        log.debug(' 📅 Filtrando eventos dos próximos 2 dias:', {
             today: today.toISOString(),
             tomorrow: tomorrow.toISOString(),
             dayAfterTomorrow: dayAfterTomorrow.toISOString(),
@@ -346,7 +349,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             .filter(event => {
                 const eventDate = new Date(event.startTime);
                 const isInRange = eventDate >= today && eventDate < threeDaysFromNow;
-                console.log('[AgendaView] Evento:', event.title, {
+                log.debug(' Evento:', event.title, {
                     eventDate: eventDate.toISOString(),
                     isInRange
                 });
@@ -357,7 +360,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 const isToday = eventDate >= today && eventDate < tomorrow;
                 const isTomorrow = eventDate >= tomorrow && eventDate < dayAfterTomorrow;
 
-                console.log('[AgendaView] Classificando evento:', event.title, {
+                log.debug(' Classificando evento:', event.title, {
                     isToday,
                     isTomorrow,
                     eventDate: eventDate.toISOString()
@@ -379,7 +382,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             })
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-        console.log('[AgendaView] ✅ Eventos filtrados:', {
+        log.debug(' ✅ Eventos filtrados:', {
             total: filtered.length,
             hoje: filtered.filter(e => e.isToday).length,
             amanha: filtered.filter(e => e.isTomorrow).length,
@@ -395,7 +398,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             const targetDate = forDate || selectedDate;
             const dateStr = targetDate.toISOString().split('T')[0];
 
-            console.log('[AgendaView] 📅 Carregando tasks para:', dateStr);
+            log.debug(' 📅 Carregando tasks para:', dateStr);
 
             const { data, error } = await supabase
                 .from('work_items')
@@ -450,7 +453,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             setMatrixTasks(matrix);
             setTimelineTasks(timeline);
         } catch (error) {
-            console.error('[AgendaView] Error loading tasks:', error);
+            log.error(' Error loading tasks:', error);
         } finally {
             setIsLoading(false);
         }
@@ -622,7 +625,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 const parsed = JSON.parse(stored);
                 setSkippedEvents(new Set(parsed));
             } catch (e) {
-                console.error('Error parsing skipped events:', e);
+                log.error('Error parsing skipped events:', e);
             }
         }
     }, []);
@@ -654,7 +657,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 duration: 3000
             });
         } else {
-            console.error('[AgendaView] Error unscheduling task:', error);
+            log.error(' Error unscheduling task:', error);
             notificationService.show({
                 type: 'error',
                 title: 'Erro ao remover tarefa',
@@ -669,7 +672,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Handler para conectar Google Calendar
     const handleConnectCalendar = async () => {
-        console.log('[AgendaView] Conectando Google Calendar...');
+        log.debug(' Conectando Google Calendar...');
         // Escopos completos para funcionamento como secretária executiva
         const googleCalendarScopes = [
             'https://www.googleapis.com/auth/calendar',
@@ -693,14 +696,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Handler para desconectar Google Calendar
     const handleDisconnectCalendar = async () => {
-        console.log('[AgendaView] Desconectando Google Calendar...');
+        log.debug(' Desconectando Google Calendar...');
         try {
             await disconnectGoogleCalendar();
-            console.log('[AgendaView] ✅ Google Calendar desconectado com sucesso');
+            log.debug(' ✅ Google Calendar desconectado com sucesso');
             // Força reload para atualizar estado de conexão
             window.location.reload();
         } catch (error) {
-            console.error('[AgendaView] ❌ Erro ao desconectar:', error);
+            log.error(' ❌ Erro ao desconectar:', error);
         }
     };
 
@@ -763,10 +766,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             <AgendaTimeline
                                 events={restOfDay}
                                 onEventClick={(eventId) => {
-                                    console.log('[AgendaView] Event clicked:', eventId);
+                                    log.debug(' Event clicked:', eventId);
                                 }}
                                 onTaskToggle={async (taskId) => {
-                                    console.log('[AgendaView] Task toggled:', taskId);
+                                    log.debug(' Task toggled:', taskId);
                                     // TODO: Toggle task completion
                                     const { error } = await supabase
                                         .from('work_items')
