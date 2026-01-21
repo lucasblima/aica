@@ -18,6 +18,10 @@
  */
 
 import { supabase } from '../../../services/supabaseClient';
+
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Incentivelawservice');
 import type {
   IncentiveLaw,
   IncentiveLawFilters,
@@ -87,7 +91,7 @@ export async function getIncentiveLaws(
     if (error) throw error;
     return data as IncentiveLaw[];
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao buscar leis:', error);
+    log.error(Erro ao buscar leis:', error);
     throw new Error(`Falha ao buscar leis de incentivo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
@@ -115,7 +119,7 @@ export async function getIncentiveLawById(id: string): Promise<IncentiveLaw | nu
 
     return data as IncentiveLaw;
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao buscar lei por ID:', error);
+    log.error(Erro ao buscar lei por ID:', error);
     throw new Error(`Falha ao buscar lei: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
@@ -143,7 +147,7 @@ export async function getIncentiveLawByShortName(shortName: string): Promise<Inc
 
     return data as IncentiveLaw;
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao buscar lei por short_name:', error);
+    log.error(Erro ao buscar lei por short_name:', error);
     throw new Error(`Falha ao buscar lei: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
@@ -198,7 +202,7 @@ export async function getIncentiveLawSummaries(): Promise<IncentiveLawSummary[]>
     if (error) throw error;
     return data as IncentiveLawSummary[];
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao buscar resumos:', error);
+    log.error(Erro ao buscar resumos:', error);
     throw new Error(`Falha ao buscar resumos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
@@ -224,7 +228,7 @@ export async function getIncentiveLawAIContext(lawId: string): Promise<string | 
     if (error) throw error;
     return data as string | null;
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao buscar contexto AI:', error);
+    log.error(Erro ao buscar contexto AI:', error);
     // Fallback: buscar a lei e formatar manualmente
     try {
       const law = await getIncentiveLawById(lawId);
@@ -315,7 +319,7 @@ export async function createIncentiveLaw(dto: CreateIncentiveLawDTO): Promise<In
     if (error) throw error;
     return data as IncentiveLaw;
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao criar lei:', error);
+    log.error(Erro ao criar lei:', error);
     // Check for unique constraint violation
     if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
       throw new Error('Já existe uma lei de incentivo com este nome ou abreviação.');
@@ -347,7 +351,7 @@ export async function updateIncentiveLaw(
     if (error) throw error;
     return data as IncentiveLaw;
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao atualizar lei:', error);
+    log.error(Erro ao atualizar lei:', error);
     throw new Error(`Falha ao atualizar lei: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
@@ -366,7 +370,7 @@ export async function deleteIncentiveLaw(id: string): Promise<void> {
 
     if (error) throw error;
   } catch (error) {
-    console.error('[IncentiveLawService] Erro ao deletar lei:', error);
+    log.error(Erro ao deletar lei:', error);
     throw new Error(`Falha ao deletar lei: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }

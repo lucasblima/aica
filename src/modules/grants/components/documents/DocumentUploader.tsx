@@ -7,6 +7,10 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Documentuploader');
 import {
   Upload,
   FileText,
@@ -269,7 +273,7 @@ export function DocumentUploader({
 
   const handleLinkConfirm = useCallback((suggestion: LinkSuggestion) => {
     // TODO: Implement link confirmation
-    console.log('Confirming link:', suggestion);
+    log.debug('Confirming link:', suggestion);
   }, []);
 
   const handleLinkReject = useCallback((suggestion: LinkSuggestion) => {

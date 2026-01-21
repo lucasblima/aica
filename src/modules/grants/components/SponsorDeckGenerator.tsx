@@ -37,6 +37,10 @@ import {
 } from 'lucide-react';
 import { useSponsorDeck } from '../hooks/useSponsorDeck';
 import { useSponsorshipTiers } from '../hooks/useSponsorship';
+
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Sponsordeckgenerator');
 import type {
   DeckTemplate,
   DeckOptions,
@@ -499,7 +503,7 @@ export function SponsorDeckGenerator({
         setCurrentStep('done');
       }).catch((err) => {
         // Error is handled in the hook, but log for debugging
-        console.error('[SponsorDeckGenerator] Generation failed:', err);
+        log.error(Generation failed:', err);
         setCurrentStep('options');
       });
     } else if (currentStepIndex < DECK_WIZARD_STEPS.length - 3) {

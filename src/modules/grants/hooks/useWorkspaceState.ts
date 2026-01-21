@@ -17,6 +17,10 @@ import {
 } from '../services/grantService';
 import { listProjectDocuments } from '../services/projectDocumentService';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Useworkspacestate');
+
 interface UseWorkspaceStateOptions {
   projectId: string;
   opportunityId: string;
@@ -149,7 +153,7 @@ export function useWorkspaceState({
 
       setInitialState(hydratedState);
     } catch (err) {
-      console.error('[useWorkspaceState] Error loading workspace:', err);
+      log.error(Error loading workspace:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar workspace');
     } finally {
       setIsLoading(false);

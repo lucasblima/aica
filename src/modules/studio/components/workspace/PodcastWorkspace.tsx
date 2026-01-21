@@ -48,6 +48,9 @@ import WorkspaceHeader from './WorkspaceHeader';
 import StageStepper from './StageStepper';
 import StageRenderer from './StageRenderer';
 import type { Dossier, WorkspaceCustomSource } from '@/modules/studio/types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PodcastWorkspace');
 
 interface PodcastWorkspaceProps {
   episodeId: string;
@@ -67,7 +70,7 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
   const [isSaving, setIsSaving] = useState(false);
 
   // DEBUG: Log workspace content state
-  console.log('[WorkspaceContent] Rendering with state:', {
+  log.debug('[WorkspaceContent] Rendering with state:', {
     isLoading: state.isLoading,
     error: state.error,
     currentStage: state.currentStage,
@@ -86,7 +89,7 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
     },
     onSaveError: (error) => {
       setIsSaving(false);
-      console.error('Auto-save error:', error);
+      log.error('Auto-save error:', error);
     },
   });
 
@@ -190,7 +193,7 @@ export default function PodcastWorkspace({
   });
 
   // DEBUG: Log workspace state
-  console.log('[PodcastWorkspace] Initial state loaded:', {
+  log.debug('[PodcastWorkspace] Initial state loaded:', {
     isLoading: initialState.isLoading,
     error: initialState.error,
     currentStage: initialState.currentStage,
@@ -200,7 +203,7 @@ export default function PodcastWorkspace({
   // Handle save callback
   const handleSave = async (state: any) => {
     // Save is handled by useAutoSave hook inside WorkspaceContent
-    console.log('[PodcastWorkspace] Manual save triggered');
+    log.debug('[PodcastWorkspace] Manual save triggered');
   };
 
   if (loadError) {
@@ -235,7 +238,7 @@ export default function PodcastWorkspace({
   // Wait for initial state to finish loading before mounting Provider
   // This ensures the reducer is initialized with the correct isLoading state
   if (initialState.isLoading) {
-    console.log('[PodcastWorkspace] Waiting for initial state to load...');
+    log.debug('[PodcastWorkspace] Waiting for initial state to load...');
     return (
       <div className="flex items-center justify-center h-screen bg-ceramic-base">
         <div className="text-center">
@@ -250,7 +253,7 @@ export default function PodcastWorkspace({
     );
   }
 
-  console.log('[PodcastWorkspace] Mounting provider with loaded state:', {
+  log.debug('[PodcastWorkspace] Mounting provider with loaded state:', {
     currentStage: initialState.currentStage,
     isLoading: initialState.isLoading,
     hasError: !!initialState.error

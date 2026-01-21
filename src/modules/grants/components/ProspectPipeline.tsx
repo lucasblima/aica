@@ -29,6 +29,10 @@ import { ProspectCard } from './ProspectCard';
 import type { PipelineColumn, KanbanSponsorCard } from '../types/prospect';
 import type { SponsorStatus } from '../types/sponsorship';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Prospectpipeline');
+
 interface ProspectPipelineProps {
   columns: PipelineColumn[];
   totalValue: number;
@@ -241,7 +245,7 @@ export function ProspectPipeline({
       try {
         await onMoveSponsor(activeId, targetColumnId as SponsorStatus);
       } catch (error) {
-        console.error('Erro ao mover patrocinador:', error);
+        log.error('Erro ao mover patrocinador:', error);
       }
     }
   }, [columns, findColumnByCardId, onMoveSponsor]);

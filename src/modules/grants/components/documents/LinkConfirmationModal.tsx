@@ -29,6 +29,10 @@ import {
 } from 'lucide-react';
 import type { LinkSuggestion } from '../../services/documentProcessingService';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Linkconfirmationmodal');
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -336,7 +340,7 @@ export function LinkConfirmationModal({
       await onConfirm(suggestionId);
       setActionStates(prev => ({ ...prev, [suggestionId]: 'confirmed' }));
     } catch (error) {
-      console.error('Error confirming suggestion:', error);
+      log.error('Error confirming suggestion:', error);
       setActionStates(prev => ({ ...prev, [suggestionId]: 'error' }));
     }
   }, [onConfirm]);
@@ -347,7 +351,7 @@ export function LinkConfirmationModal({
       await onReject(suggestionId);
       setActionStates(prev => ({ ...prev, [suggestionId]: 'rejected' }));
     } catch (error) {
-      console.error('Error rejecting suggestion:', error);
+      log.error('Error rejecting suggestion:', error);
       setActionStates(prev => ({ ...prev, [suggestionId]: 'error' }));
     }
   }, [onReject]);
@@ -364,7 +368,7 @@ export function LinkConfirmationModal({
           setActionStates(prev => ({ ...prev, [s.id]: 'confirmed' }));
         });
     } catch (error) {
-      console.error('Error confirming all high confidence:', error);
+      log.error('Error confirming all high confidence:', error);
     } finally {
       setIsBulkProcessing(false);
     }
@@ -382,7 +386,7 @@ export function LinkConfirmationModal({
           setActionStates(prev => ({ ...prev, [s.id]: 'rejected' }));
         });
     } catch (error) {
-      console.error('Error rejecting all low confidence:', error);
+      log.error('Error rejecting all low confidence:', error);
     } finally {
       setIsBulkProcessing(false);
     }

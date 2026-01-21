@@ -17,6 +17,10 @@ import { syncGrantTasksToAtlas } from '../services/grantTaskSync';
 import type { GrantTask } from '../services/grantTaskGenerator';
 import type { GrantProject, GrantOpportunity } from '../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Floatingtaskpanel');
+
 interface FloatingTaskPanelProps {
   project: GrantProject;
   opportunity: GrantOpportunity;
@@ -68,7 +72,7 @@ export function FloatingTaskPanel({
         onTaskComplete(taskId);
       }
     } catch (error) {
-      console.error('[FloatingTaskPanel] Error completing task:', error);
+      log.error(Error completing task:', error);
     } finally {
       setCompletingTask(null);
     }

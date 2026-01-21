@@ -17,6 +17,10 @@ import type {
 } from '../../../types/fileSearch';
 import type { GrantProject, GrantOpportunity } from '../types';
 
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Usegrantsfilesearch');
+
 export interface UseGrantsFileSearchOptions {
   /** ID do projeto de grant (module_id) */
   projectId?: string;
@@ -89,7 +93,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
       setCorpus(newCorpus);
       return newCorpus;
     } catch (error) {
-      console.error('[useGrantsFileSearch] ensureCorpus error:', error);
+      log.error(ensureCorpus error:', error);
       throw error;
     }
   }, [projectId, baseHook]);
@@ -138,10 +142,10 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
           },
         });
 
-        console.log('[useGrantsFileSearch] PDF indexado com sucesso:', document.id);
+        log.debug(PDF indexado com sucesso:', document.id);
         return document;
       } catch (error) {
-        console.error('[useGrantsFileSearch] indexEditalPDF error:', error);
+        log.error(indexEditalPDF error:', error);
         throw error;
       } finally {
         setIsIndexing(false);
@@ -171,7 +175,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
 
         return results;
       } catch (error) {
-        console.error('[useGrantsFileSearch] searchInEdital error:', error);
+        log.error(searchInEdital error:', error);
         throw error;
       }
     },
@@ -206,7 +210,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
 
         return await searchInEdital(enrichedQuery, resultCount);
       } catch (error) {
-        console.error('[useGrantsFileSearch] searchWithContext error:', error);
+        log.error(searchWithContext error:', error);
         throw error;
       }
     },
@@ -223,7 +227,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
       }
       return await baseHook.loadDocuments(corpus?.id);
     } catch (error) {
-      console.error('[useGrantsFileSearch] loadProjectDocuments error:', error);
+      log.error(loadProjectDocuments error:', error);
       throw error;
     }
   }, [corpus, ensureCorpus, baseHook]);
@@ -236,7 +240,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
       try {
         await baseHook.removeDocument(documentId);
       } catch (error) {
-        console.error('[useGrantsFileSearch] removeDocument error:', error);
+        log.error(removeDocument error:', error);
         throw error;
       }
     },
@@ -256,7 +260,7 @@ export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
   useEffect(() => {
     if (autoLoad && projectId) {
       ensureCorpus().catch((error) => {
-        console.warn('[useGrantsFileSearch] Auto-load failed:', error);
+        log.warn(Auto-load failed:', error);
       });
     }
   }, [autoLoad, projectId, ensureCorpus]);
@@ -313,7 +317,7 @@ export function useGrantsQuickSearch(projectId: string) {
         await ensureCorpus();
         return await searchInEdital(query, resultCount);
       } catch (error) {
-        console.error('[useGrantsQuickSearch] error:', error);
+        log.error(error:', error);
         throw error;
       }
     },

@@ -5,6 +5,10 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import type { EditalWorkspaceState } from '../types/workspace';
+
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('Useautosave');
 import {
   saveBriefing,
   saveResponse,
@@ -61,7 +65,7 @@ export function useAutoSave({
         JSON.stringify(previousState.briefingContext) !== JSON.stringify(stateToSave.briefingContext)
       ) {
         await saveBriefing(projectId, { briefing_data: stateToSave.briefingContext });
-        console.log('[AutoSave] Briefing saved');
+        log.debug(Briefing saved');
       }
 
       // Save responses if changed
@@ -73,7 +77,7 @@ export function useAutoSave({
           const prevResponse = prevResponses[fieldId];
           if (!prevResponse || prevResponse.content !== response.content || prevResponse.status !== response.status) {
             await saveResponse(projectId, fieldId, response.content, response.status);
-            console.log(`[AutoSave] Response saved for field ${fieldId}`);
+            log.debug(`[AutoSave] Response saved for field ${fieldId}`);
           }
         }
       }
@@ -86,14 +90,14 @@ export function useAutoSave({
         await updateOpportunity(opportunityId, {
           form_fields: stateToSave.formFields.fields,
         });
-        console.log('[AutoSave] Form fields saved');
+        log.debug(Form fields saved');
       }
 
       lastSavedRef.current = new Date();
       previousStateRef.current = stateToSave;
       onSaveSuccess?.();
     } catch (error) {
-      console.error('[AutoSave] Error saving:', error);
+      log.error(Error saving:', error);
       onSaveError?.(error instanceof Error ? error : new Error('Erro ao salvar'));
     } finally {
       isSavingRef.current = false;
