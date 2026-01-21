@@ -9,7 +9,10 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const log = createNamespacedLogger('UnifiedChatInterface');
 import {
   Send,
   Sparkles,
@@ -233,7 +236,7 @@ export function UnifiedChatInterface({
     modelTier,
     onError,
     onRateLimited: (status) => {
-      console.log('[UnifiedChatInterface] Rate limited:', status);
+      log.debug('[UnifiedChatInterface] Rate limited:', status);
     },
   };
 

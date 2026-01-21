@@ -4,7 +4,10 @@
  */
 
 import React, { useState } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { WeeklySummary } from '../../types/weeklySummary'
+
+const log = createNamespacedLogger('WeeklySummaryCard')
 import {
   EMOTIONAL_TREND_COLORS,
   EMOTIONAL_TREND_DESCRIPTIONS,
@@ -43,7 +46,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
       await onAddReflection(summary.id, reflectionText.trim())
       setIsAddingReflection(false)
     } catch (error) {
-      console.error('Error adding reflection:', error)
+      log.error('Error adding reflection:', error)
       alert('Erro ao salvar reflexão. Tente novamente.')
     } finally {
       setIsSubmitting(false)

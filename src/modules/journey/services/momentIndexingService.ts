@@ -6,8 +6,11 @@
  */
 
 import { supabase } from '../../../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { FileSearchDocument } from '../../../types/fileSearch';
 import type { Moment } from '../types/moment';
+
+const log = createNamespacedLogger('MomentIndexing');
 
 /**
  * Opções para indexação de momento
@@ -51,7 +54,7 @@ export async function indexJourneyMoment(
 ): Promise<FileSearchDocument> {
   const { moment, metadata = {} } = options;
 
-  console.log('[MomentIndexing] Starting indexation for moment:', moment.id);
+  log.debug('[MomentIndexing] Starting indexation for moment:', moment.id);
 
   try {
     // 1. Validar que há conteúdo para indexar
@@ -60,15 +63,15 @@ export async function indexJourneyMoment(
     }
 
     // 2. Indexar no File Search usando o hook
-    console.log('[MomentIndexing] Indexing moment in File Search...');
+    log.debug('[MomentIndexing] Indexing moment in File Search...');
     const indexed = await fileSearchHook.indexMoment(moment, metadata);
 
-    console.log('[MomentIndexing] Moment indexed:', indexed.id);
+    log.debug('[MomentIndexing] Moment indexed:', indexed.id);
 
     // 3. Opcional: Atualizar flag de indexação no banco (se existir uma coluna)
     // Se você adicionar uma coluna `indexed_at` em `moments`, pode atualizar aqui
 
-    console.log('[MomentIndexing] Indexation complete!', {
+    log.debug('[MomentIndexing] Indexation complete!', {
       momentId: moment.id,
       fileSearchDocId: indexed.id,
       characterCount: moment.content.length,
@@ -76,7 +79,7 @@ export async function indexJourneyMoment(
 
     return indexed;
   } catch (error) {
-    console.error('[MomentIndexing] Indexation failed:', error);
+    log.error('[MomentIndexing] Indexation failed:', error);
     throw error;
   }
 }
@@ -107,19 +110,19 @@ export async function autoIndexAfterCreate(
   moment: Moment,
   fileSearchHook: JourneyFileSearchHook
 ): Promise<FileSearchDocument> {
-  console.log('[MomentIndexing] Auto-indexing after create:', moment.id);
+  log.debug('[MomentIndexing] Auto-indexing after create:', moment.id);
 
   try {
     // Validar que o momento tem conteúdo
     if (!moment.content || moment.content.trim().length < 10) {
-      console.warn('[MomentIndexing] Moment has insufficient content, skipping indexation');
+      log.warn('[MomentIndexing] Moment has insufficient content, skipping indexation');
       throw new Error('Momento não tem conteúdo suficiente');
     }
 
     // Indexar
     return await indexJourneyMoment({ moment }, fileSearchHook);
   } catch (error) {
-    console.error('[MomentIndexing] Auto-indexing failed:', error);
+    log.error('[MomentIndexing] Auto-indexing failed:', error);
     throw error;
   }
 }
@@ -138,7 +141,7 @@ export async function autoIndexAfterCreate(
  * ```tsx
  * const hook = useJourneyFileSearch({ userId: 'user-123' });
  * const results = await reindexExistingMoments('user-123', hook, 100);
- * console.log(`Re-indexed ${results.length} moments`);
+ * log.debug(`Re-indexed ${results.length} moments`);
  * ```
  */
 export async function reindexExistingMoments(
@@ -146,7 +149,7 @@ export async function reindexExistingMoments(
   fileSearchHook: JourneyFileSearchHook,
   limit: number = 100
 ): Promise<FileSearchDocument[]> {
-  console.log('[MomentIndexing] Starting bulk re-indexation for user:', userId);
+  log.debug('[MomentIndexing] Starting bulk re-indexation for user:', userId);
 
   try {
     // Buscar momentos do usuário que tenham conteúdo
@@ -163,20 +166,20 @@ export async function reindexExistingMoments(
     }
 
     if (!moments || moments.length === 0) {
-      console.log('[MomentIndexing] No moments to re-index');
+      log.debug('[MomentIndexing] No moments to re-index');
       return [];
     }
 
-    console.log(`[MomentIndexing] Found ${moments.length} moments to re-index`);
+    log.debug(`[MomentIndexing] Found ${moments.length} moments to re-index`);
 
     // Usar indexMoments (batch) do hook para maior eficiência
     const results = await fileSearchHook.indexMoments(moments as Moment[]);
 
-    console.log(`[MomentIndexing] Bulk re-indexation complete: ${results.length}/${moments.length} successful`);
+    log.debug(`[MomentIndexing] Bulk re-indexation complete: ${results.length}/${moments.length} successful`);
 
     return results;
   } catch (error) {
-    console.error('[MomentIndexing] Bulk re-indexation failed:', error);
+    log.error('[MomentIndexing] Bulk re-indexation failed:', error);
     throw error;
   }
 }
@@ -204,7 +207,7 @@ export async function indexMomentsByPeriod(
   endDate: Date,
   fileSearchHook: JourneyFileSearchHook
 ): Promise<FileSearchDocument[]> {
-  console.log('[MomentIndexing] Indexing moments by period:', {
+  log.debug('[MomentIndexing] Indexing moments by period:', {
     userId,
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
@@ -226,20 +229,20 @@ export async function indexMomentsByPeriod(
     }
 
     if (!moments || moments.length === 0) {
-      console.log('[MomentIndexing] No moments found in period');
+      log.debug('[MomentIndexing] No moments found in period');
       return [];
     }
 
-    console.log(`[MomentIndexing] Found ${moments.length} moments in period`);
+    log.debug(`[MomentIndexing] Found ${moments.length} moments in period`);
 
     // Indexar em lote
     const results = await fileSearchHook.indexMoments(moments as Moment[]);
 
-    console.log(`[MomentIndexing] Period indexation complete: ${results.length}/${moments.length} successful`);
+    log.debug(`[MomentIndexing] Period indexation complete: ${results.length}/${moments.length} successful`);
 
     return results;
   } catch (error) {
-    console.error('[MomentIndexing] Period indexation failed:', error);
+    log.error('[MomentIndexing] Period indexation failed:', error);
     throw error;
   }
 }
@@ -267,7 +270,7 @@ export async function indexMomentsByEmotion(
   fileSearchHook: JourneyFileSearchHook,
   limit: number = 50
 ): Promise<FileSearchDocument[]> {
-  console.log('[MomentIndexing] Indexing moments by emotion:', { userId, emotion });
+  log.debug('[MomentIndexing] Indexing moments by emotion:', { userId, emotion });
 
   try {
     // Buscar momentos com a emoção
@@ -285,20 +288,20 @@ export async function indexMomentsByEmotion(
     }
 
     if (!moments || moments.length === 0) {
-      console.log('[MomentIndexing] No moments found with emotion:', emotion);
+      log.debug('[MomentIndexing] No moments found with emotion:', emotion);
       return [];
     }
 
-    console.log(`[MomentIndexing] Found ${moments.length} moments with emotion: ${emotion}`);
+    log.debug(`[MomentIndexing] Found ${moments.length} moments with emotion: ${emotion}`);
 
     // Indexar em lote
     const results = await fileSearchHook.indexMoments(moments as Moment[]);
 
-    console.log(`[MomentIndexing] Emotion indexation complete: ${results.length}/${moments.length} successful`);
+    log.debug(`[MomentIndexing] Emotion indexation complete: ${results.length}/${moments.length} successful`);
 
     return results;
   } catch (error) {
-    console.error('[MomentIndexing] Emotion indexation failed:', error);
+    log.error('[MomentIndexing] Emotion indexation failed:', error);
     throw error;
   }
 }
@@ -325,7 +328,7 @@ export async function indexMomentsByTag(
   limit: number = 50
 ): Promise<FileSearchDocument[]> {
   const cleanTag = tag.startsWith('#') ? tag : `#${tag}`;
-  console.log('[MomentIndexing] Indexing moments by tag:', { userId, tag: cleanTag });
+  log.debug('[MomentIndexing] Indexing moments by tag:', { userId, tag: cleanTag });
 
   try {
     // Buscar momentos com a tag
@@ -343,20 +346,20 @@ export async function indexMomentsByTag(
     }
 
     if (!moments || moments.length === 0) {
-      console.log('[MomentIndexing] No moments found with tag:', cleanTag);
+      log.debug('[MomentIndexing] No moments found with tag:', cleanTag);
       return [];
     }
 
-    console.log(`[MomentIndexing] Found ${moments.length} moments with tag: ${cleanTag}`);
+    log.debug(`[MomentIndexing] Found ${moments.length} moments with tag: ${cleanTag}`);
 
     // Indexar em lote
     const results = await fileSearchHook.indexMoments(moments as Moment[]);
 
-    console.log(`[MomentIndexing] Tag indexation complete: ${results.length}/${moments.length} successful`);
+    log.debug(`[MomentIndexing] Tag indexation complete: ${results.length}/${moments.length} successful`);
 
     return results;
   } catch (error) {
-    console.error('[MomentIndexing] Tag indexation failed:', error);
+    log.error('[MomentIndexing] Tag indexation failed:', error);
     throw error;
   }
 }
@@ -376,7 +379,7 @@ export async function isMomentIndexed(
     // Verificação simplificada
     return fileSearchHook.hasIndexedMoments();
   } catch (error) {
-    console.error('[MomentIndexing] Error checking indexation status:', error);
+    log.error('[MomentIndexing] Error checking indexation status:', error);
     return false;
   }
 }

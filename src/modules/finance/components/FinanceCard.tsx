@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { Eye, EyeOff, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+
+const log = createNamespacedLogger('FinanceCard');
 import { motion } from 'framer-motion';
 import { getAllTimeSummary, getBurnRate } from '../services/financeService';
 import type { FinanceSummary, BurnRateData } from '../types';
@@ -39,7 +42,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
             setSummary(summaryData);
             setBurnRate(burnRateData);
         } catch (err) {
-            console.error('Error loading finance data:', err);
+            log.error('Error loading finance data:', err);
             setError('Falha ao carregar dados financeiros');
         } finally {
             setLoading(false);

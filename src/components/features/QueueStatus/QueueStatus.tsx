@@ -7,7 +7,10 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { Clock, X, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react'
+
+const log = createNamespacedLogger('QueueStatus')
 import { cn } from '@/lib/utils'
 import rateLimiterService, { QueuedMessage } from '@/services/rateLimiterService'
 import './QueueStatus.css'
@@ -110,7 +113,7 @@ export function QueueStatus({
 
       setPreviousMessages(data)
     } catch (error) {
-      console.error('[QueueStatus] Error fetching messages:', error)
+      log.error('[QueueStatus] Error fetching messages:', error)
     } finally {
       setLoading(false)
     }

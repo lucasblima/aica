@@ -9,7 +9,10 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { useModuleFileSearch } from '../../../hooks/useFileSearch';
+
+const log = createNamespacedLogger('FinanceFileSearch');
 import type {
   FileSearchCorpus,
   FileSearchDocument,
@@ -104,7 +107,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
       setCorpus(newCorpus);
       return newCorpus;
     } catch (error) {
-      console.error('[useFinanceFileSearch] ensureCorpus error:', error);
+      log.error('[useFinanceFileSearch] ensureCorpus error:', error);
       throw error;
     }
   }, [userId, statementId, baseHook]);
@@ -166,10 +169,10 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
           },
         });
 
-        console.log('[useFinanceFileSearch] Statement indexado:', document.id);
+        log.debug('[useFinanceFileSearch] Statement indexado:', document.id);
         return document;
       } catch (error) {
-        console.error('[useFinanceFileSearch] indexStatement error:', error);
+        log.error('[useFinanceFileSearch] indexStatement error:', error);
         throw error;
       } finally {
         setIsIndexing(false);
@@ -234,10 +237,10 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
           },
         });
 
-        console.log('[useFinanceFileSearch] Transações indexadas:', document.id);
+        log.debug('[useFinanceFileSearch] Transações indexadas:', document.id);
         return document;
       } catch (error) {
-        console.error('[useFinanceFileSearch] indexTransactions error:', error);
+        log.error('[useFinanceFileSearch] indexTransactions error:', error);
         throw error;
       } finally {
         setIsIndexing(false);
@@ -267,7 +270,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
 
         return results;
       } catch (error) {
-        console.error('[useFinanceFileSearch] searchInStatements error:', error);
+        log.error('[useFinanceFileSearch] searchInStatements error:', error);
         throw error;
       }
     },
@@ -310,7 +313,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
 
         return await searchInStatements(enrichedQuery, resultCount);
       } catch (error) {
-        console.error('[useFinanceFileSearch] searchWithContext error:', error);
+        log.error('[useFinanceFileSearch] searchWithContext error:', error);
         throw error;
       }
     },
@@ -395,7 +398,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
       }
       return await baseHook.loadDocuments(corpus?.id);
     } catch (error) {
-      console.error('[useFinanceFileSearch] loadStatements error:', error);
+      log.error('[useFinanceFileSearch] loadStatements error:', error);
       throw error;
     }
   }, [corpus, ensureCorpus, baseHook]);
@@ -408,7 +411,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
       try {
         await baseHook.removeDocument(documentId);
       } catch (error) {
-        console.error('[useFinanceFileSearch] removeStatement error:', error);
+        log.error('[useFinanceFileSearch] removeStatement error:', error);
         throw error;
       }
     },
@@ -428,7 +431,7 @@ export function useFinanceFileSearch(options: UseFinanceFileSearchOptions = {}) 
   useEffect(() => {
     if (autoLoad && (userId || statementId)) {
       ensureCorpus().catch((error) => {
-        console.warn('[useFinanceFileSearch] Auto-load failed:', error);
+        log.warn('[useFinanceFileSearch] Auto-load failed:', error);
       });
     }
   }, [autoLoad, userId, statementId, ensureCorpus]);
@@ -490,7 +493,7 @@ export function useFinanceQuickSearch(userId: string) {
         await ensureCorpus();
         return await searchInStatements(query, resultCount);
       } catch (error) {
-        console.error('[useFinanceQuickSearch] error:', error);
+        log.error('[useFinanceQuickSearch] error:', error);
         throw error;
       }
     },

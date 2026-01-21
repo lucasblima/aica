@@ -16,6 +16,7 @@
 
 import { supabase } from '@/lib/supabase'
 import { GeminiClient } from '@/lib/gemini'
+import { createNamespacedLogger } from '@/lib/logger'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'
 
 import {
@@ -38,6 +39,7 @@ import {
 } from '@/integrations/whisperTranscription'
 
 const geminiClient = GeminiClient.getInstance()
+const log = createNamespacedLogger('MomentPersistence')
 
 /**
  * Create a new moment entry with full processing
@@ -58,11 +60,11 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     }
 
     const validatedInput = validationResult.validatedInput!
-    console.log('[momentPersistenceService] Input validated successfully')
+    log.debug('[momentPersistenceService] Input validated successfully')
 
     // Log warnings if any
     if (validationResult.warnings.length > 0) {
-      console.warn('[momentPersistenceService] Validation warnings:', validationResult.warnings)
+      log.warn('[momentPersistenceService] Validation warnings:', validationResult.warnings)
     }
 
     // 2. CHECK RATE LIMITING
@@ -77,11 +79,11 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     let audioTranscribedAt: string | undefined
 
     if (validatedInput.audioFile) {
-      console.log('[momentPersistenceService] Processing audio...')
+      log.debug('[momentPersistenceService] Processing audio...')
 
       // Upload audio to storage
       audioUrl = await uploadAudioToStorage(validatedInput.userId, validatedInput.audioFile)
-      console.log('[momentPersistenceService] Audio uploaded:', audioUrl)
+      log.debug('[momentPersistenceService] Audio uploaded:', audioUrl)
 
       // Transcribe audio
       try {
@@ -90,12 +92,12 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
         if (transcriptionResult.success && transcriptionResult.text) {
           audioTranscription = postProcessTranscription(transcriptionResult.text)
           audioTranscribedAt = transcriptionResult.transcribedAt.toISOString()
-          console.log('[momentPersistenceService] Audio transcribed successfully')
+          log.debug('[momentPersistenceService] Audio transcribed successfully')
         } else {
-          console.warn('[momentPersistenceService] Transcription failed, continuing without text')
+          log.warn('[momentPersistenceService] Transcription failed, continuing without text')
         }
       } catch (error) {
-        console.error('[momentPersistenceService] Transcription error:', error)
+        log.error('[momentPersistenceService] Transcription error:', error)
         // Continue without transcription - not critical
       }
     }
@@ -107,7 +109,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
       throw new Error('No content provided (neither text nor audio transcription)')
     }
 
-    console.log('[momentPersistenceService] Final content combined, length:', finalContent.length)
+    log.debug('[momentPersistenceService] Final content combined, length:', finalContent.length)
 
     // 5. ANALYZE SENTIMENT (Parallel with tagging)
     const [sentimentResult, taggingResult] = await Promise.all([
@@ -115,8 +117,8 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
       generateAutoTags(finalContent, validatedInput.lifeAreas),
     ])
 
-    console.log('[momentPersistenceService] Sentiment analyzed:', sentimentResult.label)
-    console.log('[momentPersistenceService] Auto-tags generated:', taggingResult.tags.length)
+    log.debug('[momentPersistenceService] Sentiment analyzed:', sentimentResult.label)
+    log.debug('[momentPersistenceService] Auto-tags generated:', taggingResult.tags.length)
 
     // 6. COMBINE TAGS
     const allTags = Array.from(new Set([...(validatedInput.tags || []), ...taggingResult.tags]))
@@ -149,7 +151,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
 
     // 8. INSERT INTO DATABASE
     const momentId = await insertMomentEntry(processedData)
-    console.log('[momentPersistenceService] Moment inserted:', momentId)
+    log.debug('[momentPersistenceService] Moment inserted:', momentId)
 
     // 9. AWARD CONSCIOUSNESS POINTS (Parallel with streak update)
     const [cpResult, streakResult] = await Promise.all([
@@ -157,14 +159,14 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
       updateUserStreak(validatedInput.userId, momentId),
     ])
 
-    console.log('[momentPersistenceService] CP awarded:', cpResult.totalPoints, 'Level up:', cpResult.leveledUp)
-    console.log('[momentPersistenceService] Streak updated:', streakResult.current_streak)
+    log.debug('[momentPersistenceService] CP awarded:', cpResult.totalPoints, 'Level up:', cpResult.leveledUp)
+    log.debug('[momentPersistenceService] Streak updated:', streakResult.current_streak)
 
     // 10. RECORD ANALYTICS EVENT
     await recordMomentCreatedEvent(validatedInput.userId, momentId, processedData)
 
     const processingTime = Date.now() - startTime
-    console.log(`[momentPersistenceService] Moment created successfully in ${processingTime}ms`)
+    log.debug(`[momentPersistenceService] Moment created successfully in ${processingTime}ms`)
 
     // 11. RETURN RESULT
     return {
@@ -178,7 +180,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     }
   } catch (error) {
     const processingTime = Date.now() - startTime
-    console.error(`[momentPersistenceService] Error creating moment (${processingTime}ms):`, error)
+    log.error(`[momentPersistenceService] Error creating moment (${processingTime}ms):`, error)
 
     // Log detailed error context
     await logError({
@@ -216,7 +218,7 @@ export async function getMomentById(userId: string, momentId: string) {
 
     return data
   } catch (error) {
-    console.error('[momentPersistenceService] Error fetching moment:', error)
+    log.error('[momentPersistenceService] Error fetching moment:', error)
     return null
   }
 }
@@ -276,7 +278,7 @@ export async function getUserMoments(
       hasMore: offset + (data?.length || 0) < (count || 0),
     }
   } catch (error) {
-    console.error('[momentPersistenceService] Error fetching moments:', error)
+    log.error('[momentPersistenceService] Error fetching moments:', error)
     return { moments: [], total: 0, hasMore: false }
   }
 }
@@ -299,11 +301,11 @@ export async function updateMomentEntry(userId: string, momentId: string, update
 
     if (error) throw error
 
-    console.log('[momentPersistenceService] Moment updated:', momentId)
+    log.debug('[momentPersistenceService] Moment updated:', momentId)
 
     return data
   } catch (error) {
-    console.error('[momentPersistenceService] Error updating moment:', error)
+    log.error('[momentPersistenceService] Error updating moment:', error)
     throw error
   }
 }
@@ -328,9 +330,9 @@ export async function deleteMomentEntry(userId: string, momentId: string) {
 
     if (error) throw error
 
-    console.log('[momentPersistenceService] Moment deleted:', momentId)
+    log.debug('[momentPersistenceService] Moment deleted:', momentId)
   } catch (error) {
-    console.error('[momentPersistenceService] Error deleting moment:', error)
+    log.error('[momentPersistenceService] Error deleting moment:', error)
     throw error
   }
 }
@@ -355,7 +357,7 @@ export async function getUserStats(userId: string) {
 
     return data
   } catch (error) {
-    console.error('[momentPersistenceService] Error fetching user stats:', error)
+    log.error('[momentPersistenceService] Error fetching user stats:', error)
     return null
   }
 }
@@ -410,7 +412,7 @@ async function uploadAudioToStorage(userId: string, audioFile: Blob): Promise<st
 
     return urlData.publicUrl
   } catch (error) {
-    console.error('[momentPersistenceService] Error uploading audio:', error)
+    log.error('[momentPersistenceService] Error uploading audio:', error)
     throw error
   }
 }
@@ -427,7 +429,7 @@ async function deleteAudioFromStorage(audioUrl: string): Promise<void> {
 
     if (error) throw error
   } catch (error) {
-    console.error('[momentPersistenceService] Error deleting audio:', error)
+    log.error('[momentPersistenceService] Error deleting audio:', error)
     // Don't throw - graceful degradation
   }
 }
@@ -479,7 +481,7 @@ Máximo 5 tags. Siga o padrão de tags em minúsculas com hífen.`
       }
     }).catch(error => {
       // Non-blocking: log error but don't throw
-      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     const responseText = response.result?.text || JSON.stringify(response.result)
@@ -503,7 +505,7 @@ Máximo 5 tags. Siga o padrão de tags em minúsculas com hífen.`
       generatedAt: new Date(),
     }
   } catch (error) {
-    console.error('[momentPersistenceService] Error generating tags:', error)
+    log.error('[momentPersistenceService] Error generating tags:', error)
     return getDefaultAutoTags()
   }
 }
@@ -523,7 +525,7 @@ async function insertMomentEntry(data: ProcessedMomentData): Promise<string> {
 
     return result.id
   } catch (error) {
-    console.error('[momentPersistenceService] Error inserting moment:', error)
+    log.error('[momentPersistenceService] Error inserting moment:', error)
     throw error
   }
 }
@@ -556,7 +558,7 @@ async function awardConsciousnessPoints(
     })
 
     if (error) {
-      console.error('[momentPersistenceService] Error awarding CP:', error)
+      log.error('[momentPersistenceService] Error awarding CP:', error)
       // Continue with estimated result
       return {
         basePoints,
@@ -573,7 +575,7 @@ async function awardConsciousnessPoints(
       reason: 'moment_registered',
     }
   } catch (error) {
-    console.error('[momentPersistenceService] Error awarding CP:', error)
+    log.error('[momentPersistenceService] Error awarding CP:', error)
     throw error
   }
 }
@@ -588,13 +590,13 @@ async function updateUserStreak(userId: string, momentId: string) {
     })
 
     if (error) {
-      console.error('[momentPersistenceService] Error updating streak:', error)
+      log.error('[momentPersistenceService] Error updating streak:', error)
       return { current_streak: 0, longest_streak: 0, streak_bonus_awarded: false }
     }
 
     return data || { current_streak: 0, longest_streak: 0, streak_bonus_awarded: false }
   } catch (error) {
-    console.error('[momentPersistenceService] Error updating streak:', error)
+    log.error('[momentPersistenceService] Error updating streak:', error)
     return { current_streak: 0, longest_streak: 0, streak_bonus_awarded: false }
   }
 }
@@ -605,7 +607,7 @@ async function updateUserStreak(userId: string, momentId: string) {
 async function recordMomentCreatedEvent(userId: string, momentId: string, data: ProcessedMomentData) {
   try {
     // Could be sent to analytics service here
-    console.log('[momentPersistenceService] Moment created event:', {
+    log.debug('[momentPersistenceService] Moment created event:', {
       userId,
       momentId,
       type: data.type,
@@ -614,7 +616,7 @@ async function recordMomentCreatedEvent(userId: string, momentId: string, data: 
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('[momentPersistenceService] Error recording event:', error)
+    log.error('[momentPersistenceService] Error recording event:', error)
     // Non-critical, continue
   }
 }
@@ -642,7 +644,7 @@ async function checkUserRateLimit(userId: string): Promise<boolean> {
     // Minimum 1 second between moments
     return timeSinceLastMoment >= 1000
   } catch (error) {
-    console.error('[momentPersistenceService] Error checking rate limit:', error)
+    log.error('[momentPersistenceService] Error checking rate limit:', error)
     return true // Allow if check fails
   }
 }
@@ -672,7 +674,7 @@ async function initializeUserStats(userId: string) {
 
     return data
   } catch (error) {
-    console.error('[momentPersistenceService] Error initializing stats:', error)
+    log.error('[momentPersistenceService] Error initializing stats:', error)
     return null
   }
 }
@@ -687,14 +689,14 @@ async function logError(context: {
   context?: any
 }) {
   try {
-    console.error('[momentPersistenceService] Error Log:', {
+    log.error('[momentPersistenceService] Error Log:', {
       timestamp: new Date().toISOString(),
       ...context,
     })
 
     // Could log to external service here
   } catch (error) {
-    console.error('[momentPersistenceService] Error logging error:', error)
+    log.error('[momentPersistenceService] Error logging error:', error)
   }
 }
 

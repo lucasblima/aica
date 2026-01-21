@@ -5,6 +5,7 @@
 
 import { supabase } from '@/lib/supabase'
 import { GeminiClient } from '@/lib/gemini'
+import { createNamespacedLogger } from '@/lib/logger'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'
 import {
   WeeklySummary,
@@ -17,6 +18,7 @@ import { Moment } from '../types/moment'
 import { getMoments } from './momentService'
 
 const geminiClient = GeminiClient.getInstance()
+const log = createNamespacedLogger('WeeklySummary')
 
 /**
  * Generate weekly summary for current week
@@ -38,7 +40,7 @@ export async function generateWeeklySummary(
     // Check if summary already exists
     const existing = await getWeeklySummary(userId, year, weekNumber)
     if (existing) {
-      console.log('Weekly summary already exists, regenerating...')
+      log.debug('Weekly summary already exists, regenerating...')
     }
 
     // Get week date range
@@ -79,7 +81,7 @@ export async function generateWeeklySummary(
 
     return data
   } catch (error) {
-    console.error('Error generating weekly summary:', error)
+    log.error('Error generating weekly summary:', error)
     throw error
   }
 }
@@ -108,7 +110,7 @@ export async function getWeeklySummary(
 
     return data
   } catch (error) {
-    console.error('Error fetching weekly summary:', error)
+    log.error('Error fetching weekly summary:', error)
     return null
   }
 }
@@ -125,7 +127,7 @@ export async function getCurrentWeeklySummary(userId: string): Promise<WeeklySum
     try {
       summary = await generateWeeklySummary(userId, year, week)
     } catch (error) {
-      console.error('Could not auto-generate summary:', error)
+      log.error('Could not auto-generate summary:', error)
       return null
     }
   }
@@ -152,7 +154,7 @@ export async function getAllWeeklySummaries(
 
     return data || []
   } catch (error) {
-    console.error('Error fetching weekly summaries:', error)
+    log.error('Error fetching weekly summaries:', error)
     return []
   }
 }
@@ -190,7 +192,7 @@ export async function addReflectionToSummary(
     )
 
     if (cpError) {
-      console.error('Error awarding CP:', cpError)
+      log.error('Error awarding CP:', cpError)
     }
 
     // Update stats
@@ -205,7 +207,7 @@ export async function addReflectionToSummary(
       cp_earned: cpResult?.new_total || 20,
     }
   } catch (error) {
-    console.error('Error adding reflection:', error)
+    log.error('Error adding reflection:', error)
     throw error
   }
 }
@@ -224,7 +226,7 @@ export async function markSummaryAsViewed(
       .eq('id', summaryId)
       .eq('user_id', userId)
   } catch (error) {
-    console.error('Error marking summary as viewed:', error)
+    log.error('Error marking summary as viewed:', error)
   }
 }
 
@@ -269,12 +271,12 @@ async function generateSummaryWithAI(moments: Moment[]): Promise<WeeklySummaryDa
       }
     }).catch(error => {
       // Non-blocking: log error but don't throw
-      console.warn('[Journey AI Tracking] Non-blocking error:', error.message);
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
     });
 
     return response.result as WeeklySummaryData
   } catch (error) {
-    console.error('Error generating summary with AI:', error)
+    log.error('Error generating summary with AI:', error)
     // Return fallback summary
     return generateFallbackSummary(moments)
   }

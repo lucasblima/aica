@@ -12,7 +12,10 @@
  */
 
 import React, { useCallback } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { HelpCircle } from 'lucide-react';
+
+const log = createNamespacedLogger('HelpButton');
 import { useTour } from '@/contexts/TourContext';
 
 interface HelpButtonProps {
@@ -30,7 +33,7 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
   try {
     tourContext = useTour();
   } catch (err) {
-    console.warn('[HelpButton] TourContext not available:', err);
+    log.warn('[HelpButton] TourContext not available:', err);
     // Render disabled button if TourContext is not available
     return (
       <button
@@ -64,7 +67,7 @@ export const HelpButton: React.FC<HelpButtonProps> = ({
       await startTour(tourKey, true);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[HelpButton] Error starting tour:', errorMsg);
+      log.error('[HelpButton] Error starting tour:', errorMsg);
     } finally {
       setIsLoading(false);
     }

@@ -5,7 +5,10 @@
  */
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
+import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
+
+const log = createNamespacedLogger('FinanceDashboard');
 import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, LayoutDashboard, Target, FileSpreadsheet } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
@@ -97,7 +100,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       setCategoryBreakdown(categoryData);
       setStatements(statementsData);
     } catch (error) {
-      console.error('Error loading finance data:', error);
+      log.error('Error loading finance data:', error);
     } finally {
       setLoading(false);
     }
@@ -120,7 +123,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       setStatements((prev) => prev.filter((s) => s.id !== statementId));
       loadData(); // Refresh summary
     } catch (error) {
-      console.error('Error deleting statement:', error);
+      log.error('Error deleting statement:', error);
       alert('Erro ao deletar extrato. Tente novamente.');
     } finally {
       setDeletingId(null);
@@ -145,7 +148,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       setShowManagement(false);
       alert('Todos os extratos foram deletados com sucesso!');
     } catch (error) {
-      console.error('Error deleting all statements:', error);
+      log.error('Error deleting all statements:', error);
       alert('Erro ao deletar extratos. Alguns podem não ter sido deletados.');
     } finally {
       setDeletingAll(false);
@@ -228,11 +231,11 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       statements: FinanceStatement[];
     }>();
 
-    console.log('[FinanceDashboard] Processing statements for monthly data:', statements?.length || 0);
+    log.debug('[FinanceDashboard] Processing statements for monthly data:', statements?.length || 0);
 
     // Handle empty statements array
     if (!statements || statements.length === 0) {
-      console.log('[FinanceDashboard] No statements, returning empty month data');
+      log.debug('[FinanceDashboard] No statements, returning empty month data');
       const months: MonthData[] = [];
       for (let month = 1; month <= 12; month++) {
         months.push({
@@ -251,7 +254,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     }
 
     statements.forEach((statement) => {
-      console.log('[FinanceDashboard] Statement:', {
+      log.debug('[FinanceDashboard] Statement:', {
         id: statement.id,
         file_name: statement.file_name,
         statement_period_start: statement.statement_period_start,
@@ -267,7 +270,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         const month = parseInt(monthStr);
         const key = `${year}-${month}`;
 
-        console.log('[FinanceDashboard] Parsed date:', { dateStr, year, month, key });
+        log.debug('[FinanceDashboard] Parsed date:', { dateStr, year, month, key });
 
         const existing = monthMap.get(key) || {
           transactionCount: 0,
@@ -287,7 +290,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           statements: existing.statements,
         });
       } else {
-        console.warn('[FinanceDashboard] Statement missing period_start:', statement.id);
+        log.warn('[FinanceDashboard] Statement missing period_start:', statement.id);
       }
     });
 
@@ -305,7 +308,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       data.closingBalance = sortedStatements[sortedStatements.length - 1]?.closing_balance || 0;
     });
 
-    console.log('[FinanceDashboard] Month map:', Array.from(monthMap.entries()));
+    log.debug('[FinanceDashboard] Month map:', Array.from(monthMap.entries()));
 
     // Generate 12 months for current year
     const months: MonthData[] = [];
@@ -342,7 +345,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       });
     }
 
-    console.log('[FinanceDashboard] Monthly data generated:', months);
+    log.debug('[FinanceDashboard] Monthly data generated:', months);
 
     return months;
   }, [statements]);
@@ -460,7 +463,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             </button>
             <button
               onClick={() => {
-                console.log('=== DEBUG: All Statements ===');
+                log.debug('=== DEBUG: All Statements ===');
                 console.table(statements.map(s => ({
                   file_name: s.file_name,
                   bank_name: s.bank_name,
@@ -504,7 +507,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             <StatementUpload
               userId={userId}
               onUploadComplete={handleUploadComplete}
-              onError={(error) => console.error(error)}
+              onError={(error) => log.error(error)}
             />
           </div>
         )}

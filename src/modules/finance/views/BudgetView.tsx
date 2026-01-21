@@ -6,7 +6,10 @@
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+
+const log = createNamespacedLogger('BudgetView');
 import { statementService } from '../services/statementService';
 import { supabase } from '../../../services/supabaseClient';
 import type { FinanceStatement, FinanceTransaction } from '../types';
@@ -86,7 +89,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       setTransactions(txData || []);
       setStatements(statementsData);
     } catch (error) {
-      console.error('Error loading budget data:', error);
+      log.error('Error loading budget data:', error);
     } finally {
       setLoading(false);
     }

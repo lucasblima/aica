@@ -5,7 +5,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { statementService } from '../services/statementService';
+
+const log = createNamespacedLogger('useFinanceStatements');
 import type { FinanceStatement } from '../types';
 
 interface UseFinanceStatementsReturn {
@@ -31,7 +34,7 @@ export function useFinanceStatements(userId: string): UseFinanceStatementsReturn
       const data = await statementService.getStatements(userId);
       setStatements(data);
     } catch (err) {
-      console.error('Error fetching statements:', err);
+      log.error('Error fetching statements:', err);
       setError('Erro ao carregar extratos');
     } finally {
       setLoading(false);
@@ -47,7 +50,7 @@ export function useFinanceStatements(userId: string): UseFinanceStatementsReturn
       await statementService.deleteStatement(id);
       setStatements((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
-      console.error('Error deleting statement:', err);
+      log.error('Error deleting statement:', err);
       throw new Error('Erro ao deletar extrato');
     }
   }, []);

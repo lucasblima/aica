@@ -5,7 +5,10 @@
  */
 
 import { supabase } from '../../../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import { csvParserService } from './csvParserService';
+
+const log = createNamespacedLogger('StatementService');
 import type {
   FinanceStatement,
   FinanceTransaction,
@@ -39,7 +42,7 @@ export const statementService = {
       .single();
 
     if (error) {
-      console.error('[statementService] Create error:', error);
+      log.error('[statementService] Create error:', error);
       throw new Error('Erro ao criar registro do extrato');
     }
 
@@ -57,7 +60,7 @@ export const statementService = {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[statementService] Get statements error:', error);
+      log.error('[statementService] Get statements error:', error);
       throw new Error('Erro ao buscar extratos');
     }
 
@@ -76,7 +79,7 @@ export const statementService = {
 
     if (error) {
       if (error.code === 'PGRST116') return null;
-      console.error('[statementService] Get statement error:', error);
+      log.error('[statementService] Get statement error:', error);
       throw new Error('Erro ao buscar extrato');
     }
 
@@ -98,7 +101,7 @@ export const statementService = {
       .single();
 
     if (error) {
-      console.error('[statementService] Update error:', error);
+      log.error('[statementService] Update error:', error);
       throw new Error('Erro ao atualizar extrato');
     }
 
@@ -119,7 +122,7 @@ export const statementService = {
         .remove([statement.storage_path]);
 
       if (storageError) {
-        console.warn('[statementService] Storage delete warning:', storageError);
+        log.warn('[statementService] Storage delete warning:', storageError);
       }
     }
 
@@ -130,7 +133,7 @@ export const statementService = {
       .eq('id', id);
 
     if (error) {
-      console.error('[statementService] Delete error:', error);
+      log.error('[statementService] Delete error:', error);
       throw new Error('Erro ao deletar extrato');
     }
   },
@@ -159,7 +162,7 @@ export const statementService = {
       });
 
     if (error) {
-      console.error('[statementService] Upload error:', error);
+      log.error('[statementService] Upload error:', error);
       throw new Error('Erro ao fazer upload do PDF');
     }
 
@@ -175,7 +178,7 @@ export const statementService = {
       .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
     if (error) {
-      console.error('[statementService] Get URL error:', error);
+      log.error('[statementService] Get URL error:', error);
       throw new Error('Erro ao obter URL do PDF');
     }
 
@@ -218,7 +221,7 @@ export const statementService = {
   ): Promise<void> {
     // Validate that transactions were found
     if (!parsed.transactions || parsed.transactions.length === 0) {
-      console.error('[statementService] No transactions found in ParsedStatement:', {
+      log.error('[statementService] No transactions found in ParsedStatement:', {
         bankName: parsed.bankName,
         periodStart: parsed.periodStart,
         periodEnd: parsed.periodEnd,
@@ -317,11 +320,11 @@ export const statementService = {
       });
 
     if (error) {
-      console.error('[statementService] Save transactions error:', error);
+      log.error('[statementService] Save transactions error:', error);
       throw new Error('Erro ao salvar transacoes');
     }
 
-    console.log(`[statementService] Saved/updated ${transactionRecords.length} transactions for statement ${statementId}`);
+    log.debug(`[statementService] Saved/updated ${transactionRecords.length} transactions for statement ${statementId}`);
   },
 
   /**
@@ -339,7 +342,7 @@ export const statementService = {
 
     // If there's an error other than "not found", log it
     if (error && error.code !== 'PGRST116') {
-      console.warn('[statementService] checkDuplicate error:', error);
+      log.warn('[statementService] checkDuplicate error:', error);
     }
 
     return !!data;
@@ -356,7 +359,7 @@ export const statementService = {
       .order('transaction_date', { ascending: false });
 
     if (error) {
-      console.error('[statementService] Get transactions error:', error);
+      log.error('[statementService] Get transactions error:', error);
       throw new Error('Erro ao buscar transacoes');
     }
 
@@ -406,9 +409,9 @@ export const statementService = {
 
     try {
       // 1. Parse CSV
-      console.log('[CSV] Parsing file:', file.name);
+      log.debug('[CSV] Parsing file:', file.name);
       const parsed = await csvParserService.parseCSV(file);
-      console.log('[CSV] Parsed:', {
+      log.debug('[CSV] Parsed:', {
         bank: parsed.bankName,
         transactions: parsed.transactions.length,
         period: `${parsed.periodStart} to ${parsed.periodEnd}`
@@ -451,7 +454,7 @@ export const statementService = {
         mime_type: 'text/csv'
       });
 
-      console.log('[CSV] Statement created:', statement.id);
+      log.debug('[CSV] Statement created:', statement.id);
 
       // 5. Insert transactions
       const transactionsToInsert = parsed.transactions.map((tx, index) => ({
@@ -472,7 +475,7 @@ export const statementService = {
         .insert(transactionsToInsert);
 
       if (txError) {
-        console.error('[CSV] Transaction insert error:', txError);
+        log.error('[CSV] Transaction insert error:', txError);
         // Mark statement as failed
         await this.updateStatement(statement.id, {
           processing_status: 'failed',
@@ -481,7 +484,7 @@ export const statementService = {
         throw new Error('Erro ao inserir transações');
       }
 
-      console.log('[CSV] Transactions inserted:', transactionsToInsert.length);
+      log.debug('[CSV] Transactions inserted:', transactionsToInsert.length);
 
       // 6. Calculate totals
       const totalCredits = parsed.transactions
@@ -502,14 +505,14 @@ export const statementService = {
       });
 
       const duration = Date.now() - startTime;
-      console.log(`[CSV] Processing completed in ${duration}ms`);
+      log.debug(`[CSV] Processing completed in ${duration}ms`);
 
       return {
         statement: updatedStatement,
         transactionCount: parsed.transactions.length
       };
     } catch (error) {
-      console.error('[CSV] Processing error:', error);
+      log.error('[CSV] Processing error:', error);
       throw error;
     }
   },

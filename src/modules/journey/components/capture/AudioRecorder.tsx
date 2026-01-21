@@ -4,7 +4,10 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { MicrophoneIcon, StopIcon } from '@heroicons/react/24/solid'
+
+const log = createNamespacedLogger('AudioRecorder')
 
 interface AudioRecorderProps {
   onRecordingComplete: (audioBlob: Blob) => void
@@ -82,7 +85,7 @@ export function AudioRecorder({
       // Start audio level monitoring
       updateAudioLevel()
     } catch (error) {
-      console.error('Error starting recording:', error)
+      log.error('Error starting recording:', error)
       alert('Não foi possível acessar o microfone. Verifique as permissões.')
     }
   }

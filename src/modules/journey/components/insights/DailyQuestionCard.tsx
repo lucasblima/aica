@@ -4,7 +4,10 @@
  */
 
 import React, { useState } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { QuestionWithResponse } from '../../types/dailyQuestion'
+
+const log = createNamespacedLogger('DailyQuestionCard')
 import {
   QUESTION_CATEGORY_COLORS,
   QUESTION_CATEGORY_ICONS,
@@ -39,7 +42,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
       setIsAnswered(true)
       setResponseText('')
     } catch (error) {
-      console.error('Error answering question:', error)
+      log.error('Error answering question:', error)
       alert('Erro ao salvar resposta. Tente novamente.')
     } finally {
       setIsSubmitting(false)
