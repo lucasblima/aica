@@ -40,9 +40,32 @@ export function WhatsAppPairingStep({
   const [instanceName, setInstanceName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCreatingInstance, setIsCreatingInstance] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   // Subscribe to session changes for automatic connection detection
-  const { isConnected, status: sessionStatus } = useWhatsAppSessionSubscription();
+  const { session, isConnected, status: sessionStatus, isLoading: isLoadingSession } = useWhatsAppSessionSubscription();
+
+  // Check for existing session on mount
+  useEffect(() => {
+    if (isLoadingSession) return;
+
+    // If there's an existing session in connecting/pairing state, skip to pairing
+    if (session && (session.status === 'connecting' || session.status === 'pairing')) {
+      console.log('[WhatsAppPairingStep] Found existing session in connecting state:', session.instance_name);
+      setInstanceName(session.instance_name);
+      // Extract phone from session if available
+      if (session.phone_number) {
+        const phone = session.phone_number.replace(/^55/, '');
+        setPhoneNumber(phone);
+        // Format for display
+        if (phone.length >= 10) {
+          setFormattedPhone(`(${phone.slice(0, 2)}) ${phone.slice(2, 7)}-${phone.slice(7, 11)}`);
+        }
+      }
+      setState('pairing');
+    }
+    setIsCheckingSession(false);
+  }, [session, isLoadingSession]);
 
   // Auto-detect when WhatsApp is connected via webhook
   useEffect(() => {
@@ -143,6 +166,16 @@ export function WhatsAppPairingStep({
     console.log('Pairing code generated:', code);
     // Could poll for connection status here
   }, []);
+
+  // Show loading while checking for existing session
+  if (isCheckingSession || isLoadingSession) {
+    return (
+      <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
+        <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-4" />
+        <p className="text-ceramic-600">Verificando conexão existente...</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col ${className}`}>
