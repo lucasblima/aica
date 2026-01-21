@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Users, Users2, Search, MessageCircle, Loader2, User, Briefcase, Heart, Home, GraduationCap, Package } from 'lucide-react';
-import { HeaderGlobal, ContactCard, ContactDetailModal, CreditBalanceWidget } from '../components';
+import { HeaderGlobal, ContactCardGrid, ContactDetailModal, CreditBalanceWidget } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
 import { supabase } from '../services/supabaseClient';
@@ -504,32 +504,14 @@ export function ContactsView() {
           </motion.div>
         )}
 
-        {/* Contact Grid */}
-        {filteredContacts.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="ceramic-card p-12 flex flex-col items-center justify-center text-center"
-          >
-            <Users className="w-16 h-16 text-ceramic-text-secondary/30 mb-4" />
-            <p className="text-ceramic-text-secondary font-bold mb-2">
-              {searchQuery || filterSource !== 'all'
-                ? 'Nenhum contato encontrado'
-                : 'Nenhum contato ainda'}
-            </p>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContacts.map((contact) => (
-              <div key={contact.id}>
-                <ContactCard
-                  contact={contact}
-                  onClick={() => handleContactSelect(contact)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Contact Grid - Issue #92: Stable rendering without animation conflicts */}
+        <ContactCardGrid
+          contacts={filteredContacts}
+          isLoading={isLoading}
+          searchQuery={searchQuery}
+          filterSource={filterSource}
+          onContactClick={handleContactSelect}
+        />
 
         {/* Results Counter */}
         {filteredContacts.length > 0 && (
