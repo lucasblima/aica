@@ -4,6 +4,9 @@ import type { Topic, TopicCategory } from '@/modules/studio/types';
 import { getCategories } from '../services/workspaceDatabaseService';
 import { arrayMove } from '@dnd-kit/sortable';
 import { DragEndEvent } from '@dnd-kit/core';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useStudioData');
 
 // Database type for topics (from Supabase)
 interface TopicDB {
@@ -80,7 +83,7 @@ export const useStudioData = ({ projectId, dossier }: UseStudioDataProps) => {
                 }));
                 setCategories(converted);
             } catch (error) {
-                console.error('Error loading categories:', error);
+                log.error('Error loading categories:', error);
             }
         };
         fetchCategories();
@@ -98,7 +101,7 @@ export const useStudioData = ({ projectId, dossier }: UseStudioDataProps) => {
                 .eq('episode_id', projectId)
                 .order('order', { ascending: true });
 
-            if (error) console.error('Error fetching topics:', error);
+            if (error) log.error('Error fetching topics:', error);
             else if (data) {
                 setTopics(data.map((t: TopicDB) => ({
                     id: t.id,
@@ -237,7 +240,7 @@ export const useStudioData = ({ projectId, dossier }: UseStudioDataProps) => {
             if (error) throw error;
             setIsEditingProject(false);
         } catch (e) {
-            console.error('Failed to save project:', e);
+            log.error('Failed to save project:', e);
             throw e;
         } finally {
             setIsSavingProject(false);

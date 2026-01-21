@@ -16,6 +16,9 @@
 
 import { GeminiClient } from '@/lib/gemini/client'
 import type { Dossier, Topic, TopicCategory } from '../types'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('pautaGeneratorService');
 
 // =====================================================
 // TYPES
@@ -272,7 +275,7 @@ class PautaGeneratorService {
 
       return pauta
     } catch (error) {
-      console.error('Error generating pauta:', error)
+      log.error('Error generating pauta:', error)
       throw error
     }
   }
@@ -357,7 +360,7 @@ Return ONLY valid JSON.
         suggestedTheme: data.suggestedTheme || 'Career and Trajectory'
       }
     } catch (error) {
-      console.error('Deep research failed:', error)
+      log.error('Deep research failed:', error)
       // Fallback data - ensure all required fields exist
       return {
         biography: `${guestName} is a personality to be researched. Detailed information will be available soon.`,
@@ -466,7 +469,7 @@ Return ONLY valid JSON.
 
       return data as PautaOutline
     } catch (error) {
-      console.error('Outline generation failed:', error)
+      log.error('Outline generation failed:', error)
       // Fallback outline
       return {
         title: `Interview with ${guestName}: ${theme}`,
@@ -578,7 +581,7 @@ Return ONLY valid JSON.
 
       return data.questions || []
     } catch (error) {
-      console.error('Question generation failed:', error)
+      log.error('Question generation failed:', error)
       // Fallback questions
       return [
         {
@@ -656,7 +659,7 @@ Return ONLY valid JSON.
 
       return data.iceBreakers || []
     } catch (error) {
-      console.error('Ice breakers generation failed:', error)
+      log.error('Ice breakers generation failed:', error)
       return [
         `${guestName}, what was the last thing that made you laugh?`,
         'If you could have dinner with anyone, living or dead, who would it be?',
@@ -825,7 +828,7 @@ Return only the refined text, no JSON.
 
       return response.result || currentContent
     } catch (error) {
-      console.error('Section refinement failed:', error)
+      log.error('Section refinement failed:', error)
       return currentContent
     }
   }
@@ -906,7 +909,7 @@ Return ONLY valid JSON.
         ]
       }
     } catch (error) {
-      console.error('Source enrichment failed:', error)
+      log.error('Source enrichment failed:', error)
       return currentPauta
     }
   }

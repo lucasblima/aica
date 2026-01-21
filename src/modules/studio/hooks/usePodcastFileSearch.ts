@@ -11,6 +11,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useModuleFileSearch } from '@/hooks/useFileSearch';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('usePodcastFileSearch');
   FileSearchCorpus,
   FileSearchDocument,
   FileSearchResult,
@@ -100,7 +103,7 @@ export function usePodcastFileSearch(options: UsePodcastFileSearchOptions = {}) 
       setCorpus(newCorpus);
       return newCorpus;
     } catch (error) {
-      console.error('[usePodcastFileSearch] ensureCorpus error:', error);
+      log.error('[usePodcastFileSearch] ensureCorpus error:', error);
       throw error;
     }
   }, [episodeId, showId, baseHook]);
@@ -154,10 +157,10 @@ export function usePodcastFileSearch(options: UsePodcastFileSearchOptions = {}) 
           },
         });
 
-        console.log('[usePodcastFileSearch] Transcrição indexada:', document.id);
+        log.debug('[usePodcastFileSearch] Transcrição indexada:', document.id);
         return document;
       } catch (error) {
-        console.error('[usePodcastFileSearch] indexTranscription error:', error);
+        log.error('[usePodcastFileSearch] indexTranscription error:', error);
         throw error;
       } finally {
         setIsIndexing(false);
@@ -187,7 +190,7 @@ export function usePodcastFileSearch(options: UsePodcastFileSearchOptions = {}) 
 
         return results;
       } catch (error) {
-        console.error('[usePodcastFileSearch] searchInEpisode error:', error);
+        log.error('[usePodcastFileSearch] searchInEpisode error:', error);
         throw error;
       }
     },
@@ -226,7 +229,7 @@ export function usePodcastFileSearch(options: UsePodcastFileSearchOptions = {}) 
 
         return await searchInEpisode(enrichedQuery, resultCount);
       } catch (error) {
-        console.error('[usePodcastFileSearch] searchWithContext error:', error);
+        log.error('[usePodcastFileSearch] searchWithContext error:', error);
         throw error;
       }
     },
@@ -293,7 +296,7 @@ export function usePodcastFileSearch(options: UsePodcastFileSearchOptions = {}) 
       }
       return await baseHook.loadDocuments(corpus?.id);
     } catch (error) {
-      console.error('[usePodcastFileSearch] loadTranscriptions error:', error);
+      log.error('[usePodcastFileSearch] loadTranscriptions error:', error);
       throw error;
     }
   }, [corpus, ensureCorpus, baseHook]);
@@ -306,7 +309,7 @@ export function usePodcastFileSearch(options: UsePodcastFileSearchOptions = {}) 
       try {
         await baseHook.removeDocument(documentId);
       } catch (error) {
-        console.error('[usePodcastFileSearch] removeTranscription error:', error);
+        log.error('[usePodcastFileSearch] removeTranscription error:', error);
         throw error;
       }
     },
@@ -326,7 +329,7 @@ export function usePodcastFileSearch(options: UsePodcastFileSearchOptions = {}) 
   useEffect(() => {
     if (autoLoad && (episodeId || showId)) {
       ensureCorpus().catch((error) => {
-        console.warn('[usePodcastFileSearch] Auto-load failed:', error);
+        log.warn('[usePodcastFileSearch] Auto-load failed:', error);
       });
     }
   }, [autoLoad, episodeId, showId, ensureCorpus]);
@@ -386,7 +389,7 @@ export function usePodcastQuickSearch(episodeId: string) {
         await ensureCorpus();
         return await searchInEpisode(query, resultCount);
       } catch (error) {
-        console.error('[usePodcastQuickSearch] error:', error);
+        log.error('[usePodcastQuickSearch] error:', error);
         throw error;
       }
     },

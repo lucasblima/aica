@@ -12,6 +12,9 @@
 
 import { GeminiClient } from '@/lib/gemini'
 import type { Dossier, WorkspaceCustomSource } from '../types'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('podcastAIService');
 
 // Initialize client singleton
 const geminiClient = GeminiClient.getInstance()
@@ -43,7 +46,7 @@ export interface GuestSearchResult {
  * @example
  * ```ts
  * const dossier = await generateDossier('Elon Musk', 'Inovação e Tecnologia')
- * console.log(dossier.biography)
+ * log.debug(dossier.biography)
  * ```
  */
 export async function generateDossier(
@@ -52,7 +55,7 @@ export async function generateDossier(
   customSources?: WorkspaceCustomSource[]
 ): Promise<Dossier> {
   try {
-    console.log('[podcastAIService] Generating dossier:', { guestName, theme, customSources })
+    log.debug('[podcastAIService] Generating dossier:', { guestName, theme, customSources })
 
     const response = await geminiClient.call({
       action: 'generate_dossier',
@@ -83,7 +86,7 @@ export async function generateDossier(
       technicalSheet: data.technicalSheet || undefined
     }
 
-    console.log('[podcastAIService] Dossier generated successfully:', {
+    log.debug('[podcastAIService] Dossier generated successfully:', {
       biographyLength: dossier.biography.length,
       controversiesCount: dossier.controversies.length,
       topicsCount: dossier.suggestedTopics.length,
@@ -93,7 +96,7 @@ export async function generateDossier(
     return dossier
 
   } catch (error) {
-    console.error('[podcastAIService] Error generating dossier:', error)
+    log.error('[podcastAIService] Error generating dossier:', error)
 
     // Fallback dossier
     return {
@@ -117,7 +120,7 @@ export async function generateDossier(
  * @example
  * ```ts
  * const results = await searchGuestProfile('Bill Gates', 'Microsoft Founder')
- * console.log(results.bio)
+ * log.debug(results.bio)
  * ```
  */
 export async function searchGuestProfile(
@@ -125,7 +128,7 @@ export async function searchGuestProfile(
   reference: string
 ): Promise<GuestSearchResult> {
   try {
-    console.log('[podcastAIService] Searching guest profile:', { name, reference })
+    log.debug('[podcastAIService] Searching guest profile:', { name, reference })
 
     const response = await geminiClient.call({
       action: 'intelligent_search',
@@ -149,7 +152,7 @@ export async function searchGuestProfile(
       relevance: data.relevance || 0.5
     }
 
-    console.log('[podcastAIService] Guest profile found:', {
+    log.debug('[podcastAIService] Guest profile found:', {
       name: result.name,
       bioLength: result.bio.length,
       relevance: result.relevance
@@ -158,7 +161,7 @@ export async function searchGuestProfile(
     return result
 
   } catch (error) {
-    console.error('[podcastAIService] Error searching guest profile:', error)
+    log.error('[podcastAIService] Error searching guest profile:', error)
 
     // Fallback result
     return {
@@ -185,7 +188,7 @@ export async function suggestTrendingGuest(): Promise<string> {
 
     return response.result || ''
   } catch (error) {
-    console.error('[podcastAIService] Error suggesting guest:', error)
+    log.error('[podcastAIService] Error suggesting guest:', error)
     return ''
   }
 }
@@ -206,7 +209,7 @@ export async function suggestTrendingTheme(guestName: string): Promise<string> {
 
     return response.result || 'Carreira e Atualidades'
   } catch (error) {
-    console.error('[podcastAIService] Error suggesting theme:', error)
+    log.error('[podcastAIService] Error suggesting theme:', error)
     return ''
   }
 }
@@ -240,7 +243,7 @@ export async function generateMoreIceBreakers(
 
     return response.result || []
   } catch (error) {
-    console.error('[podcastAIService] Error generating ice breakers:', error)
+    log.error('[podcastAIService] Error generating ice breakers:', error)
     return []
   }
 }

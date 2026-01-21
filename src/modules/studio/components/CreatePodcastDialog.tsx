@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('CreatePodcastDialog');
 
 interface CreatePodcastDialogProps {
     isOpen: boolean;
@@ -26,7 +29,7 @@ export const CreatePodcastDialog: React.FC<CreatePodcastDialogProps> = ({ isOpen
             setDescription('');
             onClose();
         } catch (error) {
-            console.error('Error submitting form:', error);
+            log.error('Error submitting form:', error);
         } finally {
             setIsSubmitting(false);
         }
