@@ -112,11 +112,10 @@ export const updateAssociationSyncStatus = async (
 // Get user profile
 export const getUserProfile = async (userId: string) => {
     try {
+        // Use RPC function to ensure profile exists before querying
+        // This prevents 406 errors by auto-creating the profile if missing
         const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', userId)
-            .single();
+            .rpc('ensure_user_profile_exists', { p_user_id: userId });
 
         if (error) throw error;
         return data;
