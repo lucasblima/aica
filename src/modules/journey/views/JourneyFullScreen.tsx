@@ -4,7 +4,10 @@
  */
 
 import React, { useState } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { AnimatePresence } from 'framer-motion'
+
+const log = createNamespacedLogger('JourneyFullScreen')
 import { useNavigate } from 'react-router-dom'
 import { QuickCapture } from '../components/capture/QuickCapture'
 import { MicrophoneFAB } from '../components/ceramic'
@@ -37,9 +40,9 @@ import { SettingsMenu, HelpButton } from '@/components'
 export function JourneyFullScreen() {
   // Debug: Log when component mounts
   React.useEffect(() => {
-    console.log('[JourneyFullScreen] Component mounted');
+    log.debug('[JourneyFullScreen] Component mounted');
     return () => {
-      console.log('[JourneyFullScreen] Component unmounting');
+      log.debug('[JourneyFullScreen] Component unmounting');
     };
   }, []);
 
@@ -118,7 +121,7 @@ export function JourneyFullScreen() {
       setShowCapture(false)
       refreshStats()
     } catch (error) {
-      console.error('Error creating moment:', error)
+      log.error('Error creating moment:', error)
     }
   }
 
@@ -146,7 +149,7 @@ export function JourneyFullScreen() {
 
       refreshStats()
     } catch (error) {
-      console.error('Error answering question:', error)
+      log.error('Error answering question:', error)
     }
   }
 
@@ -160,7 +163,7 @@ export function JourneyFullScreen() {
 
       refreshStats()
     } catch (error) {
-      console.error('Error adding reflection:', error)
+      log.error('Error adding reflection:', error)
     }
   }
 

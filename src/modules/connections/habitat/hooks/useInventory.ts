@@ -16,6 +16,8 @@ import {
   searchInventory,
 } from '../services/inventoryService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useInventory');
   InventoryItem,
   CreateInventoryItemPayload,
   UpdateInventoryItemPayload,
@@ -58,7 +60,7 @@ export function useInventory(propertyId: string): UseInventoryReturn {
       setItems(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading inventory:', err);
+      log.error('Error loading inventory:', err);
     } finally {
       setLoading(false);
     }
@@ -179,7 +181,7 @@ export function useInventoryItem(itemId: string | null) {
       setItem(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading inventory item:', err);
+      log.error('Error loading inventory item:', err);
     } finally {
       setLoading(false);
     }
@@ -219,7 +221,7 @@ export function useWarrantyAlerts(propertyId: string, daysThreshold: number = 30
       setAlerts(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading warranty alerts:', err);
+      log.error('Error loading warranty alerts:', err);
     } finally {
       setLoading(false);
     }

@@ -8,7 +8,10 @@
  */
 
 import { ReactNode } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { Navigate } from 'react-router-dom'
+
+const log = createNamespacedLogger('AdminGuard')
 import { useAuth } from '@/hooks/useAuth'
 import { LoadingScreen } from '@/components/ui'
 
@@ -32,7 +35,7 @@ export function AdminGuard({ children, fallbackPath = '/' }: AdminGuardProps) {
   // Check if user has admin flag in metadata
   const isAdmin = user.user_metadata?.is_admin === true
 
-  console.log('[AdminGuard] Checking admin access:', {
+  log.debug('[AdminGuard] Checking admin access:', {
     userId: user.id,
     email: user.email,
     isAdmin,
@@ -40,7 +43,7 @@ export function AdminGuard({ children, fallbackPath = '/' }: AdminGuardProps) {
   })
 
   if (!isAdmin) {
-    console.warn('[AdminGuard] Access denied: user is not an admin')
+    log.warn('[AdminGuard] Access denied: user is not an admin')
     return <Navigate to={fallbackPath} replace />
   }
 

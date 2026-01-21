@@ -3,6 +3,9 @@ import { Settings, LogOut, User, DollarSign, FileSearch, Activity } from 'lucide
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('SettingsMenu');
 
 interface SettingsMenuProps {
     userEmail?: string;
@@ -40,7 +43,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout,
 
             // If error is session missing, just clear storage and reload
             if (error && error.message.includes('session')) {
-                console.log('Session already expired, clearing local storage...');
+                log.debug('Session already expired, clearing local storage...');
                 localStorage.clear();
                 sessionStorage.clear();
                 window.location.href = '/';
@@ -49,7 +52,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout,
 
             // Handle other errors
             if (error) {
-                console.error('Logout error:', error);
+                log.error('Logout error:', { error });
                 // Even with error, try to clear and restart
                 localStorage.clear();
                 sessionStorage.clear();
@@ -65,7 +68,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout,
                 window.location.href = '/';
             }
         } catch (err) {
-            console.error('Logout failed:', err);
+            log.error('Logout failed:', { error: err });
             // Force logout by clearing everything
             localStorage.clear();
             sessionStorage.clear();

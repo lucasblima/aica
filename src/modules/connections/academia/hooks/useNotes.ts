@@ -8,6 +8,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { noteService } from '../services/noteService';
 import type { AcademiaNote, CreateNotePayload, UpdateNotePayload, NoteType } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useNotes');
 
 interface UseNotesOptions {
   spaceId: string;
@@ -82,7 +84,7 @@ export function useNotes(options: UseNotesOptions): UseNotesReturn {
       setNotes(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching notes:', err);
+      log.error('Error fetching notes:', err);
     } finally {
       setLoading(false);
     }

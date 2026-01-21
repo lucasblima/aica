@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { ConnectionSpace, CreateSpacePayload, UpdateSpacePayload, Archetype, ConnectionMember, ARCHETYPE_CONFIG } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('SpaceService');
 
 /**
  * Space Service
@@ -30,13 +33,13 @@ export const spaceService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching spaces:', error);
+        log.error('Error fetching spaces:', { error });
         throw new Error(`Failed to fetch spaces: ${error.message}`);
       }
 
       return data as ConnectionSpace[];
     } catch (error) {
-      console.error('Error in getSpaces:', error);
+      log.error('Error in getSpaces:', { error });
       throw error;
     }
   },
@@ -63,13 +66,13 @@ export const spaceService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching spaces by archetype:', error);
+        log.error('Error fetching spaces by archetype:', { error, archetype });
         throw new Error(`Failed to fetch ${archetype} spaces: ${error.message}`);
       }
 
       return data as ConnectionSpace[];
     } catch (error) {
-      console.error('Error in getSpacesByArchetype:', error);
+      log.error('Error in getSpacesByArchetype:', { error });
       throw error;
     }
   },
@@ -96,7 +99,7 @@ export const spaceService = {
         .maybeSingle();
 
       if (spaceError) {
-        console.error('Error fetching space:', spaceError);
+        log.error('Error fetching space:', { error: spaceError, id });
         throw new Error(`Failed to fetch space: ${spaceError.message}`);
       }
 
@@ -115,7 +118,7 @@ export const spaceService = {
         .order('joined_at', { ascending: false });
 
       if (membersError) {
-        console.error('Error fetching members:', membersError);
+        log.error('Error fetching members:', { error: membersError, id });
         throw new Error(`Failed to fetch members: ${membersError.message}`);
       }
 
@@ -124,7 +127,7 @@ export const spaceService = {
         members: membersData as ConnectionMember[]
       } as ConnectionSpace & { members: ConnectionMember[] };
     } catch (error) {
-      console.error('Error in getSpaceById:', error);
+      log.error('Error in getSpaceById:', { error });
       throw error;
     }
   },
@@ -169,13 +172,13 @@ export const spaceService = {
         .single();
 
       if (error) {
-        console.error('Error creating space:', error);
+        log.error('Error creating space:', { error, data });
         throw new Error(`Failed to create space: ${error.message}`);
       }
 
       return spaceData as ConnectionSpace;
     } catch (error) {
-      console.error('Error in createSpace:', error);
+      log.error('Error in createSpace:', { error });
       throw error;
     }
   },
@@ -206,7 +209,7 @@ export const spaceService = {
         .single();
 
       if (error) {
-        console.error('Error updating space:', error);
+        log.error('Error updating space:', { error, id, data });
         throw new Error(`Failed to update space: ${error.message}`);
       }
 
@@ -216,7 +219,7 @@ export const spaceService = {
 
       return spaceData as ConnectionSpace;
     } catch (error) {
-      console.error('Error in updateSpace:', error);
+      log.error('Error in updateSpace:', { error });
       throw error;
     }
   },
@@ -242,11 +245,11 @@ export const spaceService = {
         .eq('owner_id', user.id);
 
       if (error) {
-        console.error('Error deleting space:', error);
+        log.error('Error deleting space:', { error, id });
         throw new Error(`Failed to delete space: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in deleteSpace:', error);
+      log.error('Error in deleteSpace:', { error });
       throw error;
     }
   },
@@ -271,7 +274,7 @@ export const spaceService = {
         .single();
 
       if (fetchError) {
-        console.error('Error fetching space:', fetchError);
+        log.error('Error fetching space:', { error: fetchError, id });
         throw new Error(`Failed to fetch space: ${fetchError.message}`);
       }
 
@@ -292,13 +295,13 @@ export const spaceService = {
         .single();
 
       if (updateError) {
-        console.error('Error toggling favorite:', updateError);
+        log.error('Error toggling favorite:', { error: updateError, id });
         throw new Error(`Failed to toggle favorite: ${updateError.message}`);
       }
 
       return spaceData as ConnectionSpace;
     } catch (error) {
-      console.error('Error in toggleFavorite:', error);
+      log.error('Error in toggleFavorite:', { error });
       throw error;
     }
   },
@@ -325,11 +328,11 @@ export const spaceService = {
         .eq('owner_id', user.id);
 
       if (error) {
-        console.error('Error updating last accessed:', error);
+        log.error('Error updating last accessed:', { error, id });
         throw new Error(`Failed to update last accessed: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error in updateLastAccessed:', error);
+      log.error('Error in updateLastAccessed:', { error });
       throw error;
     }
   },

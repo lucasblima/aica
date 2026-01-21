@@ -9,6 +9,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { eventService, DateRange } from '../services/eventService';
 import type { ConnectionEvent, CreateEventPayload, ConnectionSpace } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useSpaceEvents');
 
 interface UseSpaceEventsReturn {
   events: ConnectionEvent[];
@@ -65,7 +67,7 @@ export function useSpaceEvents(
       setEvents(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching events:', err);
+      log.error('Error fetching events:', err);
     } finally {
       setLoading(false);
     }
@@ -198,7 +200,7 @@ export function useUpcomingEvents(limit: number = 5) {
       setUpcomingEvents(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching upcoming events:', err);
+      log.error('Error fetching upcoming events:', err);
     } finally {
       setLoading(false);
     }

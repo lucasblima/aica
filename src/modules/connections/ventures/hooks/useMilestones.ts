@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { milestoneService } from '../services';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useMilestones');
   VenturesMilestone,
   CreateMilestonePayload,
   UpdateMilestonePayload,
@@ -58,7 +60,7 @@ export function useMilestones(entityId: string | undefined): UseMilestonesReturn
       setActiveMilestones(Array.isArray(active) ? active : []);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching milestones:', err);
+      log.error('Error fetching milestones:', err);
       // On error, ensure arrays are still valid
       setMilestones([]);
       setActiveMilestones([]);
@@ -249,7 +251,7 @@ export function useMilestonesByStatus(
       setMilestones(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching milestones by status:', err);
+      log.error('Error fetching milestones by status:', err);
     } finally {
       setLoading(false);
     }
@@ -311,7 +313,7 @@ export function useMilestonesByCategory(
       setMilestones(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching milestones by category:', err);
+      log.error('Error fetching milestones by category:', err);
     } finally {
       setLoading(false);
     }

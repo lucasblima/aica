@@ -6,6 +6,10 @@
 
 import { supabase } from './supabaseClient';
 import { syncGoogleContacts, SyncReport as GoogleSyncReport } from './googleContactsService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ContactSyncService');
+
 
 /**
  * Comprehensive sync report combining all sources
@@ -58,12 +62,12 @@ export async function fullSync(): Promise<FullSyncReport> {
 
   try {
     // Step 1: Sync from Google Contacts
-    console.log('[contactSyncService] Starting full sync: Google + WhatsApp...');
+    log.debug('[contactSyncService] Starting full sync: Google + WhatsApp...');
     try {
       report.google = await syncGoogleContacts();
-      console.log('[contactSyncService] Google sync complete:', report.google);
+      log.debug('[contactSyncService] Google sync complete:', report.google);
     } catch (error) {
-      console.error('[contactSyncService] Google sync failed:', error);
+      log.error('[contactSyncService] Google sync failed:', { error: error });
       report.google.errors++;
       report.overallStatus = 'partial';
     }
@@ -72,9 +76,9 @@ export async function fullSync(): Promise<FullSyncReport> {
     try {
       const mergeResult = await mergeWhatsAppContacts();
       report.whatsapp = mergeResult;
-      console.log('[contactSyncService] WhatsApp merge complete:', mergeResult);
+      log.debug('[contactSyncService] WhatsApp merge complete:', mergeResult);
     } catch (error) {
-      console.error('[contactSyncService] WhatsApp merge failed:', error);
+      log.error('[contactSyncService] WhatsApp merge failed:', { error: error });
       report.whatsapp.errors++;
       report.overallStatus = 'partial';
     }
@@ -83,9 +87,9 @@ export async function fullSync(): Promise<FullSyncReport> {
     try {
       const dedupResult = await deduplicateAllContacts();
       report.deduplication = dedupResult;
-      console.log('[contactSyncService] Deduplication complete:', dedupResult);
+      log.debug('[contactSyncService] Deduplication complete:', dedupResult);
     } catch (error) {
-      console.error('[contactSyncService] Deduplication failed:', error);
+      log.error('[contactSyncService] Deduplication failed:', { error: error });
       report.deduplication.errors++;
       report.overallStatus = 'partial';
     }
@@ -100,11 +104,11 @@ export async function fullSync(): Promise<FullSyncReport> {
     }
 
     report.totalDuration = Date.now() - startTime;
-    console.log('[contactSyncService] Full sync complete:', report);
+    log.debug('[contactSyncService] Full sync complete:', report);
 
     return report;
   } catch (error) {
-    console.error('[contactSyncService] Full sync failed:', error);
+    log.error('[contactSyncService] Full sync failed:', { error: error });
     report.overallStatus = 'failed';
     report.totalDuration = Date.now() - startTime;
     throw error;
@@ -116,7 +120,7 @@ export async function fullSync(): Promise<FullSyncReport> {
  * Useful for periodic background syncs
  */
 export async function incrementalSync(): Promise<FullSyncReport> {
-  console.log('[contactSyncService] Starting incremental sync...');
+  log.debug('[contactSyncService] Starting incremental sync...');
   // Similar to fullSync but with WHERE last_synced_at < NOW() - 24h
   // For now, delegates to fullSync
   return fullSync();
@@ -146,7 +150,7 @@ async function mergeWhatsAppContacts(): Promise<{
       .in('sync_source', ['evolution', 'whatsapp']);
 
     if (whatsappError) {
-      console.error('[contactSyncService] Error fetching WhatsApp contacts:', whatsappError);
+      log.error('[contactSyncService] Error fetching WhatsApp contacts:', { error: whatsappError });
       result.errors++;
       return result;
     }
@@ -161,7 +165,7 @@ async function mergeWhatsAppContacts(): Promise<{
       .eq('sync_source', 'google');
 
     if (googleError) {
-      console.error('[contactSyncService] Error fetching Google contacts:', googleError);
+      log.error('[contactSyncService] Error fetching Google contacts:', { error: googleError });
       result.errors++;
       return result;
     }
@@ -193,7 +197,7 @@ async function mergeWhatsAppContacts(): Promise<{
           .eq('id', whatsappContact.id);
 
         if (updateError) {
-          console.error('[contactSyncService] Merge error:', updateError);
+          log.error('[contactSyncService] Merge error:', { error: updateError });
           result.errors++;
         } else {
           result.merged++;
@@ -201,10 +205,10 @@ async function mergeWhatsAppContacts(): Promise<{
       }
     }
 
-    console.log('[contactSyncService] WhatsApp merge complete:', result);
+    log.debug('[contactSyncService] WhatsApp merge complete:', result);
     return result;
   } catch (error) {
-    console.error('[contactSyncService] WhatsApp merge failed:', error);
+    log.error('[contactSyncService] WhatsApp merge failed:', { error: error });
     result.errors++;
     return result;
   }
@@ -232,7 +236,7 @@ async function deduplicateAllContacts(): Promise<{
       .eq('user_id', user.id);
 
     if (fetchError) {
-      console.error('[contactSyncService] Error fetching contacts for dedup:', fetchError);
+      log.error('[contactSyncService] Error fetching contacts for dedup:', { error: fetchError });
       result.errors++;
       return result;
     }
@@ -284,10 +288,10 @@ async function deduplicateAllContacts(): Promise<{
       }
     }
 
-    console.log('[contactSyncService] Deduplication complete:', result);
+    log.debug('[contactSyncService] Deduplication complete:', result);
     return result;
   } catch (error) {
-    console.error('[contactSyncService] Deduplication failed:', error);
+    log.error('[contactSyncService] Deduplication failed:', { error: error });
     result.errors++;
     return result;
   }
@@ -330,7 +334,7 @@ async function mergeDuplicateContacts(
         .eq('id', dup.id);
 
       if (error) {
-        console.error('[contactSyncService] Error deleting duplicate:', error);
+        log.error('[contactSyncService] Error deleting duplicate:', { error: error });
         return false;
       }
 
@@ -340,7 +344,7 @@ async function mergeDuplicateContacts(
     processedIds.add(primary.id);
     return true;
   } catch (error) {
-    console.error('[contactSyncService] Error merging duplicates:', error);
+    log.error('[contactSyncService] Error merging duplicates:', { error: error });
     return false;
   }
 }
@@ -358,7 +362,7 @@ export async function getSyncStats() {
     .eq('user_id', user.id);
 
   if (error) {
-    console.error('[contactSyncService] Error getting sync stats:', error);
+    log.error('[contactSyncService] Error getting sync stats:', { error: error });
     return null;
   }
 

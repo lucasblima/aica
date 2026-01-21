@@ -7,6 +7,10 @@
  */
 
 import { supabase } from './supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PairingCodeService');
+
 
 export interface PairingCodeResult {
   success: boolean
@@ -44,7 +48,7 @@ export async function generatePairingCode(
     })
 
     if (response.error) {
-      console.error('[pairingCodeService] Error:', response.error)
+      log.error('[pairingCodeService] Error:', response.error)
       return {
         success: false,
         error: response.error.message || 'Falha ao gerar código',
@@ -71,7 +75,7 @@ export async function generatePairingCode(
       expiresAt: data.expiresAt,
     }
   } catch (error) {
-    console.error('[pairingCodeService] Unexpected error:', error)
+    log.error('[pairingCodeService] Unexpected error:', { error: error })
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro inesperado',

@@ -5,7 +5,10 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '../../../services/supabaseClient';
+
+const log = createNamespacedLogger('useTransactions');
 import type { FinanceTransaction, TransactionFilters } from '../types';
 
 const PAGE_SIZE = 50;
@@ -93,7 +96,7 @@ export function useTransactions(
         setHasMore(newTransactions.length === PAGE_SIZE);
         setPage(pageNum);
       } catch (err) {
-        console.error('Error fetching transactions:', err);
+        log.error('Error fetching transactions:', err);
         setError('Erro ao carregar transacoes');
       } finally {
         setLoading(false);
@@ -132,7 +135,7 @@ export function useTransactions(
           prev.map((t) => (t.id === id ? { ...t, ...data } : t))
         );
       } catch (err) {
-        console.error('Error updating transaction:', err);
+        log.error('Error updating transaction:', err);
         throw new Error('Erro ao atualizar transacao');
       }
     },
@@ -151,7 +154,7 @@ export function useTransactions(
       setTransactions((prev) => prev.filter((t) => t.id !== id));
       setTotalCount((prev) => prev - 1);
     } catch (err) {
-      console.error('Error deleting transaction:', err);
+      log.error('Error deleting transaction:', err);
       throw new Error('Erro ao deletar transacao');
     }
   }, []);

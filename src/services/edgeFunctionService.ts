@@ -11,6 +11,10 @@
  */
 
 import { supabase } from './supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('EdgeFunctionService');
+
 
 // ============================================================================
 // CORE TYPES
@@ -112,7 +116,7 @@ async function retryWithBackoff<T>(
 
       if (attempt < maxRetries) {
         const delayMs = baseDelayMs * Math.pow(2, attempt)
-        console.log(`[EdgeFunction] Retry ${attempt + 1}/${maxRetries} after ${delayMs}ms`)
+        log.debug(`[EdgeFunction] Retry ${attempt + 1}/${maxRetries} after ${delayMs}ms`)
         await new Promise(resolve => setTimeout(resolve, delayMs))
       }
     }
@@ -141,7 +145,7 @@ export async function invokeEdgeFunction<T = any>(
     const latencyMs = Date.now() - startTime
 
     if (error) {
-      console.error(`[EdgeFunction] ${functionName} error:`, {
+      log.error(`[EdgeFunction] ${functionName} error:`, {
         ...logContext,
         error: error.message,
         latencyMs,
@@ -149,7 +153,7 @@ export async function invokeEdgeFunction<T = any>(
       throw new Error(`Edge Function error: ${error.message || 'Unknown error'}`)
     }
 
-    console.log(`[EdgeFunction] ${functionName} completed in ${latencyMs}ms`, logContext)
+    log.debug(`[EdgeFunction] ${functionName} completed in ${latencyMs}ms`, logContext)
     return data as T
   }
 
@@ -186,7 +190,7 @@ export async function callGeminiEdgeFunction<T = any>(
     })
 
     if (error) {
-      console.error(`[EdgeFunction] Error calling action "${action}":`, error)
+      log.error(`[EdgeFunction] Error calling action "${action}":`, { error: error })
       throw new Error(`Edge Function error: ${error.message || 'Unknown error'}`)
     }
 
@@ -200,7 +204,7 @@ export async function callGeminiEdgeFunction<T = any>(
       throw new Error('Edge Function returned success: false')
     }
 
-    console.log(`[EdgeFunction] Action "${action}" completed in ${response.latencyMs || 0}ms`, {
+    log.debug(`[EdgeFunction] Action "${action}" completed in ${response.latencyMs || 0}ms`, {
       ...(response.usageMetadata && {
         tokens: {
           input: response.usageMetadata.promptTokenCount,
@@ -216,7 +220,7 @@ export async function callGeminiEdgeFunction<T = any>(
       ...(response.usageMetadata && { __usageMetadata: response.usageMetadata })
     } as T & { __usageMetadata?: EdgeFunctionResponse['usageMetadata'] }
   } catch (error) {
-    console.error(`[EdgeFunction] Failed to call action "${action}":`, error)
+    log.error(`[EdgeFunction] Failed to call action "${action}":`, { error: error })
     throw error instanceof Error
       ? error
       : new Error('Unknown error calling Edge Function')

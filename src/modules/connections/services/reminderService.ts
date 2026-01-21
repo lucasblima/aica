@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ReminderService');
 
 /**
  * Reminder configuration
@@ -43,7 +46,7 @@ export const reminderService = {
     reminderType: 'notification' | 'email' | 'sms' = 'notification'
   ): Promise<Reminder> {
     try {
-      console.log('[reminderService] 🔔 Setting reminder:', {
+      log.debug('[reminderService] 🔔 Setting reminder:', {
         eventId,
         minutesBefore,
         reminderType,
@@ -95,10 +98,10 @@ export const reminderService = {
         throw new Error(`Failed to set reminder: ${result.error.message}`);
       }
 
-      console.log('[reminderService] ✅ Reminder set successfully:', { reminderId: result.data.id });
+      log.debug('[reminderService] ✅ Reminder set successfully:', { reminderId: result.data.id });
       return result.data as Reminder;
     } catch (error) {
-      console.error('[reminderService] ❌ Error setting reminder:', error);
+      log.error('[reminderService] ❌ Error setting reminder:', { error });
       throw error;
     }
   },
@@ -109,7 +112,7 @@ export const reminderService = {
    */
   async getPendingReminders(): Promise<PendingReminder[]> {
     try {
-      console.log('[reminderService] 📋 Fetching pending reminders');
+      log.debug('[reminderService] 📋 Fetching pending reminders');
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -139,7 +142,7 @@ export const reminderService = {
       }
 
       if (!reminders || reminders.length === 0) {
-        console.log('[reminderService] ℹ️ No pending reminders');
+        log.debug('[reminderService] ℹ️ No pending reminders');
         return [];
       }
 
@@ -173,13 +176,13 @@ export const reminderService = {
         }
       }
 
-      console.log('[reminderService] ✅ Pending reminders fetched:', {
+      log.debug('[reminderService] ✅ Pending reminders fetched:', {
         count: pendingReminders.length,
       });
 
       return pendingReminders;
     } catch (error) {
-      console.error('[reminderService] ❌ Error fetching pending reminders:', error);
+      log.error('[reminderService] ❌ Error fetching pending reminders:', { error });
       throw error;
     }
   },
@@ -189,7 +192,7 @@ export const reminderService = {
    */
   async markReminderAsSent(reminderId: string): Promise<Reminder> {
     try {
-      console.log('[reminderService] ✉️ Marking reminder as sent:', { reminderId });
+      log.debug('[reminderService] ✉️ Marking reminder as sent:', { reminderId });
 
       const result = await supabase
         .from('connection_event_reminders')
@@ -206,10 +209,10 @@ export const reminderService = {
         throw new Error(`Failed to mark reminder as sent: ${result.error.message}`);
       }
 
-      console.log('[reminderService] ✅ Reminder marked as sent');
+      log.debug('[reminderService] ✅ Reminder marked as sent');
       return result.data as Reminder;
     } catch (error) {
-      console.error('[reminderService] ❌ Error marking reminder as sent:', error);
+      log.error('[reminderService] ❌ Error marking reminder as sent:', { error });
       throw error;
     }
   },
@@ -219,7 +222,7 @@ export const reminderService = {
    */
   async removeReminder(reminderId: string): Promise<void> {
     try {
-      console.log('[reminderService] 🗑️ Removing reminder:', { reminderId });
+      log.debug('[reminderService] 🗑️ Removing reminder:', { reminderId });
 
       const { error } = await supabase
         .from('connection_event_reminders')
@@ -230,9 +233,9 @@ export const reminderService = {
         throw new Error(`Failed to remove reminder: ${error.message}`);
       }
 
-      console.log('[reminderService] ✅ Reminder removed');
+      log.debug('[reminderService] ✅ Reminder removed');
     } catch (error) {
-      console.error('[reminderService] ❌ Error removing reminder:', error);
+      log.error('[reminderService] ❌ Error removing reminder:', { error });
       throw error;
     }
   },
@@ -242,7 +245,7 @@ export const reminderService = {
    */
   async getEventReminders(eventId: string): Promise<Reminder[]> {
     try {
-      console.log('[reminderService] 📋 Fetching reminders for event:', { eventId });
+      log.debug('[reminderService] 📋 Fetching reminders for event:', { eventId });
 
       const { data, error } = await supabase
         .from('connection_event_reminders')
@@ -254,10 +257,10 @@ export const reminderService = {
         throw new Error(`Failed to fetch reminders: ${error.message}`);
       }
 
-      console.log('[reminderService] ✅ Event reminders fetched:', { count: (data || []).length });
+      log.debug('[reminderService] ✅ Event reminders fetched:', { count: (data || []).length });
       return (data || []) as Reminder[];
     } catch (error) {
-      console.error('[reminderService] ❌ Error fetching event reminders:', error);
+      log.error('[reminderService] ❌ Error fetching event reminders:', { error });
       throw error;
     }
   },
@@ -270,7 +273,7 @@ export const reminderService = {
     minutesBefore: number
   ): Promise<Reminder> {
     try {
-      console.log('[reminderService] 🔄 Updating reminder:', {
+      log.debug('[reminderService] 🔄 Updating reminder:', {
         reminderId,
         minutesBefore,
       });
@@ -289,10 +292,10 @@ export const reminderService = {
         throw new Error(`Failed to update reminder: ${result.error.message}`);
       }
 
-      console.log('[reminderService] ✅ Reminder updated');
+      log.debug('[reminderService] ✅ Reminder updated');
       return result.data as Reminder;
     } catch (error) {
-      console.error('[reminderService] ❌ Error updating reminder:', error);
+      log.error('[reminderService] ❌ Error updating reminder:', { error });
       throw error;
     }
   },
@@ -303,7 +306,7 @@ export const reminderService = {
    */
   async getUpcomingReminders(): Promise<PendingReminder[]> {
     try {
-      console.log('[reminderService] 🔔 Fetching upcoming reminders');
+      log.debug('[reminderService] 🔔 Fetching upcoming reminders');
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -361,13 +364,13 @@ export const reminderService = {
         }
       }
 
-      console.log('[reminderService] ✅ Upcoming reminders fetched:', {
+      log.debug('[reminderService] ✅ Upcoming reminders fetched:', {
         count: upcomingReminders.length,
       });
 
       return upcomingReminders;
     } catch (error) {
-      console.error('[reminderService] ❌ Error fetching upcoming reminders:', error);
+      log.error('[reminderService] ❌ Error fetching upcoming reminders:', { error });
       throw error;
     }
   },

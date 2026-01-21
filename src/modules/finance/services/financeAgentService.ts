@@ -15,6 +15,9 @@ import type {
   AgentContext,
   DateRange,
 } from '../types'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('FinanceAgentService')
 
 // Initialize Gemini client
 const geminiClient = GeminiClient.getInstance()
@@ -126,7 +129,7 @@ export class FinanceAgentService {
         },
       }
     } catch (error) {
-      console.error('[FinanceAgentService] Error building context:', error)
+      log.error('[FinanceAgentService] Error building context:', error)
       throw error
     }
   }
@@ -174,7 +177,7 @@ export class FinanceAgentService {
       return assistantMessage
 
     } catch (error) {
-      console.error('[FinanceAgentService] Chat error:', error)
+      log.error('[FinanceAgentService] Chat error:', error)
       throw new Error('Erro ao comunicar com o assistente. Tente novamente.')
     }
   }
@@ -238,10 +241,10 @@ Use estas informacoes para responder as perguntas do usuario sobre suas financas
         .insert(messages)
 
       if (error) {
-        console.error('[FinanceAgentService] Error saving conversation:', error)
+        log.error('[FinanceAgentService] Error saving conversation:', error)
       }
     } catch (error) {
-      console.error('[FinanceAgentService] Error saving conversation:', error)
+      log.error('[FinanceAgentService] Error saving conversation:', error)
     }
   }
 
@@ -264,7 +267,7 @@ Use estas informacoes para responder as perguntas do usuario sobre suas financas
 
       return (data || []) as FinanceAgentMessage[]
     } catch (error) {
-      console.error('[FinanceAgentService] Error fetching history:', error)
+      log.error('[FinanceAgentService] Error fetching history:', error)
       return []
     }
   }
@@ -299,7 +302,7 @@ Use estas informacoes para responder as perguntas do usuario sobre suas financas
         ...info,
       }))
     } catch (error) {
-      console.error('[FinanceAgentService] Error fetching sessions:', error)
+      log.error('[FinanceAgentService] Error fetching sessions:', error)
       return []
     }
   }

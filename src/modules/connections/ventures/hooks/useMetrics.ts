@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { metricsService } from '../services';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useMetrics');
   VenturesMetrics,
   CreateMetricsPayload,
   UpdateMetricsPayload,
@@ -51,7 +53,7 @@ export function useMetrics(entityId: string | undefined): UseMetricsReturn {
       setCurrentMetrics(current);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching metrics:', err);
+      log.error('Error fetching metrics:', err);
     } finally {
       setLoading(false);
     }
@@ -197,7 +199,7 @@ export function useMetricsHistory(
       setHistory(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching metrics history:', err);
+      log.error('Error fetching metrics history:', err);
     } finally {
       setLoading(false);
     }

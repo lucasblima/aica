@@ -12,6 +12,10 @@
  */
 
 import { supabase } from './supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ModelRouterService');
+
 
 // =============================================================================
 // TYPES
@@ -207,7 +211,7 @@ class ModelRouterService {
 
       return data as UserPlanDetails;
     } catch (error) {
-      console.error('[ModelRouterService] Failed to get plan details:', error);
+      log.error('[ModelRouterService] Failed to get plan details:', { error: error });
       return null;
     }
   }
@@ -235,7 +239,7 @@ class ModelRouterService {
         remaining: data?.remaining_tokens ?? 999999,
       };
     } catch (error) {
-      console.error('[ModelRouterService] Token check failed:', error);
+      log.error('[ModelRouterService] Token check failed:', { error: error });
       // Fail open for UX
       return { available: true, remaining: 999999 };
     }

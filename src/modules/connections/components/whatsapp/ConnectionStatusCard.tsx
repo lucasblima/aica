@@ -23,6 +23,8 @@ import { useWhatsAppConnection } from '../../hooks/useWhatsAppConnection';
 import { useWhatsAppGamification } from '../../hooks/useWhatsAppGamification';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('ConnectionStatusCard');
 
 // ============================================================================
 // TYPES
@@ -158,7 +160,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
       // Award XP and badge for first connection
       await trackConnection();
     } catch (err) {
-      console.error('[ConnectionStatusCard] Connect error:', err);
+      log.error('[ConnectionStatusCard] Connect error:', err);
     }
   };
 
@@ -167,7 +169,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
     try {
       await disconnect();
     } catch (err) {
-      console.error('[ConnectionStatusCard] Disconnect error:', err);
+      log.error('[ConnectionStatusCard] Disconnect error:', err);
     }
   };
 
@@ -176,7 +178,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
     try {
       await fetchQRCode();
     } catch (err) {
-      console.error('[ConnectionStatusCard] Refresh QR error:', err);
+      log.error('[ConnectionStatusCard] Refresh QR error:', err);
     }
   };
 
@@ -293,7 +295,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
                 checkConnection();
                 trackConnection();
               }}
-              onError={(err) => console.error('[ConnectionStatusCard] Pairing error:', err)}
+              onError={(err) => log.error('[ConnectionStatusCard] Pairing error:', err)}
             />
           )}
 

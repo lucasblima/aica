@@ -15,6 +15,10 @@ import type {
   MonthlyCostSummary,
   AIUsageRecord
 } from '../types/aiCost';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('AICostAnalyticsService');
+
 
 // =====================================================
 // Database RPC Functions
@@ -38,7 +42,7 @@ export async function getUserAICosts(
   });
 
   if (error) {
-    console.error('[aiCostAnalytics] Error calling get_user_ai_costs:', error);
+    log.error('[aiCostAnalytics] Error calling get_user_ai_costs:', { error: error });
     throw error;
   }
 
@@ -58,7 +62,7 @@ export async function getDailyAICosts(
   });
 
   if (error) {
-    console.error('[aiCostAnalytics] Error calling get_daily_ai_costs:', error);
+    log.error('[aiCostAnalytics] Error calling get_daily_ai_costs:', { error: error });
     throw error;
   }
 
@@ -74,7 +78,7 @@ export async function getCurrentMonthCost(userId: string): Promise<number> {
   });
 
   if (error) {
-    console.error('[aiCostAnalytics] Error calling get_current_month_cost:', error);
+    log.error('[aiCostAnalytics] Error calling get_current_month_cost:', { error: error });
     throw error;
   }
 
@@ -101,7 +105,7 @@ export async function getModelCostBreakdown(
     .gte('created_at', startDate);
 
   if (error) {
-    console.error('[aiCostAnalytics] Error fetching model costs:', error);
+    log.error('[aiCostAnalytics] Error fetching model costs:', { error: error });
     throw error;
   }
 
@@ -147,7 +151,7 @@ export async function getOperationCostBreakdown(
     .gte('created_at', startDate);
 
   if (error) {
-    console.error('[aiCostAnalytics] Error fetching operation costs:', error);
+    log.error('[aiCostAnalytics] Error fetching operation costs:', { error: error });
     throw error;
   }
 
@@ -192,7 +196,7 @@ export async function getTopExpensiveOperations(
     .limit(limit);
 
   if (error) {
-    console.error('[aiCostAnalytics] Error fetching top operations:', error);
+    log.error('[aiCostAnalytics] Error fetching top operations:', { error: error });
     throw error;
   }
 
@@ -244,7 +248,7 @@ export async function getAllAIUsageRecords(
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error('[aiCostAnalytics] Error fetching usage records:', error);
+    log.error('[aiCostAnalytics] Error fetching usage records:', { error: error });
     throw error;
   }
 
@@ -268,7 +272,7 @@ export async function getModuleCostBreakdown(
     .not('module_type', 'is', null);
 
   if (error) {
-    console.error('[aiCostAnalytics] Error fetching module costs:', error);
+    log.error('[aiCostAnalytics] Error fetching module costs:', { error: error });
     throw error;
   }
 
@@ -311,7 +315,7 @@ export async function getTotalRequestsCount(
     .gte('created_at', startDate);
 
   if (error) {
-    console.error('[aiCostAnalytics] Error counting requests:', error);
+    log.error('[aiCostAnalytics] Error counting requests:', { error: error });
     return 0;
   }
 

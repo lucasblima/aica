@@ -27,6 +27,8 @@ import { useWhatsAppGamification } from '../../hooks/useWhatsAppGamification';
 import type { ConsentType, ConsentRecord } from '@/types/whatsapp';
 import { ConfirmationModal } from '@/components/ui';
 import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('ConsentManager');
 
 // ============================================================================
 // TYPES
@@ -282,7 +284,7 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({
 
       setConsentStates(newStates);
     } catch (error) {
-      console.error('[ConsentManager] Failed to load consent status:', error);
+      log.error('[ConsentManager] Failed to load consent status:', error);
       setErrorMessage('Erro ao carregar status de consentimento');
     } finally {
       setIsLoading(false);
@@ -305,7 +307,7 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({
       const history = await whatsappConsentService.getConsentHistory(contactPhone);
       setConsentHistory(history.slice(0, 10)); // Show last 10 records
     } catch (error) {
-      console.error('[ConsentManager] Failed to load history:', error);
+      log.error('[ConsentManager] Failed to load history:', error);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -375,7 +377,7 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({
         loadConsentHistory();
       }
     } catch (error) {
-      console.error('[ConsentManager] Toggle consent error:', error);
+      log.error('[ConsentManager] Toggle consent error:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Erro ao atualizar consentimento');
     } finally {
       setIsSaving(false);
@@ -400,7 +402,7 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({
 
       setSuccessMessage('Solicitação de exclusão criada. Dados serão removidos em 72 horas.');
     } catch (error) {
-      console.error('[ConsentManager] Data deletion error:', error);
+      log.error('[ConsentManager] Data deletion error:', error);
       setErrorMessage('Erro ao solicitar exclusão de dados');
     } finally {
       setIsSaving(false);

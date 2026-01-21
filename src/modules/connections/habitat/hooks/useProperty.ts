@@ -14,6 +14,8 @@ import {
   formatPropertyAddress,
 } from '../services/propertyService';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useProperty');
   HabitatProperty,
   CreateHabitatPropertyPayload,
   UpdateHabitatPropertyPayload,
@@ -54,7 +56,7 @@ export function useProperty(spaceId: string): UsePropertyReturn {
       setProperties(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading properties:', err);
+      log.error('Error loading properties:', err);
     } finally {
       setLoading(false);
     }
@@ -122,7 +124,7 @@ export function usePropertyById(propertyId: string | null) {
       setProperty(data);
     } catch (err) {
       setError(err as Error);
-      console.error('Error loading property:', err);
+      log.error('Error loading property:', err);
     } finally {
       setLoading(false);
     }

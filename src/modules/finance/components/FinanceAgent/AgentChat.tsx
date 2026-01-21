@@ -5,7 +5,10 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createNamespacedLogger } from '@/lib/logger';
 import { Send, Sparkles, TrendingDown, PieChart, AlertTriangle, Loader2 } from 'lucide-react';
+
+const log = createNamespacedLogger('AgentChat');
 import DOMPurify from 'dompurify';
 import { financeAgentService } from '../../services/financeAgentService';
 import type { AgentContext } from '../../types';
@@ -118,7 +121,7 @@ Como posso ajudar hoje?`,
         }))
       );
     } catch (error) {
-      console.error('Error loading history:', error);
+      log.error('Error loading history:', error);
     }
   };
 
@@ -163,7 +166,7 @@ Como posso ajudar hoje?`,
       setMessages((prev) => [...prev, assistantMessage]);
       onNewSession?.(sessionId);
     } catch (error) {
-      console.error('Chat error:', error);
+      log.error('Chat error:', error);
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -202,7 +205,7 @@ Como posso ajudar hoje?`,
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Quick action error:', error);
+      log.error('Quick action error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -218,7 +221,7 @@ Como posso ajudar hoje?`,
   const formatContent = (content: string) => {
     // Safety check for non-string content
     if (typeof content !== 'string') {
-      console.warn('AgentChat: received non-string content:', content);
+      log.warn('AgentChat: received non-string content:', content);
       return '';
     }
 

@@ -15,6 +15,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useContactSearch');
   searchContacts,
   ContactSearchResult,
   ContactSearchOptions,
@@ -125,7 +127,7 @@ export function useContactSearch(
       setError(error)
       setResults([])
       setTotalResults(0)
-      console.error('[useContactSearch] Search error:', error)
+      log.error('[useContactSearch] Search error:', error)
     } finally {
       setIsLoading(false)
     }

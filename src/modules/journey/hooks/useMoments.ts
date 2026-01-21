@@ -4,7 +4,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
+
+const log = createNamespacedLogger('useMoments')
 import {
   Moment,
   CreateMomentInput,
@@ -60,7 +63,7 @@ export function useMoments(options: UseMomentsOptions = {}) {
         setHasMore(offset + fetchedMoments.length < count)
       } catch (err) {
         setError(err as Error)
-        console.error('Error fetching moments:', err)
+        log.error('Error fetching moments:', err)
       } finally {
         setIsLoading(false)
       }
@@ -202,7 +205,7 @@ export function useSingleMoment(momentId: string) {
       setMoment(fetchedMoment)
     } catch (err) {
       setError(err as Error)
-      console.error('Error fetching moment:', err)
+      log.error('Error fetching moment:', err)
     } finally {
       setIsLoading(false)
     }

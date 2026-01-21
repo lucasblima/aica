@@ -19,6 +19,9 @@
 
 import { useState } from 'react'
 import { supabase } from '@/services/supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger'
+
+const log = createNamespacedLogger('useProcessContact')
 
 export interface ProcessingEstimate {
   creditCost: number
@@ -122,7 +125,7 @@ export function useProcessContact(): UseProcessContactReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to estimate cost'
       setError(message)
-      console.error('[useProcessContact] Estimate error:', message)
+      log.error('Estimate error:', { error: message })
       return null
     } finally {
       setIsEstimating(false)
@@ -181,7 +184,7 @@ export function useProcessContact(): UseProcessContactReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Processing failed'
       setError(message)
-      console.error('[useProcessContact] Process error:', message)
+      log.error('Process error:', { error: message })
 
       const errorResult: AnalysisResult = {
         success: false,

@@ -14,6 +14,10 @@
 
 import { supabase } from './supabaseClient';
 import { ContactNetwork, ContactNetworkCreateInput, ContactNetworkUpdateInput, ContactNetworkStats } from '../types/memoryTypes';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ContactNetworkService');
+
 
 // ============================================================================
 // CONTACT CRUD OPERATIONS
@@ -35,7 +39,7 @@ export async function getUserContacts(userId: string): Promise<ContactNetwork[]>
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching user contacts:', error);
+    log.error('Error fetching user contacts:', { error: error });
     throw error;
   }
 }
@@ -55,7 +59,7 @@ export async function getContactById(contactId: string): Promise<ContactNetwork 
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error(`Error fetching contact ${contactId}:`, error);
+    log.error(`Error fetching contact ${contactId}:`, { error: error });
     throw error;
   }
 }
@@ -79,7 +83,7 @@ export async function getContactByPhone(
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error(`Error fetching contact by phone ${phoneNumber}:`, error);
+    log.error(`Error fetching contact by phone ${phoneNumber}:`, { error: error });
     throw error;
   }
 }
@@ -110,7 +114,7 @@ export async function createContact(
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error creating contact:', error);
+    log.error('Error creating contact:', { error: error });
     throw error;
   }
 }
@@ -133,7 +137,7 @@ export async function updateContact(
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error(`Error updating contact ${contactId}:`, error);
+    log.error(`Error updating contact ${contactId}:`, { error: error });
     throw error;
   }
 }
@@ -150,7 +154,7 @@ export async function archiveContact(contactId: string): Promise<void> {
 
     if (error) throw error;
   } catch (error) {
-    console.error(`Error archiving contact ${contactId}:`, error);
+    log.error(`Error archiving contact ${contactId}:`, { error: error });
     throw error;
   }
 }
@@ -167,7 +171,7 @@ export async function deleteContact(contactId: string): Promise<void> {
 
     if (error) throw error;
   } catch (error) {
-    console.error(`Error deleting contact ${contactId}:`, error);
+    log.error(`Error deleting contact ${contactId}:`, { error: error });
     throw error;
   }
 }
@@ -225,7 +229,7 @@ export async function recordInteraction(
 
     await updateContact(contactId, updates);
   } catch (error) {
-    console.error(`Error recording interaction for contact ${contactId}:`, error);
+    log.error(`Error recording interaction for contact ${contactId}:`, { error: error });
   }
 }
 
@@ -315,7 +319,7 @@ export async function updateHealthScore(contactId: string): Promise<number> {
 
     return score;
   } catch (error) {
-    console.error(`Error updating health score for ${contactId}:`, error);
+    log.error(`Error updating health score for ${contactId}:`, { error: error });
     return 50;
   }
 }
@@ -332,9 +336,9 @@ export async function updateAllHealthScores(userId: string): Promise<void> {
       await updateHealthScore(contact.id);
     }
 
-    console.log(`Updated health scores for ${contacts.length} contacts`);
+    log.debug(`Updated health scores for ${contacts.length} contacts`);
   } catch (error) {
-    console.error('Error updating all health scores:', error);
+    log.error('Error updating all health scores:', { error: error });
   }
 }
 
@@ -377,7 +381,7 @@ export async function analyzeSentimentTrend(
     if (diff < -0.1) return 'declining';
     return 'stable';
   } catch (error) {
-    console.error(`Error analyzing sentiment trend for ${contactId}:`, error);
+    log.error(`Error analyzing sentiment trend for ${contactId}:`, { error: error });
     return 'unknown';
   }
 }
@@ -437,7 +441,7 @@ export async function getContactNetworkStats(userId: string): Promise<ContactNet
 
     return stats;
   } catch (error) {
-    console.error('Error getting contact network stats:', error);
+    log.error('Error getting contact network stats:', { error: error });
     return {
       total_contacts: 0,
       active_contacts: 0,
@@ -507,7 +511,7 @@ export async function getContactsNeedingAttention(
 
     return needingAttention.slice(0, 10); // Top 10 contacts needing attention
   } catch (error) {
-    console.error('Error getting contacts needing attention:', error);
+    log.error('Error getting contacts needing attention:', { error: error });
     return [];
   }
 }
@@ -535,7 +539,7 @@ export async function searchContacts(
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error searching contacts:', error);
+    log.error('Error searching contacts:', { error: error });
     return [];
   }
 }
@@ -558,7 +562,7 @@ export async function getContactsByType(
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error(`Error fetching contacts by type ${relationshipType}:`, error);
+    log.error(`Error fetching contacts by type ${relationshipType}:`, { error: error });
     return [];
   }
 }

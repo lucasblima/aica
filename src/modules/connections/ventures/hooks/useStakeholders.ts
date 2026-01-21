@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { stakeholderService } from '../services';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('useStakeholders');
   VenturesStakeholder,
   CreateStakeholderPayload,
   UpdateStakeholderPayload,
@@ -66,7 +68,7 @@ export function useStakeholders(entityId: string | undefined): UseStakeholdersRe
       setTeamMembers(Array.isArray(teamData) ? teamData : []);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching stakeholders:', err);
+      log.error('Error fetching stakeholders:', err);
       // On error, ensure arrays are still valid
       setStakeholders([]);
       setFounders([]);
@@ -242,7 +244,7 @@ export function useEquityDistribution(
       setData(equityData);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching equity distribution:', err);
+      log.error('Error fetching equity distribution:', err);
     } finally {
       setLoading(false);
     }
@@ -308,7 +310,7 @@ export function useCapitalRaised(entityId: string | undefined): UseCapitalRaised
       setData(capitalData);
     } catch (err) {
       setError(err as Error);
-      console.error('Error fetching capital raised:', err);
+      log.error('Error fetching capital raised:', err);
     } finally {
       setLoading(false);
     }

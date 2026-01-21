@@ -19,6 +19,10 @@ import {
   CreateNotificationRequest,
   PaginatedResponse,
 } from '@/types/whatsapp';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('NotificationSchedulerService');
+
 
 // ============================================================================
 // CONSTANTS
@@ -63,7 +67,7 @@ export async function createNotification(
     .single();
 
   if (error) {
-    console.error('[notificationSchedulerService] createNotification error:', error);
+    log.error('[notificationSchedulerService] createNotification error:', { error: error });
     throw error;
   }
 
@@ -93,7 +97,7 @@ export async function getScheduledNotifications(
   const { data, error, count } = await query;
 
   if (error) {
-    console.error('[notificationSchedulerService] getScheduledNotifications error:', error);
+    log.error('[notificationSchedulerService] getScheduledNotifications error:', { error: error });
     throw error;
   }
 
@@ -119,7 +123,7 @@ export async function getNotification(notificationId: string): Promise<Scheduled
 
   if (error) {
     if (error.code === 'PGRST116') return null;
-    console.error('[notificationSchedulerService] getNotification error:', error);
+    log.error('[notificationSchedulerService] getNotification error:', { error: error });
     throw error;
   }
 
@@ -158,7 +162,7 @@ export async function updateNotification(
     .single();
 
   if (error) {
-    console.error('[notificationSchedulerService] updateNotification error:', error);
+    log.error('[notificationSchedulerService] updateNotification error:', { error: error });
     throw error;
   }
 
@@ -179,7 +183,7 @@ export async function cancelNotification(notificationId: string): Promise<boolea
     .in('status', ['scheduled', 'queued']); // Can only cancel pending notifications
 
   if (error) {
-    console.error('[notificationSchedulerService] cancelNotification error:', error);
+    log.error('[notificationSchedulerService] cancelNotification error:', { error: error });
     throw error;
   }
 
@@ -198,7 +202,7 @@ export async function deleteNotification(notificationId: string): Promise<boolea
     .eq('id', notificationId);
 
   if (error) {
-    console.error('[notificationSchedulerService] deleteNotification error:', error);
+    log.error('[notificationSchedulerService] deleteNotification error:', { error: error });
     throw error;
   }
 
@@ -226,7 +230,7 @@ export async function rescheduleNotification(
     .single();
 
   if (error) {
-    console.error('[notificationSchedulerService] rescheduleNotification error:', error);
+    log.error('[notificationSchedulerService] rescheduleNotification error:', { error: error });
     throw error;
   }
 
@@ -265,7 +269,7 @@ export async function getTemplates(
   const { data, error } = await query;
 
   if (error) {
-    console.error('[notificationSchedulerService] getTemplates error:', error);
+    log.error('[notificationSchedulerService] getTemplates error:', { error: error });
     throw error;
   }
 
@@ -285,7 +289,7 @@ export async function getTemplateByKey(templateKey: string): Promise<Notificatio
 
   if (error) {
     if (error.code === 'PGRST116') return null;
-    console.error('[notificationSchedulerService] getTemplateByKey error:', error);
+    log.error('[notificationSchedulerService] getTemplateByKey error:', { error: error });
     throw error;
   }
 
@@ -328,7 +332,7 @@ export async function createTemplate(
     .single();
 
   if (error) {
-    console.error('[notificationSchedulerService] createTemplate error:', error);
+    log.error('[notificationSchedulerService] createTemplate error:', { error: error });
     throw error;
   }
 
@@ -362,7 +366,7 @@ export async function updateTemplate(
     .single();
 
   if (error) {
-    console.error('[notificationSchedulerService] updateTemplate error:', error);
+    log.error('[notificationSchedulerService] updateTemplate error:', { error: error });
     throw error;
   }
 
@@ -380,7 +384,7 @@ export async function deleteTemplate(templateId: string): Promise<boolean> {
     .eq('is_system', false); // Prevent deleting system templates
 
   if (error) {
-    console.error('[notificationSchedulerService] deleteTemplate error:', error);
+    log.error('[notificationSchedulerService] deleteTemplate error:', { error: error });
     throw error;
   }
 
@@ -404,7 +408,7 @@ export async function getNotificationLogs(
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('[notificationSchedulerService] getNotificationLogs error:', error);
+    log.error('[notificationSchedulerService] getNotificationLogs error:', { error: error });
     throw error;
   }
 
@@ -425,7 +429,7 @@ export async function getRecentLogs(
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error('[notificationSchedulerService] getRecentLogs error:', error);
+    log.error('[notificationSchedulerService] getRecentLogs error:', { error: error });
     throw error;
   }
 
@@ -548,7 +552,7 @@ export async function getNotificationStats(): Promise<{
     .is('deleted_at', null);
 
   if (error) {
-    console.error('[notificationSchedulerService] getNotificationStats error:', error);
+    log.error('[notificationSchedulerService] getNotificationStats error:', { error: error });
     throw error;
   }
 

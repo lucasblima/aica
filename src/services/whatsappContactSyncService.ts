@@ -7,6 +7,10 @@
  */
 
 import { supabase } from './supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('WhatsAppContactSyncService');
+
 
 // ============================================================================
 // TYPES
@@ -42,7 +46,7 @@ export interface SyncStatus {
 export async function syncWhatsAppContacts(
   instanceName?: string
 ): Promise<SyncContactsResponse> {
-  console.log('[whatsappContactSyncService] Starting contact sync...')
+  log.debug('[whatsappContactSyncService] Starting contact sync...')
 
   try {
     // Get current session
@@ -64,16 +68,16 @@ export async function syncWhatsAppContacts(
     })
 
     if (error) {
-      console.error('[whatsappContactSyncService] Edge Function error:', error)
+      log.error('[whatsappContactSyncService] Edge Function error:', { error: error })
       throw error
     }
 
-    console.log('[whatsappContactSyncService] Sync completed:', data)
+    log.debug('[whatsappContactSyncService] Sync completed:', data)
 
     return data as SyncContactsResponse
   } catch (error) {
     const err = error as Error
-    console.error('[whatsappContactSyncService] Sync failed:', err.message)
+    log.error('[whatsappContactSyncService] Sync failed:', err.message)
 
     return {
       success: false,
@@ -92,7 +96,7 @@ export async function syncWhatsAppContacts(
  * @returns Sync status object
  */
 export async function getSyncStatus(): Promise<SyncStatus> {
-  console.log('[whatsappContactSyncService] Getting sync status...')
+  log.debug('[whatsappContactSyncService] Getting sync status...')
 
   try {
     const {
@@ -116,7 +120,7 @@ export async function getSyncStatus(): Promise<SyncStatus> {
 
     if (syncError && syncError.code !== 'PGRST116') {
       // Ignore "no rows" error
-      console.error('[whatsappContactSyncService] Error fetching sync status:', syncError)
+      log.error('[whatsappContactSyncService] Error fetching sync status:', { error: syncError })
     }
 
     const lastSyncAt = lastSync?.completed_at || null
@@ -138,7 +142,7 @@ export async function getSyncStatus(): Promise<SyncStatus> {
       .not('whatsapp_id', 'is', null)
 
     if (countError) {
-      console.error('[whatsappContactSyncService] Error counting contacts:', countError)
+      log.error('[whatsappContactSyncService] Error counting contacts:', { error: countError })
     }
 
     return {
@@ -148,7 +152,7 @@ export async function getSyncStatus(): Promise<SyncStatus> {
     }
   } catch (error) {
     const err = error as Error
-    console.error('[whatsappContactSyncService] Error getting sync status:', err.message)
+    log.error('[whatsappContactSyncService] Error getting sync status:', err.message)
 
     return {
       isStale: true,
@@ -166,7 +170,7 @@ export async function getSyncStatus(): Promise<SyncStatus> {
  * @returns Array of sync log entries
  */
 export async function getSyncLogs(limit: number = 10) {
-  console.log('[whatsappContactSyncService] Fetching sync logs...')
+  log.debug('[whatsappContactSyncService] Fetching sync logs...')
 
   try {
     const {
@@ -186,14 +190,14 @@ export async function getSyncLogs(limit: number = 10) {
       .limit(limit)
 
     if (error) {
-      console.error('[whatsappContactSyncService] Error fetching sync logs:', error)
+      log.error('[whatsappContactSyncService] Error fetching sync logs:', { error: error })
       throw error
     }
 
     return data || []
   } catch (error) {
     const err = error as Error
-    console.error('[whatsappContactSyncService] Failed to fetch sync logs:', err.message)
+    log.error('[whatsappContactSyncService] Failed to fetch sync logs:', err.message)
     return []
   }
 }
@@ -223,13 +227,13 @@ export async function hasWhatsAppIntegration(): Promise<boolean> {
       .limit(1)
 
     if (error) {
-      console.error('[whatsappContactSyncService] Error checking integration:', error)
+      log.error('[whatsappContactSyncService] Error checking integration:', { error: error })
       return false
     }
 
     return (count || 0) > 0
   } catch (error) {
-    console.error('[whatsappContactSyncService] Error checking integration:', error)
+    log.error('[whatsappContactSyncService] Error checking integration:', { error: error })
     return false
   }
 }

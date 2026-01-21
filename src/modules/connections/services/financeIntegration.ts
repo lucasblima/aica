@@ -6,6 +6,9 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('FinanceIntegration');
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -119,7 +122,7 @@ export async function createSharedExpense(
       settled: expense.settled,
     };
   } catch (error) {
-    console.error('Error creating shared expense:', error);
+    log.error('Error creating shared expense:', error);
     throw error;
   }
 }
@@ -158,7 +161,7 @@ export async function getSpaceExpenses(spaceId: string): Promise<SharedExpense[]
       settled: tx.is_settled,
     }));
   } catch (error) {
-    console.error('Error fetching space expenses:', error);
+    log.error('Error fetching space expenses:', error);
     throw error;
   }
 }
@@ -209,7 +212,7 @@ export async function settleExpense(
 
     if (updateError) throw updateError;
   } catch (error) {
-    console.error('Error settling expense:', error);
+    log.error('Error settling expense:', error);
     throw error;
   }
 }
@@ -260,7 +263,7 @@ export async function calculateMemberBalance(
       net: owed - owes,
     };
   } catch (error) {
-    console.error('Error calculating member balance:', error);
+    log.error('Error calculating member balance:', error);
     throw error;
   }
 }
@@ -344,7 +347,7 @@ export async function syncVentureFinance(ventureId: string): Promise<VentureFina
       runway: Math.floor(runway * 10) / 10, // Round to 1 decimal
     };
   } catch (error) {
-    console.error('Error syncing venture finance:', error);
+    log.error('Error syncing venture finance:', error);
     throw error;
   }
 }
@@ -389,7 +392,7 @@ export async function trackBusinessExpense(
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error tracking business expense:', error);
+    log.error('Error tracking business expense:', error);
     throw error;
   }
 }
@@ -432,7 +435,7 @@ export async function recordRevenue(
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error recording revenue:', error);
+    log.error('Error recording revenue:', error);
     throw error;
   }
 }

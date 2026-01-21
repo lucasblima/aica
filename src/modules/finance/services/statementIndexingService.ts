@@ -6,7 +6,10 @@
  */
 
 import { supabase } from '../../../services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
 import type { FileSearchDocument } from '../../../types/fileSearch';
+
+const log = createNamespacedLogger('StatementIndexing');
 import type { FinanceStatement } from '../types';
 
 /**
@@ -53,7 +56,7 @@ export async function indexFinanceStatement(
 ): Promise<FileSearchDocument> {
   const { statement, markdownContent, metadata = {} } = options;
 
-  console.log('[StatementIndexing] Starting indexation for statement:', statement.id);
+  log.debug('[StatementIndexing] Starting indexation for statement:', statement.id);
 
   try {
     // 1. Validar que há conteúdo para indexar
@@ -64,7 +67,7 @@ export async function indexFinanceStatement(
     }
 
     // 2. Indexar no File Search usando o hook
-    console.log('[StatementIndexing] Indexing statement in File Search...');
+    log.debug('[StatementIndexing] Indexing statement in File Search...');
     const indexed = await fileSearchHook.indexStatement(
       statement,
       content,
@@ -75,7 +78,7 @@ export async function indexFinanceStatement(
       }
     );
 
-    console.log('[StatementIndexing] Statement indexed:', indexed.id);
+    log.debug('[StatementIndexing] Statement indexed:', indexed.id);
 
     // 3. Atualizar timestamp de markdown generation no banco (se ainda não está definido)
     if (!statement.markdown_generated_at) {
@@ -87,12 +90,12 @@ export async function indexFinanceStatement(
         .eq('id', statement.id);
 
       if (updateError) {
-        console.warn('[StatementIndexing] Failed to update timestamp:', updateError);
+        log.warn('[StatementIndexing] Failed to update timestamp:', updateError);
         // Não falha a operação, apenas loga o warning
       }
     }
 
-    console.log('[StatementIndexing] Indexation complete!', {
+    log.debug('[StatementIndexing] Indexation complete!', {
       statementId: statement.id,
       fileSearchDocId: indexed.id,
       characterCount: content.length,
@@ -100,7 +103,7 @@ export async function indexFinanceStatement(
 
     return indexed;
   } catch (error) {
-    console.error('[StatementIndexing] Indexation failed:', error);
+    log.error('[StatementIndexing] Indexation failed:', error);
     throw error;
   }
 }
@@ -136,11 +139,11 @@ export async function saveAndIndexStatementMarkdown(
   saved: boolean;
   indexed: FileSearchDocument;
 }> {
-  console.log('[StatementIndexing] Saving and indexing markdown for:', statementId);
+  log.debug('[StatementIndexing] Saving and indexing markdown for:', statementId);
 
   try {
     // 1. Salvar markdown no banco de dados
-    console.log('[StatementIndexing] Step 1: Saving markdown to database...');
+    log.debug('[StatementIndexing] Step 1: Saving markdown to database...');
     const { error: saveError } = await supabase
       .from('finance_statements')
       .update({
@@ -153,7 +156,7 @@ export async function saveAndIndexStatementMarkdown(
       throw new Error(`Failed to save markdown: ${saveError.message}`);
     }
 
-    console.log('[StatementIndexing] Markdown saved to database');
+    log.debug('[StatementIndexing] Markdown saved to database');
 
     // 2. Buscar statement atualizado
     const { data: statement, error: fetchError } = await supabase
@@ -167,7 +170,7 @@ export async function saveAndIndexStatementMarkdown(
     }
 
     // 3. Indexar no File Search
-    console.log('[StatementIndexing] Step 2: Indexing in File Search...');
+    log.debug('[StatementIndexing] Step 2: Indexing in File Search...');
     const indexed = await indexFinanceStatement(
       {
         statement: statement as FinanceStatement,
@@ -176,14 +179,14 @@ export async function saveAndIndexStatementMarkdown(
       fileSearchHook
     );
 
-    console.log('[StatementIndexing] Save and indexation complete!');
+    log.debug('[StatementIndexing] Save and indexation complete!');
 
     return {
       saved: true,
       indexed,
     };
   } catch (error) {
-    console.error('[StatementIndexing] Save and indexation failed:', error);
+    log.error('[StatementIndexing] Save and indexation failed:', error);
     throw error;
   }
 }
@@ -202,7 +205,7 @@ export async function saveAndIndexStatementMarkdown(
  * ```tsx
  * const hook = useFinanceFileSearch({ userId: 'user-123' });
  * const results = await reindexExistingStatements('user-123', hook, 50);
- * console.log(`Re-indexed ${results.length} statements`);
+ * log.debug(`Re-indexed ${results.length} statements`);
  * ```
  */
 export async function reindexExistingStatements(
@@ -210,7 +213,7 @@ export async function reindexExistingStatements(
   fileSearchHook: FinanceFileSearchHook,
   limit: number = 50
 ): Promise<FileSearchDocument[]> {
-  console.log('[StatementIndexing] Starting bulk re-indexation for user:', userId);
+  log.debug('[StatementIndexing] Starting bulk re-indexation for user:', userId);
 
   try {
     // Buscar statements com markdown mas sem indexação recente
@@ -227,17 +230,17 @@ export async function reindexExistingStatements(
     }
 
     if (!statements || statements.length === 0) {
-      console.log('[StatementIndexing] No statements to re-index');
+      log.debug('[StatementIndexing] No statements to re-index');
       return [];
     }
 
-    console.log(`[StatementIndexing] Found ${statements.length} statements to re-index`);
+    log.debug(`[StatementIndexing] Found ${statements.length} statements to re-index`);
 
     const results: FileSearchDocument[] = [];
 
     for (const statement of statements) {
       try {
-        console.log(`[StatementIndexing] Re-indexing statement: ${statement.id}`);
+        log.debug(`[StatementIndexing] Re-indexing statement: ${statement.id}`);
 
         const indexed = await indexFinanceStatement(
           {
@@ -247,18 +250,18 @@ export async function reindexExistingStatements(
         );
 
         results.push(indexed);
-        console.log(`[StatementIndexing] ✓ Re-indexed: ${statement.id}`);
+        log.debug(`[StatementIndexing] ✓ Re-indexed: ${statement.id}`);
       } catch (statementError) {
-        console.error(`[StatementIndexing] ✗ Failed to re-index ${statement.id}:`, statementError);
+        log.error(`[StatementIndexing] ✗ Failed to re-index ${statement.id}:`, statementError);
         // Continue com próximo statement
       }
     }
 
-    console.log(`[StatementIndexing] Bulk re-indexation complete: ${results.length}/${statements.length} successful`);
+    log.debug(`[StatementIndexing] Bulk re-indexation complete: ${results.length}/${statements.length} successful`);
 
     return results;
   } catch (error) {
-    console.error('[StatementIndexing] Bulk re-indexation failed:', error);
+    log.error('[StatementIndexing] Bulk re-indexation failed:', error);
     throw error;
   }
 }
@@ -288,7 +291,7 @@ export async function autoIndexAfterProcessing(
   statementId: string,
   fileSearchHook: FinanceFileSearchHook
 ): Promise<FileSearchDocument> {
-  console.log('[StatementIndexing] Auto-indexing after processing:', statementId);
+  log.debug('[StatementIndexing] Auto-indexing after processing:', statementId);
 
   try {
     // Buscar statement
@@ -319,7 +322,7 @@ export async function autoIndexAfterProcessing(
       fileSearchHook
     );
   } catch (error) {
-    console.error('[StatementIndexing] Auto-indexing failed:', error);
+    log.error('[StatementIndexing] Auto-indexing failed:', error);
     throw error;
   }
 }
@@ -343,7 +346,7 @@ export async function isStatementIndexed(
     // Uma implementação mais robusta verificaria os custom_metadata
     return documents;
   } catch (error) {
-    console.error('[StatementIndexing] Error checking indexation status:', error);
+    log.error('[StatementIndexing] Error checking indexation status:', error);
     return false;
   }
 }

@@ -4,7 +4,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
+
+const log = createNamespacedLogger('useConsciousnessPoints')
 import {
   UserConsciousnessStats,
   ConsciousnessPointsLog,
@@ -53,7 +56,7 @@ export function useConsciousnessPoints() {
       // Reset to safe defaults on error
       setStats(null)
       setProgress(null)
-      console.error('Error fetching CP stats:', error)
+      log.error('Error fetching CP stats:', error)
     } finally {
       // ALWAYS set loading to false
       setIsLoading(false)
@@ -105,7 +108,7 @@ export function useCPLog(limit: number = 50) {
       setError(error)
       // Reset to safe defaults on error
       setLog([])
-      console.error('Error fetching CP log:', error)
+      log.error('Error fetching CP log:', error)
     } finally {
       // ALWAYS set loading to false
       setIsLoading(false)
@@ -159,7 +162,7 @@ export function useAchievements() {
       setError(error)
       // Reset to safe defaults on error
       setAchievements({ level_ups: [], streaks: [] })
-      console.error('Error fetching achievements:', error)
+      log.error('Error fetching achievements:', error)
     } finally {
       // ALWAYS set loading to false
       setIsLoading(false)

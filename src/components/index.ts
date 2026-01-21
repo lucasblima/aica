@@ -53,6 +53,7 @@ export { CalendarSyncIndicator } from './features/CalendarSyncIndicator';
 export { ConnectionArchetypes } from './features/ConnectionArchetypes';
 // prettier-ignore
 export { default as ContactCard } from './features/ContactCard';
+export { ContactCardGrid } from './features/ContactCardGrid';
 export { CreditBalanceWidget } from './features/CreditBalanceWidget';
 // prettier-ignore
 export { default as ContactDetailModal } from './features/ContactDetailModal';

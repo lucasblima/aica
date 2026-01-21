@@ -46,6 +46,8 @@ import whatsappAnalyticsService, {
 import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion';
 import { useWhatsAppGamification } from '../hooks/useWhatsAppGamification';
 import { useWhatsAppContacts, WhatsAppContact } from '@/hooks/useWhatsAppContacts';
+import { createNamespacedLogger } from '@/lib/logger';
+const log = createNamespacedLogger('ConnectionsWhatsAppTab');
 
 // ============================================================================
 // TYPES
@@ -350,7 +352,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
         setSelectedContactHash(contactsList[0].contactHash);
       }
     } catch (err) {
-      console.error('[ConnectionsWhatsAppTab] Error loading contacts:', err);
+      log.error('[ConnectionsWhatsAppTab] Error loading contacts:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar contatos');
     } finally {
       setIsLoadingContacts(false);
@@ -364,7 +366,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
       const alerts = await whatsappAnalyticsService.getAnomalyAlerts(7, 5);
       setAnomalies(alerts);
     } catch (err) {
-      console.error('[ConnectionsWhatsAppTab] Error loading anomalies:', err);
+      log.error('[ConnectionsWhatsAppTab] Error loading anomalies:', err);
     } finally {
       setIsLoadingAnomalies(false);
     }
@@ -621,7 +623,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
                     contact={contact}
                     onClick={() => {
                       // Could navigate to contact details or select for analysis
-                      console.log('Selected contact:', contact);
+                      log.debug('Selected contact:', contact);
                     }}
                   />
                 </motion.div>
