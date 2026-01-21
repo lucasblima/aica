@@ -11,6 +11,9 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('GuestApprovalPage');
 
 interface GuestApprovalData {
   episodeId: string;
@@ -113,7 +116,7 @@ export const GuestApprovalPage: React.FC = () => {
         .maybeSingle();
 
       if (researchError && researchError.code !== 'PGRST116') {
-        console.error('Error fetching guest research:', researchError);
+        log.error('Error fetching guest research:', researchError);
       }
 
       // Set guest data
@@ -136,7 +139,7 @@ export const GuestApprovalPage: React.FC = () => {
         });
       }
     } catch (err) {
-      console.error('Error loading approval data:', err);
+      log.error('Error loading approval data:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
     } finally {
       setIsLoading(false);
@@ -172,7 +175,7 @@ export const GuestApprovalPage: React.FC = () => {
 
       setSubmissionStatus('success');
     } catch (err) {
-      console.error('Error approving:', err);
+      log.error('Error approving:', err);
       setSubmissionStatus('error');
       setError('Erro ao salvar aprovação');
     } finally {
@@ -212,7 +215,7 @@ export const GuestApprovalPage: React.FC = () => {
 
       setSubmissionStatus('success');
     } catch (err) {
-      console.error('Error rejecting:', err);
+      log.error('Error rejecting:', err);
       setSubmissionStatus('error');
       setError('Erro ao salvar rejeição');
     } finally {

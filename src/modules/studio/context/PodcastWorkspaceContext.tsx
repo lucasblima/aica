@@ -9,6 +9,9 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
 import type {
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PodcastWorkspaceContext');
   PodcastWorkspaceState,
   WorkspaceAction,
   WorkspaceActions,
@@ -535,7 +538,7 @@ export function PodcastWorkspaceProvider({
         const results = await onSearchGuestProfile(name, reference);
         dispatch({ type: 'SET_SEARCH_RESULTS', payload: results });
       } catch (error) {
-        console.error('Error searching guest profile:', error);
+        log.error('Error searching guest profile:', error);
         dispatch({ type: 'SET_ERROR', payload: 'Erro ao buscar perfil do convidado' });
       }
     },
@@ -552,7 +555,7 @@ export function PodcastWorkspaceProvider({
         const dossier = await onGenerateDossier(guestName, theme, customSources);
         dispatch({ type: 'FINISH_DOSSIER_GENERATION', payload: dossier });
       } catch (error) {
-        console.error('Error generating dossier:', error);
+        log.error('Error generating dossier:', error);
         dispatch({ type: 'SET_RESEARCH_ERROR', payload: 'Erro ao gerar dossier' });
       }
     },
@@ -568,7 +571,7 @@ export function PodcastWorkspaceProvider({
         const dossier = await onGenerateDossier(guestName, theme, customSources);
         dispatch({ type: 'FINISH_DOSSIER_GENERATION', payload: dossier });
       } catch (error) {
-        console.error('Error regenerating dossier:', error);
+        log.error('Error regenerating dossier:', error);
         dispatch({ type: 'SET_RESEARCH_ERROR', payload: 'Erro ao regerar dossier' });
       }
     },
@@ -606,12 +609,12 @@ export function PodcastWorkspaceProvider({
 
     generatePauta: async (config: any) => {
       // Will be implemented with AI service
-      console.log('Generate pauta with config:', config);
+      log.debug('Generate pauta with config:', config);
     },
 
     loadSavedPautas: async () => {
       // Will be implemented with database service
-      console.log('Load saved pautas');
+      log.debug('Load saved pautas');
     },
 
     // Production actions
@@ -651,7 +654,7 @@ export function PodcastWorkspaceProvider({
           await onSave(state);
           dispatch({ type: 'MARK_SAVED' });
         } catch (error) {
-          console.error('Error saving workspace:', error);
+          log.error('Error saving workspace:', error);
           dispatch({ type: 'SET_ERROR', payload: 'Erro ao salvar' });
         } finally {
           dispatch({ type: 'SET_LOADING', payload: false });

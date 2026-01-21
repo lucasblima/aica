@@ -11,6 +11,9 @@
 import { GeminiClient } from '@/lib/gemini/client';
 import type { GeminiChatResponse } from '@/lib/gemini/types';
 import type { GuestProfile } from '../types/wizard.types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('guestResearchService');
 
 /**
  * System instruction for guest research
@@ -126,7 +129,7 @@ function parseGeminiResponse(response: GeminiChatResponse): GuestProfile | null 
 
     return null;
   } catch (error) {
-    console.error('[guestResearchService] Failed to parse Gemini response:', error);
+    log.error('[guestResearchService] Failed to parse Gemini response:', error);
     return null;
   }
 }
@@ -169,15 +172,15 @@ function validateAndNormalizeProfile(data: any): GuestProfile {
  * @example
  * ```ts
  * const profile = await searchGuestProfile('Elon Musk', 'CEO Tesla');
- * console.log(profile.biography);
- * console.log(profile.recent_facts);
+ * log.debug(profile.biography);
+ * log.debug(profile.recent_facts);
  * ```
  */
 export async function searchGuestProfile(
   name: string,
   reference: string
 ): Promise<GuestProfile> {
-  console.log('[guestResearchService] Starting guest research...', { name, reference });
+  log.debug('[guestResearchService] Starting guest research...', { name, reference });
 
   try {
     const client = GeminiClient.getInstance();
@@ -197,29 +200,29 @@ export async function searchGuestProfile(
       },
     });
 
-    console.log('[guestResearchService] Received Gemini response');
+    log.debug('[guestResearchService] Received Gemini response');
 
     // Parse and validate response
     const profile = parseGeminiResponse(response);
 
     if (!profile) {
-      console.warn('[guestResearchService] Failed to parse response, using fallback');
+      log.warn('[guestResearchService] Failed to parse response, using fallback');
       return createFallbackProfile(name, reference);
     }
 
     // If research was unreliable, use fallback
     if (!profile.is_reliable || profile.confidence_score < 30) {
-      console.warn('[guestResearchService] Low confidence research, using fallback');
+      log.warn('[guestResearchService] Low confidence research, using fallback');
       return createFallbackProfile(name, reference);
     }
 
-    console.log('[guestResearchService] Guest research completed successfully', {
+    log.debug('[guestResearchService] Guest research completed successfully', {
       confidence: profile.confidence_score,
     });
 
     return profile;
   } catch (error) {
-    console.error('[guestResearchService] Error during guest research:', error);
+    log.error('[guestResearchService] Error during guest research:', error);
 
     // Handle specific error types
     if ((error as any).code === 'RATE_LIMITED') {
@@ -233,7 +236,7 @@ export async function searchGuestProfile(
     }
 
     // For all other errors, return fallback profile
-    console.warn('[guestResearchService] Returning fallback profile due to error');
+    log.warn('[guestResearchService] Returning fallback profile due to error');
     return createFallbackProfile(name, reference);
   }
 }
@@ -253,7 +256,7 @@ export async function searchGuestProfile(
  *       const result = await searchGuestProfile('Elon Musk', 'CEO Tesla');
  *       setProfile(result);
  *     } catch (error) {
- *       console.error(error);
+ *       log.error(error);
  *     } finally {
  *       setLoading(false);
  *     }

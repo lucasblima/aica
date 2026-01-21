@@ -3,6 +3,9 @@ import { ArrowLeft, Plus, Mic2, FolderOpen } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { HeaderGlobal } from '@/components/layout';
 import type { PodcastShow } from '../types/podcast';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PodcastShowPage');
 
 interface PodcastShowPageProps {
   showId: string;
@@ -82,7 +85,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
       if (episodesError) throw episodesError;
       setEpisodes(episodesData || []);
     } catch (error) {
-      console.error('Error fetching show data:', error);
+      log.error('Error fetching show data:', error);
     } finally {
       setIsLoading(false);
     }

@@ -17,6 +17,9 @@ import {
   type PautaVersion,
 } from '../services/pautaPersistenceService'
 import type { GeneratedPauta } from '../services/pautaGeneratorService'
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useSavedPauta');
 
 export interface UseSavedPautaResult {
   // Data
@@ -56,7 +59,7 @@ export function useSavedPauta(projectId: string | undefined): UseSavedPautaResul
       const pauta = await pautaPersistenceService.getActivePauta(projectId)
       setActivePauta(pauta)
     } catch (error) {
-      console.error('Error loading active pauta:', error)
+      log.error('Error loading active pauta:', error)
       setActivePauta(null)
     } finally {
       setIsLoading(false)
@@ -77,7 +80,7 @@ export function useSavedPauta(projectId: string | undefined): UseSavedPautaResul
       const versionList = await pautaPersistenceService.listPautaVersions(projectId)
       setVersions(versionList)
     } catch (error) {
-      console.error('Error loading pauta versions:', error)
+      log.error('Error loading pauta versions:', error)
       setVersions([])
     } finally {
       setIsLoadingVersions(false)
@@ -99,7 +102,7 @@ export function useSavedPauta(projectId: string | undefined): UseSavedPautaResul
         }
         return success
       } catch (error) {
-        console.error('Error setting active version:', error)
+        log.error('Error setting active version:', error)
         return false
       }
     },
@@ -119,7 +122,7 @@ export function useSavedPauta(projectId: string | undefined): UseSavedPautaResul
         }
         return success
       } catch (error) {
-        console.error('Error deleting pauta:', error)
+        log.error('Error deleting pauta:', error)
         return false
       }
     },

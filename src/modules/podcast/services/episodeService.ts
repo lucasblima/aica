@@ -8,6 +8,9 @@
 import { supabase } from '@/services/supabaseClient';
 import type { Episode } from '../types';
 import type { EpisodeCreationData, GuestProfile } from '../types/wizard.types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('episodeService');
 
 /**
  * PodcastEpisode type - extends Episode with additional fields
@@ -33,7 +36,7 @@ export async function createEpisode(data: CreateEpisodeRequest): Promise<{
   error: Error | null;
 }> {
   try {
-    console.log('[episodeService] Creating episode...', data);
+    log.debug('[episodeService] Creating episode...', data);
 
     // Get current user
     const {
@@ -74,21 +77,21 @@ export async function createEpisode(data: CreateEpisodeRequest): Promise<{
       .single();
 
     if (error) {
-      console.error('[episodeService] Error creating episode:', error);
+      log.error('[episodeService] Error creating episode:', error);
       return {
         data: null,
         error: new Error(error.message),
       };
     }
 
-    console.log('[episodeService] Episode created successfully:', episode.id);
+    log.debug('[episodeService] Episode created successfully:', episode.id);
 
     return {
       data: episode as PodcastEpisode,
       error: null,
     };
   } catch (error) {
-    console.error('[episodeService] Unexpected error:', error);
+    log.error('[episodeService] Unexpected error:', error);
     return {
       data: null,
       error: error instanceof Error ? error : new Error('Erro desconhecido'),
@@ -111,13 +114,13 @@ export async function getEpisode(episodeId: string): Promise<PodcastEpisode | nu
       .single();
 
     if (error) {
-      console.error('[episodeService] Error fetching episode:', error);
+      log.error('[episodeService] Error fetching episode:', error);
       return null;
     }
 
     return data as PodcastEpisode;
   } catch (error) {
-    console.error('[episodeService] Unexpected error:', error);
+    log.error('[episodeService] Unexpected error:', error);
     return null;
   }
 }
@@ -142,13 +145,13 @@ export async function updateEpisode(
       .single();
 
     if (error) {
-      console.error('[episodeService] Error updating episode:', error);
+      log.error('[episodeService] Error updating episode:', error);
       return null;
     }
 
     return data as PodcastEpisode;
   } catch (error) {
-    console.error('[episodeService] Unexpected error:', error);
+    log.error('[episodeService] Unexpected error:', error);
     return null;
   }
 }
@@ -168,13 +171,13 @@ export async function listEpisodes(showId: string): Promise<PodcastEpisode[]> {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[episodeService] Error listing episodes:', error);
+      log.error('[episodeService] Error listing episodes:', error);
       return [];
     }
 
     return data as PodcastEpisode[];
   } catch (error) {
-    console.error('[episodeService] Unexpected error:', error);
+    log.error('[episodeService] Unexpected error:', error);
     return [];
   }
 }
@@ -193,13 +196,13 @@ export async function deleteEpisode(episodeId: string): Promise<boolean> {
       .eq('id', episodeId);
 
     if (error) {
-      console.error('[episodeService] Error deleting episode:', error);
+      log.error('[episodeService] Error deleting episode:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[episodeService] Unexpected error:', error);
+    log.error('[episodeService] Unexpected error:', error);
     return false;
   }
 }

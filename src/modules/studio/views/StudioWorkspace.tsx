@@ -18,6 +18,9 @@ import React from 'react';
 import type { StudioWorkspaceProps } from '../types/studio';
 import { generateDossier, searchGuestProfile } from '../services/podcastAIService';
 import { PodcastWorkspace } from '../components/workspace';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('StudioWorkspace');
 
 /**
  * Unsupported project type fallback
@@ -49,7 +52,7 @@ function UnsupportedProjectType({ type }: { type: string }) {
  */
 export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProps) {
   // Debug logs
-  console.log('[StudioWorkspace] Rendering with project:', {
+  log.debug('[StudioWorkspace] Rendering with project:', {
     id: project.id,
     type: project.type,
     title: project.title,
@@ -70,11 +73,11 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
             onBack={onBack}
             // AI service callbacks
             onGenerateDossier={async (guestName, theme, customSources) => {
-              console.log('[StudioWorkspace] Generating dossier via AI service:', { guestName, theme });
+              log.debug('[StudioWorkspace] Generating dossier via AI service:', { guestName, theme });
               return await generateDossier(guestName, theme, customSources);
             }}
             onSearchGuestProfile={async (name, reference) => {
-              console.log('[StudioWorkspace] Searching guest profile via AI service:', { name, reference });
+              log.debug('[StudioWorkspace] Searching guest profile via AI service:', { name, reference });
               return await searchGuestProfile(name, reference);
             }}
           />
