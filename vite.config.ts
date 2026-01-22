@@ -164,8 +164,14 @@ export default defineConfig(({ mode }) => {
               return 'module-onboarding';
             }
 
-            // Services chunk
+            // Services chunk - includes src/services and src/lib for shared utilities
             if (id.includes('src/services')) {
+              return 'services';
+            }
+
+            // Lib chunk - shared utilities that should load before modules
+            // This prevents circular dependencies between services and modules
+            if (id.includes('src/lib/')) {
               return 'services';
             }
           }
