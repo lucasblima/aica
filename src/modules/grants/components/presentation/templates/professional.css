@@ -1,0 +1,231 @@
+/**
+ * Professional Template - Clean, corporate design
+ * Issue #117 - Presentation Generator
+ */
+
+:root.template-professional {
+  /* Colors */
+  --deck-primary: #1e3a5f;
+  --deck-secondary: #2d4a6f;
+  --deck-accent: #ed8936;
+  --deck-bg: #ffffff;
+  --deck-text: #1a202c;
+  --deck-text-muted: #4a5568;
+  --deck-border: #e2e8f0;
+
+  /* Typography */
+  --deck-font-title: 'Montserrat', 'Arial', sans-serif;
+  --deck-font-body: 'Open Sans', 'Calibri', sans-serif;
+  --deck-font-mono: 'Courier New', monospace;
+
+  /* Spacing */
+  --deck-spacing-xs: 8px;
+  --deck-spacing-sm: 16px;
+  --deck-spacing-md: 24px;
+  --deck-spacing-lg: 32px;
+  --deck-spacing-xl: 48px;
+
+  /* Borders */
+  --deck-border-radius: 8px;
+  --deck-border-width: 2px;
+
+  /* Shadows */
+  --deck-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --deck-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --deck-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Slide base styles */
+.template-professional .slide {
+  background: var(--deck-bg);
+  color: var(--deck-text);
+  font-family: var(--deck-font-body);
+}
+
+/* Headings */
+.template-professional .slide h1 {
+  font-family: var(--deck-font-title);
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--deck-primary);
+  line-height: 1.2;
+  margin-bottom: var(--deck-spacing-md);
+}
+
+.template-professional .slide h2 {
+  font-family: var(--deck-font-title);
+  font-size: 48px;
+  font-weight: 600;
+  color: var(--deck-primary);
+  line-height: 1.3;
+  margin-bottom: var(--deck-spacing-sm);
+}
+
+.template-professional .slide h3 {
+  font-family: var(--deck-font-title);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--deck-secondary);
+  line-height: 1.4;
+  margin-bottom: var(--deck-spacing-sm);
+}
+
+/* Body text */
+.template-professional .slide p {
+  font-size: 24px;
+  line-height: 1.6;
+  color: var(--deck-text);
+  margin-bottom: var(--deck-spacing-sm);
+}
+
+/* Lists */
+.template-professional .slide ul,
+.template-professional .slide ol {
+  font-size: 24px;
+  line-height: 1.6;
+  color: var(--deck-text);
+  padding-left: var(--deck-spacing-lg);
+}
+
+.template-professional .slide li {
+  margin-bottom: var(--deck-spacing-xs);
+}
+
+.template-professional .slide li::marker {
+  color: var(--deck-accent);
+  font-weight: 600;
+}
+
+/* Accent elements */
+.template-professional .slide .accent {
+  color: var(--deck-accent);
+  font-weight: 600;
+}
+
+.template-professional .slide .highlight {
+  background: var(--deck-accent);
+  color: white;
+  padding: var(--deck-spacing-xs) var(--deck-spacing-sm);
+  border-radius: var(--deck-border-radius);
+}
+
+/* Cards */
+.template-professional .slide .card {
+  background: white;
+  border: var(--deck-border-width) solid var(--deck-border);
+  border-radius: var(--deck-border-radius);
+  padding: var(--deck-spacing-md);
+  box-shadow: var(--deck-shadow-md);
+}
+
+/* Metrics */
+.template-professional .slide .metric {
+  text-align: center;
+}
+
+.template-professional .slide .metric-value {
+  font-family: var(--deck-font-title);
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--deck-primary);
+  line-height: 1;
+}
+
+.template-professional .slide .metric-label {
+  font-size: 20px;
+  color: var(--deck-text-muted);
+  margin-top: var(--deck-spacing-xs);
+}
+
+/* Timeline */
+.template-professional .slide .timeline-item {
+  border-left: 4px solid var(--deck-accent);
+  padding-left: var(--deck-spacing-md);
+  margin-bottom: var(--deck-spacing-md);
+}
+
+.template-professional .slide .timeline-item.highlighted {
+  border-left-color: var(--deck-primary);
+  background: rgba(30, 58, 95, 0.05);
+  padding: var(--deck-spacing-sm) var(--deck-spacing-md);
+  border-radius: var(--deck-border-radius);
+}
+
+/* Team members */
+.template-professional .slide .team-member {
+  text-align: center;
+  padding: var(--deck-spacing-md);
+}
+
+.template-professional .slide .team-photo {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 4px solid var(--deck-primary);
+  object-fit: cover;
+  margin-bottom: var(--deck-spacing-sm);
+}
+
+/* Tiers */
+.template-professional .slide .tier-card {
+  border: var(--deck-border-width) solid var(--deck-border);
+  border-radius: var(--deck-border-radius);
+  padding: var(--deck-spacing-md);
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.template-professional .slide .tier-card.highlighted {
+  border-color: var(--deck-accent);
+  border-width: 4px;
+  box-shadow: 0 0 0 4px rgba(237, 137, 54, 0.2);
+  transform: scale(1.05);
+}
+
+/* Buttons */
+.template-professional .slide .btn-primary {
+  background: var(--deck-primary);
+  color: white;
+  padding: var(--deck-spacing-sm) var(--deck-spacing-lg);
+  border-radius: var(--deck-border-radius);
+  font-family: var(--deck-font-title);
+  font-size: 24px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.template-professional .slide .btn-primary:hover {
+  background: var(--deck-secondary);
+  transform: translateY(-2px);
+  box-shadow: var(--deck-shadow-lg);
+}
+
+/* Tables */
+.template-professional .slide table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--deck-border-radius);
+  overflow: hidden;
+}
+
+.template-professional .slide th {
+  background: var(--deck-primary);
+  color: white;
+  padding: var(--deck-spacing-sm);
+  font-family: var(--deck-font-title);
+  font-size: 24px;
+  text-align: left;
+}
+
+.template-professional .slide td {
+  padding: var(--deck-spacing-sm);
+  border-bottom: 1px solid var(--deck-border);
+  font-size: 20px;
+}
+
+.template-professional .slide tr:last-child td {
+  border-bottom: none;
+}
