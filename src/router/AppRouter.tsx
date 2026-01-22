@@ -37,6 +37,7 @@ const FinanceAgentView = lazy(() => import('../modules/finance/views/FinanceAgen
 
 // Grants Module - Document processing intensive
 const GrantsModuleView = lazy(() => import('../modules/grants/views/GrantsModuleView').then(m => ({ default: m.GrantsModuleView })));
+const PresentationDemo = lazy(() => import('../modules/grants/components/presentation/PresentationDemo').then(m => ({ default: m.PresentationDemo })));
 
 // Connections Module - Multiple nested views
 const ConnectionsPage = lazy(() => import('../pages/ConnectionsPage').then(m => ({ default: m.ConnectionsPage })));
@@ -552,6 +553,12 @@ export function AppRouter() {
                <Route
                   path="/terms"
                   element={<TermsOfServicePage />}
+               />
+
+               {/* Presentation Demo - Public route for testing Issue #117 */}
+               <Route
+                  path="/presentation-demo"
+                  element={<PresentationDemo />}
                />
 
                {/* Onboarding Flow - Protected, for new users */}
