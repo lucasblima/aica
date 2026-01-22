@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import * as spaceService from '../services/connectionSpaceService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useConnectionSpaces');
   ConnectionSpace,
   CreateSpacePayload,
   UpdateSpacePayload,
   Archetype
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useConnectionSpaces');
 
 /**
  * Options for configuring the useConnectionSpaces hook.
