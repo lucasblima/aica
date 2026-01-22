@@ -16,13 +16,14 @@ import {
   searchInventory,
 } from '../services/inventoryService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useInventory');
   InventoryItem,
   CreateInventoryItemPayload,
   UpdateInventoryItemPayload,
   WarrantyAlert,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useInventory');
 
 interface UseInventoryReturn {
   items: InventoryItem[];

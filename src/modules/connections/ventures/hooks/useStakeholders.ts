@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { stakeholderService } from '../services';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useStakeholders');
   VenturesStakeholder,
   CreateStakeholderPayload,
   UpdateStakeholderPayload,
   StakeholderType,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useStakeholders');
 
 interface UseStakeholdersReturn {
   stakeholders: VenturesStakeholder[];

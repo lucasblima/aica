@@ -1,12 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('credentialService');
   AcademiaCredential,
   CreateCredentialPayload,
   UpdateCredentialPayload,
   CredentialType,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('credentialService');
 
 /**
  * Credential Service

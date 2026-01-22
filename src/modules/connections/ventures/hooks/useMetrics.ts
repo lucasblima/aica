@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { metricsService } from '../services';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useMetrics');
   VenturesMetrics,
   CreateMetricsPayload,
   UpdateMetricsPayload,
   PeriodType,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useMetrics');
 
 interface UseMetricsReturn {
   metrics: VenturesMetrics[];

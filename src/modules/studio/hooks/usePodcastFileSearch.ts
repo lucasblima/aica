@@ -11,13 +11,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useModuleFileSearch } from '@/hooks/useFileSearch';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-
-const log = createNamespacedLogger('usePodcastFileSearch');
   FileSearchCorpus,
   FileSearchDocument,
   FileSearchResult,
 } from '@/types/fileSearch';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('usePodcastFileSearch');
 
 export interface UsePodcastFileSearchOptions {
   /** ID do episódio (module_id) */

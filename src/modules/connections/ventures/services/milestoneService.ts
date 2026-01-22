@@ -1,13 +1,14 @@
 import { supabase } from '@/lib/supabase';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('milestoneService');
   VenturesMilestone,
   CreateMilestonePayload,
   UpdateMilestonePayload,
   MilestoneStatus,
   MilestoneCategory,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('milestoneService');
 
 /**
  * Milestone Service

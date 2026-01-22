@@ -2,14 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { milestoneService } from '../services';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useMilestones');
   VenturesMilestone,
   CreateMilestonePayload,
   UpdateMilestonePayload,
   MilestoneStatus,
   MilestoneCategory,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useMilestones');
 
 interface UseMilestonesReturn {
   milestones: VenturesMilestone[];

@@ -1,12 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('journeyService');
   AcademiaJourney,
   CreateJourneyPayload,
   UpdateJourneyPayload,
   JourneyStatus,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('journeyService');
 
 /**
  * Journey Service

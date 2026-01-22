@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import * as memberService from '../services/connectionMemberService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useConnectionMembers');
   ConnectionMember,
   AddMemberPayload,
   MemberRole
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useConnectionMembers');
 
 interface UseConnectionMembersOptions {
   spaceId: string;

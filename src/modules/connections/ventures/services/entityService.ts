@@ -1,11 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('entityService');
   VenturesEntity,
   CreateEntityPayload,
   UpdateEntityPayload,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('entityService');
 
 /**
  * Entity Service
