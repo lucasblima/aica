@@ -302,10 +302,65 @@ function getMessageType(message: MessageData['message']): string {
 }
 
 /**
+ * Format document type for display
+ * Issue #118 - WhatsApp Document Input
+ */
+function formatDocumentType(type: string): string {
+  const types: Record<string, string> = {
+    'projeto_rouanet': 'Projeto Rouanet',
+    'estatuto': 'Estatuto',
+    'apresentacao': 'Apresentação',
+    'relatorio': 'Relatório',
+    'contrato': 'Contrato',
+    'outro': 'Outro documento',
+  }
+  return types[type] || type
+}
+
+/**
  * Convert WhatsApp JID to normalized phone number
  */
 function jidToPhone(remoteJid: string): string {
   return remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '')
+}
+
+/**
+ * Create pending action for document linking
+ * Issue #118 - WhatsApp Document Input
+ */
+async function createLinkingPendingAction(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  contactPhone: string,
+  remoteJid: string,
+  instanceName: string,
+  documentId: string,
+  detectedType: string,
+  confidence: number
+): Promise<void> {
+  try {
+    const { error } = await supabase.from('whatsapp_pending_actions').insert({
+      user_id: userId,
+      contact_phone: contactPhone,
+      remote_jid: remoteJid,
+      instance_name: instanceName,
+      source_message_id: documentId, // Track which document
+      action_type: 'link_document',
+      action_payload: {
+        document_id: documentId,
+        detected_type: detectedType,
+        confidence,
+      },
+      status: 'pending',
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
+    })
+
+    if (error) {
+      log('ERROR', 'Failed to create pending action', error)
+    }
+  } catch (err) {
+    log('ERROR', 'Exception creating pending action', (err as Error).message)
+  }
 }
 
 /**
@@ -956,6 +1011,123 @@ async function sendWhatsAppMessage(
   }
 }
 
+/**
+ * Handle media messages (document, image, audio, video)
+ * Downloads media from Evolution API and processes via File Pipeline
+ * Issue #118 - WhatsApp Input de Documentos
+ */
+async function handleMediaMessage(
+  supabase: ReturnType<typeof createClient>,
+  instanceName: string,
+  userId: string,
+  messageData: MessageData,
+  messageType: 'document' | 'image' | 'audio' | 'video'
+): Promise<void> {
+  const contactPhone = jidToPhone(messageData.key.remoteJid)
+  const remoteJid = messageData.key.remoteJid
+  const messageId = messageData.key.id
+
+  log('INFO', 'Processing media message', { messageType, messageId, contactPhone })
+
+  // Extract media info based on type
+  let mediaUrl: string | undefined
+  let mimeType: string | undefined
+  let originalFilename: string | undefined
+
+  if (messageType === 'document' && messageData.message?.documentMessage) {
+    const doc = messageData.message.documentMessage
+    mediaUrl = doc.url
+    mimeType = doc.mimetype
+    originalFilename = doc.fileName || doc.title || 'document'
+  } else if (messageType === 'image' && messageData.message?.imageMessage) {
+    const img = messageData.message.imageMessage
+    mediaUrl = img.url
+    mimeType = img.mimetype
+    originalFilename = img.fileName || 'image.jpg'
+  } else if (messageType === 'audio' && messageData.message?.audioMessage) {
+    const audio = messageData.message.audioMessage
+    mediaUrl = audio.url
+    mimeType = audio.mimetype
+    originalFilename = 'audio.ogg'
+  } else if (messageType === 'video' && messageData.message?.videoMessage) {
+    const video = messageData.message.videoMessage
+    mediaUrl = video.url
+    mimeType = video.mimetype
+    originalFilename = 'video.mp4'
+  }
+
+  if (!mediaUrl || !mimeType) {
+    log('WARN', 'Media message missing URL or mimetype', { messageType, messageId })
+    await sendWhatsAppMessage(
+      instanceName,
+      remoteJid,
+      '❌ Não consegui processar este arquivo. Por favor, tente novamente.'
+    )
+    return
+  }
+
+  // Send "processing" message
+  await sendWhatsAppMessage(
+    instanceName,
+    remoteJid,
+    '⏳ Recebi seu documento! Processando...'
+  )
+
+  // Import processor (dynamic import to avoid circular deps)
+  const { processWhatsAppMedia } = await import('../_shared/whatsapp-document-processor.ts')
+
+  // Process the media
+  const result = await processWhatsAppMedia(supabase, {
+    userId,
+    instanceName,
+    messageId,
+    mediaType: messageType,
+    mediaUrl,
+    mimeType,
+    originalFilename,
+    contactPhone,
+    remoteJid,
+  })
+
+  if (result.success) {
+    // Format success message
+    let successMessage = '✅ *Documento processado!*\n\n'
+
+    if (result.detectedType) {
+      successMessage += `📄 *Tipo detectado:* ${formatDocumentType(result.detectedType)}\n`
+      successMessage += `📊 *Confiança:* ${Math.round((result.confidence || 0) * 100)}%\n`
+    }
+
+    successMessage += '\nDeseja vincular este documento a uma organização?\n\n'
+    successMessage += '_Responda com SIM para ver opções ou NAO para ignorar_'
+
+    await sendWhatsAppMessage(instanceName, remoteJid, successMessage)
+
+    // Create pending action for linking (if detected type has high confidence)
+    if (result.detectedType && (result.confidence || 0) > 0.7) {
+      await createLinkingPendingAction(
+        supabase,
+        userId,
+        contactPhone,
+        remoteJid,
+        instanceName,
+        result.documentId!,
+        result.detectedType,
+        result.confidence!
+      )
+    }
+  } else {
+    // Error message
+    const errorMessage = result.error?.includes('não suportado')
+      ? '❌ *Formato não suportado*\n\nEnvie documentos em:\n• PDF\n• Word (DOCX)\n• PowerPoint (PPTX)\n• Imagens (JPG, PNG)'
+      : '❌ Erro ao processar documento. Tente novamente mais tarde.'
+
+    await sendWhatsAppMessage(instanceName, remoteJid, errorMessage)
+
+    log('ERROR', 'Media processing failed', { error: result.error, messageId })
+  }
+}
+
 // ============================================================================
 // EVENT HANDLERS
 // ============================================================================
@@ -1012,18 +1184,28 @@ async function handleMessagesUpsert(
     }
   }
 
-  // Store the message
+  const messageType = getMessageType(messageData.message)
+
+  // Issue #118: Process media messages (document, image, audio, video)
+  if (messageType !== 'text' && messageType !== 'sticker' && messageType !== 'location' && messageType !== 'reaction') {
+    // Handle media message asynchronously
+    await handleMediaMessage(
+      supabase,
+      instanceName,
+      userId,
+      messageData,
+      messageType as 'document' | 'image' | 'audio' | 'video'
+    )
+    // Note: Media message is NOT stored in whatsapp_messages table
+    // Instead, it's tracked in whatsapp_media_tracking and processed_documents
+    return
+  }
+
+  // Original text message handling continues below...
+  // Store the message (only for text messages)
   const result = await storeMessage(supabase, userId, instanceName, messageData)
 
   if (result) {
-    const messageType = getMessageType(messageData.message)
-
-    // Queue for async processing if needed (audio transcription, OCR, etc.)
-    // Note: Currently skipped since schema doesn't support media
-    if (messageType !== 'text') {
-      await enqueueForProcessing(supabase, result.messageId, messageType, userId)
-    }
-
     // Trigger health score recalculation (Issue #144)
     // Must await to ensure RPC completes before Edge Function terminates
     await triggerHealthScoreRecalculation(supabase, userId, result.contactId)
