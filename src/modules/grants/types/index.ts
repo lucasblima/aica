@@ -540,3 +540,26 @@ export {
   calculateCompletionPercentage,
   calculateTotalXpPotential,
 } from './wizard';
+
+// ============================================
+// PRESENTATION RAG (Re-export from presentationRAG.ts)
+// ============================================
+
+export type {
+  TargetFocus,
+  PresentationContext,
+  OrganizationInfo,
+  ProjectInfo,
+  ImpactMetrics,
+  DocumentSearchResult,
+  GeneratedPresentation,
+  GeneratedSlide,
+  BuildContextOptions,
+  GenerateSlideOptions,
+  AudiencePromptConfig,
+  FieldExtractionConfig,
+  ValidationResult,
+  GenerationStats,
+  ContextBuildError,
+  ContentGenerationError,
+} from './presentationRAG';
