@@ -665,6 +665,7 @@ async function processConsentKeyword(
 /**
  * Check for pending actions and process confirmation responses
  * Issue #100: Organization document registration via WhatsApp
+ * Issue #118: Document linking flow (Fase 4)
  */
 async function checkPendingActionResponse(
   supabase: ReturnType<typeof createClient>,
@@ -684,10 +685,6 @@ async function checkPendingActionResponse(
     const isRejection = ['NAO', 'NÃO', 'N', 'NO', 'CANCELAR', 'IGNORAR', 'DEPOIS'].some(
       k => normalizedText === k || normalizedText.startsWith(k + ' ')
     )
-
-    if (!isConfirmation && !isRejection) {
-      return { handled: false }
-    }
 
     // Find pending action for this user/contact
     const { data: pendingAction, error: fetchError } = await supabase
@@ -709,7 +706,26 @@ async function checkPendingActionResponse(
       actionId: pendingAction.id,
       actionType: pendingAction.action_type,
       isConfirmation,
+      isRejection,
+      messageText: messageText.substring(0, 50),
     })
+
+    // Route to specific handler based on action_type
+    if (pendingAction.action_type === 'link_document') {
+      return await handleDocumentLinkingFlow(
+        supabase,
+        pendingAction,
+        messageText,
+        userId,
+        remoteJid,
+        instanceName
+      )
+    }
+
+    // Original register_organization flow
+    if (!isConfirmation && !isRejection) {
+      return { handled: false }
+    }
 
     if (isRejection) {
       // User rejected - update status
@@ -886,6 +902,360 @@ async function processOrganizationRegistration(
 
     log('ERROR', 'Organization registration failed', errorMsg)
     return { success: false, error: errorMsg }
+  }
+}
+
+/**
+ * Handle document linking conversational flow
+ * Issue #118 - Fase 4
+ *
+ * Multi-step flow:
+ * Step 1: User responds SIM → List organizations
+ * Step 2: User responds with number → Link document
+ * Step 3: User responds NAO → Cancel
+ * Step 4: User provides organization name → Create org and link
+ */
+async function handleDocumentLinkingFlow(
+  supabase: ReturnType<typeof createClient>,
+  pendingAction: any,
+  messageText: string,
+  userId: string,
+  remoteJid: string,
+  instanceName: string
+): Promise<{ handled: boolean; response?: string }> {
+  const normalizedText = messageText.trim().toUpperCase()
+  const documentId = pendingAction.action_payload?.document_id
+
+  log('INFO', 'Handling document linking flow', {
+    step: pendingAction.action_payload?.step || 'initial',
+    documentId,
+    messageText: messageText.substring(0, 50),
+  })
+
+  // STEP 1: User responds "SIM" → List organizations
+  if (normalizedText === 'SIM' || normalizedText === 'S') {
+    log('INFO', 'User wants to link document', { documentId, userId })
+
+    // Fetch user's organizations
+    const organizations = await fetchUserOrganizations(supabase, userId)
+
+    if (organizations.length === 0) {
+      // No organizations, suggest creating one
+      const response = '🏢 *Você ainda não tem organizações cadastradas.*\n\n' +
+        'Para vincular documentos, primeiro cadastre uma organização no app.\n\n' +
+        'Ou responda com o nome da organização para criar uma nova agora.'
+
+      // Update pending action to wait for organization name
+      await supabase.from('whatsapp_pending_actions')
+        .update({
+          action_payload: {
+            ...pendingAction.action_payload,
+            step: 'awaiting_org_name'
+          }
+        })
+        .eq('id', pendingAction.id)
+
+      return { handled: true, response }
+    }
+
+    // Format organizations list
+    const response = await formatOrganizationsMessage(organizations, documentId)
+
+    // Update pending action to await organization selection
+    await supabase.from('whatsapp_pending_actions')
+      .update({
+        action_payload: {
+          ...pendingAction.action_payload,
+          step: 'awaiting_org_selection',
+          organizations: organizations.map(o => ({ id: o.id, name: o.name }))
+        }
+      })
+      .eq('id', pendingAction.id)
+
+    return { handled: true, response }
+  }
+
+  // STEP 2: User responds "NAO" → Cancel
+  if (normalizedText === 'NAO' || normalizedText === 'N' || normalizedText === 'NÃO') {
+    log('INFO', 'User declined document linking', { documentId })
+
+    // Mark as cancelled
+    await supabase.from('whatsapp_pending_actions')
+      .update({ status: 'cancelled' })
+      .eq('id', pendingAction.id)
+
+    const response = '✅ Ok, documento não vinculado.\n\n' +
+      'Você pode consultá-lo depois no app ou vincular manualmente.'
+
+    return { handled: true, response }
+  }
+
+  // STEP 3: User responds with number → Link to organization
+  const step = pendingAction.action_payload?.step
+
+  if (step === 'awaiting_org_selection') {
+    const selectedIndex = parseInt(messageText.trim())
+
+    if (isNaN(selectedIndex)) {
+      return {
+        handled: true,
+        response: '❌ Resposta inválida. Por favor, responda com o *número* da organização.'
+      }
+    }
+
+    const orgs = pendingAction.action_payload?.organizations || []
+
+    // Handle special options
+    if (selectedIndex === 0) {
+      // Create new organization
+      const response = '🏢 *Criar nova organização*\n\n' +
+        'Responda com o nome da organização que deseja criar.'
+
+      await supabase.from('whatsapp_pending_actions')
+        .update({
+          action_payload: {
+            ...pendingAction.action_payload,
+            step: 'awaiting_org_name'
+          }
+        })
+        .eq('id', pendingAction.id)
+
+      return { handled: true, response }
+    }
+
+    // Validate selection (1-indexed)
+    if (selectedIndex < 1 || selectedIndex > orgs.length) {
+      return {
+        handled: true,
+        response: `❌ Opção inválida. Escolha um número entre 1 e ${orgs.length}, ou 0 para criar nova organização.`
+      }
+    }
+
+    const selectedOrg = orgs[selectedIndex - 1]
+
+    log('INFO', 'User selected organization', {
+      orgId: selectedOrg.id,
+      orgName: selectedOrg.name,
+      documentId,
+    })
+
+    // Link document to organization
+    const linkResult = await linkDocumentToOrganization(
+      supabase,
+      documentId,
+      selectedOrg.id
+    )
+
+    if (linkResult.success) {
+      // Mark action as completed
+      await supabase.from('whatsapp_pending_actions')
+        .update({ status: 'completed' })
+        .eq('id', pendingAction.id)
+
+      const response = `✅ *Documento vinculado!*\n\n` +
+        `🏢 Organização: *${selectedOrg.name}*\n\n` +
+        `O documento já está disponível no contexto para consultas e geração de apresentações.`
+
+      return { handled: true, response }
+    } else {
+      return {
+        handled: true,
+        response: '❌ Erro ao vincular documento. Tente novamente mais tarde.'
+      }
+    }
+  }
+
+  // STEP 4: User provides organization name → Create org and link
+  if (step === 'awaiting_org_name') {
+    const orgName = messageText.trim()
+
+    if (orgName.length < 3) {
+      return {
+        handled: true,
+        response: '❌ Nome muito curto. Por favor, forneça um nome com pelo menos 3 caracteres.'
+      }
+    }
+
+    log('INFO', 'Creating new organization', { orgName, documentId })
+
+    // Create organization
+    const createResult = await createOrganization(supabase, userId, orgName)
+
+    if (createResult.success) {
+      // Link document to new organization
+      await linkDocumentToOrganization(supabase, documentId, createResult.organizationId!)
+
+      // Mark action as completed
+      await supabase.from('whatsapp_pending_actions')
+        .update({ status: 'completed' })
+        .eq('id', pendingAction.id)
+
+      const response = `✅ *Organização criada e documento vinculado!*\n\n` +
+        `🏢 Organização: *${orgName}*\n\n` +
+        `Tudo pronto! O documento já está disponível no app.`
+
+      return { handled: true, response }
+    } else {
+      return {
+        handled: true,
+        response: '❌ Erro ao criar organização. Tente novamente ou crie pelo app.'
+      }
+    }
+  }
+
+  // Default: No match, ask again
+  log('WARN', 'Unhandled message in document linking flow', { step, messageText })
+  return {
+    handled: false
+  }
+}
+
+/**
+ * Fetch user's organizations
+ * Issue #118 - Fase 4
+ */
+async function fetchUserOrganizations(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<Array<{ id: string; name: string; cnpj?: string }>> {
+  try {
+    const { data, error } = await supabase
+      .from('organizations')
+      .select('id, name, document_number')
+      .eq('user_id', userId)
+      .order('name')
+
+    if (error) {
+      log('ERROR', 'Failed to fetch organizations', error)
+      return []
+    }
+
+    // Map document_number to cnpj for compatibility
+    const orgs = (data || []).map(org => ({
+      id: org.id,
+      name: org.name,
+      cnpj: org.document_number
+    }))
+
+    log('INFO', 'Fetched organizations', { count: orgs.length, userId })
+    return orgs
+  } catch (err) {
+    log('ERROR', 'Exception fetching organizations', (err as Error).message)
+    return []
+  }
+}
+
+/**
+ * Format organizations list message
+ * Issue #118 - Fase 4
+ */
+async function formatOrganizationsMessage(
+  organizations: Array<{ id: string; name: string; cnpj?: string }>,
+  documentId: string
+): Promise<string> {
+  let message = '🏢 *A qual organização vincular este documento?*\n\n'
+
+  if (organizations.length === 1) {
+    message += `*Organização disponível:*\n`
+    message += `1) ${organizations[0].name}`
+    if (organizations[0].cnpj) {
+      message += ` (CNPJ: ${formatCNPJ(organizations[0].cnpj)})`
+    }
+    message += '\n\n'
+  } else {
+    message += `*Organizações disponíveis:*\n`
+    organizations.forEach((org, index) => {
+      message += `${index + 1}) ${org.name}`
+      if (org.cnpj) {
+        message += ` (CNPJ: ${formatCNPJ(org.cnpj)})`
+      }
+      message += '\n'
+    })
+    message += '\n'
+  }
+
+  message += `0) Criar nova organização\n\n`
+  message += `_Responda com o número da opção_`
+
+  return message
+}
+
+/**
+ * Format CNPJ for display
+ * Issue #118 - Fase 4
+ */
+function formatCNPJ(cnpj: string): string {
+  // Remove non-digits
+  const cleaned = cnpj.replace(/\D/g, '')
+
+  if (cleaned.length !== 14) {
+    return cnpj // Return as-is if invalid
+  }
+
+  // Format: XX.XXX.XXX/XXXX-XX
+  return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5, 8)}/` +
+         `${cleaned.slice(8, 12)}-${cleaned.slice(12, 14)}`
+}
+
+/**
+ * Link document to organization
+ * Issue #118 - Fase 4
+ */
+async function linkDocumentToOrganization(
+  supabase: ReturnType<typeof createClient>,
+  documentId: string,
+  organizationId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('processed_documents')
+      .update({ organization_id: organizationId })
+      .eq('id', documentId)
+
+    if (error) {
+      log('ERROR', 'Failed to link document', error)
+      return { success: false, error: error.message }
+    }
+
+    log('INFO', 'Document linked successfully', { documentId, organizationId })
+    return { success: true }
+  } catch (err) {
+    log('ERROR', 'Exception linking document', (err as Error).message)
+    return { success: false, error: (err as Error).message }
+  }
+}
+
+/**
+ * Create organization
+ * Issue #118 - Fase 4
+ */
+async function createOrganization(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  name: string
+): Promise<{ success: boolean; organizationId?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('organizations')
+      .insert({
+        user_id: userId,
+        name: name,
+        organization_type: 'outro', // Default type
+        created_at: new Date().toISOString()
+      })
+      .select('id')
+      .single()
+
+    if (error) {
+      log('ERROR', 'Failed to create organization', error)
+      return { success: false, error: error.message }
+    }
+
+    log('INFO', 'Organization created', { name, organizationId: data.id })
+    return { success: true, organizationId: data.id }
+  } catch (err) {
+    log('ERROR', 'Exception creating organization', (err as Error).message)
+    return { success: false, error: (err as Error).message }
   }
 }
 
