@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { ConnectionMember, AddMemberPayload, MemberRole } from '../types';
 import { createNamespacedLogger } from '@/lib/logger';
 

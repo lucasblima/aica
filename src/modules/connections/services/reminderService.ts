@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ReminderService');

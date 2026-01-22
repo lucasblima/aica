@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { eventService, DateRange } from './eventService';
 import { getValidAccessToken } from '@/services/googleCalendarTokenService';
 import { fetchCalendarEvents, transformGoogleEvent } from '@/services/googleCalendarService';

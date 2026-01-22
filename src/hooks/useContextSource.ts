@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import {
   getDailyQuestionWithContext,
   saveDailyResponse,

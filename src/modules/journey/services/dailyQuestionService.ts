@@ -7,7 +7,7 @@
  * 3. Pool Fixo: Pool rotativo de perguntas reflexivas genéricas
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/services/supabaseClient'
 import { GeminiClient } from '@/lib/gemini'
 import type { GeminiChatResponse } from '@/lib/gemini'
 import { createNamespacedLogger } from '@/lib/logger'

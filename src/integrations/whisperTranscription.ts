@@ -9,7 +9,7 @@
  * - Graceful fallbacks
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/services/supabaseClient'
 import { EDGE_FUNCTIONS_URL } from '@/config/api'
 import { TranscriptionResult } from '@/modules/journey/types/persistenceTypes'
 import { createNamespacedLogger } from '@/lib/logger'

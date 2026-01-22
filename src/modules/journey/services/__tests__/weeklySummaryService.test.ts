@@ -25,7 +25,7 @@ import {
   type WeeklySummary,
   type WeeklySummaryData,
 } from '../weeklySummaryService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { GeminiClient } from '@/lib/gemini';
 import * as momentService from '../momentService';
 

@@ -3,7 +3,7 @@
  * Service layer for managing daily voluntary questions
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
 import {
   DailyQuestion,

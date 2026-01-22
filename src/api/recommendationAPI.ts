@@ -6,7 +6,7 @@
  * @see docs/onboarding/MODULOS_RECOMENDACOES_LOGIC.md
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { RecommendationEngine, getRecommendationEngine } from '@/services/recommendationEngine';
 import {
   RecommendationResult,
