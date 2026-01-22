@@ -1,0 +1,338 @@
+/**
+ * Creative Template - Bold, artistic design
+ * Issue #117 - Presentation Generator
+ */
+
+:root.template-creative {
+  /* Colors */
+  --deck-primary: #6366f1;
+  --deck-secondary: #ec4899;
+  --deck-accent: #14b8a6;
+  --deck-bg: #f8fafc;
+  --deck-text: #0f172a;
+  --deck-text-muted: #64748b;
+  --deck-border: #e0e7ff;
+
+  /* Typography */
+  --deck-font-title: 'Poppins', 'Arial', sans-serif;
+  --deck-font-body: 'Inter', 'Calibri', sans-serif;
+  --deck-font-mono: 'Courier New', monospace;
+
+  /* Spacing */
+  --deck-spacing-xs: 8px;
+  --deck-spacing-sm: 16px;
+  --deck-spacing-md: 24px;
+  --deck-spacing-lg: 32px;
+  --deck-spacing-xl: 48px;
+
+  /* Borders */
+  --deck-border-radius: 16px;
+  --deck-border-width: 3px;
+
+  /* Shadows */
+  --deck-shadow-sm: 0 2px 8px rgba(99, 102, 241, 0.15);
+  --deck-shadow-md: 0 8px 16px rgba(99, 102, 241, 0.2);
+  --deck-shadow-lg: 0 16px 32px rgba(99, 102, 241, 0.25);
+}
+
+/* Slide base styles */
+.template-creative .slide {
+  background: linear-gradient(135deg, var(--deck-bg) 0%, #f1f5f9 100%);
+  color: var(--deck-text);
+  font-family: var(--deck-font-body);
+  position: relative;
+}
+
+.template-creative .slide::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Headings */
+.template-creative .slide h1 {
+  font-family: var(--deck-font-title);
+  font-size: 80px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--deck-primary) 0%, var(--deck-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: var(--deck-spacing-md);
+}
+
+.template-creative .slide h2 {
+  font-family: var(--deck-font-title);
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--deck-primary);
+  line-height: 1.2;
+  margin-bottom: var(--deck-spacing-sm);
+  position: relative;
+  display: inline-block;
+}
+
+.template-creative .slide h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--deck-accent) 0%, transparent 100%);
+  border-radius: 2px;
+}
+
+.template-creative .slide h3 {
+  font-family: var(--deck-font-title);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--deck-secondary);
+  line-height: 1.3;
+  margin-bottom: var(--deck-spacing-sm);
+}
+
+/* Body text */
+.template-creative .slide p {
+  font-size: 26px;
+  line-height: 1.7;
+  color: var(--deck-text);
+  margin-bottom: var(--deck-spacing-sm);
+}
+
+/* Lists */
+.template-creative .slide ul,
+.template-creative .slide ol {
+  font-size: 26px;
+  line-height: 1.7;
+  color: var(--deck-text);
+  padding-left: var(--deck-spacing-lg);
+}
+
+.template-creative .slide li {
+  margin-bottom: var(--deck-spacing-sm);
+  position: relative;
+}
+
+.template-creative .slide ul li::marker {
+  content: '▸';
+  color: var(--deck-accent);
+  font-size: 32px;
+}
+
+/* Accent elements */
+.template-creative .slide .accent {
+  color: var(--deck-accent);
+  font-weight: 700;
+}
+
+.template-creative .slide .highlight {
+  background: linear-gradient(135deg, var(--deck-primary) 0%, var(--deck-secondary) 100%);
+  color: white;
+  padding: var(--deck-spacing-xs) var(--deck-spacing-md);
+  border-radius: var(--deck-border-radius);
+  box-shadow: var(--deck-shadow-md);
+}
+
+/* Cards */
+.template-creative .slide .card {
+  background: white;
+  border: none;
+  border-radius: var(--deck-border-radius);
+  padding: var(--deck-spacing-lg);
+  box-shadow: var(--deck-shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.template-creative .slide .card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--deck-primary) 0%, var(--deck-accent) 100%);
+}
+
+/* Metrics */
+.template-creative .slide .metric {
+  text-align: center;
+  padding: var(--deck-spacing-md);
+  background: white;
+  border-radius: var(--deck-border-radius);
+  box-shadow: var(--deck-shadow-sm);
+}
+
+.template-creative .slide .metric-value {
+  font-family: var(--deck-font-title);
+  font-size: 72px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--deck-primary) 0%, var(--deck-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.template-creative .slide .metric-label {
+  font-size: 22px;
+  color: var(--deck-text-muted);
+  margin-top: var(--deck-spacing-sm);
+  font-weight: 500;
+}
+
+/* Timeline */
+.template-creative .slide .timeline-item {
+  position: relative;
+  padding-left: var(--deck-spacing-xl);
+  margin-bottom: var(--deck-spacing-lg);
+}
+
+.template-creative .slide .timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--deck-primary) 0%, var(--deck-accent) 100%);
+  border-radius: 2px;
+}
+
+.template-creative .slide .timeline-item::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 8px;
+  width: 16px;
+  height: 16px;
+  background: var(--deck-accent);
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 3px var(--deck-accent);
+}
+
+.template-creative .slide .timeline-item.highlighted {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%);
+  padding: var(--deck-spacing-md) var(--deck-spacing-md) var(--deck-spacing-md) var(--deck-spacing-xl);
+  border-radius: var(--deck-border-radius);
+}
+
+/* Team members */
+.template-creative .slide .team-member {
+  text-align: center;
+  padding: var(--deck-spacing-md);
+  background: white;
+  border-radius: var(--deck-border-radius);
+  box-shadow: var(--deck-shadow-md);
+  transition: all 0.3s ease;
+}
+
+.template-creative .slide .team-member:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--deck-shadow-lg);
+}
+
+.template-creative .slide .team-photo {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 6px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, var(--deck-primary), var(--deck-accent)) border-box;
+  object-fit: cover;
+  margin-bottom: var(--deck-spacing-sm);
+}
+
+/* Tiers */
+.template-creative .slide .tier-card {
+  border: none;
+  border-radius: var(--deck-border-radius);
+  padding: var(--deck-spacing-lg);
+  background: white;
+  box-shadow: var(--deck-shadow-md);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-creative .slide .tier-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(90deg, var(--deck-primary) 0%, var(--deck-accent) 100%);
+}
+
+.template-creative .slide .tier-card.highlighted {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 4px var(--deck-accent), var(--deck-shadow-lg);
+}
+
+.template-creative .slide .tier-card.highlighted::before {
+  height: 12px;
+}
+
+/* Buttons */
+.template-creative .slide .btn-primary {
+  background: linear-gradient(135deg, var(--deck-primary) 0%, var(--deck-secondary) 100%);
+  color: white;
+  padding: var(--deck-spacing-md) var(--deck-spacing-xl);
+  border-radius: var(--deck-border-radius);
+  font-family: var(--deck-font-title);
+  font-size: 26px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--deck-shadow-md);
+}
+
+.template-creative .slide .btn-primary:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--deck-shadow-lg);
+}
+
+/* Tables */
+.template-creative .slide table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--deck-border-radius);
+  overflow: hidden;
+  box-shadow: var(--deck-shadow-md);
+}
+
+.template-creative .slide th {
+  background: linear-gradient(135deg, var(--deck-primary) 0%, var(--deck-secondary) 100%);
+  color: white;
+  padding: var(--deck-spacing-md);
+  font-family: var(--deck-font-title);
+  font-size: 26px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.template-creative .slide td {
+  padding: var(--deck-spacing-md);
+  background: white;
+  border-bottom: 1px solid var(--deck-border);
+  font-size: 22px;
+}
+
+.template-creative .slide tr:last-child td {
+  border-bottom: none;
+}
+
+.template-creative .slide tr:nth-child(even) td {
+  background: var(--deck-bg);
+}
