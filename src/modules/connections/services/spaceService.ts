@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { ConnectionSpace, CreateSpacePayload, UpdateSpacePayload, Archetype, ConnectionMember, ARCHETYPE_CONFIG } from '../types';
 import { createNamespacedLogger } from '@/lib/logger';
 

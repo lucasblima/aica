@@ -11,7 +11,7 @@ import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnes
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
 import { ViewState } from '../../types';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('Home');

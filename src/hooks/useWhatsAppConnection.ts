@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 import {
   generateWhatsAppQRCode as generateQRCodeEdge,
   disconnectWhatsApp as disconnectWhatsAppEdge,

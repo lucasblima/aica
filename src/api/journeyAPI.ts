@@ -13,7 +13,7 @@
  * - POST /api/journey/moments/:momentId/insights - Generate insights
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
 import {
   CreateMomentEntryInput,

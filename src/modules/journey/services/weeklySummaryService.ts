@@ -3,7 +3,7 @@
  * Service layer for generating and managing weekly summaries (Feature 7)
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/services/supabaseClient'
 import { GeminiClient } from '@/lib/gemini'
 import { createNamespacedLogger } from '@/lib/logger'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'

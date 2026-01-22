@@ -3,7 +3,7 @@
  * Service layer for managing user moments (journal entries)
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/services/supabaseClient'
 import { GeminiClient } from '@/lib/gemini'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'
 import { createNamespacedLogger } from '@/lib/logger'

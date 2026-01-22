@@ -14,7 +14,7 @@
  * - Event logging for analytics
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/services/supabaseClient'
 import { GeminiClient } from '@/lib/gemini'
 import { createNamespacedLogger } from '@/lib/logger'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'
