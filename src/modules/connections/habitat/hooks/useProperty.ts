@@ -14,13 +14,14 @@ import {
   formatPropertyAddress,
 } from '../services/propertyService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useProperty');
   HabitatProperty,
   CreateHabitatPropertyPayload,
   UpdateHabitatPropertyPayload,
   PropertyFinancialSummary,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useProperty');
 
 interface UsePropertyReturn {
   properties: HabitatProperty[];

@@ -9,9 +9,6 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-
-const log = createNamespacedLogger('PodcastWorkspaceContext');
   PodcastWorkspaceState,
   WorkspaceAction,
   WorkspaceActions,
@@ -28,6 +25,9 @@ const log = createNamespacedLogger('PodcastWorkspaceContext');
   TopicCategory,
   SavedPauta,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('PodcastWorkspaceContext');
 
 // ============================================
 // INITIAL STATE

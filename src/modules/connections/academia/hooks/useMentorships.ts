@@ -8,13 +8,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { mentorshipService } from '../services/mentorshipService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useMentorships');
   AcademiaMentorship,
   CreateMentorshipPayload,
   UpdateMentorshipPayload,
   MentorshipRelationType,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useMentorships');
 
 interface UseMentorshipsOptions {
   spaceId: string;

@@ -8,13 +8,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { credentialService } from '../services/credentialService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useCredentials');
   AcademiaCredential,
   CreateCredentialPayload,
   UpdateCredentialPayload,
   CredentialType,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useCredentials');
 
 interface UseCredentialsOptions {
   spaceId: string;

@@ -1,12 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('metricsService');
   VenturesMetrics,
   CreateMetricsPayload,
   UpdateMetricsPayload,
   PeriodType,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('metricsService');
 
 /**
  * Metrics Service

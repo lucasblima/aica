@@ -8,13 +8,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { journeyService } from '../services/journeyService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useJourneys');
   AcademiaJourney,
   CreateJourneyPayload,
   UpdateJourneyPayload,
   JourneyStatus,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useJourneys');
 
 interface UseJourneysOptions {
   spaceId: string;

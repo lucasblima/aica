@@ -1,12 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('stakeholderService');
   VenturesStakeholder,
   CreateStakeholderPayload,
   UpdateStakeholderPayload,
   StakeholderType,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('stakeholderService');
 
 /**
  * Stakeholder Service

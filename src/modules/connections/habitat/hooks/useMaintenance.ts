@@ -18,13 +18,14 @@ import {
   getMaintenanceByItem,
 } from '../services/maintenanceService';
 import type {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useMaintenance');
   MaintenanceRecord,
   CreateMaintenanceRecordPayload,
   UpdateMaintenanceRecordPayload,
   MaintenanceSummary,
 } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('useMaintenance');
 
 interface UseMaintenanceReturn {
   records: MaintenanceRecord[];
