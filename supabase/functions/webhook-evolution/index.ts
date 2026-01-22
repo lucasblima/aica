@@ -464,7 +464,7 @@ async function getOrCreateContactId(
         user_id: userId,
         phone_number: normalizedPhone,
         name: contactName || `WhatsApp ${contactPhone}`,
-        source: 'whatsapp',
+        sync_source: 'whatsapp',
         // Initialize health score fields
         health_score: 10,
         health_score_trend: 'stable',
@@ -874,9 +874,13 @@ async function enqueueForProcessing(
  * @param contactId - The contact_network.id to recalculate (already resolved by storeMessage)
  */
 async function triggerHealthScoreRecalculation(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
   contactId: string
 ): Promise<void> {
+  // Check if real-time is enabled
   if (!HEALTH_SCORE_REALTIME_ENABLED) {
+    log('DEBUG', 'Health score realtime disabled, skipping')
     return
   }
 
@@ -894,29 +898,18 @@ async function triggerHealthScoreRecalculation(
   healthScoreDebounceMap.set(debounceKey, now)
 
   try {
-    // Call calculate-health-scores Edge Function via internal HTTP
-    // Using service role to allow batch operations
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/calculate-health-scores`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ contactId }),
+    // Call record_health_score RPC directly (same as calculate-health-scores Edge Function)
+    const { data: newScore, error: rpcError } = await supabase.rpc('record_health_score', {
+      _user_id: userId,
+      _contact_id: contactId,
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      log('WARN', 'Health score recalc failed', { status: response.status, error: errorText })
+    if (rpcError) {
+      log('WARN', 'Health score RPC failed', { error: rpcError.message })
       return
     }
 
-    const result = await response.json()
-    log('INFO', 'Health score recalculated', {
-      contactId,
-      score: result.healthScore,
-      trend: result.trend,
-    })
+    log('DEBUG', 'Health score recalculated', { contactId, score: newScore })
   } catch (error) {
     log('ERROR', 'Health score recalc error', (error as Error).message)
     // Don't throw - this is a non-critical operation
@@ -1032,10 +1025,8 @@ async function handleMessagesUpsert(
     }
 
     // Trigger health score recalculation (Issue #144)
-    // Fire and forget - don't block webhook response
-    triggerHealthScoreRecalculation(result.contactId).catch(err => {
-      log('WARN', 'Health score trigger failed', (err as Error).message)
-    })
+    // Must await to ensure RPC completes before Edge Function terminates
+    await triggerHealthScoreRecalculation(supabase, userId, result.contactId)
   }
 }
 
