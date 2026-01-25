@@ -7,6 +7,7 @@ import { TourConfig } from '@/contexts/TourContext';
 export const journeyFirstVisitTour: TourConfig = {
   key: 'journey-first-visit',
   name: 'Journey Consciousness & Moments',
+  module: 'journey',
   autoStart: true,
   steps: [
     {

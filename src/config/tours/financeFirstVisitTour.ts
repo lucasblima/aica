@@ -7,6 +7,7 @@ import { TourConfig } from '@/contexts/TourContext';
 export const financeFirstVisitTour: TourConfig = {
   key: 'finance-first-visit',
   name: 'Finance Budget & Tracking',
+  module: 'finance',
   autoStart: true,
   steps: [
     {
