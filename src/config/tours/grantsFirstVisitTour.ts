@@ -7,6 +7,7 @@ import { TourConfig } from '@/contexts/TourContext';
 export const grantsFirstVisitTour: TourConfig = {
   key: 'grants-first-visit',
   name: 'Grants Discovery & Tracking',
+  module: 'grants',
   autoStart: true,
   steps: [
     {

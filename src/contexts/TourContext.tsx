@@ -1,18 +1,24 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import JoyRide from 'react-joyride';
+import JoyRide, { ACTIONS, EVENTS, STATUS, type CallBackProps, type Styles } from 'react-joyride';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('TourContext');
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 /**
  * Tour step configuration matching react-joyride format
  */
 export interface TourStep {
   target: string; // CSS selector or data-tour attribute
-  content: string;
-  placement?: 'top' | 'right' | 'bottom' | 'left' | 'center';
+  content: React.ReactNode;
+  title?: string;
+  placement?: 'top' | 'right' | 'bottom' | 'left' | 'center' | 'auto';
   disableBeacon?: boolean;
+  spotlightClicks?: boolean;
 }
 
 /**
@@ -23,6 +29,31 @@ export interface TourConfig {
   name: string; // Human readable name
   steps: TourStep[];
   autoStart?: boolean; // Whether to auto-start on first visit
+  autoStartDelay?: number; // Delay in ms before auto-starting (default: 500)
+  module?: 'atlas' | 'journey' | 'studio' | 'finance' | 'grants' | 'connections' | 'general';
+  onComplete?: () => void;
+  onSkip?: () => void;
+}
+
+/**
+ * Tour progress status
+ */
+export type TourStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped';
+
+/**
+ * Tour progress record from database
+ */
+export interface TourProgress {
+  id: string;
+  user_id: string;
+  tour_id: string;
+  status: TourStatus;
+  started_at: string | null;
+  completed_at: string | null;
+  skipped_at: string | null;
+  current_step: number;
+  total_steps: number;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -31,7 +62,10 @@ export interface TourConfig {
 interface TourContextType {
   startTour: (tourKey: string, forceStart?: boolean) => Promise<void>;
   completeTour: (tourKey: string) => Promise<void>;
+  skipTour: (tourKey: string) => Promise<void>;
   hasTourCompleted: (tourKey: string) => boolean;
+  shouldShowTour: (tourKey: string) => boolean;
+  getTourProgress: (tourKey: string) => TourProgress | undefined;
   activeTourKey: string | null;
   isLoading: boolean;
   error: string | null;
@@ -51,50 +85,116 @@ export interface TourProviderProps {
   tours?: TourConfig[];
 }
 
+// ============================================================================
+// DEFAULT STYLES (Digital Ceramic Design System)
+// ============================================================================
+
+const DEFAULT_TOUR_STYLES: Partial<Styles> = {
+  options: {
+    arrowColor: '#FFFBF5',
+    backgroundColor: '#FFFBF5',
+    primaryColor: '#F59E0B',
+    textColor: '#1F2937',
+    zIndex: 10000,
+  },
+  buttonNext: {
+    backgroundColor: '#F59E0B',
+    borderRadius: '12px',
+    color: '#FFFFFF',
+    fontSize: '14px',
+    padding: '10px 20px',
+  },
+  buttonBack: {
+    color: '#6B7280',
+    marginRight: '10px',
+  },
+  buttonSkip: {
+    color: '#9CA3AF',
+  },
+  tooltip: {
+    borderRadius: '16px',
+    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+    padding: '20px',
+  },
+  tooltipContent: {
+    padding: '10px 0',
+  },
+  spotlight: {
+    borderRadius: '12px',
+  },
+};
+
 export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = [] }) => {
-  const [completedTours, setCompletedTours] = useState<Set<string>>(new Set());
+  const [tourProgress, setTourProgress] = useState<Map<string, TourProgress>>(new Map());
   const [activeTourKey, setActiveTourKey] = useState<string | null>(null);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user's completed tours from Supabase on mount
+  // Load user's tour progress from Supabase on mount
   useEffect(() => {
-    const loadCompletedTours = async () => {
+    const loadTourProgress = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
         const { data, error: fetchError } = await supabase
           .from('user_tour_progress')
-          .select('tour_key');
+          .select('*');
 
         if (fetchError) {
-          log.error(' Failed to load completed tours:', fetchError);
+          // Table might not exist yet - that's ok
+          if (fetchError.code === '42P01') {
+            log.debug('Tour progress table does not exist yet');
+            setIsLoading(false);
+            return;
+          }
+          log.error('Failed to load tour progress:', fetchError);
           setError(fetchError.message);
           return;
         }
 
         if (data) {
-          const completed = new Set(data.map(row => row.tour_key));
-          setCompletedTours(completed);
+          const progressMap = new Map<string, TourProgress>();
+          data.forEach((row) => {
+            progressMap.set(row.tour_id, row as TourProgress);
+          });
+          setTourProgress(progressMap);
         }
       } catch (err) {
-        log.error(' Unexpected error loading tours:', err);
+        log.error('Unexpected error loading tours:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadCompletedTours();
+    loadTourProgress();
   }, []);
 
   /**
    * Check if a tour has been completed
    */
   const hasTourCompleted = useCallback((tourKey: string): boolean => {
-    return completedTours.has(tourKey);
-  }, [completedTours]);
+    const progress = tourProgress.get(tourKey);
+    return progress?.status === 'completed';
+  }, [tourProgress]);
+
+  /**
+   * Check if a tour should be shown (not completed or skipped)
+   */
+  const shouldShowTour = useCallback((tourKey: string): boolean => {
+    const progress = tourProgress.get(tourKey);
+    if (!progress) return true; // Never started
+    return progress.status === 'not_started' || progress.status === 'in_progress';
+  }, [tourProgress]);
+
+  /**
+   * Get progress for a specific tour
+   */
+  const getTourProgress = useCallback((tourKey: string): TourProgress | undefined => {
+    return tourProgress.get(tourKey);
+  }, [tourProgress]);
 
   /**
    * Start a tour by key
@@ -107,62 +207,149 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       return;
     }
 
-    // Don't start if already completed, unless forceStart is true (for re-watching)
-    if (!forceStart && hasTourCompleted(tourKey)) {
+    // Don't start if already completed or skipped, unless forceStart is true
+    if (!forceStart && !shouldShowTour(tourKey)) {
       return;
     }
 
+    const tourConfig = tours.find(t => t.key === tourKey);
+
+    // Record tour start in database
+    try {
+      await supabase.rpc('start_tour', {
+        p_user_id: (await supabase.auth.getUser()).data.user?.id,
+        p_tour_id: tourKey,
+        p_total_steps: tourConfig?.steps.length || 1,
+      });
+    } catch (err) {
+      log.error('Error starting tour in database:', err);
+    }
+
     setActiveTourKey(tourKey);
-  }, [activeTourKey, hasTourCompleted]);
+    setCurrentStepIndex(0);
+  }, [activeTourKey, shouldShowTour, tours]);
 
   /**
    * Mark a tour as completed and persist to database
    */
   const completeTour = useCallback(async (tourKey: string) => {
+    const tourConfig = tours.find(t => t.key === tourKey);
+
     try {
       setError(null);
 
-      // Insert tour completion record
-      const { error: insertError } = await supabase
-        .from('user_tour_progress')
-        .insert({
-          tour_key: tourKey,
-        });
-
-      if (insertError) {
-        // Handle unique constraint violation (already completed)
-        if (insertError.code === '23505') {
-          log.debug(' Tour already completed:', tourKey);
-        } else {
-          throw insertError;
-        }
-      }
+      // Use RPC function for completion
+      await supabase.rpc('complete_tour', {
+        p_user_id: (await supabase.auth.getUser()).data.user?.id,
+        p_tour_id: tourKey,
+      });
 
       // Update local state
-      setCompletedTours(prev => new Set([...prev, tourKey]));
-      setActiveTourKey(null);
+      setTourProgress(prev => {
+        const newMap = new Map(prev);
+        newMap.set(tourKey, {
+          ...prev.get(tourKey),
+          tour_id: tourKey,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+        } as TourProgress);
+        return newMap;
+      });
+
+      // Call onComplete callback
+      tourConfig?.onComplete?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save tour progress';
-      log.error(' Error completing tour:', message);
+      log.error('Error completing tour:', message);
       setError(message);
+    } finally {
+      setActiveTourKey(null);
+      setCurrentStepIndex(0);
     }
-  }, []);
+  }, [tours]);
+
+  /**
+   * Skip a tour and persist to database
+   */
+  const skipTour = useCallback(async (tourKey: string) => {
+    const tourConfig = tours.find(t => t.key === tourKey);
+
+    try {
+      setError(null);
+
+      // Use RPC function for skipping
+      await supabase.rpc('skip_tour', {
+        p_user_id: (await supabase.auth.getUser()).data.user?.id,
+        p_tour_id: tourKey,
+      });
+
+      // Update local state
+      setTourProgress(prev => {
+        const newMap = new Map(prev);
+        newMap.set(tourKey, {
+          ...prev.get(tourKey),
+          tour_id: tourKey,
+          status: 'skipped',
+          skipped_at: new Date().toISOString(),
+        } as TourProgress);
+        return newMap;
+      });
+
+      // Call onSkip callback
+      tourConfig?.onSkip?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save tour progress';
+      log.error('Error skipping tour:', message);
+      setError(message);
+    } finally {
+      setActiveTourKey(null);
+      setCurrentStepIndex(0);
+    }
+  }, [tours]);
 
   /**
    * Handle tour callback from react-joyride
    */
   const handleTourCallback = useCallback(
-    (data: any) => {
-      const { action, type, tour } = data;
+    (data: CallBackProps) => {
+      const { action, status, type, index } = data;
 
-      // When user finishes or skips the tour
-      if (type === 'tour:end' || action === 'skip' || action === 'close') {
+      // Handle tour end
+      if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
         if (activeTourKey) {
-          completeTour(activeTourKey);
+          if (status === STATUS.FINISHED) {
+            completeTour(activeTourKey);
+          } else if (status === STATUS.SKIPPED) {
+            skipTour(activeTourKey);
+          }
+        }
+        return;
+      }
+
+      // Handle step changes
+      if (type === EVENTS.STEP_AFTER) {
+        if (action === ACTIONS.NEXT) {
+          setCurrentStepIndex(prev => prev + 1);
+        } else if (action === ACTIONS.PREV) {
+          setCurrentStepIndex(prev => Math.max(0, prev - 1));
         }
       }
+
+      // Handle close button
+      if (action === ACTIONS.CLOSE && activeTourKey) {
+        skipTour(activeTourKey);
+      }
+
+      // Update step index in database
+      if (type === EVENTS.STEP_AFTER && activeTourKey) {
+        supabase.rpc('update_tour_step', {
+          p_user_id: null, // Will be set by function
+          p_tour_id: activeTourKey,
+          p_current_step: index + 1,
+        }).catch(err => log.error('Error updating tour step:', err));
+      }
     },
-    [activeTourKey, completeTour]
+    [activeTourKey, completeTour, skipTour]
   );
 
   /**
@@ -173,7 +360,10 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
   const value: TourContextType = {
     startTour,
     completeTour,
+    skipTour,
     hasTourCompleted,
+    shouldShowTour,
+    getTourProgress,
     activeTourKey,
     isLoading,
     error,
@@ -187,39 +377,22 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       {activeTourConfig && (
         <JoyRide
           steps={activeTourConfig.steps as any}
+          stepIndex={currentStepIndex}
           run={true}
           continuous={true}
           showProgress={true}
           showSkipButton={true}
+          disableOverlayClose
+          spotlightClicks
           callback={handleTourCallback}
-          styles={{
-            beaconInner: {
-              backgroundColor: '#6B9EFF',
-            },
-            beaconOuter: {
-              backgroundColor: 'rgba(107, 158, 255, 0.2)',
-              border: '2px solid #6B9EFF',
-            },
-            tooltip: {
-              backgroundColor: '#fff',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              color: '#2d3748',
-              fontSize: '14px',
-              padding: '12px 16px',
-            },
-            buttonNext: {
-              backgroundColor: '#6B9EFF',
-              color: '#fff',
-              borderRadius: '6px',
-              padding: '8px 16px',
-              fontSize: '14px',
-              fontWeight: '600',
-            },
-            buttonSkip: {
-              color: '#6B9EFF',
-              fontSize: '14px',
-            },
+          styles={DEFAULT_TOUR_STYLES}
+          locale={{
+            back: 'Voltar',
+            close: 'Fechar',
+            last: 'Concluir',
+            next: 'Próximo',
+            open: 'Abrir',
+            skip: 'Pular tour',
           }}
         />
       )}
