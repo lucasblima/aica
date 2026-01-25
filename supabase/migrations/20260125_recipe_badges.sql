@@ -69,10 +69,10 @@ ADD COLUMN IF NOT EXISTS favorite BOOLEAN DEFAULT false;
 
 -- Step 5: Create index for faster badge lookups
 CREATE INDEX IF NOT EXISTS idx_user_achievements_badge_lookup
-ON public.user_achievements(user_id, achievement_id);
+ON public.user_achievements(user_id, badge_id);
 
-CREATE INDEX IF NOT EXISTS idx_user_achievements_earned_at
-ON public.user_achievements(earned_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_unlocked_at
+ON public.user_achievements(unlocked_at DESC);
 
 -- Step 6: Create function to get user badge stats
 CREATE OR REPLACE FUNCTION public.get_user_badge_stats(p_user_id UUID)
@@ -211,7 +211,7 @@ SELECT
   COUNT(ua.id) as badges_earned,
   COALESCE(SUM((ua.metadata->>'xp_reward')::int), 0) as total_xp_from_badges,
   COALESCE(SUM((ua.metadata->>'cp_reward')::int), 0) as total_cp_from_badges,
-  MAX(ua.earned_at) as last_badge_at
+  MAX(ua.unlocked_at) as last_badge_at
 FROM user_stats us
 LEFT JOIN user_achievements ua ON ua.user_id = us.user_id
 LEFT JOIN profiles p ON p.id = us.user_id
@@ -260,7 +260,7 @@ WHERE recipe_profile IS NULL
 -- DROP FUNCTION IF EXISTS public.update_recipe_pillar_score(UUID, TEXT, INT);
 -- DROP FUNCTION IF EXISTS public.toggle_black_hat_badges(UUID, BOOLEAN);
 -- DROP INDEX IF EXISTS idx_user_achievements_badge_lookup;
--- DROP INDEX IF EXISTS idx_user_achievements_earned_at;
+-- DROP INDEX IF EXISTS idx_user_achievements_unlocked_at;
 -- ALTER TABLE public.user_achievements DROP COLUMN IF EXISTS metadata;
 -- ALTER TABLE public.user_achievements DROP COLUMN IF EXISTS displayed;
 -- ALTER TABLE public.user_achievements DROP COLUMN IF EXISTS favorite;
