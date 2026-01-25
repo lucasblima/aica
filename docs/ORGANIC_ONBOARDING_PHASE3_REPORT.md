@@ -9,14 +9,14 @@
 
 Phase 2 integrated `TourProvider` and `useTourAutoStart` hooks across all 5 modules. Phase 3 requires implementing `data-tour` HTML attributes on UI elements to enable the tooltip tours.
 
-**Current Progress:**
-- **Atlas:** 8/9 (89%) ✅ Near complete
-- **Journey:** 2/7 (29%) 🚧 Partially started
+**Current Progress (After Sprint 1):**
+- **Atlas:** 9/9 (100%) ✅ **COMPLETE**
+- **Journey:** 7/7 (100%) ✅ **COMPLETE**
 - **Finance:** 0/8 (0%) ❌ Not started
 - **Grants:** 0/8 (0%) ❌ Not started
 - **Studio:** 0/8 (0%) ❌ Not started
 
-**Total:** 10/40 attributes implemented (25%)
+**Total:** 16/40 attributes implemented (40%)
 
 ---
 
@@ -24,7 +24,7 @@ Phase 2 integrated `TourProvider` and `useTourAutoStart` hooks across all 5 modu
 
 ### 1. Atlas (Meu Dia) - Task Management
 
-**Status:** 8/9 implemented (89%) ✅
+**Status:** 9/9 implemented (100%) ✅ **COMPLETE**
 
 **Tour Configuration:** `src/config/tours/atlasFirstVisitTour.ts`
 
@@ -38,40 +38,37 @@ Phase 2 integrated `TourProvider` and `useTourAutoStart` hooks across all 5 modu
 | 6 | `quadrant-4` | `src/components/domain/PriorityMatrix.tsx` | ✅ Implemented | Neither |
 | 7 | `add-task-button` | `src/views/AgendaView.tsx` | ✅ Implemented | New task button |
 | 8 | `task-filters` | `src/components/domain/PriorityMatrix.tsx` | ✅ Implemented | Filter controls |
-| 9 | `xp-badge` | `src/views/AgendaView.tsx` or Header component | ❌ **Missing** | XP display widget |
+| 9 | `xp-badge` | `src/views/AgendaView.tsx` | ✅ **Implemented (Sprint 1)** | GamificationWidget in header |
 
-**Next Steps:**
-- [ ] Add `data-tour="xp-badge"` to the XP/level display component in AgendaView
+**Implementation (Sprint 1):**
+- ✅ Imported `GamificationWidget` from `@/components/features`
+- ✅ Added widget to header with `data-tour="xp-badge"` wrapper
+- ✅ Used `compact` mode for space efficiency
 
 ---
 
 ### 2. Journey (Conscientização) - Consciousness & Moments
 
-**Status:** 2/7 implemented (29%) 🚧
+**Status:** 7/7 implemented (100%) ✅ **COMPLETE**
 
 **Tour Configuration:** `src/config/tours/journeyFirstVisitTour.ts`
 
-| # | data-tour attribute | Expected Location | Status | Notes |
+| # | data-tour attribute | Component Location | Status | Notes |
 |---|---------------------|-------------------|--------|-------|
 | 1 | `journey-header` | `src/modules/journey/views/JourneyFullScreen.tsx` | ✅ Implemented | Header section |
-| 2 | `consciousness-score` | Journey dashboard | ❌ **Missing** | CP Score display widget |
-| 3 | `consciousness-points` | `src/modules/journey/views/JourneyFullScreen.tsx` | ⚠️ **Commented** | Line 70: `{/* data-tour="consciousness-points" */}` |
-| 4 | `moments-timeline` | Journey main content area | ❌ **Missing** | Timeline/feed of moments |
+| 2 | `consciousness-score` | `src/modules/journey/components/gamification/ConsciousnessScore.tsx` | ✅ **Implemented (Sprint 1)** | Root div |
+| 3 | `consciousness-points` | `src/modules/journey/views/JourneyFullScreen.tsx` | ✅ **Implemented (Sprint 1)** | Wrapper div added |
+| 4 | `moments-timeline` | `src/modules/journey/components/timeline/UnifiedTimelineView.tsx` | ✅ **Implemented (Sprint 1)** | Root div |
 | 5 | `add-moment-button` | `src/modules/journey/views/JourneyFullScreen.tsx` | ✅ Implemented | New moment button |
-| 6 | `emotion-picker` | Moment capture form | ❌ **Missing** | Emotion selection UI |
-| 7 | `growth-insights` | Journey dashboard sidebar | ❌ **Missing** | AI insights panel |
+| 6 | `emotion-picker` | `src/modules/journey/components/capture/EmotionPicker.tsx` | ✅ **Implemented (Sprint 1)** | Root div |
+| 7 | `growth-insights` | `src/modules/journey/components/insights/WeeklySummaryCard.tsx` | ✅ **Implemented (Sprint 1)** | Insights section |
 
-**Next Steps:**
-- [ ] Uncomment and activate `consciousness-points` attribute (line 70)
-- [ ] Add `data-tour="consciousness-score"` to ConsciousnessScore component
-- [ ] Add `data-tour="moments-timeline"` to moments list/timeline container
-- [ ] Add `data-tour="emotion-picker"` to emotion selection UI in moment form
-- [ ] Add `data-tour="growth-insights"` to insights panel (if exists)
-
-**Files to Modify:**
-- `src/modules/journey/views/JourneyFullScreen.tsx`
-- `src/modules/journey/components/ConsciousnessScore.tsx` (likely)
-- Moment form component (find with grep)
+**Implementation (Sprint 1):**
+- ✅ Added `data-tour="consciousness-score"` to ConsciousnessScore root element
+- ✅ Wrapped ConsciousnessScore in JourneyFullScreen with `consciousness-points` attribute
+- ✅ Added `data-tour="moments-timeline"` to UnifiedTimelineView root
+- ✅ Added `data-tour="emotion-picker"` to EmotionPicker root
+- ✅ Added `data-tour="growth-insights"` to WeeklySummaryCard insights section
 
 ---
 
@@ -192,9 +189,9 @@ Phase 2 integrated `TourProvider` and `useTourAutoStart` hooks across all 5 modu
 
 ## Phase 3 Completion Checklist
 
-### Sprint 1: Complete Near-Finished Modules
-- [ ] **Atlas:** Add `xp-badge` attribute (1 file)
-- [ ] **Journey:** Add 5 missing attributes (2-3 files)
+### Sprint 1: Complete Near-Finished Modules ✅ **DONE**
+- [x] **Atlas:** Add `xp-badge` attribute (1 file)
+- [x] **Journey:** Add 5 missing attributes (2-3 files)
 
 ### Sprint 2: Finance Module
 - [ ] Analyze FinanceDashboard structure
@@ -276,11 +273,11 @@ grep -r "episode\|episódio" src/modules/studio/ --include="*.tsx"
 **PRs:**
 - PR #155: Phase 1 - Foundation
 - PR #156: Phase 2 - Module Integration
-- PR #??? (Next): Phase 3 - Data-Tour Attributes
+- PR #157 (This PR): Phase 3 - Data-Tour Attributes Sprint 1
 
 ---
 
-**Last Updated:** 2026-01-25
+**Last Updated:** 2026-01-25 (Updated after Sprint 1 completion)
 **Report Generated By:** Claude Sonnet 4.5
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
