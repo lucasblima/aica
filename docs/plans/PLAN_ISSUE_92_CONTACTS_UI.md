@@ -46,14 +46,14 @@ interaction_count, last_interaction_at
 
 | Task | Descrição | Arquivos | Status |
 |------|-----------|----------|--------|
-| 1.1 | Criar utility `formatRelativeTime()` | `src/lib/dateUtils.ts` | ⬜ Pending |
-| 1.2 | Criar `RelationshipScoreBadge` com cores e emojis | `src/components/ui/RelationshipScoreBadge.tsx` | ⬜ Pending |
-| 1.3 | Criar `ContactAvatar` com fallback chain (WhatsApp pic → initials) | `src/components/ui/ContactAvatar.tsx` | ⬜ Pending |
+| 1.1 | Criar utility `formatRelativeTime()` | `src/lib/dateUtils.ts` | ✅ Done |
+| 1.2 | Criar `RelationshipScoreBadge` com cores e emojis | `src/components/ui/RelationshipScoreBadge.tsx` | ✅ Done |
+| 1.3 | Criar `ContactAvatar` com fallback chain (WhatsApp pic → initials) | `src/components/ui/ContactAvatar.tsx` | ✅ Done |
 
 **Acceptance Criteria Phase 1:**
-- [ ] `formatRelativeTime(date)` retorna "há X dias/horas/minutos"
-- [ ] Badge mostra score colorido (verde >70, amarelo 40-70, vermelho <40)
-- [ ] Avatar mostra foto do WhatsApp ou iniciais como fallback
+- [x] `formatRelativeTime(date)` retorna "há X dias/horas/minutos"
+- [x] Badge mostra score colorido (verde >70, amarelo 40-70, vermelho <40)
+- [x] Avatar mostra foto do WhatsApp ou iniciais como fallback
 
 ---
 
@@ -62,16 +62,16 @@ interaction_count, last_interaction_at
 
 | Task | Descrição | Arquivos | Status |
 |------|-----------|----------|--------|
-| 2.1 | Criar `WhatsAppContactCard.tsx` com layout rico | `src/modules/connections/components/WhatsAppContactCard.tsx` | ⬜ Pending |
-| 2.2 | Adicionar quick actions (Chat, Favoritar) | Mesmo arquivo | ⬜ Pending |
-| 2.3 | Exibir última mensagem com timestamp relativo | Mesmo arquivo | ⬜ Pending |
-| 2.4 | Adicionar indicadores visuais (online, favorito, novo) | Mesmo arquivo | ⬜ Pending |
+| 2.1 | Criar `WhatsAppContactCard.tsx` com layout rico | `src/modules/connections/components/WhatsAppContactCard.tsx` | ✅ Done |
+| 2.2 | Adicionar quick actions (Chat, Favoritar) | Mesmo arquivo | ✅ Done |
+| 2.3 | Exibir última mensagem com timestamp relativo | Mesmo arquivo | ✅ Done |
+| 2.4 | Adicionar indicadores visuais (online, favorito, novo) | Mesmo arquivo | ✅ Done |
 
 **Acceptance Criteria Phase 2:**
-- [ ] Card exibe: avatar, nome, telefone, health score, última interação
-- [ ] Botões de ação funcionais
-- [ ] Timestamp "Última mensagem há X dias" visível
-- [ ] Card responsivo (mobile-first)
+- [x] Card exibe: avatar, nome, telefone, health score, última interação
+- [x] Botões de ação funcionais
+- [x] Timestamp "Última mensagem há X dias" visível
+- [x] Card responsivo (mobile-first)
 
 ---
 
@@ -80,17 +80,17 @@ interaction_count, last_interaction_at
 
 | Task | Descrição | Arquivos | Status |
 |------|-----------|----------|--------|
-| 3.1 | Criar `WhatsAppContactList.tsx` usando VirtualList existente | `src/modules/connections/components/WhatsAppContactList.tsx` | ⬜ Pending |
-| 3.2 | Implementar hook `useContactFilters` | `src/modules/connections/hooks/useContactFilters.ts` | ⬜ Pending |
-| 3.3 | Criar UI de filtros (chips: Todos, Favoritos, Recentes, Por categoria) | `src/modules/connections/components/ContactFilters.tsx` | ⬜ Pending |
-| 3.4 | Implementar ordenação (nome, score, última interação) | `src/modules/connections/hooks/useContactSort.ts` | ⬜ Pending |
-| 3.5 | Criar barra de busca integrada | `src/modules/connections/components/ContactSearchBar.tsx` | ⬜ Pending |
+| 3.1 | Criar `WhatsAppContactList.tsx` usando VirtualList existente | `src/modules/connections/components/WhatsAppContactList.tsx` | ✅ Done |
+| 3.2 | Implementar hook `useContactFilters` | `src/modules/connections/hooks/useContactFilters.ts` | ✅ Done |
+| 3.3 | Criar UI de filtros (chips: Todos, Favoritos, Recentes, Por categoria) | `src/modules/connections/components/ContactFilters.tsx` | ✅ Done |
+| 3.4 | Implementar ordenação (nome, score, última interação) | `src/modules/connections/hooks/useContactFilters.ts` (combined) | ✅ Done |
+| 3.5 | Criar barra de busca integrada | `src/modules/connections/components/ContactSearchBar.tsx` | ✅ Done |
 
 **Acceptance Criteria Phase 3:**
-- [ ] Lista renderiza 500+ contatos sem lag (<16ms por frame)
-- [ ] Filtros funcionam combinados
-- [ ] Busca por nome/telefone instantânea (debounced)
-- [ ] Ordenação persiste na sessão
+- [x] Lista renderiza 500+ contatos sem lag (<16ms por frame)
+- [x] Filtros funcionam combinados
+- [x] Busca por nome/telefone instantânea (debounced)
+- [x] Ordenação persiste na sessão
 
 ---
 
@@ -99,16 +99,16 @@ interaction_count, last_interaction_at
 
 | Task | Descrição | Arquivos | Status |
 |------|-----------|----------|--------|
-| 4.1 | Integrar componentes na `ContactsView.tsx` | `src/pages/ContactsView.tsx` | ⬜ Pending |
-| 4.2 | Criar empty states customizados por filtro | Componentes de empty state | ⬜ Pending |
-| 4.3 | Otimizar performance (React.memo, useMemo) | Todos os componentes novos | ⬜ Pending |
-| 4.4 | Adicionar testes unitários | `src/modules/connections/__tests__/` | ⬜ Pending |
+| 4.1 | Integrar componentes na `ContactsView.tsx` | `src/pages/ContactsView.tsx` | ✅ Done |
+| 4.2 | Criar empty states customizados por filtro | `WhatsAppContactList.tsx` (built-in) | ✅ Done |
+| 4.3 | Otimizar performance (React.memo, useMemo) | Todos os componentes novos | ✅ Done |
+| 4.4 | Adicionar testes unitários | `src/modules/connections/__tests__/` | ⏳ Follow-up |
 
 **Acceptance Criteria Phase 4:**
-- [ ] ContactsView usa novos componentes
-- [ ] Empty states informativos para cada filtro
-- [ ] Lighthouse Performance Score > 90
-- [ ] Cobertura de testes > 80%
+- [x] ContactsView usa novos componentes
+- [x] Empty states informativos para cada filtro
+- [ ] Lighthouse Performance Score > 90 (requires deployment verification)
+- [ ] Cobertura de testes > 80% (follow-up task)
 
 ---
 
@@ -169,3 +169,4 @@ Phase 1 (Foundation)
 
 **Criado em:** 2026-01-22
 **Última atualização:** 2026-01-22
+**Status:** ✅ Implementation Complete (Tests pending as follow-up)

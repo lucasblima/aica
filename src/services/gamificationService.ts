@@ -5,14 +5,27 @@
  * - XP (Experience Points) tracking
  * - Leveling system with progression
  * - Achievement badges
- * - Streak counters (daily, task-specific)
+ * - Streak trends (compassionate system - 47/50 days instead of rigid streaks)
  * - Leaderboard support
  * - Rewards and unlockables
+ *
+ * Gamification 2.0 Updates:
+ * - Integrated with streakRecoveryService for compassionate streak handling
+ * - Grace periods for life's unpredictability (4 per month)
+ * - Recovery through effort (3 tasks), not punishment
+ * - Focus on trends, celebrate comebacks
  */
 
 import { supabase } from './supabaseClient';
 import { notificationService } from './notificationService';
 import { createNamespacedLogger } from '@/lib/logger';
+import { streakRecoveryService } from './streakRecoveryService';
+import {
+  getTrendDisplayString,
+  getTrendColor,
+  getTrendQuality,
+} from '@/types/streakTrend';
+import type { CompassionateMessage } from '@/types/streakTrend';
 
 const log = createNamespacedLogger('GamificationService');
 
@@ -63,6 +76,31 @@ export interface StreakInfo {
   longest: number;
   last_activity: string;
   active: boolean; // Is current streak still alive?
+}
+
+/**
+ * Enhanced streak information with compassionate trend system
+ * Gamification 2.0: Shows "47/50 dias" instead of rigid streak numbers
+ */
+export interface StreakTrendInfo extends StreakInfo {
+  // Trend data (Gamification 2.0)
+  trendDisplay: string; // "47/50 dias"
+  trendPercentage: number; // 0-100
+  trendQuality: 'excellent' | 'good' | 'moderate' | 'needs_attention';
+  trendColor: string; // Hex color based on quality
+
+  // Grace period status
+  isInGracePeriod: boolean;
+  gracePeriodRemaining: number; // Days remaining this month
+
+  // Recovery status
+  canRecover: boolean;
+  isRecovering: boolean;
+  recoveryProgress: number; // 0-3 tasks completed
+  recoveryTasksNeeded: number;
+
+  // Compassionate message for UI
+  message: CompassionateMessage | null;
 }
 
 export interface LeaderboardEntry {
@@ -558,7 +596,8 @@ export async function updateStreakStatus(userId: string): Promise<StreakInfo> {
 }
 
 /**
- * Get user's streak information
+ * Get user's streak information (legacy format)
+ * @deprecated Use getUserStreakTrend for Gamification 2.0 compassionate streak system
  */
 export async function getUserStreak(userId: string): Promise<StreakInfo> {
   try {
@@ -580,6 +619,175 @@ export async function getUserStreak(userId: string): Promise<StreakInfo> {
   } catch (error) {
     log.error('Error fetching user streak', { error });
     return { current: 0, longest: 0, last_activity: '', active: false };
+  }
+}
+
+// ============================================================================
+// COMPASSIONATE STREAK SYSTEM (GAMIFICATION 2.0)
+// ============================================================================
+
+/**
+ * Get user's streak with compassionate trend system
+ * Gamification 2.0: Returns "47/50 dias" format with grace periods and recovery
+ */
+export async function getUserStreakTrend(userId: string): Promise<StreakTrendInfo> {
+  try {
+    const [status, legacyStreak] = await Promise.all([
+      streakRecoveryService.getStreakStatus(userId),
+      getUserStreak(userId),
+    ]);
+
+    return {
+      // Legacy fields for backward compatibility
+      current: status.currentTrend,
+      longest: status.longestStreak,
+      last_activity: legacyStreak.last_activity,
+      active: status.isActive,
+
+      // Trend data (Gamification 2.0)
+      trendDisplay: getTrendDisplayString(status.currentTrend, status.trendWindow),
+      trendPercentage: status.trendPercentage,
+      trendQuality: getTrendQuality(status.trendPercentage),
+      trendColor: getTrendColor(status.trendPercentage),
+
+      // Grace period status
+      isInGracePeriod: status.isInGracePeriod,
+      gracePeriodRemaining: status.gracePeriodRemaining,
+
+      // Recovery status
+      canRecover: status.canRecover,
+      isRecovering: status.isRecovering,
+      recoveryProgress: status.recoveryProgress,
+      recoveryTasksNeeded: status.recoveryTasksNeeded,
+
+      // Compassionate message
+      message: status.message,
+    };
+  } catch (error) {
+    log.error('Error fetching streak trend', { error });
+    return {
+      current: 0,
+      longest: 0,
+      last_activity: '',
+      active: false,
+      trendDisplay: '0/50 dias',
+      trendPercentage: 0,
+      trendQuality: 'needs_attention',
+      trendColor: '#F97316',
+      isInGracePeriod: false,
+      gracePeriodRemaining: 4,
+      canRecover: true,
+      isRecovering: false,
+      recoveryProgress: 0,
+      recoveryTasksNeeded: 3,
+      message: null,
+    };
+  }
+}
+
+/**
+ * Record daily activity with compassionate streak system
+ * Called when user completes a task - updates trend instead of rigid streak
+ */
+export async function recordDailyActivity(userId: string): Promise<StreakTrendInfo> {
+  try {
+    // Record activity in the new compassionate system
+    await streakRecoveryService.recordDailyActivity(userId);
+
+    // Also maintain legacy streak for backward compatibility
+    await updateStreakStatus(userId);
+
+    // Return updated trend info
+    return getUserStreakTrend(userId);
+  } catch (error) {
+    log.error('Error recording daily activity', { error });
+    throw error;
+  }
+}
+
+/**
+ * Use a grace period (user chose to take a break)
+ * Compassionate approach: Life happens, no punishment
+ */
+export async function useGracePeriod(userId: string): Promise<{
+  success: boolean;
+  message: CompassionateMessage;
+  streakInfo: StreakTrendInfo;
+}> {
+  try {
+    const result = await streakRecoveryService.useGracePeriod(userId);
+    const streakInfo = await getUserStreakTrend(userId);
+
+    if (result.success) {
+      notificationService.show({
+        type: 'info',
+        title: result.message.title,
+        message: result.message.message,
+        icon: result.message.emoji,
+        duration: 5000,
+      });
+    }
+
+    return { ...result, streakInfo };
+  } catch (error) {
+    log.error('Error using grace period', { error });
+    throw error;
+  }
+}
+
+/**
+ * Start recovery mode (user wants to recover after absence)
+ * Compassionate approach: Recovery through effort (3 tasks), not payment
+ */
+export async function startStreakRecovery(userId: string): Promise<{
+  success: boolean;
+  message: CompassionateMessage;
+  streakInfo: StreakTrendInfo;
+}> {
+  try {
+    const result = await streakRecoveryService.startRecovery(userId);
+    const streakInfo = await getUserStreakTrend(userId);
+
+    if (result.success) {
+      notificationService.show({
+        type: 'info',
+        title: result.message.title,
+        message: result.message.message,
+        icon: result.message.emoji,
+        duration: 5000,
+      });
+    }
+
+    return { ...result, streakInfo };
+  } catch (error) {
+    log.error('Error starting recovery', { error });
+    throw error;
+  }
+}
+
+/**
+ * Check if user's streak needs attention (grace period or recovery)
+ * Used for proactive UI prompts
+ */
+export async function checkStreakHealth(userId: string): Promise<{
+  needsAttention: boolean;
+  suggestedAction: 'none' | 'grace_period' | 'recovery';
+  message: CompassionateMessage;
+}> {
+  try {
+    return await streakRecoveryService.checkStreakHealth(userId);
+  } catch (error) {
+    log.error('Error checking streak health', { error });
+    return {
+      needsAttention: false,
+      suggestedAction: 'none',
+      message: {
+        type: 'gentle_reminder',
+        title: 'Um Passo de Cada Vez',
+        message: 'Pequenos progressos levam a grandes mudancas.',
+        emoji: '🌿',
+      },
+    };
   }
 }
 

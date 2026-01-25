@@ -21,5 +21,15 @@ export * from './haptics';
 // Utils
 export { cn } from './utils';
 
+// Date utilities
+export {
+  formatRelativeTime,
+  formatLastInteraction,
+  getDaysSince,
+  isWithinDays,
+  isRecent,
+  isStale
+} from './dateUtils';
+
 // NOTE: Supabase client is NOT exported from lib to avoid circular dependencies
 // Import directly from '@/services/supabaseClient' instead
