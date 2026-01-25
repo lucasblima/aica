@@ -534,7 +534,7 @@ export function AppRouter() {
       <TourProvider tours={allTours}>
          <XPNotificationProvider>
             <Suspense fallback={<LoadingScreen message="Carregando..." />}>
-            <Routes>
+               <Routes>
                {/* Guest Approval Page - Public route for podcast guests */}
                <Route
                   path="/guest-approval/:episodeId/:approvalToken"
