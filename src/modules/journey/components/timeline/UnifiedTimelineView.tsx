@@ -209,7 +209,7 @@ export function UnifiedTimelineView({ userId, onEventClick }: UnifiedTimelineVie
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="max-w-4xl mx-auto px-4 py-6" data-tour="moments-timeline">
       {/* Filter Bar */}
       <TimelineFilter filters={filters} onFilterChange={setFilters} stats={stats?.eventsByType} />
 

@@ -142,7 +142,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
 
         {/* Insights */}
         {summary.summary_data.insights.length > 0 && (
-          <div>
+          <div data-tour="growth-insights">
             <div className="flex items-center gap-2 mb-3">
               <LightBulbIcon className="h-5 w-5 text-yellow-500" />
               <h4 className="font-semibold text-gray-900">Insights</h4>

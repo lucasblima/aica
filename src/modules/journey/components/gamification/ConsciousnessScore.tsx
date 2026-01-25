@@ -49,7 +49,7 @@ export function ConsciousnessScore({
   const classes = sizeClasses[size]
 
   return (
-    <div className={`bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl ${classes.container}`}>
+    <div className={`bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl ${classes.container}`} data-tour="consciousness-score">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
