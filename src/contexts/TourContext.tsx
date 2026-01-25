@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import JoyRide, { ACTIONS, EVENTS, STATUS, type CallBackProps, type Styles } from 'react-joyride';
+import JoyRide, { ACTIONS, EVENTS, STATUS, type CallBackProps, type Styles, type Step } from 'react-joyride';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -247,12 +247,19 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       // Update local state
       setTourProgress(prev => {
         const newMap = new Map(prev);
+        const existing = prev.get(tourKey);
         newMap.set(tourKey, {
-          ...prev.get(tourKey),
+          id: existing?.id || '',
+          user_id: existing?.user_id || '',
           tour_id: tourKey,
           status: 'completed',
+          started_at: existing?.started_at || null,
           completed_at: new Date().toISOString(),
-        } as TourProgress);
+          skipped_at: existing?.skipped_at || null,
+          current_step: existing?.current_step || 0,
+          total_steps: existing?.total_steps || 0,
+          metadata: existing?.metadata || {},
+        });
         return newMap;
       });
 
@@ -286,12 +293,19 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       // Update local state
       setTourProgress(prev => {
         const newMap = new Map(prev);
+        const existing = prev.get(tourKey);
         newMap.set(tourKey, {
-          ...prev.get(tourKey),
+          id: existing?.id || '',
+          user_id: existing?.user_id || '',
           tour_id: tourKey,
           status: 'skipped',
+          started_at: existing?.started_at || null,
+          completed_at: existing?.completed_at || null,
           skipped_at: new Date().toISOString(),
-        } as TourProgress);
+          current_step: existing?.current_step || 0,
+          total_steps: existing?.total_steps || 0,
+          metadata: existing?.metadata || {},
+        });
         return newMap;
       });
 
@@ -340,13 +354,18 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
         skipTour(activeTourKey);
       }
 
-      // Update step index in database
+      // Update step index in database (fire and forget with proper user_id)
       if (type === EVENTS.STEP_AFTER && activeTourKey) {
-        supabase.rpc('update_tour_step', {
-          p_user_id: null, // Will be set by function
-          p_tour_id: activeTourKey,
-          p_current_step: index + 1,
-        }).catch(err => log.error('Error updating tour step:', err));
+        (async () => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.id) {
+            supabase.rpc('update_tour_step', {
+              p_user_id: user.id,
+              p_tour_id: activeTourKey,
+              p_current_step: index + 1,
+            }).catch(err => log.error('Error updating tour step:', err));
+          }
+        })();
       }
     },
     [activeTourKey, completeTour, skipTour]
@@ -376,7 +395,14 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
       {/* Render react-joyride if there's an active tour */}
       {activeTourConfig && (
         <JoyRide
-          steps={activeTourConfig.steps as any}
+          steps={activeTourConfig.steps.map((step): Step => ({
+            target: step.target,
+            content: step.content,
+            title: step.title,
+            placement: step.placement,
+            disableBeacon: step.disableBeacon,
+            spotlightClicks: step.spotlightClicks,
+          }))}
           stepIndex={currentStepIndex}
           run={true}
           continuous={true}
