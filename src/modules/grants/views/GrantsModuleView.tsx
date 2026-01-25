@@ -63,6 +63,9 @@ interface GrantsModuleViewProps {
 
 /* data-tour markers: grants-header, opportunities-list, opportunity-filter, edital-parser, opportunity-detail, saved-opportunities, application-tracking, ai-briefing */
 export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) => {
+  // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
+  useTourAutoStart('grants-first-visit');
+
   // View state
   const [currentView, setCurrentView] = useState<ModuleView>('dashboard');
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
