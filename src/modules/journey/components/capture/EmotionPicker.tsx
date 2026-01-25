@@ -29,7 +29,7 @@ export function EmotionPicker({ value, onChange, size = 'md' }: EmotionPickerPro
   }
 
   return (
-    <div className="relative">
+    <div className="relative" data-tour="emotion-picker">
       {/* Selected emotion display */}
       <button
         type="button"
