@@ -11,6 +11,7 @@
 
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
+import { consciousnessPointsService } from '@/services/consciousnessPointsService';
 import type {
   HealthScoreHistory,
   ContactAtRisk,
@@ -193,6 +194,96 @@ export async function getContactsAtRiskCount(): Promise<number> {
   }
 
   return count || 0;
+}
+
+/**
+ * Record that user cared for an at-risk contact
+ * Awards +8 CP (Gamification 2.0: Connection category)
+ *
+ * Call this when:
+ * - User initiates a message to an at-risk contact
+ * - User acknowledges an alert and takes action
+ * - User schedules a follow-up with an at-risk contact
+ */
+export async function recordRelationshipCare(
+  contactId: string,
+  contactName: string
+): Promise<{
+  success: boolean;
+  cpAwarded: number;
+  message?: string;
+}> {
+  try {
+    log.info('Recording relationship care', { contactId, contactName });
+
+    // Award CP for relationship care
+    const cpResult = await consciousnessPointsService.awardRelationshipCareCP(
+      (await supabase.auth.getUser()).data.user?.id || '',
+      contactId,
+      contactName
+    );
+
+    if (cpResult.success) {
+      log.info('CP awarded for relationship care', {
+        contactId,
+        contactName,
+        cpAwarded: cpResult.awarded,
+      });
+    }
+
+    return {
+      success: cpResult.success,
+      cpAwarded: cpResult.awarded,
+      message: cpResult.success
+        ? `+${cpResult.awarded} CP por cuidar de ${contactName}`
+        : undefined,
+    };
+  } catch (error) {
+    log.error('Error recording relationship care', { contactId, error });
+    return {
+      success: false,
+      cpAwarded: 0,
+      message: 'Erro ao registrar cuidado relacional',
+    };
+  }
+}
+
+/**
+ * Mark an at-risk alert as acknowledged and optionally record care action
+ */
+export async function acknowledgeHealthAlert(
+  alertId: string,
+  options: {
+    contactId?: string;
+    contactName?: string;
+    recordCare?: boolean;
+  } = {}
+): Promise<{
+  success: boolean;
+  cpAwarded?: number;
+}> {
+  try {
+    // For now, we don't have a separate alerts table with acknowledged field
+    // This is a placeholder for future implementation
+    log.info('Acknowledging health alert', { alertId, options });
+
+    // If recordCare is true and we have contact info, award CP
+    if (options.recordCare && options.contactId && options.contactName) {
+      const careResult = await recordRelationshipCare(
+        options.contactId,
+        options.contactName
+      );
+      return {
+        success: true,
+        cpAwarded: careResult.cpAwarded,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    log.error('Error acknowledging health alert', { alertId, error });
+    return { success: false };
+  }
 }
 
 // ============================================================================
@@ -385,6 +476,8 @@ export default {
   getHealthScoreAlerts,
   getContactsAtRisk,
   getContactsAtRiskCount,
+  recordRelationshipCare, // Gamification 2.0: Awards +8 CP
+  acknowledgeHealthAlert, // Gamification 2.0: Awards CP on acknowledge
   getContactsWithHealthScores,
   getContactHealthScore,
   getHealthScoreStats,
