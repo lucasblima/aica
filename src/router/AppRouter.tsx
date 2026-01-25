@@ -432,7 +432,7 @@ export function AppRouter() {
 
    // ==================== JOURNEY VIEW ====================
    const renderJourney = () => (
-      <JourneyFullScreen />
+      <JourneyFullScreen onBack={() => setCurrentView('vida')} />
    );
 
    // Main App Content (authenticated state)
