@@ -11,6 +11,8 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
+import { TourProvider } from '../contexts/TourContext';
+import { allTours } from '../config/tours';
 import { AdminGuard } from '../components/guards/AdminGuard';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -527,10 +529,12 @@ export function AppRouter() {
 
    // Use React Router Routes to ensure proper Router context for all components
    // Wrapped in Suspense to handle lazy-loaded components
+   // TourProvider enables contextual onboarding tours (Phase 2 - Organic Onboarding)
    return (
-      <XPNotificationProvider>
-         <Suspense fallback={<LoadingScreen message="Carregando..." />}>
-            <Routes>
+      <TourProvider tours={allTours}>
+         <XPNotificationProvider>
+            <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+               <Routes>
                {/* Guest Approval Page - Public route for podcast guests */}
                <Route
                   path="/guest-approval/:episodeId/:approvalToken"
@@ -662,7 +666,8 @@ export function AppRouter() {
                   element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
                />
             </Routes>
-         </Suspense>
-      </XPNotificationProvider>
+            </Suspense>
+         </XPNotificationProvider>
+      </TourProvider>
    );
 }
