@@ -35,9 +35,13 @@ import {
 import { CreateMomentInput } from '../types/moment'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
+import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
 import { SettingsMenu, HelpButton } from '@/components'
 
 export function JourneyFullScreen() {
+  // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
+  useTourAutoStart('journey-first-visit');
+
   // Debug: Log when component mounts
   React.useEffect(() => {
     log.debug('[JourneyFullScreen] Component mounted');
