@@ -8,20 +8,26 @@
 ## ⚠️ PROBLEMAS IDENTIFICADOS E RESOLVIDOS
 
 ### Problema 1: Migration `20260125_recipe_badges.sql`
-**Erro:**
+**Erros:**
 ```
 ERROR: 42703: column "achievement_id" does not exist
 ERROR: 42703: column "earned_at" does not exist
+ERROR: 42703: column p.display_name does not exist
 ```
 
-**Causa:**
+**Causas:**
 - Migration usava `achievement_id` mas a coluna correta é `badge_id`
 - Migration usava `earned_at` mas a coluna correta é `unlocked_at`
+- Migration usava `p.display_name` e `p.email` mas profiles tem `full_name` e email vem de `auth.users`
 
 **Solução:** ✅ **CORRIGIDO**
 - Linha 72: `achievement_id` → `badge_id`
 - Linha 75: `earned_at` → `unlocked_at`
+- Linha 210: `p.display_name` → `p.full_name`
+- Linha 210: `p.email` → `u.email` (join com auth.users)
 - Linha 214: `earned_at` → `unlocked_at`
+- Linha 218: Adicionado `LEFT JOIN auth.users u`
+- Linha 219: GROUP BY atualizado (`p.full_name`, `u.email`)
 - Linha 263: Comentário de rollback atualizado
 
 ### Problema 2: Migration `20260122000003_whatsapp_document_tracking.sql`
