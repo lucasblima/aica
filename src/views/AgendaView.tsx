@@ -18,7 +18,7 @@ import { supabase } from '../services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('AgendaView');
-import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd } from '../components';
+import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, GamificationWidget } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
 import { Task, Quadrant } from '../../types';
 // REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
@@ -722,15 +722,22 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     </p>
                 </div>
 
-                {/* Status minimalista do Calendar */}
-                <CalendarStatusDot
-                    isConnected={isCalendarConnected}
-                    isSyncing={isLoadingCalendar}
-                    hasError={!!calendarError}
-                    onConnect={handleConnectCalendar}
-                    onSync={syncCalendar}
-                    onDisconnect={handleDisconnectCalendar}
-                />
+                <div className="flex items-center gap-4">
+                    {/* XP and Level Display - Phase 3 Organic Onboarding */}
+                    <div data-tour="xp-badge">
+                        <GamificationWidget userId={userId} compact={true} />
+                    </div>
+
+                    {/* Status minimalista do Calendar */}
+                    <CalendarStatusDot
+                        isConnected={isCalendarConnected}
+                        isSyncing={isLoadingCalendar}
+                        hasError={!!calendarError}
+                        onConnect={handleConnectCalendar}
+                        onSync={syncCalendar}
+                        onDisconnect={handleDisconnectCalendar}
+                    />
+                </div>
             </div>
 
             <DndContext

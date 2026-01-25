@@ -244,9 +244,10 @@ export function JourneyFullScreen() {
               ) : (
                 <div className="space-y-6">
                   {/* CP Score detailed - Consciousness Points */}
-                  {/* data-tour="consciousness-points" */}
                   {stats && (
-                    <ConsciousnessScore stats={stats} size="md" showDetails={true} />
+                    <div data-tour="consciousness-points">
+                      <ConsciousnessScore stats={stats} size="md" showDetails={true} />
+                    </div>
                   )}
 
                   {/* Daily Question */}
