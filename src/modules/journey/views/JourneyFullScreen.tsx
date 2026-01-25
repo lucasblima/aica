@@ -38,7 +38,11 @@ import { useAuth } from '../../../hooks/useAuth'
 import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
 import { SettingsMenu, HelpButton } from '@/components'
 
-export function JourneyFullScreen() {
+interface JourneyFullScreenProps {
+  onBack?: () => void;
+}
+
+export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
   useTourAutoStart('journey-first-visit');
 
@@ -180,7 +184,7 @@ export function JourneyFullScreen() {
             <div className="flex items-center gap-3">
               {/* Back Navigation Button */}
               <button
-                onClick={() => navigate('/')}
+                onClick={() => onBack ? onBack() : navigate('/')}
                 className="ceramic-card hover:ceramic-elevated p-2 rounded-full transition-all"
                 aria-label="Voltar para página inicial"
               >
