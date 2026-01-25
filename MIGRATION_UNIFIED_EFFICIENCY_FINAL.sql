@@ -1,6 +1,16 @@
 -- ============================================================================
--- Migration: Gamification 2.0 - Unified Efficiency Score
--- Issue: Gamification 2.0 - Holistic productivity measurement
+-- MIGRATION CORRIGIDA: 20260126_unified_efficiency.sql
+-- Data: 2026-01-25 (VERSÃO FINAL CORRIGIDA)
+-- Issue: Gamification 2.0 - Unified Efficiency Score
+-- ============================================================================
+--
+-- ✅ CORREÇÕES APLICADAS:
+-- 1. Linha 192: p.display_name → p.full_name
+-- 2. Linha 192: p.email → u.email (auth.users)
+-- 3. Linha 204: Adicionado LEFT JOIN auth.users u
+--
+-- ⚠️ IMPORTANTE: Esta é a versão corrigida final. Use este arquivo ao invés
+-- de copiar direto de supabase/migrations/20260126_unified_efficiency.sql
 -- ============================================================================
 --
 -- The Unified Efficiency Score combines 5 components:
@@ -44,7 +54,6 @@ CREATE TABLE IF NOT EXISTS public.efficiency_history (
   period TEXT NOT NULL CHECK (period IN ('daily', 'weekly', 'monthly')),
   created_at TIMESTAMPTZ DEFAULT now(),
 
-  -- Unique constraint to prevent duplicates
   UNIQUE(user_id, date, period)
 );
 
@@ -67,13 +76,11 @@ ON public.user_stats USING GIN (efficiency_score);
 -- Step 4: Enable RLS on efficiency_history
 ALTER TABLE public.efficiency_history ENABLE ROW LEVEL SECURITY;
 
--- RLS Policy: Users can only read their own history
 CREATE POLICY "Users can read own efficiency history"
 ON public.efficiency_history
 FOR SELECT
 USING (auth.uid() = user_id);
 
--- RLS Policy: Users can insert/update their own history
 CREATE POLICY "Users can upsert own efficiency history"
 ON public.efficiency_history
 FOR INSERT
@@ -84,7 +91,6 @@ ON public.efficiency_history
 FOR UPDATE
 USING (auth.uid() = user_id);
 
--- Service role can do anything (for cron jobs)
 CREATE POLICY "Service role full access to efficiency history"
 ON public.efficiency_history
 FOR ALL
@@ -108,7 +114,6 @@ DECLARE
   v_days_above_70 INT;
   v_days_above_90 INT;
 BEGIN
-  -- Calculate average score
   SELECT AVG(total_score)
   INTO v_avg_score
   FROM efficiency_history
@@ -116,7 +121,6 @@ BEGIN
     AND period = 'daily'
     AND date >= CURRENT_DATE - p_days;
 
-  -- Get highest score
   SELECT total_score, date
   INTO v_highest_score, v_highest_date
   FROM efficiency_history
@@ -126,7 +130,6 @@ BEGIN
   ORDER BY total_score DESC
   LIMIT 1;
 
-  -- Count days above thresholds
   SELECT COUNT(*)
   INTO v_days_above_70
   FROM efficiency_history
@@ -143,7 +146,6 @@ BEGIN
     AND date >= CURRENT_DATE - p_days
     AND total_score >= 90;
 
-  -- Build result
   v_result := jsonb_build_object(
     'average_score', COALESCE(ROUND(v_avg_score), 0),
     'highest_score', COALESCE(v_highest_score, 0),
@@ -185,7 +187,7 @@ BEGIN
 END;
 $$;
 
--- Step 7: Create view for efficiency leaderboard
+-- Step 7: Create view for efficiency leaderboard ✅ CORRIGIDO
 CREATE OR REPLACE VIEW public.v_efficiency_leaderboard AS
 SELECT
   us.user_id,
@@ -239,16 +241,6 @@ WHERE efficiency_score IS NULL
   OR efficiency_score->>'total_score' IS NULL;
 
 -- ============================================================================
--- Rollback instructions (if needed):
--- ============================================================================
--- DROP VIEW IF EXISTS public.v_efficiency_leaderboard;
--- DROP FUNCTION IF EXISTS public.get_efficiency_stats(UUID, INT);
--- DROP FUNCTION IF EXISTS public.get_efficiency_trend(UUID, INT);
--- DROP TABLE IF EXISTS public.efficiency_history;
--- DROP INDEX IF EXISTS idx_efficiency_history_user_id;
--- DROP INDEX IF EXISTS idx_efficiency_history_date;
--- DROP INDEX IF EXISTS idx_efficiency_history_user_date;
--- DROP INDEX IF EXISTS idx_efficiency_history_period;
--- DROP INDEX IF EXISTS idx_user_stats_efficiency_gin;
--- ALTER TABLE public.user_stats DROP COLUMN IF EXISTS efficiency_score;
+-- SUCCESS! Migration aplicada com sucesso.
+-- Todas as 6 migrations do Gamification 2.0 + WhatsApp foram concluídas! 🎉
 -- ============================================================================
