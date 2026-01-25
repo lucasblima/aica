@@ -43,6 +43,22 @@ ERROR: 42P01: relation "public.processed_documents" does not exist
 **Solução:** ✅ **ORDEM CORRIGIDA**
 - Aplicar `20260112000001_create_document_processing.sql` ANTES de `20260122000003`
 
+### Problema 3: Migration `20260126_unified_efficiency.sql`
+**Erro:**
+```
+ERROR: 42703: column p.display_name does not exist
+LINE 192: COALESCE(p.display_name, p.email, 'Anonymous') as user_name
+```
+
+**Causa:**
+- Mesma causa do Problema 1: view `v_efficiency_leaderboard` usava colunas incorretas
+- `p.display_name` e `p.email` não existem na tabela profiles
+
+**Solução:** ✅ **CORRIGIDO**
+- Linha 192: `p.display_name` → `p.full_name`
+- Linha 192: `p.email` → `u.email` (join com auth.users)
+- Linha 204: Adicionado `LEFT JOIN auth.users u`
+
 ---
 
 ## 📋 ORDEM CORRETA DE APLICAÇÃO (6 migrations)
@@ -128,17 +144,20 @@ supabase/migrations/20260125_recipe_badges.sql
 
 ---
 
-**Migration 5: Unified Efficiency**
+**Migration 5: Unified Efficiency** ✅ CORRIGIDA
 ```bash
 supabase/migrations/20260126_unified_efficiency.sql
+OU use: MIGRATION_UNIFIED_EFFICIENCY_FINAL.sql
 ```
 - **Depende de:** `user_stats.recipe_profile` (Migration 4)
+- **ATENÇÃO:** ✅ Versão corrigida (full_name, u.email)
 - **O que cria:**
-  - Coluna `user_stats.unified_efficiency` (JSONB)
-  - Função `calculate_unified_efficiency()`
-  - Trigger para recalcular automaticamente
-  - Índices para leaderboard
-- **Tamanho:** 8.3KB (280 linhas)
+  - Coluna `user_stats.efficiency_score` (JSONB)
+  - Tabela `efficiency_history`
+  - View `v_efficiency_leaderboard` (CORRIGIDA)
+  - Funções: `get_efficiency_stats()`, `get_efficiency_trend()`
+  - RLS policies e índices
+- **Tamanho:** 8.3KB (255 linhas - corrigida)
 - **Tempo estimado:** ~8 segundos
 
 ---
