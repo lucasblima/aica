@@ -7,6 +7,7 @@ import { TourConfig } from '@/contexts/TourContext';
 export const atlasFirstVisitTour: TourConfig = {
   key: 'atlas-first-visit',
   name: 'Atlas Task Management',
+  module: 'atlas',
   autoStart: true,
   steps: [
     {
