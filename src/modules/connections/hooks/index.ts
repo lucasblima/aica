@@ -39,6 +39,17 @@ export { useConnectionMembers } from './useConnectionMembers';
 // Search hooks
 export { useDebouncedSearch } from './useDebouncedSearch';
 
+// Contact Filter hooks (Issue #92)
+export { useContactFilters } from './useContactFilters';
+export type {
+  ContactFilterType,
+  ContactSortField,
+  ContactSortOrder,
+  ContactFiltersState,
+  UseContactFiltersOptions,
+  UseContactFiltersReturn,
+} from './useContactFilters';
+
 // Re-export types for convenience
 export type {
   ConnectionSpace,

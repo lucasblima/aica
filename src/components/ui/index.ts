@@ -35,3 +35,5 @@ export { default as BentoCard } from './BentoCard';
 export { default as CeramicPillButton } from './CeramicPillButton';
 // prettier-ignore
 export { default as Logo } from './Logo';
+export { RelationshipScoreBadge, ScoreDot } from './RelationshipScoreBadge';
+export { ContactAvatar } from './ContactAvatar';

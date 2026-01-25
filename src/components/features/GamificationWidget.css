@@ -101,48 +101,204 @@
   opacity: 0.8;
 }
 
-/* Streak Section */
+/* Streak Section - Gamification 2.0 Compassionate System */
 .streak-section {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   padding: 16px;
   background: #fff9e6;
   border-radius: 12px;
   border: 2px solid #ffc107;
   margin-bottom: 20px;
+  transition: all 0.3s ease;
 }
 
-.streak-section.inactive {
-  background: #f0f0f0;
-  border-color: #999;
+.streak-section.active {
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+  border-color: #ffc107;
 }
 
-.streak-icon {
+.streak-section.grace-period {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-color: #4caf50;
+}
+
+.streak-section.recovering {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #2196f3;
+}
+
+/* Trend Display */
+.streak-trend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trend-icon {
   font-size: 40px;
 }
 
-.streak-info {
+.trend-info {
   flex: 1;
 }
 
-.streak-number {
-  font-size: 28px;
+.trend-display {
+  font-size: 24px;
   font-weight: 700;
-  color: #333;
+  line-height: 1.2;
 }
 
-.streak-label {
+.trend-label {
   font-size: 12px;
   color: #666;
   text-transform: uppercase;
   font-weight: 600;
+  margin-top: 2px;
 }
 
+/* Trend Progress Bar */
+.trend-progress-container {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.trend-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease, background-color 0.3s ease;
+}
+
+/* Recovery Progress */
+.recovery-progress {
+  padding: 8px 0;
+}
+
+.recovery-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.recovery-bar-container {
+  display: flex;
+  gap: 8px;
+}
+
+.recovery-step {
+  flex: 1;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.recovery-step.completed {
+  background: #4caf50;
+}
+
+/* Grace Period Info */
+.grace-period-info {
+  font-size: 12px;
+  color: #4caf50;
+  font-weight: 500;
+  text-align: center;
+  padding: 4px 0;
+}
+
+/* Compassionate Message */
+.compassionate-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.compassionate-message.trend_celebration {
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.compassionate-message.grace_period_active,
+.compassionate-message.grace_period_available {
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.compassionate-message.recovery_available,
+.compassionate-message.recovery_in_progress {
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.compassionate-message.recovery_complete,
+.compassionate-message.comeback_celebration {
+  background: rgba(156, 39, 176, 0.1);
+}
+
+.compassionate-message.gentle_reminder {
+  background: rgba(158, 158, 158, 0.1);
+}
+
+.message-emoji {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.message-content {
+  flex: 1;
+}
+
+.message-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.message-text {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.message-action-btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.message-action-btn:hover {
+  transform: scale(1.05);
+}
+
+.message-action-btn:active {
+  transform: scale(0.98);
+}
+
+.action-loading {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Legacy streak display */
 .streak-best {
   font-size: 11px;
   color: #999;
-  margin-top: 4px;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 /* Badges Section */

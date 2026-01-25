@@ -1,0 +1,304 @@
+/* Consciousness Points Display Styles */
+/* Gamification 2.0: Quality over Quantity */
+
+.cp-display {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.cp-display.compact {
+  padding: 16px;
+}
+
+.cp-display.loading,
+.cp-display.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 120px;
+  color: #666;
+  font-size: 14px;
+}
+
+.cp-display.error {
+  color: #dc2626;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Main CP Counter */
+.cp-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  border-radius: 12px;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.cp-icon {
+  font-size: 48px;
+  flex-shrink: 0;
+}
+
+.cp-value-container {
+  flex: 1;
+}
+
+.cp-value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.cp-label {
+  font-size: 12px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* Daily/Weekly Stats */
+.cp-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+.cp-stat .stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+.cp-stat .stat-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Category Breakdown */
+.cp-categories {
+  margin-bottom: 20px;
+}
+
+.cp-categories h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1;
+}
+
+.category-icon {
+  font-size: 18px;
+}
+
+.category-name {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.category-amount {
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.category-bar-container {
+  grid-column: 1;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.category-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.category-percentage {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: right;
+  min-width: 40px;
+}
+
+/* History */
+.cp-history {
+  margin-bottom: 16px;
+}
+
+.cp-history h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.history-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.history-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.history-description {
+  font-size: 13px;
+  color: #374151;
+}
+
+.history-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.history-amount {
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Philosophy */
+.cp-philosophy {
+  padding: 12px;
+  background: #faf5ff;
+  border-radius: 8px;
+  border-left: 3px solid #8b5cf6;
+}
+
+.cp-philosophy p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.cp-philosophy strong {
+  color: #8b5cf6;
+}
+
+.cp-philosophy em {
+  font-style: italic;
+  color: #374151;
+}
+
+/* Compact Mode */
+.cp-display.compact .cp-main {
+  padding: 12px;
+}
+
+.cp-display.compact .cp-icon {
+  font-size: 32px;
+}
+
+.cp-display.compact .cp-value {
+  font-size: 24px;
+}
+
+.cp-display.compact .cp-stats {
+  margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .cp-display {
+    padding: 16px;
+  }
+
+  .cp-main {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .cp-icon {
+    font-size: 36px;
+  }
+
+  .cp-value {
+    font-size: 28px;
+  }
+
+  .category-item {
+    gap: 4px;
+  }
+
+  .category-name {
+    font-size: 12px;
+  }
+}

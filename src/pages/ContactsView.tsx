@@ -7,13 +7,16 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Users, Users2, Search, MessageCircle, Loader2, User, Briefcase, Heart, Home, GraduationCap, Package } from 'lucide-react';
-import { HeaderGlobal, ContactCardGrid, ContactDetailModal, CreditBalanceWidget } from '../components';
+import { RefreshCw, MessageCircle, Loader2 } from 'lucide-react';
+import { HeaderGlobal, ContactDetailModal, CreditBalanceWidget } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
 import { supabase } from '../services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { ContactNetwork } from '../types/memoryTypes';
+
+// Issue #92: Rich WhatsApp contact list components
+import { WhatsAppContactList } from '@/modules/connections/components';
 
 const log = createNamespacedLogger('ContactsView');
 
@@ -26,10 +29,7 @@ import type { WhatsAppSession } from '../modules/onboarding/types';
 export function ContactsView() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<ContactNetwork[]>([]);
-  const [filteredContacts, setFilteredContacts] = useState<ContactNetwork[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterSource, setFilterSource] = useState<'all' | 'google' | 'whatsapp'>('all');
-  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactNetwork | null>(null);
@@ -247,41 +247,31 @@ export function ContactsView() {
     }
   };
 
-  // Calculate category counts
-  const categoryCounts = contacts.reduce((acc, c) => {
-    const category = c.relationship_type || 'other';
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  // Filter contacts based on search, source, and category
-  useEffect(() => {
-    let filtered = contacts;
-
-    if (filterSource !== 'all') {
-      filtered = filtered.filter(c => c.sync_source === filterSource);
-    }
-
-    if (filterCategory) {
-      filtered = filtered.filter(c => c.relationship_type === filterCategory);
-    }
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(c =>
-        c.name.toLowerCase().includes(query) ||
-        c.email?.toLowerCase().includes(query) ||
-        c.phone_number?.includes(query)
-      );
-    }
-
-    setFilteredContacts(filtered);
-  }, [contacts, searchQuery, filterSource, filterCategory]);
-
-  const handleContactSelect = (contact: ContactNetwork) => {
+  // Handle contact click - open detail modal
+  const handleContactClick = useCallback((contact: ContactNetwork) => {
     setSelectedContact(contact);
     setIsDetailModalOpen(true);
-  };
+  }, []);
+
+  // Handle chat action - open WhatsApp
+  const handleChatClick = useCallback((contact: ContactNetwork) => {
+    const phone = contact.whatsapp_phone || contact.phone_number;
+    if (phone) {
+      // Remove non-digits and open WhatsApp
+      const cleanPhone = phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanPhone}`, '_blank');
+    }
+  }, []);
+
+  // Handle favorite toggle
+  const handleFavoriteToggle = useCallback((contact: ContactNetwork) => {
+    setFavoriteIds(prev =>
+      prev.includes(contact.id)
+        ? prev.filter(id => id !== contact.id)
+        : [...prev, contact.id]
+    );
+    // TODO: Persist favorites to database
+  }, []);
 
   const handleContactSave = async (updatedContact: Partial<ContactNetwork>) => {
     log.debug(' Contact save:', updatedContact);
@@ -371,117 +361,28 @@ export function ContactsView() {
 
       {/* Main Content */}
       <main className="p-6 space-y-6 max-w-7xl mx-auto">
-        {/* Credit Balance Widget */}
-        <CreditBalanceWidget className="max-w-md" />
+        {/* Credit Balance Widget + Sync Button Row */}
+        <div className="flex items-start justify-between gap-4">
+          <CreditBalanceWidget className="max-w-md" />
 
-        {/* Search and Filter Bar */}
-        <div className="flex gap-3 items-end">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
-              Buscar
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-secondary" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Nome, email ou telefone..."
-                className="w-full pl-10 px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Filter Select */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
-              Filtro
-            </label>
-            <select
-              value={filterSource}
-              onChange={(e) => setFilterSource(e.target.value as 'all' | 'google' | 'whatsapp')}
-              className="px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all font-medium"
-            >
-              <option value="all">Todos</option>
-              <option value="google">Google</option>
-              <option value="whatsapp">WhatsApp</option>
-            </select>
-          </div>
-
-          {/* WhatsApp Sync Button */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
-              Sincronizar
-            </label>
-            <button
-              onClick={handleWhatsAppSync}
-              disabled={isSyncing}
-              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
-                isSyncing
-                  ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
-                  : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
-              }`}
-              title={syncStatus?.lastSyncAt ? `Última sincronização: ${new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR')}` : 'Sincronizar contatos WhatsApp'}
-            >
-              <MessageCircle className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
-              <span>{isSyncing ? 'Sincronizando...' : 'WhatsApp'}</span>
-              {isSyncing && (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              )}
-            </button>
-          </div>
+          {/* Sync Button */}
+          <button
+            onClick={handleWhatsAppSync}
+            disabled={isSyncing}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+              isSyncing
+                ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
+                : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
+            }`}
+            title={syncStatus?.lastSyncAt ? `Ultima sincronizacao: ${new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR')}` : 'Sincronizar contatos WhatsApp'}
+          >
+            <MessageCircle className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
+            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+            {isSyncing && (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            )}
+          </button>
         </div>
-
-        {/* Category Chips */}
-        {Object.keys(categoryCounts).length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilterCategory(null)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                filterCategory === null
-                  ? 'bg-green-500 text-white'
-                  : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
-              }`}
-            >
-              <Users className="w-3 h-3" />
-              Todos ({contacts.length})
-            </button>
-            {Object.entries(categoryCounts)
-              .sort((a, b) => b[1] - a[1])
-              .map(([category, count]) => {
-                const categoryConfig: Record<string, { icon: React.ElementType; label: string; color: string }> = {
-                  group: { icon: Users2, label: 'Grupos', color: 'bg-purple-500' },
-                  contact: { icon: User, label: 'Contatos', color: 'bg-blue-500' },
-                  colleague: { icon: Briefcase, label: 'Colegas', color: 'bg-amber-500' },
-                  client: { icon: Briefcase, label: 'Clientes', color: 'bg-emerald-500' },
-                  friend: { icon: Heart, label: 'Amigos', color: 'bg-pink-500' },
-                  family: { icon: Home, label: 'Família', color: 'bg-red-500' },
-                  mentor: { icon: GraduationCap, label: 'Mentores', color: 'bg-indigo-500' },
-                  mentee: { icon: GraduationCap, label: 'Mentorados', color: 'bg-cyan-500' },
-                  vendor: { icon: Package, label: 'Fornecedores', color: 'bg-orange-500' },
-                  other: { icon: User, label: 'Outros', color: 'bg-gray-500' },
-                };
-                const config = categoryConfig[category] || { icon: User, label: category, color: 'bg-gray-500' };
-                const Icon = config.icon;
-
-                return (
-                  <button
-                    key={category}
-                    onClick={() => setFilterCategory(filterCategory === category ? null : category)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      filterCategory === category
-                        ? `${config.color} text-white`
-                        : 'ceramic-inset text-ceramic-text-secondary hover:text-ceramic-text-primary'
-                    }`}
-                  >
-                    <Icon className="w-3 h-3" />
-                    {config.label} ({count})
-                  </button>
-                );
-              })}
-          </div>
-        )}
 
         {/* Sync Status */}
         {syncStatus && syncStatus.contactCount > 0 && (
@@ -490,7 +391,7 @@ export function ContactsView() {
             <span>
               {syncStatus.contactCount} contatos WhatsApp
               {syncStatus.lastSyncAt && (
-                <> • Última sincronização: {new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
+                <> • Ultima sincronizacao: {new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
               )}
             </span>
           </div>
@@ -507,23 +408,19 @@ export function ContactsView() {
           </motion.div>
         )}
 
-        {/* Contact Grid - Issue #92: Stable rendering without animation conflicts */}
-        <ContactCardGrid
-          contacts={filteredContacts}
-          isLoading={isLoading}
-          searchQuery={searchQuery}
-          filterSource={filterSource}
-          onContactClick={handleContactSelect}
-        />
-
-        {/* Results Counter */}
-        {filteredContacts.length > 0 && (
-          <div className="flex items-center justify-between pt-4 border-t border-ceramic-text-secondary/10">
-            <p className="text-xs text-ceramic-text-secondary font-medium">
-              Mostrando {filteredContacts.length} contatos
-            </p>
-          </div>
-        )}
+        {/* Issue #92: Rich WhatsApp Contact List with filters and virtualization */}
+        <div className="ceramic-card">
+          <WhatsAppContactList
+            contacts={contacts}
+            favoriteIds={favoriteIds}
+            isLoading={isLoading}
+            error={error ? new Error(error) : null}
+            onContactClick={handleContactClick}
+            onChatClick={handleChatClick}
+            onFavoriteToggle={handleFavoriteToggle}
+            height="calc(100vh - 350px)"
+          />
+        </div>
       </main>
 
       {/* Contact Detail Modal */}

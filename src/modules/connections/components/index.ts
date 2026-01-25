@@ -36,3 +36,9 @@ export { MemberAvatarStack } from './MemberAvatarStack';
 export { VirtualList, VirtualGrid } from './VirtualList';
 export { OptimizedImage, OptimizedAvatar } from './OptimizedImage';
 export * from './skeletons';
+
+// WhatsApp Contact Components (Issue #92)
+export { WhatsAppContactCard } from './WhatsAppContactCard';
+export { WhatsAppContactList } from './WhatsAppContactList';
+export { ContactFilters } from './ContactFilters';
+export { ContactSearchBar } from './ContactSearchBar';
