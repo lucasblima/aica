@@ -193,6 +193,125 @@ import { analyzeSentimentWithGemini } from '@/integrations'
 | Studio | `src/modules/studio/` | Podcast production workflow |
 | Grants | `src/modules/grants/` | PDF-first edital parsing |
 | Finance | `src/modules/finance/` | Bank statement processing |
+| Connections | `src/modules/connections/` | WhatsApp integration, pairing code |
+
+---
+
+## WhatsApp Pairing Code (Issue #87)
+
+### Overview
+Alternative to QR Code for WhatsApp connection. Generates 8-digit pairing code with 60s TTL for easier mobile pairing.
+
+### Architecture Flow
+1. **Frontend:** `usePairingCode().generateCode('5511987654321')`
+2. **Edge Function:** `generate-pairing-code` → Evolution API
+3. **Evolution API:** Returns pairing code (60s TTL)
+4. **User:** Enters code in WhatsApp mobile app
+5. **Webhook:** `CONNECTION_UPDATE` → updates DB `status='connected'`
+6. **Frontend:** Real-time subscription detects change → UI updates
+
+### Key Components
+
+#### Backend
+- **Edge Function:** `supabase/functions/generate-pairing-code/index.ts`
+  - RPC: `get_or_create_whatsapp_session`, `record_pairing_attempt`
+  - Query param: `?number={phoneNumber}` (format: 5511987654321)
+  - Returns: `{ code: "12345678", expiresAt: "ISO8601" }`
+
+- **Webhook:** `supabase/functions/webhook-evolution/index.ts`
+  - Event: `CONNECTION_UPDATE`
+  - Updates `whatsapp_sessions.status` → 'connected'
+  - Auto-syncs contacts via Evolution API
+
+- **Database:** `whatsapp_sessions` table
+  - Migration: `20260113_whatsapp_sessions_multi_instance.sql`
+  - RPC functions: 6 total (see migration file)
+  - Permissions: `20260121000007_grant_whatsapp_rpc_permissions.sql`
+
+#### Frontend
+- **Hook:** `src/hooks/usePairingCode.ts`
+  - Countdown timer 60s
+  - Format: XXXX-XXXX (visual only, API uses 8 digits)
+  - Copy to clipboard
+
+- **Component:** `src/modules/connections/components/whatsapp/PairingCodeDisplay.tsx`
+  - 4-step instructions in Portuguese
+  - Ceramic theme design
+  - Auto-regenerate on expiration
+
+- **Integration:** `src/modules/connections/views/ConnectionsWhatsAppTab.tsx`
+  - Toggle QR/Pairing methods
+  - Real-time subscription via `useWhatsAppSessionSubscription()`
+
+### Usage Example
+```typescript
+import { usePairingCode } from '@/hooks/usePairingCode'
+
+const { generateCode, code, secondsRemaining, isExpired } = usePairingCode()
+
+// Generate code
+await generateCode('5511987654321')
+
+// Display
+if (code && !isExpired) {
+  console.log(`Code: ${code}, expires in ${secondsRemaining}s`)
+}
+```
+
+### Troubleshooting
+
+#### Code not generating
+- **Symptom:** Edge Function returns 400/401 error
+- **Check:**
+  1. `EVOLUTION_API_URL` and `EVOLUTION_API_KEY` in Supabase secrets
+  2. JWT token passing correctly (see `usePairingCode.ts:99-107`)
+  3. RPC permissions granted (`20260121000007_grant_whatsapp_rpc_permissions.sql`)
+- **Debug:** `npx supabase functions logs generate-pairing-code --tail`
+
+#### Webhook not updating status
+- **Symptom:** Status stays 'connecting' after entering code
+- **Check:**
+  1. `EVOLUTION_WEBHOOK_SECRET` matches in:
+     - Supabase Edge Function secrets
+     - Evolution API webhook configuration
+  2. HMAC signature validation (see `webhook-evolution/index.ts`)
+- **Debug:** `npx supabase functions logs webhook-evolution --tail`
+
+#### Real-time lag or not working
+- **Symptom:** UI doesn't update after connection
+- **Check:**
+  1. Supabase Dashboard → Database → Replication
+  2. Enable replication for `whatsapp_sessions` table
+  3. RLS policies allow SELECT for user
+- **Verify:** `useWhatsAppSessionSubscription()` hook active
+
+#### Pairing code format mismatch
+- **Symptom:** User enters code but WhatsApp rejects
+- **Check:**
+  1. Evolution API query param: `?number={phoneNumber}` (line 189 in generate-pairing-code)
+  2. Phone format: No spaces, format 5511987654321 (10-15 digits)
+- **Note:** Frontend displays XXXX-XXXX for UX, but API uses 8 digits without dash
+
+### Environment Secrets (Supabase)
+Required in Edge Functions → Secrets:
+```bash
+EVOLUTION_API_URL=https://your-evolution-api.com
+EVOLUTION_API_KEY=your-api-key
+EVOLUTION_WEBHOOK_SECRET=your-webhook-secret
+SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+### Rate Limiting
+- **Pairing attempts:** Tracked in `whatsapp_sessions.pairing_attempts`
+- **Messages sent:** Tracked in `messages_sent_today` (resets daily)
+- **Grace period:** 90s server-side (beyond 60s UI countdown)
+
+### Related Issues
+- **#89:** Webhook CONNECTION_UPDATE real-time (implemented)
+- **#90:** Dedicated connection page (ConnectionsWhatsAppTab)
+- **#91:** Process received messages to timeline (future)
+- **#118:** WhatsApp as document input for RAG (future)
 
 ---
 
