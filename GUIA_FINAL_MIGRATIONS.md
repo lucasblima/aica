@@ -54,12 +54,14 @@ cat PATCH_MIGRATION_0_FK_CONSTRAINTS.sql
 ## ✅ Passo 2: Aplicar Migration 3 (Consciousness Points)
 
 ```bash
-cat MIGRATION_3_CONSCIOUSNESS_POINTS.sql
+cat MIGRATION_3_CONSCIOUSNESS_POINTS_IDEMPOTENT.sql
 ```
 
 **Copie TODO** → Cole no SQL Editor → Execute (Ctrl+Enter)
 
 **Esperado:** "Success. No rows returned" (~8 segundos)
+
+**Nota:** Esta versão tem `DROP POLICY IF EXISTS` antes de `CREATE POLICY` (100% idempotente)
 
 ---
 
@@ -128,7 +130,7 @@ ON CONFLICT (version) DO NOTHING;
 | Arquivo | Propósito |
 |---------|-----------|
 | `MIGRATION_0_FINAL_IDEMPOTENT.sql` | **USAR ESTE** - Migration 0 100% idempotente |
-| `MIGRATION_3_CONSCIOUSNESS_POINTS.sql` | Migration 3 (já é idempotente) |
+| `MIGRATION_3_CONSCIOUSNESS_POINTS_IDEMPOTENT.sql` | **USAR ESTE** - Migration 3 100% idempotente |
 | `FIX_POLICIES_AND_TRIGGERS.sql` | Cleanup de policies/triggers (fallback) |
 | `PATCH_MIGRATION_0_FK_CONSTRAINTS.sql` | Patch FK constraints (fallback) |
 
@@ -140,7 +142,7 @@ ON CONFLICT (version) DO NOTHING;
 
 **Ordem de Execução:**
 1. MIGRATION_0_FINAL_IDEMPOTENT.sql
-2. MIGRATION_3_CONSCIOUSNESS_POINTS.sql
+2. MIGRATION_3_CONSCIOUSNESS_POINTS_IDEMPOTENT.sql
 3. Query de validação
 
 **Tempo total:** 3-5 minutos
