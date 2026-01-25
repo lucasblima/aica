@@ -6,6 +6,7 @@
 
 import { beforeAll, afterAll, afterEach } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
+import '@testing-library/jest-dom/vitest'
 
 // Environment variables para testes
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'http://localhost:54321'
