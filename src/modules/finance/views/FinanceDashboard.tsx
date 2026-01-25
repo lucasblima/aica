@@ -53,6 +53,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   onNavigateToAgent,
   onBack,
 }) => {
+  // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
+  useTourAutoStart('finance-first-visit');
+
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([]);
