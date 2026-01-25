@@ -207,7 +207,7 @@ $$;
 CREATE OR REPLACE VIEW public.v_badge_leaderboard AS
 SELECT
   us.user_id,
-  COALESCE(p.display_name, p.email, 'Anonymous') as user_name,
+  COALESCE(p.full_name, u.email, 'Anonymous') as user_name,
   COUNT(ua.id) as badges_earned,
   COALESCE(SUM((ua.metadata->>'xp_reward')::int), 0) as total_xp_from_badges,
   COALESCE(SUM((ua.metadata->>'cp_reward')::int), 0) as total_cp_from_badges,
@@ -215,7 +215,8 @@ SELECT
 FROM user_stats us
 LEFT JOIN user_achievements ua ON ua.user_id = us.user_id
 LEFT JOIN profiles p ON p.id = us.user_id
-GROUP BY us.user_id, p.display_name, p.email
+LEFT JOIN auth.users u ON u.id = us.user_id
+GROUP BY us.user_id, p.full_name, u.email
 ORDER BY badges_earned DESC, total_cp_from_badges DESC;
 
 -- Step 10: Grant permissions
