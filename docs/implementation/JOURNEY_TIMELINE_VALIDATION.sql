@@ -63,11 +63,12 @@ ORDER BY created_at DESC
 LIMIT 1;
 
 -- 8. Sample de mensagens recentes (verificar conteúdo)
-SELECT 
-  created_at,
-  message_direction,
-  LEFT(message_text, 50) as preview,
-  cn.name as contact_name
+SELECT
+  wm.created_at,
+  wm.message_direction,
+  LEFT(wm.message_text, 50) as preview,
+  cn.name as contact_name,
+  cn.phone_number as contact_phone
 FROM whatsapp_messages wm
 LEFT JOIN contact_network cn ON wm.contact_id = cn.id
 WHERE wm.user_id = 'SEU_USER_ID'
