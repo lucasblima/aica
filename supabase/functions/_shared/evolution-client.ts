@@ -370,7 +370,27 @@ export async function restartInstance(
 }
 
 /**
- * Delete an instance
+ * Logout an instance (disconnect WhatsApp without deleting)
+ * @param instanceName - Name of the instance
+ * @returns Evolution API response
+ */
+export async function logoutInstance(
+  instanceName: string
+): Promise<EvolutionApiResponse> {
+  if (!instanceName) {
+    throw new Error('Instance name is required')
+  }
+
+  const response = await makeRequest(
+    'DELETE',
+    `/instance/logout/${instanceName}`
+  )
+
+  return response as EvolutionApiResponse
+}
+
+/**
+ * Delete an instance (permanently remove)
  * @param instanceName - Name of the instance
  */
 export async function deleteInstance(
@@ -518,6 +538,7 @@ export default {
   sendMedia,
   getInstanceInfo,
   restartInstance,
+  logoutInstance,
   deleteInstance,
   // Sprint 1: Contact Sync
   fetchAllContacts,
