@@ -335,6 +335,7 @@ async function fetchQuestionEvents(
 ): Promise<QuestionEvent[]> {
   try {
     // Query question_responses with join to daily_questions for the question text
+    // Note: Using responded_at for ordering and filtering (created_at may not exist)
     let query = supabase
       .from('question_responses')
       .select(`
@@ -343,7 +344,6 @@ async function fetchQuestionEvents(
         question_id,
         response_text,
         responded_at,
-        created_at,
         daily_questions!inner(id, question_text, category)
       `)
       .eq('user_id', userId)
@@ -364,7 +364,7 @@ async function fetchQuestionEvents(
     const events = (data || []).map((q: any): QuestionEvent => ({
       id: `question-${q.id}`,
       source: 'question' as const,
-      created_at: q.responded_at || q.created_at,
+      created_at: q.responded_at, // Use responded_at as the event timestamp
       user_id: q.user_id,
       question_text: q.daily_questions?.question_text || '',
       response: q.response_text,
@@ -386,6 +386,7 @@ async function fetchQuestionEvents(
 
 /**
  * Fetch weekly summaries for timeline
+ * Note: Uses week_start_date for ordering and filtering (created_at may not exist)
  */
 async function fetchSummaryEvents(
   userId: string,
@@ -398,11 +399,11 @@ async function fetchSummaryEvents(
       .from('weekly_summaries')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .order('week_start_date', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (dateFilter) {
-      query = query.gte('created_at', dateFilter)
+      query = query.gte('week_start_date', dateFilter)
     }
 
     const { data, error } = await query
@@ -415,10 +416,10 @@ async function fetchSummaryEvents(
     const events = (data || []).map((s): SummaryEvent => ({
       id: `summary-${s.id}`,
       source: 'summary' as const,
-      created_at: s.created_at,
+      created_at: s.week_start_date, // Use week_start_date as event timestamp
       user_id: s.user_id,
-      week_start: s.week_start,
-      week_end: s.week_end,
+      week_start: s.week_start_date,
+      week_end: s.week_end_date,
       highlights: s.highlights || [],
       mood_average: s.mood_average,
       moments_count: s.moments_count,
