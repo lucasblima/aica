@@ -24,6 +24,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
   const [responseText, setResponseText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAnswered, setIsAnswered] = useState(!!question.user_response)
+  const [savedResponse, setSavedResponse] = useState(question.user_response?.response_text || '')
 
   const categoryColor = QUESTION_CATEGORY_COLORS[question.category]
   const categoryIcon = QUESTION_CATEGORY_ICONS[question.category]
@@ -39,6 +40,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
     try {
       setIsSubmitting(true)
       await onAnswer(question.id, responseText.trim())
+      setSavedResponse(responseText.trim()) // Save locally for immediate display
       setIsAnswered(true)
       setResponseText('')
     } catch (error) {
@@ -49,8 +51,11 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
     }
   }
 
+  // Get the response text from either the saved state or the question object
+  const displayResponse = savedResponse || question.user_response?.response_text || ''
+
   // If already answered, show confirmation
-  if (isAnswered && question.user_response) {
+  if (isAnswered && displayResponse) {
     return (
       <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-3">
@@ -62,7 +67,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
 
         <div className="p-3 bg-white rounded-lg">
           <p className="text-sm text-gray-600 mb-1">Sua resposta:</p>
-          <p className="text-gray-900">{question.user_response.response_text}</p>
+          <p className="text-gray-900">{displayResponse}</p>
         </div>
 
         <div className="mt-3 flex items-center gap-2 text-sm text-green-700">

@@ -43,8 +43,8 @@ interface JourneyFullScreenProps {
 }
 
 export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
-  // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
-  useTourAutoStart('journey-first-visit');
+  // TODO: Re-enable tour when Journey module is fully functional
+  // useTourAutoStart('journey-first-visit');
 
   // Debug: Log when component mounts
   React.useEffect(() => {
@@ -69,7 +69,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { user } = useAuth()
   const { moments, create: createMoment } = useMoments()
   const { summary, addReflection } = useCurrentWeeklySummary()
-  const { question, answer: answerQuestion, skip: skipQuestion } = useDailyQuestion()
+  const { question, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, triggerAnimation } = useCPAnimation()
 
@@ -156,6 +156,11 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       }
 
       refreshStats()
+
+      // Fetch next question after a short delay to show success feedback
+      setTimeout(() => {
+        refreshQuestion()
+      }, 2000)
     } catch (error) {
       log.error('Error answering question:', error)
     }
