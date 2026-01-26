@@ -137,6 +137,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
 
   /**
    * Disconnect WhatsApp instance
+   * Calls Evolution API to logout, then updates database
    */
   const disconnect = useCallback(async () => {
     try {
@@ -149,18 +150,32 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
 
       log.debug('[useWhatsAppConnection] Disconnecting session:', session.instance_name)
 
-      // Update session status in database
-      const { error: updateError } = await supabase
-        .from('whatsapp_sessions')
-        .update({
-          status: 'disconnected',
-          disconnected_at: new Date().toISOString(),
-        })
-        .eq('id', session.id)
+      // Get current session to ensure we have valid token
+      const { data: { session: authSession } } = await supabase.auth.getSession()
 
-      if (updateError) {
-        throw updateError
+      if (!authSession?.access_token) {
+        throw new Error('User not authenticated. Please log in again.')
       }
+
+      // Call disconnect-whatsapp Edge Function to logout from Evolution API
+      const response = await supabase.functions.invoke('disconnect-whatsapp', {
+        body: { sessionId: session.id },
+        headers: {
+          Authorization: `Bearer ${authSession.access_token}`,
+        },
+      })
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to disconnect')
+      }
+
+      const result = response.data as { success: boolean; message?: string; error?: string }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to disconnect')
+      }
+
+      log.debug('[useWhatsAppConnection] Disconnected from Evolution API:', result.message)
 
       // Clear QR code
       setQrCode(null)
@@ -171,6 +186,9 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         instance: session.instance_name,
       })
 
+      // Refresh session data to get latest state
+      await refreshSession()
+
       log.debug('[useWhatsAppConnection] Disconnected successfully')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -179,7 +197,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [session])
+  }, [session, refreshSession])
 
   /**
    * Fetch QR code for connection
