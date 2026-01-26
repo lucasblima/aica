@@ -84,6 +84,8 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
     isSearching,
     documents,
     clearSearchResults,
+    indexMoment,
+    isIndexing,
   } = useJourneyFileSearch({ userId: user?.id, autoLoad: true })
 
   const hasIndexedMoments = documents.length > 0
@@ -92,6 +94,13 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const handleCreateMoment = async (input: CreateMomentInput) => {
     try {
       const result = await createMoment(input)
+
+      // Auto-index moment for File Search (async, non-blocking)
+      if (result && result.content && result.content.length >= 10) {
+        indexMoment(result).catch((err) => {
+          log.warn('Failed to index moment for File Search:', err)
+        })
+      }
 
       // Generate post-capture insight
       const recentMoments = moments.slice(0, 7).map(m => ({

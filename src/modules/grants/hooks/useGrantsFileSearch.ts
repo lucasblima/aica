@@ -1,30 +1,32 @@
 /**
- * Hook especializado para File Search no módulo Grants
+ * Hook simplificado para File Search no módulo Grants
  *
- * Fornece interface otimizada para:
- * - Indexar PDFs de editais automaticamente
- * - Buscar semanticamente em documentos de editais
- * - Gerenciar corpus por projeto
- * - Integrar com documentService
+ * ARQUITETURA: Google File Search como fonte única
+ * - Processamento de editais via Edge Function `process-edital`
+ * - Busca semântica usando `gemini_file_name` diretamente
+ * - Sem corpus management (arquivos são indexados diretamente)
+ *
+ * @module modules/grants/hooks/useGrantsFileSearch
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useModuleFileSearch } from '../../../hooks/useFileSearch';
-import type {
-  FileSearchCorpus,
-  FileSearchDocument,
-  FileSearchResult,
-} from '../../../types/fileSearch';
+import { supabase } from '@/services/supabaseClient';
+import { invokeEdgeFunction } from '@/services/edgeFunctionService';
 import type { GrantProject, GrantOpportunity } from '../types';
-
 import { createNamespacedLogger } from '@/lib/logger';
 
-const log = createNamespacedLogger('Usegrantsfilesearch');
+const log = createNamespacedLogger('useGrantsFileSearch');
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 export interface UseGrantsFileSearchOptions {
-  /** ID do projeto de grant (module_id) */
-  projectId?: string;
-  /** Auto-carregar corpora ao montar */
+  /** gemini_file_name (files/xxx) do documento indexado */
+  geminiFileName?: string;
+  /** ID do documento no file_search_documents */
+  documentId?: string;
+  /** Auto-carregar documento ao montar */
   autoLoad?: boolean;
 }
 
@@ -33,296 +35,317 @@ export interface GrantsSearchContext {
   opportunity?: GrantOpportunity;
 }
 
+export interface FileSearchDocument {
+  id: string;
+  gemini_file_name: string;
+  original_filename: string;
+  mime_type: string;
+  file_size_bytes: number;
+  module_type: string;
+  module_id?: string;
+  indexing_status: 'pending' | 'completed' | 'failed';
+  created_at: string;
+}
+
+export interface FileSearchResult {
+  content: string;
+  score?: number;
+  citations?: string[];
+}
+
+// =============================================================================
+// MAIN HOOK
+// =============================================================================
+
 /**
- * Hook especializado para File Search no módulo Grants
+ * Hook simplificado para File Search no módulo Grants
+ *
+ * Usa Google File Search como fonte única (sem corpus management).
  *
  * @example
  * ```tsx
  * const {
- *   corpus,
- *   documents,
- *   indexEditalPDF,
+ *   document,
  *   searchInEdital,
- *   isIndexing,
+ *   isSearching,
  *   searchResults
- * } = useGrantsFileSearch({ projectId: 'proj-123', autoLoad: true });
- *
- * // Indexar PDF do edital
- * await indexEditalPDF(pdfFile, 'Edital FAPESP 2024');
+ * } = useGrantsFileSearch({ geminiFileName: 'files/abc123' });
  *
  * // Buscar informações no edital
  * const results = await searchInEdital('Quais são os critérios de avaliação?');
  * ```
  */
 export function useGrantsFileSearch(options: UseGrantsFileSearchOptions = {}) {
-  const { projectId, autoLoad = true } = options;
+  const { geminiFileName, documentId, autoLoad = true } = options;
 
-  // Base hook com filtro de módulo 'grants'
-  const baseHook = useModuleFileSearch('grants', projectId);
-
-  // Estados específicos do Grants
-  const [corpus, setCorpus] = useState<FileSearchCorpus | null>(null);
-  const [isIndexing, setIsIndexing] = useState(false);
+  // Estados
+  const [document, setDocument] = useState<FileSearchDocument | null>(null);
+  const [searchResults, setSearchResults] = useState<FileSearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [context, setContext] = useState<GrantsSearchContext>({});
 
   /**
-   * Carrega ou cria corpus para o projeto
+   * Carrega documento do banco de dados
    */
-  const ensureCorpus = useCallback(async (): Promise<FileSearchCorpus> => {
-    try {
-      if (!projectId) {
-        throw new Error('projectId is required to create or load corpus');
-      }
-
-      // Tentar carregar corpus existente
-      const existingCorpora = await baseHook.loadCorpora();
-      const existingCorpus = existingCorpora.find(
-        (c) => c.module_type === 'grants' && c.module_id === projectId
-      );
-
-      if (existingCorpus) {
-        setCorpus(existingCorpus);
-        return existingCorpus;
-      }
-
-      // Criar novo corpus
-      const corpusName = `grants-project-${projectId}`;
-      const displayName = `Grant Project ${projectId}`;
-
-      const newCorpus = await baseHook.createNewCorpus(corpusName, displayName);
-      setCorpus(newCorpus);
-      return newCorpus;
-    } catch (error) {
-      log.error(ensureCorpus error:', error);
-      throw error;
+  const loadDocument = useCallback(async (): Promise<FileSearchDocument | null> => {
+    if (!geminiFileName && !documentId) {
+      return null;
     }
-  }, [projectId, baseHook]);
 
-  /**
-   * Indexa um PDF de edital
-   *
-   * @param file - Arquivo PDF do edital
-   * @param displayName - Nome para exibição (ex: "Edital FAPESP 2024")
-   * @param metadata - Metadados adicionais (opcional)
-   */
-  const indexEditalPDF = useCallback(
-    async (
-      file: File,
-      displayName: string,
-      metadata?: Record<string, any>
-    ): Promise<FileSearchDocument> => {
-      try {
-        setIsIndexing(true);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        // Validar tipo de arquivo
-        if (file.type !== 'application/pdf') {
-          throw new Error('Apenas arquivos PDF são suportados');
-        }
+      let query = supabase
+        .from('file_search_documents')
+        .select('*')
+        .eq('module_type', 'grants');
 
-        // Validar tamanho (máx 50MB)
-        const maxSize = 50 * 1024 * 1024; // 50MB
-        if (file.size > maxSize) {
-          throw new Error('Arquivo muito grande. Máximo: 50MB');
-        }
-
-        // Garantir que corpus existe
-        const targetCorpus = await ensureCorpus();
-
-        // Indexar documento
-        const document = await baseHook.uploadDocument({
-          file,
-          corpus_id: targetCorpus.id,
-          display_name: displayName,
-          module_type: 'grants',
-          module_id: projectId,
-          custom_metadata: {
-            document_type: 'edital_pdf',
-            project_id: projectId,
-            ...metadata,
-          },
-        });
-
-        log.debug('PDF indexado com sucesso:', document.id);
-        return document;
-      } catch (error) {
-        log.error(indexEditalPDF error:', error);
-        throw error;
-      } finally {
-        setIsIndexing(false);
+      if (documentId) {
+        query = query.eq('id', documentId);
+      } else if (geminiFileName) {
+        query = query.eq('gemini_file_name', geminiFileName);
       }
-    },
-    [projectId, ensureCorpus, baseHook]
-  );
+
+      const { data, error: dbError } = await query.single();
+
+      if (dbError) {
+        log.warn('Document not found:', dbError.message);
+        return null;
+      }
+
+      const doc: FileSearchDocument = {
+        id: data.id,
+        gemini_file_name: data.gemini_file_name,
+        original_filename: data.original_filename,
+        mime_type: data.mime_type,
+        file_size_bytes: data.file_size_bytes,
+        module_type: data.module_type,
+        module_id: data.module_id,
+        indexing_status: data.indexing_status,
+        created_at: data.created_at,
+      };
+
+      setDocument(doc);
+      return doc;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load document';
+      setError(msg);
+      log.error('loadDocument error:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [geminiFileName, documentId]);
 
   /**
-   * Busca semântica em documentos do edital
+   * Busca semântica no edital usando Google File Search
    *
    * @param query - Pergunta ou termo de busca
-   * @param resultCount - Número de resultados (padrão: 5)
    */
   const searchInEdital = useCallback(
-    async (query: string, resultCount: number = 5): Promise<FileSearchResult[]> => {
-      try {
-        if (!corpus) {
-          throw new Error('Nenhum corpus disponível. Indexe um PDF primeiro.');
-        }
+    async (query: string): Promise<FileSearchResult[]> => {
+      const targetFile = document?.gemini_file_name || geminiFileName;
 
-        const results = await baseHook.search({
-          corpus_id: corpus.id,
+      if (!targetFile) {
+        throw new Error('Nenhum documento disponível. Faça upload de um PDF primeiro.');
+      }
+
+      try {
+        setIsSearching(true);
+        setError(null);
+
+        // Call Edge Function to query the file using Gemini
+        const response = await invokeEdgeFunction<{
+          success: boolean;
+          answer: string;
+          citations?: string[];
+          error?: string;
+        }>('query-edital', {
+          gemini_file_name: targetFile,
           query,
-          result_count: resultCount,
         });
 
+        if (!response.success) {
+          throw new Error(response.error || 'Search failed');
+        }
+
+        const results: FileSearchResult[] = [
+          {
+            content: response.answer,
+            score: 1.0,
+            citations: response.citations || [],
+          },
+        ];
+
+        setSearchResults(results);
         return results;
-      } catch (error) {
-        log.error(searchInEdital error:', error);
-        throw error;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Search failed';
+        setError(msg);
+        log.error('searchInEdital error:', err);
+        throw err;
+      } finally {
+        setIsSearching(false);
       }
     },
-    [corpus, baseHook]
+    [document, geminiFileName]
   );
 
   /**
    * Busca com contexto adicional (projeto + edital)
-   *
-   * Útil para fazer perguntas contextualizadas como:
-   * "Quais critérios de avaliação se aplicam ao meu projeto?"
    */
   const searchWithContext = useCallback(
     async (
       query: string,
-      context: GrantsSearchContext,
-      resultCount: number = 5
+      searchContext: GrantsSearchContext
     ): Promise<FileSearchResult[]> => {
-      try {
-        setContext(context);
+      setContext(searchContext);
 
-        // Enriquecer query com contexto
-        let enrichedQuery = query;
+      // Enriquecer query com contexto
+      let enrichedQuery = query;
 
-        if (context.project) {
-          enrichedQuery += ` (contexto: projeto "${context.project.project_name}")`;
-        }
-
-        if (context.opportunity) {
-          enrichedQuery += ` (edital: "${context.opportunity.title}")`;
-        }
-
-        return await searchInEdital(enrichedQuery, resultCount);
-      } catch (error) {
-        log.error(searchWithContext error:', error);
-        throw error;
+      if (searchContext.project) {
+        enrichedQuery += ` (contexto: projeto "${searchContext.project.project_name}")`;
       }
+
+      if (searchContext.opportunity) {
+        enrichedQuery += ` (edital: "${searchContext.opportunity.title}")`;
+      }
+
+      return await searchInEdital(enrichedQuery);
     },
     [searchInEdital]
   );
 
   /**
-   * Lista todos os documentos indexados do projeto
+   * Lista todos os documentos de grants do usuário
    */
-  const loadProjectDocuments = useCallback(async () => {
+  const loadGrantsDocuments = useCallback(async (): Promise<FileSearchDocument[]> => {
     try {
-      if (!corpus) {
-        await ensureCorpus();
+      setIsLoading(true);
+      setError(null);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return [];
       }
-      return await baseHook.loadDocuments(corpus?.id);
-    } catch (error) {
-      log.error(loadProjectDocuments error:', error);
-      throw error;
+
+      const { data, error: dbError } = await supabase
+        .from('file_search_documents')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('module_type', 'grants')
+        .eq('indexing_status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (dbError) {
+        log.error('loadGrantsDocuments error:', dbError);
+        return [];
+      }
+
+      return (data || []).map((row) => ({
+        id: row.id,
+        gemini_file_name: row.gemini_file_name,
+        original_filename: row.original_filename,
+        mime_type: row.mime_type,
+        file_size_bytes: row.file_size_bytes,
+        module_type: row.module_type,
+        module_id: row.module_id,
+        indexing_status: row.indexing_status,
+        created_at: row.created_at,
+      }));
+    } catch (err) {
+      log.error('loadGrantsDocuments error:', err);
+      return [];
+    } finally {
+      setIsLoading(false);
     }
-  }, [corpus, ensureCorpus, baseHook]);
+  }, []);
 
   /**
-   * Remove um documento indexado
+   * Verifica se há documento carregado
    */
-  const removeDocument = useCallback(
-    async (documentId: string) => {
-      try {
-        await baseHook.removeDocument(documentId);
-      } catch (error) {
-        log.error(removeDocument error:', error);
-        throw error;
-      }
-    },
-    [baseHook]
-  );
+  const hasDocument = useCallback(() => {
+    return !!document || !!geminiFileName;
+  }, [document, geminiFileName]);
 
   /**
-   * Verifica se há documentos indexados
+   * Limpa resultados de busca
    */
-  const hasIndexedDocuments = useCallback(() => {
-    return baseHook.documents.length > 0;
-  }, [baseHook.documents]);
+  const clearSearchResults = useCallback(() => {
+    setSearchResults([]);
+  }, []);
 
   /**
-   * Auto-load ao montar (se autoLoad=true)
+   * Limpa erro
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  /**
+   * Auto-load ao montar
    */
   useEffect(() => {
-    if (autoLoad && projectId) {
-      ensureCorpus().catch((error) => {
-        log.warn('Auto-load failed:', error);
+    if (autoLoad && (geminiFileName || documentId)) {
+      loadDocument().catch((err) => {
+        log.warn('Auto-load failed:', err);
       });
     }
-  }, [autoLoad, projectId, ensureCorpus]);
+  }, [autoLoad, geminiFileName, documentId, loadDocument]);
 
   return {
     // Estados
-    corpus,
-    documents: baseHook.documents,
-    searchResults: baseHook.searchResults,
-    isLoading: baseHook.isLoading,
-    isSearching: baseHook.isSearching,
-    isIndexing,
-    error: baseHook.error,
+    document,
+    searchResults,
+    isLoading,
+    isSearching,
+    error,
     context,
 
-    // Ações específicas do Grants
-    indexEditalPDF,
+    // Ações
+    loadDocument,
     searchInEdital,
     searchWithContext,
-    loadProjectDocuments,
-    removeDocument,
-    hasIndexedDocuments,
-
-    // Ações do base hook (se necessário)
-    clearSearchResults: baseHook.clearSearchResults,
-    clearError: baseHook.clearError,
+    loadGrantsDocuments,
+    hasDocument,
+    clearSearchResults,
+    clearError,
 
     // Metadados
-    projectId,
+    geminiFileName: document?.gemini_file_name || geminiFileName,
     moduleType: 'grants' as const,
   };
 }
 
+// =============================================================================
+// QUICK SEARCH HOOK
+// =============================================================================
+
 /**
- * Hook simplificado para busca rápida sem gerenciamento de estado
- *
- * Útil para componentes que apenas fazem busca pontual
+ * Hook simplificado para busca rápida em um edital específico
  *
  * @example
  * ```tsx
- * const { quickSearch } = useGrantsQuickSearch('proj-123');
+ * const { quickSearch, isSearching } = useGrantsQuickSearch('files/abc123');
  * const results = await quickSearch('Critérios de avaliação');
  * ```
  */
-export function useGrantsQuickSearch(projectId: string) {
-  const { searchInEdital, ensureCorpus } = useGrantsFileSearch({
-    projectId,
-    autoLoad: true,
+export function useGrantsQuickSearch(geminiFileName: string) {
+  const { searchInEdital, isSearching, error } = useGrantsFileSearch({
+    geminiFileName,
+    autoLoad: false,
   });
 
   const quickSearch = useCallback(
-    async (query: string, resultCount: number = 5) => {
-      try {
-        await ensureCorpus();
-        return await searchInEdital(query, resultCount);
-      } catch (error) {
-        log.error(error:', error);
-        throw error;
-      }
+    async (query: string) => {
+      return await searchInEdital(query);
     },
-    [searchInEdital, ensureCorpus]
+    [searchInEdital]
   );
 
-  return { quickSearch };
+  return { quickSearch, isSearching, error };
 }
