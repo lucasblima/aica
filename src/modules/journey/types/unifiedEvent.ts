@@ -198,13 +198,13 @@ export type TimelineFilter = TimelineFilters
  * Default filter configuration
  * Note: Only include sources that have corresponding database tables
  * - task, activity, approval: Tables don't exist yet (future Atlas integration)
- * - whatsapp: whatsapp_messages table
+ * - whatsapp: whatsapp_messages table ✅ (Issue #138)
  * - moment: moments table
  * - question: question_responses table
  * - summary: weekly_summaries table
  */
 export const DEFAULT_TIMELINE_FILTERS: TimelineFilters = {
-  sources: ['moment', 'question', 'summary'],
+  sources: ['whatsapp', 'moment', 'question', 'summary'],
   dateRange: 'last30',
 }
 
