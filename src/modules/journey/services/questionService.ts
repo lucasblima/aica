@@ -65,8 +65,17 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
     const randomIndex = Math.floor(Math.random() * availableQuestions.length)
     const selectedQuestion = availableQuestions[randomIndex]
 
+    log.debug('Selected question for user', {
+      questionId: selectedQuestion.id,
+      category: selectedQuestion.category,
+      isReanswering: unansweredQuestions.length === 0,
+      totalQuestions: questions?.length,
+      totalAnswered: answeredIds.size,
+    })
+
     // Don't include user_response when returning - we want fresh questions
     // This ensures the card shows the question form, not "already answered"
+    // Note: If user has answered all questions, they can re-answer (upsert updates existing)
     return {
       ...selectedQuestion,
       user_response: undefined, // Always allow answering again
@@ -118,7 +127,13 @@ export async function answerQuestion(
   input: AnswerQuestionInput
 ): Promise<AnswerQuestionResult> {
   try {
-    // Insert response
+    log.debug('Saving question response', {
+      userId,
+      questionId: input.question_id,
+      responseLength: input.response_text.length,
+    })
+
+    // Insert response (upsert will update if same user_id + question_id exists)
     const { data: response, error: responseError } = await supabase
       .from('question_responses')
       .upsert(
@@ -135,7 +150,15 @@ export async function answerQuestion(
       .select()
       .single()
 
-    if (responseError) throw responseError
+    if (responseError) {
+      log.error('Error saving question response:', responseError)
+      throw responseError
+    }
+
+    log.debug('Question response saved successfully', {
+      responseId: response.id,
+      questionId: response.question_id,
+    })
 
     // Award CP
     const { data: cpResult, error: cpError } = await supabase.rpc(
