@@ -12,8 +12,8 @@ import React, { useState } from 'react';
 import { X, ArrowLeft, ArrowRight, Check, Sparkles, Loader2, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFUploadZone } from './PDFUploadZone';
-import { processEditalPDF } from '../services/pdfService';
-import { analyzeEditalStructure, parseFormFieldsFromText } from '../services/grantAIService';
+import { processEdital, type ProcessEditalResponse, type AnalyzedEditalData } from '@/services/edgeFunctionService';
+import { parseFormFieldsFromText } from '../services/grantAIService';
 import type { CreateOpportunityPayload } from '../types';
 
 import { createNamespacedLogger } from '@/lib/logger';
@@ -36,12 +36,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
   const [currentStep, setCurrentStep] = useState<WizardStep>('upload');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pdfData, setPdfData] = useState<{
-    path: string;
-    text: string;
-    url: string;
-  } | null>(null);
-  const [extractedData, setExtractedData] = useState<any>(null);
+  const [processedEdital, setProcessedEdital] = useState<ProcessEditalResponse | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // Form fields state
@@ -51,28 +46,33 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
 
   /**
    * Handle PDF upload and analysis
+   * Uses Google File Search as single source - all processing happens server-side
    */
   const handleFileSelected = async (file: File) => {
     try {
       setIsProcessing(true);
       setError(null);
 
-      // 1. Upload e extrair texto
-      log.debug('Processando PDF...');
-      const processed = await processEditalPDF(file);
-      setPdfData(processed);
+      // Process PDF server-side via Edge Function
+      // This uploads to Google Files API, waits for indexing, and extracts structured data
+      log.debug('Processing PDF via Edge Function (Google File Search)...');
+      const result = await processEdital(file);
 
-      // 2. Analisar com IA
-      log.debug('Analisando edital...');
-      const analyzed = await analyzeEditalStructure(processed.text);
-      setExtractedData(analyzed);
+      log.info('Edital processed successfully', {
+        documentId: result.file_search_document_id,
+        geminiFileName: result.gemini_file_name,
+        title: result.analyzed_data.title,
+        processingTimeMs: result.processing_time_ms,
+      });
 
-      // 3. Avançar para revisão
+      setProcessedEdital(result);
+
+      // Advance to review step
       setCurrentStep('review');
       setIsProcessing(false);
     } catch (err) {
-      log.error('Erro ao processar PDF:', err);
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      log.error('Error processing PDF:', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido ao processar PDF');
       setIsProcessing(false);
     }
   };
@@ -104,26 +104,32 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
    * Handle save
    */
   const handleSave = async () => {
-    if (!extractedData || !pdfData) return;
+    if (!processedEdital) return;
 
     try {
       setIsSaving(true);
 
+      const { analyzed_data, gemini_file_name, file_search_document_id } = processedEdital;
+
       // Use parsed fields if available, otherwise use extracted fields
-      const formFields = parsedFields.length > 0 ? parsedFields : extractedData.form_fields;
+      const formFields = parsedFields.length > 0 ? parsedFields : analyzed_data.form_fields;
 
       const payload: CreateOpportunityPayload = {
-        ...extractedData,
+        ...analyzed_data,
         form_fields: formFields,
-        edital_pdf_path: pdfData.path,
-        edital_text_content: pdfData.text,
+        // Use gemini_file_name as the path reference (Google File Search is the source)
+        edital_pdf_path: gemini_file_name,
+        // Store raw text preview for quick access
+        edital_text_content: analyzed_data.raw_text_preview || '',
+        // Store File Search document ID for semantic search
+        file_search_document_id: file_search_document_id,
         status: 'open'
       };
 
       await onSave(payload);
       onClose();
     } catch (err) {
-      log.error('Erro ao salvar edital:', err);
+      log.error('Error saving edital:', err);
       setError(err instanceof Error ? err.message : 'Erro ao salvar');
       setIsSaving(false);
     }
@@ -151,8 +157,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
    */
   const handleReset = () => {
     setCurrentStep('upload');
-    setPdfData(null);
-    setExtractedData(null);
+    setProcessedEdital(null);
     setFormFieldsText('');
     setParsedFields([]);
     setError(null);
@@ -274,7 +279,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
               </motion.div>
             )}
 
-            {currentStep === 'review' && extractedData && (
+            {currentStep === 'review' && processedEdital && (
               <motion.div
                 key="review"
                 initial={{ opacity: 0, x: 20 }}
@@ -288,8 +293,9 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                     ✓ Edital analisado com sucesso!
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    {extractedData.form_fields?.length || 0} campos identificados,
-                    {' '}{extractedData.evaluation_criteria?.length || 0} critérios de avaliação extraídos.
+                    {processedEdital.analyzed_data.form_fields?.length || 0} campos identificados,
+                    {' '}{processedEdital.analyzed_data.evaluation_criteria?.length || 0} critérios de avaliação extraídos.
+                    {' '}Processado em {(processedEdital.processing_time_ms / 1000).toFixed(1)}s
                   </p>
                 </div>
 
@@ -302,17 +308,17 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-bold text-ceramic-text-secondary">TÍTULO</label>
-                      <p className="text-sm text-ceramic-text-primary mt-1">{extractedData.title}</p>
+                      <p className="text-sm text-ceramic-text-primary mt-1">{processedEdital.analyzed_data.title}</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-bold text-ceramic-text-secondary">AGÊNCIA</label>
-                        <p className="text-sm text-ceramic-text-primary mt-1">{extractedData.funding_agency}</p>
+                        <p className="text-sm text-ceramic-text-primary mt-1">{processedEdital.analyzed_data.funding_agency}</p>
                       </div>
                       <div>
                         <label className="text-xs font-bold text-ceramic-text-secondary">NÚMERO</label>
-                        <p className="text-sm text-ceramic-text-primary mt-1">{extractedData.edital_number}</p>
+                        <p className="text-sm text-ceramic-text-primary mt-1">{processedEdital.analyzed_data.edital_number}</p>
                       </div>
                     </div>
 
@@ -320,13 +326,13 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                       <div>
                         <label className="text-xs font-bold text-ceramic-text-secondary">FINANCIAMENTO</label>
                         <p className="text-sm text-ceramic-text-primary mt-1">
-                          R$ {extractedData.min_funding?.toLocaleString('pt-BR')} - R$ {extractedData.max_funding?.toLocaleString('pt-BR')}
+                          R$ {processedEdital.analyzed_data.min_funding?.toLocaleString('pt-BR')} - R$ {processedEdital.analyzed_data.max_funding?.toLocaleString('pt-BR')}
                         </p>
                       </div>
                       <div>
                         <label className="text-xs font-bold text-ceramic-text-secondary">DEADLINE</label>
                         <p className="text-sm text-ceramic-text-primary mt-1">
-                          {new Date(extractedData.submission_deadline).toLocaleDateString('pt-BR')}
+                          {new Date(processedEdital.analyzed_data.submission_deadline).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
                     </div>
@@ -334,7 +340,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                     <div>
                       <label className="text-xs font-bold text-ceramic-text-secondary">TEMAS</label>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {extractedData.eligible_themes?.map((theme: string, i: number) => (
+                        {processedEdital.analyzed_data.eligible_themes?.map((theme: string, i: number) => (
                           <span key={i} className="px-3 py-1 bg-ceramic-accent/10 text-ceramic-accent rounded-full text-xs font-bold">
                             {theme}
                           </span>
@@ -344,18 +350,18 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
 
                     <div>
                       <label className="text-xs font-bold text-ceramic-text-secondary">
-                        CRITÉRIOS DE AVALIAÇÃO ({extractedData.evaluation_criteria?.length || 0})
+                        CRITÉRIOS DE AVALIAÇÃO ({processedEdital.analyzed_data.evaluation_criteria?.length || 0})
                       </label>
                       <div className="space-y-2 mt-2">
-                        {extractedData.evaluation_criteria?.slice(0, 3).map((criterion: any, i: number) => (
+                        {processedEdital.analyzed_data.evaluation_criteria?.slice(0, 3).map((criterion, i: number) => (
                           <div key={i} className="flex items-center justify-between text-xs">
                             <span className="text-ceramic-text-primary">{criterion.name}</span>
                             <span className="text-ceramic-text-secondary">Peso: {criterion.weight}%</span>
                           </div>
                         ))}
-                        {(extractedData.evaluation_criteria?.length || 0) > 3 && (
+                        {(processedEdital.analyzed_data.evaluation_criteria?.length || 0) > 3 && (
                           <p className="text-xs text-ceramic-text-secondary italic">
-                            + {extractedData.evaluation_criteria.length - 3} critérios adicionais
+                            + {processedEdital.analyzed_data.evaluation_criteria.length - 3} critérios adicionais
                           </p>
                         )}
                       </div>

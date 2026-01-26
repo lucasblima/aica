@@ -107,18 +107,18 @@ export const ContextStage: React.FC = () => {
     dispatch({ type: 'UPDATE_PDF', payload: { file, processingStatus: 'uploading' } });
 
     try {
-      // Import the PDF service dynamically
-      const { processEditalPDF } = await import('../../services/pdfService');
+      // Use server-side processing via Edge Function (Google File Search as single source)
+      const { processEdital } = await import('@/services/edgeFunctionService');
 
       dispatch({ type: 'UPDATE_PDF', payload: { processingStatus: 'extracting' } });
 
-      const result = await processEditalPDF(file);
+      const result = await processEdital(file);
 
       dispatch({
         type: 'UPDATE_PDF',
         payload: {
-          path: result.path,
-          textContent: result.text,
+          path: result.gemini_file_name,  // Use gemini file reference
+          textContent: result.analyzed_data.raw_text_preview || '',
           processingStatus: 'done',
           error: null,
         },
@@ -147,13 +147,8 @@ export const ContextStage: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      // Import the PDF service dynamically
-      const { deleteEditalPDF } = await import('../../services/pdfService');
-
-      if (pdfUpload.path) {
-        await deleteEditalPDF(pdfUpload.path);
-      }
-
+      // Note: Google File Search files expire automatically after 48 hours
+      // No need to explicitly delete them - just reset local state
       dispatch({ type: 'RESET_PDF' });
     } catch (error) {
       log.error('Delete error:', error);

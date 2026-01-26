@@ -291,6 +291,8 @@ export interface CreateOpportunityPayload {
   external_system_url?: string;
   edital_pdf_path?: string;
   edital_text_content?: string;
+  // Google File Search document reference (for semantic search)
+  file_search_document_id?: string;
 }
 
 export interface CreateProjectPayload {
