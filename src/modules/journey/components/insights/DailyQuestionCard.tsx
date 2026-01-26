@@ -25,6 +25,21 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAnswered, setIsAnswered] = useState(!!question.user_response)
   const [savedResponse, setSavedResponse] = useState(question.user_response?.response_text || '')
+  const [lastQuestionId, setLastQuestionId] = useState(question.id)
+
+  // Reset state when question changes (new question loaded)
+  React.useEffect(() => {
+    if (question.id !== lastQuestionId) {
+      log.debug('Question changed, resetting state', {
+        oldId: lastQuestionId,
+        newId: question.id
+      })
+      setLastQuestionId(question.id)
+      setIsAnswered(!!question.user_response)
+      setSavedResponse(question.user_response?.response_text || '')
+      setResponseText('')
+    }
+  }, [question.id, question.user_response, lastQuestionId])
 
   const categoryColor = QUESTION_CATEGORY_COLORS[question.category]
   const categoryIcon = QUESTION_CATEGORY_ICONS[question.category]
