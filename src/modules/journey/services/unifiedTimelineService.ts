@@ -324,7 +324,8 @@ async function fetchTaskEvents(
 }
 
 /**
- * Fetch daily questions for timeline
+ * Fetch question responses for timeline
+ * Note: Queries question_responses (user answers), not daily_questions (global question pool)
  */
 async function fetchQuestionEvents(
   userId: string,
@@ -333,15 +334,24 @@ async function fetchQuestionEvents(
   offset: number
 ): Promise<QuestionEvent[]> {
   try {
+    // Query question_responses with join to daily_questions for the question text
     let query = supabase
-      .from('daily_questions')
-      .select('*')
+      .from('question_responses')
+      .select(`
+        id,
+        user_id,
+        question_id,
+        response_text,
+        responded_at,
+        created_at,
+        daily_questions!inner(id, question_text, category)
+      `)
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .order('responded_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (dateFilter) {
-      query = query.gte('created_at', dateFilter)
+      query = query.gte('responded_at', dateFilter)
     }
 
     const { data, error } = await query
@@ -351,16 +361,16 @@ async function fetchQuestionEvents(
       return []
     }
 
-    const events = (data || []).map((q): QuestionEvent => ({
+    const events = (data || []).map((q: any): QuestionEvent => ({
       id: `question-${q.id}`,
       source: 'question' as const,
-      created_at: q.created_at,
+      created_at: q.responded_at || q.created_at,
       user_id: q.user_id,
-      question_text: q.question || q.question_text || '',
-      response: q.response || q.answer,
-      answered_at: q.answered_at,
-      skipped: q.skipped,
-      xp_earned: q.xp_earned,
+      question_text: q.daily_questions?.question_text || '',
+      response: q.response_text,
+      answered_at: q.responded_at,
+      skipped: false,
+      xp_earned: 10, // Default CP for answering
       displayData: { icon: '', title: '', label: '', color: '', preview: '' }, // Placeholder
     }))
 
