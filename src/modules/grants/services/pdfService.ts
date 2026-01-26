@@ -9,10 +9,12 @@ import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('Pdfservice');
 
-// Configure o worker do PDF.js
-// Usando arquivo local na pasta public para evitar problemas de CORS e versão
-// O arquivo é copiado de node_modules/pdfjs-dist/build/pdf.worker.min.mjs
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Configure o worker do PDF.js para Vite
+// Usando new URL com import.meta.url para garantir que o bundler resolva corretamente
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 /**
  * Sanitiza nome de arquivo removendo caracteres especiais
