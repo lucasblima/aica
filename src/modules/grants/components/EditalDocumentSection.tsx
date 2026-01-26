@@ -9,26 +9,27 @@
  * - Busca semântica no conteúdo do PDF (File Search)
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { FileText, Upload, Loader2, X, Download, Eye, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/services/supabaseClient';
 import { EditalSearchBar, QuickSearchExamples } from './EditalSearchBar';
-import { useGrantsFileSearch } from '../hooks/useGrantsFileSearch';
-import type { FileSearchResult } from '../../../types/fileSearch';
+import { useGrantsFileSearch, type FileSearchResult } from '../hooks/useGrantsFileSearch';
 
 import { createNamespacedLogger } from '@/lib/logger';
 
-const log = createNamespacedLogger('Editaldocumentsection');
+const log = createNamespacedLogger('EditalDocumentSection');
 
 interface EditalDocumentSectionProps {
   opportunityId: string;
   opportunityTitle: string;
   editalPdfPath?: string;
   editalTextContent?: string;
+  /** gemini_file_name for File Search (from process-edital) */
+  geminiFileName?: string;
   onUpload: (file: File) => Promise<void>;
   onDelete: () => Promise<void>;
-  defaultCollapsed?: boolean; // NEW: Start collapsed by default to save space
+  defaultCollapsed?: boolean;
 }
 
 export function EditalDocumentSection({
@@ -36,9 +37,10 @@ export function EditalDocumentSection({
   opportunityTitle,
   editalPdfPath,
   editalTextContent,
+  geminiFileName,
   onUpload,
   onDelete,
-  defaultCollapsed = true // Default to collapsed for space optimization
+  defaultCollapsed = true
 }: EditalDocumentSectionProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -46,14 +48,14 @@ export function EditalDocumentSection({
   const [showEditalSection, setShowEditalSection] = useState(!defaultCollapsed);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // File Search integration
+  // File Search integration (simplified - uses gemini_file_name directly)
   const [searchResults, setSearchResults] = useState<FileSearchResult[]>([]);
   const {
     searchInEdital,
-    hasIndexedDocuments,
+    hasDocument,
     isSearching,
     clearSearchResults,
-  } = useGrantsFileSearch({ projectId: opportunityId, autoLoad: true });
+  } = useGrantsFileSearch({ geminiFileName, autoLoad: !!geminiFileName });
 
   /**
    * Handle PDF upload
@@ -118,7 +120,7 @@ export function EditalDocumentSection({
    */
   const handleSearch = async (query: string) => {
     try {
-      const results = await searchInEdital(query, 5);
+      const results = await searchInEdital(query);
       setSearchResults(results);
       return results;
     } catch (error) {
