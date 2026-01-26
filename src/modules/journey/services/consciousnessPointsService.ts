@@ -22,6 +22,8 @@ export async function getUserConsciousnessStats(
   userId: string
 ): Promise<UserConsciousnessStats | null> {
   try {
+    log.debug('Fetching consciousness stats for user:', userId)
+
     const { data, error } = await supabase
       .from('user_consciousness_stats')
       .select('*')
@@ -29,12 +31,20 @@ export async function getUserConsciousnessStats(
       .single()
 
     if (error) {
+      log.warn('Query error:', error.code, error.message)
       // Create initial stats if not found
       if (error.code === 'PGRST116') {
+        log.debug('No stats found, initializing...')
         return await initializeUserStats(userId)
       }
       throw error
     }
+
+    log.debug('Stats fetched successfully:', {
+      total_points: data?.total_points,
+      level: data?.level,
+      total_moments: data?.total_moments
+    })
 
     return data
   } catch (error) {
@@ -48,6 +58,8 @@ export async function getUserConsciousnessStats(
  */
 async function initializeUserStats(userId: string): Promise<UserConsciousnessStats> {
   try {
+    log.debug('Initializing stats for user:', userId)
+
     const { data, error } = await supabase
       .from('user_consciousness_stats')
       .insert({
@@ -64,8 +76,12 @@ async function initializeUserStats(userId: string): Promise<UserConsciousnessSta
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      log.error('INSERT failed:', error.code, error.message, error.details)
+      throw error
+    }
 
+    log.debug('Stats initialized successfully:', data)
     return data
   } catch (error) {
     log.error('Error initializing stats:', error)

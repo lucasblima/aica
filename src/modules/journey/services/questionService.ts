@@ -140,13 +140,14 @@ export async function answerQuestion(
       log.error('Error awarding CP:', cpError)
     }
 
-    // Update stats
-    await supabase
-      .from('user_consciousness_stats')
-      .update({
-        total_questions_answered: supabase.sql`total_questions_answered + 1`,
-      })
-      .eq('user_id', userId)
+    // Update stats via RPC (supabase.sql doesn't work client-side)
+    const { error: statsError } = await supabase.rpc('increment_questions_answered', {
+      p_user_id: userId,
+    })
+
+    if (statsError) {
+      log.warn('Error incrementing questions counter:', statsError)
+    }
 
     return {
       response,

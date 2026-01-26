@@ -195,11 +195,14 @@ export async function addReflectionToSummary(
       log.error('Error awarding CP:', cpError)
     }
 
-    // Update stats
-    await supabase
-      .from('user_consciousness_stats')
-      .update({ total_summaries_reflected: supabase.sql`total_summaries_reflected + 1` })
-      .eq('user_id', userId)
+    // Update stats via RPC (supabase.sql doesn't work client-side)
+    const { error: statsError } = await supabase.rpc('increment_summaries_reflected', {
+      p_user_id: userId,
+    })
+
+    if (statsError) {
+      log.warn('Error incrementing summaries counter:', statsError)
+    }
 
     return {
       ...summary,
