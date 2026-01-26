@@ -230,12 +230,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
             </div>
           </div>
 
-          {/* CP Score */}
-          {stats && (
-            <div className="max-w-md">
-              <ConsciousnessScore stats={stats} size="sm" showDetails={false} />
-            </div>
-          )}
+          {/* CP Score moved to sidebar - removed duplicate from header */}
         </div>
       </div>
 
