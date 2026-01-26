@@ -62,6 +62,7 @@ export async function createOpportunity(
         external_system_url: payload.external_system_url,
         edital_pdf_path: payload.edital_pdf_path,
         edital_text_content: payload.edital_text_content,
+        file_search_document_id: payload.file_search_document_id,
         status: 'draft'
       })
       .select()
@@ -1321,5 +1322,113 @@ export async function deleteEditalPDF(
   } catch (error) {
     log.error('Erro ao deletar PDF do edital:', error);
     throw new Error(`Falha ao deletar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+  }
+}
+
+// ============================================
+// FILE SEARCH INTEGRATION
+// ============================================
+
+/**
+ * Links a processed document (from process-edital Edge Function) to an opportunity
+ *
+ * @param opportunityId - ID of the opportunity
+ * @param fileSearchDocumentId - ID from file_search_documents table
+ * @param geminiFileName - Google Files API reference (files/xxx)
+ * @returns Updated opportunity
+ * @throws Error if linking fails
+ */
+export async function linkProcessedDocument(
+  opportunityId: string,
+  fileSearchDocumentId: string,
+  geminiFileName?: string
+): Promise<GrantOpportunity> {
+  try {
+    const updateData: Record<string, any> = {
+      file_search_document_id: fileSearchDocumentId,
+      updated_at: new Date().toISOString()
+    };
+
+    // Also update the edital_pdf_path with gemini_file_name if provided
+    if (geminiFileName) {
+      updateData.edital_pdf_path = geminiFileName;
+    }
+
+    const { data, error } = await supabase
+      .from('grant_opportunities')
+      .update(updateData)
+      .eq('id', opportunityId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    log.debug('Processed document linked to opportunity:', {
+      opportunityId,
+      fileSearchDocumentId,
+      geminiFileName
+    });
+
+    return data as GrantOpportunity;
+  } catch (error) {
+    log.error('Erro ao vincular documento processado:', error);
+    throw new Error(`Falha ao vincular documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+  }
+}
+
+/**
+ * Gets the file_search_document_id for an opportunity
+ *
+ * @param opportunityId - ID of the opportunity
+ * @returns The file_search_document_id or null if not linked
+ */
+export async function getOpportunityFileSearchDocument(
+  opportunityId: string
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('grant_opportunities')
+      .select('file_search_document_id')
+      .eq('id', opportunityId)
+      .single();
+
+    if (error) throw error;
+
+    return data?.file_search_document_id || null;
+  } catch (error) {
+    log.error('Erro ao buscar documento do edital:', error);
+    return null;
+  }
+}
+
+/**
+ * Updates the module_id in file_search_documents to link to the opportunity
+ * This enables querying documents by opportunity
+ *
+ * @param fileSearchDocumentId - ID from file_search_documents
+ * @param opportunityId - ID of the opportunity to link
+ */
+export async function updateFileSearchDocumentModule(
+  fileSearchDocumentId: string,
+  opportunityId: string
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('file_search_documents')
+      .update({
+        module_id: opportunityId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', fileSearchDocumentId);
+
+    if (error) throw error;
+
+    log.debug('File search document module updated:', {
+      fileSearchDocumentId,
+      opportunityId
+    });
+  } catch (error) {
+    log.error('Erro ao atualizar módulo do documento:', error);
+    throw new Error(`Falha ao atualizar documento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
