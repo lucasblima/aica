@@ -38,6 +38,7 @@ import {
   checkAllResponsesApproved
 } from '../services/grantService';
 import { generateFieldContent } from '../services/grantAIService';
+import { indexEditalDocument } from '../services/editalIndexingService';
 
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -178,6 +179,22 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const handleCreateOpportunity = async (payload: CreateOpportunityPayload) => {
     try {
       const opportunity = await createOpportunity(payload);
+
+      // Index edital in Google File Search for semantic search (Issue #159)
+      if (payload.edital_text_content && payload.edital_pdf_path) {
+        try {
+          await indexEditalDocument({
+            opportunityId: opportunity.id,
+            displayName: payload.title,
+            textContent: payload.edital_text_content,
+            storagePath: payload.edital_pdf_path
+          });
+          log.debug('Edital indexed successfully in File Search');
+        } catch (indexError) {
+          // Log but don't fail the opportunity creation
+          log.error('Failed to index edital in File Search:', indexError);
+        }
+      }
 
       // Automatically create a project for this opportunity
       const project = await createProject({
