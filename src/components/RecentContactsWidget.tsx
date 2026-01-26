@@ -7,6 +7,11 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users } from 'lucide-react';
 import type { ContactNetwork } from '../types/memoryTypes';
+import { getUserContacts } from '../services/contactNetworkService';
+import { useAuth } from '../hooks/useAuth';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('RecentContactsWidget');
 
 interface RecentContactsWidgetProps {
   onViewAllClick?: () => void;
@@ -14,59 +19,45 @@ interface RecentContactsWidgetProps {
 }
 
 export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentContactsWidgetProps) {
+  const { user } = useAuth();
   const [contacts, setContacts] = useState<ContactNetwork[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for demo - in production, this would fetch from API
+  // Fetch real contacts from database
   useEffect(() => {
-    // Simulated loading
-    setIsLoading(true);
-    setTimeout(() => {
-      setContacts([
-        {
-          id: '1',
-          user_id: 'demo-user-id',
-          name: 'João Silva',
-          email: 'joao@example.com',
-          avatar_url: 'https://i.pravatar.cc/150?img=1',
-          health_score: 85,
-          sync_source: 'google',
-          last_interaction_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: '2',
-          user_id: 'demo-user-id',
-          name: 'Maria Santos',
-          email: 'maria@example.com',
-          avatar_url: 'https://i.pravatar.cc/150?img=2',
-          health_score: 72,
-          sync_source: 'whatsapp',
-          last_interaction_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: '3',
-          user_id: 'demo-user-id',
-          name: 'Pedro Oliveira',
-          email: 'pedro@example.com',
-          avatar_url: 'https://i.pravatar.cc/150?img=3',
-          health_score: 91,
-          sync_source: 'google',
-          last_interaction_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: '4',
-          user_id: 'demo-user-id',
-          name: 'Ana Costa',
-          email: 'ana@example.com',
-          avatar_url: 'https://i.pravatar.cc/150?img=4',
-          health_score: 68,
-          sync_source: 'whatsapp',
-          last_interaction_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      ]);
+    if (!user?.id) {
       setIsLoading(false);
-    }, 500);
-  }, []);
+      return;
+    }
+
+    const loadContacts = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch all contacts (already sorted by last_interaction_at DESC)
+        const allContacts = await getUserContacts(user.id);
+
+        // Limit to 6 most recent contacts for widget
+        const recentContacts = allContacts.slice(0, 6);
+
+        setContacts(recentContacts);
+
+        log.debug('Loaded recent contacts:', {
+          total: allContacts.length,
+          displayed: recentContacts.length
+        });
+      } catch (err) {
+        log.error('Error loading recent contacts:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load contacts');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContacts();
+  }, [user?.id]);
 
   if (isLoading) {
     return (
@@ -84,6 +75,19 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
     );
   }
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="ceramic-card p-6">
+        <div className="flex items-center gap-2 text-ceramic-text-secondary">
+          <Users className="w-5 h-5" />
+          <p className="text-sm">Não foi possível carregar contatos recentes</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Hide widget if no contacts
   if (contacts.length === 0) {
     return null;
   }
