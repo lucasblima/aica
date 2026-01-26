@@ -489,3 +489,120 @@ export async function sendGuestApprovalLink(
     logContext: { action: 'send_approval_link', method: request.method },
   })
 }
+
+// ============================================================================
+// PROCESS EDITAL FUNCTIONS (process-edital)
+// ============================================================================
+
+/**
+ * Evaluation criterion extracted from edital
+ */
+export interface EditalEvaluationCriterion {
+  name: string
+  description?: string
+  weight?: number
+  max_score?: number
+}
+
+/**
+ * Form field extracted from edital
+ */
+export interface EditalFormField {
+  id: string
+  label: string
+  type: 'text' | 'textarea' | 'number' | 'date' | 'select' | 'file'
+  required: boolean
+  description?: string
+  max_length?: number
+  options?: string[]
+}
+
+/**
+ * Analyzed data extracted from edital PDF
+ */
+export interface AnalyzedEditalData {
+  title: string
+  funding_agency: string
+  program_name?: string
+  edital_number?: string
+  submission_deadline: string
+  submission_start?: string
+  result_date?: string
+  min_funding?: number
+  max_funding?: number
+  counterpart_percentage?: number
+  eligible_themes: string[]
+  eligibility_requirements: string[]
+  evaluation_criteria: EditalEvaluationCriterion[]
+  form_fields: EditalFormField[]
+  external_system_url?: string
+  raw_text_preview?: string
+}
+
+/**
+ * Response from process-edital Edge Function
+ */
+export interface ProcessEditalResponse {
+  success: boolean
+  gemini_file_name: string
+  file_search_document_id: string
+  analyzed_data: AnalyzedEditalData
+  processing_time_ms: number
+  error?: string
+}
+
+/**
+ * Helper function to convert File to base64
+ */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // Remove data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64 = result.split(',')[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+/**
+ * Process an edital PDF using Google File Search as single source.
+ *
+ * This function:
+ * 1. Converts the PDF to base64
+ * 2. Uploads to Google Files API for indexing
+ * 3. Extracts structured data using Gemini
+ * 4. Returns gemini_file_name for semantic search + analyzed data for form population
+ *
+ * @param file - The PDF file to process
+ * @returns ProcessEditalResponse with gemini_file_name, document_id, and analyzed_data
+ */
+export async function processEdital(file: File): Promise<ProcessEditalResponse> {
+  log.info('Processing edital PDF', { fileName: file.name, fileSize: file.size })
+
+  const base64Data = await fileToBase64(file)
+
+  const response = await invokeEdgeFunction<ProcessEditalResponse>('process-edital', {
+    file_data: base64Data,
+    file_name: file.name,
+    file_size: file.size,
+  }, {
+    retryCount: 1, // Retry once on failure
+    logContext: { action: 'process_edital', fileName: file.name },
+  })
+
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to process edital')
+  }
+
+  log.info('Edital processed successfully', {
+    documentId: response.file_search_document_id,
+    processingTimeMs: response.processing_time_ms,
+    title: response.analyzed_data.title,
+  })
+
+  return response
+}

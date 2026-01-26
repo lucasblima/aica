@@ -39,4 +39,5 @@ export * from './presentationContentSchemas';
 
 // Utilities
 export * from './briefingAIService';
-export * from './pdfService';
+// Note: pdfService.ts is deprecated - use processEdital from @/services/edgeFunctionService instead
+// PDF processing now happens server-side via Google File Search
