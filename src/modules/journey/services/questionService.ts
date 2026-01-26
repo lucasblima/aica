@@ -27,8 +27,17 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
       .select('*')
       .eq('active', true)
 
-    if (questionsError) throw questionsError
-    if (!questions || questions.length === 0) return null
+    if (questionsError) {
+      log.error('Error fetching questions:', questionsError)
+      throw questionsError
+    }
+
+    log.debug('Active questions found:', questions?.length || 0)
+
+    if (!questions || questions.length === 0) {
+      log.warn('No active questions found in database')
+      return null
+    }
 
     // Get user's answered question IDs
     const { data: responses, error: responsesError } = await supabase
@@ -36,14 +45,19 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
       .select('question_id')
       .eq('user_id', userId)
 
-    if (responsesError) throw responsesError
+    if (responsesError) {
+      log.error('Error fetching responses:', responsesError)
+      throw responsesError
+    }
 
     const answeredIds = new Set(responses?.map(r => r.question_id) || [])
+    log.debug('Questions answered by user:', answeredIds.size)
 
     // Filter unanswered questions
     const unansweredQuestions = questions.filter(q => !answeredIds.has(q.id))
+    log.debug('Unanswered questions:', unansweredQuestions.length)
 
-    // If all answered, pick a random one to allow re-answering
+    // If all answered, allow re-answering any question (but mark as already answered)
     const availableQuestions =
       unansweredQuestions.length > 0 ? unansweredQuestions : questions
 
@@ -51,12 +65,11 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
     const randomIndex = Math.floor(Math.random() * availableQuestions.length)
     const selectedQuestion = availableQuestions[randomIndex]
 
-    // Get user's response if exists
-    const userResponse = responses?.find(r => r.question_id === selectedQuestion.id)
-
+    // Don't include user_response when returning - we want fresh questions
+    // This ensures the card shows the question form, not "already answered"
     return {
       ...selectedQuestion,
-      user_response: userResponse ? (userResponse as QuestionResponse) : undefined,
+      user_response: undefined, // Always allow answering again
     }
   } catch (error) {
     log.error('Error fetching daily question:', error)
