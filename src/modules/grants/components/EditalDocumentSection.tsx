@@ -377,7 +377,7 @@ export function EditalDocumentSection({
       )}
 
       {/* File Search Integration */}
-      {hasPdf && hasIndexedDocuments() && (
+      {hasPdf && hasDocument() && (
         <div className="mt-4 pt-4 border-t border-ceramic-text-secondary/10">
           <div className="space-y-4">
             {/* Search Bar */}
@@ -385,7 +385,7 @@ export function EditalDocumentSection({
               onSearch={handleSearch}
               results={searchResults}
               isSearching={isSearching}
-              hasDocuments={hasIndexedDocuments()}
+              hasDocuments={hasDocument()}
               placeholder="Pergunte algo sobre o edital... Ex: Quais são os critérios de avaliação?"
               onClear={handleClearSearch}
             />
