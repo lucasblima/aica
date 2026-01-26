@@ -38,3 +38,13 @@ verify_jwt = false
 # Function handles its own JWT validation
 [functions.create-user-instance]
 verify_jwt = false
+
+# process-edital: Processes edital PDFs via Google File Search
+# Requires user authentication for document ownership
+[functions.process-edital]
+verify_jwt = true
+
+# query-edital: Semantic search in edital documents
+# Requires user authentication for document access control
+[functions.query-edital]
+verify_jwt = true
