@@ -1,6 +1,10 @@
 /**
  * Question Service
  * Service layer for managing daily voluntary questions
+ *
+ * Supports infinite questions through AI generation:
+ * - When unanswered questions fall below threshold, auto-triggers generation
+ * - Questions include both global pool and user-specific AI-generated ones
  */
 
 import { supabase } from '@/services/supabaseClient'
@@ -12,20 +16,28 @@ import {
   AnswerQuestionInput,
   AnswerQuestionResult,
 } from '../types/dailyQuestion'
+import { checkAndTriggerGenerationIfNeeded } from './questionGenerationService'
 
 const log = createNamespacedLogger('QuestionService')
+
+// Configuration for question system
+const QUESTION_CONFIG = {
+  MIN_UNANSWERED_THRESHOLD: 3, // Trigger generation when below this
+}
 
 /**
  * Get daily question for user
  * Returns a random question that user hasn't answered yet
+ * Auto-triggers AI generation when running low on questions
  */
 export async function getDailyQuestion(userId: string): Promise<QuestionWithResponse | null> {
   try {
-    // Get all active questions
+    // Get all active questions (global + user-specific)
     const { data: questions, error: questionsError } = await supabase
       .from('daily_questions')
       .select('*')
       .eq('active', true)
+      .or(`user_id.is.null,user_id.eq.${userId}`)
 
     if (questionsError) {
       log.error('Error fetching questions:', questionsError)
@@ -36,6 +48,10 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
 
     if (!questions || questions.length === 0) {
       log.warn('No active questions found in database')
+      // Trigger generation if no questions exist
+      checkAndTriggerGenerationIfNeeded(userId).catch(err => {
+        log.warn('Failed to trigger generation:', err)
+      })
       return null
     }
 
@@ -57,25 +73,47 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
     const unansweredQuestions = questions.filter(q => !answeredIds.has(q.id))
     log.debug('Unanswered questions:', unansweredQuestions.length)
 
-    // If all answered, allow re-answering any question (but mark as already answered)
+    // Check if we need to generate more questions (non-blocking)
+    if (unansweredQuestions.length < QUESTION_CONFIG.MIN_UNANSWERED_THRESHOLD) {
+      log.info('Low on unanswered questions, triggering generation', {
+        unansweredCount: unansweredQuestions.length,
+        threshold: QUESTION_CONFIG.MIN_UNANSWERED_THRESHOLD,
+      })
+      checkAndTriggerGenerationIfNeeded(userId).catch(err => {
+        log.warn('Failed to trigger generation:', err)
+      })
+    }
+
+    // If all answered, allow re-answering any question
     const availableQuestions =
       unansweredQuestions.length > 0 ? unansweredQuestions : questions
 
-    // Pick random question
-    const randomIndex = Math.floor(Math.random() * availableQuestions.length)
-    const selectedQuestion = availableQuestions[randomIndex]
+    // Pick random question (prefer higher relevance_score for AI-generated)
+    let selectedQuestion: DailyQuestion
+
+    if (availableQuestions.some(q => q.relevance_score)) {
+      // Sort by relevance and pick from top 3
+      const sorted = [...availableQuestions].sort((a, b) =>
+        (b.relevance_score || 0.5) - (a.relevance_score || 0.5)
+      )
+      const topQuestions = sorted.slice(0, Math.min(3, sorted.length))
+      const randomIndex = Math.floor(Math.random() * topQuestions.length)
+      selectedQuestion = topQuestions[randomIndex]
+    } else {
+      const randomIndex = Math.floor(Math.random() * availableQuestions.length)
+      selectedQuestion = availableQuestions[randomIndex]
+    }
 
     log.debug('Selected question for user', {
       questionId: selectedQuestion.id,
       category: selectedQuestion.category,
+      isAiGenerated: selectedQuestion.created_by_ai || false,
       isReanswering: unansweredQuestions.length === 0,
       totalQuestions: questions?.length,
       totalAnswered: answeredIds.size,
     })
 
     // Don't include user_response when returning - we want fresh questions
-    // This ensures the card shows the question form, not "already answered"
-    // Note: If user has answered all questions, they can re-answer (upsert updates existing)
     return {
       ...selectedQuestion,
       user_response: undefined, // Always allow answering again
