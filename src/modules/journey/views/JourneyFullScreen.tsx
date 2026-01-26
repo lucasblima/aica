@@ -172,6 +172,8 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       }, 2000)
     } catch (error) {
       log.error('Error answering question:', error)
+      // Re-throw to let the card component handle UI state
+      throw error
     }
   }
 
