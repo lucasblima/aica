@@ -9,10 +9,10 @@ import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('Pdfservice');
 
-// Configure o worker do PDF.js usando jsDelivr CDN
-// NOTA: CloudFlare CDN (cdnjs) só tem versões até 4.x 
-// jsDelivr suporta todas as versões do pdfjs-dist incluindo 5.x
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Configure o worker do PDF.js
+// Usando arquivo local na pasta public para evitar problemas de CORS e versão
+// O arquivo é copiado de node_modules/pdfjs-dist/build/pdf.worker.min.mjs
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 /**
  * Sanitiza nome de arquivo removendo caracteres especiais
