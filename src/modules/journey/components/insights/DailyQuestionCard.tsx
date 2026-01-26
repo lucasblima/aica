@@ -38,6 +38,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
       setIsAnswered(!!question.user_response)
       setSavedResponse(question.user_response?.response_text || '')
       setResponseText('')
+      setIsSubmitting(false) // Reset submitting state when question changes
     }
   }, [question.id, question.user_response, lastQuestionId])
 
