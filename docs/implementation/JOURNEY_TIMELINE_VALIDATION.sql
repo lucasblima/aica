@@ -14,10 +14,10 @@ FROM whatsapp_messages
 WHERE user_id = 'SEU_USER_ID'; -- Substituir pelo user_id real
 
 -- 2. Verificar contatos sincronizados
-SELECT 
+SELECT
   COUNT(*) as total_contacts,
   COUNT(CASE WHEN sync_source = 'whatsapp' THEN 1 END) as whatsapp_contacts,
-  MAX(last_interaction_at) as last_whatsapp_activity
+  MAX(whatsapp_last_message_at) as last_whatsapp_activity
 FROM contact_network
 WHERE user_id = 'SEU_USER_ID';
 
