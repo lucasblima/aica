@@ -386,7 +386,7 @@ async function fetchQuestionEvents(
 
 /**
  * Fetch weekly summaries for timeline
- * Note: Uses week_start_date for ordering and filtering (created_at may not exist)
+ * Note: Uses period_start for ordering and filtering (matches actual DB column)
  */
 async function fetchSummaryEvents(
   userId: string,
@@ -399,11 +399,11 @@ async function fetchSummaryEvents(
       .from('weekly_summaries')
       .select('*')
       .eq('user_id', userId)
-      .order('week_start_date', { ascending: false })
+      .order('period_start', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (dateFilter) {
-      query = query.gte('week_start_date', dateFilter)
+      query = query.gte('period_start', dateFilter)
     }
 
     const { data, error } = await query
@@ -416,15 +416,15 @@ async function fetchSummaryEvents(
     const events = (data || []).map((s): SummaryEvent => ({
       id: `summary-${s.id}`,
       source: 'summary' as const,
-      created_at: s.week_start_date, // Use week_start_date as event timestamp
+      created_at: s.period_start, // Use period_start as event timestamp
       user_id: s.user_id,
-      week_start: s.week_start_date,
-      week_end: s.week_end_date,
+      week_start: s.period_start,
+      week_end: s.period_end,
       highlights: s.highlights || [],
       mood_average: s.mood_average,
       moments_count: s.moments_count,
       tasks_completed: s.tasks_completed,
-      reflection: s.reflection,
+      reflection: s.user_reflection,
       displayData: { icon: '', title: '', label: '', color: '', preview: '' }, // Placeholder
     }))
 

@@ -30,10 +30,10 @@ BEGIN
   ) THEN
     ALTER TABLE weekly_summaries ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
 
-    -- Backfill with week_start_date for existing rows
+    -- Backfill with period_start for existing rows
     UPDATE weekly_summaries
-    SET created_at = week_start_date
-    WHERE created_at IS NULL AND week_start_date IS NOT NULL;
+    SET created_at = period_start::timestamptz
+    WHERE created_at IS NULL AND period_start IS NOT NULL;
   END IF;
 END $$;
 

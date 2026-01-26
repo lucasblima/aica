@@ -13,6 +13,7 @@ import { ProposalGeneratorView } from '../components/ProposalGeneratorView';
 import { EditalProjectWorkspace } from '../components/workspace/EditalProjectWorkspace';
 import { ApprovedProjectModal } from '../components/ApprovedProjectModal';
 import { OrganizationWizard } from '../components/wizard';
+import { UploadedDocumentsManager } from '../components/UploadedDocumentsManager';
 import {
   createOpportunity,
   listOpportunities,
@@ -760,6 +761,14 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                   + Projeto Aprovado
                 </button>
               </div>
+            </div>
+
+            {/* Uploaded Documents Manager - Shows all PDFs to avoid duplicates */}
+            <div className="mb-6">
+              <UploadedDocumentsManager
+                defaultCollapsed={true}
+                maxHeight="300px"
+              />
             </div>
 
             {/* Active Opportunities List */}

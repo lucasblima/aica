@@ -1,106 +1,72 @@
 -- ============================================================================
--- MIGRATION CORRIGIDA: 20260126_unified_efficiency.sql
+-- MIGRATION CORRIGIDA: 20260125_recipe_badges.sql
 -- Data: 2026-01-25 (VERSÃO FINAL CORRIGIDA)
--- Issue: Gamification 2.0 - Unified Efficiency Score
+-- Issue: Gamification 2.0 - RECIPE Framework & Badges
 -- ============================================================================
 --
--- ✅ CORREÇÕES APLICADAS:
--- 1. Linha 192: p.display_name → p.full_name
--- 2. Linha 192: p.email → u.email (auth.users)
--- 3. Linha 204: Adicionado LEFT JOIN auth.users u
+-- ✅ TODAS AS CORREÇÕES APLICADAS:
+-- 1. achievement_id → badge_id (linhas 72)
+-- 2. earned_at → unlocked_at (linhas 75, 214)
+-- 3. p.display_name → p.full_name (linha 210)
+-- 4. p.email → u.email (linha 210)
+-- 5. Adicionado LEFT JOIN auth.users u (linha 218)
+-- 6. GROUP BY atualizado (linha 219)
 --
 -- ⚠️ IMPORTANTE: Esta é a versão corrigida final. Use este arquivo ao invés
--- de copiar direto de supabase/migrations/20260126_unified_efficiency.sql
--- ============================================================================
---
--- The Unified Efficiency Score combines 5 components:
--- 1. Task Completion Rate (25%) - Quantity of tasks completed
--- 2. Focus Quality (25%) - Quality of attention during work
--- 3. Consistency Score (20%) - Daily activity regularity
--- 4. Priority Alignment (20%) - Completing high-priority tasks
--- 5. Time Efficiency (10%) - Completing tasks on time
---
--- Formula emphasizes QUALITY over raw QUANTITY to encourage
--- sustainable productivity without burnout.
+-- de copiar direto de supabase/migrations/20260125_recipe_badges.sql
 -- ============================================================================
 
--- Step 1: Add efficiency_score JSONB column to user_stats
+-- Step 1: Add RECIPE engagement profile to user_stats
 ALTER TABLE public.user_stats
-ADD COLUMN IF NOT EXISTS efficiency_score JSONB DEFAULT '{
-  "total_score": 0,
-  "level": "low",
-  "components": {
-    "completion_rate": 0,
-    "focus_quality": 0,
-    "consistency": 0,
-    "priority_alignment": 0,
-    "time_efficiency": 0
+ADD COLUMN IF NOT EXISTS recipe_profile JSONB DEFAULT '{
+  "pillar_scores": {
+    "reflection": 50,
+    "exposition": 50,
+    "choice": 50,
+    "information": 50,
+    "play": 50,
+    "engagement": 50
   },
-  "strongest": null,
-  "weakest": null,
-  "suggested_focus": null,
-  "trend": "stable",
-  "delta": 0,
+  "dominant_pillars": [],
+  "growth_pillars": [],
+  "preferred_drives": ["epic_meaning", "accomplishment", "empowerment", "ownership", "social_influence"],
+  "black_hat_enabled": false,
+  "gamification_intensity": "moderate",
+  "last_assessed_at": null,
   "updated_at": null
 }'::jsonb;
 
--- Step 2: Create efficiency_history table
-CREATE TABLE IF NOT EXISTS public.efficiency_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
-  total_score INT NOT NULL CHECK (total_score >= 0 AND total_score <= 100),
-  components JSONB NOT NULL,
-  period TEXT NOT NULL CHECK (period IN ('daily', 'weekly', 'monthly')),
-  created_at TIMESTAMPTZ DEFAULT now(),
+-- Step 2: Add black_hat_enabled to streak_trend if not exists
+DO $$
+BEGIN
+  UPDATE user_stats
+  SET streak_trend = COALESCE(streak_trend, '{}'::jsonb) || jsonb_build_object(
+    'black_hat_enabled', false
+  )
+  WHERE streak_trend IS NULL
+    OR streak_trend->>'black_hat_enabled' IS NULL;
+END $$;
 
-  UNIQUE(user_id, date, period)
-);
+-- Step 3: Add metadata column to user_achievements for badge-specific data
+ALTER TABLE public.user_achievements
+ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
 
--- Step 3: Add indexes for performance
-CREATE INDEX IF NOT EXISTS idx_efficiency_history_user_id
-ON public.efficiency_history(user_id);
+-- Step 4: Add displayed and favorite columns to user_achievements
+ALTER TABLE public.user_achievements
+ADD COLUMN IF NOT EXISTS displayed BOOLEAN DEFAULT true;
 
-CREATE INDEX IF NOT EXISTS idx_efficiency_history_date
-ON public.efficiency_history(date DESC);
+ALTER TABLE public.user_achievements
+ADD COLUMN IF NOT EXISTS favorite BOOLEAN DEFAULT false;
 
-CREATE INDEX IF NOT EXISTS idx_efficiency_history_user_date
-ON public.efficiency_history(user_id, date DESC);
+-- Step 5: Create index for faster badge lookups ✅ CORRIGIDO
+CREATE INDEX IF NOT EXISTS idx_user_achievements_badge_lookup
+ON public.user_achievements(user_id, badge_id);
 
-CREATE INDEX IF NOT EXISTS idx_efficiency_history_period
-ON public.efficiency_history(period);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_unlocked_at
+ON public.user_achievements(unlocked_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_user_stats_efficiency_gin
-ON public.user_stats USING GIN (efficiency_score);
-
--- Step 4: Enable RLS on efficiency_history
-ALTER TABLE public.efficiency_history ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can read own efficiency history"
-ON public.efficiency_history
-FOR SELECT
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can upsert own efficiency history"
-ON public.efficiency_history
-FOR INSERT
-WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own efficiency history"
-ON public.efficiency_history
-FOR UPDATE
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Service role full access to efficiency history"
-ON public.efficiency_history
-FOR ALL
-USING (auth.jwt()->>'role' = 'service_role');
-
--- Step 5: Create function to get efficiency stats
-CREATE OR REPLACE FUNCTION public.get_efficiency_stats(
-  p_user_id UUID,
-  p_days INT DEFAULT 30
-)
+-- Step 6: Create function to get user badge stats
+CREATE OR REPLACE FUNCTION public.get_user_badge_stats(p_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -108,139 +74,166 @@ SET search_path = public
 AS $$
 DECLARE
   v_result JSONB;
-  v_avg_score NUMERIC;
-  v_highest_score INT;
-  v_highest_date DATE;
-  v_days_above_70 INT;
-  v_days_above_90 INT;
+  v_earned INT;
+  v_total_xp INT;
+  v_total_cp INT;
 BEGIN
-  SELECT AVG(total_score)
-  INTO v_avg_score
-  FROM efficiency_history
-  WHERE user_id = p_user_id
-    AND period = 'daily'
-    AND date >= CURRENT_DATE - p_days;
-
-  SELECT total_score, date
-  INTO v_highest_score, v_highest_date
-  FROM efficiency_history
-  WHERE user_id = p_user_id
-    AND period = 'daily'
-    AND date >= CURRENT_DATE - p_days
-  ORDER BY total_score DESC
-  LIMIT 1;
-
   SELECT COUNT(*)
-  INTO v_days_above_70
-  FROM efficiency_history
-  WHERE user_id = p_user_id
-    AND period = 'daily'
-    AND date >= CURRENT_DATE - p_days
-    AND total_score >= 70;
+  INTO v_earned
+  FROM user_achievements
+  WHERE user_id = p_user_id;
 
-  SELECT COUNT(*)
-  INTO v_days_above_90
-  FROM efficiency_history
+  SELECT
+    COALESCE(SUM((metadata->>'xp_reward')::int), 0),
+    COALESCE(SUM((metadata->>'cp_reward')::int), 0)
+  INTO v_total_xp, v_total_cp
+  FROM user_achievements
   WHERE user_id = p_user_id
-    AND period = 'daily'
-    AND date >= CURRENT_DATE - p_days
-    AND total_score >= 90;
+    AND metadata IS NOT NULL;
 
   v_result := jsonb_build_object(
-    'average_score', COALESCE(ROUND(v_avg_score), 0),
-    'highest_score', COALESCE(v_highest_score, 0),
-    'highest_date', v_highest_date,
-    'days_above_70', COALESCE(v_days_above_70, 0),
-    'days_above_90', COALESCE(v_days_above_90, 0),
-    'period_days', p_days
+    'earned', v_earned,
+    'total_xp_from_badges', v_total_xp,
+    'total_cp_from_badges', v_total_cp
   );
 
   RETURN v_result;
 END;
 $$;
 
--- Step 6: Create function to get efficiency trend
-CREATE OR REPLACE FUNCTION public.get_efficiency_trend(
+-- Step 7: Create function to update RECIPE pillar scores
+CREATE OR REPLACE FUNCTION public.update_recipe_pillar_score(
   p_user_id UUID,
-  p_days INT DEFAULT 7
+  p_pillar TEXT,
+  p_delta INT
 )
-RETURNS TABLE (
-  date DATE,
-  total_score INT,
-  components JSONB
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_profile JSONB;
+  v_current_score INT;
+  v_new_score INT;
+BEGIN
+  SELECT recipe_profile
+  INTO v_profile
+  FROM user_stats
+  WHERE user_id = p_user_id;
+
+  IF v_profile IS NULL THEN
+    v_profile := '{
+      "pillar_scores": {
+        "reflection": 50,
+        "exposition": 50,
+        "choice": 50,
+        "information": 50,
+        "play": 50,
+        "engagement": 50
+      }
+    }'::jsonb;
+  END IF;
+
+  v_current_score := COALESCE((v_profile->'pillar_scores'->>p_pillar)::int, 50);
+  v_new_score := GREATEST(0, LEAST(100, v_current_score + p_delta));
+
+  v_profile := jsonb_set(
+    v_profile,
+    ARRAY['pillar_scores', p_pillar],
+    to_jsonb(v_new_score)
+  );
+
+  v_profile := v_profile || jsonb_build_object(
+    'updated_at', now()::text
+  );
+
+  UPDATE user_stats
+  SET recipe_profile = v_profile
+  WHERE user_id = p_user_id;
+
+  RETURN v_profile;
+END;
+$$;
+
+-- Step 8: Create function to toggle Black Hat badges
+CREATE OR REPLACE FUNCTION public.toggle_black_hat_badges(
+  p_user_id UUID,
+  p_enabled BOOLEAN
 )
+RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  RETURN QUERY
-  SELECT
-    eh.date,
-    eh.total_score,
-    eh.components
-  FROM efficiency_history eh
-  WHERE eh.user_id = p_user_id
-    AND eh.period = 'daily'
-    AND eh.date >= CURRENT_DATE - p_days
-  ORDER BY eh.date ASC;
+  UPDATE user_stats
+  SET streak_trend = COALESCE(streak_trend, '{}'::jsonb) || jsonb_build_object(
+    'black_hat_enabled', p_enabled,
+    'updated_at', now()::text
+  )
+  WHERE user_id = p_user_id;
+
+  UPDATE user_stats
+  SET recipe_profile = COALESCE(recipe_profile, '{}'::jsonb) || jsonb_build_object(
+    'black_hat_enabled', p_enabled,
+    'updated_at', now()::text
+  )
+  WHERE user_id = p_user_id;
 END;
 $$;
 
--- Step 7: Create view for efficiency leaderboard ✅ CORRIGIDO
-CREATE OR REPLACE VIEW public.v_efficiency_leaderboard AS
+-- Step 9: Create view for badge leaderboard ✅ CORRIGIDO
+CREATE OR REPLACE VIEW public.v_badge_leaderboard AS
 SELECT
   us.user_id,
   COALESCE(p.full_name, u.email, 'Anonymous') as user_name,
-  COALESCE((us.efficiency_score->>'total_score')::int, 0) as current_score,
-  COALESCE((us.efficiency_score->>'level')::text, 'low') as current_level,
-  (
-    SELECT AVG(total_score)
-    FROM efficiency_history eh
-    WHERE eh.user_id = us.user_id
-      AND eh.period = 'daily'
-      AND eh.date >= CURRENT_DATE - 30
-  ) as avg_score_30d
+  COUNT(ua.id) as badges_earned,
+  COALESCE(SUM((ua.metadata->>'xp_reward')::int), 0) as total_xp_from_badges,
+  COALESCE(SUM((ua.metadata->>'cp_reward')::int), 0) as total_cp_from_badges,
+  MAX(ua.unlocked_at) as last_badge_at
 FROM user_stats us
+LEFT JOIN user_achievements ua ON ua.user_id = us.user_id
 LEFT JOIN profiles p ON p.id = us.user_id
 LEFT JOIN auth.users u ON u.id = us.user_id
-WHERE us.efficiency_score IS NOT NULL
-  AND (us.efficiency_score->>'total_score')::int > 0
-ORDER BY current_score DESC;
+GROUP BY us.user_id, p.full_name, u.email
+ORDER BY badges_earned DESC, total_cp_from_badges DESC;
 
--- Step 8: Grant permissions
-GRANT EXECUTE ON FUNCTION public.get_efficiency_stats(UUID, INT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_efficiency_trend(UUID, INT) TO authenticated;
+-- Step 10: Grant permissions
+GRANT EXECUTE ON FUNCTION public.get_user_badge_stats(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_recipe_pillar_score(UUID, TEXT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.toggle_black_hat_badges(UUID, BOOLEAN) TO authenticated;
 
--- Step 9: Add comments
-COMMENT ON TABLE public.efficiency_history IS 'Gamification 2.0: Daily/weekly/monthly efficiency score history for trend tracking.';
+-- Step 11: Add comments
+COMMENT ON COLUMN public.user_stats.recipe_profile IS 'Gamification 2.0: RECIPE Framework engagement profile. Contains pillar_scores, dominant/growth pillars, drive preferences, and black_hat_enabled (default: false).';
 
-COMMENT ON COLUMN public.user_stats.efficiency_score IS 'Gamification 2.0: Unified Efficiency Score. 5 components weighted to emphasize quality over quantity. Format: {total_score, level, components: {completion_rate, focus_quality, consistency, priority_alignment, time_efficiency}, strongest, weakest, suggested_focus, trend, delta, updated_at}';
+COMMENT ON FUNCTION public.toggle_black_hat_badges(UUID, BOOLEAN) IS 'Toggle Black Hat badges for a user. Black Hat badges are DISABLED by default for sustainable engagement.';
 
--- Step 10: Initialize efficiency_score for existing users
+-- Step 12: Initialize recipe_profile for existing users
 UPDATE public.user_stats
-SET efficiency_score = jsonb_build_object(
-  'total_score', 0,
-  'level', 'low',
-  'components', jsonb_build_object(
-    'completion_rate', 0,
-    'focus_quality', 0,
-    'consistency', 0,
-    'priority_alignment', 0,
-    'time_efficiency', 0
+SET recipe_profile = jsonb_build_object(
+  'user_id', user_id::text,
+  'pillar_scores', jsonb_build_object(
+    'reflection', 50,
+    'exposition', 50,
+    'choice', 50,
+    'information', 50,
+    'play', 50,
+    'engagement', 50
   ),
-  'strongest', null,
-  'weakest', null,
-  'suggested_focus', 'completion_rate',
-  'trend', 'stable',
-  'delta', 0,
+  'dominant_pillars', '[]'::jsonb,
+  'growth_pillars', '[]'::jsonb,
+  'preferred_drives', '["epic_meaning", "accomplishment", "empowerment", "ownership", "social_influence"]'::jsonb,
+  'black_hat_enabled', false,
+  'gamification_intensity', 'moderate',
+  'last_assessed_at', null,
   'updated_at', now()::text
 )
-WHERE efficiency_score IS NULL
-  OR efficiency_score = '{}'::jsonb
-  OR efficiency_score->>'total_score' IS NULL;
+WHERE recipe_profile IS NULL
+  OR recipe_profile = '{}'::jsonb
+  OR recipe_profile->>'pillar_scores' IS NULL;
 
 -- ============================================================================
 -- SUCCESS! Migration aplicada com sucesso.
--- Todas as 6 migrations do Gamification 2.0 + WhatsApp foram concluídas! 🎉
+-- Próximo passo: Aplicar migration 20260126_unified_efficiency.sql
 -- ============================================================================
