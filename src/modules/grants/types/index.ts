@@ -49,6 +49,9 @@ export interface GrantOpportunity {
   // PDF do edital
   edital_pdf_path?: string;
   edital_text_content?: string;
+
+  // Google File Search integration
+  file_search_document_id?: string;
 }
 
 export interface EvaluationCriterion {
