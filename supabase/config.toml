@@ -40,11 +40,12 @@ verify_jwt = false
 verify_jwt = false
 
 # process-edital: Processes edital PDFs via Google File Search
-# Requires user authentication for document ownership
+# Function handles its own JWT validation for better error messages
+# Setting verify_jwt = false allows function to validate and log errors
 [functions.process-edital]
-verify_jwt = true
+verify_jwt = false
 
 # query-edital: Semantic search in edital documents
-# Requires user authentication for document access control
+# Function handles its own JWT validation for better error messages
 [functions.query-edital]
-verify_jwt = true
+verify_jwt = false
