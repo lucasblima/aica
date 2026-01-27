@@ -131,6 +131,9 @@ async function retryWithBackoff<T>(
 
 /**
  * Generic Edge Function invoker with unified error handling
+ *
+ * Note: Explicitly gets the access token and passes it in headers
+ * to work around Supabase gateway issues with verify_jwt
  */
 export async function invokeEdgeFunction<T = any>(
   functionName: string,
@@ -141,7 +144,33 @@ export async function invokeEdgeFunction<T = any>(
 
   const invokeFn = async () => {
     const startTime = Date.now()
-    const { data, error } = await supabase.functions.invoke(functionName, { body })
+
+    // Get the current session to ensure we have a valid token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError) {
+      log.error(`[EdgeFunction] Session error:`, sessionError)
+      throw new Error('Authentication error: Could not get session')
+    }
+
+    if (!session?.access_token) {
+      log.error(`[EdgeFunction] No active session for ${functionName}`)
+      throw new Error('Authentication required: Please log in again')
+    }
+
+    log.debug(`[EdgeFunction] Calling ${functionName} with token`, {
+      ...logContext,
+      hasToken: !!session.access_token,
+      tokenPrefix: session.access_token.substring(0, 20) + '...',
+    })
+
+    // Explicitly pass the Authorization header
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      body,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    })
     const latencyMs = Date.now() - startTime
 
     if (error) {
