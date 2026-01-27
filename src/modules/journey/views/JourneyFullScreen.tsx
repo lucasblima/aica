@@ -97,29 +97,10 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
     try {
       const result = await createMoment(input)
 
-      // Auto-index moment for File Search (async, non-blocking)
-      if (result && result.content && result.content.length >= 10) {
-        indexMoment(result).catch((err) => {
-          log.warn('Failed to index moment for File Search:', err)
-        })
-      }
+      // Close capture modal IMMEDIATELY (don't wait for background tasks)
+      setShowCapture(false)
 
-      // Generate post-capture insight
-      const recentMoments = moments.slice(0, 7).map(m => ({
-        content: m.content || '',
-        tags: m.tags || [],
-        created_at: m.created_at
-      }))
-
-      const insight = await generatePostCaptureInsight(
-        input.content || '',
-        recentMoments
-      )
-
-      setCurrentInsight(insight)
-      setShowInsight(true)
-
-      // Trigger CP animation
+      // Trigger CP animation immediately
       triggerAnimation(
         5,
         result.leveled_up,
@@ -137,9 +118,39 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
         })
       }
 
-      setShowCapture(false)
-      refreshStats()
-      refreshTimeline() // Refresh timeline to show new moment immediately
+      // BACKGROUND TASKS (non-blocking, fire-and-forget)
+
+      // Auto-index moment for File Search
+      if (result && result.content && result.content.length >= 10) {
+        indexMoment(result).catch((err) => {
+          log.warn('Failed to index moment for File Search:', err)
+        })
+      }
+
+      // Generate post-capture insight (async, don't wait)
+      const recentMoments = moments.slice(0, 7).map(m => ({
+        content: m.content || '',
+        tags: m.tags || [],
+        created_at: m.created_at
+      }))
+
+      generatePostCaptureInsight(input.content || '', recentMoments)
+        .then((insight) => {
+          setCurrentInsight(insight)
+          setShowInsight(true)
+        })
+        .catch((error) => {
+          log.warn('Failed to generate post-capture insight (non-critical):', error)
+        })
+
+      // Refresh stats and timeline in background
+      Promise.allSettled([
+        refreshStats(),
+        refreshTimeline()
+      ]).catch((error) => {
+        log.warn('Background refresh failed (non-critical):', error)
+      })
+
     } catch (error) {
       log.error('Error creating moment:', error)
     }
