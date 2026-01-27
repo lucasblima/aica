@@ -124,9 +124,9 @@ export function JourneyCardCollapsed({ onClick }: JourneyCardCollapsedProps) {
 
           <div className="text-center">
             <div className="text-lg font-bold text-[#5C554B]">
-              {stats.total_summaries_reflected}
+              {stats.longest_streak}
             </div>
-            <div className="text-xs text-[#948D82]">Reflexões</div>
+            <div className="text-xs text-[#948D82]">Recorde</div>
           </div>
         </div>
       )}
