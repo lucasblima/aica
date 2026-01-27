@@ -22,6 +22,7 @@ import { useCurrentWeeklySummary } from '../hooks/useWeeklySummary'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
 import { useConsciousnessPoints, useCPAnimation } from '../hooks/useConsciousnessPoints'
 import { useJourneyFileSearch } from '../hooks/useJourneyFileSearch'
+import { useUnifiedTimeline } from '../hooks/useUnifiedTimeline'
 import { generatePostCaptureInsight } from '../services/aiAnalysisService'
 import {
   PlusIcon,
@@ -72,6 +73,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { question, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, triggerAnimation } = useCPAnimation()
+  const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
 
   // File Search integration
   const {
@@ -137,6 +139,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       setShowCapture(false)
       refreshStats()
+      refreshTimeline() // Refresh timeline to show new moment immediately
     } catch (error) {
       log.error('Error creating moment:', error)
     }
