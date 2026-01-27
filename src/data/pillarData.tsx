@@ -31,8 +31,6 @@ export interface Pillar {
   example: string;
   exampleDescription: string;
   ctaLabel: string;
-  learnMoreUrl: string;
-  documentationUrl: string;
   order: number;
   isNew?: boolean;
 }
@@ -59,8 +57,6 @@ export const PILLARS: Record<Pillar['id'], Pillar> = {
     exampleDescription:
       'Defina suas prioridades, organize por contexto e acompanhe seu progresso em tempo real com a matriz de Eisenhower.',
     ctaLabel: 'Explorar Atlas',
-    learnMoreUrl: '/docs/atlas',
-    documentationUrl: '/tutorials/atlas-getting-started',
     order: 1,
     isNew: false,
   },
@@ -86,8 +82,6 @@ export const PILLARS: Record<Pillar['id'], Pillar> = {
     exampleDescription:
       'Capture seus momentos significativos, reflexões e aprendizados. Entenda seus padrões emocionais ao longo do tempo.',
     ctaLabel: 'Explorar Jornada',
-    learnMoreUrl: '/docs/jornada',
-    documentationUrl: '/tutorials/jornada-getting-started',
     order: 2,
     isNew: false,
   },
@@ -113,8 +107,6 @@ export const PILLARS: Record<Pillar['id'], Pillar> = {
     exampleDescription:
       'Grave, edite e publique episódios de podcast. Compartilhe suas histórias e conecte-se com uma audiência global.',
     ctaLabel: 'Explorar Podcast',
-    learnMoreUrl: '/docs/podcast',
-    documentationUrl: '/tutorials/podcast-getting-started',
     order: 3,
     isNew: true,
   },
@@ -140,8 +132,6 @@ export const PILLARS: Record<Pillar['id'], Pillar> = {
     exampleDescription:
       'Defina orçamentos, rastreie gastos e otimize sua relação com o dinheiro. Alcance suas metas financeiras com clareza.',
     ctaLabel: 'Explorar Financeiro',
-    learnMoreUrl: '/docs/financeiro',
-    documentationUrl: '/tutorials/financeiro-getting-started',
     order: 4,
     isNew: false,
   },
