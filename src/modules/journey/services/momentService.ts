@@ -83,36 +83,39 @@ export async function createMoment(
         log.warn('Background sentiment analysis failed (non-critical):', error)
       })
 
-    // Award CP for registering moment
-    const { data: cpResult, error: cpError } = await supabase.rpc(
-      'award_consciousness_points',
-      {
+    // Award CP and update streak in BACKGROUND (non-blocking, fire-and-forget)
+    // Return moment immediately to show modal faster
+    const momentId = moment.id
+
+    // Fire-and-forget: Process gamification in background
+    Promise.allSettled([
+      supabase.rpc('award_consciousness_points', {
         p_user_id: userId,
         p_points: 5,
         p_reason: 'moment_registered',
-        p_reference_id: moment.id,
+        p_reference_id: momentId,
         p_reference_type: 'moment',
+      }),
+      supabase.rpc('update_moment_streak', {
+        p_user_id: userId
+      })
+    ]).then(([cpResult, streakResult]) => {
+      if (cpResult.status === 'rejected') {
+        log.error('Error awarding CP:', cpResult.reason)
       }
-    )
+      if (streakResult.status === 'rejected') {
+        log.error('Error updating streak:', streakResult.reason)
+      }
+      log.debug('Background gamification completed for moment:', momentId)
+    }).catch((error) => {
+      log.warn('Background gamification failed (non-critical):', error)
+    })
 
-    if (cpError) {
-      log.error('Error awarding CP:', cpError)
-    }
-
-    // Update streak
-    const { data: streakResult, error: streakError } = await supabase.rpc(
-      'update_moment_streak',
-      { p_user_id: userId }
-    )
-
-    if (streakError) {
-      log.error('Error updating streak:', streakError)
-    }
-
+    // Return immediately with estimated values (actual CP processed in background)
     return {
       ...moment,
-      cp_earned: cpResult?.new_total || 5,
-      leveled_up: cpResult?.leveled_up || false,
+      cp_earned: 5, // Fixed value, actual total calculated in background
+      leveled_up: false, // Conservative default, level up animation may appear later
     }
   } catch (error) {
     log.error('Error creating moment:', error)
