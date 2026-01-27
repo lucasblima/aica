@@ -9,7 +9,7 @@
 
 import React, { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { SparklesIcon, ChevronRightIcon, BellAlertIcon, Flame } from 'lucide-react'
+import { Sparkles, ChevronRight, BellRing, Flame } from 'lucide-react'
 import { useConsciousnessPoints } from '../hooks/useConsciousnessPoints'
 import { useMoments } from '../hooks/useMoments'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
@@ -203,10 +203,10 @@ export function JourneyHeroCard({
           aria-label="Abrir Minha Jornada"
         >
           <div className="flex items-center gap-3">
-            <SparklesIcon className="h-6 w-6 text-amber-600" />
+            <Sparkles className="h-6 w-6 text-amber-600" />
             <h3 className="text-xl font-bold text-etched">Minha Jornada</h3>
           </div>
-          <ChevronRightIcon className="h-5 w-5 text-[#948D82] group-hover:text-[#5C554B] transition-colors" />
+          <ChevronRight className="h-5 w-5 text-[#948D82] group-hover:text-[#5C554B] transition-colors" />
         </motion.div>
 
         {/* Last moment preview */}
@@ -245,7 +245,7 @@ export function JourneyHeroCard({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <BellAlertIcon className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <BellRing className="h-5 w-5 text-amber-600 flex-shrink-0" />
             <p className="text-sm font-medium text-[#5C554B]">
               Você tem uma pergunta do dia pendente!
             </p>
