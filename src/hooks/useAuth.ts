@@ -68,7 +68,10 @@ export function useAuth() {
   useEffect(() => {
     let isMounted = true
 
-    async function initializeAuth() {
+    async function initializeAuth(retryCount = 0) {
+      const MAX_RETRIES = 2
+      const RETRY_DELAY = 500
+
       try {
         const code = getAuthCodeFromUrl()
 
@@ -76,7 +79,8 @@ export function useAuth() {
           log.debug('🚀 Initializing auth', {
             hasCode: !!code,
             url: window.location.pathname,
-            origin: window.location.origin
+            origin: window.location.origin,
+            retryCount
           })
         }
 
@@ -102,7 +106,20 @@ export function useAuth() {
         const { data: { session: existingSession }, error } = await supabase.auth.getSession()
 
         if (error) {
-          log.error('Error getting session:', { error: error.message })
+          // Handle AbortError gracefully - it's a transient error from Supabase's lock mechanism
+          if (error.message?.includes('AbortError') || error.name === 'AbortError') {
+            if (retryCount < MAX_RETRIES) {
+              log.warn(`Auth lock aborted, retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+              if (isMounted) {
+                return initializeAuth(retryCount + 1)
+              }
+              return
+            }
+            log.warn('Auth initialization aborted after retries - user may need to refresh')
+          } else {
+            log.error('Error getting session:', { error: error.message })
+          }
         }
 
         if (isMounted) {
@@ -118,8 +135,21 @@ export function useAuth() {
             }
           }
         }
-      } catch (error) {
-        log.error('Initialization error:', { error })
+      } catch (error: any) {
+        // Handle AbortError thrown as exception
+        if (error?.name === 'AbortError' || error?.message?.includes('AbortError') || error?.message?.includes('signal is aborted')) {
+          if (retryCount < MAX_RETRIES) {
+            log.warn(`Auth lock aborted (exception), retrying (${retryCount + 1}/${MAX_RETRIES})...`)
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+            if (isMounted) {
+              return initializeAuth(retryCount + 1)
+            }
+            return
+          }
+          log.warn('Auth initialization aborted after retries - continuing without session')
+        } else {
+          log.error('Initialization error:', { error })
+        }
         if (isMounted) {
           setIsLoading(false)
         }
