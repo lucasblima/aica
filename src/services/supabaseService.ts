@@ -301,10 +301,20 @@ export const createAssociation = async (association: {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
+        // Generate a unique slug from name + timestamp
+        const baseSlug = association.name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove accents
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+        const uniqueSlug = `${baseSlug}-${Date.now()}`;
+
         const { data, error } = await supabase
             .from('associations')
             .insert([{
                 ...association,
+                slug: uniqueSlug,
                 workspace_id: '11111111-1111-1111-1111-111111111111', // Default workspace for MVP
                 owner_user_id: user.id,
                 is_active: true
