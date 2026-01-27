@@ -21,6 +21,7 @@ export { MomentCard } from './components/timeline/MomentCard'
 export { WeeklySummaryCard } from './components/insights/WeeklySummaryCard'
 export { DailyQuestionCard } from './components/insights/DailyQuestionCard'
 export { ConsciousnessScore } from './components/gamification/ConsciousnessScore'
+export { JourneyHeroCard } from './components/JourneyHeroCard'
 
 // Views
 export * from './views'

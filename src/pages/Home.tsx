@@ -2,12 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase } from 'lucide-react';
-import { HeaderGlobal, IdentityPassport, ProfileModal, ConnectionArchetypes, ModuleCard } from '../components';
+import { HeaderGlobal, ProfileModal, ConnectionArchetypes, ModuleCard } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
-import { JourneyCardCollapsed } from '../modules/journey/views/JourneyCardCollapsed';
+import { JourneyHeroCard } from '../modules/journey';
 import { RecentContactsWidget } from '../components';
-import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
 import { ViewState } from '../../types';
@@ -97,9 +96,6 @@ export default function Home({
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
 
-   // Get CP stats for streak integration
-   const { stats: cpStats } = useConsciousnessPoints();
-
    // Reset ProfileModal when component unmounts (prevents modal persisting across views)
    useEffect(() => {
       return () => {
@@ -176,33 +172,23 @@ export default function Home({
             />
 
             <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-8">
-               {/* 1. Identity Passport - Full Width Hero with Streak Badge */}
+               {/* 1. Journey Hero Card - Unified Identity + Journey Preview */}
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
                   custom={0}
-                  className="relative"
                >
-                  <IdentityPassport
-                     userId={userId}
+                  <JourneyHeroCard
                      onOpenProfile={() => {
-                        log.debug(' IdentityPassport onOpenProfile clicked');
+                        log.debug(' JourneyHeroCard onOpenProfile clicked');
                         setProfileModalOpen(true);
                      }}
+                     onOpenJourney={() => {
+                        log.debug(' JourneyHeroCard onOpenJourney clicked');
+                        onNavigateToView('journey');
+                     }}
                   />
-                  {/* GAP 5: Streak Badge - Minimalista */}
-                  <motion.div
-                     className="absolute top-4 right-4 sm:top-6 sm:right-6"
-                     initial={{ opacity: 0, scale: 0.8 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     transition={{ delay: 0.3, duration: 0.4, type: 'spring', stiffness: 200 }}
-                  >
-                     <div className="ceramic-inset-sm px-3 py-1 flex items-center gap-2">
-                        <span className="text-base">🔥</span>
-                        <span className="text-amber-600 text-xs font-bold">{cpStats?.current_streak || 0} dias</span>
-                     </div>
-                  </motion.div>
                </motion.div>
 
 
@@ -256,24 +242,12 @@ export default function Home({
                      />
                   </motion.div>
 
-                  {/* Jornada - Timeline de Vida */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={4}
-                     className="cursor-pointer hover:scale-[1.01] transition-transform"
-                     onClick={() => onNavigateToView('journey')}
-                  >
-                     <JourneyCardCollapsed />
-                  </motion.div>
-
                   {/* Saúde */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={5}
+                     custom={4}
                      onClick={() => onNavigateToView('health')}
                   >
                      <ModuleCard
@@ -290,7 +264,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={6}
+                     custom={5}
                      onClick={() => onNavigateToView('education')}
                   >
                      <ModuleCard
@@ -307,7 +281,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={7}
+                     custom={6}
                      onClick={() => onNavigateToView('legal')}
                   >
                      <ModuleCard
@@ -324,7 +298,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={8}
+                     custom={7}
                      onClick={() => onNavigateToView('professional')}
                   >
                      <ModuleCard
@@ -342,7 +316,7 @@ export default function Home({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={9}
+                  custom={8}
                >
                   <RecentContactsWidget
                      onViewAllClick={() => navigate('/contacts')}
@@ -357,7 +331,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={10}
+                     custom={9}
                      onClick={() => onNavigateToView('connections')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
@@ -397,7 +371,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={11}
+                     custom={10}
                      onClick={() => onNavigateToView('studio')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                      style={{
