@@ -49,10 +49,7 @@ export async function createMoment(
         ? `${input.content}\n\n[Transcrição]: ${transcription}`
         : input.content
 
-    // Analyze sentiment
-    const sentimentData = await analyzeMomentSentiment(finalContent || '')
-
-    // Insert moment
+    // Insert moment WITHOUT waiting for sentiment analysis (faster UX)
     const { data: moment, error: insertError } = await supabase
       .from('moments')
       .insert({
@@ -61,7 +58,7 @@ export async function createMoment(
         content: finalContent,
         audio_url: audioUrl,
         emotion: input.emotion,
-        sentiment_data: sentimentData,
+        sentiment_data: null, // Will be updated asynchronously
         tags: input.tags,
         location: input.location,
       })
@@ -69,6 +66,22 @@ export async function createMoment(
       .single()
 
     if (insertError) throw insertError
+
+    // Analyze sentiment in background (non-blocking)
+    analyzeMomentSentiment(finalContent || '')
+      .then(async (sentimentData) => {
+        // Update moment with sentiment data
+        await supabase
+          .from('moments')
+          .update({ sentiment_data: sentimentData })
+          .eq('id', moment.id)
+          .eq('user_id', userId)
+
+        log.debug('Sentiment analysis completed for moment:', moment.id)
+      })
+      .catch((error) => {
+        log.warn('Background sentiment analysis failed (non-critical):', error)
+      })
 
     // Award CP for registering moment
     const { data: cpResult, error: cpError } = await supabase.rpc(
