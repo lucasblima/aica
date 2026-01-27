@@ -44,7 +44,7 @@ function getCorsHeaders(request: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-api-version',
     'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json',
   }
