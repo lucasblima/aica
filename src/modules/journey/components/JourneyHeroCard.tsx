@@ -7,9 +7,9 @@
  * Layer 2 (Elevated) - The "physical card" on the ceramic table
  */
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, ChevronRight, BellRing, Flame } from 'lucide-react'
+import { Sparkles, ChevronRight, MessageCircleQuestion, Flame } from 'lucide-react'
 import { useConsciousnessPoints } from '../hooks/useConsciousnessPoints'
 import { useMoments } from '../hooks/useMoments'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
@@ -57,6 +57,11 @@ export function JourneyHeroCard({
   const lastMoment = moments[0]
   const hasUnansweredQuestion = question && !question.user_response
   const hasStreak = stats && stats.current_streak > 0
+
+  // Track if avatar image failed to load
+  const [avatarError, setAvatarError] = useState(false)
+  const avatarUrl = user?.user_metadata?.avatar_url
+  const showAvatarImage = avatarUrl && !avatarError
 
   if (isLoading) {
     return (
@@ -124,11 +129,12 @@ export function JourneyHeroCard({
             aria-label="Abrir perfil"
             data-testid="journey-hero-avatar"
           >
-            {user?.user_metadata?.avatar_url ? (
+            {showAvatarImage ? (
               <img
-                src={user.user_metadata.avatar_url}
+                src={avatarUrl}
                 alt={displayName}
                 className="w-14 h-14 rounded-full object-cover"
+                onError={() => setAvatarError(true)}
               />
             ) : (
               <div
@@ -237,18 +243,34 @@ export function JourneyHeroCard({
           </motion.div>
         )}
 
-        {/* Unanswered question indicator */}
+        {/* Daily Question CTA */}
         {hasUnansweredQuestion && (
           <motion.div
-            className="flex items-center gap-2 p-3 ceramic-inset-shallow rounded-2xl notification-pulse mb-4"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 cursor-pointer group"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
+            onClick={onOpenJourney}
+            whileHover={{ scale: 1.01 }}
+            role="button"
+            aria-label="Responder pergunta do dia"
           >
-            <BellRing className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm font-medium text-[#5C554B]">
-              Você tem uma pergunta do dia pendente!
-            </p>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-100 flex-shrink-0">
+                <MessageCircleQuestion className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-amber-700 mb-1">
+                  Pergunta do dia
+                </p>
+                <p className="text-sm font-medium text-[#5C554B] line-clamp-2 group-hover:text-[#3D3830] transition-colors">
+                  "{question.question_text}"
+                </p>
+                <p className="text-xs text-amber-600 mt-2 font-medium group-hover:text-amber-700 transition-colors">
+                  Toque para responder →
+                </p>
+              </div>
+            </div>
           </motion.div>
         )}
 
