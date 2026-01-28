@@ -541,6 +541,19 @@ async function getOrCreateContactId(
 }
 
 /**
+ * Get file extension for media type
+ */
+function getExtensionForType(mediaType: string): string {
+  const extensions: Record<string, string> = {
+    'image': 'jpg',
+    'audio': 'mp3',
+    'video': 'mp4',
+    'document': 'pdf'
+  }
+  return extensions[mediaType] || 'bin'
+}
+
+/**
  * Store incoming message
  * Updated to use current whatsapp_messages schema with contact_id FK
  *
@@ -560,9 +573,16 @@ async function storeMessage(
     const messageText = extractMessageText(messageData.message)
     const messageType = getMessageType(messageData.message)
 
-    // Skip non-text messages for now (schema doesn't support media)
-    if (!messageText) {
-      log('DEBUG', 'Skipping non-text message', { messageId, type: messageType })
+    // Extract media URL if present
+    const mediaUrl = messageData.message?.imageMessage?.url ||
+                     messageData.message?.audioMessage?.url ||
+                     messageData.message?.videoMessage?.url ||
+                     messageData.message?.documentMessage?.url ||
+                     null
+
+    // For messages without text AND without media, skip
+    if (!messageText && !mediaUrl) {
+      log('DEBUG', 'Skipping message (no text, no media)', { messageId })
       return null
     }
 
@@ -590,15 +610,18 @@ async function storeMessage(
       messageTimestamp = new Date()
     }
 
-    // Insert using current schema: contact_id, message_text, message_direction
+    // Insert with media fields (Issue #118: WhatsApp RAG)
     const { data, error } = await supabase
       .from('whatsapp_messages')
       .insert({
         user_id: userId,
         contact_id: contactId,
-        message_text: messageText,
+        message_text: messageText || null, // Can be null if media-only
         message_direction: fromMe ? 'outgoing' : 'incoming',
         message_timestamp: messageTimestamp.toISOString(),
+        media_type: messageType !== 'text' ? messageType : null,
+        media_url: mediaUrl,
+        document_processed: false, // Will be set to true after processing
       })
       .select('id')
       .single()
@@ -616,8 +639,40 @@ async function storeMessage(
       id: data.id,
       contactId,
       direction: fromMe ? 'outgoing' : 'incoming',
-      textLength: messageText.length
+      textLength: messageText?.length || 0,
+      hasMedia: !!mediaUrl,
+      mediaType: messageType
     })
+
+    // Queue document processing if message has media attachment (Issue #118: WhatsApp RAG)
+    if (mediaUrl && messageType !== 'text') {
+      log('INFO', 'Queueing document processing', {
+        messageId: data.id,
+        mediaType: messageType,
+        mediaUrl: mediaUrl.substring(0, 50) + '...'
+      })
+
+      // Fire-and-forget: Process document asynchronously
+      supabase.functions.invoke('process-whatsapp-document', {
+        body: {
+          message_id: data.id,
+          contact_id: contactId,
+          media_url: mediaUrl,
+          media_type: messageType,
+          file_name: messageData.message?.documentMessage?.fileName ||
+                     `${messageType}_${Date.now()}.${getExtensionForType(messageType)}`,
+          instance_name: instanceName
+        }
+      }).then(() => {
+        log('INFO', 'Document processing queued successfully', { messageId: data.id })
+      }).catch((err) => {
+        log('WARN', 'Failed to queue document processing (non-critical)', {
+          messageId: data.id,
+          error: err.message
+        })
+      })
+    }
+
     return { messageId: data.id, contactId }
   } catch (error) {
     log('ERROR', 'Failed to store message', (error as Error).message)
