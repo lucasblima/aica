@@ -3,15 +3,70 @@
  * Displays recent contacts in a horizontal scroll widget on Home page
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Users } from 'lucide-react';
+import { ChevronRight, Users, User } from 'lucide-react';
 import type { ContactNetwork } from '../types/memoryTypes';
 import { getUserContacts } from '../services/contactNetworkService';
 import { useAuth } from '../hooks/useAuth';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('RecentContactsWidget');
+
+// Color palette for avatar backgrounds based on name
+const AVATAR_COLORS = [
+  '#3B82F6', // blue
+  '#10B981', // emerald
+  '#8B5CF6', // violet
+  '#F59E0B', // amber
+  '#EF4444', // red
+  '#EC4899', // pink
+  '#06B6D4', // cyan
+  '#84CC16', // lime
+];
+
+function getAvatarColor(name: string): string {
+  const index = name.charCodeAt(0) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[index];
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
+// Contact Avatar with fallback to initials
+function ContactAvatar({ contact }: { contact: ContactNetwork }) {
+  const [imageError, setImageError] = useState(false);
+  const avatarUrl = contact.avatar_url || contact.whatsapp_profile_pic_url;
+  const showImage = avatarUrl && !imageError;
+
+  const initials = useMemo(() => getInitials(contact.name), [contact.name]);
+  const bgColor = useMemo(() => getAvatarColor(contact.name), [contact.name]);
+
+  if (showImage) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={contact.name}
+        className="w-14 h-14 rounded-full object-cover"
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm"
+      style={{ backgroundColor: bgColor }}
+    >
+      {initials}
+    </div>
+  );
+}
 
 interface RecentContactsWidgetProps {
   onViewAllClick?: () => void;
@@ -129,17 +184,23 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
               onClick={() => onContactClick?.(contact)}
               className="flex-shrink-0 flex flex-col items-center gap-2 group cursor-pointer"
             >
-              {/* Avatar with health score ring */}
+              {/* Avatar with health score badge */}
               <div className="relative">
-                <img
-                  src={contact.avatar_url || '/default-avatar.png'}
-                  alt={contact.name}
-                  className="w-16 h-16 rounded-full object-cover ceramic-inset group-hover:scale-110 transition-transform"
-                />
-                {/* Health score badge */}
-                <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center shadow-lg">
-                  {contact.health_score}
+                <div className="ceramic-inset rounded-full p-0.5 group-hover:scale-110 transition-transform">
+                  <ContactAvatar contact={contact} />
                 </div>
+                {/* Health score badge */}
+                {contact.health_score != null && (
+                  <div
+                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center shadow-md"
+                    style={{
+                      backgroundColor: contact.health_score >= 70 ? '#10B981' :
+                                       contact.health_score >= 40 ? '#F59E0B' : '#EF4444'
+                    }}
+                  >
+                    {contact.health_score}
+                  </div>
+                )}
               </div>
 
               {/* Name */}
