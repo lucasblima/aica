@@ -48,10 +48,10 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
 
     if (!questions || questions.length === 0) {
       log.warn('No active questions found in database')
-      // Trigger generation if no questions exist
-      checkAndTriggerGenerationIfNeeded(userId).catch(err => {
-        log.warn('Failed to trigger generation:', err)
-      })
+      // Auto-generation disabled - see TODO above
+      // checkAndTriggerGenerationIfNeeded(userId).catch(err => {
+      //   log.warn('Failed to trigger generation:', err)
+      // })
       return null
     }
 
@@ -73,16 +73,18 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
     const unansweredQuestions = questions.filter(q => !answeredIds.has(q.id))
     log.debug('Unanswered questions:', unansweredQuestions.length)
 
-    // Check if we need to generate more questions (non-blocking)
-    if (unansweredQuestions.length < QUESTION_CONFIG.MIN_UNANSWERED_THRESHOLD) {
-      log.info('Low on unanswered questions, triggering generation', {
-        unansweredCount: unansweredQuestions.length,
-        threshold: QUESTION_CONFIG.MIN_UNANSWERED_THRESHOLD,
-      })
-      checkAndTriggerGenerationIfNeeded(userId).catch(err => {
-        log.warn('Failed to trigger generation:', err)
-      })
-    }
+    // Auto-generation disabled on page load to prevent 401 errors during session initialization
+    // Generation can be triggered manually or after answering questions
+    // TODO: Re-enable when Edge Function auth is properly configured
+    // if (unansweredQuestions.length < QUESTION_CONFIG.MIN_UNANSWERED_THRESHOLD) {
+    //   log.info('Low on unanswered questions, triggering generation', {
+    //     unansweredCount: unansweredQuestions.length,
+    //     threshold: QUESTION_CONFIG.MIN_UNANSWERED_THRESHOLD,
+    //   })
+    //   checkAndTriggerGenerationIfNeeded(userId).catch(err => {
+    //     log.warn('Failed to trigger generation:', err)
+    //   })
+    // }
 
     // If all answered, allow re-answering any question
     const availableQuestions =
