@@ -178,6 +178,9 @@ export async function triggerQuestionGeneration(
     }
 
     const response = await supabase.functions.invoke(CONFIG.EDGE_FUNCTION_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: {
         batch_size: options?.batchSize || 5,
         categories: options?.categories,
