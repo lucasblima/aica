@@ -173,15 +173,23 @@ async function fetchWhatsAppEvents(
   offset: number
 ): Promise<WhatsAppEvent[]> {
   try {
+    // JOIN with contact_network to get contact name and number
     let query = supabase
       .from('whatsapp_messages')
-      .select('*')
+      .select(`
+        *,
+        contact_network!contact_id (
+          name,
+          phone_number,
+          whatsapp_name
+        )
+      `)
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .order('message_timestamp', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (dateFilter) {
-      query = query.gte('created_at', dateFilter)
+      query = query.gte('message_timestamp', dateFilter)
     }
 
     const { data, error } = await query
@@ -194,15 +202,15 @@ async function fetchWhatsAppEvents(
     const events = (data || []).map((msg): WhatsAppEvent => ({
       id: `whatsapp-${msg.id}`,
       source: 'whatsapp' as const,
-      created_at: msg.created_at,
+      created_at: msg.message_timestamp || msg.created_at, // Use message_timestamp for proper ordering
       user_id: msg.user_id,
-      content: msg.content || msg.message || '',
-      contact_name: msg.contact_name,
-      contact_number: msg.contact_number || msg.remote_jid,
-      message_type: msg.message_type || 'text',
-      direction: msg.direction || 'incoming',
-      sentiment: msg.sentiment,
-      tags: msg.tags || [],
+      content: msg.message_text || '', // Fixed: use correct column name
+      contact_name: msg.contact_network?.name || msg.contact_network?.whatsapp_name || 'Contato Desconhecido',
+      contact_number: msg.contact_network?.phone_number || '',
+      message_type: 'text', // Default to text (media types to be implemented later)
+      direction: msg.message_direction || 'incoming', // Fixed: use correct column name
+      sentiment: undefined, // To be enriched by AI analysis
+      tags: [], // To be enriched by AI analysis
       displayData: { icon: '', title: '', label: '', color: '', preview: '' }, // Placeholder
     }))
 
