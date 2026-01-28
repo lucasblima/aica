@@ -415,7 +415,7 @@ async function saveDocumentReference(
   }
 
   // ✅ NEW: Update corpus document count
-  await supabase.rpc('increment_corpus_document_count', { corpus_id: corpusId })
+  await supabase.rpc('increment_corpus_document_count', { corpus_uuid: corpusId })
 
   log('INFO', 'Document reference saved', { documentId: data.id, corpusId })
 
