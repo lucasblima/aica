@@ -67,7 +67,7 @@ export function useFileSearch() {
    * Carrega lista de corpora do usuário
    * @param filters - Filtros opcionais (module_type, module_id)
    */
-  const loadCorpora = useCallback(async (filters?: { module_type?: string; module_id?: string }) => {
+  const loadCorpora = useCallback(async (filters?: { module_type?: string | string[]; module_id?: string }) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -194,7 +194,7 @@ export function useFileSearch() {
    */
   const loadDocuments = useCallback(async (filters?: {
     corpus_id?: string;
-    module_type?: string;
+    module_type?: string | string[];
     module_id?: string;
   }) => {
     try {
@@ -278,7 +278,7 @@ export function useFileSearch() {
  *
  * Wrapper do useFileSearch com filtros pré-configurados
  *
- * @param module_type - Tipo do módulo (grants, podcast, finance, etc.)
+ * @param module_type - Tipo do módulo (grants, podcast, finance, etc.) ou array de tipos para busca unificada
  * @param module_id - ID opcional da entidade específica
  *
  * @example
@@ -286,11 +286,14 @@ export function useFileSearch() {
  * // Hook para Grants module
  * const grantsSearch = useModuleFileSearch('grants', projectId);
  *
+ * // Hook para busca unificada (Journey + WhatsApp)
+ * const unifiedSearch = useModuleFileSearch(['journey', 'whatsapp'], userId);
+ *
  * // Automaticamente filtra apenas documentos do módulo Grants
  * await grantsSearch.loadDocuments();
  * ```
  */
-export function useModuleFileSearch(module_type: string, module_id?: string) {
+export function useModuleFileSearch(module_type: string | string[], module_id?: string) {
   const baseHook = useFileSearch();
 
   const loadCorporaFiltered = useCallback(
@@ -305,14 +308,21 @@ export function useModuleFileSearch(module_type: string, module_id?: string) {
   );
 
   const searchWithModuleContext = useCallback(
-    (query: Omit<FileSearchQuery, 'module_type' | 'module_id'>) =>
-      baseHook.search({ ...query, module_type, module_id }),
+    (query: Omit<FileSearchQuery, 'module_type' | 'module_id'>) => {
+      // When searching across multiple modules, use the first module type for context
+      // (The actual search will include all modules via corpus filters)
+      const contextModuleType = Array.isArray(module_type) ? module_type[0] : module_type;
+      return baseHook.search({ ...query, module_type: contextModuleType, module_id });
+    },
     [baseHook, module_type, module_id]
   );
 
   const createCorpusForModule = useCallback(
-    (name: string, displayName: string) =>
-      baseHook.createNewCorpus(name, displayName, module_type, module_id),
+    (name: string, displayName: string) => {
+      // When creating corpus for multiple modules, use the first one
+      const corpusModuleType = Array.isArray(module_type) ? module_type[0] : module_type;
+      return baseHook.createNewCorpus(name, displayName, corpusModuleType, module_id);
+    },
     [baseHook, module_type, module_id]
   );
 

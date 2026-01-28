@@ -65,8 +65,9 @@ export interface JourneySearchContext {
 export function useJourneyFileSearch(options: UseJourneyFileSearchOptions = {}) {
   const { userId, momentId, autoLoad = true } = options;
 
-  // Base hook com filtro de módulo 'journey'
-  const baseHook = useModuleFileSearch('journey', userId || momentId);
+  // Base hook com filtro de múltiplos módulos: 'journey' + 'whatsapp'
+  // Isso permite buscar tanto momentos do Journey quanto documentos enviados via WhatsApp
+  const baseHook = useModuleFileSearch(['journey', 'whatsapp'], userId || momentId);
 
   // Estados específicos do Journey
   const [corpus, setCorpus] = useState<FileSearchCorpus | null>(null);

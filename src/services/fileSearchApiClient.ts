@@ -59,12 +59,12 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 
 /**
  * Lists all corpora for the current user
- * @param moduleType - Optional filter by module type
+ * @param moduleType - Optional filter by module type (single string or array)
  * @param moduleId - Optional filter by module ID
  * @returns Array of FileSearchCorpus objects
  */
 export async function listCorpora(
-  moduleType?: string,
+  moduleType?: string | string[],
   moduleId?: string
 ): Promise<FileSearchCorpus[]> {
   // Use Supabase directly if configured
@@ -83,7 +83,12 @@ export async function listCorpora(
         .order('created_at', { ascending: false });
 
       if (moduleType) {
-        query = query.eq('module_type', moduleType);
+        // Support multiple module types
+        if (Array.isArray(moduleType)) {
+          query = query.in('module_type', moduleType);
+        } else {
+          query = query.eq('module_type', moduleType);
+        }
       }
       if (moduleId) {
         query = query.eq('module_id', moduleId);
@@ -470,13 +475,13 @@ export async function queryFileSearch(
 /**
  * Lists documents in a corpus with optional filters
  * @param corpusId - ID of the corpus to list documents from (optional when using Supabase)
- * @param moduleType - Optional filter by module type
+ * @param moduleType - Optional filter by module type (single string or array)
  * @param moduleId - Optional filter by module ID
  * @returns Array of FileSearchDocument objects
  */
 export async function listDocuments(
   corpusId?: string,
-  moduleType?: string,
+  moduleType?: string | string[],
   moduleId?: string
 ): Promise<FileSearchDocument[]> {
   // Use Supabase directly if configured
@@ -498,7 +503,12 @@ export async function listDocuments(
         query = query.eq('corpus_id', corpusId);
       }
       if (moduleType) {
-        query = query.eq('module_type', moduleType);
+        // Support multiple module types
+        if (Array.isArray(moduleType)) {
+          query = query.in('module_type', moduleType);
+        } else {
+          query = query.eq('module_type', moduleType);
+        }
       }
       if (moduleId) {
         query = query.eq('module_id', moduleId);
