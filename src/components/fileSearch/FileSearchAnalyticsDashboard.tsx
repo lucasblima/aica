@@ -64,6 +64,12 @@ const MODULE_CONFIG: Record<
     color: 'text-indigo-600',
     bgColor: 'bg-indigo-50',
   },
+  whatsapp: {
+    icon: '📱',
+    label: 'WhatsApp',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+  },
 };
 
 /**
