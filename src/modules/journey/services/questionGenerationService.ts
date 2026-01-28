@@ -170,6 +170,14 @@ export async function triggerQuestionGeneration(
   try {
     log.info('Triggering question generation', options)
 
+    // First validate session with getUser() - this triggers token refresh if needed
+    const { error: userError } = await supabase.auth.getUser()
+    if (userError) {
+      log.debug('Session not valid for generation:', userError.message)
+      throw new Error('Session not valid')
+    }
+
+    // Now get the (potentially refreshed) session token
     const { data: sessionData } = await supabase.auth.getSession()
     const token = sessionData.session?.access_token
 
@@ -223,7 +231,8 @@ export async function triggerQuestionGeneration(
     const isAuthError = err.message?.includes('401') ||
                        err.message?.includes('Unauthorized') ||
                        err.message?.includes('non-2xx') ||
-                       err.message?.includes('authentication')
+                       err.message?.includes('authentication') ||
+                       err.message?.includes('Session not valid')
     if (isAuthError) {
       log.debug('Generation skipped due to auth state:', err.message)
     } else {
@@ -326,10 +335,10 @@ export async function checkAndTriggerGenerationIfNeeded(
   userId: string
 ): Promise<boolean> {
   try {
-    // First verify session is valid before attempting generation
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (!sessionData.session?.access_token) {
-      log.debug('Skipping generation check - no valid session yet')
+    // Verify session is valid by calling getUser() - this validates token and triggers refresh if needed
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData.user) {
+      log.debug('Skipping generation check - session not valid:', userError?.message)
       return false
     }
 
