@@ -35,6 +35,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://aica-staging-5p22u2w6jq-rj.a.run.app',
+  'https://aica-life-os.web.app', // Production domain
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {
@@ -128,36 +129,58 @@ async function uploadToGoogleFiles(
 ): Promise<string> {
   log('INFO', 'Uploading to Google Files API', { fileName, mimeType })
 
-  // Decode base64 to bytes
-  const binaryString = atob(base64Data)
-  const bytes = new Uint8Array(binaryString.length)
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
+  try {
+    // Validate API key before attempting upload
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured')
+    }
+
+    // Decode base64 to bytes
+    const binaryString = atob(base64Data)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    const blob = new Blob([bytes], { type: mimeType })
+
+    log('DEBUG', 'File decoded', { sizeBytes: blob.size })
+
+    // Upload via multipart form
+    const formData = new FormData()
+    formData.append('file', blob, fileName)
+
+    const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`
+
+    log('DEBUG', 'Sending upload request to Google Files API')
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      log('ERROR', 'Google Files API error', { status: response.status, statusText: response.statusText, errorText })
+      throw new Error(`Google Files upload failed (${response.status}): ${errorText}`)
+    }
+
+    const result = await response.json()
+
+    if (!result.file || !result.file.name) {
+      log('ERROR', 'Invalid response from Google Files API', { result })
+      throw new Error('Invalid response: missing file.name')
+    }
+
+    const geminiFileName = result.file.name // "files/xxx"
+
+    log('INFO', 'File uploaded to Google Files API', { geminiFileName, state: result.file.state })
+
+    return geminiFileName
+  } catch (error) {
+    const err = error as Error
+    log('ERROR', 'Upload to Google Files failed', { error: err.message, fileName })
+    throw new Error(`Failed to upload file to Google Files API: ${err.message}`)
   }
-  const blob = new Blob([bytes], { type: mimeType })
-
-  // Upload via multipart form
-  const formData = new FormData()
-  formData.append('file', blob, fileName)
-
-  const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`
-
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    body: formData,
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Google Files upload failed: ${response.statusText} - ${errorText}`)
-  }
-
-  const result = await response.json()
-  const geminiFileName = result.file.name // "files/xxx"
-
-  log('INFO', 'File uploaded to Google Files API', { geminiFileName })
-
-  return geminiFileName
 }
 
 /**
@@ -586,14 +609,37 @@ serve(async (req) => {
 
   } catch (error) {
     const err = error as Error
-    log('ERROR', 'Request processing failed', err.message)
+    log('ERROR', 'Request processing failed', { error: err.message, stack: err.stack })
+
+    // Determine appropriate status code based on error type
+    let statusCode = 500
+    let errorMessage = err.message || 'Internal server error'
+
+    // Check for specific error types
+    if (err.message.includes('GEMINI_API_KEY')) {
+      statusCode = 500
+      errorMessage = 'Server configuration error: Gemini API key not configured'
+    } else if (err.message.includes('Authentication') || err.message.includes('token')) {
+      statusCode = 401
+      errorMessage = 'Authentication failed: Invalid or expired token'
+    } else if (err.message.includes('Google Files upload failed')) {
+      statusCode = 502
+      errorMessage = `External API error: ${err.message}`
+    } else if (err.message.includes('Timeout waiting for file')) {
+      statusCode = 504
+      errorMessage = 'File processing timeout: Google Files API took too long to process the PDF'
+    } else if (err.message.includes('Failed to parse')) {
+      statusCode = 500
+      errorMessage = 'AI extraction error: Failed to parse edital structure from Gemini response'
+    }
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: err.message || 'Internal server error',
+        error: errorMessage,
+        details: err.message, // Include original error for debugging
       }),
-      { status: 500, headers: corsHeaders }
+      { status: statusCode, headers: corsHeaders }
     )
   }
 })
