@@ -108,11 +108,73 @@ SELECT * FROM user_credits WHERE user_id = '3d88f68e-87a5-4d45-93d1-5a28dfacaf86
 
 ## Checklist de Validação
 
-- [ ] Migration `20260120_user_credits_system.sql` aplicada
-- [ ] Query `SELECT * FROM user_credits` retorna dados
-- [ ] Página `/contacts` carrega sem erro 400
-- [ ] Widget `CreditBalanceWidget` exibe saldo correto
-- [ ] Fotos de perfil com fallback (não 404 visível)
+- [x] Migration `20260120_user_credits_system.sql` aplicada
+- [x] Coluna `last_daily_claim` existe na tabela
+- [x] Query `SELECT * FROM user_credits` retorna dados
+- [x] Página `/contacts` carrega sem erro 400
+- [x] Widget `CreditBalanceWidget` exibe saldo correto
+- [x] Fotos de perfil com fallback (não 404 visível)
+
+---
+
+## Fix Aplicado (2026-01-27)
+
+### Problema Real Identificado
+A coluna `last_daily_claim` estava **faltando** na tabela `user_credits`. O hook `useUserCredits` tenta selecionar essa coluna, causando erro 400 do PostgREST.
+
+### Solução Completa
+
+```sql
+-- 1. Adicionar coluna faltando
+ALTER TABLE public.user_credits
+ADD COLUMN IF NOT EXISTS last_daily_claim TIMESTAMPTZ;
+
+-- 2. Recriar RLS policies (idempotente)
+DROP POLICY IF EXISTS "Users can view own credits" ON public.user_credits;
+DROP POLICY IF EXISTS "Users can update own credits" ON public.user_credits;
+DROP POLICY IF EXISTS "Service role full access" ON public.user_credits;
+
+CREATE POLICY "Users can view own credits"
+    ON public.user_credits FOR SELECT
+    TO authenticated
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own credits"
+    ON public.user_credits FOR UPDATE
+    TO authenticated
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Service role full access"
+    ON public.user_credits FOR ALL
+    TO service_role
+    USING (true);
+
+-- 3. Garantir permissões
+GRANT SELECT, UPDATE ON public.user_credits TO authenticated;
+
+-- 4. Seed créditos iniciais para usuários existentes
+INSERT INTO public.user_credits (user_id, balance, lifetime_earned, lifetime_spent)
+SELECT id, 50, 50, 0
+FROM auth.users
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.user_credits WHERE user_credits.user_id = users.id
+)
+ON CONFLICT (user_id) DO NOTHING;
+```
+
+### Verificação
+```sql
+-- Estrutura da tabela (deve incluir last_daily_claim)
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'user_credits';
+
+-- Policies (deve mostrar 3+)
+SELECT policyname, cmd, roles FROM pg_policies
+WHERE tablename = 'user_credits';
+
+-- Dados do usuário
+SELECT * FROM user_credits WHERE user_id = auth.uid();
+```
 
 ---
 
