@@ -96,21 +96,16 @@ export function JourneyHeroCard({
     >
       {/* HERO SECTION */}
       <div className="relative mb-6">
-        {/* Streak badge - top right corner */}
+        {/* Streak badge - top right corner (inside card) */}
         {hasStreak && (
           <motion.div
-            className="absolute -top-2 -right-2 ceramic-inset-sm px-3 py-1 rounded-full flex items-center gap-1.5 z-10"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            className="absolute top-0 right-0 ceramic-inset-sm px-3 py-1.5 rounded-full flex items-center gap-1.5"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, delay: 0.3 }}
             data-testid="journey-hero-streak"
           >
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            >
-              <Flame className="h-4 w-4 text-orange-500" />
-            </motion.div>
+            <Flame className="h-4 w-4 text-orange-500" />
             <span className="text-xs font-bold text-ceramic-text-primary">
               {stats!.current_streak} dias
             </span>
