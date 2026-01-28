@@ -189,8 +189,17 @@ export async function triggerQuestionGeneration(
     })
 
     if (response.error) {
-      log.error('Edge function error:', response.error)
-      throw new Error(response.error.message || 'Generation failed')
+      // Check if it's an auth error (expected during page load race conditions)
+      const errorMsg = response.error.message || 'Generation failed'
+      const isAuthError = errorMsg.includes('401') ||
+                         errorMsg.includes('Unauthorized') ||
+                         errorMsg.includes('non-2xx')
+      if (isAuthError) {
+        log.debug('Edge function auth error (session may still be initializing):', errorMsg)
+      } else {
+        log.error('Edge function error:', response.error)
+      }
+      throw new Error(errorMsg)
     }
 
     const result = response.data as GenerationResult
@@ -210,7 +219,16 @@ export async function triggerQuestionGeneration(
     }
   } catch (error) {
     const err = error as Error
-    log.error('Error triggering generation:', err)
+    // Don't log auth errors as errors - they're expected during session initialization
+    const isAuthError = err.message?.includes('401') ||
+                       err.message?.includes('Unauthorized') ||
+                       err.message?.includes('non-2xx') ||
+                       err.message?.includes('authentication')
+    if (isAuthError) {
+      log.debug('Generation skipped due to auth state:', err.message)
+    } else {
+      log.error('Error triggering generation:', err)
+    }
 
     return {
       success: false,
@@ -308,6 +326,13 @@ export async function checkAndTriggerGenerationIfNeeded(
   userId: string
 ): Promise<boolean> {
   try {
+    // First verify session is valid before attempting generation
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (!sessionData.session?.access_token) {
+      log.debug('Skipping generation check - no valid session yet')
+      return false
+    }
+
     const check = await checkShouldGenerateQuestions(userId)
 
     if (check.shouldGenerate) {
@@ -318,7 +343,15 @@ export async function checkAndTriggerGenerationIfNeeded(
 
       // Trigger in background (don't await)
       triggerQuestionGeneration({ batchSize: 5 }).catch(err => {
-        log.warn('Background generation failed:', err)
+        // Don't log auth errors as errors - they're expected during page load
+        const isAuthError = err?.message?.includes('401') ||
+                           err?.message?.includes('Unauthorized') ||
+                           err?.message?.includes('authentication')
+        if (isAuthError) {
+          log.debug('Generation skipped due to auth state:', err.message)
+        } else {
+          log.warn('Background generation failed:', err)
+        }
       })
 
       return true
