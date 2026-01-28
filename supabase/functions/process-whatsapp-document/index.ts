@@ -323,6 +323,50 @@ async function transcribeAudio(geminiFileName: string): Promise<string> {
 // =============================================================================
 
 /**
+ * Get or create Journey corpus for user (shared by Journey + WhatsApp modules)
+ */
+async function ensureJourneyCorpus(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<string> {
+  // Try to find existing Journey corpus for this user
+  const { data: existingCorpus } = await supabase
+    .from('file_search_corpora')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('module_type', 'journey')
+    .limit(1)
+    .single()
+
+  if (existingCorpus) {
+    log('INFO', 'Found existing Journey corpus', { corpusId: existingCorpus.id })
+    return existingCorpus.id
+  }
+
+  // Create new Journey corpus
+  const { data: newCorpus, error } = await supabase
+    .from('file_search_corpora')
+    .insert({
+      user_id: userId,
+      corpus_name: `journey-user-${userId}`,
+      display_name: `Journey - User ${userId}`,
+      module_type: 'journey',
+      module_id: userId,
+      document_count: 0,
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    log('ERROR', 'Failed to create Journey corpus', { error: error.message })
+    throw new Error(`Failed to create Journey corpus: ${error.message}`)
+  }
+
+  log('INFO', 'Created new Journey corpus', { corpusId: newCorpus.id })
+  return newCorpus.id
+}
+
+/**
  * Save document reference to file_search_documents
  */
 async function saveDocumentReference(
@@ -339,17 +383,21 @@ async function saveDocumentReference(
 ): Promise<string> {
   log('INFO', 'Saving document reference to database')
 
+  // Get Journey corpus (shared between Journey moments and WhatsApp documents)
+  const corpusId = await ensureJourneyCorpus(supabase, userId)
+
   const { data, error } = await supabase
     .from('file_search_documents')
     .insert({
       user_id: userId,
+      corpus_id: corpusId, // ✅ NEW: Associate with Journey corpus
       gemini_file_name: geminiFileName,
       original_filename: originalFileName,
       mime_type: 'application/pdf', // Simplified for now
       file_size_bytes: fileSize,
       module_type: 'whatsapp',
       indexing_status: 'completed',
-      metadata: {
+      custom_metadata: { // ✅ FIXED: Changed from 'metadata' to 'custom_metadata'
         source: 'whatsapp',
         contact_id: contactId,
         contact_name: contactName || 'Unknown',
@@ -366,7 +414,10 @@ async function saveDocumentReference(
     throw new Error(`Failed to save document reference: ${error.message}`)
   }
 
-  log('INFO', 'Document reference saved', { documentId: data.id })
+  // ✅ NEW: Update corpus document count
+  await supabase.rpc('increment_corpus_document_count', { corpus_id: corpusId })
+
+  log('INFO', 'Document reference saved', { documentId: data.id, corpusId })
 
   return data.id
 }
