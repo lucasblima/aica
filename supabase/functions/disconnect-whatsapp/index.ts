@@ -1,19 +1,21 @@
 /**
  * Disconnect WhatsApp Edge Function
  *
- * Logs out a WhatsApp instance from Evolution API without deleting it.
- * This allows the user to reconnect later using QR code or pairing code.
+ * Disconnects and DELETES a WhatsApp instance from Evolution API.
+ * This removes the instance permanently to prevent orphaned instances.
+ * User can reconnect later by creating a new instance.
  *
  * Endpoint: POST /functions/v1/disconnect-whatsapp
  * Body: { sessionId: string } or empty (uses user's session)
  * Response: { success: boolean, message?: string, error?: string }
  *
  * Related: Issue #87 - WhatsApp Pairing Code
+ * Fix: Orphaned instances bug - now properly deletes instance
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { logoutInstance } from '../_shared/evolution-client.ts'
+import { deleteInstance } from '../_shared/evolution-client.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -129,14 +131,15 @@ serve(async (req: Request) => {
       )
     }
 
-    // 7. Call Evolution API to logout instance
+    // 7. Call Evolution API to DELETE instance (not just logout)
+    // This prevents orphaned instances accumulating on Evolution API server
     try {
-      const logoutResult = await logoutInstance(session.instance_name)
-      console.log(`[disconnect-whatsapp] Evolution API logout result:`, logoutResult)
+      const deleteResult = await deleteInstance(session.instance_name)
+      console.log(`[disconnect-whatsapp] Evolution API delete result:`, deleteResult)
     } catch (evolutionError) {
-      console.error(`[disconnect-whatsapp] Evolution API error:`, evolutionError)
+      console.error(`[disconnect-whatsapp] Evolution API delete error:`, evolutionError)
       // Continue anyway - update DB even if Evolution API fails
-      // The instance might be already disconnected on Evolution side
+      // The instance might be already deleted or non-existent
     }
 
     // 8. Update session status in database
