@@ -177,8 +177,19 @@ export async function triggerQuestionGeneration(
       throw new Error('Session not valid')
     }
 
-    // supabase.functions.invoke() automatically includes Authorization header from session
+    // Get fresh session token after validation/refresh
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData.session?.access_token
+    if (!token) {
+      log.debug('No session token available after validation')
+      throw new Error('Session not valid')
+    }
+
+    // @supabase/ssr may not auto-include Authorization header, so we pass it explicitly
     const response = await supabase.functions.invoke(CONFIG.EDGE_FUNCTION_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: {
         batch_size: options?.batchSize || 5,
         categories: options?.categories,
