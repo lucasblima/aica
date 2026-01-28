@@ -170,25 +170,15 @@ export async function triggerQuestionGeneration(
   try {
     log.info('Triggering question generation', options)
 
-    // First validate session with getUser() - this triggers token refresh if needed
-    const { error: userError } = await supabase.auth.getUser()
-    if (userError) {
-      log.debug('Session not valid for generation:', userError.message)
+    // Validate session with getUser() - this triggers token refresh if needed
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData.user) {
+      log.debug('Session not valid for generation:', userError?.message)
       throw new Error('Session not valid')
     }
 
-    // Now get the (potentially refreshed) session token
-    const { data: sessionData } = await supabase.auth.getSession()
-    const token = sessionData.session?.access_token
-
-    if (!token) {
-      throw new Error('No authentication token available')
-    }
-
+    // supabase.functions.invoke() automatically includes Authorization header from session
     const response = await supabase.functions.invoke(CONFIG.EDGE_FUNCTION_URL, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: {
         batch_size: options?.batchSize || 5,
         categories: options?.categories,
