@@ -214,13 +214,18 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
 
     const tourConfig = tours.find(t => t.key === tourKey);
 
-    // Record tour start in database
+    // Record tour start in database (only if user is authenticated)
     try {
-      await supabase.rpc('start_tour', {
-        p_user_id: (await supabase.auth.getUser()).data.user?.id,
-        p_tour_id: tourKey,
-        p_total_steps: tourConfig?.steps.length || 1,
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        await supabase.rpc('start_tour', {
+          p_user_id: user.id,
+          p_tour_id: tourKey,
+          p_total_steps: tourConfig?.steps.length || 1,
+        });
+      } else {
+        log.debug('Skipping tour DB record - user not authenticated');
+      }
     } catch (err) {
       log.error('Error starting tour in database:', err);
     }
@@ -238,11 +243,14 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
     try {
       setError(null);
 
-      // Use RPC function for completion
-      await supabase.rpc('complete_tour', {
-        p_user_id: (await supabase.auth.getUser()).data.user?.id,
-        p_tour_id: tourKey,
-      });
+      // Use RPC function for completion (only if user is authenticated)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        await supabase.rpc('complete_tour', {
+          p_user_id: user.id,
+          p_tour_id: tourKey,
+        });
+      }
 
       // Update local state
       setTourProgress(prev => {
@@ -284,11 +292,14 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
     try {
       setError(null);
 
-      // Use RPC function for skipping
-      await supabase.rpc('skip_tour', {
-        p_user_id: (await supabase.auth.getUser()).data.user?.id,
-        p_tour_id: tourKey,
-      });
+      // Use RPC function for skipping (only if user is authenticated)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        await supabase.rpc('skip_tour', {
+          p_user_id: user.id,
+          p_tour_id: tourKey,
+        });
+      }
 
       // Update local state
       setTourProgress(prev => {
