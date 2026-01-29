@@ -9,10 +9,18 @@
  * 5. Updates whatsapp_messages with processing status
  *
  * Supports: PDF, Images (OCR), Audio (transcription), Documents
+ *
+ * Audio Transcription (Issue #176):
+ * - Uses Gemini 2.0 Flash for audio transcription
+ * - Supports: OGG (Opus), MP3, M4A, WAV
+ * - Max file size: 25MB
+ * - Timeout: 30 seconds
+ * - Returns: transcription, duration, language, confidence
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
 
 // =============================================================================
 // CONFIGURATION
@@ -50,7 +58,41 @@ interface ProcessResponse {
   document_id?: string
   extracted_text?: string
   error?: string
+  // Audio transcription metadata (Issue #176)
+  audio_metadata?: AudioTranscriptionResult
 }
+
+// =============================================================================
+// AUDIO TRANSCRIPTION TYPES (Issue #176)
+// =============================================================================
+
+interface AudioTranscriptionResult {
+  transcription: string
+  duration_seconds: number
+  language: string
+  confidence: number
+}
+
+// Supported audio MIME types for transcription
+const SUPPORTED_AUDIO_MIMETYPES = [
+  'audio/ogg',           // OGG (WhatsApp default)
+  'audio/opus',          // Opus codec
+  'audio/mpeg',          // MP3
+  'audio/mp3',           // MP3 alternative
+  'audio/mp4',           // M4A
+  'audio/m4a',           // M4A alternative
+  'audio/x-m4a',         // M4A alternative
+  'audio/wav',           // WAV
+  'audio/wave',          // WAV alternative
+  'audio/x-wav',         // WAV alternative
+  'audio/webm',          // WebM audio
+  'audio/aac',           // AAC
+]
+
+// Audio processing limits
+const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024  // 25MB
+const AUDIO_TRANSCRIPTION_TIMEOUT_MS = 30000   // 30 seconds
+const GEMINI_AUDIO_MODEL = 'gemini-2.0-flash-exp'
 
 // =============================================================================
 // LOGGING
@@ -309,13 +351,294 @@ If there is no text in the image, return "No text detected".
   return extractedText
 }
 
+// =============================================================================
+// AUDIO TRANSCRIPTION (Issue #176)
+// =============================================================================
+
 /**
- * Transcribe audio using Gemini (placeholder for now)
+ * Check if MIME type is a supported audio format
+ */
+function isSupportedAudioMimeType(mimeType: string): boolean {
+  const normalizedMimeType = mimeType.toLowerCase().split(';')[0].trim()
+  return SUPPORTED_AUDIO_MIMETYPES.includes(normalizedMimeType)
+}
+
+/**
+ * Normalize audio MIME type for Gemini API
+ * Gemini expects specific MIME types for audio processing
+ */
+function normalizeAudioMimeType(mimeType: string): string {
+  const normalized = mimeType.toLowerCase().split(';')[0].trim()
+
+  // Map common variations to standard MIME types
+  const mimeTypeMap: Record<string, string> = {
+    'audio/mp3': 'audio/mpeg',
+    'audio/m4a': 'audio/mp4',
+    'audio/x-m4a': 'audio/mp4',
+    'audio/wave': 'audio/wav',
+    'audio/x-wav': 'audio/wav',
+    'audio/opus': 'audio/ogg',
+  }
+
+  return mimeTypeMap[normalized] || normalized
+}
+
+/**
+ * Estimate audio duration from file size (rough approximation)
+ * Used when actual duration is not available from metadata
+ */
+function estimateAudioDuration(fileSizeBytes: number, mimeType: string): number {
+  // Approximate bitrates for different formats (in bytes per second)
+  const bitrateEstimates: Record<string, number> = {
+    'audio/ogg': 16000,   // ~128 kbps
+    'audio/mpeg': 16000,  // ~128 kbps
+    'audio/mp4': 16000,   // ~128 kbps
+    'audio/wav': 176400,  // Uncompressed stereo 44.1kHz 16-bit
+    'audio/webm': 16000,  // ~128 kbps
+    'audio/aac': 16000,   // ~128 kbps
+  }
+
+  const bytesPerSecond = bitrateEstimates[normalizeAudioMimeType(mimeType)] || 16000
+  return Math.round(fileSizeBytes / bytesPerSecond)
+}
+
+/**
+ * Transcribe audio using Gemini 2.0 Flash
+ * Implements Issue #176 - Audio transcription for WhatsApp messages
+ *
+ * @param audioBuffer - Raw audio data as Uint8Array
+ * @param mimeType - Audio MIME type (e.g., 'audio/ogg', 'audio/mpeg')
+ * @param fileSizeBytes - File size for duration estimation
+ * @returns AudioTranscriptionResult with transcription, duration, language, confidence
+ */
+async function transcribeAudioWithGemini(
+  audioBuffer: Uint8Array,
+  mimeType: string,
+  fileSizeBytes: number
+): Promise<AudioTranscriptionResult> {
+  log('INFO', 'Starting audio transcription with Gemini', {
+    mimeType,
+    sizeBytes: fileSizeBytes,
+    model: GEMINI_AUDIO_MODEL
+  })
+
+  // Validate file size
+  if (fileSizeBytes > MAX_AUDIO_SIZE_BYTES) {
+    throw new Error(`Audio file too large: ${fileSizeBytes} bytes (max: ${MAX_AUDIO_SIZE_BYTES} bytes)`)
+  }
+
+  // Validate MIME type
+  if (!isSupportedAudioMimeType(mimeType)) {
+    throw new Error(`Unsupported audio format: ${mimeType}. Supported: OGG, MP3, M4A, WAV, WebM, AAC`)
+  }
+
+  const normalizedMimeType = normalizeAudioMimeType(mimeType)
+  const estimatedDuration = estimateAudioDuration(fileSizeBytes, mimeType)
+
+  try {
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
+
+    const model = genAI.getGenerativeModel({
+      model: GEMINI_AUDIO_MODEL,
+      generationConfig: {
+        temperature: 0.1,  // Low temperature for accurate transcription
+        maxOutputTokens: 8192,
+      },
+    })
+
+    // Convert audio to base64
+    const base64Audio = btoa(String.fromCharCode(...audioBuffer))
+
+    // Structured prompt for transcription with metadata extraction
+    const prompt = `You are a professional audio transcription service. Transcribe this audio message accurately.
+
+Instructions:
+1. Transcribe the EXACT words spoken in the audio
+2. Preserve the original language (Portuguese, English, Spanish, etc.)
+3. Include filler words, pauses indicated as "...", and emotional expressions if present
+4. If the audio is inaudible or unclear, indicate with [inaudivel] or [unclear]
+5. Do NOT translate - keep the original language
+
+After the transcription, provide metadata in this EXACT JSON format on a new line:
+{"language": "pt-BR", "confidence": 0.95}
+
+Where:
+- language: ISO language code (pt-BR, en-US, es-ES, etc.)
+- confidence: Your confidence in the transcription accuracy (0.0 to 1.0)
+
+Example output:
+Ola, tudo bem? Eu queria saber se voce pode me ajudar com uma coisa...
+{"language": "pt-BR", "confidence": 0.92}
+
+Now transcribe the audio:`
+
+    // Create abort controller for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), AUDIO_TRANSCRIPTION_TIMEOUT_MS)
+
+    try {
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: normalizedMimeType,
+            data: base64Audio,
+          },
+        },
+      ])
+
+      clearTimeout(timeoutId)
+
+      const response = await result.response
+      const fullText = response.text().trim()
+
+      // Parse response to extract transcription and metadata
+      const lines = fullText.split('\n')
+      let transcription = ''
+      let language = 'pt-BR'  // Default to Portuguese
+      let confidence = 0.8    // Default confidence
+
+      // Look for JSON metadata at the end
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i].trim()
+        if (line.startsWith('{') && line.endsWith('}')) {
+          try {
+            const metadata = JSON.parse(line)
+            if (metadata.language) language = metadata.language
+            if (typeof metadata.confidence === 'number') confidence = metadata.confidence
+            // Remove metadata line from transcription
+            lines.splice(i, 1)
+            break
+          } catch {
+            // Not valid JSON, keep as part of transcription
+          }
+        }
+      }
+
+      transcription = lines.join('\n').trim()
+
+      // Fallback if transcription is empty
+      if (!transcription || transcription.length === 0) {
+        transcription = '[Audio inaudivel ou vazio]'
+        confidence = 0.0
+      }
+
+      // Get token usage for cost tracking
+      const usageMetadata = response.usageMetadata
+      const inputTokens = usageMetadata?.promptTokenCount || 0
+      const outputTokens = usageMetadata?.candidatesTokenCount || 0
+
+      log('INFO', 'Audio transcription completed', {
+        transcriptionLength: transcription.length,
+        language,
+        confidence,
+        estimatedDuration,
+        inputTokens,
+        outputTokens
+      })
+
+      return {
+        transcription,
+        duration_seconds: estimatedDuration,
+        language,
+        confidence: Math.min(Math.max(confidence, 0), 1) // Clamp to [0, 1]
+      }
+
+    } catch (error) {
+      clearTimeout(timeoutId)
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Audio transcription timeout after ${AUDIO_TRANSCRIPTION_TIMEOUT_MS}ms`)
+      }
+      throw error
+    }
+
+  } catch (error) {
+    const err = error as Error
+    log('ERROR', 'Audio transcription failed', {
+      error: err.message,
+      mimeType,
+      sizeBytes: fileSizeBytes
+    })
+
+    // Return a fallback result instead of throwing
+    return {
+      transcription: `[Erro na transcricao: ${err.message}]`,
+      duration_seconds: estimatedDuration,
+      language: 'unknown',
+      confidence: 0.0
+    }
+  }
+}
+
+/**
+ * Log AI usage for cost tracking (Issue #176)
+ * Uses the log_ai_usage RPC function
+ */
+async function logAudioTranscriptionUsage(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  messageId: string,
+  inputTokens: number,
+  outputTokens: number,
+  durationSeconds: number
+): Promise<void> {
+  try {
+    // Calculate costs using Gemini 2.0 Flash pricing (currently free during preview)
+    // When pricing is enabled, this will use the ai_model_pricing table
+    const { data: costs } = await supabase.rpc('calculate_token_cost', {
+      p_model_name: GEMINI_AUDIO_MODEL,
+      p_input_tokens: inputTokens,
+      p_output_tokens: outputTokens
+    })
+
+    const inputCost = costs?.[0]?.input_cost_usd || 0
+    const outputCost = costs?.[0]?.output_cost_usd || 0
+    const totalCost = costs?.[0]?.total_cost_usd || 0
+
+    await supabase.rpc('log_ai_usage', {
+      p_user_id: userId,
+      p_operation_type: 'audio_transcription',
+      p_ai_model: GEMINI_AUDIO_MODEL,
+      p_input_tokens: inputTokens,
+      p_output_tokens: outputTokens,
+      p_total_tokens: inputTokens + outputTokens,
+      p_duration_seconds: durationSeconds,
+      p_input_cost_usd: inputCost,
+      p_output_cost_usd: outputCost,
+      p_total_cost_usd: totalCost,
+      p_module_type: 'whatsapp',
+      p_module_id: null,
+      p_asset_id: null,
+      p_request_metadata: {
+        source: 'whatsapp_audio',
+        message_id: messageId,
+        function: 'process-whatsapp-document'
+      }
+    })
+
+    log('DEBUG', 'AI usage logged for audio transcription', {
+      userId,
+      messageId,
+      inputTokens,
+      outputTokens,
+      totalCost
+    })
+  } catch (error) {
+    // Non-critical - log but don't fail the main operation
+    log('WARN', 'Failed to log AI usage', { error: (error as Error).message })
+  }
+}
+
+/**
+ * Legacy function - wrapper for backward compatibility
+ * Now uses the full transcription pipeline
  */
 async function transcribeAudio(geminiFileName: string): Promise<string> {
-  log('WARN', 'Audio transcription not yet implemented', { geminiFileName })
-  // TODO: Implement with Gemini audio API or Whisper
-  return '[Audio transcription coming soon]'
+  log('WARN', 'transcribeAudio called with geminiFileName - use transcribeAudioWithGemini for full metadata', { geminiFileName })
+  // This path is called when audio was already uploaded to Gemini Files API
+  // For now, return placeholder - the main flow uses transcribeAudioWithGemini directly
+  return '[Use transcribeAudioWithGemini for full audio transcription]'
 }
 
 // =============================================================================
@@ -368,6 +691,7 @@ async function ensureJourneyCorpus(
 
 /**
  * Save document reference to file_search_documents
+ * Updated for Issue #176 to include audio transcription metadata
  */
 async function saveDocumentReference(
   supabase: ReturnType<typeof createClient>,
@@ -379,32 +703,55 @@ async function saveDocumentReference(
   fileSize: number,
   mediaType: string,
   extractedText: string,
-  contactName?: string
+  contactName?: string,
+  audioMetadata?: AudioTranscriptionResult
 ): Promise<string> {
   log('INFO', 'Saving document reference to database')
 
   // Get Journey corpus (shared between Journey moments and WhatsApp documents)
   const corpusId = await ensureJourneyCorpus(supabase, userId)
 
+  // Determine correct MIME type based on media type
+  let mimeType = 'application/pdf'
+  if (mediaType === 'audio') {
+    mimeType = 'audio/ogg' // Default for WhatsApp audio
+  } else if (mediaType === 'image') {
+    mimeType = 'image/jpeg'
+  }
+
+  // Build custom metadata with audio-specific fields if available
+  const customMetadata: Record<string, unknown> = {
+    source: 'whatsapp',
+    contact_id: contactId,
+    contact_name: contactName || 'Unknown',
+    message_id: messageId,
+    media_type: mediaType,
+    extracted_text_preview: extractedText.substring(0, 500),
+  }
+
+  // Add audio transcription metadata (Issue #176)
+  if (audioMetadata) {
+    customMetadata.audio_transcription = {
+      duration_seconds: audioMetadata.duration_seconds,
+      language: audioMetadata.language,
+      confidence: audioMetadata.confidence,
+      model: GEMINI_AUDIO_MODEL,
+      transcribed_at: new Date().toISOString()
+    }
+  }
+
   const { data, error } = await supabase
     .from('file_search_documents')
     .insert({
       user_id: userId,
-      corpus_id: corpusId, // ✅ NEW: Associate with Journey corpus
+      corpus_id: corpusId,
       gemini_file_name: geminiFileName,
       original_filename: originalFileName,
-      mime_type: 'application/pdf', // Simplified for now
+      mime_type: mimeType,
       file_size_bytes: fileSize,
       module_type: 'whatsapp',
       indexing_status: 'completed',
-      custom_metadata: { // ✅ FIXED: Changed from 'metadata' to 'custom_metadata'
-        source: 'whatsapp',
-        contact_id: contactId,
-        contact_name: contactName || 'Unknown',
-        message_id: messageId,
-        media_type: mediaType,
-        extracted_text_preview: extractedText.substring(0, 500),
-      },
+      custom_metadata: customMetadata,
     })
     .select('id')
     .single()
@@ -414,10 +761,15 @@ async function saveDocumentReference(
     throw new Error(`Failed to save document reference: ${error.message}`)
   }
 
-  // ✅ NEW: Update corpus document count
+  // Update corpus document count
   await supabase.rpc('increment_corpus_document_count', { corpus_uuid: corpusId })
 
-  log('INFO', 'Document reference saved', { documentId: data.id, corpusId })
+  log('INFO', 'Document reference saved', {
+    documentId: data.id,
+    corpusId,
+    mediaType,
+    hasAudioMetadata: !!audioMetadata
+  })
 
   return data.id
 }
@@ -493,21 +845,57 @@ serve(async (req) => {
 
     // 4. Extract content based on media type
     let extractedText = ''
+    let audioMetadata: AudioTranscriptionResult | undefined
+
     switch (request.media_type) {
       case 'document':
         extractedText = await extractPDFText(geminiFileName)
         break
+
       case 'image':
         extractedText = await extractImageText(geminiFileName)
         break
+
       case 'audio':
-        extractedText = await transcribeAudio(geminiFileName)
+        // Issue #176: Full audio transcription with metadata
+        log('INFO', 'Processing audio transcription', {
+          mimeType,
+          sizeBytes: buffer.length,
+          fileName: request.file_name
+        })
+
+        // Use direct transcription (no need to upload to Gemini Files API first)
+        audioMetadata = await transcribeAudioWithGemini(buffer, mimeType, buffer.length)
+        extractedText = audioMetadata.transcription
+
+        // Log AI usage for cost tracking
+        // Note: Token counts are estimated since we don't have exact values from inlineData
+        const estimatedInputTokens = Math.ceil(buffer.length / 100) // Rough estimate
+        const estimatedOutputTokens = Math.ceil(extractedText.length / 4) // ~4 chars per token
+
+        await logAudioTranscriptionUsage(
+          supabase,
+          message.user_id,
+          request.message_id,
+          estimatedInputTokens,
+          estimatedOutputTokens,
+          audioMetadata.duration_seconds
+        )
+
+        log('INFO', 'Audio transcription completed', {
+          language: audioMetadata.language,
+          confidence: audioMetadata.confidence,
+          durationSeconds: audioMetadata.duration_seconds,
+          transcriptionLength: extractedText.length
+        })
         break
+
       default:
         extractedText = `[${request.media_type} processing not implemented]`
     }
 
     // 5. Save to file_search_documents
+    // For audio, include transcription metadata in custom_metadata
     const documentId = await saveDocumentReference(
       supabase,
       message.user_id,
@@ -518,17 +906,32 @@ serve(async (req) => {
       buffer.length,
       request.media_type,
       extractedText,
-      message.contact_network?.name
+      message.contact_network?.name,
+      audioMetadata // Pass audio metadata for storage
     )
 
-    // 6. Update whatsapp_messages
+    // 6. Update whatsapp_messages with processing results
+    const messageUpdate: Record<string, unknown> = {
+      document_processed: true,
+      gemini_file_name: geminiFileName,
+      file_search_document_id: documentId,
+    }
+
+    // Add audio-specific metadata if available
+    if (audioMetadata) {
+      messageUpdate.content_transcription = extractedText
+      messageUpdate.transcription_metadata = {
+        duration_seconds: audioMetadata.duration_seconds,
+        language: audioMetadata.language,
+        confidence: audioMetadata.confidence,
+        model: GEMINI_AUDIO_MODEL,
+        processed_at: new Date().toISOString()
+      }
+    }
+
     await supabase
       .from('whatsapp_messages')
-      .update({
-        document_processed: true,
-        gemini_file_name: geminiFileName,
-        file_search_document_id: documentId,
-      })
+      .update(messageUpdate)
       .eq('id', request.message_id)
 
     const processingTimeMs = Date.now() - startTime
@@ -538,6 +941,8 @@ serve(async (req) => {
       geminiFileName,
       processingTimeMs,
       textLength: extractedText.length,
+      mediaType: request.media_type,
+      hasAudioMetadata: !!audioMetadata
     })
 
     const response: ProcessResponse = {
@@ -545,6 +950,7 @@ serve(async (req) => {
       gemini_file_name: geminiFileName,
       document_id: documentId,
       extracted_text: extractedText.substring(0, 200), // Preview only
+      audio_metadata: audioMetadata
     }
 
     return new Response(

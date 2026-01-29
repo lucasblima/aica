@@ -11,6 +11,7 @@ const log = createNamespacedLogger('InvitationService');
  */
 
 export type InviteStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
+export type EmailDeliveryStatus = 'pending' | 'sent' | 'delivered' | 'bounced' | 'failed';
 
 export interface Invitation {
   id: string;
@@ -19,10 +20,15 @@ export interface Invitation {
   token: string;
   status: InviteStatus;
   invited_by: string; // user_id
-  role: 'admin' | 'member' | 'viewer';
+  role: 'owner' | 'admin' | 'member' | 'guest';
   expires_at: string;
   created_at: string;
   accepted_at?: string;
+  rejected_at?: string;
+  // Email tracking fields
+  email_sent_at?: string;
+  email_delivery_status?: EmailDeliveryStatus;
+  email_delivery_error?: string;
 }
 
 export interface InviteResult {
@@ -60,6 +66,70 @@ export function isInvitationExpired(invitation: Invitation): boolean {
 }
 
 /**
+ * Sends invitation email via Edge Function
+ *
+ * @param invitationId - The ID of the invitation
+ * @param email - Invitee email address
+ * @param inviterName - Name of the person sending the invite
+ * @param spaceName - Name of the connection space
+ * @param spaceArchetype - Type of space (habitat, ventures, academia, tribo)
+ * @param token - Invitation token
+ */
+async function sendInvitationEmail(
+  invitationId: string,
+  email: string,
+  inviterName: string,
+  spaceName: string,
+  spaceArchetype: string,
+  token: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invitation-email`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          invitation_id: invitationId,
+          to_email: email,
+          inviter_name: inviterName,
+          space_name: spaceName,
+          space_archetype: spaceArchetype,
+          token,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      log.error('Edge Function error:', result);
+      return {
+        success: false,
+        error: result.error || 'Failed to send invitation email',
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    log.error('Error calling send-invitation-email Edge Function:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
  * Creates a new invitation for a connection space
  *
  * @param spaceId - The ID of the connection space
@@ -73,7 +143,7 @@ export async function createInvitation(
   spaceId: string,
   email: string,
   invitedBy: string,
-  role: 'admin' | 'member' | 'viewer' = 'member',
+  role: 'owner' | 'admin' | 'member' | 'guest' = 'member',
   expiresInDays: number = 7
 ): Promise<InviteResult> {
   try {
@@ -97,15 +167,33 @@ export async function createInvitation(
     // Check if user is authorized to invite to this space
     const { data: spaceData, error: spaceError } = await supabase
       .from('connection_spaces')
-      .select('id, user_id')
+      .select('id, user_id, name, archetype')
       .eq('id', spaceId)
-      .eq('user_id', invitedBy)
       .single();
 
     if (spaceError || !spaceData) {
       return {
         success: false,
         error: 'Space not found or you do not have permission to invite members'
+      };
+    }
+
+    // Verify user owns the space or is admin
+    const { data: memberData } = await supabase
+      .from('connection_members')
+      .select('role')
+      .eq('space_id', spaceId)
+      .eq('user_id', invitedBy)
+      .eq('is_active', true)
+      .single();
+
+    const isOwner = spaceData.user_id === invitedBy;
+    const isAdmin = memberData?.role === 'admin' || memberData?.role === 'owner';
+
+    if (!isOwner && !isAdmin) {
+      return {
+        success: false,
+        error: 'You do not have permission to invite members to this space'
       };
     }
 
@@ -142,7 +230,8 @@ export async function createInvitation(
       status: 'pending' as InviteStatus,
       invited_by: invitedBy,
       role,
-      expires_at: expiresAt.toISOString()
+      expires_at: expiresAt.toISOString(),
+      email_delivery_status: 'pending' as EmailDeliveryStatus,
     };
 
     const { data: invitationData, error: invitationError } = await supabase
@@ -162,16 +251,27 @@ export async function createInvitation(
     const invitation = invitationData as Invitation;
     const inviteLink = generateInviteLink(token);
 
-    // TODO: Send email invitation via email service
-    // This would integrate with an email service provider
-    // const emailPayload = {
-    //   to: email,
-    //   subject: 'You\'ve been invited to join a connection space',
-    //   inviteLink,
-    //   spaceName: spaceData.name,
-    //   invitedByName: user.name
-    // };
-    // await emailService.sendInvitation(emailPayload);
+    // Get inviter name for email
+    const { data: userData } = await supabase.auth.getUser();
+    const inviterName = userData?.user?.user_metadata?.full_name ||
+                       userData?.user?.email?.split('@')[0] ||
+                       'Um membro';
+
+    // Send invitation email via Edge Function
+    const emailResult = await sendInvitationEmail(
+      invitation.id,
+      email,
+      inviterName,
+      spaceData.name,
+      spaceData.archetype,
+      token
+    );
+
+    if (!emailResult.success) {
+      log.warn('Failed to send invitation email:', emailResult.error);
+      // Don't fail the entire operation if email fails
+      // Invitation is still created, email can be retried
+    }
 
     return {
       success: true,
@@ -526,10 +626,10 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
       };
     }
 
-    // Fetch the original invitation
+    // Fetch the original invitation with space details
     const { data: originalInvitation, error: fetchError } = await supabase
       .from('connection_invitations')
-      .select('*, connection_spaces!inner(owner_id)')
+      .select('*, connection_spaces!inner(user_id, name, archetype)')
       .eq('id', invitationId)
       .single();
 
@@ -540,9 +640,21 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
       };
     }
 
-    // Verify user owns the space
+    // Verify user owns the space or is admin
     const space = originalInvitation.connection_spaces as any;
-    if (space.owner_id !== user.id) {
+    const isOwner = space.user_id === user.id;
+
+    const { data: memberData } = await supabase
+      .from('connection_members')
+      .select('role')
+      .eq('space_id', originalInvitation.space_id)
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+
+    const isAdmin = memberData?.role === 'admin' || memberData?.role === 'owner';
+
+    if (!isOwner && !isAdmin) {
       return {
         success: false,
         error: 'You do not have permission to resend this invitation'
@@ -553,6 +665,7 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
     await cancelInvitation(invitationId);
 
     // Create a new invitation with the same parameters
+    // This will automatically send the email via createInvitation
     return await createInvitation(
       originalInvitation.space_id,
       originalInvitation.email,

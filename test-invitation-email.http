@@ -1,0 +1,184 @@
+### ============================================================================
+### Test File: Connection Invitations Email System
+### Usage: Use REST Client extension in VSCode
+### ============================================================================
+
+### Variables
+@supabaseUrl = https://uzywajqzbdbrfammshdg.supabase.co
+@anonKey = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6eXdhanF6YmRicmZhbW1zaGRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMwODY1ODksImV4cCI6MjA0ODY2MjU4OX0.U4VePSYyCq0UkETOPH0SwR-Ay1VbmKNV1yPE9JxJxio
+@accessToken = YOUR_ACCESS_TOKEN_HERE
+
+### ============================================================================
+### 1. Test Edge Function Directly (Manual Test)
+### ============================================================================
+
+POST {{supabaseUrl}}/functions/v1/send-invitation-email
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "invitation_id": "123e4567-e89b-12d3-a456-426614174000",
+  "to_email": "test@example.com",
+  "inviter_name": "João Silva",
+  "space_name": "Família Silva",
+  "space_archetype": "habitat",
+  "token": "abc123def456ghi789jkl012mno345pq"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "message": "Invitation email sent successfully",
+###   "messageId": "resend-message-id-123"
+### }
+
+
+### ============================================================================
+### 2. Create Invitation (Via Database RPC - For Testing)
+### ============================================================================
+
+POST {{supabaseUrl}}/rest/v1/connection_invitations
+Content-Type: application/json
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+Prefer: return=representation
+
+{
+  "space_id": "YOUR_SPACE_ID_HERE",
+  "email": "test@example.com",
+  "token": "abc123def456ghi789jkl012mno345pq",
+  "status": "pending",
+  "invited_by": "YOUR_USER_ID_HERE",
+  "role": "member",
+  "expires_at": "2026-02-05T23:59:59Z",
+  "email_delivery_status": "pending"
+}
+
+### Expected Response: Created invitation object
+
+
+### ============================================================================
+### 3. Query Invitations (Check Status)
+### ============================================================================
+
+GET {{supabaseUrl}}/rest/v1/connection_invitations?select=*&order=created_at.desc&limit=10
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+
+### Expected Response: Array of invitations
+
+
+### ============================================================================
+### 4. Query Invitation by Email
+### ============================================================================
+
+GET {{supabaseUrl}}/rest/v1/connection_invitations?select=*&email=eq.test@example.com
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+
+### Expected Response: Invitations for specific email
+
+
+### ============================================================================
+### 5. Query Invitation by Token
+### ============================================================================
+
+GET {{supabaseUrl}}/rest/v1/connection_invitations?select=*&token=eq.abc123def456ghi789jkl012mno345pq
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+
+### Expected Response: Single invitation object
+
+
+### ============================================================================
+### 6. Update Email Status (Simulate Email Sent)
+### ============================================================================
+
+PATCH {{supabaseUrl}}/rest/v1/connection_invitations?id=eq.YOUR_INVITATION_ID
+Content-Type: application/json
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+Prefer: return=representation
+
+{
+  "email_sent_at": "2026-01-29T12:00:00Z",
+  "email_delivery_status": "sent"
+}
+
+### Expected Response: Updated invitation object
+
+
+### ============================================================================
+### 7. Test Resend API Directly (Bypass Edge Function)
+### ============================================================================
+
+POST https://api.resend.com/emails
+Content-Type: application/json
+Authorization: Bearer YOUR_RESEND_API_KEY
+
+{
+  "from": "noreply@resend.dev",
+  "to": "test@example.com",
+  "subject": "Test Email from Aica",
+  "html": "<h1>Hello from Aica!</h1><p>This is a test email.</p>"
+}
+
+### Expected Response:
+### {
+###   "id": "resend-message-id"
+### }
+
+
+### ============================================================================
+### 8. Query Space Details (For Testing)
+### ============================================================================
+
+GET {{supabaseUrl}}/rest/v1/connection_spaces?select=id,name,archetype,user_id&limit=5
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+
+### Expected Response: Array of connection spaces
+
+
+### ============================================================================
+### 9. Query Connection Members (Verify Permissions)
+### ============================================================================
+
+GET {{supabaseUrl}}/rest/v1/connection_members?select=*&space_id=eq.YOUR_SPACE_ID
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+
+### Expected Response: Array of members
+
+
+### ============================================================================
+### 10. Test Security: Try to Create Invitation for Another User's Space
+### ============================================================================
+
+POST {{supabaseUrl}}/rest/v1/connection_invitations
+Content-Type: application/json
+apikey: {{anonKey}}
+Authorization: Bearer {{accessToken}}
+Prefer: return=representation
+
+{
+  "space_id": "ANOTHER_USER_SPACE_ID",
+  "email": "malicious@example.com",
+  "token": "malicioustoken123",
+  "status": "pending",
+  "invited_by": "YOUR_USER_ID",
+  "role": "admin",
+  "expires_at": "2026-02-05T23:59:59Z"
+}
+
+### Expected Response: 403 Forbidden (RLS policy blocks)
+
+
+### ============================================================================
+### Notes:
+### - Replace YOUR_ACCESS_TOKEN_HERE with real JWT from Supabase Auth
+### - Replace YOUR_SPACE_ID_HERE with actual space ID
+### - Replace YOUR_USER_ID_HERE with your authenticated user ID
+### - Replace YOUR_RESEND_API_KEY with Resend API key
+### - Use REST Client extension in VSCode to run these requests
+### ============================================================================

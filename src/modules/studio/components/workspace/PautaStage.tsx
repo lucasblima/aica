@@ -7,10 +7,11 @@
  * Features:
  * - Drag-and-drop topic reordering with keyboard support
  * - Category-based topic organization
- * - AI-powered pauta generation (placeholder)
+ * - AI-powered pauta generation via PautaGeneratorPanel
  * - Version history management
  * - Auto-save integration
  * - Progress tracking with completion stats
+ * - Teleprompter integration for production mode
  *
  * UX Improvements:
  * - Ceramic Design System classes
@@ -18,11 +19,13 @@
  * - Enhanced visual feedback for drag operations
  * - Improved loading states and error handling
  *
- * Future Enhancements:
- * - PautaGeneratorPanel for advanced AI pauta customization
+ * Integration (Issue #171):
+ * - PautaGeneratorPanel for NotebookLM-style AI pauta generation
+ * - Guest research data flows from ResearchStage
+ * - Preview and edit before saving to workspace state
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
@@ -34,7 +37,8 @@ import {
   History,
   Loader2,
   ChevronDown,
-  Wand2
+  Wand2,
+  MonitorPlay
 } from 'lucide-react';
 import {
   DndContext,
@@ -61,6 +65,8 @@ import { useAutoSave } from '@/modules/studio/hooks/useAutoSave';
 import { useSavedPauta } from '@/modules/studio/hooks/useSavedPauta';
 import type { Topic, TopicCategory } from '@/modules/studio/types';
 import { createNamespacedLogger } from '@/lib/logger';
+import { PautaGeneratorPanel } from './PautaGeneratorPanel';
+import { TeleprompterWindow } from '@/modules/studio/components/TeleprompterWindow';
 
 const log = createNamespacedLogger('PautaStage');
 
@@ -215,7 +221,7 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
 // ============================================
 
 export default function PautaStage() {
-  const { state, actions } = usePodcastWorkspace();
+  const { state, actions, dispatch } = usePodcastWorkspace();
   const { pauta, episodeId, setup } = state;
 
   // Auto-save hook
@@ -235,6 +241,13 @@ export default function PautaStage() {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [isSwappingVersion, setIsSwappingVersion] = useState(false);
+
+  // PautaGeneratorPanel state
+  const [showGeneratorPanel, setShowGeneratorPanel] = useState(false);
+
+  // Teleprompter state
+  const [showTeleprompter, setShowTeleprompter] = useState(false);
+  const [teleprompterIndex, setTeleprompterIndex] = useState(0);
 
   // DnD Sensors with keyboard support
   const sensors = useSensors(
@@ -353,12 +366,51 @@ export default function PautaStage() {
     try {
       const success = await setActiveVersion(pautaId);
       if (!success) {
-        alert('Erro ao carregar versão anterior');
+        alert('Erro ao carregar versao anterior');
       }
     } finally {
       setIsSwappingVersion(false);
     }
   };
+
+  // Handler for PautaGeneratorPanel - receives generated topics and categories
+  const handlePautaGenerated = useCallback((topics: Topic[], categories: TopicCategory[]) => {
+    log.debug('Pauta generated - topics:', topics.length, 'categories:', categories.length);
+
+    // Update categories first
+    actions.setCategories(categories);
+
+    // Clear existing topics and add new ones
+    // We dispatch directly to replace all topics at once
+    dispatch({ type: 'SET_TOPICS', payload: topics });
+
+    // Close the generator panel
+    setShowGeneratorPanel(false);
+
+    log.debug('Pauta applied to workspace state');
+  }, [actions, dispatch]);
+
+  // Get non-archived topics for teleprompter
+  const teleprompterTopics = useMemo(() => {
+    return pauta.topics
+      .filter(t => !t.archived)
+      .sort((a, b) => a.order - b.order);
+  }, [pauta.topics]);
+
+  // Handler for opening teleprompter
+  const handleOpenTeleprompter = useCallback(() => {
+    if (teleprompterTopics.length === 0) {
+      alert('Adicione topicos a pauta antes de usar o teleprompter');
+      return;
+    }
+    setTeleprompterIndex(0);
+    setShowTeleprompter(true);
+  }, [teleprompterTopics.length]);
+
+  // Handler for teleprompter index change
+  const handleTeleprompterIndexChange = useCallback((index: number) => {
+    setTeleprompterIndex(index);
+  }, []);
 
   // ============================================
   // RENDER
@@ -390,12 +442,12 @@ export default function PautaStage() {
             {versions.length > 0 && (
               <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
                 <History className="w-3 h-3" aria-hidden="true" />
-                <span>{versions.length} versão{versions.length > 1 ? 's' : ''}</span>
+                <span>{versions.length} versao{versions.length > 1 ? 'es' : ''}</span>
                 <button
                   onClick={() => setShowVersionHistory(!showVersionHistory)}
                   className="ml-1 p-0.5 hover:bg-green-100 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
-                  title="Ver histórico de versões"
-                  aria-label="Ver histórico de versões da pauta"
+                  title="Ver historico de versoes"
+                  aria-label="Ver historico de versoes da pauta"
                   aria-expanded={showVersionHistory}
                 >
                   <ChevronDown className="w-3 h-3" aria-hidden="true" />
@@ -403,9 +455,22 @@ export default function PautaStage() {
               </div>
             )}
 
-            {/* AI Generator Button - TODO: Integrate PautaGeneratorPanel */}
+            {/* Teleprompter Button */}
+            {pauta.topics.length > 0 && (
+              <button
+                onClick={handleOpenTeleprompter}
+                className="px-4 py-2 rounded-lg bg-ceramic-primary text-white text-sm font-bold flex items-center gap-2 hover:bg-ceramic-primary/90 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ceramic-primary focus:ring-offset-2"
+                title="Abrir teleprompter para praticar"
+                aria-label="Abrir teleprompter"
+              >
+                <MonitorPlay className="w-4 h-4" aria-hidden="true" />
+                Teleprompter
+              </button>
+            )}
+
+            {/* AI Generator Button - Opens PautaGeneratorPanel */}
             <button
-              onClick={() => log.debug('TODO: Integrate PautaGeneratorPanel')}
+              onClick={() => setShowGeneratorPanel(true)}
               className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-bold flex items-center gap-2 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
               title="Gerar Pauta com IA (estilo NotebookLM)"
               aria-label={pauta.topics.length > 0 ? 'Regenerar pauta com IA' : 'Gerar pauta com IA'}
@@ -509,7 +574,7 @@ export default function PautaStage() {
                 Comece adicionando tópicos manualmente ou use IA para gerar uma pauta completa
               </p>
               <button
-                onClick={() => log.debug('TODO: Show PautaGeneratorPanel')}
+                onClick={() => setShowGeneratorPanel(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 aria-label="Gerar pauta com inteligência artificial"
               >
@@ -650,6 +715,23 @@ export default function PautaStage() {
           </motion.button>
         )}
       </div>
+
+      {/* Pauta Generator Panel Modal */}
+      <PautaGeneratorPanel
+        isOpen={showGeneratorPanel}
+        onClose={() => setShowGeneratorPanel(false)}
+        onPautaGenerated={handlePautaGenerated}
+      />
+
+      {/* Teleprompter Window */}
+      {showTeleprompter && (
+        <TeleprompterWindow
+          topics={teleprompterTopics}
+          currentIndex={teleprompterIndex}
+          onIndexChange={handleTeleprompterIndexChange}
+          onClose={() => setShowTeleprompter(false)}
+        />
+      )}
     </div>
   );
 }
