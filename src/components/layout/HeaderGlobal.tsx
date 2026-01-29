@@ -7,9 +7,12 @@ interface HeaderGlobalProps {
     title: string;
     subtitle?: string;
     userEmail?: string;
+    avatarUrl?: string;
+    userName?: string;
     onLogout?: () => void;
     onNavigateToAICost?: () => void;
     onNavigateToFileSearch?: () => void;
+    onOpenProfile?: () => void;
     showTabs?: boolean;
     activeTab?: 'personal' | 'network';
     onTabChange?: (tab: 'personal' | 'network') => void;
@@ -19,9 +22,12 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
     title,
     subtitle = 'LIFE OS',
     userEmail,
+    avatarUrl,
+    userName,
     onLogout,
     onNavigateToAICost,
     onNavigateToFileSearch,
+    onOpenProfile,
     showTabs = false,
     activeTab = 'personal',
     onTabChange
@@ -43,9 +49,12 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
                 {/* Settings Menu */}
                 <SettingsMenu
                     userEmail={userEmail}
+                    avatarUrl={avatarUrl}
+                    userName={userName}
                     onLogout={onLogout}
                     onNavigateToAICost={onNavigateToAICost}
                     onNavigateToFileSearch={onNavigateToFileSearch}
+                    onOpenProfile={onOpenProfile}
                 />
             </div>
 
