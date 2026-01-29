@@ -16,7 +16,9 @@ import {
   Clock,
   UserPlus,
   Gift,
-  Loader2
+  Loader2,
+  Trash2,
+  Link2
 } from 'lucide-react';
 import { useInviteSystem } from '../../hooks/useInviteSystem';
 
@@ -29,19 +31,25 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
   const {
     stats,
     referrals,
+    pendingInvites,
     loading,
     generating,
+    revoking,
     currentUrl,
     hasInvites,
     availableCount,
+    pendingCount,
     generateInvite,
     copyLink,
     shareLink,
-    refreshReferrals
+    refreshReferrals,
+    refreshPendingInvites,
+    revokeInvite
   } = useInviteSystem();
 
   const [copied, setCopied] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showPending, setShowPending] = useState(false);
 
   // Load referral history when showing history tab
   useEffect(() => {
@@ -49,6 +57,20 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
       refreshReferrals();
     }
   }, [showHistory, refreshReferrals]);
+
+  // Load pending invites when showing pending tab
+  useEffect(() => {
+    if (showPending) {
+      refreshPendingInvites();
+    }
+  }, [showPending, refreshPendingInvites]);
+
+  // Load pending invites on mount if modal is open
+  useEffect(() => {
+    if (isOpen) {
+      refreshPendingInvites();
+    }
+  }, [isOpen, refreshPendingInvites]);
 
   // Reset copied state
   useEffect(() => {
@@ -69,6 +91,31 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
 
   const handleGenerateNew = async () => {
     await generateInvite();
+  };
+
+  const handleRevoke = async (referralId: string) => {
+    const success = await revokeInvite(referralId);
+    if (success) {
+      // Refresh pending invites list
+      refreshPendingInvites();
+    }
+  };
+
+  const copyInviteUrl = async (token: string) => {
+    const url = `${window.location.origin}/invite/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+    } catch {
+      // Fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+    }
   };
 
   if (!isOpen) return null;
@@ -239,6 +286,71 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
               </div>
             </div>
           </div>
+
+          {/* Pending invites toggle */}
+          {pendingCount > 0 && (
+            <button
+              onClick={() => setShowPending(!showPending)}
+              className="w-full mt-4 text-sm text-ceramic-accent hover:text-ceramic-accent/80 transition-colors flex items-center justify-center gap-1 font-medium"
+            >
+              <Link2 className="w-3 h-3" />
+              {showPending ? 'Ocultar links pendentes' : `Gerenciar links pendentes (${pendingCount})`}
+            </button>
+          )}
+
+          {/* Pending invites list */}
+          <AnimatePresence>
+            {showPending && pendingCount > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                  <div className="text-xs text-ceramic-text-tertiary mb-2">
+                    Delete um link para recuperar 1 convite na sua quota
+                  </div>
+                  {pendingInvites.map((invite) => (
+                    <div
+                      key={invite.id}
+                      className="ceramic-concave p-3 rounded-lg flex items-center justify-between gap-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-ceramic-text-primary font-mono truncate">
+                          .../{invite.invite_token.slice(-8)}
+                        </div>
+                        <div className="text-[10px] text-ceramic-text-tertiary">
+                          Criado em {new Date(invite.created_at).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => copyInviteUrl(invite.invite_token)}
+                          className="p-1.5 rounded-lg hover:bg-ceramic-cool transition-colors"
+                          title="Copiar link"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
+                        </button>
+                        <button
+                          onClick={() => handleRevoke(invite.id)}
+                          disabled={revoking === invite.id}
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                          title="Deletar e recuperar quota"
+                        >
+                          {revoking === invite.id ? (
+                            <Loader2 className="w-3.5 h-3.5 text-red-500 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* History toggle */}
           <button

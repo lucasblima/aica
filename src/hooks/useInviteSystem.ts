@@ -15,6 +15,8 @@ import {
   shareInvite,
   getReferralHistory,
   processPendingInvite,
+  getPendingInvites,
+  revokeInvite as revokeInviteService,
   type InviteStats,
   type Referral,
   type AcceptInviteResult
@@ -24,8 +26,10 @@ interface UseInviteSystemReturn {
   // State
   stats: InviteStats | null;
   referrals: Referral[];
+  pendingInvites: Referral[];
   loading: boolean;
   generating: boolean;
+  revoking: string | null; // ID being revoked
   currentToken: string | null;
   currentUrl: string | null;
 
@@ -35,10 +39,13 @@ interface UseInviteSystemReturn {
   shareLink: () => Promise<boolean>;
   refreshStats: () => Promise<void>;
   refreshReferrals: () => Promise<void>;
+  refreshPendingInvites: () => Promise<void>;
+  revokeInvite: (referralId: string) => Promise<boolean>;
 
   // Computed
   hasInvites: boolean;
   availableCount: number;
+  pendingCount: number;
 }
 
 export function useInviteSystem(): UseInviteSystemReturn {
@@ -47,13 +54,16 @@ export function useInviteSystem(): UseInviteSystemReturn {
   // State
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [revoking, setRevoking] = useState<string | null>(null);
   const [currentToken, setCurrentToken] = useState<string | null>(null);
 
   // Computed
   const hasInvites = (stats?.available ?? 0) > 0;
   const availableCount = stats?.available ?? 0;
+  const pendingCount = pendingInvites.length;
   const currentUrl = currentToken ? getInviteUrl(currentToken) : null;
 
   // Fetch stats on mount and auth change
@@ -89,6 +99,47 @@ export function useInviteSystem(): UseInviteSystemReturn {
       console.error('[useInviteSystem] Error fetching referrals:', error);
     }
   }, [isAuthenticated]);
+
+  // Fetch pending invites
+  const refreshPendingInvites = useCallback(async () => {
+    if (!isAuthenticated) {
+      setPendingInvites([]);
+      return;
+    }
+
+    try {
+      const data = await getPendingInvites();
+      setPendingInvites(data);
+    } catch (error) {
+      console.error('[useInviteSystem] Error fetching pending invites:', error);
+    }
+  }, [isAuthenticated]);
+
+  // Revoke an invite
+  const revokeInvite = useCallback(async (referralId: string): Promise<boolean> => {
+    if (!isAuthenticated) return false;
+
+    setRevoking(referralId);
+    try {
+      const result = await revokeInviteService(referralId);
+
+      if (result.success) {
+        // Remove from pending list
+        setPendingInvites(prev => prev.filter(r => r.id !== referralId));
+        // Refresh stats to update available count
+        await refreshStats();
+        return true;
+      } else {
+        console.error('[useInviteSystem] Revoke failed:', result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('[useInviteSystem] Error revoking invite:', error);
+      return false;
+    } finally {
+      setRevoking(null);
+    }
+  }, [isAuthenticated, refreshStats]);
 
   // Generate new invite
   const generateInvite = useCallback(async (): Promise<string | null> => {
@@ -160,8 +211,10 @@ export function useInviteSystem(): UseInviteSystemReturn {
   return {
     stats,
     referrals,
+    pendingInvites,
     loading,
     generating,
+    revoking,
     currentToken,
     currentUrl,
     generateInvite,
@@ -169,8 +222,11 @@ export function useInviteSystem(): UseInviteSystemReturn {
     shareLink,
     refreshStats,
     refreshReferrals,
+    refreshPendingInvites,
+    revokeInvite,
     hasInvites,
-    availableCount
+    availableCount,
+    pendingCount
   };
 }
 

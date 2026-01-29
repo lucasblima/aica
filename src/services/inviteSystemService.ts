@@ -261,3 +261,58 @@ export async function processPendingInvite(): Promise<AcceptInviteResult | null>
 
   return result;
 }
+
+// ============================================================================
+// INVITE CRUD OPERATIONS
+// ============================================================================
+
+export interface RevokeInviteResult {
+  success: boolean;
+  quota_returned: boolean;
+  error?: string;
+}
+
+/**
+ * Get all pending invites (not yet accepted/expired)
+ */
+export async function getPendingInvites(): Promise<Referral[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('user_referrals')
+    .select('*')
+    .eq('inviter_id', user.id)
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[InviteSystem] Error getting pending invites:', error);
+    return [];
+  }
+
+  return data as Referral[];
+}
+
+/**
+ * Revoke a pending invite and return the quota
+ */
+export async function revokeInvite(referralId: string): Promise<RevokeInviteResult> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, quota_returned: false, error: 'Usuário não autenticado' };
+  }
+
+  const { data, error } = await supabase.rpc('revoke_invite', {
+    p_referral_id: referralId,
+    p_user_id: user.id
+  });
+
+  if (error) {
+    console.error('[InviteSystem] Error revoking invite:', error);
+    return { success: false, quota_returned: false, error: error.message };
+  }
+
+  return data as RevokeInviteResult;
+}
