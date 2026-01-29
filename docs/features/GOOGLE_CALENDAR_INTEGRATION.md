@@ -220,10 +220,84 @@ interface TimelineEvent {
 
 The integration includes robust error handling:
 
-1. **Token Expiration**: Automatically refreshes expired tokens
+1. **Token Expiration**: Automatically refreshes expired tokens with retry logic
 2. **Connection Loss**: Gracefully handles disconnections
 3. **API Errors**: Clear error messages for user feedback
 4. **Invalid Tokens**: Re-prompts for authorization
+5. **Proactive Refresh**: Refreshes tokens 5 minutes before expiry to prevent failures
+
+### Token Refresh with Exponential Backoff
+
+The token refresh system implements a robust retry strategy:
+
+```
+Attempt 1: Immediate
+Attempt 2: After 1 second delay
+Attempt 3: After 2 seconds delay
+Attempt 4: After 4 seconds delay (max retries)
+```
+
+**Configuration:**
+- `maxRetries`: 3 (total 4 attempts)
+- `baseDelayMs`: 1000ms (doubles each retry)
+- `proactiveRefreshBufferMs`: 5 minutes before expiry
+- `minRefreshIntervalMs`: 30 seconds between attempts
+
+### Token Refresh Failure Notifications
+
+Components can subscribe to token refresh failures:
+
+```typescript
+import { onTokenRefreshFailure } from '@/services/googleCalendarTokenService';
+
+// Subscribe to failures
+const unsubscribe = onTokenRefreshFailure((error) => {
+    console.log('Refresh failed:', error.code, error.message);
+    if (error.requiresReconnect) {
+        // Show reconnection UI
+    }
+});
+
+// Cleanup
+unsubscribe();
+```
+
+The `useGoogleCalendarEvents` hook automatically handles this:
+
+```typescript
+const {
+    refreshFailure,      // Current failure notification
+    clearRefreshFailure, // Clear the notification
+    getRefreshState,     // Get retry state for debugging
+} = useGoogleCalendarEvents({
+    onRefreshFailure: (notification) => {
+        // Optional callback for custom handling
+        showToast(notification.message);
+    },
+});
+```
+
+### Error Codes
+
+| Code | Description | Retryable | Action |
+|------|-------------|-----------|--------|
+| `INVALID_GRANT` | Refresh token revoked | No | Requires reconnect |
+| `RATE_LIMITED` | API rate limit exceeded | Yes | Wait and retry |
+| `SERVER_ERROR_5xx` | Google server error | Yes | Automatic retry |
+| `UNAUTHORIZED` | Invalid credentials | No | Requires reconnect |
+| `NETWORK_ERROR` | Network connectivity issue | Yes | Automatic retry |
+| `CONFIG_MISSING` | Missing Supabase config | No | Check environment |
+
+### Manual Reconnection Flow
+
+When token refresh fails permanently (e.g., `INVALID_GRANT`):
+
+1. User sees notification: "Conexao com Google Calendar expirou"
+2. User clicks "Reconectar"
+3. System calls `disconnectGoogleCalendar()` to clean up
+4. User re-authorizes via `connectGoogleCalendar()`
+5. OAuth flow completes and new tokens are stored
+6. Sync resumes automatically
 
 ## Security Considerations
 

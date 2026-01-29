@@ -28,6 +28,10 @@ import { TagInput } from './TagInput';
 interface QuickCaptureProps {
   onSubmit: (moment: CreateMomentInput) => Promise<void>;
   onCancel?: () => void;
+  /** Initial content to pre-populate (e.g., from voice recording) */
+  initialContent?: string;
+  /** Whether content is from audio transcription */
+  isFromAudio?: boolean;
 }
 
 interface AISuggestion {
@@ -36,8 +40,13 @@ interface AISuggestion {
   icon?: string;
 }
 
-export function QuickCapture({ onSubmit, onCancel }: QuickCaptureProps) {
-  const [content, setContent] = useState('');
+export function QuickCapture({
+  onSubmit,
+  onCancel,
+  initialContent = '',
+  isFromAudio = false,
+}: QuickCaptureProps) {
+  const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -49,6 +58,13 @@ export function QuickCapture({ onSubmit, onCancel }: QuickCaptureProps) {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update content when initialContent changes (e.g., from voice recording)
+  useEffect(() => {
+    if (initialContent && initialContent !== content) {
+      setContent(initialContent);
+    }
+  }, [initialContent]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -137,10 +153,14 @@ export function QuickCapture({ onSubmit, onCancel }: QuickCaptureProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="ceramic-concave p-2 rounded-lg">
-            <SparklesIcon className="h-5 w-5 text-purple-500" />
+            {isFromAudio ? (
+              <MicrophoneIcon className="h-5 w-5 text-amber-600" />
+            ) : (
+              <SparklesIcon className="h-5 w-5 text-purple-500" />
+            )}
           </div>
           <h3 className="text-lg font-bold text-ceramic-text-primary">
-            💭 O que está te movendo agora?
+            {isFromAudio ? '🎙️ Transcrição de Áudio' : '💭 O que está te movendo agora?'}
           </h3>
         </div>
         {isAnalyzing && (

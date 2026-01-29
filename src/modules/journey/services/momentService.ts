@@ -324,11 +324,13 @@ async function deleteAudio(audioUrl: string): Promise<void> {
 
 /**
  * Transcribe audio using Web Speech API or backend fallback
+ * NOTE: This function is now deprecated in favor of real-time Web Speech API
+ * in useAudioRecording hook. Kept for backward compatibility with audio uploads.
  */
 async function transcribeAudio(audioBlob: Blob): Promise<string> {
-  // For now, return placeholder
-  // TODO: Implement with Web Speech API or backend action
-  return '[Transcrição em processamento...]'
+  // For now, return placeholder for uploaded audio files
+  // Real-time transcription happens in useAudioRecording hook
+  return '[Transcrição de áudio enviado - em processamento...]'
 }
 
 /**

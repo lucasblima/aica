@@ -3,6 +3,118 @@ import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('GoogleCalendarTokenService');
 
+/**
+ * Token Refresh Configuration
+ * Implements exponential backoff retry strategy
+ */
+const TOKEN_REFRESH_CONFIG = {
+    /** Maximum number of retry attempts */
+    maxRetries: 3,
+    /** Base delay in milliseconds (doubles with each retry: 1s, 2s, 4s) */
+    baseDelayMs: 1000,
+    /** Time buffer before expiry to trigger proactive refresh (5 minutes) */
+    proactiveRefreshBufferMs: 5 * 60 * 1000,
+    /** Minimum time between refresh attempts to prevent hammering (30 seconds) */
+    minRefreshIntervalMs: 30 * 1000,
+};
+
+/**
+ * Token refresh state tracking
+ */
+interface TokenRefreshState {
+    lastAttemptTime: number | null;
+    consecutiveFailures: number;
+    lastErrorCode: string | null;
+}
+
+let refreshState: TokenRefreshState = {
+    lastAttemptTime: null,
+    consecutiveFailures: 0,
+    lastErrorCode: null,
+};
+
+/**
+ * Callback type for token refresh failure notifications
+ */
+type TokenRefreshFailureCallback = (error: {
+    code: string;
+    message: string;
+    requiresReconnect: boolean;
+    consecutiveFailures: number;
+}) => void;
+
+/** Registered callbacks for refresh failures */
+const refreshFailureCallbacks: TokenRefreshFailureCallback[] = [];
+
+/**
+ * Register a callback to be notified when token refresh fails
+ * Used by UI components to show user-friendly notifications
+ */
+export function onTokenRefreshFailure(callback: TokenRefreshFailureCallback): () => void {
+    refreshFailureCallbacks.push(callback);
+    return () => {
+        const index = refreshFailureCallbacks.indexOf(callback);
+        if (index > -1) {
+            refreshFailureCallbacks.splice(index, 1);
+        }
+    };
+}
+
+/**
+ * Notify all registered callbacks about a refresh failure
+ */
+function notifyRefreshFailure(error: {
+    code: string;
+    message: string;
+    requiresReconnect: boolean;
+}): void {
+    const notification = {
+        ...error,
+        consecutiveFailures: refreshState.consecutiveFailures,
+    };
+    refreshFailureCallbacks.forEach(callback => {
+        try {
+            callback(notification);
+        } catch (e) {
+            log.error('Error in refresh failure callback:', { error: e });
+        }
+    });
+}
+
+/**
+ * Reset refresh state after successful refresh
+ */
+function resetRefreshState(): void {
+    refreshState = {
+        lastAttemptTime: Date.now(),
+        consecutiveFailures: 0,
+        lastErrorCode: null,
+    };
+}
+
+/**
+ * Record a refresh failure
+ */
+function recordRefreshFailure(errorCode: string): void {
+    refreshState.lastAttemptTime = Date.now();
+    refreshState.consecutiveFailures++;
+    refreshState.lastErrorCode = errorCode;
+}
+
+/**
+ * Sleep utility for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate exponential backoff delay
+ */
+function getRetryDelay(attempt: number): number {
+    return TOKEN_REFRESH_CONFIG.baseDelayMs * Math.pow(2, attempt);
+}
+
 
 /**
  * Serviço de gerenciamento de tokens Google Calendar
@@ -169,22 +281,28 @@ export async function isGoogleCalendarConnected(): Promise<boolean> {
 /**
  * Obtém um token de acesso válido da sessão Supabase
  * O Supabase gerencia automaticamente a renovação dos tokens OAuth
+ *
+ * Implements proactive token refresh:
+ * - Refreshes token if expiring within 5 minutes (configurable)
+ * - Prevents failed API calls due to token expiration
  */
 export async function getValidAccessToken(): Promise<string | null> {
-    try {
-        log.debug('[getValidAccessToken] 🔑 Obtendo token válido...');
+    const timestamp = new Date().toISOString();
 
-        // Primeiro: tentar obter token atualizado da sessão Supabase
-        // O Supabase automaticamente renova tokens expirados
-        log.debug('[getValidAccessToken] 📡 Buscando token da sessão Supabase...');
+    try {
+        log.debug(`[getValidAccessToken] [${timestamp}] Obtaining valid token...`);
+
+        // First: try to get updated token from Supabase session
+        // Supabase automatically renews expired tokens
+        log.debug('[getValidAccessToken] Checking Supabase session for provider_token...');
         const { data: session } = await supabase.auth.getSession();
 
         if (session?.session?.provider_token) {
-            log.debug('[getValidAccessToken] ✅ Token obtido da sessão Supabase');
+            log.debug('[getValidAccessToken] Provider token found in Supabase session');
 
-            // Atualizar token no banco de dados
+            // Update token in database
             if (session.session.user?.id) {
-                log.debug('[getValidAccessToken] 💾 Atualizando token no banco...');
+                log.debug('[getValidAccessToken] Updating token in database...');
                 await supabase
                     .from('google_calendar_tokens')
                     .update({
@@ -197,81 +315,164 @@ export async function getValidAccessToken(): Promise<string | null> {
             return session.session.provider_token;
         }
 
-        log.debug('[getValidAccessToken] ⚠️ Sem provider_token na sessão, buscando do banco...');
+        log.debug('[getValidAccessToken] No provider_token in session, checking database...');
 
-        // Fallback: buscar do banco de dados
+        // Fallback: get from database
         const tokens = await getGoogleCalendarTokens();
 
         if (!tokens) {
-            log.error('[getValidAccessToken] ❌ Token não encontrado');
-            throw new Error('Token não encontrado. Autorize o Google Calendar primeiro.');
+            log.error('[getValidAccessToken] ERROR_CODE=TOKEN_NOT_FOUND: No token in database');
+            throw new Error('Token nao encontrado. Autorize o Google Calendar primeiro.');
         }
 
-        log.debug('[getValidAccessToken] 📋 Token info:', {
+        log.debug('[getValidAccessToken] Token info from database:', {
             hasAccessToken: !!tokens.access_token,
             hasRefreshToken: !!tokens.refresh_token,
             tokenExpiry: tokens.token_expiry,
-            isConnected: tokens.is_connected
+            isConnected: tokens.is_connected,
         });
 
-        // Verificar se o token expirou
+        // Check if token needs refresh (expired or expiring soon)
         if (tokens.token_expiry) {
             const expiryTime = new Date(tokens.token_expiry).getTime();
             const timeUntilExpiry = expiryTime - Date.now();
+            const timeUntilExpiryMinutes = Math.round(timeUntilExpiry / 60000);
 
-            log.debug('[getValidAccessToken] ⏰ Tempo até expiração:', {
+            log.debug('[getValidAccessToken] Token expiration status:', {
                 expiryTime: new Date(tokens.token_expiry).toISOString(),
-                timeUntilExpiryMinutes: Math.round(timeUntilExpiry / 60000)
+                timeUntilExpiryMinutes,
+                proactiveRefreshThresholdMinutes: Math.round(TOKEN_REFRESH_CONFIG.proactiveRefreshBufferMs / 60000),
             });
 
-            // Se expirou, tentar renovar automaticamente
-            if (timeUntilExpiry < 0) {
-                log.warn('[getValidAccessToken] ⚠️ Token expirado. Tentando renovar...');
+            // Proactive refresh: refresh if expiring within buffer time
+            const needsRefresh = timeUntilExpiry < TOKEN_REFRESH_CONFIG.proactiveRefreshBufferMs;
+            const isExpired = timeUntilExpiry < 0;
+
+            if (needsRefresh) {
+                if (isExpired) {
+                    log.warn('[getValidAccessToken] Token EXPIRED. Attempting refresh...');
+                } else {
+                    log.debug(`[getValidAccessToken] Token expiring in ${timeUntilExpiryMinutes} minutes. Proactive refresh...`);
+                }
 
                 if (tokens.refresh_token) {
-                    log.debug('[getValidAccessToken] 🔄 Refresh token disponível, renovando...');
+                    log.debug('[getValidAccessToken] Refresh token available, initiating refresh...');
                     const newAccessToken = await refreshAccessToken(tokens.refresh_token);
 
                     if (newAccessToken) {
-                        log.debug('[getValidAccessToken] ✅ Token renovado com sucesso');
+                        log.debug('[getValidAccessToken] Token refreshed successfully');
                         return newAccessToken;
                     }
 
-                    log.error('[getValidAccessToken] ❌ Falha ao renovar token');
-                }
+                    log.error('[getValidAccessToken] ERROR_CODE=REFRESH_FAILED: Token refresh failed');
 
-                log.error('[getValidAccessToken] ❌ Sem refresh token disponível');
-                throw new Error('Token expirado. Reconecte ao Google Calendar.');
+                    // If token is expired and refresh failed, throw error
+                    if (isExpired) {
+                        throw new Error('Token expirado e refresh falhou. Reconecte ao Google Calendar.');
+                    }
+
+                    // If not expired yet, return current token and log warning
+                    log.warn('[getValidAccessToken] Refresh failed but token not yet expired. Using current token.');
+                } else {
+                    log.error('[getValidAccessToken] ERROR_CODE=NO_REFRESH_TOKEN: No refresh token available');
+
+                    if (isExpired) {
+                        throw new Error('Token expirado. Reconecte ao Google Calendar.');
+                    }
+                }
             }
         }
 
-        log.debug('[getValidAccessToken] ✅ Retornando access_token do banco');
+        log.debug('[getValidAccessToken] Returning access_token from database');
         return tokens.access_token;
     } catch (error) {
-        log.error('[getValidAccessToken] ❌ Erro ao obter token válido:', { error: error });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        log.error(`[getValidAccessToken] ERROR: ${errorMessage}`, { error });
         return null;
     }
 }
 
 /**
- * Renova o token de acesso usando o refresh token
- *
- * SECURITY: Client secret removido do frontend - agora usa Edge Function
- * A Edge Function oauth-token-refresh gerencia tokens server-side de forma segura
+ * Classifies token refresh errors for appropriate handling
  */
-export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
+interface TokenRefreshError {
+    code: string;
+    message: string;
+    isRetryable: boolean;
+    requiresReconnect: boolean;
+}
+
+function classifyRefreshError(status: number, errorData: Record<string, unknown>): TokenRefreshError {
+    const errorString = JSON.stringify(errorData).toLowerCase();
+
+    // Invalid grant - token revoked or expired permanently
+    if (status === 400 && errorString.includes('invalid_grant')) {
+        return {
+            code: 'INVALID_GRANT',
+            message: 'Refresh token revogado ou expirado. Reconexao necessaria.',
+            isRetryable: false,
+            requiresReconnect: true,
+        };
+    }
+
+    // Rate limiting
+    if (status === 429) {
+        return {
+            code: 'RATE_LIMITED',
+            message: 'Limite de requisicoes excedido. Aguarde alguns minutos.',
+            isRetryable: true,
+            requiresReconnect: false,
+        };
+    }
+
+    // Server errors - retryable
+    if (status >= 500 && status < 600) {
+        return {
+            code: `SERVER_ERROR_${status}`,
+            message: 'Erro temporario no servidor Google. Tentando novamente.',
+            isRetryable: true,
+            requiresReconnect: false,
+        };
+    }
+
+    // Unauthorized - likely credential issue
+    if (status === 401) {
+        return {
+            code: 'UNAUTHORIZED',
+            message: 'Credenciais invalidas. Reconexao necessaria.',
+            isRetryable: false,
+            requiresReconnect: true,
+        };
+    }
+
+    // Other client errors - not retryable
+    if (status >= 400 && status < 500) {
+        return {
+            code: `CLIENT_ERROR_${status}`,
+            message: errorData.error as string || 'Erro na requisicao de refresh.',
+            isRetryable: false,
+            requiresReconnect: false,
+        };
+    }
+
+    // Network or unknown errors - retryable
+    return {
+        code: 'UNKNOWN_ERROR',
+        message: 'Erro desconhecido. Tentando novamente.',
+        isRetryable: true,
+        requiresReconnect: false,
+    };
+}
+
+/**
+ * Attempt a single token refresh call to the Edge Function
+ */
+async function attemptTokenRefresh(
+    refreshToken: string,
+    supabaseUrl: string,
+    supabaseAnonKey: string
+): Promise<{ success: true; accessToken: string; expiresIn: number } | { success: false; error: TokenRefreshError }> {
     try {
-        log.debug('[refreshAccessToken] 🔄 Iniciando renovação do token via Edge Function...');
-        log.debug('[refreshAccessToken] 🔑 Refresh token presente:', !!refreshToken);
-
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseAnonKey) {
-            throw new Error('Configuração Supabase ausente');
-        }
-
-        // Call Edge Function instead of Google directly
         const response = await fetch(`${supabaseUrl}/functions/v1/oauth-token-refresh`, {
             method: 'POST',
             headers: {
@@ -283,65 +484,170 @@ export async function refreshAccessToken(refreshToken: string): Promise<string |
             }),
         });
 
-        log.debug('[refreshAccessToken] 📡 Resposta recebida da Edge Function:', {
-            status: response.status,
-            ok: response.ok
-        });
-
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            log.error('[refreshAccessToken] ❌ Erro na resposta:', { error: errorData });
-
-            // Se o erro for invalid_grant (token revogado ou expirado), desconectar para evitar loops
-            if (response.status === 400 && JSON.stringify(errorData).includes('invalid_grant')) {
-                log.warn('[refreshAccessToken] 🚨 Refresh token inválido/revogado. Desconectando Google Calendar...');
-                await disconnectGoogleCalendar();
-                throw new Error('Conexão com Google Calendar expirou. Por favor, reconecte.');
-            }
-
-            throw new Error(`Falha ao renovar token de acesso: ${response.status} - ${errorData.error || 'Unknown error'}`);
+            const classifiedError = classifyRefreshError(response.status, errorData);
+            return { success: false, error: classifiedError };
         }
 
         const data = await response.json();
-        const newAccessToken = data.access_token;
-        const expiresIn = data.expires_in;
-
-        log.debug('[refreshAccessToken] ✅ Novo token recebido:', {
-            hasAccessToken: !!newAccessToken,
-            expiresIn
-        });
-
-        // Atualizar token no banco de dados
-        const { data: session } = await supabase.auth.getSession();
-        if (session?.session?.user?.id) {
-            const newExpiry = new Date(Date.now() + expiresIn * 1000).toISOString();
-
-            log.debug('[refreshAccessToken] 💾 Salvando novo token no banco...', {
-                userId: session.session.user.id,
-                newExpiry
-            });
-
-            const { error } = await supabase
-                .from('google_calendar_tokens')
-                .update({
-                    access_token: newAccessToken,
-                    token_expiry: newExpiry,
-                    last_refresh: new Date().toISOString(),
-                })
-                .eq('user_id', session.session.user.id);
-
-            if (error) {
-                log.error('[refreshAccessToken] ❌ Erro ao salvar token:', { error: error });
-            } else {
-                log.debug('[refreshAccessToken] ✅ Token salvo com sucesso');
-            }
-        }
-
-        return newAccessToken;
+        return {
+            success: true,
+            accessToken: data.access_token,
+            expiresIn: data.expires_in,
+        };
     } catch (error) {
-        log.error('[refreshAccessToken] ❌ Erro ao renovar token de acesso:', { error: error });
+        // Network errors are retryable
+        return {
+            success: false,
+            error: {
+                code: 'NETWORK_ERROR',
+                message: error instanceof Error ? error.message : 'Erro de rede',
+                isRetryable: true,
+                requiresReconnect: false,
+            },
+        };
+    }
+}
+
+/**
+ * Renova o token de acesso usando o refresh token
+ *
+ * SECURITY: Client secret removido do frontend - agora usa Edge Function
+ * A Edge Function oauth-token-refresh gerencia tokens server-side de forma segura
+ *
+ * Implements exponential backoff retry strategy:
+ * - Attempt 1: immediate
+ * - Attempt 2: after 1 second
+ * - Attempt 3: after 2 seconds
+ * - Attempt 4: after 4 seconds
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<string | null> {
+    const startTime = Date.now();
+    const timestamp = new Date().toISOString();
+
+    log.debug(`[refreshAccessToken] [${timestamp}] Starting token refresh with retry logic...`);
+    log.debug('[refreshAccessToken] Refresh token present:', !!refreshToken);
+    log.debug('[refreshAccessToken] Current refresh state:', {
+        consecutiveFailures: refreshState.consecutiveFailures,
+        lastErrorCode: refreshState.lastErrorCode,
+    });
+
+    // Check minimum refresh interval to prevent hammering
+    if (refreshState.lastAttemptTime) {
+        const timeSinceLastAttempt = Date.now() - refreshState.lastAttemptTime;
+        if (timeSinceLastAttempt < TOKEN_REFRESH_CONFIG.minRefreshIntervalMs) {
+            const waitTime = TOKEN_REFRESH_CONFIG.minRefreshIntervalMs - timeSinceLastAttempt;
+            log.debug(`[refreshAccessToken] Rate limiting: waiting ${waitTime}ms before retry`);
+            await sleep(waitTime);
+        }
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+        log.error('[refreshAccessToken] ERROR_CODE=CONFIG_MISSING: Supabase configuration missing');
+        recordRefreshFailure('CONFIG_MISSING');
         return null;
     }
+
+    let lastError: TokenRefreshError | null = null;
+
+    // Retry loop with exponential backoff
+    for (let attempt = 0; attempt <= TOKEN_REFRESH_CONFIG.maxRetries; attempt++) {
+        if (attempt > 0) {
+            const delay = getRetryDelay(attempt - 1);
+            log.debug(`[refreshAccessToken] Retry attempt ${attempt}/${TOKEN_REFRESH_CONFIG.maxRetries} after ${delay}ms delay`);
+            await sleep(delay);
+        }
+
+        log.debug(`[refreshAccessToken] Attempt ${attempt + 1}/${TOKEN_REFRESH_CONFIG.maxRetries + 1} - Calling Edge Function...`);
+
+        const result = await attemptTokenRefresh(refreshToken, supabaseUrl, supabaseAnonKey);
+
+        if (result.success) {
+            const elapsedMs = Date.now() - startTime;
+            log.debug(`[refreshAccessToken] SUCCESS after ${attempt + 1} attempt(s) in ${elapsedMs}ms`);
+            log.debug('[refreshAccessToken] New token received:', {
+                hasAccessToken: true,
+                expiresIn: result.expiresIn,
+            });
+
+            // Save the new token to database
+            const { data: session } = await supabase.auth.getSession();
+            if (session?.session?.user?.id) {
+                const newExpiry = new Date(Date.now() + result.expiresIn * 1000).toISOString();
+
+                log.debug('[refreshAccessToken] Saving new token to database...', {
+                    userId: session.session.user.id,
+                    newExpiry,
+                });
+
+                const { error } = await supabase
+                    .from('google_calendar_tokens')
+                    .update({
+                        access_token: result.accessToken,
+                        token_expiry: newExpiry,
+                        last_refresh: new Date().toISOString(),
+                    })
+                    .eq('user_id', session.session.user.id);
+
+                if (error) {
+                    log.error('[refreshAccessToken] ERROR_CODE=DB_SAVE_FAILED: Error saving token:', { error });
+                } else {
+                    log.debug('[refreshAccessToken] Token saved successfully');
+                }
+            }
+
+            // Reset refresh state on success
+            resetRefreshState();
+            return result.accessToken;
+        }
+
+        // Handle error
+        lastError = result.error;
+        log.warn(`[refreshAccessToken] Attempt ${attempt + 1} failed: ERROR_CODE=${lastError.code}: ${lastError.message}`);
+
+        // If error is not retryable, break immediately
+        if (!lastError.isRetryable) {
+            log.debug('[refreshAccessToken] Error is not retryable, stopping retry loop');
+            break;
+        }
+    }
+
+    // All retries exhausted or non-retryable error
+    const elapsedMs = Date.now() - startTime;
+    recordRefreshFailure(lastError?.code || 'UNKNOWN');
+
+    log.error(`[refreshAccessToken] FAILED after ${elapsedMs}ms - ERROR_CODE=${lastError?.code}: ${lastError?.message}`);
+    log.error('[refreshAccessToken] Consecutive failures:', refreshState.consecutiveFailures);
+
+    // Handle permanent failures requiring reconnection
+    if (lastError?.requiresReconnect) {
+        log.warn('[refreshAccessToken] Refresh token invalid/revoked. Disconnecting Google Calendar...');
+
+        // Notify UI about the failure
+        notifyRefreshFailure({
+            code: lastError.code,
+            message: lastError.message,
+            requiresReconnect: true,
+        });
+
+        await disconnectGoogleCalendar();
+        return null;
+    }
+
+    // Notify UI about transient failures (after max retries)
+    if (refreshState.consecutiveFailures >= TOKEN_REFRESH_CONFIG.maxRetries) {
+        notifyRefreshFailure({
+            code: lastError?.code || 'MAX_RETRIES_EXCEEDED',
+            message: 'Falha ao sincronizar calendario apos multiplas tentativas. Verifique sua conexao.',
+            requiresReconnect: false,
+        });
+    }
+
+    return null;
 }
 
 /**
@@ -425,6 +731,55 @@ export async function getGoogleUserInfo(): Promise<{
         };
     } catch (error) {
         log.error('Erro ao obter informações do usuário Google:', { error: error });
+        return null;
+    }
+}
+
+/**
+ * Get current token refresh state for monitoring/debugging
+ */
+export function getTokenRefreshState(): {
+    consecutiveFailures: number;
+    lastErrorCode: string | null;
+    lastAttemptTime: Date | null;
+} {
+    return {
+        consecutiveFailures: refreshState.consecutiveFailures,
+        lastErrorCode: refreshState.lastErrorCode,
+        lastAttemptTime: refreshState.lastAttemptTime
+            ? new Date(refreshState.lastAttemptTime)
+            : null,
+    };
+}
+
+/**
+ * Check if token needs refresh based on expiry time
+ * Useful for UI components to show warning before expiry
+ */
+export async function getTokenExpiryStatus(): Promise<{
+    isExpired: boolean;
+    isExpiringSoon: boolean;
+    timeUntilExpiryMs: number | null;
+    expiryTime: Date | null;
+} | null> {
+    try {
+        const tokens = await getGoogleCalendarTokens();
+
+        if (!tokens || !tokens.token_expiry) {
+            return null;
+        }
+
+        const expiryTime = new Date(tokens.token_expiry);
+        const timeUntilExpiryMs = expiryTime.getTime() - Date.now();
+
+        return {
+            isExpired: timeUntilExpiryMs < 0,
+            isExpiringSoon: timeUntilExpiryMs < TOKEN_REFRESH_CONFIG.proactiveRefreshBufferMs,
+            timeUntilExpiryMs: timeUntilExpiryMs > 0 ? timeUntilExpiryMs : null,
+            expiryTime,
+        };
+    } catch (error) {
+        log.error('Error checking token expiry status:', { error });
         return null;
     }
 }

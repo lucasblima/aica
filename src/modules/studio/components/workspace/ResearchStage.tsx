@@ -8,18 +8,20 @@
  * - AI-powered dossier generation
  * - Custom research sources (text, URL, file)
  * - Multi-tab dossier view (Biography, Technical Sheet, News)
- * - Interactive chat for guest questions
+ * - Real-time AI chat for interview preparation (Gemini Live)
  *
  * UX Improvements:
  * - Ceramic Design System classes
  * - WCAG 2.1 AA accessibility compliance
  * - Proper loading states and error handling
  * - Enhanced visual hierarchy
+ * - Streaming chat responses with typing indicator
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
 import { useWorkspaceAI } from '@/modules/studio/hooks/useWorkspaceAI';
+import { useGeminiLive, type GeminiLiveContext } from '@/modules/studio/services/geminiLiveService';
 import {
   Sparkles,
   FileText,
@@ -33,6 +35,9 @@ import {
   Send,
   RefreshCw,
   Check,
+  Wifi,
+  WifiOff,
+  StopCircle,
 } from 'lucide-react';
 import type { WorkspaceCustomSource } from '@/modules/studio/types';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -41,16 +46,11 @@ const log = createNamespacedLogger('ResearchStage');
 
 type ResearchTab = 'bio' | 'ficha' | 'noticias';
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  text: string;
-  timestamp: number;
-}
-
 export default function ResearchStage() {
   const { state, actions } = usePodcastWorkspace();
   const { setup, research } = state;
   const ai = useWorkspaceAI();
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<ResearchTab>('bio');
   const [showSourcesModal, setShowSourcesModal] = useState(false);
@@ -58,9 +58,51 @@ export default function ResearchStage() {
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [isProcessingSources, setIsProcessingSources] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  // Build context for Gemini Live chat
+  const geminiContext = useMemo<GeminiLiveContext>(() => {
+    const dossierSummary = research.dossier
+      ? `${research.dossier.biography?.substring(0, 500) || ''}${
+          research.dossier.controversies?.length
+            ? ` Controversias: ${research.dossier.controversies.slice(0, 2).join(', ')}`
+            : ''
+        }`
+      : '';
+
+    return {
+      guest_name: setup.guestName || 'Convidado',
+      guest_bio: setup.guestBio || research.dossier?.biography?.substring(0, 300),
+      episode_theme: setup.theme || research.dossier?.episodeTheme,
+      dossier_summary: dossierSummary,
+    };
+  }, [setup.guestName, setup.guestBio, setup.theme, research.dossier]);
+
+  // Initialize Gemini Live chat
+  const {
+    messages: chatMessages,
+    isStreaming: isChatLoading,
+    connectionState,
+    currentResponse,
+    sendMessage,
+    cancelRequest,
+    clearMessages,
+    setContext,
+  } = useGeminiLive({
+    context: geminiContext,
+  });
+
+  // Update context when it changes
+  useEffect(() => {
+    setContext(geminiContext);
+  }, [geminiContext, setContext]);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages, currentResponse]);
 
   const handleAddCustomSource = async () => {
     if (!sourceText && !sourceUrl && !sourceFile) {
@@ -102,31 +144,20 @@ export default function ResearchStage() {
   };
 
   const handleSendChatMessage = async () => {
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || isChatLoading) return;
 
-    const userMessage: ChatMessage = {
-      role: 'user',
-      text: chatInput,
-      timestamp: Date.now(),
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
+    const message = chatInput.trim();
     setChatInput('');
-    setIsChatLoading(true);
 
     try {
-      // TODO: Integrate with Gemini Live API in future iteration
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        text: 'Resposta simulada. Integração com Gemini Live API em fase posterior.',
-        timestamp: Date.now(),
-      };
-      setChatMessages(prev => [...prev, assistantMessage]);
+      await sendMessage(message);
     } catch (error) {
-      log.error('Error:', error);
-    } finally {
-      setIsChatLoading(false);
+      log.error('Error sending chat message:', error);
     }
+  };
+
+  const handleCancelChat = () => {
+    cancelRequest();
   };
 
   return (
@@ -419,38 +450,117 @@ export default function ResearchStage() {
             )}
           </div>
 
-          {/* Chat Section */}
+          {/* Chat Section - Gemini Live Integration */}
           <div className="border-t border-ceramic-border bg-ceramic-surface">
+            {/* Chat Header with Connection Status */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-ceramic-border bg-ceramic-base">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-orange-500" aria-hidden="true" />
+                <span className="text-sm font-medium text-ceramic-primary">Chat com IA</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Connection indicator */}
+                <div className="flex items-center gap-1">
+                  {connectionState === 'connected' && (
+                    <>
+                      <Wifi className="w-3 h-3 text-green-500" aria-hidden="true" />
+                      <span className="text-xs text-green-600">Conectado</span>
+                    </>
+                  )}
+                  {connectionState === 'connecting' && (
+                    <>
+                      <Loader2 className="w-3 h-3 text-orange-500 animate-spin" aria-hidden="true" />
+                      <span className="text-xs text-orange-600">Conectando...</span>
+                    </>
+                  )}
+                  {connectionState === 'error' && (
+                    <>
+                      <WifiOff className="w-3 h-3 text-red-500" aria-hidden="true" />
+                      <span className="text-xs text-red-600">Erro</span>
+                    </>
+                  )}
+                  {connectionState === 'disconnected' && (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-gray-400" aria-hidden="true" />
+                      <span className="text-xs text-ceramic-tertiary">Pronto</span>
+                    </>
+                  )}
+                </div>
+                {/* Clear chat button */}
+                {chatMessages.length > 0 && (
+                  <button
+                    onClick={clearMessages}
+                    className="text-xs text-ceramic-tertiary hover:text-ceramic-secondary px-2 py-1 rounded hover:bg-ceramic-surface-secondary transition-colors"
+                    aria-label="Limpar chat"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex flex-col h-80">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4" role="log" aria-live="polite" aria-label="Chat de perguntas sobre o convidado">
-                {chatMessages.length === 0 && (
+              <div
+                ref={chatContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4"
+                role="log"
+                aria-live="polite"
+                aria-label="Chat de perguntas sobre o convidado"
+              >
+                {chatMessages.length === 0 && !currentResponse && (
                   <div className="flex items-center justify-center h-full text-center">
-                    <p className="text-ceramic-tertiary text-sm">
-                      Faça perguntas sobre o convidado
-                    </p>
+                    <div className="space-y-2">
+                      <Sparkles className="w-8 h-8 text-gray-300 mx-auto" aria-hidden="true" />
+                      <p className="text-ceramic-tertiary text-sm">
+                        Faca perguntas sobre {setup.guestName || 'o convidado'}
+                      </p>
+                      <p className="text-ceramic-tertiary text-xs">
+                        Ex: "Quais perguntas devo evitar?" ou "Sugira um quebra-gelo"
+                      </p>
+                    </div>
                   </div>
                 )}
+
+                {/* Chat messages */}
                 {chatMessages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    key={msg.timestamp.getTime()}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div
-                      className={`max-w-xs px-4 py-2 rounded-lg ${
+                      className={`max-w-[80%] px-4 py-2 rounded-lg ${
                         msg.role === 'user'
                           ? 'bg-orange-500 text-white'
                           : 'bg-ceramic-surface-secondary text-ceramic-primary'
                       }`}
                     >
-                      <p className="text-sm">{msg.text}</p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
                   </div>
                 ))}
-                {isChatLoading && (
+
+                {/* Streaming response */}
+                {currentResponse && (
                   <div className="flex justify-start">
-                    <div className="bg-ceramic-surface-secondary text-ceramic-primary px-4 py-2 rounded-lg">
+                    <div className="max-w-[80%] px-4 py-2 rounded-lg bg-ceramic-surface-secondary text-ceramic-primary">
+                      <p className="text-sm whitespace-pre-wrap">{currentResponse}</p>
+                      <span className="inline-block w-1.5 h-4 bg-orange-500 animate-pulse ml-0.5" aria-hidden="true" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading indicator (when streaming hasn't started yet) */}
+                {isChatLoading && !currentResponse && (
+                  <div className="flex justify-start">
+                    <div className="bg-ceramic-surface-secondary text-ceramic-primary px-4 py-2 rounded-lg flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      <span className="text-sm text-ceramic-secondary">Pensando...</span>
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Chat input */}
               <div className="border-t border-ceramic-border p-4">
                 <form onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }} className="flex gap-2">
                   <label htmlFor="chat-input" className="sr-only">Pergunta sobre o convidado</label>
@@ -459,19 +569,30 @@ export default function ResearchStage() {
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Faça uma pergunta..."
+                    placeholder={isChatLoading ? 'Aguarde a resposta...' : 'Faca uma pergunta...'}
                     className="flex-1 px-3 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                     disabled={isChatLoading}
                     aria-required="true"
                   />
-                  <button
-                    type="submit"
-                    disabled={isChatLoading || !chatInput.trim()}
-                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                    aria-label="Enviar pergunta"
-                  >
-                    <Send className="w-4 h-4" aria-hidden="true" />
-                  </button>
+                  {isChatLoading ? (
+                    <button
+                      type="button"
+                      onClick={handleCancelChat}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      aria-label="Cancelar resposta"
+                    >
+                      <StopCircle className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!chatInput.trim()}
+                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                      aria-label="Enviar pergunta"
+                    >
+                      <Send className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  )}
                 </form>
               </div>
             </div>

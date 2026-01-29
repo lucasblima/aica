@@ -1,13 +1,28 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
     fetchAndTransformEvents,
     TimelineEvent,
     fetchAvailableCalendars,
 } from '../services/googleCalendarService';
 import { isGoogleCalendarConnected } from '../services/googleAuthService';
+import {
+    onTokenRefreshFailure,
+    getTokenRefreshState,
+} from '../services/googleCalendarTokenService';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('useGoogleCalendarEvents');
+
+/**
+ * Token refresh failure notification interface
+ */
+export interface TokenRefreshFailureNotification {
+    code: string;
+    message: string;
+    requiresReconnect: boolean;
+    consecutiveFailures: number;
+    timestamp: Date;
+}
 
 export interface UseGoogleCalendarEventsOptions {
     /** Sincronizar automaticamente ao conectar */
@@ -18,6 +33,8 @@ export interface UseGoogleCalendarEventsOptions {
     startDate?: Date;
     /** Data de término (padrão: início + 7 dias) */
     endDate?: Date;
+    /** Callback quando token refresh falha */
+    onRefreshFailure?: (notification: TokenRefreshFailureNotification) => void;
 }
 
 export function useGoogleCalendarEvents(
@@ -28,6 +45,7 @@ export function useGoogleCalendarEvents(
         syncInterval = 300, // 5 minutos
         startDate,
         endDate,
+        onRefreshFailure,
     } = options;
 
     const [events, setEvents] = useState<TimelineEvent[]>([]);
@@ -36,6 +54,55 @@ export function useGoogleCalendarEvents(
     const [error, setError] = useState<string | null>(null);
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
     const [isTokenExpired, setIsTokenExpired] = useState(false);
+    const [refreshFailure, setRefreshFailure] = useState<TokenRefreshFailureNotification | null>(null);
+
+    // Keep track of the callback ref to avoid unnecessary re-subscriptions
+    const onRefreshFailureRef = useRef(onRefreshFailure);
+    onRefreshFailureRef.current = onRefreshFailure;
+
+    // Subscribe to token refresh failure notifications
+    useEffect(() => {
+        log.debug('Subscribing to token refresh failure notifications');
+
+        const unsubscribe = onTokenRefreshFailure((failureInfo) => {
+            const notification: TokenRefreshFailureNotification = {
+                ...failureInfo,
+                timestamp: new Date(),
+            };
+
+            log.warn('Token refresh failure notification received:', {
+                code: notification.code,
+                message: notification.message,
+                requiresReconnect: notification.requiresReconnect,
+                consecutiveFailures: notification.consecutiveFailures,
+            });
+
+            setRefreshFailure(notification);
+
+            if (notification.requiresReconnect) {
+                setIsTokenExpired(true);
+                setIsConnected(false);
+            }
+
+            // Call the callback if provided
+            if (onRefreshFailureRef.current) {
+                onRefreshFailureRef.current(notification);
+            }
+        });
+
+        return () => {
+            log.debug('Unsubscribing from token refresh failure notifications');
+            unsubscribe();
+        };
+    }, []);
+
+    // Clear refresh failure when connection is re-established
+    useEffect(() => {
+        if (isConnected && refreshFailure) {
+            log.debug('Connection re-established, clearing refresh failure state');
+            setRefreshFailure(null);
+        }
+    }, [isConnected, refreshFailure]);
 
     // Verificar conexão ao montar
     useEffect(() => {
@@ -155,6 +222,16 @@ export function useGoogleCalendarEvents(
         ));
     }, []);
 
+    // Function to clear the refresh failure notification
+    const clearRefreshFailure = useCallback(() => {
+        setRefreshFailure(null);
+    }, []);
+
+    // Function to get current refresh state for debugging
+    const getRefreshState = useCallback(() => {
+        return getTokenRefreshState();
+    }, []);
+
     return {
         events,
         isConnected,
@@ -162,6 +239,12 @@ export function useGoogleCalendarEvents(
         error,
         lastSyncTime,
         isTokenExpired,
+        /** Current token refresh failure notification, if any */
+        refreshFailure,
+        /** Clear the current refresh failure notification */
+        clearRefreshFailure,
+        /** Get current token refresh state for debugging */
+        getRefreshState,
         sync,
         addLocalEvent,
         fetchEvents,
