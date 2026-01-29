@@ -53,6 +53,9 @@ const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ def
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
 const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ default: m.OnboardingFlow })));
 
+// Invite System - Public page for invite acceptance
+const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m => ({ default: m.InviteAcceptPage })));
+
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
 const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
@@ -585,6 +588,12 @@ export function AppRouter() {
                <Route
                   path="/presentation-demo"
                   element={<PresentationDemo />}
+               />
+
+               {/* Invite Accept - Public route for viral invites */}
+               <Route
+                  path="/invite/:token"
+                  element={<InviteAcceptPage />}
                />
 
                {/* Onboarding Flow - Protected, for new users */}

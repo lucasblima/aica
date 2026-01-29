@@ -54,5 +54,9 @@ export type { UnifiedChatInterfaceProps, QuickAction } from './UnifiedChatInterf
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';
 export { WeeklyCalendarView } from './WeeklyCalendarView';
 
+// Invite System - Viral Growth (Gmail-style)
+export { InviteBadge } from './InviteBadge';
+export { InviteModal } from './InviteModal';
+
 // Admin Components - Issue #129
 export { CapacityGauge, StatusPieChart, InstanceTable, ErrorsLog, HealthAlerts } from './admin';
