@@ -203,6 +203,68 @@ async function getRecentQuestions(
 }
 
 // =============================================================================
+// CONTEXT ANALYSIS (NEW: Extract emotions from responses)
+// =============================================================================
+
+/**
+ * NOVA: Analisa respostas recentes para inferir emoções e temas
+ * Isso resolve o problema de "not yet identified"
+ */
+async function analyzeRecentResponses(
+  responses: RecentResponse[]
+): Promise<{ emotions: string[], themes: string[] }> {
+  if (responses.length === 0) {
+    // Fallback: contexto genérico para novos usuários
+    return {
+      emotions: ['curiosidade', 'reflexão'],
+      themes: ['autoconhecimento', 'crescimento pessoal'],
+    }
+  }
+
+  // Keywords simples para detecção (pode ser substituído por Gemini no futuro)
+  const emotionKeywords = {
+    feliz: ['feliz', 'alegre', 'contente', 'animado', 'otimista'],
+    ansioso: ['ansioso', 'preocupado', 'nervoso', 'tenso'],
+    grato: ['grato', 'agradecido', 'gratidão'],
+    triste: ['triste', 'down', 'melancólico', 'desmotivado'],
+    calmo: ['calmo', 'tranquilo', 'sereno', 'paz'],
+  }
+
+  const themeKeywords = {
+    trabalho: ['trabalho', 'carreira', 'profissional', 'projeto'],
+    relacionamentos: ['família', 'amigos', 'parceiro', 'relacionamento'],
+    saude: ['saúde', 'exercício', 'bem-estar', 'alimentação'],
+    crescimento: ['aprendizado', 'crescimento', 'desenvolvimento', 'evolução'],
+  }
+
+  const detectedEmotions = new Set<string>()
+  const detectedThemes = new Set<string>()
+
+  const allText = responses
+    .map(r => r.response_text.toLowerCase())
+    .join(' ')
+
+  // Detectar emoções
+  for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+    if (keywords.some(kw => allText.includes(kw))) {
+      detectedEmotions.add(emotion)
+    }
+  }
+
+  // Detectar temas
+  for (const [theme, keywords] of Object.entries(themeKeywords)) {
+    if (keywords.some(kw => allText.includes(kw))) {
+      detectedThemes.add(theme)
+    }
+  }
+
+  return {
+    emotions: Array.from(detectedEmotions).slice(0, 3),
+    themes: Array.from(detectedThemes).slice(0, 3),
+  }
+}
+
+// =============================================================================
 // GEMINI QUESTION GENERATION
 // =============================================================================
 
@@ -211,15 +273,21 @@ function buildGenerationPrompt(
   recentResponses: RecentResponse[],
   recentQuestions: string[],
   batchSize: number,
-  categories: QuestionCategory[]
+  categories: QuestionCategory[],
+  inferredContext?: { emotions: string[], themes: string[] }
 ): string {
+  // ✅ FIX: Use análise inferida quando contexto está vazio
   const emotionsStr = context.dominant_emotions.length > 0
     ? context.dominant_emotions.join(', ')
-    : 'not yet identified'
+    : (inferredContext?.emotions.length ?? 0) > 0
+    ? inferredContext!.emotions.join(', ') + ' (inferido das respostas)'
+    : 'curiosidade, reflexão (padrão para novos usuários)'
 
   const themesStr = context.recurring_themes.length > 0
     ? context.recurring_themes.join(', ')
-    : 'not yet identified'
+    : (inferredContext?.themes.length ?? 0) > 0
+    ? inferredContext!.themes.join(', ') + ' (inferido das respostas)'
+    : 'autoconhecimento, crescimento pessoal (padrão para novos usuários)'
 
   const preferredStr = context.preferred_categories.length > 0
     ? context.preferred_categories.join(', ')
@@ -391,14 +459,27 @@ async function storeGeneratedQuestions(
 async function updateContextBankAfterGeneration(
   supabase: ReturnType<typeof createClient>,
   userId: string,
-  questionsGenerated: number
+  questionsGenerated: number,
+  inferredContext?: { emotions: string[], themes: string[] }
 ): Promise<void> {
+  // ✅ FIX: Atualiza context bank com emoções/temas inferidos
+  const updateData: any = {
+    last_generation_at: new Date().toISOString(),
+  }
+
+  // Se temos contexto inferido, armazena para próximas gerações
+  if (inferredContext) {
+    if (inferredContext.emotions.length > 0) {
+      updateData.dominant_emotions = inferredContext.emotions
+    }
+    if (inferredContext.themes.length > 0) {
+      updateData.recurring_themes = inferredContext.themes
+    }
+  }
+
   const { error } = await supabase
     .from('user_question_context_bank')
-    .update({
-      last_generation_at: new Date().toISOString(),
-      generation_count: supabase.rpc ? undefined : 0, // Increment handled separately
-    })
+    .update(updateData)
     .eq('user_id', userId)
 
   if (error) {
@@ -520,13 +601,19 @@ serve(async (req) => {
       getRecentQuestions(supabase, user.id, 20),
     ])
 
+    // ✅ NOVA: Analisa respostas para inferir contexto
+    const inferredContext = await analyzeRecentResponses(recentResponses)
+
+    log('DEBUG', 'Inferred context from responses', inferredContext)
+
     // Build prompt and generate questions
     const prompt = buildGenerationPrompt(
       context,
       recentResponses,
       recentQuestions,
       batchSize,
-      categories
+      categories,
+      inferredContext
     )
 
     const promptHash = btoa(prompt.substring(0, 100)).substring(0, 32)
@@ -550,8 +637,8 @@ serve(async (req) => {
       promptHash
     )
 
-    // Update context bank
-    await updateContextBankAfterGeneration(supabase, user.id, storedCount)
+    // ✅ Update context bank with inferred data
+    await updateContextBankAfterGeneration(supabase, user.id, storedCount, inferredContext)
 
     const processingTimeMs = Date.now() - startTime
 
@@ -559,6 +646,8 @@ serve(async (req) => {
       userId: user.id,
       generated: generatedQuestions.length,
       stored: storedCount,
+      inferredEmotions: inferredContext.emotions,
+      inferredThemes: inferredContext.themes,
       processingTimeMs,
     })
 
@@ -573,6 +662,7 @@ serve(async (req) => {
           context_factors: q.context_factors,
         })),
         context_updated: true,
+        inferred_context: inferredContext,
         processing_time_ms: processingTimeMs,
       }),
       { status: 200, headers: corsHeaders }
