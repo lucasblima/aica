@@ -67,6 +67,10 @@ const WhatsAppMonitoringDashboard = lazy(() => import('../pages/admin/WhatsAppMo
 
 
 const ProfilePage = lazy(() => import('../views/ProfilePage').then(m => ({ default: m.ProfilePage })));
+
+// Life Area Views - Generic view for health, education, legal, professional modules
+const LifeAreaView = lazy(() => import('../views/LifeAreaView').then(m => ({ default: m.LifeAreaView })));
+
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
    const [tasks, setTasks] = useState<any[]>([]);
@@ -445,7 +449,11 @@ export function AppRouter() {
       const { isFocusedMode } = useNavigation();
 
       // Define focused modes where global nav should be hidden (Contextual Descent)
-      const focusedModes: ViewState[] = ['association_detail', 'finance', 'finance_agent', 'grants', 'ai-cost', 'file-search-analytics', 'journey'];
+      const focusedModes: ViewState[] = [
+         'association_detail', 'finance', 'finance_agent', 'grants', 'ai-cost', 'file-search-analytics', 'journey',
+         // Life Area Modules
+         'health', 'education', 'legal', 'professional'
+      ];
 
       // Determine if we should show BottomNav
       // Hide when:
@@ -481,6 +489,20 @@ export function AppRouter() {
                   onBack={() => setCurrentView('vida')}
                   mode="fullpage"
                />
+            )}
+
+            {/* Life Area Module Views */}
+            {currentView === 'health' && (
+               <LifeAreaView moduleId="health" onBack={() => setCurrentView('vida')} />
+            )}
+            {currentView === 'education' && (
+               <LifeAreaView moduleId="education" onBack={() => setCurrentView('vida')} />
+            )}
+            {currentView === 'legal' && (
+               <LifeAreaView moduleId="legal" onBack={() => setCurrentView('vida')} />
+            )}
+            {currentView === 'professional' && (
+               <LifeAreaView moduleId="professional" onBack={() => setCurrentView('vida')} />
             )}
 
             {/* ANCHOR PRINCIPLE: Global Navigation - Unified visibility logic via NavigationContext */}

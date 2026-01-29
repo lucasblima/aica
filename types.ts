@@ -79,7 +79,24 @@ export interface SystemHealth {
   activeWebhooks: number;
 }
 
-export type ViewState = 'vida' | 'agenda' | 'connections' | 'studio' | 'association_detail' | 'podcast' | 'finance' | 'finance_agent' | 'journey' | 'grants' | 'ai-cost' | 'file-search-analytics';
+export type ViewState =
+  | 'vida'
+  | 'agenda'
+  | 'connections'
+  | 'studio'
+  | 'association_detail'
+  | 'podcast'
+  | 'finance'
+  | 'finance_agent'
+  | 'journey'
+  | 'grants'
+  | 'ai-cost'
+  | 'file-search-analytics'
+  // Life Area Modules
+  | 'health'
+  | 'education'
+  | 'legal'
+  | 'professional';
 
 export type Quadrant = 'urgent-important' | 'important' | 'urgent' | 'low';
 
