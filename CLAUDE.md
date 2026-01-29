@@ -18,24 +18,30 @@ npx supabase functions serve  # Local Edge Functions
 
 ---
 
-## ⚠️ DEPLOY - REGRAS CRÍTICAS
+## ⚠️ DEPLOY - FLUXO VIA TERMINAL
 
-### ❌ NUNCA EXECUTE MANUALMENTE:
-```bash
-gcloud builds submit ...   # NÃO - causa deploy duplicado
-gcloud run deploy ...      # NÃO - usa trigger automático
-```
-
-### ✅ DEPLOY CORRETO:
+### Passo 1: Commit e Push
 ```bash
 git add -A && git commit -m "sua mensagem" && git push origin main
 ```
-Deploy é **100% automático** via GitHub trigger (~4 min).
 
-**Verificar status:**
+### Passo 2: Deploy Manual via Cloud Build
 ```bash
-gcloud builds list --limit=5 --region=southamerica-east1
+gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=aica-461022
 ```
+Deploy leva ~4 minutos.
+
+### Verificar Status
+```bash
+# Listar builds recentes
+gcloud builds list --limit=5 --region=southamerica-east1 --project=aica-461022
+
+# Logs do último build
+gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=southamerica-east1 --project=aica-461022) --region=southamerica-east1
+```
+
+### Após Deploy
+Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app
 
 ---
 
