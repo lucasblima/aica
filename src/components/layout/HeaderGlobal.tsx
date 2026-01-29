@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Users } from 'lucide-react';
 import { SettingsMenu } from './SettingsMenu';
 import { CeramicTabSelector, Logo } from '../ui';
+import { InviteBadge, InviteModal } from '../features';
 
 interface HeaderGlobalProps {
     title: string;
@@ -32,7 +33,10 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
     activeTab = 'personal',
     onTabChange
 }) => {
+    const [showInviteModal, setShowInviteModal] = useState(false);
+
     return (
+        <>
         <header className="flex-none pt-8 px-6 pb-6">
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-4">
@@ -46,16 +50,19 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
                         </h1>
                     </div>
                 </div>
-                {/* Settings Menu */}
-                <SettingsMenu
-                    userEmail={userEmail}
-                    avatarUrl={avatarUrl}
-                    userName={userName}
-                    onLogout={onLogout}
-                    onNavigateToAICost={onNavigateToAICost}
-                    onNavigateToFileSearch={onNavigateToFileSearch}
-                    onOpenProfile={onOpenProfile}
-                />
+                {/* Invite Badge & Settings Menu */}
+                <div className="flex items-center gap-3">
+                    <InviteBadge onClick={() => setShowInviteModal(true)} />
+                    <SettingsMenu
+                        userEmail={userEmail}
+                        avatarUrl={avatarUrl}
+                        userName={userName}
+                        onLogout={onLogout}
+                        onNavigateToAICost={onNavigateToAICost}
+                        onNavigateToFileSearch={onNavigateToFileSearch}
+                        onOpenProfile={onOpenProfile}
+                    />
+                </div>
             </div>
 
             {/* Optional Tabs - CeramicTabSelector */}
@@ -70,5 +77,12 @@ export const HeaderGlobal: React.FC<HeaderGlobalProps> = ({
                 />
             )}
         </header>
+
+        {/* Invite Modal */}
+        <InviteModal
+            isOpen={showInviteModal}
+            onClose={() => setShowInviteModal(false)}
+        />
+        </>
     );
 };
