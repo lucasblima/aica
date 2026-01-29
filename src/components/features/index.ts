@@ -43,6 +43,7 @@ export { LifeWeeksGrid } from './LifeWeeksGrid';
 export { default as ModuleCard } from './ModuleCard';
 export { NextEventHero } from './NextEventHero';
 export { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from './NextTwoDaysView';
+export { NotificationBell } from './NotificationBell';
 // prettier-ignore
 export { default as OnboardingWizard } from './OnboardingWizard';
 export { PomodoroTimer } from './PomodoroTimer';
