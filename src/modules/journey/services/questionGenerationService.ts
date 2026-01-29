@@ -1,6 +1,12 @@
 /**
  * Question Generation Service
  * Handles AI-powered question generation via Edge Function
+ *
+ * Implements:
+ * - Typed errors for better error handling
+ * - Retry with exponential backoff
+ * - Circuit breaker to prevent spam on failures
+ * - Proper session validation
  */
 
 import { supabase } from '@/services/supabaseClient'
@@ -8,6 +14,156 @@ import { createNamespacedLogger } from '@/lib/logger'
 import { QuestionCategory } from '../types/dailyQuestion'
 
 const log = createNamespacedLogger('QuestionGenerationService')
+
+// =============================================================================
+// TYPED ERRORS (from API Integrations skill)
+// =============================================================================
+
+class EdgeFunctionError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public details?: unknown
+  ) {
+    super(message)
+    this.name = 'EdgeFunctionError'
+  }
+
+  isRetryable(): boolean {
+    // Retry on server errors (5xx) and rate limit (429)
+    return this.status >= 500 || this.status === 429
+  }
+
+  isAuthError(): boolean {
+    return this.status === 401 || this.status === 403
+  }
+
+  static fromResponse(status: number, message: string): EdgeFunctionError {
+    let code = 'UNKNOWN_ERROR'
+    if (status === 401) code = 'UNAUTHORIZED'
+    else if (status === 403) code = 'FORBIDDEN'
+    else if (status === 429) code = 'RATE_LIMITED'
+    else if (status >= 500) code = 'SERVER_ERROR'
+
+    return new EdgeFunctionError(status, code, message)
+  }
+}
+
+// =============================================================================
+// CIRCUIT BREAKER (from API Integrations skill)
+// =============================================================================
+
+enum CircuitState {
+  CLOSED = 'CLOSED',
+  OPEN = 'OPEN',
+  HALF_OPEN = 'HALF_OPEN',
+}
+
+class CircuitBreaker {
+  private state: CircuitState = CircuitState.CLOSED
+  private failures: number = 0
+  private lastFailureTime?: number
+  private readonly failureThreshold: number
+  private readonly resetTimeoutMs: number
+
+  constructor(failureThreshold: number = 3, resetTimeoutMs: number = 60000) {
+    this.failureThreshold = failureThreshold
+    this.resetTimeoutMs = resetTimeoutMs
+  }
+
+  canExecute(): boolean {
+    if (this.state === CircuitState.CLOSED) return true
+
+    if (this.state === CircuitState.OPEN) {
+      if (this.shouldAttemptReset()) {
+        this.state = CircuitState.HALF_OPEN
+        return true
+      }
+      return false
+    }
+
+    // HALF_OPEN - allow one attempt
+    return true
+  }
+
+  private shouldAttemptReset(): boolean {
+    if (!this.lastFailureTime) return true
+    return Date.now() - this.lastFailureTime >= this.resetTimeoutMs
+  }
+
+  onSuccess(): void {
+    this.failures = 0
+    this.state = CircuitState.CLOSED
+  }
+
+  onFailure(): void {
+    this.failures++
+    this.lastFailureTime = Date.now()
+
+    if (this.failures >= this.failureThreshold) {
+      this.state = CircuitState.OPEN
+      log.debug(`Circuit breaker OPEN after ${this.failures} failures`)
+    }
+  }
+
+  getState(): CircuitState {
+    return this.state
+  }
+}
+
+// Singleton circuit breaker for Edge Function
+const edgeFunctionCircuit = new CircuitBreaker(3, 60000) // 3 failures, 1 min reset
+
+// =============================================================================
+// RETRY LOGIC (from API Integrations skill)
+// =============================================================================
+
+interface RetryOptions {
+  maxRetries?: number
+  baseDelayMs?: number
+  maxDelayMs?: number
+  retryCondition?: (error: Error) => boolean
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {}
+): Promise<T> {
+  const {
+    maxRetries = 2,
+    baseDelayMs = 1000,
+    maxDelayMs = 10000,
+    retryCondition = (err) => err instanceof EdgeFunctionError && err.isRetryable(),
+  } = options
+
+  let lastError: Error = new Error('Unknown error')
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error as Error
+
+      // Check if should retry
+      if (!retryCondition(lastError)) {
+        throw lastError
+      }
+
+      if (attempt < maxRetries) {
+        // Calculate delay with jitter
+        const delay = Math.min(
+          baseDelayMs * Math.pow(2, attempt) + Math.random() * 500,
+          maxDelayMs
+        )
+        log.debug(`Attempt ${attempt + 1} failed, retrying in ${delay}ms`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  throw lastError
+}
 
 // =============================================================================
 // TYPES
@@ -57,6 +213,57 @@ export interface UserContextBank {
 const CONFIG = {
   MIN_UNANSWERED_THRESHOLD: 3,
   EDGE_FUNCTION_URL: 'generate-questions',
+  SESSION_VALIDATION_TIMEOUT_MS: 5000,
+}
+
+// =============================================================================
+// SESSION VALIDATION
+// =============================================================================
+
+interface SessionValidation {
+  isValid: boolean
+  token?: string
+  userId?: string
+  error?: string
+}
+
+/**
+ * Validate session and get fresh token
+ * Returns token only if session is fully valid
+ */
+async function validateSession(): Promise<SessionValidation> {
+  try {
+    // First, validate with getUser() - this triggers token refresh if needed
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+
+    if (userError) {
+      return { isValid: false, error: userError.message }
+    }
+
+    if (!userData.user) {
+      return { isValid: false, error: 'No user in session' }
+    }
+
+    // Get the (potentially refreshed) session token
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError) {
+      return { isValid: false, error: sessionError.message }
+    }
+
+    const token = sessionData.session?.access_token
+    if (!token) {
+      return { isValid: false, error: 'No access token in session' }
+    }
+
+    return {
+      isValid: true,
+      token,
+      userId: userData.user.id,
+    }
+  } catch (error) {
+    return { isValid: false, error: (error as Error).message }
+  }
 }
 
 // =============================================================================
@@ -77,8 +284,7 @@ export async function checkShouldGenerateQuestions(
       .rpc('check_should_generate_questions', { p_user_id: userId })
 
     if (error) {
-      log.error('Error checking generation status:', error)
-      // Default to checking manually if RPC fails
+      log.debug('RPC check failed, using manual check:', error.message)
       return await checkManually(userId)
     }
 
@@ -97,7 +303,7 @@ export async function checkShouldGenerateQuestions(
 
     return await checkManually(userId)
   } catch (error) {
-    log.error('Error in checkShouldGenerateQuestions:', error)
+    log.debug('Error in checkShouldGenerateQuestions:', error)
     return {
       shouldGenerate: false,
       unansweredCount: 0,
@@ -113,7 +319,6 @@ export async function checkShouldGenerateQuestions(
  */
 async function checkManually(userId: string): Promise<GenerationCheckResult> {
   try {
-    // Get all active questions (global + user-specific)
     const { data: questions, error: qError } = await supabase
       .from('daily_questions')
       .select('id')
@@ -122,7 +327,6 @@ async function checkManually(userId: string): Promise<GenerationCheckResult> {
 
     if (qError) throw qError
 
-    // Get user's answered question IDs
     const { data: responses, error: rError } = await supabase
       .from('question_responses')
       .select('question_id')
@@ -138,11 +342,11 @@ async function checkManually(userId: string): Promise<GenerationCheckResult> {
       shouldGenerate: unansweredCount < CONFIG.MIN_UNANSWERED_THRESHOLD,
       unansweredCount,
       totalAvailable,
-      hoursSinceLastGeneration: 999, // Unknown
-      dailyGenerationCount: 0, // Unknown
+      hoursSinceLastGeneration: 999,
+      dailyGenerationCount: 0,
     }
   } catch (error) {
-    log.error('Error in manual check:', error)
+    log.debug('Error in manual check:', error)
     return {
       shouldGenerate: false,
       unansweredCount: 0,
@@ -154,11 +358,58 @@ async function checkManually(userId: string): Promise<GenerationCheckResult> {
 }
 
 // =============================================================================
-// TRIGGER GENERATION
+// TRIGGER GENERATION (with retry and circuit breaker)
 // =============================================================================
 
 /**
+ * Internal function to call Edge Function
+ */
+async function callEdgeFunction(
+  token: string,
+  options: {
+    batchSize?: number
+    categories?: QuestionCategory[]
+    forceRegenerate?: boolean
+  }
+): Promise<GenerationResult> {
+  const response = await supabase.functions.invoke(CONFIG.EDGE_FUNCTION_URL, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      batch_size: options.batchSize || 5,
+      categories: options.categories,
+      force_regenerate: options.forceRegenerate || false,
+    },
+  })
+
+  if (response.error) {
+    const errorMsg = response.error.message || 'Generation failed'
+
+    // Parse status from error message if available
+    let status = 500
+    if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) status = 401
+    else if (errorMsg.includes('403') || errorMsg.includes('Forbidden')) status = 403
+    else if (errorMsg.includes('429') || errorMsg.includes('rate')) status = 429
+
+    throw EdgeFunctionError.fromResponse(status, errorMsg)
+  }
+
+  const result = response.data as GenerationResult
+
+  return {
+    success: result.success,
+    questionsGenerated: result.questionsGenerated || (result as any).questions_generated || 0,
+    questions: result.questions || [],
+    contextUpdated: result.contextUpdated || (result as any).context_updated || false,
+    processingTimeMs: result.processingTimeMs || (result as any).processing_time_ms,
+    error: result.error,
+  }
+}
+
+/**
  * Trigger question generation via Edge Function
+ * Includes retry logic and circuit breaker
  */
 export async function triggerQuestionGeneration(
   options?: {
@@ -167,77 +418,74 @@ export async function triggerQuestionGeneration(
     forceRegenerate?: boolean
   }
 ): Promise<GenerationResult> {
+  // Check circuit breaker first
+  if (!edgeFunctionCircuit.canExecute()) {
+    log.debug('Circuit breaker is OPEN, skipping generation')
+    return {
+      success: false,
+      questionsGenerated: 0,
+      questions: [],
+      contextUpdated: false,
+      error: 'Service temporarily unavailable (circuit breaker open)',
+    }
+  }
+
   try {
     log.info('Triggering question generation', options)
 
-    // Validate session with getUser() - this triggers token refresh if needed
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError || !userData.user) {
-      log.debug('Session not valid for generation:', userError?.message)
-      throw new Error('Session not valid')
-    }
-
-    // Get fresh session token after validation/refresh
-    const { data: sessionData } = await supabase.auth.getSession()
-    const token = sessionData.session?.access_token
-    if (!token) {
-      log.debug('No session token available after validation')
-      throw new Error('Session not valid')
-    }
-
-    // @supabase/ssr may not auto-include Authorization header, so we pass it explicitly
-    const response = await supabase.functions.invoke(CONFIG.EDGE_FUNCTION_URL, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: {
-        batch_size: options?.batchSize || 5,
-        categories: options?.categories,
-        force_regenerate: options?.forceRegenerate || false,
-      },
-    })
-
-    if (response.error) {
-      // Check if it's an auth error (expected during page load race conditions)
-      const errorMsg = response.error.message || 'Generation failed'
-      const isAuthError = errorMsg.includes('401') ||
-                         errorMsg.includes('Unauthorized') ||
-                         errorMsg.includes('non-2xx')
-      if (isAuthError) {
-        log.debug('Edge function auth error (session may still be initializing):', errorMsg)
-      } else {
-        log.error('Edge function error:', response.error)
+    // Validate session
+    const session = await validateSession()
+    if (!session.isValid || !session.token) {
+      log.debug('Session not valid for generation:', session.error)
+      return {
+        success: false,
+        questionsGenerated: 0,
+        questions: [],
+        contextUpdated: false,
+        error: 'Session not valid',
       }
-      throw new Error(errorMsg)
     }
 
-    const result = response.data as GenerationResult
+    // Call with retry (only for retryable errors like 5xx)
+    const result = await withRetry(
+      () => callEdgeFunction(session.token!, options || {}),
+      {
+        maxRetries: 2,
+        baseDelayMs: 1000,
+        retryCondition: (err) => {
+          if (err instanceof EdgeFunctionError) {
+            // Only retry server errors, not auth errors
+            return err.isRetryable() && !err.isAuthError()
+          }
+          return false
+        },
+      }
+    )
+
+    // Success - reset circuit breaker
+    edgeFunctionCircuit.onSuccess()
 
     log.info('Generation completed', {
       questionsGenerated: result.questionsGenerated,
       success: result.success,
     })
 
-    return {
-      success: result.success,
-      questionsGenerated: result.questionsGenerated || result.questions_generated || 0,
-      questions: result.questions || [],
-      contextUpdated: result.contextUpdated || result.context_updated || false,
-      processingTimeMs: result.processingTimeMs || result.processing_time_ms,
-      error: result.error,
-    }
+    return result
   } catch (error) {
     const err = error as Error
-    // Don't log auth errors as errors - they're expected during session initialization
-    const isAuthError = err.message?.includes('401') ||
-                       err.message?.includes('Unauthorized') ||
-                       err.message?.includes('non-2xx') ||
-                       err.message?.includes('authentication') ||
-                       err.message?.includes('Session not valid')
-    if (isAuthError) {
-      log.debug('Generation skipped due to auth state:', err.message)
+
+    // Record failure in circuit breaker
+    edgeFunctionCircuit.onFailure()
+
+    // Handle typed errors
+    if (err instanceof EdgeFunctionError) {
+      if (err.isAuthError()) {
+        log.debug('Generation skipped due to auth error:', err.message)
+      } else {
+        log.warn('Edge function error:', err.code, err.message)
+      }
     } else {
-      log.error('Error triggering generation:', err)
+      log.debug('Generation failed:', err.message)
     }
 
     return {
@@ -266,7 +514,7 @@ export async function getUserContextBank(userId: string): Promise<UserContextBan
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') return null // Not found
+      if (error.code === 'PGRST116') return null
       throw error
     }
 
@@ -285,7 +533,7 @@ export async function getUserContextBank(userId: string): Promise<UserContextBan
       generationCount: data.generation_count || 0,
     }
   } catch (error) {
-    log.error('Error fetching context bank:', error)
+    log.debug('Error fetching context bank:', error)
     return null
   }
 }
@@ -319,7 +567,7 @@ export async function updateUserContext(
     log.debug('Context bank updated', { userId })
     return true
   } catch (error) {
-    log.error('Error updating context bank:', error)
+    log.debug('Error updating context bank:', error)
     return false
   }
 }
@@ -336,10 +584,16 @@ export async function checkAndTriggerGenerationIfNeeded(
   userId: string
 ): Promise<boolean> {
   try {
-    // Verify session is valid by calling getUser() - this validates token and triggers refresh if needed
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError || !userData.user) {
-      log.debug('Skipping generation check - session not valid:', userError?.message)
+    // First validate session before doing anything
+    const session = await validateSession()
+    if (!session.isValid) {
+      log.debug('Skipping generation - session not valid:', session.error)
+      return false
+    }
+
+    // Check circuit breaker
+    if (!edgeFunctionCircuit.canExecute()) {
+      log.debug('Skipping generation - circuit breaker open')
       return false
     }
 
@@ -352,16 +606,8 @@ export async function checkAndTriggerGenerationIfNeeded(
       })
 
       // Trigger in background (don't await)
-      triggerQuestionGeneration({ batchSize: 5 }).catch(err => {
-        // Don't log auth errors as errors - they're expected during page load
-        const isAuthError = err?.message?.includes('401') ||
-                           err?.message?.includes('Unauthorized') ||
-                           err?.message?.includes('authentication')
-        if (isAuthError) {
-          log.debug('Generation skipped due to auth state:', err.message)
-        } else {
-          log.warn('Background generation failed:', err)
-        }
+      triggerQuestionGeneration({ batchSize: 5 }).catch(() => {
+        // Errors already logged in triggerQuestionGeneration
       })
 
       return true
@@ -369,7 +615,19 @@ export async function checkAndTriggerGenerationIfNeeded(
 
     return false
   } catch (error) {
-    log.error('Error in checkAndTriggerGenerationIfNeeded:', error)
+    log.debug('Error in checkAndTriggerGenerationIfNeeded:', error)
     return false
   }
+}
+
+// =============================================================================
+// EXPORTS FOR TESTING
+// =============================================================================
+
+export const __testing = {
+  EdgeFunctionError,
+  CircuitBreaker,
+  edgeFunctionCircuit,
+  validateSession,
+  withRetry,
 }
