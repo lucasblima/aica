@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase } from 'lucide-react';
@@ -11,6 +11,7 @@ import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from 
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
 import { ViewState } from '../../types';
 import { supabase } from '@/services/supabaseClient';
+import { useAuth } from '@/hooks/useAuth';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('Home');
@@ -84,6 +85,7 @@ export default function Home({
    onCreateAssociation
 }: HomeProps) {
    const navigate = useNavigate();
+   const { user } = useAuth();
    const [activeTab, setActiveTab] = useState<TabState>('personal');
    // Handle tab change - navigate to /connections for network tab
    const handleTabChange = (tab: TabState) => {
@@ -95,6 +97,13 @@ export default function Home({
    };
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+
+   // User metadata for avatar and profile
+   const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
+   const userName = useMemo(() => {
+      if (!user) return undefined;
+      return user.user_metadata?.full_name || user.email?.split('@')[0];
+   }, [user]);
 
    // Reset ProfileModal when component unmounts (prevents modal persisting across views)
    useEffect(() => {
@@ -163,9 +172,12 @@ export default function Home({
                title="Minha Vida"
                subtitle="LIFE OS"
                userEmail={userEmail || undefined}
+               avatarUrl={avatarUrl}
+               userName={userName}
                onLogout={onLogout}
                onNavigateToAICost={onNavigateToAICost}
                onNavigateToFileSearch={onNavigateToFileSearch}
+               onOpenProfile={() => setProfileModalOpen(true)}
                showTabs={false}
                activeTab={activeTab}
                onTabChange={handleTabChange}
@@ -425,9 +437,12 @@ export default function Home({
                title="Minha Vida"
                subtitle="LIFE OS"
                userEmail={userEmail || undefined}
+               avatarUrl={avatarUrl}
+               userName={userName}
                onLogout={onLogout}
                onNavigateToAICost={onNavigateToAICost}
                onNavigateToFileSearch={onNavigateToFileSearch}
+               onOpenProfile={() => setProfileModalOpen(true)}
                showTabs={false}
                activeTab={activeTab}
                onTabChange={handleTabChange}

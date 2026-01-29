@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, LogOut, User, DollarSign, FileSearch, Activity, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
@@ -9,15 +9,36 @@ const log = createNamespacedLogger('SettingsMenu');
 
 interface SettingsMenuProps {
     userEmail?: string;
+    avatarUrl?: string;
+    userName?: string;
     onLogout?: () => void;
     onNavigateToAICost?: () => void;
     onNavigateToFileSearch?: () => void;
+    onOpenProfile?: () => void;
 }
 
-export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout, onNavigateToAICost, onNavigateToFileSearch }) => {
+export const SettingsMenu: React.FC<SettingsMenuProps> = ({
+    userEmail,
+    avatarUrl,
+    userName,
+    onLogout,
+    onNavigateToAICost,
+    onNavigateToFileSearch,
+    onOpenProfile
+}) => {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
+    const [avatarError, setAvatarError] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Compute initials for avatar fallback
+    const initials = useMemo(() => {
+        if (userName) return userName.slice(0, 2).toUpperCase();
+        if (userEmail) return userEmail.slice(0, 2).toUpperCase();
+        return 'US';
+    }, [userName, userEmail]);
+
+    const showAvatarImage = avatarUrl && !avatarError;
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -95,13 +116,33 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout,
                         boxShadow: '8px 8px 16px rgba(163, 158, 145, 0.2), -8px -8px 16px rgba(255, 255, 255, 0.8)'
                     }}
                 >
-                    {/* Header - User Info */}
+                    {/* Header - User Info (clickable to open profile) */}
                     <div className="px-6 py-4">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-full ceramic-inset flex items-center justify-center">
-                                <User className="w-5 h-5 text-ceramic-text-secondary" />
+                        <button
+                            onClick={() => {
+                                if (onOpenProfile) {
+                                    onOpenProfile();
+                                    setIsOpen(false);
+                                }
+                            }}
+                            className="w-full flex items-center gap-3 mb-2 hover:bg-white/30 rounded-xl p-2 -m-2 transition-colors cursor-pointer"
+                            aria-label="Abrir perfil"
+                        >
+                            <div className="w-10 h-10 rounded-full ceramic-inset flex items-center justify-center overflow-hidden">
+                                {showAvatarImage ? (
+                                    <img
+                                        src={avatarUrl}
+                                        alt={userName || userEmail || 'Avatar'}
+                                        className="w-10 h-10 rounded-full object-cover"
+                                        onError={() => setAvatarError(true)}
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-sm">
+                                        {initials}
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 text-left">
                                 <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
                                     Conta
                                 </p>
@@ -109,7 +150,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ userEmail, onLogout,
                                     {userEmail || 'user@example.com'}
                                 </p>
                             </div>
-                        </div>
+                        </button>
                     </div>
 
                     {/* Divider - Engraved */}
