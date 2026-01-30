@@ -45,9 +45,11 @@ export function usePairingCode(): UsePairingCodeReturn {
   const [code, setCode] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
   const [secondsRemaining, setSecondsRemaining] = useState(0)
+  const [serverTimeOffset, setServerTimeOffset] = useState<number>(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const expiredCallbackFired = useRef<boolean>(false)
 
-  // Calcular tempo restante
+  // Calculate time remaining with server time correction
   useEffect(() => {
     if (!expiresAt) {
       setSecondsRemaining(0)
@@ -55,16 +57,29 @@ export function usePairingCode(): UsePairingCodeReturn {
     }
 
     const updateTimer = () => {
-      const now = Date.now()
+      // Use server-corrected time to avoid clock desync issues
+      const correctedNow = Date.now() + serverTimeOffset
       const expiry = new Date(expiresAt).getTime()
-      const remaining = Math.max(0, Math.floor((expiry - now) / 1000))
+      const remaining = Math.max(0, Math.floor((expiry - correctedNow) / 1000))
       setSecondsRemaining(remaining)
+
+      // F7: Fire expiration callback once when timer reaches zero
+      if (remaining <= 0 && code && !expiredCallbackFired.current) {
+        expiredCallbackFired.current = true
+        // Dispatch custom event for components to handle expiration
+        window.dispatchEvent(new CustomEvent('pairing-code-expired', {
+          detail: { code }
+        }))
+      }
 
       if (remaining <= 0 && timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
     }
+
+    // Reset expiration callback flag when new code is set
+    expiredCallbackFired.current = false
 
     updateTimer()
     timerRef.current = setInterval(updateTimer, 1000)
@@ -75,25 +90,64 @@ export function usePairingCode(): UsePairingCodeReturn {
         timerRef.current = null
       }
     }
-  }, [expiresAt])
+  }, [expiresAt, serverTimeOffset, code])
 
   const generateCode = useCallback(async (phoneNumber: string): Promise<PairingCodeResult | null> => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Refresh session to ensure we have a valid token
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
+      let accessToken: string | null = null
 
-      let accessToken = session?.access_token
+      // STEP 1: Always try refresh first to get a fresh token
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
 
-      if (sessionError || !accessToken) {
-        // Fallback to getSession if refresh fails
-        const { data: { session: fallbackSession } } = await supabase.auth.getSession()
-        if (!fallbackSession?.access_token) {
-          throw new Error('Usuário não autenticado. Por favor, faça login novamente.')
+      if (refreshData?.session?.access_token) {
+        // Refresh succeeded, use the new token
+        accessToken = refreshData.session.access_token
+      } else if (refreshError) {
+        // STEP 2: Refresh failed - determine if it's a network error or auth error
+        const errorMessage = refreshError.message?.toLowerCase() || ''
+        const isNetworkError =
+          errorMessage.includes('network') ||
+          errorMessage.includes('fetch') ||
+          errorMessage.includes('failed to fetch') ||
+          errorMessage.includes('networkerror') ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('connection')
+
+        if (!isNetworkError) {
+          // Auth error (invalid refresh token, session revoked, etc.) - force re-login
+          throw new Error('Sessão expirada. Por favor, faça login novamente.')
         }
-        accessToken = fallbackSession.access_token
+
+        // Network error - check if cached session is still valid with buffer
+        const { data: { session: cachedSession } } = await supabase.auth.getSession()
+
+        if (cachedSession?.access_token && cachedSession?.expires_at) {
+          const expiresAtMs = cachedSession.expires_at * 1000 // Convert to milliseconds
+          const now = Date.now()
+          const bufferMs = 60 * 1000 // 1 minute buffer for safety
+
+          if (expiresAtMs > now + bufferMs) {
+            // Token is valid with sufficient buffer, safe to use
+            accessToken = cachedSession.access_token
+          } else {
+            // Token is expired or expiring too soon
+            throw new Error('Sessão expirada. Por favor, faça login novamente.')
+          }
+        } else {
+          // No cached session available
+          throw new Error('Não foi possível autenticar. Verifique sua conexão ou faça login novamente.')
+        }
+      } else {
+        // No refresh error but also no session - user not authenticated
+        throw new Error('Usuário não autenticado. Por favor, faça login novamente.')
+      }
+
+      // STEP 3: Verify we have a valid token before proceeding
+      if (!accessToken) {
+        throw new Error('Não foi possível obter token de autenticação. Faça login novamente.')
       }
 
       // CRITICAL FIX: @supabase/ssr with cookie-based auth does NOT automatically
@@ -115,11 +169,25 @@ export function usePairingCode(): UsePairingCodeReturn {
         success: boolean
         code?: string
         expiresAt?: string
+        serverTime?: string
         error?: string
       }
 
       if (!result.success || !result.code) {
         throw new Error(result.error || 'Falha ao gerar código de pareamento')
+      }
+
+      // Calculate server-client time offset for accurate countdown
+      if (result.serverTime) {
+        const serverNow = new Date(result.serverTime).getTime()
+        const clientNow = Date.now()
+        const offset = serverNow - clientNow
+        setServerTimeOffset(offset)
+
+        // Log significant clock skew for debugging
+        if (Math.abs(offset) > 5000) {
+          console.warn(`[usePairingCode] Clock skew detected: ${Math.round(offset / 1000)}s`)
+        }
       }
 
       // Formatar código para exibição (XXXX-XXXX)
@@ -152,6 +220,8 @@ export function usePairingCode(): UsePairingCodeReturn {
     setExpiresAt(null)
     setError(null)
     setSecondsRemaining(0)
+    setServerTimeOffset(0)
+    expiredCallbackFired.current = false
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null

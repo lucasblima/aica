@@ -175,11 +175,23 @@ function getCorsHeaders(request: Request): Record<string, string> {
 
 /**
  * Validate HMAC-SHA256 signature from Evolution API
+ *
+ * SECURITY: Signature validation is REQUIRED in production.
+ * Set EVOLUTION_WEBHOOK_SECRET in Supabase Edge Function secrets.
  */
 async function validateHmacSignature(body: string, signature: string | null): Promise<boolean> {
+  // P0 FIX: Reject webhooks when secret is not configured (security vulnerability)
+  // Only allow bypass in explicit development mode
+  const isDevelopment = Deno.env.get('DENO_ENV') === 'development' ||
+                        Deno.env.get('SUPABASE_URL')?.includes('localhost')
+
   if (!EVOLUTION_WEBHOOK_SECRET) {
-    log('WARN', 'EVOLUTION_WEBHOOK_SECRET not configured, skipping signature validation')
-    return true // Allow in development, should be required in production
+    if (isDevelopment) {
+      log('WARN', 'EVOLUTION_WEBHOOK_SECRET not configured, allowing in development mode')
+      return true
+    }
+    log('ERROR', 'EVOLUTION_WEBHOOK_SECRET not configured - rejecting webhook for security')
+    return false
   }
 
   if (!signature) {
@@ -462,19 +474,59 @@ async function findUserByInstance(supabase: ReturnType<typeof createClient>, ins
 }
 
 /**
+ * Verify webhook has service role access
+ * Call this at start of request processing
+ */
+async function verifyServiceRoleAccess(supabase: ReturnType<typeof createClient>): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('validate_service_role_access')
+    if (error) {
+      log('ERROR', 'Service role validation failed', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint
+      })
+      return false
+    }
+    return data === true
+  } catch (e) {
+    log('ERROR', 'Service role validation exception', (e as Error).message)
+    return false
+  }
+}
+
+/**
  * Get session by instance name
  */
 async function getSessionByInstance(
   supabase: ReturnType<typeof createClient>,
   instanceName: string
 ): Promise<{ id: string; user_id: string; status: string } | null> {
-  const { data, error } = await supabase
+  const { data, error, status } = await supabase
     .from('whatsapp_sessions')
     .select('id, user_id, status')
     .eq('instance_name', instanceName)
     .single()
 
-  if (error || !data) {
+  if (error) {
+    log('ERROR', 'getSessionByInstance failed', {
+      instanceName,
+      errorCode: error.code,
+      errorMessage: error.message,
+      hint: error.hint,
+      httpStatus: status,
+      possibleRLS: error.code === 'PGRST116' || error.message.includes('permission')
+    })
+
+    // Alert on RLS issues - this is a critical configuration bug
+    if (error.code === 'PGRST116' || error.message.includes('permission')) {
+      log('ERROR', 'CRITICAL: Service role query blocked - check RLS policies', { instanceName })
+    }
+
+    return null
+  }
+
+  if (!data) {
     return null
   }
 
@@ -1722,26 +1774,21 @@ async function handleConnectionUpdate(
     }
   }
 
-  // Legacy: Also try to update users table for backward compatibility
-  const userId = await findUserByInstance(supabase, instanceName)
-  if (userId) {
-    const updates: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    }
-
-    if (state === 'open') {
-      updates.whatsapp_connected = true
-      updates.whatsapp_connected_at = new Date().toISOString()
-    } else if (state === 'close' || state === 'connecting') {
-      updates.whatsapp_connected = false
-      updates.whatsapp_disconnected_at = new Date().toISOString()
-    }
-
-    await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', userId)
-  }
+  // DEPRECATED: Legacy users table update removed (Issue F3, Epic #122)
+  // WhatsApp connection state is now ONLY stored in whatsapp_sessions table.
+  // This eliminates the dual source of truth that caused state inconsistencies.
+  //
+  // For backward compatibility, read-only consumers can use the
+  // users_whatsapp_compat view created in migration 20260130000002.
+  //
+  // Migration timeline:
+  // - Phase 1 (current): Stop writing to users table, deprecate columns
+  // - Phase 2 (v2.0): Remove legacy columns from users table entirely
+  //
+  // Related:
+  // - Migration: supabase/migrations/20260130000002_deprecate_legacy_whatsapp_fields.sql
+  // - Frontend hook: src/hooks/useWhatsAppSessionSubscription.ts (uses whatsapp_sessions)
+  // - Service: src/services/whatsappService.ts (to be migrated)
 }
 
 /**
@@ -1967,6 +2014,19 @@ serve(async (req) => {
 
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // Verify service role access (critical configuration check)
+    const isServiceRole = await verifyServiceRoleAccess(supabase)
+    if (!isServiceRole) {
+      log('ERROR', 'CRITICAL: Webhook running without service role access')
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Internal configuration error - service role access denied'
+        }),
+        { status: 500, headers: CORS_HEADERS }
+      )
+    }
 
     // Route to appropriate handler
     switch (event) {
