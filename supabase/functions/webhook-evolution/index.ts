@@ -1634,6 +1634,16 @@ async function handleMessagesUpsert(
     // Trigger health score recalculation (Issue #144)
     // Must await to ensure RPC completes before Edge Function terminates
     await triggerHealthScoreRecalculation(supabase, userId, result.contactId)
+
+    // Update contact message metrics cache (for sorting by volume/recency)
+    // Fire-and-forget to avoid blocking webhook response
+    supabase.rpc('update_contact_message_metrics', {
+      _contact_id: result.contactId
+    }).then(() => {
+      log('DEBUG', 'Contact metrics updated', { contactId: result.contactId })
+    }).catch(err => {
+      log('WARN', 'Failed to update contact metrics (non-critical)', err.message)
+    })
   }
 }
 

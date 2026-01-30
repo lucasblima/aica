@@ -32,6 +32,9 @@ import {
   Phone,
   UserCircle,
   Clock,
+  ArrowUp,
+  ArrowDown,
+  SortAsc,
 } from 'lucide-react';
 import { CeramicTabSelector } from '@/components/ui';
 import {
@@ -45,7 +48,7 @@ import whatsappAnalyticsService, {
 } from '@/services/whatsappAnalyticsService';
 import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion';
 import { useWhatsAppGamification } from '../hooks/useWhatsAppGamification';
-import { useWhatsAppContacts, WhatsAppContact } from '@/hooks/useWhatsAppContacts';
+import { useWhatsAppContacts, WhatsAppContact, ContactSortField, ContactSortOrder } from '@/hooks/useWhatsAppContacts';
 import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('ConnectionsWhatsAppTab');
 
@@ -226,11 +229,32 @@ const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onCl
     return phone;
   };
 
+  // Format relative time for last activity
+  const formatLastActivity = (timestamp: string | null): string => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Agora';
+    if (minutes < 60) return `${minutes}min`;
+    if (hours < 24) return `${hours}h`;
+    if (days < 7) return `${days}d`;
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  };
+
   // Get display name (prefer whatsapp_name, fallback to name)
   const displayName = contact.whatsapp_name || contact.name || 'Contato';
 
   // Check if it's a group (WhatsApp groups have @g.us in their ID)
   const isGroup = contact.whatsapp_id?.includes('@g.us') || contact.whatsapp_id?.includes('-');
+
+  // Message count and last activity
+  const messageCount = contact.whatsapp_message_count || 0;
+  const lastActivity = contact.last_whatsapp_message_at;
 
   return (
     <motion.div
@@ -276,12 +300,19 @@ const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onCl
           </div>
         </div>
 
-        {/* Sync Source Badge */}
-        {contact.sync_source && (
-          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-            {contact.sync_source}
-          </span>
-        )}
+        {/* Metrics Badge */}
+        <div className="flex flex-col items-end gap-1">
+          {messageCount > 0 && (
+            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
+              {messageCount} msg
+            </span>
+          )}
+          {lastActivity && (
+            <span className="text-xs text-ceramic-text-secondary">
+              {formatLastActivity(lastActivity)}
+            </span>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -316,7 +347,12 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     isLoading: isSyncLoading,
     error: syncError,
     lastSyncAt,
+    fetchContacts,
   } = useWhatsAppContacts();
+
+  // Local sorting state
+  const [sortBy, setSortBy] = useState<ContactSortField>('last_activity');
+  const [sortOrder, setSortOrder] = useState<ContactSortOrder>('desc');
 
   // Tab configuration
   const tabs = [
@@ -331,6 +367,12 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     loadContacts();
     loadAnomalies();
   }, []);
+
+  // Reload WhatsApp contacts when sorting changes
+  useEffect(() => {
+    fetchContacts(sortBy, sortOrder);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, sortOrder]);
 
   // Track analytics view when tab changes to 'analytics'
   useEffect(() => {
@@ -588,6 +630,38 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
               </p>
             </div>
           )}
+        </div>
+
+        {/* Sort Controls */}
+        <div className="ceramic-card p-4 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary">
+              <SortAsc className="w-4 h-4" />
+              <span>Ordenar por:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as ContactSortField)}
+                className="ceramic-inset px-3 py-2 rounded-xl text-sm font-medium text-ceramic-text-primary bg-transparent border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
+              >
+                <option value="name">Nome</option>
+                <option value="message_count">Volume de mensagens</option>
+                <option value="last_activity">Atividade recente</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="ceramic-card p-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
+                title={sortOrder === 'asc' ? 'Ordem crescente' : 'Ordem decrescente'}
+              >
+                {sortOrder === 'asc' ? (
+                  <ArrowUp className="w-4 h-4 text-ceramic-text-secondary" />
+                ) : (
+                  <ArrowDown className="w-4 h-4 text-ceramic-text-secondary" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Contacts List */}

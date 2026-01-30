@@ -244,7 +244,11 @@ async function validateSession(): Promise<SessionValidation> {
       return { isValid: false, error: 'No user in session' }
     }
 
-    // Get the (potentially refreshed) session token
+    // Force token refresh to ensure we have a fresh token for Edge Functions
+    // This fixes 401 errors when token is close to expiration
+    await supabase.auth.refreshSession()
+
+    // Get the refreshed session token
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
 
     if (sessionError) {
@@ -576,6 +580,11 @@ export async function updateUserContext(
 // AUTO-GENERATION HELPER
 // =============================================================================
 
+// Guard to prevent multiple concurrent generation attempts
+let generationInProgress = false
+let lastGenerationAttempt = 0
+const GENERATION_COOLDOWN_MS = 30000 // 30 seconds between attempts
+
 /**
  * Check and trigger generation if needed (non-blocking)
  * Returns true if generation was triggered
@@ -584,6 +593,19 @@ export async function checkAndTriggerGenerationIfNeeded(
   userId: string
 ): Promise<boolean> {
   try {
+    // Prevent concurrent generation attempts
+    if (generationInProgress) {
+      log.debug('Skipping generation - already in progress')
+      return false
+    }
+
+    // Cooldown to prevent rapid retries
+    const now = Date.now()
+    if (now - lastGenerationAttempt < GENERATION_COOLDOWN_MS) {
+      log.debug('Skipping generation - cooldown active')
+      return false
+    }
+
     // First validate session before doing anything
     const session = await validateSession()
     if (!session.isValid) {
@@ -605,10 +627,18 @@ export async function checkAndTriggerGenerationIfNeeded(
         unansweredCount: check.unansweredCount,
       })
 
+      // Mark generation as in progress
+      generationInProgress = true
+      lastGenerationAttempt = Date.now()
+
       // Trigger in background (don't await)
-      triggerQuestionGeneration({ batchSize: 5 }).catch(() => {
-        // Errors already logged in triggerQuestionGeneration
-      })
+      triggerQuestionGeneration({ batchSize: 5 })
+        .catch(() => {
+          // Errors already logged in triggerQuestionGeneration
+        })
+        .finally(() => {
+          generationInProgress = false
+        })
 
       return true
     }
