@@ -34,9 +34,15 @@ export interface WhatsAppContact {
   whatsapp_name: string | null
   whatsapp_profile_pic_url: string | null
   sync_source: string | null
+  whatsapp_message_count: number
+  last_whatsapp_message_at: string | null
   created_at: string
   updated_at: string
 }
+
+// Contact sorting options
+export type ContactSortField = 'name' | 'message_count' | 'last_activity'
+export type ContactSortOrder = 'asc' | 'desc'
 
 export interface SyncResult {
   success: boolean
@@ -70,7 +76,7 @@ interface UseWhatsAppContactsReturn {
   /** Sync contacts from Evolution API */
   syncContacts: () => Promise<SyncResult | null>
   /** Fetch contacts from database */
-  fetchContacts: () => Promise<void>
+  fetchContacts: (sortBy?: ContactSortField, sortOrder?: ContactSortOrder) => Promise<void>
   /** Last sync timestamp */
   lastSyncAt: string | null
 }
@@ -89,9 +95,12 @@ export function useWhatsAppContacts(): UseWhatsAppContactsReturn {
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null)
 
   /**
-   * Fetch contacts from database
+   * Fetch contacts from database with optional sorting
    */
-  const fetchContacts = useCallback(async () => {
+  const fetchContacts = useCallback(async (
+    sortBy: ContactSortField = 'name',
+    sortOrder: ContactSortOrder = 'asc'
+  ) => {
     try {
       setIsLoading(true)
       setError(null)
@@ -101,13 +110,34 @@ export function useWhatsAppContacts(): UseWhatsAppContactsReturn {
         throw new Error('User not authenticated')
       }
 
-      // Fetch contacts synced from WhatsApp
-      const { data, error: fetchError, count } = await supabase
+      // Build query with sorting
+      const query = supabase
         .from('contact_network')
         .select('*', { count: 'exact' })
         .eq('user_id', session.user.id)
         .eq('sync_source', 'whatsapp')
-        .order('whatsapp_name', { ascending: true })
+
+      // Apply sorting based on sortBy field
+      switch (sortBy) {
+        case 'message_count':
+          query.order('whatsapp_message_count', {
+            ascending: sortOrder === 'asc',
+            nullsFirst: false,
+          })
+          break
+        case 'last_activity':
+          query.order('last_whatsapp_message_at', {
+            ascending: sortOrder === 'asc',
+            nullsFirst: false,
+          })
+          break
+        case 'name':
+        default:
+          query.order('whatsapp_name', { ascending: sortOrder === 'asc' })
+          break
+      }
+
+      const { data, error: fetchError, count } = await query
 
       if (fetchError) {
         throw fetchError
