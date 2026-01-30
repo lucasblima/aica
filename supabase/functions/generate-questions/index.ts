@@ -18,7 +18,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
-const GEMINI_MODEL = 'gemini-2.0-flash-exp'
+const GEMINI_MODEL = 'gemini-2.0-flash'
 
 // Generation configuration
 const CONFIG = {
@@ -527,9 +527,22 @@ serve(async (req) => {
     // Get authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      log('ERROR', 'No Authorization header provided')
       return new Response(
         JSON.stringify({ success: false, error: 'Authorization required' }),
         { status: 401, headers: corsHeaders }
+      )
+    }
+
+    // Validate environment variables
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      log('ERROR', 'Missing environment variables', {
+        hasUrl: !!SUPABASE_URL,
+        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+      })
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error' }),
+        { status: 500, headers: corsHeaders }
       )
     }
 
@@ -538,15 +551,23 @@ serve(async (req) => {
 
     // Verify user authentication
     const token = authHeader.replace('Bearer ', '')
+    log('DEBUG', 'Validating token', { tokenLength: token.length, tokenPrefix: token.substring(0, 20) })
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
 
     if (authError || !user) {
-      log('ERROR', 'Authentication failed', authError?.message)
+      log('ERROR', 'Authentication failed', {
+        error: authError?.message,
+        errorCode: authError?.status,
+        hasUser: !!user
+      })
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid authentication' }),
+        JSON.stringify({ success: false, error: 'Invalid authentication', details: authError?.message }),
         { status: 401, headers: corsHeaders }
       )
     }
+
+    log('INFO', 'User authenticated', { userId: user.id })
 
     // Parse request body
     const request: GenerateQuestionsRequest = await req.json().catch(() => ({}))
