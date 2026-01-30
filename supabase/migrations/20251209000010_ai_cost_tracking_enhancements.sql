@@ -138,7 +138,7 @@ CREATE OR REPLACE FUNCTION public.log_ai_usage(
   p_duration_seconds NUMERIC DEFAULT NULL,
   p_input_cost_usd NUMERIC DEFAULT NULL,
   p_output_cost_usd NUMERIC DEFAULT NULL,
-  p_total_cost_usd NUMERIC,
+  p_total_cost_usd NUMERIC DEFAULT NULL,
   p_module_type TEXT DEFAULT NULL,
   p_module_id UUID DEFAULT NULL,
   p_asset_id UUID DEFAULT NULL,
@@ -152,7 +152,10 @@ BEGIN
   -- Validate total cost matches sum (allow 0.000001 tolerance for rounding)
   v_calculated_total := COALESCE(p_input_cost_usd, 0) + COALESCE(p_output_cost_usd, 0);
 
-  IF ABS(v_calculated_total - p_total_cost_usd) > 0.000001 THEN
+  -- Auto-calculate if not provided
+  IF p_total_cost_usd IS NULL THEN
+    p_total_cost_usd := v_calculated_total;
+  ELSIF ABS(v_calculated_total - p_total_cost_usd) > 0.000001 THEN
     RAISE WARNING 'Cost mismatch: input (%) + output (%) != total (%)',
       p_input_cost_usd, p_output_cost_usd, p_total_cost_usd;
     -- Auto-correct to avoid data inconsistency

@@ -28,12 +28,112 @@ interface PairingCodeResponse {
   success: boolean
   code?: string
   expiresAt?: string
+  serverTime?: string
   sessionId?: string
   instanceName?: string
   error?: string
 }
 
 const PAIRING_CODE_EXPIRATION_SECONDS = 60
+
+/**
+ * Configure webhook for an Evolution API instance
+ */
+async function configureInstanceWebhook(
+  evolutionApiUrl: string,
+  evolutionApiKey: string,
+  instanceName: string,
+  supabaseUrl: string
+): Promise<void> {
+  const webhookUrl = `${supabaseUrl}/functions/v1/webhook-evolution`
+
+  try {
+    // CRITICAL: Evolution API v2 requires 'webhook' wrapper object with proper key names
+    // See: https://github.com/EvolutionAPI/evolution-api/issues/1220
+    const response = await fetch(
+      `${evolutionApiUrl}/webhook/set/${instanceName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': evolutionApiKey,
+        },
+        body: JSON.stringify({
+          webhook: {
+            enabled: true,
+            url: webhookUrl,
+            webhookByEvents: true,
+            webhookBase64: false,
+            events: ['CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'QRCODE_UPDATED', 'CONTACTS_UPDATE'],
+          },
+        }),
+      }
+    )
+
+    if (response.ok) {
+      console.log(`[generate-pairing-code] Webhook configured for ${instanceName}`)
+    } else {
+      const errorText = await response.text()
+      console.warn(`[generate-pairing-code] Webhook config warning: ${response.status} - ${errorText}`)
+    }
+  } catch (e) {
+    console.warn('[generate-pairing-code] Webhook config failed:', e)
+  }
+}
+
+/**
+ * Ensure Evolution API instance exists using optimistic creation pattern.
+ * Avoids TOCTOU race condition by attempting creation first and handling conflicts.
+ *
+ * @returns Object with success status and whether instance was newly created
+ */
+async function ensureInstanceExists(
+  evolutionApiUrl: string,
+  evolutionApiKey: string,
+  instanceName: string,
+  supabaseUrl: string
+): Promise<{ success: boolean; created: boolean }> {
+
+  // OPTIMISTIC: Try to create first (no check) to avoid TOCTOU race condition
+  const createResponse = await fetch(
+    `${evolutionApiUrl}/instance/create`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': evolutionApiKey,
+      },
+      body: JSON.stringify({
+        instanceName: instanceName,
+        qrcode: false,
+        integration: 'WHATSAPP-BAILEYS',
+      }),
+    }
+  )
+
+  if (createResponse.ok) {
+    // Instance created successfully - configure webhook
+    console.log(`[generate-pairing-code] Instance created: ${instanceName}`)
+    await configureInstanceWebhook(evolutionApiUrl, evolutionApiKey, instanceName, supabaseUrl)
+    return { success: true, created: true }
+  }
+
+  // Check if error indicates instance already exists
+  const errorBody = await createResponse.text()
+  const isAlreadyExists = createResponse.status === 409 ||
+    errorBody.toLowerCase().includes('already exists') ||
+    errorBody.toLowerCase().includes('instance name already in use') ||
+    errorBody.toLowerCase().includes('already in use')
+
+  if (isAlreadyExists) {
+    console.log(`[generate-pairing-code] Instance already exists: ${instanceName}`)
+    return { success: true, created: false }
+  }
+
+  // Actual error - not a conflict
+  console.error(`[generate-pairing-code] Instance creation failed: ${createResponse.status} - ${errorBody}`)
+  throw new Error('Failed to create WhatsApp instance')
+}
 
 serve(async (req: Request) => {
   // 1. Handle CORS preflight
@@ -121,82 +221,17 @@ serve(async (req: Request) => {
       throw new Error('Evolution API credentials not configured')
     }
 
-    // 8. Ensure instance exists in Evolution API
-    const checkResponse = await fetch(
-      `${evolutionApiUrl}/instance/fetchInstances?instanceName=${session.instance_name}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': evolutionApiKey,
-        },
-      }
+    // 8. Ensure instance exists in Evolution API (optimistic creation pattern)
+    // Uses create-then-handle-conflict instead of check-then-create to avoid TOCTOU race condition
+    const instanceResult = await ensureInstanceExists(
+      evolutionApiUrl,
+      evolutionApiKey,
+      session.instance_name,
+      supabaseUrl
     )
 
-    const existingInstances = await checkResponse.json()
-    const instanceExists = Array.isArray(existingInstances) &&
-      existingInstances.some((i: { name: string }) => i.name === session.instance_name)
-
-    if (!instanceExists) {
-      console.log(`[generate-pairing-code] Creating instance: ${session.instance_name}`)
-
-      // Create the instance
-      const createResponse = await fetch(
-        `${evolutionApiUrl}/instance/create`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': evolutionApiKey,
-          },
-          body: JSON.stringify({
-            instanceName: session.instance_name,
-            qrcode: false,
-            integration: 'WHATSAPP-BAILEYS',
-          }),
-        }
-      )
-
-      if (!createResponse.ok) {
-        const errorText = await createResponse.text()
-        console.error(`[generate-pairing-code] Failed to create instance: ${errorText}`)
-        throw new Error('Failed to create WhatsApp instance')
-      }
-
-      // Configure webhook
-      // CRITICAL: Evolution API v2 requires 'webhook' wrapper object with proper key names
-      // See: https://github.com/EvolutionAPI/evolution-api/issues/1220
-      const webhookUrl = `${supabaseUrl}/functions/v1/webhook-evolution`
-      try {
-        const webhookConfigResponse = await fetch(
-          `${evolutionApiUrl}/webhook/set/${session.instance_name}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': evolutionApiKey,
-            },
-            body: JSON.stringify({
-              webhook: {
-                enabled: true,
-                url: webhookUrl,
-                webhookByEvents: true,
-                webhookBase64: false,
-                events: ['CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'QRCODE_UPDATED', 'CONTACTS_UPDATE'],
-              },
-            }),
-          }
-        )
-
-        if (webhookConfigResponse.ok) {
-          console.log(`[generate-pairing-code] Webhook configured for ${session.instance_name}`)
-        } else {
-          const webhookErrorText = await webhookConfigResponse.text()
-          console.warn(`[generate-pairing-code] Webhook config failed: ${webhookConfigResponse.status} - ${webhookErrorText}`)
-        }
-      } catch (e) {
-        console.warn('[generate-pairing-code] Webhook config failed:', e)
-      }
+    if (instanceResult.created) {
+      console.log(`[generate-pairing-code] New instance created and webhook configured: ${session.instance_name}`)
     }
 
     // 9. Generate pairing code via Evolution API
@@ -260,6 +295,7 @@ serve(async (req: Request) => {
       success: true,
       code: pairingCode,
       expiresAt,
+      serverTime: new Date().toISOString(),
       sessionId: session.id,
       instanceName: session.instance_name,
     }

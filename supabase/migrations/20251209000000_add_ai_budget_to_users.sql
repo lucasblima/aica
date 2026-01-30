@@ -14,10 +14,7 @@
 -- {"monthly_ai_budget_usd": 50.00}
 
 -- No schema changes needed - auth.users already has raw_user_meta_data
-
--- Add comment for documentation
-COMMENT ON COLUMN auth.users.raw_user_meta_data IS
-'User metadata including AI budget settings: {"monthly_ai_budget_usd": 50.00, ...}';
+-- Note: Cannot add COMMENT to auth.users as it's managed by Supabase
 
 -- =====================================================
 -- HELPER FUNCTION: Get User AI Budget
