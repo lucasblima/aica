@@ -130,6 +130,11 @@ const EVOLUTION_API_KEY = Deno.env.get('EVOLUTION_API_KEY')
 const HEALTH_SCORE_REALTIME_ENABLED = Deno.env.get('HEALTH_SCORE_REALTIME_ENABLED') === 'true'
 const HEALTH_SCORE_DEBOUNCE_MS = parseInt(Deno.env.get('HEALTH_SCORE_DEBOUNCE_MS') || '60000') // 1 minute default
 
+// Contact sync configuration (Issue F8, F10)
+// Configurable limits to avoid memory issues with large contact lists
+const CONTACT_SYNC_LIMIT = parseInt(Deno.env.get('CONTACT_SYNC_LIMIT') || '1000')
+const GROUP_SYNC_LIMIT = parseInt(Deno.env.get('GROUP_SYNC_LIMIT') || '200')
+
 // Legacy instance configuration (deprecated - multi-instance architecture uses whatsapp_sessions table)
 // Kept for backward compatibility during migration, should be removed after full migration
 const LEGACY_SHARED_INSTANCE = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'AI_Comtxae_4006'
@@ -330,10 +335,51 @@ function formatDocumentType(type: string): string {
 }
 
 /**
- * Convert WhatsApp JID to normalized phone number
+ * Normalize WhatsApp JID to phone number
+ * Handles various JID formats (Issue F9):
+ * - 5511999999999@s.whatsapp.net (individual)
+ * - 120363123456789@g.us (group - returns group ID)
+ * - 5511999999999@lid (linked device)
+ * - 5511999999999:123@s.whatsapp.net (device-specific)
+ *
+ * @param remoteJid - The WhatsApp JID to parse
+ * @returns Normalized phone number or group ID (digits only)
  */
 function jidToPhone(remoteJid: string): string {
-  return remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '')
+  if (!remoteJid) return ''
+
+  // Remove device suffix (e.g., ":123")
+  const withoutDevice = remoteJid.split(':')[0]
+
+  // Extract before @ symbol
+  const atIndex = withoutDevice.indexOf('@')
+  if (atIndex === -1) return withoutDevice
+
+  return withoutDevice.substring(0, atIndex)
+}
+
+/**
+ * Check if JID is a group (Issue F9)
+ * Groups have @g.us suffix
+ *
+ * @param jid - The WhatsApp JID to check
+ * @returns True if the JID represents a group
+ */
+function isGroupJid(jid: string): boolean {
+  return jid?.includes('@g.us') || false
+}
+
+/**
+ * Validate if a string is a valid phone number (digits only)
+ * Used for filtering invalid contacts during sync
+ *
+ * @param phone - The phone number to validate
+ * @returns True if the phone is valid (10-15 digits)
+ */
+function isValidPhone(phone: string): boolean {
+  if (!phone) return false
+  // Phone should be 10-15 digits (international format)
+  return /^\d{10,15}$/.test(phone)
 }
 
 /**
@@ -1817,16 +1863,50 @@ async function triggerAutomaticSync(
       const contacts = await contactsResponse.json()
       const contactsArray = Array.isArray(contacts) ? contacts : []
 
-      log('INFO', `Found ${contactsArray.length} contacts`, { instanceName })
+      log('INFO', `Found ${contactsArray.length} raw contacts`, { instanceName })
+
+      // Issue F8: Deduplicate contacts by normalized phone
+      // This handles cases where the same phone appears with different JID formats
+      const contactMap = new Map<string, typeof contactsArray[0]>()
+      for (const contact of contactsArray) {
+        if (!contact.id) continue
+
+        // Skip groups (they have @g.us suffix) - synced separately
+        if (isGroupJid(contact.id)) continue
+
+        // Use robust JID parsing (Issue F9)
+        const phone = jidToPhone(contact.id)
+
+        // Validate phone format
+        if (!isValidPhone(phone)) {
+          log('DEBUG', 'Skipping invalid phone', { jid: contact.id, phone })
+          continue
+        }
+
+        // Keep the most complete version (prefer one with pushName)
+        const existing = contactMap.get(phone)
+        if (!existing || (contact.pushName && !existing.pushName)) {
+          contactMap.set(phone, contact)
+        }
+      }
+
+      const uniqueContacts = Array.from(contactMap.values())
+      log('INFO', `Deduplicated ${contactsArray.length} contacts to ${uniqueContacts.length}`, { instanceName })
+
+      // Issue F10: Use configurable limit and log truncation
+      const contactsToSync = uniqueContacts.slice(0, CONTACT_SYNC_LIMIT)
+      if (uniqueContacts.length > CONTACT_SYNC_LIMIT) {
+        log('WARN', 'Contact list truncated due to limit', {
+          total: uniqueContacts.length,
+          limit: CONTACT_SYNC_LIMIT,
+          instanceName
+        })
+      }
 
       // Store contacts in contact_network table
       // Schema uses: whatsapp_id, name, phone_number, whatsapp_phone, whatsapp_name, whatsapp_profile_pic_url
-      for (const contact of contactsArray.slice(0, 500)) { // Limit to 500 contacts
-        const phone = contact.id?.replace('@s.whatsapp.net', '').replace('@g.us', '')
-        if (!phone) continue
-
-        // Skip groups - only sync individual contacts here
-        if (contact.id?.includes('@g.us')) continue
+      for (const contact of contactsToSync) {
+        const phone = jidToPhone(contact.id)
 
         await supabase
           .from('contact_network')
@@ -1848,7 +1928,7 @@ async function triggerAutomaticSync(
           })
       }
 
-      log('INFO', 'Contacts synced successfully', { instanceName, count: Math.min(contactsArray.length, 500) })
+      log('INFO', 'Contacts synced successfully', { instanceName, count: contactsToSync.length })
     } else {
       log('WARN', 'Failed to fetch contacts', { status: contactsResponse.status })
     }
@@ -1873,15 +1953,28 @@ async function triggerAutomaticSync(
 
       log('INFO', `Found ${groupsArray.length} groups`, { instanceName })
 
+      // Issue F10: Use configurable limit and log truncation
+      const groupsToSync = groupsArray.slice(0, GROUP_SYNC_LIMIT)
+      if (groupsArray.length > GROUP_SYNC_LIMIT) {
+        log('WARN', 'Group list truncated due to limit', {
+          total: groupsArray.length,
+          limit: GROUP_SYNC_LIMIT,
+          instanceName
+        })
+      }
+
       // Store groups in contact_network table
       // Groups use whatsapp_id with @g.us suffix to distinguish from contacts
-      for (const group of groupsArray.slice(0, 100)) { // Limit to 100 groups
+      for (const group of groupsToSync) {
+        // Use robust JID parsing (Issue F9)
+        const groupId = jidToPhone(group.id)
+
         await supabase
           .from('contact_network')
           .upsert({
             user_id: userId,
             whatsapp_id: group.id,
-            whatsapp_phone: group.id?.replace('@g.us', ''),
+            whatsapp_phone: groupId,
             name: group.subject || group.name || 'Group',
             whatsapp_name: group.subject || group.name || 'Group',
             whatsapp_profile_pic_url: group.pictureUrl || null,
@@ -1895,7 +1988,7 @@ async function triggerAutomaticSync(
           })
       }
 
-      log('INFO', 'Groups synced successfully', { instanceName, count: Math.min(groupsArray.length, 100) })
+      log('INFO', 'Groups synced successfully', { instanceName, count: groupsToSync.length })
     } else {
       log('WARN', 'Failed to fetch groups', { status: groupsResponse.status })
     }
