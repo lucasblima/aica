@@ -448,19 +448,7 @@ async function findUserByInstance(supabase: ReturnType<typeof createClient>, ins
     }
   }
 
-  // 3. Legacy fallback: check users table for instance_name column
-  const { data: legacyUser } = await supabase
-    .from('users')
-    .select('id')
-    .eq('instance_name', instanceName)
-    .single()
-
-  if (legacyUser?.id) {
-    log('DEBUG', 'User found via legacy users.instance_name', { instanceName })
-    return legacyUser.id
-  }
-
-  // 4. Check if this is the legacy shared instance (deprecated)
+  // 3. Check if this is the legacy shared instance (deprecated)
   // Multi-instance architecture: each user has their own instance
   if (instanceName === LEGACY_SHARED_INSTANCE) {
     log('WARN', 'Event from legacy shared instance, cannot determine user', { instanceName })
