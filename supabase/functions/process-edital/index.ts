@@ -25,7 +25,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
 // Model for structured extraction (use stable version)
-const GEMINI_MODEL = 'gemini-1.5-flash'
+const GEMINI_MODEL = 'gemini-1.5-flash-latest'
 
 // =============================================================================
 // CORS CONFIGURATION
