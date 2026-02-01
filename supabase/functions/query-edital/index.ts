@@ -125,7 +125,7 @@ Responda de forma direta e clara. Se citar trechos do documento, use aspas.
   }
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
