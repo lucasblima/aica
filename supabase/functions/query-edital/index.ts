@@ -109,9 +109,9 @@ Responda de forma direta e clara. Se citar trechos do documento, use aspas.
         parts: [
           { text: queryPrompt },
           {
-            file_data: {
-              file_uri: `https://generativelanguage.googleapis.com/v1beta/${geminiFileName}`,
-              mime_type: 'application/pdf',
+            fileData: {
+              fileUri: geminiFileName,  // Just "files/xxx", not full URL
+              mimeType: 'application/pdf',
             },
           },
         ],
