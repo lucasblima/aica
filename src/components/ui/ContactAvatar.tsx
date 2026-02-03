@@ -11,6 +11,25 @@
 import React, { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
+// Supabase URL for proxy endpoint
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+
+/**
+ * Get proxied URL for WhatsApp profile pictures
+ * WhatsApp blocks direct hotlinking, so we proxy through our Edge Function
+ */
+function getProxiedWhatsAppUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+
+  // Only proxy WhatsApp URLs
+  if (url.includes('pps.whatsapp.net') || url.includes('mmg.whatsapp.net')) {
+    return `${SUPABASE_URL}/functions/v1/proxy-whatsapp-image?url=${encodeURIComponent(url)}`;
+  }
+
+  // Return other URLs as-is
+  return url;
+}
+
 export interface ContactAvatarProps {
   /** Contact name (used for initials fallback) */
   name: string | null | undefined;
@@ -122,11 +141,13 @@ export function ContactAvatar({
   const [imageError, setImageError] = useState(false);
   const [fallbackError, setFallbackError] = useState(false);
 
-  // Determine which image to show
+  // Determine which image to show (with WhatsApp proxy)
   const imageUrl = useMemo(() => {
     if (imageError && fallbackError) return null;
     if (imageError) return avatarUrl;
-    return whatsappProfilePicUrl || avatarUrl;
+    // Proxy WhatsApp URLs to avoid 403 hotlink protection
+    const proxiedWhatsApp = getProxiedWhatsAppUrl(whatsappProfilePicUrl);
+    return proxiedWhatsApp || avatarUrl;
   }, [whatsappProfilePicUrl, avatarUrl, imageError, fallbackError]);
 
   const initials = useMemo(() => getInitials(name), [name]);

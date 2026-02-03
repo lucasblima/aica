@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, MessageCircle, Loader2 } from 'lucide-react';
+import { RefreshCw, MessageCircle, Loader2, Settings2 } from 'lucide-react';
 import { HeaderGlobal, ContactDetailModal, CreditBalanceWidget } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
@@ -45,6 +45,9 @@ export function ContactsView() {
   // Auto-sync state
   const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+
+  // Issue #91: Reconnect/reconfigure webhook state
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // Refs to prevent infinite loops
   const hasAttemptedDatabaseSync = useRef(false);
@@ -306,6 +309,40 @@ export function ContactsView() {
     }
   };
 
+  // Issue #91: Handle reconnect/reconfigure webhook
+  const handleReconnect = async () => {
+    setIsReconnecting(true);
+    setError(null);
+
+    try {
+      log.debug('Reconnecting WhatsApp - reconfiguring webhook...');
+
+      const result = await configureWebhook();
+
+      if (result?.success) {
+        log.debug('Webhook reconfigured successfully:', result);
+
+        // Refresh session to get updated status
+        if (user?.id) {
+          const session = await getWhatsAppSession(user.id);
+          setWhatsappSession(session);
+        }
+
+        // Show success message
+        alert(`✅ Conexão reconfigurada!\n\nWebhook: ${result.webhookConfigured ? 'OK' : 'Fallback'}\nStatus: ${result.connectionState || 'unknown'}`);
+      } else {
+        throw new Error('Falha ao reconfigurar conexão');
+      }
+    } catch (err) {
+      const error = err as Error;
+      log.error('Reconnect error:', error);
+      setError(`Erro ao reconectar: ${error.message}`);
+      alert(`❌ Erro ao reconectar:\n\n${error.message}`);
+    } finally {
+      setIsReconnecting(false);
+    }
+  };
+
   // Show loading while checking session or auto-syncing contacts
   if (isCheckingSession || isAutoSyncing) {
     return (
@@ -365,23 +402,41 @@ export function ContactsView() {
         <div className="flex items-start justify-between gap-4">
           <CreditBalanceWidget className="max-w-md" />
 
-          {/* Sync Button */}
-          <button
-            onClick={handleWhatsAppSync}
-            disabled={isSyncing}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
-              isSyncing
-                ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
-                : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
-            }`}
-            title={syncStatus?.lastSyncAt ? `Ultima sincronizacao: ${new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR')}` : 'Sincronizar contatos WhatsApp'}
-          >
-            <MessageCircle className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
-            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
-            {isSyncing && (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            )}
-          </button>
+          {/* Button Group */}
+          <div className="flex items-center gap-2">
+            {/* Issue #91: Reconnect Button - reconfigures webhook with secret */}
+            <button
+              onClick={handleReconnect}
+              disabled={isReconnecting}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+                isReconnecting
+                  ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
+                  : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
+              }`}
+              title="Reconectar WhatsApp - reconfigura webhook para receber mensagens"
+            >
+              <Settings2 className={`w-4 h-4 ${isReconnecting ? 'animate-spin' : ''}`} />
+              <span>{isReconnecting ? 'Reconectando...' : 'Reconectar'}</span>
+            </button>
+
+            {/* Sync Button */}
+            <button
+              onClick={handleWhatsAppSync}
+              disabled={isSyncing}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+                isSyncing
+                  ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
+                  : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
+              }`}
+              title={syncStatus?.lastSyncAt ? `Ultima sincronizacao: ${new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR')}` : 'Sincronizar contatos WhatsApp'}
+            >
+              <MessageCircle className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+              {isSyncing && (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Sync Status */}
