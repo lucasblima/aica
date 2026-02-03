@@ -166,14 +166,23 @@ async function uploadToGoogleFiles(
 
     const result = await response.json()
 
+    log('DEBUG', 'Google Files API response', { file: result.file })
+
     if (!result.file || !result.file.name) {
       log('ERROR', 'Invalid response from Google Files API', { result })
       throw new Error('Invalid response: missing file.name')
     }
 
-    const geminiFileName = result.file.name // "files/xxx"
+    // Use the full URI if available, otherwise construct it from name
+    // The fileUri parameter in generateContent expects the full URI
+    const geminiFileName = result.file.uri || `https://generativelanguage.googleapis.com/v1beta/${result.file.name}`
 
-    log('INFO', 'File uploaded to Google Files API', { geminiFileName, state: result.file.state })
+    log('INFO', 'File uploaded to Google Files API', {
+      geminiFileName,
+      state: result.file.state,
+      name: result.file.name,
+      uri: result.file.uri
+    })
 
     return geminiFileName
   } catch (error) {
@@ -186,19 +195,24 @@ async function uploadToGoogleFiles(
 /**
  * Wait for file to be processed and ACTIVE in Google Files API
  */
-async function waitForFileActive(geminiFileName: string, maxWaitMs = 120000): Promise<void> {
-  log('INFO', 'Waiting for file to be ACTIVE', { geminiFileName })
+async function waitForFileActive(geminiFileUri: string, maxWaitMs = 120000): Promise<void> {
+  log('INFO', 'Waiting for file to be ACTIVE', { geminiFileUri })
 
   const startTime = Date.now()
   const pollInterval = 2000 // 2 seconds
 
+  // Extract file name from URI for status check
+  // URI format: https://generativelanguage.googleapis.com/v1beta/files/xxx
+  const fileNameMatch = geminiFileUri.match(/files\/[^/]+$/)
+  const fileName = fileNameMatch ? fileNameMatch[0] : geminiFileUri
+
   while (true) {
     if (Date.now() - startTime > maxWaitMs) {
-      throw new Error(`Timeout waiting for file to be ACTIVE: ${geminiFileName}`)
+      throw new Error(`Timeout waiting for file to be ACTIVE: ${geminiFileUri}`)
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${geminiFileName}?key=${GEMINI_API_KEY}`
+      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${GEMINI_API_KEY}`
     )
 
     if (!response.ok) {
@@ -208,7 +222,7 @@ async function waitForFileActive(geminiFileName: string, maxWaitMs = 120000): Pr
     const fileInfo = await response.json()
 
     if (fileInfo.state === 'ACTIVE') {
-      log('INFO', 'File is ACTIVE', { geminiFileName, elapsedMs: Date.now() - startTime })
+      log('INFO', 'File is ACTIVE', { geminiFileUri, elapsedMs: Date.now() - startTime })
       return
     }
 
@@ -228,8 +242,8 @@ async function waitForFileActive(geminiFileName: string, maxWaitMs = 120000): Pr
 /**
  * Extract structured data from edital using Gemini with the uploaded file
  */
-async function extractEditalStructure(geminiFileName: string): Promise<AnalyzedEditalData> {
-  log('INFO', 'Extracting edital structure with Gemini', { geminiFileName })
+async function extractEditalStructure(geminiFileUri: string): Promise<AnalyzedEditalData> {
+  log('INFO', 'Extracting edital structure with Gemini', { geminiFileUri })
 
   const extractionPrompt = `
 Voce e um especialista em analise de editais de fomento brasileiros.
@@ -358,7 +372,7 @@ IMPORTANTE:
           { text: extractionPrompt },
           {
             fileData: {
-              fileUri: geminiFileName,  // Just "files/xxx", not full URL
+              fileUri: geminiFileUri,  // Full URI from Google Files API
               mimeType: 'application/pdf',
             },
           },
@@ -562,23 +576,23 @@ serve(async (req) => {
     // =======================================================================
 
     // 1. Upload to Google Files API
-    const geminiFileName = await uploadToGoogleFiles(
+    const geminiFileUri = await uploadToGoogleFiles(
       request.file_data,
       request.file_name,
       'application/pdf'
     )
 
     // 2. Wait for file to be ACTIVE (indexed)
-    await waitForFileActive(geminiFileName)
+    await waitForFileActive(geminiFileUri)
 
     // 3. Extract structured data using Gemini
-    const analyzedData = await extractEditalStructure(geminiFileName)
+    const analyzedData = await extractEditalStructure(geminiFileUri)
 
     // 4. Save reference to database
     const documentId = await saveDocumentReference(
       supabase,
       user.id,
-      geminiFileName,
+      geminiFileUri,
       request.file_name,
       request.file_size || 0
     )
@@ -589,14 +603,14 @@ serve(async (req) => {
 
     log('INFO', 'Edital processed successfully', {
       documentId,
-      geminiFileName,
+      geminiFileUri,
       processingTimeMs,
       title: analyzedData.title,
     })
 
     const response: ProcessEditalResponse = {
       success: true,
-      gemini_file_name: geminiFileName,
+      gemini_file_name: geminiFileUri,
       file_search_document_id: documentId,
       analyzed_data: analyzedData,
       processing_time_ms: processingTimeMs,
