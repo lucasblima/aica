@@ -78,10 +78,10 @@ function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?:
  * Query the edital document using Gemini
  */
 async function queryDocument(
-  geminiFileName: string,
+  geminiFileUri: string,
   userQuery: string
 ): Promise<{ answer: string; citations: string[] }> {
-  log('INFO', 'Querying document with Gemini', { geminiFileName, queryLength: userQuery.length })
+  log('INFO', 'Querying document with Gemini', { geminiFileUri, queryLength: userQuery.length })
 
   const queryPrompt = `
 Voce e um assistente especializado em analise de editais de fomento brasileiros.
@@ -110,7 +110,7 @@ Responda de forma direta e clara. Se citar trechos do documento, use aspas.
           { text: queryPrompt },
           {
             fileData: {
-              fileUri: geminiFileName,  // Just "files/xxx", not full URL
+              fileUri: geminiFileUri,  // Full URI from Google Files API
               mimeType: 'application/pdf',
             },
           },
