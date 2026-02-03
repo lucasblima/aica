@@ -196,6 +196,18 @@ export function WhatsAppContactCard({
                   Ultima mensagem {formatRelativeTime(lastMessageAt, { useHaPrefix: true })}
                 </p>
               )}
+
+              {/* Issue #91: Message preview */}
+              {contact.last_message_preview && (
+                <div className="flex items-start gap-1 text-ceramic-text-secondary mt-1">
+                  {contact.last_message_direction === 'outgoing' && (
+                    <span className="text-xs font-medium text-ceramic-text-tertiary flex-shrink-0">Voce:</span>
+                  )}
+                  <p className="text-xs truncate max-w-[220px]">
+                    {contact.last_message_preview}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

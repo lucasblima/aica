@@ -1645,6 +1645,7 @@ async function handleMediaMessage(
 
 /**
  * Handle messages.upsert event
+ * Issue #91: Store ALL messages (incoming AND outgoing) for timeline
  */
 async function handleMessagesUpsert(
   supabase: ReturnType<typeof createClient>,
@@ -1652,12 +1653,7 @@ async function handleMessagesUpsert(
   eventData: { data: MessageData }
 ): Promise<void> {
   const messageData = eventData.data
-
-  // Skip if fromMe (our own messages)
-  if (messageData.key.fromMe) {
-    log('DEBUG', 'Skipping outgoing message')
-    return
-  }
+  const isOutgoing = messageData.key.fromMe
 
   // Find user for this instance
   const userId = await findUserByInstance(supabase, instanceName)
@@ -1669,8 +1665,8 @@ async function handleMessagesUpsert(
   const contactPhone = jidToPhone(messageData.key.remoteJid)
   const messageText = extractMessageText(messageData.message)
 
-  // Check for consent keywords first
-  if (messageText) {
+  // Only process consent keywords for INCOMING messages
+  if (!isOutgoing && messageText) {
     const consentResult = await processConsentKeyword(supabase, userId, contactPhone, messageText)
     if (consentResult.matched && consentResult.response) {
       // Send automatic response for consent keyword
@@ -1698,8 +1694,9 @@ async function handleMessagesUpsert(
   const messageType = getMessageType(messageData.message)
 
   // Issue #118: Process media messages (document, image, audio, video)
-  if (messageType !== 'text' && messageType !== 'sticker' && messageType !== 'location' && messageType !== 'reaction') {
-    // Handle media message asynchronously
+  // Only for INCOMING messages - outgoing media doesn't need document processing
+  if (!isOutgoing && messageType !== 'text' && messageType !== 'sticker' && messageType !== 'location' && messageType !== 'reaction') {
+    // Handle media message asynchronously (document pipeline)
     await handleMediaMessage(
       supabase,
       instanceName,
@@ -1707,13 +1704,12 @@ async function handleMessagesUpsert(
       messageData,
       messageType as 'document' | 'image' | 'audio' | 'video'
     )
-    // Note: Media message is NOT stored in whatsapp_messages table
-    // Instead, it's tracked in whatsapp_media_tracking and processed_documents
-    return
+    // Issue #91: Also store media message in whatsapp_messages for timeline
+    // The storeMessage function handles media_type and media_url fields
   }
 
-  // Original text message handling continues below...
-  // Store the message (only for text messages)
+  // Issue #91: Store ALL messages (text AND media, incoming AND outgoing) for timeline
+  // This enables the trigger to update contact_network.last_message_preview
   const result = await storeMessage(supabase, userId, instanceName, messageData)
 
   if (result) {

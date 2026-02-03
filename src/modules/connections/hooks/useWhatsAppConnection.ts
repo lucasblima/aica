@@ -201,58 +201,21 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
 
   /**
    * Fetch QR code for connection
+   * @deprecated Use pairing code instead via usePairingCode hook
+   * Issue #91: Removed incorrect call to webhook-evolution
    */
   const fetchQRCode = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      if (!session?.instance_name) {
-        throw new Error('No instance available. Please connect first.')
-      }
-
-      log.debug('[useWhatsAppConnection] Fetching QR code for:', session.instance_name)
-
-      const { data: { session: authSession } } = await supabase.auth.getSession()
-
-      if (!authSession?.access_token) {
-        throw new Error('User not authenticated')
-      }
-
-      // Call webhook-evolution Edge Function to get QR code
-      const response = await supabase.functions.invoke('webhook-evolution', {
-        body: {
-          action: 'generate_qrcode',
-          instance: session.instance_name,
-        },
-        headers: {
-          Authorization: `Bearer ${authSession.access_token}`,
-        },
-      })
-
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to generate QR code')
-      }
-
-      const result = response.data as { success: boolean; qrcode?: { base64?: string }; error?: string }
-
-      if (!result.success || !result.qrcode?.base64) {
-        throw new Error(result.error || 'Failed to generate QR code')
-      }
-
-      setQrCode(result.qrcode.base64)
-      log.debug('[useWhatsAppConnection] QR code generated successfully')
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      setError(new Error(errorMessage))
-      log.error('[useWhatsAppConnection] Fetch QR code error:', errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [session])
+    // QR code generation is deprecated in favor of pairing code
+    // The webhook-evolution endpoint is a webhook RECEIVER, not an API
+    // Use the usePairingCode hook from @/hooks/usePairingCode instead
+    log.warn('[useWhatsAppConnection] fetchQRCode is deprecated. Use usePairingCode hook instead.')
+    setError(new Error('QR code deprecated. Use pairing code instead.'))
+  }, [])
 
   /**
    * Check current connection status
+   * Issue #91: Fixed to use configure-instance-webhook instead of webhook-evolution
+   * webhook-evolution is a webhook RECEIVER, not an API endpoint
    */
   const checkConnection = useCallback(async () => {
     try {
@@ -272,11 +235,12 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         throw new Error('User not authenticated')
       }
 
-      // Call webhook-evolution Edge Function to check connection
-      const response = await supabase.functions.invoke('webhook-evolution', {
+      // Issue #91: Use configure-instance-webhook which properly checks connection
+      // This also reconfigures the webhook with the correct secret
+      const response = await supabase.functions.invoke('configure-instance-webhook', {
         body: {
-          action: 'check_connection',
-          instance: session.instance_name,
+          instanceName: session.instance_name,
+          updateSessionStatus: true
         },
         headers: {
           Authorization: `Bearer ${authSession.access_token}`,
@@ -287,19 +251,26 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
         throw new Error(response.error.message || 'Failed to check connection')
       }
 
-      const result = response.data as { success: boolean; state?: string; error?: string }
+      const result = response.data as ConfigureWebhookResult
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to check connection')
       }
 
-      // Update connection state
+      // Update connection state based on result
+      const state = result.connectionState === 'open' ? 'open'
+        : result.connectionState === 'connecting' ? 'connecting'
+        : 'close'
+
       setConnectionState({
-        state: result.state === 'open' ? 'open' : result.state === 'connecting' ? 'connecting' : 'close',
+        state,
         instance: session.instance_name,
       })
 
-      log.debug('[useWhatsAppConnection] Connection status:', result.state)
+      // Refresh session to get updated status from database
+      await refreshSession()
+
+      log.debug('[useWhatsAppConnection] Connection status:', result.connectionState)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(new Error(errorMessage))
@@ -307,7 +278,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [session])
+  }, [session, refreshSession])
 
   /**
    * Configure webhook for existing instance

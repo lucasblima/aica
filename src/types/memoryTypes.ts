@@ -167,6 +167,12 @@ export interface ContactNetwork {
   whatsapp_sentiment_avg?: number; // -1 to 1
   whatsapp_metadata?: Record<string, any>;
   last_whatsapp_message_at?: string;
+
+  // ==========================================================================
+  // WhatsApp Message Preview (Issue #91)
+  // ==========================================================================
+  last_message_preview?: string; // Truncated preview of last message (max 100 chars)
+  last_message_direction?: 'incoming' | 'outgoing'; // Direction of last message
 }
 
 export interface ContactNetworkCreateInput {
