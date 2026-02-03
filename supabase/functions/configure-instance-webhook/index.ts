@@ -127,7 +127,9 @@ serve(async (req: Request) => {
 
     // 8. Configure webhook for the instance
     // CRITICAL: Evolution API v2 requires 'webhook' wrapper object
+    // Issue #91: Include webhook_secret for HMAC signature validation
     const webhookUrl = `${supabaseUrl}/functions/v1/webhook-evolution`
+    const webhookSecret = Deno.env.get('EVOLUTION_WEBHOOK_SECRET')
 
     console.log(`[configure-instance-webhook] Configuring webhook: ${webhookUrl}`)
 
@@ -151,6 +153,8 @@ serve(async (req: Request) => {
               'QRCODE_UPDATED',
               'CONTACTS_UPDATE',
             ],
+            // Issue #91: Add secret for webhook signature validation
+            ...(webhookSecret && { secret: webhookSecret }),
           },
         }),
       }
