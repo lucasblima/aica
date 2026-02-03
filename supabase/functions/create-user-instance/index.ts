@@ -167,10 +167,12 @@ serve(async (req: Request) => {
 
         // Store webhook URL if provided
         const webhookUrl = Deno.env.get('SUPABASE_URL') + '/functions/v1/webhook-evolution'
+        const webhookSecret = Deno.env.get('EVOLUTION_WEBHOOK_SECRET')
 
         // Configure webhook for the new instance
         // CRITICAL: Evolution API v2 requires 'webhook' wrapper object with proper key names
         // See: https://github.com/EvolutionAPI/evolution-api/issues/1220
+        // Issue #91: Include webhook_secret for HMAC signature validation
         try {
           const webhookConfigResponse = await fetch(
             `${evolutionApiUrl}/webhook/set/${session.instance_name}`,
@@ -192,6 +194,8 @@ serve(async (req: Request) => {
                     'QRCODE_UPDATED',
                     'CONTACTS_UPDATE',
                   ],
+                  // Issue #91: Add secret for webhook signature validation
+                  ...(webhookSecret && { secret: webhookSecret }),
                 },
               }),
             }

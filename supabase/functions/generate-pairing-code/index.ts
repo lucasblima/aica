@@ -38,6 +38,7 @@ const PAIRING_CODE_EXPIRATION_SECONDS = 60
 
 /**
  * Configure webhook for an Evolution API instance
+ * Issue #91: Include webhook_secret for HMAC signature validation
  */
 async function configureInstanceWebhook(
   evolutionApiUrl: string,
@@ -46,6 +47,7 @@ async function configureInstanceWebhook(
   supabaseUrl: string
 ): Promise<void> {
   const webhookUrl = `${supabaseUrl}/functions/v1/webhook-evolution`
+  const webhookSecret = Deno.env.get('EVOLUTION_WEBHOOK_SECRET')
 
   try {
     // CRITICAL: Evolution API v2 requires 'webhook' wrapper object with proper key names
@@ -65,13 +67,15 @@ async function configureInstanceWebhook(
             webhookByEvents: true,
             webhookBase64: false,
             events: ['CONNECTION_UPDATE', 'MESSAGES_UPSERT', 'QRCODE_UPDATED', 'CONTACTS_UPDATE'],
+            // Issue #91: Add secret for webhook signature validation
+            ...(webhookSecret && { secret: webhookSecret }),
           },
         }),
       }
     )
 
     if (response.ok) {
-      console.log(`[generate-pairing-code] Webhook configured for ${instanceName}`)
+      console.log(`[generate-pairing-code] Webhook configured for ${instanceName} (with secret: ${!!webhookSecret})`)
     } else {
       const errorText = await response.text()
       console.warn(`[generate-pairing-code] Webhook config warning: ${response.status} - ${errorText}`)
