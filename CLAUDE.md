@@ -44,17 +44,17 @@ git add -A && git commit -m "sua mensagem" && git push origin main
 
 ### Passo 2: Deploy Manual via Cloud Build
 ```bash
-gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=aica-461022
+gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762
 ```
 Deploy leva ~4 minutos.
 
 ### Verificar Status
 ```bash
 # Listar builds recentes
-gcloud builds list --limit=5 --region=southamerica-east1 --project=aica-461022
+gcloud builds list --limit=5 --region=southamerica-east1 --project=gen-lang-client-0948335762
 
 # Logs do ultimo build
-gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=southamerica-east1 --project=aica-461022) --region=southamerica-east1
+gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=southamerica-east1 --project=gen-lang-client-0948335762) --region=southamerica-east1
 ```
 
 ### Apos Deploy
