@@ -232,3 +232,9 @@ export const ARCHETYPE_METADATA: Record<ArchetypeType, ArchetypeMetadata> = {
     }
   }
 };
+
+// =============================================================================
+// WHATSAPP INTENT TYPES (Issue #91)
+// =============================================================================
+
+export * from './intent';

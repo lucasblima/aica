@@ -3,21 +3,56 @@
  * Rich contact card for WhatsApp-synced contacts
  *
  * Issue #92: feat(whatsapp): Exibir lista de contatos sincronizados com UI rica
+ * Issue #91: feat(whatsapp): Display extracted intents instead of raw messages
  */
 
 import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Star, Phone, Mail, MoreVertical } from 'lucide-react';
+import {
+  MessageCircle,
+  Star,
+  Phone,
+  MoreVertical,
+  MessageCircleQuestion,
+  MessageCircleReply,
+  Calendar,
+  FileText,
+  Mic,
+  Smile,
+  ClipboardList,
+  RefreshCw,
+  Image as ImageIcon,
+  Loader2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/dateUtils';
 import { ContactAvatar } from '@/components/ui/ContactAvatar';
 import { RelationshipScoreBadge } from '@/components/ui/RelationshipScoreBadge';
 import type { ContactNetwork } from '@/types/memoryTypes';
 import type { HealthScoreTrend } from '@/types/healthScore';
+import type {
+  IntentCategory,
+  IntentSentiment,
+  ProcessingStatus,
+} from '../types/intent';
+import {
+  INTENT_SENTIMENT_COLORS,
+} from '../types/intent';
 
 export interface WhatsAppContactCardProps {
   /** Contact data */
-  contact: ContactNetwork;
+  contact: ContactNetwork & {
+    /** Last extracted intent preview (Issue #91) */
+    last_intent_preview?: string;
+    /** Intent category for icon display */
+    last_intent_category?: IntentCategory;
+    /** Intent sentiment for color coding */
+    last_intent_sentiment?: IntentSentiment;
+    /** Intent urgency level 1-5 */
+    last_intent_urgency?: number;
+    /** Processing status for messages */
+    processing_status?: ProcessingStatus;
+  };
   /** Whether this contact is favorited */
   isFavorite?: boolean;
   /** Click handler for opening contact details */
@@ -75,6 +110,56 @@ function formatPhoneNumber(phone: string | null | undefined): string {
   // Fallback: just add some spacing
   return phone;
 }
+
+/**
+ * Icon mapping for intent categories
+ */
+const INTENT_ICONS: Record<IntentCategory, React.ComponentType<{ className?: string }>> = {
+  question: MessageCircleQuestion,
+  response: MessageCircleReply,
+  scheduling: Calendar,
+  document: FileText,
+  audio: Mic,
+  social: Smile,
+  request: ClipboardList,
+  update: RefreshCw,
+  media: ImageIcon,
+};
+
+/**
+ * IntentPreview Component
+ * Displays extracted intent with category icon, sentiment color, and urgency badge
+ */
+interface IntentPreviewProps {
+  contact: WhatsAppContactCardProps['contact'];
+}
+
+const IntentPreview: React.FC<IntentPreviewProps> = ({ contact }) => {
+  if (!contact.last_intent_preview) {
+    return null;
+  }
+
+  const category = contact.last_intent_category || 'social';
+  const sentiment = contact.last_intent_sentiment || 'neutral';
+  const urgency = contact.last_intent_urgency || 1;
+
+  const Icon = INTENT_ICONS[category] || MessageCircleQuestion;
+  const sentimentColor = INTENT_SENTIMENT_COLORS[sentiment] || 'text-gray-600';
+
+  return (
+    <div className="flex items-center gap-2 text-sm mt-1">
+      <Icon className={`w-4 h-4 flex-shrink-0 ${sentimentColor}`} />
+      <span className="truncate text-ceramic-text-secondary">
+        {contact.last_intent_preview}
+      </span>
+      {urgency >= 4 && (
+        <span className="flex-shrink-0 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium">
+          Urgente
+        </span>
+      )}
+    </div>
+  );
+};
 
 export function WhatsAppContactCard({
   contact,
@@ -197,8 +282,10 @@ export function WhatsAppContactCard({
                 </p>
               )}
 
-              {/* Issue #91: Message preview */}
-              {contact.last_message_preview && (
+              {/* Issue #91: Intent preview (preferred) or fallback to message preview */}
+              {contact.last_intent_preview ? (
+                <IntentPreview contact={contact} />
+              ) : contact.last_message_preview ? (
                 <div className="flex items-start gap-1 text-ceramic-text-secondary mt-1">
                   {contact.last_message_direction === 'outgoing' && (
                     <span className="text-xs font-medium text-ceramic-text-tertiary flex-shrink-0">Voce:</span>
@@ -206,6 +293,14 @@ export function WhatsAppContactCard({
                   <p className="text-xs truncate max-w-[220px]">
                     {contact.last_message_preview}
                   </p>
+                </div>
+              ) : null}
+
+              {/* Processing status indicator */}
+              {contact.processing_status === 'pending' && (
+                <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Processando...</span>
                 </div>
               )}
             </div>
