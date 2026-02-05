@@ -14,6 +14,7 @@ import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
 import { AdminGuard } from '../components/guards/AdminGuard';
+import { AicaChatFAB } from '../components/features/AicaChatFAB';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('AppRouter');
@@ -517,6 +518,10 @@ export function AppRouter() {
                   isListening={false}
                />
             )}
+
+            {/* Aica Chat FAB - Floating button for quick AI access */}
+            {isAuthenticated && <AicaChatFAB bottomOffset={shouldShowGlobalNav ? 80 : 16} />}
+
             {/* Notification Toast Container */}
             <NotificationContainer />
          </div>
