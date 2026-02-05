@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, AlertCircle, Users } from 'lucide-react';
+import { ChevronRight, Users } from 'lucide-react';
 import {
   getMockAthleteCountsByModality,
   getMockAlertsSummary,
@@ -37,9 +37,6 @@ export function FluxCard() {
   const unacknowledgedAlerts = getMockUnacknowledgedAlerts();
   const totalAthletes = MOCK_ATHLETES.length;
 
-  // Calculate urgent alerts (critical + high)
-  const urgentAlerts = alertsSummary.critical + alertsSummary.high;
-
   // Handle navigation
   const handleClick = () => {
     navigate('/flux');
@@ -65,27 +62,14 @@ export function FluxCard() {
 
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="ceramic-inset p-2">
-              <Users className="w-5 h-5 text-cyan-600" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Flux</span>
-              <p className="text-lg font-bold text-ceramic-text-primary">{totalAthletes} Atletas</p>
-            </div>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="ceramic-inset p-2">
+            <Users className="w-5 h-5 text-cyan-600" />
           </div>
-
-          {/* Alerts Badge */}
-          {urgentAlerts > 0 && (
-            <button
-              onClick={handleAlertsClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-            >
-              <AlertCircle className="w-4 h-4 text-red-600" />
-              <span className="text-sm font-bold text-red-700">{urgentAlerts}</span>
-            </button>
-          )}
+          <div>
+            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Flux</span>
+            <p className="text-lg font-bold text-ceramic-text-primary">{totalAthletes} Atletas</p>
+          </div>
         </div>
 
         {/* Modality Grid */}
