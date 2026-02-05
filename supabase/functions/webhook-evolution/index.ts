@@ -22,7 +22,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
 
 // Helper function to convert ArrayBuffer to hex string
 function arrayBufferToHex(buffer: ArrayBuffer): string {
@@ -640,72 +640,47 @@ function getExtensionForType(mediaType: string): string {
 }
 
 /**
- * Extract intent from message using Gemini via extract-intent Edge Function
+ * Trigger intent extraction asynchronously (fire and forget)
  * Issue #91, #185: Privacy-first intent extraction
  *
- * @returns Intent data or null if extraction fails
+ * This function triggers the extract-intent Edge Function asynchronously
+ * to avoid blocking webhook response. The raw text is passed but NEVER stored.
  */
-async function extractMessageIntent(
-  supabase: ReturnType<typeof createClient>,
-  messageText: string,
-  messageType: string,
-  contactName?: string
-): Promise<{
-  summary: string
-  category: string
-  sentiment: string
-  urgency: number
-  topic: string | null
-  actionRequired: boolean
-  mentionedDate: string | null
-  mentionedTime: string | null
-  confidence: number
-  embedding: number[]
-} | null> {
-  try {
-    log('INFO', 'Extracting intent from message', { textLength: messageText.length, messageType })
+function triggerIntentExtraction(
+  messageId: string,
+  rawText: string,
+  mediaType?: string
+): void {
+  const supabaseUrl = SUPABASE_URL
+  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY
 
-    const { data, error } = await supabase.functions.invoke('extract-intent', {
-      body: {
-        messageText,
-        messageType,
-        contactName,
-        skipEmbedding: false,
-      },
-    })
-
-    if (error) {
-      log('ERROR', 'Intent extraction failed', error)
-      return null
-    }
-
-    if (!data || !data.summary) {
-      log('WARN', 'Invalid intent response', data)
-      return null
-    }
-
-    log('INFO', 'Intent extracted successfully', {
-      category: data.category,
-      urgency: data.urgency,
-      actionRequired: data.actionRequired
-    })
-
-    return data
-  } catch (err) {
-    log('ERROR', 'Exception in extractMessageIntent', (err as Error).message)
-    return null
-  }
+  // Fire and forget - don't block webhook
+  fetch(`${supabaseUrl}/functions/v1/extract-intent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify({
+      messageId,
+      rawText, // Passed for processing, NEVER stored
+      mediaType,
+    }),
+  }).catch(err => {
+    log('ERROR', '[webhook-evolution] Failed to trigger intent extraction', err.message)
+    // Mensagem fica com status 'pending', pode ser reprocessada depois
+  })
 }
 
 /**
- * Store incoming message with intent extraction
- * Updated for Issue #91, #185: Privacy-first storage (no raw text, only intent)
+ * Store incoming message WITHOUT raw text (privacy-first)
+ * Updated for Issue #91, #185: NO raw text stored, only metadata
  *
  * Flow:
  * 1. Get/create contact
- * 2. Extract intent from raw text via Gemini
- * 3. Store intent fields (NOT raw text) with processing_status = 'completed'
- * 4. If intent extraction fails, store with processing_status = 'pending' for retry
+ * 2. Insert message with processing_status='pending' (NO text)
+ * 3. Trigger async intent extraction (fire and forget)
+ * 4. Intent extraction updates message with intent fields
  *
  * @returns Object with messageId and contactId, or null on failure
  */
@@ -761,53 +736,11 @@ async function storeMessage(
     }
 
     // ===========================================================================
-    // INTENT EXTRACTION (Issue #91, #185)
+    // INSERT MESSAGE WITHOUT RAW TEXT (Issue #91, #185)
     // ===========================================================================
-    // Extract intent from message BEFORE storing (privacy-first approach)
+    // Message is stored with processing_status='pending'
     // Raw text is NEVER stored in the database
-
-    let intentData: Awaited<ReturnType<typeof extractMessageIntent>> = null
-    let processingStatus = 'pending'
-
-    if (messageText) {
-      intentData = await extractMessageIntent(
-        supabase,
-        messageText,
-        messageType,
-        messageData.pushName || undefined
-      )
-
-      if (intentData) {
-        processingStatus = 'completed'
-      } else {
-        // Intent extraction failed, mark for retry
-        log('WARN', 'Intent extraction failed, will retry later', { messageId })
-        processingStatus = 'pending'
-      }
-    } else if (mediaUrl) {
-      // Media-only message - create default intent
-      intentData = {
-        summary: messageType === 'image' ? 'Imagem compartilhada' :
-                 messageType === 'audio' ? 'Audio compartilhado' :
-                 messageType === 'video' ? 'Video compartilhado' :
-                 messageType === 'document' ? 'Documento compartilhado' :
-                 'Midia compartilhada',
-        category: 'media',
-        sentiment: 'neutral',
-        urgency: 1,
-        topic: messageType,
-        actionRequired: false,
-        mentionedDate: null,
-        mentionedTime: null,
-        confidence: 1.0,
-        embedding: [],
-      }
-      processingStatus = 'completed'
-    }
-
-    // ===========================================================================
-    // INSERT MESSAGE WITH INTENT (no raw text stored)
-    // ===========================================================================
+    // Intent extraction happens asynchronously
 
     const insertData: Record<string, unknown> = {
       user_id: userId,
@@ -820,25 +753,23 @@ async function storeMessage(
       media_type: messageType !== 'text' ? messageType : null,
       media_url: mediaUrl,
       document_processed: false,
-      processing_status: processingStatus,
+      processing_status: 'pending', // Will be updated by extract-intent
     }
 
-    // Add intent fields if available
-    if (intentData) {
-      insertData.intent_summary = intentData.summary
-      insertData.intent_category = intentData.category
-      insertData.intent_sentiment = intentData.sentiment
-      insertData.intent_urgency = intentData.urgency
-      insertData.intent_topic = intentData.topic
-      insertData.intent_action_required = intentData.actionRequired
-      insertData.intent_mentioned_date = intentData.mentionedDate
-      insertData.intent_mentioned_time = intentData.mentionedTime
-      insertData.intent_confidence = intentData.confidence
-
-      // Only add embedding if it has values
-      if (intentData.embedding && intentData.embedding.length === 768) {
-        insertData.intent_embedding = intentData.embedding
-      }
+    // For media-only messages, add default intent immediately
+    if (!messageText && mediaUrl) {
+      insertData.intent_summary = messageType === 'image' ? 'Imagem compartilhada' :
+                                   messageType === 'audio' ? 'Audio compartilhado' :
+                                   messageType === 'video' ? 'Video compartilhado' :
+                                   messageType === 'document' ? 'Documento compartilhado' :
+                                   'Midia compartilhada'
+      insertData.intent_category = 'media'
+      insertData.intent_sentiment = 'neutral'
+      insertData.intent_urgency = 1
+      insertData.intent_topic = messageType
+      insertData.intent_action_required = false
+      insertData.intent_confidence = 1.0
+      insertData.processing_status = 'completed'
     }
 
     const { data, error } = await supabase
@@ -856,14 +787,25 @@ async function storeMessage(
       throw error
     }
 
-    log('INFO', 'Message stored with intent', {
+    log('INFO', 'Message stored without raw text', {
       id: data.id,
       contactId,
       direction: fromMe ? 'outgoing' : 'incoming',
-      processingStatus,
-      intentCategory: intentData?.category || 'none',
-      hasEmbedding: !!(intentData?.embedding?.length)
+      hasText: !!messageText,
+      hasMedia: !!mediaUrl,
+      messageType
     })
+
+    // ===========================================================================
+    // TRIGGER ASYNC INTENT EXTRACTION (Issue #91, #185)
+    // ===========================================================================
+    // Call extract-intent Edge Function asynchronously (fire and forget)
+    // Raw text is passed for processing but NEVER stored
+
+    if (messageText) {
+      log('INFO', 'Triggering intent extraction', { messageId: data.id })
+      triggerIntentExtraction(data.id, messageText, mediaUrl ? messageType : undefined)
+    }
 
     // Queue document processing if message has media attachment (Issue #118: WhatsApp RAG)
     if (mediaUrl && messageType !== 'text') {
