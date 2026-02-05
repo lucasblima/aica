@@ -61,12 +61,29 @@ export type GeminiAction =
   | 'analyze_edital_structure'
   | 'extract_edital_text'
 
-  // File-Search (RAG)
+  // Grounded Search (Google Search integration)
+  | 'grounded_search'
+
+  // File-Search V1 (RAG - legacy)
   | 'create_store'
   | 'upload_document'
   | 'search_documents'
   | 'delete_store'
   | 'list_stores'
+
+  // File-Search V2 (native @google/genai SDK)
+  | 'create_store_v2'
+  | 'upload_document_v2'
+  | 'query_v2'
+  | 'delete_document_v2'
+  | 'delete_store_v2'
+  | 'list_stores_v2'
+
+  // Agent System
+  | 'chat_with_agent'
+
+  // ADK Multi-Agent (proxied to Cloud Run)
+  | 'agent_chat'
 
 /**
  * Request base para chamadas ao Gemini
@@ -76,6 +93,7 @@ export interface GeminiChatRequest {
   payload: Record<string, any>
   model?: GeminiModel
   stream?: boolean
+  agent?: 'atlas' | 'captacao' | 'studio' | 'journey' | 'finance' | 'connections' | 'coordinator'
 }
 
 /**

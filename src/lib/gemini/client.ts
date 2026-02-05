@@ -31,11 +31,21 @@ const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
  */
 const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
   'deep_research': 'deep-research',
+  // File Search V1 (legacy)
   'create_store': 'file-search',
   'upload_document': 'file-search',
   'search_documents': 'file-search',
   'delete_store': 'file-search',
-  'list_stores': 'file-search'
+  'list_stores': 'file-search',
+  // File Search V2 (native @google/genai SDK)
+  'create_store_v2': 'file-search-v2',
+  'upload_document_v2': 'file-search-v2',
+  'query_v2': 'file-search-v2',
+  'delete_document_v2': 'file-search-v2',
+  'delete_store_v2': 'file-search-v2',
+  'list_stores_v2': 'file-search-v2',
+  // ADK Multi-Agent System (proxied to Cloud Run)
+  'agent_chat': 'agent-proxy',
 }
 
 /**

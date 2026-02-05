@@ -9,11 +9,13 @@ import { NotificationContainer, LoadingScreen, BottomNav } from '../components';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
+import { FluxProvider } from '../modules/flux/context/FluxContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
 import { AdminGuard } from '../components/guards/AdminGuard';
+import { AicaChatFAB } from '../components/features/AicaChatFAB';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('AppRouter');
@@ -48,6 +50,12 @@ const SpaceDetailPage = lazy(() => import('../pages/SpaceDetailPage').then(m => 
 const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
 const WhatsAppAnalyticsPage = lazy(() => import('../pages/WhatsAppAnalyticsPage').then(m => ({ default: m.default })));
 const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
+
+// Flux Module - Swim training management
+const FluxDashboard = lazy(() => import('../modules/flux').then(m => ({ default: m.FluxDashboard })));
+const FluxAthleteDetailView = lazy(() => import('../modules/flux').then(m => ({ default: m.AthleteDetailView })));
+const FluxCanvasEditorView = lazy(() => import('../modules/flux').then(m => ({ default: m.CanvasEditorView })));
+const FluxAlertsView = lazy(() => import('../modules/flux').then(m => ({ default: m.AlertsView })));
 
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
@@ -517,6 +525,10 @@ export function AppRouter() {
                   isListening={false}
                />
             )}
+
+            {/* Aica Chat FAB - Floating button for quick AI access */}
+            {isAuthenticated && <AicaChatFAB bottomOffset={shouldShowGlobalNav ? 80 : 16} />}
+
             {/* Notification Toast Container */}
             <NotificationContainer />
          </div>
@@ -630,6 +642,48 @@ export function AppRouter() {
                            <StudioProvider>
                               <StudioMainView />
                            </StudioProvider>
+                        }
+                     />
+                  </>
+               )}
+
+               {/* Flux Module Routes - Protected */}
+               {isAuthenticated && (
+                  <>
+                     {/* Main Dashboard */}
+                     <Route
+                        path="/flux"
+                        element={
+                           <FluxProvider>
+                              <FluxDashboard />
+                           </FluxProvider>
+                        }
+                     />
+                     {/* Athlete Detail */}
+                     <Route
+                        path="/flux/athlete/:athleteId"
+                        element={
+                           <FluxProvider>
+                              <FluxAthleteDetailView />
+                           </FluxProvider>
+                        }
+                     />
+                     {/* Canvas Editor */}
+                     <Route
+                        path="/flux/canvas/:blockId"
+                        element={
+                           <FluxProvider>
+                              <FluxCanvasEditorView />
+                           </FluxProvider>
+                        }
+                     />
+                     {/* Alerts Center */}
+                     <Route
+                        path="/flux/alerts"
+                        element={
+                           <FluxProvider>
+                              <FluxAlertsView />
+                           </FluxProvider>
                         }
                      />
                   </>

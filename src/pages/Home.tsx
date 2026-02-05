@@ -6,6 +6,7 @@ import { HeaderGlobal, ProfileModal, ConnectionArchetypes, ModuleCard } from '..
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
+import { FluxCard } from '../modules/flux';
 import { RecentContactsWidget } from '../components';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
@@ -404,7 +405,7 @@ export default function Home({
                                  Podcast Copilot
                               </p>
                               <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                                 Transforme suas reflexões em episódios de podcast
+                                 Transforme suas reflexoes em episodios de podcast
                               </p>
                            </div>
                         </div>
@@ -413,6 +414,16 @@ export default function Home({
                            <ChevronRight className="w-3 h-3" />
                         </div>
                      </div>
+                  </motion.div>
+
+                  {/* Flux - Training Management Mini Dashboard */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={11}
+                  >
+                     <FluxCard />
                   </motion.div>
                </div>
             </main>
