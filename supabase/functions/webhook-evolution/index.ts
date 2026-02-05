@@ -640,8 +640,72 @@ function getExtensionForType(mediaType: string): string {
 }
 
 /**
- * Store incoming message
- * Updated to use current whatsapp_messages schema with contact_id FK
+ * Extract intent from message using Gemini via extract-intent Edge Function
+ * Issue #91, #185: Privacy-first intent extraction
+ *
+ * @returns Intent data or null if extraction fails
+ */
+async function extractMessageIntent(
+  supabase: ReturnType<typeof createClient>,
+  messageText: string,
+  messageType: string,
+  contactName?: string
+): Promise<{
+  summary: string
+  category: string
+  sentiment: string
+  urgency: number
+  topic: string | null
+  actionRequired: boolean
+  mentionedDate: string | null
+  mentionedTime: string | null
+  confidence: number
+  embedding: number[]
+} | null> {
+  try {
+    log('INFO', 'Extracting intent from message', { textLength: messageText.length, messageType })
+
+    const { data, error } = await supabase.functions.invoke('extract-intent', {
+      body: {
+        messageText,
+        messageType,
+        contactName,
+        skipEmbedding: false,
+      },
+    })
+
+    if (error) {
+      log('ERROR', 'Intent extraction failed', error)
+      return null
+    }
+
+    if (!data || !data.summary) {
+      log('WARN', 'Invalid intent response', data)
+      return null
+    }
+
+    log('INFO', 'Intent extracted successfully', {
+      category: data.category,
+      urgency: data.urgency,
+      actionRequired: data.actionRequired
+    })
+
+    return data
+  } catch (err) {
+    log('ERROR', 'Exception in extractMessageIntent', (err as Error).message)
+    return null
+  }
+}
+
+/**
+ * Store incoming message with intent extraction
+ * Updated for Issue #91, #185: Privacy-first storage (no raw text, only intent)
+ *
+ * Flow:
+ * 1. Get/create contact
+ * 2. Extract intent from raw text via Gemini
+ * 3. Store intent fields (NOT raw text) with processing_status = 'completed'
+ * 4. If intent extraction fails, store with processing_status = 'pending' for retry
  *
  * @returns Object with messageId and contactId, or null on failure
  */
@@ -696,24 +760,95 @@ async function storeMessage(
       messageTimestamp = new Date()
     }
 
-    // Insert with media fields (Issue #118: WhatsApp RAG)
+    // ===========================================================================
+    // INTENT EXTRACTION (Issue #91, #185)
+    // ===========================================================================
+    // Extract intent from message BEFORE storing (privacy-first approach)
+    // Raw text is NEVER stored in the database
+
+    let intentData: Awaited<ReturnType<typeof extractMessageIntent>> = null
+    let processingStatus = 'pending'
+
+    if (messageText) {
+      intentData = await extractMessageIntent(
+        supabase,
+        messageText,
+        messageType,
+        messageData.pushName || undefined
+      )
+
+      if (intentData) {
+        processingStatus = 'completed'
+      } else {
+        // Intent extraction failed, mark for retry
+        log('WARN', 'Intent extraction failed, will retry later', { messageId })
+        processingStatus = 'pending'
+      }
+    } else if (mediaUrl) {
+      // Media-only message - create default intent
+      intentData = {
+        summary: messageType === 'image' ? 'Imagem compartilhada' :
+                 messageType === 'audio' ? 'Audio compartilhado' :
+                 messageType === 'video' ? 'Video compartilhado' :
+                 messageType === 'document' ? 'Documento compartilhado' :
+                 'Midia compartilhada',
+        category: 'media',
+        sentiment: 'neutral',
+        urgency: 1,
+        topic: messageType,
+        actionRequired: false,
+        mentionedDate: null,
+        mentionedTime: null,
+        confidence: 1.0,
+        embedding: [],
+      }
+      processingStatus = 'completed'
+    }
+
+    // ===========================================================================
+    // INSERT MESSAGE WITH INTENT (no raw text stored)
+    // ===========================================================================
+
+    const insertData: Record<string, unknown> = {
+      user_id: userId,
+      contact_id: contactId,
+      contact_phone: contactPhone,
+      contact_name: messageData.pushName || null,
+      message_direction: fromMe ? 'outgoing' : 'incoming',
+      message_type: messageType,
+      message_timestamp: messageTimestamp.toISOString(),
+      media_type: messageType !== 'text' ? messageType : null,
+      media_url: mediaUrl,
+      document_processed: false,
+      processing_status: processingStatus,
+    }
+
+    // Add intent fields if available
+    if (intentData) {
+      insertData.intent_summary = intentData.summary
+      insertData.intent_category = intentData.category
+      insertData.intent_sentiment = intentData.sentiment
+      insertData.intent_urgency = intentData.urgency
+      insertData.intent_topic = intentData.topic
+      insertData.intent_action_required = intentData.actionRequired
+      insertData.intent_mentioned_date = intentData.mentionedDate
+      insertData.intent_mentioned_time = intentData.mentionedTime
+      insertData.intent_confidence = intentData.confidence
+
+      // Only add embedding if it has values
+      if (intentData.embedding && intentData.embedding.length === 768) {
+        insertData.intent_embedding = intentData.embedding
+      }
+    }
+
     const { data, error } = await supabase
       .from('whatsapp_messages')
-      .insert({
-        user_id: userId,
-        contact_id: contactId,
-        message_text: messageText || null, // Can be null if media-only
-        message_direction: fromMe ? 'outgoing' : 'incoming',
-        message_timestamp: messageTimestamp.toISOString(),
-        media_type: messageType !== 'text' ? messageType : null,
-        media_url: mediaUrl,
-        document_processed: false, // Will be set to true after processing
-      })
+      .insert(insertData)
       .select('id')
       .single()
 
     if (error) {
-      // Check if it's a duplicate (unlikely without message_id unique constraint)
+      // Check if it's a duplicate
       if (error.code === '23505') {
         log('DEBUG', 'Duplicate message, skipping', { messageId })
         return null
@@ -721,13 +856,13 @@ async function storeMessage(
       throw error
     }
 
-    log('INFO', 'Message stored', {
+    log('INFO', 'Message stored with intent', {
       id: data.id,
       contactId,
       direction: fromMe ? 'outgoing' : 'incoming',
-      textLength: messageText?.length || 0,
-      hasMedia: !!mediaUrl,
-      mediaType: messageType
+      processingStatus,
+      intentCategory: intentData?.category || 'none',
+      hasEmbedding: !!(intentData?.embedding?.length)
     })
 
     // Queue document processing if message has media attachment (Issue #118: WhatsApp RAG)
