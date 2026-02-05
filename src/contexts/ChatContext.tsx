@@ -21,6 +21,11 @@ const log = createNamespacedLogger('ChatContext')
 // TYPES
 // ============================================================================
 
+export interface ChatMessageSource {
+  title: string
+  url: string
+}
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -31,6 +36,8 @@ export interface ChatMessage {
   is_queued?: boolean
   queue_position?: number
   error?: string
+  agent?: string
+  sources?: ChatMessageSource[]
 }
 
 export interface ChatSession {
@@ -231,7 +238,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       if (messagesError) throw messagesError
 
-      dispatch({ type: 'SET_MESSAGES', messages: messages || [] })
+      // Hydrate agent metadata from JSONB column
+      const hydratedMessages: ChatMessage[] = (messages || []).map((m: any) => ({
+        ...m,
+        agent: m.metadata?.agent,
+        sources: m.metadata?.sources,
+      }))
+
+      dispatch({ type: 'SET_MESSAGES', messages: hydratedMessages })
     } catch (err) {
       log.error(' loadSession error:', err)
       dispatch({ type: 'SET_ERROR', error: 'Failed to load chat session' })
@@ -369,19 +383,25 @@ export function ChatProvider({ children }: ChatProviderProps) {
         },
       })
 
-      const { data, error } = await supabase.functions.invoke('chat-with-aica', {
+      // Route to ADK multi-agent system via agent-proxy Edge Function
+      const { data, error } = await supabase.functions.invoke('agent-proxy', {
         body: {
           message: content,
           session_id: sessionId,
-          tier: tierToUse,
-          context_messages: state.messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          context: {
+            context_messages: state.messages.slice(-10).map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+          },
         },
       })
 
       if (error) throw error
+
+      if (!data.success && data.error) {
+        throw new Error(data.error)
+      }
 
       // Remove typing indicator and add real response
       dispatch({
@@ -391,10 +411,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
           content: data.response,
           model_tier: tierToUse,
           tokens_used: data.tokens_used,
+          agent: data.agent,
+          sources: data.sources,
         },
       })
 
       // Save assistant message to database
+      const messageMetadata: Record<string, unknown> = {}
+      if (data.agent) messageMetadata.agent = data.agent
+      if (data.sources?.length) messageMetadata.sources = data.sources
+
       await supabase.from('chat_messages').insert({
         session_id: sessionId,
         user_id: user.id,
@@ -402,6 +428,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
         content: data.response,
         model_tier: tierToUse,
         tokens_used: data.tokens_used,
+        ...(Object.keys(messageMetadata).length > 0 && { metadata: messageMetadata }),
       })
 
       // Consume tokens

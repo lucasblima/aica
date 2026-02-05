@@ -106,6 +106,67 @@ A dedicated vertical for content creators.
   - `src/views/AgendaView.tsx` - Timeline integration logic
   - `src/components/DailyTimeline.tsx` - Week selector with date filtering
 
+
+### 3.7. Flux - Training Management (Professional Module)
+A comprehensive training management system for coaches working with athletes across multiple modalities.
+
+- **Multi-Modality Support:**
+  - Swimming (Natacao)
+  - Running (Corrida)
+  - Cycling (Ciclismo)
+  - Strength Training (Forca)
+
+- **Athlete Management:**
+  - 7-level progression system (Iniciante I-III, Intermediario I-III, Avancado)
+  - Status tracking: Active, Paused, Trial, Churned
+  - Anamnesis data: injuries, chronic pain, sleep quality, stress level
+  - WhatsApp integration for athlete communication
+
+- **Dashboard Features:**
+  - Grid view of all athletes with colorimetric status indicators
+  - Quick stats: Total Athletes, Average Adherence Rate
+  - Modality filter tabs with counts
+  - Level filter (Iniciante, Intermediario, Avancado)
+  - Adherence rate sorting (ascending/descending)
+  - Critical alerts preview with document/exam status
+
+- **Alert System (5 Types):**
+  - **Health:** Pain reports, injury concerns, fatigue
+  - **Motivation:** Demotivation, considering quitting
+  - **Absence:** Missed workouts, schedule conflicts
+  - **Documents:** Expired medical exams, pending certificates
+  - **Custom:** General athlete notes
+  - Severity levels: Critical, High, Medium, Low
+  - Acknowledgement and resolution tracking
+
+- **AI Integration:**
+  - AI-generated WhatsApp messages for athlete follow-up
+  - Context-aware message templates based on:
+    - Adherence rate (low/medium/high)
+    - Active alerts (health, motivation, absence)
+    - Athlete level and status
+  - Message regeneration with alternative tones (casual, professional, motivational)
+
+- **12-Week Workout Blocks:**
+  - Canvas-based visual editor for workout planning
+  - Weekly plan delivery via WhatsApp
+  - Exercise library with categories (warmup, main, technique, cooldown, dryland)
+  - Feedback collection with sentiment analysis
+  - AI analysis with volume/intensity adjustment recommendations
+
+- **Files:**
+  - `src/modules/flux/views/FluxDashboard.tsx` - Main coach dashboard
+  - `src/modules/flux/views/AlertsView.tsx` - Alerts management center
+  - `src/modules/flux/views/AthleteDetailView.tsx` - 12-week athlete timeline
+  - `src/modules/flux/views/CanvasEditorView.tsx` - Workout block editor
+  - `src/modules/flux/components/FluxCard.tsx` - Mini dashboard for Home page
+  - `src/modules/flux/components/AthleteCard.tsx` - Athlete display card
+  - `src/modules/flux/components/AlertBadge.tsx` - Alert indicator component
+  - `src/modules/flux/components/WhatsAppMessageModal.tsx` - AI message composer
+  - `src/modules/flux/context/FluxContext.tsx` - Module state management (FSM)
+  - `src/modules/flux/types/flux.ts` - TypeScript type definitions (427 lines)
+  - `src/modules/flux/mockData.ts` - Mock data with 312 athletes (696 lines)
+
 ## 4. Technical Architecture Updates
 - **Gemini Live:** Uses Multimodal Live API via WebSocket. Must handle connection lifecycle robustly (connect → session → send/receive → disconnect).
 - **Navigation:**
@@ -324,9 +385,33 @@ A dedicated vertical for content creators.
 
 ### Overall Progress: 95% Complete (19/20 Tasks)
 
-**Last Updated:** 2025-12-13 | Latest Commit: `f990ce2`
+**Last Updated:** 2026-02-05 | Latest Commit: `4d0a093`
 
 ### Recently Completed (Current Sprint)
+
+
+
+#### Task 24: Flux Training Management Module ✅
+- **Problem Solved:** Coaches need a comprehensive tool to manage athletes across multiple training modalities
+- **Implementation:**
+  - **FluxDashboard.tsx** (468 lines) - Main dashboard with athlete grid, filters, and quick stats
+  - **AlertsView.tsx** (269 lines) - Filterable alerts management center
+  - **FluxCard.tsx** (131 lines) - Mini dashboard card for Home page integration
+  - **AthleteCard.tsx** - Athlete display with adherence rate and alert indicators
+  - **WhatsAppMessageModal.tsx** (292 lines) - AI-generated follow-up messages
+  - **FluxContext.tsx** - FSM-based state management with 4 modes
+  - **types/flux.ts** (427 lines) - Comprehensive TypeScript definitions
+  - **mockData.ts** (696 lines) - 312 mock athletes with realistic data
+- **Key Features:**
+  - 312 athletes mock data with 4 modalities
+  - 5 alert types with 4 severity levels
+  - 11 pending medical exam/certificate alerts
+  - Modality filtering (swimming, running, cycling, strength)
+  - Level filtering (Iniciante, Intermediario, Avancado)
+  - Adherence rate sorting (ascending/descending)
+  - AI-powered WhatsApp message generation
+- **Commits:** `4d0a093`, `d088508`, `efee9f4`, `a6fd54c`, `7666ace`, `484ddc7`, `e3a8361`, `218658b`
+- **Status:** Frontend mockup complete, ready for backend integration
 
 
 #### Task 23: EfficiencyTrendChart Refactor ✅
@@ -802,6 +887,14 @@ const results = await searchInStatements('Quanto gastei com alimentação em dez
   - `GoogleCalendarConnect.tsx` UI component
   - `AgendaView.tsx` timeline integration
   - `DailyTimeline.tsx` week selector with date filtering
+- **Flux Training Management Module** - 15 files found (HIGH CONFIDENCE)
+  - `src/modules/flux/views/FluxDashboard.tsx` (468 lines) - Main coach dashboard
+  - `src/modules/flux/views/AlertsView.tsx` (269 lines) - Alerts management center
+  - `src/modules/flux/components/FluxCard.tsx` (131 lines) - Mini dashboard for Home
+  - `src/modules/flux/components/WhatsAppMessageModal.tsx` (292 lines) - AI message composer
+  - `src/modules/flux/context/FluxContext.tsx` - FSM state management
+  - `src/modules/flux/types/flux.ts` (427 lines) - TypeScript definitions
+  - `src/modules/flux/mockData.ts` (696 lines) - 312 mock athletes
 
 #### ⚠️  Partial Implementations (Frontend-First Development)
 - **Security Definer Pattern** - medium confidence (1 files)
@@ -855,6 +948,7 @@ npx playwright show-report    # Open HTML report in browser
 - `scripts/README.md` - Utility scripts documentation
 
 ### Key Implementation Files
+- `src/modules/flux/` - Flux training management module (15 files)
 - `src/pages/Home.tsx` - Main dashboard page component
 - `src/components/EfficiencyScoreCard.tsx` - Efficiency visualization
 - `src/services/efficiencyService.ts` - Efficiency calculation engine
@@ -863,6 +957,13 @@ npx playwright show-report    # Open HTML report in browser
 - `playwright.config.ts` - E2E test configuration
 - `scripts/update-docs.ts` - Documentation maintenance automation
 - `scripts/validate-supabase-schema.ts` - Database validation tool
+
+
+### Recently Modified Files (February 2026)
+- `src/modules/flux/` - New Flux training management module (15 files)
+- `src/modules/flux/views/FluxDashboard.tsx` - Main coach dashboard
+- `src/modules/flux/components/WhatsAppMessageModal.tsx` - AI message composer
+- `src/modules/flux/mockData.ts` - 312 mock athletes with metrics
 
 ### Recently Modified Files (December 2025)
 - `App.tsx` - Route reorganization, Home extraction

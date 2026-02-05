@@ -1,0 +1,83 @@
+# =============================================================================
+# AICA Agents Service - Cloud Build Configuration
+# =============================================================================
+# Builds and deploys the Python ADK multi-agent backend to Cloud Run.
+#
+# Usage:
+#   gcloud builds submit --config=backend/cloudbuild-agents.yaml \
+#     --region=southamerica-east1 --project=aica-461022 backend/
+#
+# Required secrets in Secret Manager:
+#   - gemini-api-key
+#   - supabase-service-key
+#   - supabase-jwt-secret
+# =============================================================================
+
+substitutions:
+  _SERVICE_NAME: aica-agents
+  _DEPLOY_REGION: southamerica-east1
+  _IMAGE_NAME: aica-agents
+  _TAG: latest
+  _SUPABASE_URL: https://uzywajqzbdbrfammshdg.supabase.co
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/gemini-api-key/versions/latest
+      env: 'GEMINI_API_KEY'
+    - versionName: projects/$PROJECT_ID/secrets/supabase-service-key/versions/latest
+      env: 'SUPABASE_SERVICE_KEY'
+    - versionName: projects/$PROJECT_ID/secrets/supabase-jwt-secret/versions/latest
+      env: 'SUPABASE_JWT_SECRET'
+
+steps:
+  # Step 1: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-agents-image'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest'
+      - '.'
+
+  # Step 2: Push image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-agents-image'
+    args: ['push', 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG}']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-agents-latest'
+    args: ['push', 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest']
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-agents'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run deploy ${_SERVICE_NAME} \
+          --platform=managed \
+          --image=gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG} \
+          --region=${_DEPLOY_REGION} \
+          --port=8081 \
+          --memory=512Mi \
+          --cpu=1 \
+          --min-instances=0 \
+          --max-instances=5 \
+          --timeout=60s \
+          --concurrency=10 \
+          --set-env-vars="SUPABASE_URL=${_SUPABASE_URL}" \
+          --set-secrets="GEMINI_API_KEY=gemini-api-key:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_JWT_SECRET=supabase-jwt-secret:latest" \
+          --allow-unauthenticated
+    secretEnv: ['GEMINI_API_KEY', 'SUPABASE_SERVICE_KEY', 'SUPABASE_JWT_SECRET']
+
+images:
+  - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:${_TAG}'
+  - 'gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: '600s'

@@ -6,7 +6,7 @@ Este arquivo contém instruções para agentes Claude Code trabalhando no projet
 
 ## Visao Geral do Projeto
 
-**AICA Life OS** e um "Sistema Operacional de Vida Integral" que integra produtividade pessoal e profissional para brasileiros. Funciona como um "Jarvis pessoal" com 7 modulos principais.
+**AICA Life OS** e um "Sistema Operacional de Vida Integral" que integra produtividade pessoal e profissional para brasileiros. Funciona como um "Jarvis pessoal" com 8 modulos principais.
 
 ### Stack Tecnologico
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
@@ -73,6 +73,7 @@ Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app
 | **Connections** | CRM pessoal por contexto | `connection_spaces`, `connection_members` |
 | **Studio** | Producao de podcasts com IA | `podcast_shows`, `podcast_episodes` |
 | **Finance** | Gestao financeira pessoal | `finance_transactions` |
+| **Flux** | Gestao de treinos para coaches | `athletes`, `workout_blocks`, `alerts` |
 
 ### Module Paths
 | Module | Path | Purpose |
@@ -83,6 +84,7 @@ Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app
 | Grants | `src/modules/grants/` | PDF-first edital parsing |
 | Finance | `src/modules/finance/` | Bank statement processing |
 | Connections | `src/modules/connections/` | WhatsApp integration, pairing code |
+| Flux | `src/modules/flux/` | Training management for coaches (multi-modality) |
 
 ---
 

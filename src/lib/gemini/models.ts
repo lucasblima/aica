@@ -7,13 +7,13 @@
 
 export const GEMINI_MODELS = {
   // Modelo rápido para tarefas simples (< 10s)
-  fast: 'gemini-2.0-flash',
+  fast: 'gemini-2.5-flash',
 
   // Modelo inteligente para tarefas complexas
   smart: 'gemini-2.5-flash',
 
-  // Modelo experimental para recursos novos
-  experimental: 'gemini-2.0-flash-exp',
+  // Modelo avançado para raciocínio complexo
+  pro: 'gemini-2.5-pro',
 
   // Modelo para embeddings (RAG)
   embedding: 'text-embedding-004',
@@ -64,6 +64,15 @@ export const USE_CASE_TO_MODEL: Record<string, GeminiModel> = {
   'analyze_moment_sentiment': 'fast',  // Real-time sentiment analysis (< 10s)
   'generate_weekly_summary': 'smart',   // Complex weekly summary (~8s)
   'generate_daily_question': 'fast',    // AI-driven contextual daily questions (< 3s)
+
+  // Grounded Search (Google Search)
+  'grounded_search': 'smart',           // Real-time web search with citations
+
+  // Agent System
+  'chat_with_agent': 'smart',           // Module-specific AI agents
+
+  // ADK Multi-Agent (proxied to Cloud Run)
+  'agent_chat': 'smart',               // ADK coordinator agent
 }
 
 /**
