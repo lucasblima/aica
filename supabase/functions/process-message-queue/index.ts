@@ -9,7 +9,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.2.1'
 
 // ============================================================================

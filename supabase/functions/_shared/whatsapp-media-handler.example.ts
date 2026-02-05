@@ -6,7 +6,7 @@
  * NOT meant to be imported - for reference only.
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm';
 import {
   processWhatsAppMedia,
   type ProcessMediaOptions,
