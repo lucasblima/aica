@@ -9,6 +9,7 @@ import { NotificationContainer, LoadingScreen, BottomNav } from '../components';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
+import { SwimFluxProvider } from '../modules/swimflux/context/SwimFluxContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
@@ -49,6 +50,12 @@ const SpaceDetailPage = lazy(() => import('../pages/SpaceDetailPage').then(m => 
 const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
 const WhatsAppAnalyticsPage = lazy(() => import('../pages/WhatsAppAnalyticsPage').then(m => ({ default: m.default })));
 const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
+
+// SwimFlux Module - Swim training management
+const SwimFluxDashboard = lazy(() => import('../modules/swimflux').then(m => ({ default: m.SwimFluxDashboard })));
+const AthleteDetailView = lazy(() => import('../modules/swimflux').then(m => ({ default: m.AthleteDetailView })));
+const CanvasEditorView = lazy(() => import('../modules/swimflux').then(m => ({ default: m.CanvasEditorView })));
+const AlertsView = lazy(() => import('../modules/swimflux').then(m => ({ default: m.AlertsView })));
 
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
@@ -635,6 +642,48 @@ export function AppRouter() {
                            <StudioProvider>
                               <StudioMainView />
                            </StudioProvider>
+                        }
+                     />
+                  </>
+               )}
+
+               {/* SwimFlux Module Routes - Protected */}
+               {isAuthenticated && (
+                  <>
+                     {/* Main Dashboard */}
+                     <Route
+                        path="/swimflux"
+                        element={
+                           <SwimFluxProvider>
+                              <SwimFluxDashboard />
+                           </SwimFluxProvider>
+                        }
+                     />
+                     {/* Athlete Detail */}
+                     <Route
+                        path="/swimflux/athlete/:athleteId"
+                        element={
+                           <SwimFluxProvider>
+                              <AthleteDetailView />
+                           </SwimFluxProvider>
+                        }
+                     />
+                     {/* Canvas Editor */}
+                     <Route
+                        path="/swimflux/canvas/:blockId"
+                        element={
+                           <SwimFluxProvider>
+                              <CanvasEditorView />
+                           </SwimFluxProvider>
+                        }
+                     />
+                     {/* Alerts Center */}
+                     <Route
+                        path="/swimflux/alerts"
+                        element={
+                           <SwimFluxProvider>
+                              <AlertsView />
+                           </SwimFluxProvider>
                         }
                      />
                   </>
