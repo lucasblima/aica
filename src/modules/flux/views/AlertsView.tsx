@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSwimFlux } from '../context/SwimFluxContext';
+import { useFlux } from '../context/FluxContext';
 import { MOCK_ALERTS, getMockAthleteById } from '../mockData';
 import type { AlertType, AlertSeverity } from '../types';
 import { AlertBadge } from '../components/AlertBadge';
@@ -15,7 +15,7 @@ import { ArrowLeft, Filter, CheckCircle } from 'lucide-react';
 
 export default function AlertsView() {
   const navigate = useNavigate();
-  const { state, actions } = useSwimFlux();
+  const { state, actions } = useFlux();
 
   // Local filter state
   const [selectedType, setSelectedType] = useState<AlertType | 'all'>('all');
@@ -41,14 +41,14 @@ export default function AlertsView() {
     const athlete = getMockAthleteById(alert.athlete_id);
     if (athlete) {
       actions.viewAthleteDetail(athlete.id);
-      navigate(`/swimflux/athlete/${athlete.id}`);
+      navigate(`/flux/athlete/${athlete.id}`);
     }
   };
 
   // Handle back
   const handleBack = () => {
     actions.viewDashboard();
-    navigate('/swimflux');
+    navigate('/flux');
   };
 
   return (
@@ -71,7 +71,7 @@ export default function AlertsView() {
           </div>
           <div>
             <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5">
-              SwimFlux
+              Flux
             </p>
             <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
               Alertas
@@ -158,7 +158,7 @@ export default function AlertsView() {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-red-500" />
               <h2 className="text-sm font-bold text-red-600 uppercase tracking-wider">
-                Críticos ({criticalAlerts.length})
+                Criticos ({criticalAlerts.length})
               </h2>
             </div>
             <div className="space-y-3">
@@ -200,7 +200,7 @@ export default function AlertsView() {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-amber-500" />
               <h2 className="text-sm font-bold text-amber-600 uppercase tracking-wider">
-                Média ({mediumAlerts.length})
+                Media ({mediumAlerts.length})
               </h2>
             </div>
             <div className="space-y-3">
@@ -247,7 +247,7 @@ export default function AlertsView() {
                 Nenhum alerta encontrado
               </p>
               <p className="text-sm text-ceramic-text-secondary font-light">
-                Todos os atletas estão bem! 🎉
+                Todos os atletas estao bem!
               </p>
             </div>
           </div>

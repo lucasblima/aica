@@ -48,7 +48,7 @@ export function ProgressionBar({
         {/* Adherence Rate */}
         <div className="text-right">
           <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider">
-            Adesão
+            Adesao
           </p>
           <p className={`text-2xl font-bold ${adherenceColorClass}`}>
             {adherenceRate}%

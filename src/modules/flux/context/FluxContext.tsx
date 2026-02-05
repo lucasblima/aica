@@ -1,7 +1,7 @@
 /**
- * SwimFlux Context - FSM State Management
+ * Flux Context - FSM State Management
  *
- * Global state management for the SwimFlux module using React Context.
+ * Global state management for the Flux module using React Context.
  * Implements Finite State Machine for navigation and view control.
  *
  * Pattern follows Studio module's StudioContext architecture.
@@ -9,27 +9,27 @@
 
 import React, { createContext, useContext, useReducer, useMemo, useCallback } from 'react';
 import type {
-  SwimFluxState,
-  SwimFluxAction,
-  SwimFluxContextValue,
-  SwimFluxActions,
+  FluxState,
+  FluxAction,
+  FluxContextValue,
+  FluxActions,
 } from '../types';
-import { INITIAL_SWIMFLUX_STATE } from '../types';
+import { INITIAL_FLUX_STATE } from '../types';
 
 // ============================================
 // CONTEXT CREATION
 // ============================================
 
-const SwimFluxContext = createContext<SwimFluxContextValue | undefined>(undefined);
+const FluxContext = createContext<FluxContextValue | undefined>(undefined);
 
 // ============================================
 // REDUCER
 // ============================================
 
 /**
- * Reducer for SwimFlux state transitions (FSM)
+ * Reducer for Flux state transitions (FSM)
  */
-function swimFluxReducer(state: SwimFluxState, action: SwimFluxAction): SwimFluxState {
+function fluxReducer(state: FluxState, action: FluxAction): FluxState {
   switch (action.type) {
     case 'VIEW_DASHBOARD':
       return {
@@ -89,34 +89,34 @@ function swimFluxReducer(state: SwimFluxState, action: SwimFluxAction): SwimFlux
 // PROVIDER COMPONENT
 // ============================================
 
-interface SwimFluxProviderProps {
+interface FluxProviderProps {
   children: React.ReactNode;
-  initialState?: Partial<SwimFluxState>;
+  initialState?: Partial<FluxState>;
 }
 
 /**
- * SwimFlux Context Provider
+ * Flux Context Provider
  *
- * Wrap your SwimFlux module routes with this provider.
+ * Wrap your Flux module routes with this provider.
  *
  * @example
  * ```tsx
- * <SwimFluxProvider>
- *   <SwimFluxDashboard />
- * </SwimFluxProvider>
+ * <FluxProvider>
+ *   <FluxDashboard />
+ * </FluxProvider>
  * ```
  */
-export function SwimFluxProvider({ children, initialState }: SwimFluxProviderProps) {
+export function FluxProvider({ children, initialState }: FluxProviderProps) {
   const [state, dispatch] = useReducer(
-    swimFluxReducer,
-    initialState ? { ...INITIAL_SWIMFLUX_STATE, ...initialState } : INITIAL_SWIMFLUX_STATE
+    fluxReducer,
+    initialState ? { ...INITIAL_FLUX_STATE, ...initialState } : INITIAL_FLUX_STATE
   );
 
   // ============================================
   // ACTION CREATORS (Memoized)
   // ============================================
 
-  const actions: SwimFluxActions = useMemo(
+  const actions: FluxActions = useMemo(
     () => ({
       viewDashboard: () => {
         dispatch({ type: 'VIEW_DASHBOARD' });
@@ -130,11 +130,11 @@ export function SwimFluxProvider({ children, initialState }: SwimFluxProviderPro
         dispatch({ type: 'EDIT_CANVAS', payload: { blockId, athleteId } });
       },
 
-      manageAlerts: (filters?: SwimFluxState['alertFilters']) => {
+      manageAlerts: (filters?: FluxState['alertFilters']) => {
         dispatch({ type: 'MANAGE_ALERTS', payload: { filters } });
       },
 
-      updateAlertFilters: (filters: SwimFluxState['alertFilters']) => {
+      updateAlertFilters: (filters: FluxState['alertFilters']) => {
         dispatch({ type: 'UPDATE_ALERT_FILTERS', payload: filters });
       },
 
@@ -149,7 +149,7 @@ export function SwimFluxProvider({ children, initialState }: SwimFluxProviderPro
   // CONTEXT VALUE
   // ============================================
 
-  const value = useMemo<SwimFluxContextValue>(
+  const value = useMemo<FluxContextValue>(
     () => ({
       state,
       dispatch,
@@ -158,7 +158,7 @@ export function SwimFluxProvider({ children, initialState }: SwimFluxProviderPro
     [state, actions]
   );
 
-  return <SwimFluxContext.Provider value={value}>{children}</SwimFluxContext.Provider>;
+  return <FluxContext.Provider value={value}>{children}</FluxContext.Provider>;
 }
 
 // ============================================
@@ -166,14 +166,14 @@ export function SwimFluxProvider({ children, initialState }: SwimFluxProviderPro
 // ============================================
 
 /**
- * Hook to access SwimFlux context
+ * Hook to access Flux context
  *
- * @throws Error if used outside SwimFluxProvider
+ * @throws Error if used outside FluxProvider
  *
  * @example
  * ```tsx
  * function MyComponent() {
- *   const { state, actions } = useSwimFlux();
+ *   const { state, actions } = useFlux();
  *
  *   return (
  *     <button onClick={() => actions.viewDashboard()}>
@@ -183,11 +183,11 @@ export function SwimFluxProvider({ children, initialState }: SwimFluxProviderPro
  * }
  * ```
  */
-export function useSwimFlux(): SwimFluxContextValue {
-  const context = useContext(SwimFluxContext);
+export function useFlux(): FluxContextValue {
+  const context = useContext(FluxContext);
 
   if (!context) {
-    throw new Error('useSwimFlux must be used within a SwimFluxProvider');
+    throw new Error('useFlux must be used within a FluxProvider');
   }
 
   return context;
@@ -200,8 +200,8 @@ export function useSwimFlux(): SwimFluxContextValue {
 /**
  * Hook to get current mode
  */
-export function useSwimFluxMode() {
-  const { state } = useSwimFlux();
+export function useFluxMode() {
+  const { state } = useFlux();
   return state.mode;
 }
 
@@ -209,7 +209,7 @@ export function useSwimFluxMode() {
  * Hook to get selected athlete ID
  */
 export function useSelectedAthleteId() {
-  const { state } = useSwimFlux();
+  const { state } = useFlux();
   return state.selectedAthleteId;
 }
 
@@ -217,7 +217,7 @@ export function useSelectedAthleteId() {
  * Hook to get selected block ID
  */
 export function useSelectedBlockId() {
-  const { state } = useSwimFlux();
+  const { state } = useFlux();
   return state.selectedBlockId;
 }
 
@@ -225,7 +225,7 @@ export function useSelectedBlockId() {
  * Hook to get alert filters
  */
 export function useAlertFilters() {
-  const { state } = useSwimFlux();
+  const { state } = useFlux();
   return state.alertFilters;
 }
 
@@ -233,6 +233,6 @@ export function useAlertFilters() {
  * Hook to check if in canvas edit mode
  */
 export function useIsCanvasEditMode() {
-  const { state } = useSwimFlux();
+  const { state } = useFlux();
   return state.canvasEditMode;
 }

@@ -9,7 +9,7 @@ import { NotificationContainer, LoadingScreen, BottomNav } from '../components';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
-import { SwimFluxProvider } from '../modules/swimflux/context/SwimFluxContext';
+import { FluxProvider } from '../modules/flux/context/FluxContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
@@ -51,11 +51,11 @@ const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m =
 const WhatsAppAnalyticsPage = lazy(() => import('../pages/WhatsAppAnalyticsPage').then(m => ({ default: m.default })));
 const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
 
-// SwimFlux Module - Swim training management
-const SwimFluxDashboard = lazy(() => import('../modules/swimflux').then(m => ({ default: m.SwimFluxDashboard })));
-const AthleteDetailView = lazy(() => import('../modules/swimflux').then(m => ({ default: m.AthleteDetailView })));
-const CanvasEditorView = lazy(() => import('../modules/swimflux').then(m => ({ default: m.CanvasEditorView })));
-const AlertsView = lazy(() => import('../modules/swimflux').then(m => ({ default: m.AlertsView })));
+// Flux Module - Swim training management
+const FluxDashboard = lazy(() => import('../modules/flux').then(m => ({ default: m.FluxDashboard })));
+const FluxAthleteDetailView = lazy(() => import('../modules/flux').then(m => ({ default: m.AthleteDetailView })));
+const FluxCanvasEditorView = lazy(() => import('../modules/flux').then(m => ({ default: m.CanvasEditorView })));
+const FluxAlertsView = lazy(() => import('../modules/flux').then(m => ({ default: m.AlertsView })));
 
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
@@ -647,43 +647,43 @@ export function AppRouter() {
                   </>
                )}
 
-               {/* SwimFlux Module Routes - Protected */}
+               {/* Flux Module Routes - Protected */}
                {isAuthenticated && (
                   <>
                      {/* Main Dashboard */}
                      <Route
-                        path="/swimflux"
+                        path="/flux"
                         element={
-                           <SwimFluxProvider>
-                              <SwimFluxDashboard />
-                           </SwimFluxProvider>
+                           <FluxProvider>
+                              <FluxDashboard />
+                           </FluxProvider>
                         }
                      />
                      {/* Athlete Detail */}
                      <Route
-                        path="/swimflux/athlete/:athleteId"
+                        path="/flux/athlete/:athleteId"
                         element={
-                           <SwimFluxProvider>
-                              <AthleteDetailView />
-                           </SwimFluxProvider>
+                           <FluxProvider>
+                              <FluxAthleteDetailView />
+                           </FluxProvider>
                         }
                      />
                      {/* Canvas Editor */}
                      <Route
-                        path="/swimflux/canvas/:blockId"
+                        path="/flux/canvas/:blockId"
                         element={
-                           <SwimFluxProvider>
-                              <CanvasEditorView />
-                           </SwimFluxProvider>
+                           <FluxProvider>
+                              <FluxCanvasEditorView />
+                           </FluxProvider>
                         }
                      />
                      {/* Alerts Center */}
                      <Route
-                        path="/swimflux/alerts"
+                        path="/flux/alerts"
                         element={
-                           <SwimFluxProvider>
-                              <AlertsView />
-                           </SwimFluxProvider>
+                           <FluxProvider>
+                              <FluxAlertsView />
+                           </FluxProvider>
                         }
                      />
                   </>

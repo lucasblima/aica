@@ -1,17 +1,17 @@
 /**
- * SwimFlux Module Types - Public API
+ * Flux Module Types - Public API
  *
- * Centralized export for all SwimFlux module types.
- * Import from this file to access any SwimFlux-related types.
+ * Centralized export for all Flux module types.
+ * Import from this file to access any Flux-related types.
  *
  * @example
  * ```ts
- * import type { SwimFluxState, Athlete, Alert } from '@/modules/swimflux/types'
+ * import type { FluxState, Athlete, Alert } from '@/modules/flux/types'
  * ```
  */
 
 // ============================================
-// CORE SWIMFLUX TYPES
+// CORE FLUX TYPES
 // ============================================
 
 export type {
@@ -39,11 +39,11 @@ export type {
   Exercise,
 
   // UI State
-  SwimFluxMode,
-  SwimFluxState,
-  SwimFluxAction,
-  SwimFluxContextValue,
-  SwimFluxActions,
+  FluxMode,
+  FluxState,
+  FluxAction,
+  FluxContextValue,
+  FluxActions,
 
   // Component Props
   AthleteCardProps,
@@ -52,13 +52,13 @@ export type {
   ProgressionBarProps,
 
   // Helper Types
-  SwimFluxLoadResult,
+  FluxLoadResult,
   AthleteWithMetrics,
-} from './swimflux';
+} from './flux';
 
 export {
-  INITIAL_SWIMFLUX_STATE,
+  INITIAL_FLUX_STATE,
   LEVEL_LABELS,
   STATUS_CONFIG,
   SEVERITY_COLORS,
-} from './swimflux';
+} from './flux';

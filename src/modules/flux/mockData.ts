@@ -1,5 +1,5 @@
 /**
- * SwimFlux Module - Mock Data
+ * Flux Module - Mock Data
  *
  * Realistic mock data for testing and development.
  * Represents a typical coach with 8 athletes at various levels.
@@ -22,7 +22,7 @@ export const MOCK_ATHLETES: Athlete[] = [
   {
     id: 'athlete-1',
     user_id: 'coach-1',
-    name: 'João Silva',
+    name: 'Joao Silva',
     email: 'joao.silva@email.com',
     phone: '+5511987654321',
     level: 'intermediario_2',
@@ -189,7 +189,7 @@ export const MOCK_WORKOUT_BLOCKS: WorkoutBlock[] = [
     id: 'block-1',
     user_id: 'coach-1',
     athlete_id: 'athlete-1',
-    title: 'Bloco 1 - Base Aeróbica',
+    title: 'Bloco 1 - Base Aerobica',
     start_date: '2026-01-06',
     end_date: '2026-03-30',
     status: 'active',
@@ -212,7 +212,7 @@ export const MOCK_WORKOUT_BLOCKS: WorkoutBlock[] = [
                 },
                 {
                   id: 'ex-2',
-                  name: 'Série Principal - Crawl',
+                  name: 'Serie Principal - Crawl',
                   category: 'main',
                   sets: 8,
                   reps: '100m',
@@ -225,7 +225,7 @@ export const MOCK_WORKOUT_BLOCKS: WorkoutBlock[] = [
         },
       ],
     },
-    progression_notes: 'Foco em volume e técnica',
+    progression_notes: 'Foco em volume e tecnica',
     created_at: '2026-01-01T10:00:00Z',
   },
   {
@@ -251,7 +251,7 @@ export const MOCK_WORKOUT_BLOCKS: WorkoutBlock[] = [
                   sets: 10,
                   reps: '50m',
                   rest: '60s',
-                  notes: 'Máxima velocidade',
+                  notes: 'Maxima velocidade',
                   order: 0,
                 },
               ],
@@ -276,7 +276,7 @@ export const MOCK_FEEDBACKS: Feedback[] = [
     completed_workout: false,
     volume_pct: 60,
     intensity_pct: 70,
-    raw_message: 'Fiz só 60% do treino. Senti dor no ombro direito durante os 100m crawl. Precisei parar.',
+    raw_message: 'Fiz so 60% do treino. Senti dor no ombro direito durante os 100m crawl. Precisei parar.',
     parsed_data: {
       completed: 0.6,
       pain_reported: true,
@@ -286,10 +286,10 @@ export const MOCK_FEEDBACKS: Feedback[] = [
     has_critical_keywords: true,
     critical_keywords: ['dor', 'parar'],
     ia_analysis: {
-      summary: 'Atleta relatou dor no ombro durante crawl. Redução de volume necessária.',
+      summary: 'Atleta relatou dor no ombro durante crawl. Reducao de volume necessaria.',
       recommendations: [
         'Reduzir volume em 30%',
-        'Focar em técnica de respiração',
+        'Focar em tecnica de respiracao',
         'Avaliar necessidade de fisioterapia',
       ],
       suggested_adjustments: {
@@ -307,7 +307,7 @@ export const MOCK_FEEDBACKS: Feedback[] = [
     completed_workout: true,
     volume_pct: 100,
     intensity_pct: 95,
-    raw_message: 'Treino completo! Me senti muito bem hoje, consegui manter o ritmo até o final. 💪',
+    raw_message: 'Treino completo! Me senti muito bem hoje, consegui manter o ritmo ate o final.',
     parsed_data: {
       completed: 1.0,
       positive_sentiment: true,
@@ -316,9 +316,9 @@ export const MOCK_FEEDBACKS: Feedback[] = [
     has_critical_keywords: false,
     critical_keywords: [],
     ia_analysis: {
-      summary: 'Excelente desempenho. Atleta demonstra evolução positiva.',
+      summary: 'Excelente desempenho. Atleta demonstra evolucao positiva.',
       recommendations: [
-        'Manter progressão atual',
+        'Manter progressao atual',
         'Considerar aumento gradual de intensidade',
       ],
       confidence_score: 0.9,
@@ -332,7 +332,7 @@ export const MOCK_FEEDBACKS: Feedback[] = [
     completed_workout: false,
     volume_pct: 0,
     intensity_pct: 0,
-    raw_message: 'Não consegui ir treinar. To muito desanimada, não to vendo resultado. Acho que vou desistir.',
+    raw_message: 'Nao consegui ir treinar. To muito desanimada, nao to vendo resultado. Acho que vou desistir.',
     parsed_data: {
       completed: 0,
       absence: true,
@@ -340,9 +340,9 @@ export const MOCK_FEEDBACKS: Feedback[] = [
     },
     sentiment_score: -0.7,
     has_critical_keywords: true,
-    critical_keywords: ['desanimada', 'desistir', 'não consegui'],
+    critical_keywords: ['desanimada', 'desistir', 'nao consegui'],
     ia_analysis: {
-      summary: 'Alerta de motivação crítica. Risco de churn alto.',
+      summary: 'Alerta de motivacao critica. Risco de churn alto.',
       recommendations: [
         'Agendar conversa individual urgente',
         'Revisar objetivos e expectativas',
@@ -367,7 +367,7 @@ export const MOCK_ALERTS: Alert[] = [
     alert_type: 'health',
     severity: 'critical',
     keywords_detected: ['dor', 'parar'],
-    message_preview: 'Fiz só 60% do treino. Senti dor no ombro direito durante os 100m crawl...',
+    message_preview: 'Fiz so 60% do treino. Senti dor no ombro direito durante os 100m crawl...',
     created_at: '2026-02-03T20:15:05Z',
   },
   {
@@ -377,8 +377,8 @@ export const MOCK_ALERTS: Alert[] = [
     feedback_id: 'feedback-3',
     alert_type: 'motivation',
     severity: 'critical',
-    keywords_detected: ['desanimada', 'desistir', 'não consegui'],
-    message_preview: 'Não consegui ir treinar. To muito desanimada, não to vendo resultado...',
+    keywords_detected: ['desanimada', 'desistir', 'nao consegui'],
+    message_preview: 'Nao consegui ir treinar. To muito desanimada, nao to vendo resultado...',
     created_at: '2026-01-28T18:00:05Z',
   },
   {
@@ -400,8 +400,8 @@ export const MOCK_ALERTS: Alert[] = [
     feedback_id: 'feedback-5',
     alert_type: 'health',
     severity: 'high',
-    keywords_detected: ['cansaço extremo'],
-    message_preview: 'Terminei o treino mas to com cansaço extremo. Não dormi bem essa semana.',
+    keywords_detected: ['cansaco extremo'],
+    message_preview: 'Terminei o treino mas to com cansaco extremo. Nao dormi bem essa semana.',
     created_at: '2026-02-05T20:00:00Z',
   },
 ];
@@ -426,21 +426,21 @@ export const MOCK_EXERCISES: Exercise[] = [
   {
     id: 'exercise-2',
     user_id: 'coach-1',
-    name: 'Série Principal - Crawl',
+    name: 'Serie Principal - Crawl',
     category: 'main',
-    description: 'Série principal em crawl com foco em técnica',
+    description: 'Serie principal em crawl com foco em tecnica',
     default_sets: 8,
     default_reps: '100m',
     default_rest: '20s',
     level_range: ['intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
-    tags: ['crawl', 'aeróbico'],
+    tags: ['crawl', 'aerobico'],
   },
   {
     id: 'exercise-3',
     user_id: 'coach-1',
     name: 'Sprint 50m',
     category: 'main',
-    description: 'Tiros de velocidade máxima',
+    description: 'Tiros de velocidade maxima',
     default_sets: 10,
     default_reps: '50m',
     default_rest: '60s',
@@ -457,14 +457,14 @@ export const MOCK_EXERCISES: Exercise[] = [
     default_reps: '100m',
     default_rest: '30s',
     level_range: ['iniciante_1', 'iniciante_2', 'iniciante_3'],
-    tags: ['técnica', 'pernada'],
+    tags: ['tecnica', 'pernada'],
   },
   {
     id: 'exercise-5',
     user_id: 'coach-1',
     name: 'Desaquecimento - Costas',
     category: 'cooldown',
-    description: 'Nado costas leve para recuperação',
+    description: 'Nado costas leve para recuperacao',
     default_sets: 1,
     default_reps: '200m',
     default_rest: '0',

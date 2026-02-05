@@ -1,7 +1,7 @@
 /**
- * SwimFlux Module - Core Types
+ * Flux Module - Core Types
  *
- * Type definitions for the SwimFlux swim training management module.
+ * Type definitions for the Flux swim training management module.
  * Based on PRD v1.0 - February 2026
  */
 
@@ -92,7 +92,7 @@ export interface WorkoutBlock {
   id: string;
   user_id: string; // Coach
   athlete_id: string;
-  title: string; // e.g., "Bloco 1 - Base Aeróbica"
+  title: string; // e.g., "Bloco 1 - Base Aerobica"
   start_date: string; // ISO 8601 date
   end_date: string; // start_date + 12 weeks
   status: BlockStatus;
@@ -231,19 +231,19 @@ export interface Exercise {
 // ============================================
 
 /**
- * FSM states for SwimFlux module navigation
+ * FSM states for Flux module navigation
  */
-export type SwimFluxMode =
+export type FluxMode =
   | 'viewing_dashboard'      // Main dashboard view
   | 'viewing_athlete_detail' // Single athlete 12-week timeline
   | 'editing_canvas'         // Canvas editor for workout blocks
   | 'managing_alerts';       // Alerts center
 
 /**
- * Global state for SwimFlux module (Context)
+ * Global state for Flux module (Context)
  */
-export interface SwimFluxState {
-  mode: SwimFluxMode;
+export interface FluxState {
+  mode: FluxMode;
   selectedAthleteId: string | null;
   selectedBlockId: string | null;
   alertFilters: {
@@ -255,34 +255,34 @@ export interface SwimFluxState {
 }
 
 /**
- * Actions for SwimFlux state transitions
+ * Actions for Flux state transitions
  */
-export type SwimFluxAction =
+export type FluxAction =
   | { type: 'VIEW_DASHBOARD' }
   | { type: 'VIEW_ATHLETE_DETAIL'; payload: { athleteId: string } }
   | { type: 'EDIT_CANVAS'; payload: { blockId: string; athleteId: string } }
-  | { type: 'MANAGE_ALERTS'; payload?: { filters?: SwimFluxState['alertFilters'] } }
-  | { type: 'UPDATE_ALERT_FILTERS'; payload: SwimFluxState['alertFilters'] }
+  | { type: 'MANAGE_ALERTS'; payload?: { filters?: FluxState['alertFilters'] } }
+  | { type: 'UPDATE_ALERT_FILTERS'; payload: FluxState['alertFilters'] }
   | { type: 'TOGGLE_CANVAS_EDIT_MODE' };
 
 /**
  * Context value exposed to components
  */
-export interface SwimFluxContextValue {
-  state: SwimFluxState;
-  dispatch: React.Dispatch<SwimFluxAction>;
-  actions: SwimFluxActions;
+export interface FluxContextValue {
+  state: FluxState;
+  dispatch: React.Dispatch<FluxAction>;
+  actions: FluxActions;
 }
 
 /**
  * Convenience action creators
  */
-export interface SwimFluxActions {
+export interface FluxActions {
   viewDashboard: () => void;
   viewAthleteDetail: (athleteId: string) => void;
   editCanvas: (blockId: string, athleteId: string) => void;
-  manageAlerts: (filters?: SwimFluxState['alertFilters']) => void;
-  updateAlertFilters: (filters: SwimFluxState['alertFilters']) => void;
+  manageAlerts: (filters?: FluxState['alertFilters']) => void;
+  updateAlertFilters: (filters: FluxState['alertFilters']) => void;
   toggleCanvasEditMode: () => void;
 }
 
@@ -336,7 +336,7 @@ export interface ProgressionBarProps {
 /**
  * Data load result for async operations
  */
-export interface SwimFluxLoadResult<T> {
+export interface FluxLoadResult<T> {
   data: T | null;
   error: Error | null;
   isLoading: boolean;
@@ -358,9 +358,9 @@ export interface AthleteWithMetrics extends Athlete {
 // ============================================
 
 /**
- * Initial state for SwimFluxContext
+ * Initial state for FluxContext
  */
-export const INITIAL_SWIMFLUX_STATE: SwimFluxState = {
+export const INITIAL_FLUX_STATE: FluxState = {
   mode: 'viewing_dashboard',
   selectedAthleteId: null,
   selectedBlockId: null,
@@ -377,10 +377,10 @@ export const LEVEL_LABELS: Record<AthleteLevel, string> = {
   iniciante_1: 'Iniciante I',
   iniciante_2: 'Iniciante II',
   iniciante_3: 'Iniciante III',
-  intermediario_1: 'Intermediário I',
-  intermediario_2: 'Intermediário II',
-  intermediario_3: 'Intermediário III',
-  avancado: 'Avançado',
+  intermediario_1: 'Intermediario I',
+  intermediario_2: 'Intermediario II',
+  intermediario_3: 'Intermediario III',
+  avancado: 'Avancado',
 };
 
 /**

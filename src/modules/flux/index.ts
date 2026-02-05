@@ -1,7 +1,7 @@
 /**
- * SwimFlux Module - Public API
+ * Flux Module - Public API
  *
- * Barrel export for the SwimFlux swim training management module.
+ * Barrel export for the Flux swim training management module.
  * Lazy-loaded by AppRouter.tsx
  */
 
@@ -16,14 +16,14 @@ export type * from './types';
 // ============================================
 
 export {
-  SwimFluxProvider,
-  useSwimFlux,
-  useSwimFluxMode,
+  FluxProvider,
+  useFlux,
+  useFluxMode,
   useSelectedAthleteId,
   useSelectedBlockId,
   useAlertFilters,
   useIsCanvasEditMode,
-} from './context/SwimFluxContext';
+} from './context/FluxContext';
 
 // ============================================
 // MOCK DATA (Development only)
@@ -49,7 +49,7 @@ export {
 // VIEWS (Lazy-loaded by router)
 // ============================================
 
-export { default as SwimFluxDashboard } from './views/SwimFluxDashboard';
+export { default as FluxDashboard } from './views/FluxDashboard';
 export { default as AthleteDetailView } from './views/AthleteDetailView';
 export { default as CanvasEditorView } from './views/CanvasEditorView';
 export { default as AlertsView } from './views/AlertsView';

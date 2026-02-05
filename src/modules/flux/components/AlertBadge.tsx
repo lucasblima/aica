@@ -159,7 +159,7 @@ export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps)
         </span>
 
         {isAcknowledged && (
-          <span className="font-medium text-green-600">✓ Reconhecido</span>
+          <span className="font-medium text-green-600">Reconhecido</span>
         )}
       </div>
     </div>

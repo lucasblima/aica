@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSwimFlux } from '../context/SwimFluxContext';
+import { useFlux } from '../context/FluxContext';
 import {
   getMockAthleteWithMetricsById,
   getMockAlertsForAthlete,
@@ -31,7 +31,7 @@ import {
 export default function AthleteDetailView() {
   const navigate = useNavigate();
   const { athleteId } = useParams<{ athleteId: string }>();
-  const { actions } = useSwimFlux();
+  const { actions } = useFlux();
 
   // Fetch athlete data (mock)
   const athlete = athleteId ? getMockAthleteWithMetricsById(athleteId) : null;
@@ -42,14 +42,14 @@ export default function AthleteDetailView() {
   // Handle back
   const handleBack = () => {
     actions.viewDashboard();
-    navigate('/swimflux');
+    navigate('/flux');
   };
 
   // Handle edit canvas
   const handleEditCanvas = () => {
     if (activeBlock && athleteId) {
       actions.editCanvas(activeBlock.id, athleteId);
-      navigate(`/swimflux/canvas/${activeBlock.id}`);
+      navigate(`/flux/canvas/${activeBlock.id}`);
     }
   };
 
@@ -58,7 +58,7 @@ export default function AthleteDetailView() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
         <p className="text-lg font-bold text-ceramic-text-primary mb-4">
-          Atleta não encontrado
+          Atleta nao encontrado
         </p>
         <button
           onClick={handleBack}
@@ -129,10 +129,10 @@ export default function AthleteDetailView() {
             <div className="flex-1">
               <p className="text-xs text-ceramic-text-secondary mb-1">Status</p>
               <p className="text-sm font-bold text-ceramic-text-primary">
-                {athlete.status === 'active' && '✅ Ativo'}
-                {athlete.status === 'trial' && '🔄 Trial'}
-                {athlete.status === 'paused' && '⏸️ Pausado'}
-                {athlete.status === 'churned' && '❌ Inativo'}
+                {athlete.status === 'active' && 'Ativo'}
+                {athlete.status === 'trial' && 'Trial'}
+                {athlete.status === 'paused' && 'Pausado'}
+                {athlete.status === 'churned' && 'Inativo'}
               </p>
             </div>
             {athlete.status === 'trial' && athlete.trial_expires_at && (
@@ -191,7 +191,7 @@ export default function AthleteDetailView() {
             </div>
             <div className="flex items-center gap-4 text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-text-secondary/10">
               <div>
-                <span className="font-medium">Início:</span>{' '}
+                <span className="font-medium">Inicio:</span>{' '}
                 {new Date(activeBlock.start_date).toLocaleDateString('pt-BR')}
               </div>
               <div>
@@ -221,7 +221,7 @@ export default function AthleteDetailView() {
           </div>
           {alerts.length > 3 && (
             <button
-              onClick={() => navigate('/swimflux/alerts')}
+              onClick={() => navigate('/flux/alerts')}
               className="w-full mt-3 px-4 py-2 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
             >
               Ver todos os alertas
@@ -298,7 +298,7 @@ export default function AthleteDetailView() {
                             : 'text-gray-600'
                         }`}
                       >
-                        {feedback.sentiment_score > 0 ? '😊' : feedback.sentiment_score < 0 ? '😔' : '😐'}
+                        {feedback.sentiment_score > 0 ? '+' : ''}{feedback.sentiment_score.toFixed(1)}
                       </span>
                     </div>
                   )}
@@ -336,11 +336,11 @@ export default function AthleteDetailView() {
             </div>
             {athlete.anamnesis.injuries && athlete.anamnesis.injuries.length > 0 && (
               <div className="pt-3 border-t border-ceramic-text-secondary/10">
-                <p className="text-xs text-ceramic-text-secondary mb-2">Lesões Prévias</p>
+                <p className="text-xs text-ceramic-text-secondary mb-2">Lesoes Previas</p>
                 <ul className="space-y-1">
                   {athlete.anamnesis.injuries.map((injury, index) => (
                     <li key={index} className="text-sm text-ceramic-text-primary">
-                      • {injury}
+                      - {injury}
                     </li>
                   ))}
                 </ul>

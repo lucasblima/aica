@@ -1,13 +1,13 @@
 /**
- * SwimFluxDashboard - Main coach dashboard view
+ * FluxDashboard - Main coach dashboard view
  *
  * Displays athlete grid with colorimetric status, alert summary, and quick stats.
- * Entry point for the SwimFlux module.
+ * Entry point for the Flux module.
  */
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSwimFlux } from '../context/SwimFluxContext';
+import { useFlux } from '../context/FluxContext';
 import {
   MOCK_ATHLETES_WITH_METRICS,
   getMockAlertsForAthlete,
@@ -18,9 +18,9 @@ import { AthleteCard } from '../components/AthleteCard';
 import { AlertBadge } from '../components/AlertBadge';
 import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus } from 'lucide-react';
 
-export default function SwimFluxDashboard() {
+export default function FluxDashboard() {
   const navigate = useNavigate();
-  const { actions } = useSwimFlux();
+  const { actions } = useFlux();
 
   // Mock data
   const athletes = MOCK_ATHLETES_WITH_METRICS;
@@ -35,13 +35,13 @@ export default function SwimFluxDashboard() {
   // Handle athlete click
   const handleAthleteClick = (athleteId: string) => {
     actions.viewAthleteDetail(athleteId);
-    navigate(`/swimflux/athlete/${athleteId}`);
+    navigate(`/flux/athlete/${athleteId}`);
   };
 
   // Handle alert click
   const handleAlertsClick = () => {
     actions.manageAlerts({ unacknowledged_only: true });
-    navigate('/swimflux/alerts');
+    navigate('/flux/alerts');
   };
 
   return (
@@ -64,10 +64,10 @@ export default function SwimFluxDashboard() {
           </div>
           <div>
             <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5">
-              Módulo
+              Modulo
             </p>
             <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
-              SwimFlux
+              Flux
             </h1>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function SwimFluxDashboard() {
                 <TrendingUp className="w-4 h-4 text-green-600" />
               </div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                Adesão Média
+                Adesao Media
               </p>
             </div>
             <p className="text-2xl font-bold text-green-600">
@@ -132,7 +132,7 @@ export default function SwimFluxDashboard() {
             <div className="flex items-center gap-3 mb-3">
               <AlertCircle className="w-5 h-5 text-red-600" />
               <p className="text-sm font-bold text-red-700">
-                {criticalAlerts.length} alerta(s) crítico(s) requer(em) atenção
+                {criticalAlerts.length} alerta(s) critico(s) requer(em) atencao
               </p>
             </div>
             <div className="space-y-2">
@@ -183,7 +183,7 @@ export default function SwimFluxDashboard() {
                 Nenhum atleta cadastrado
               </p>
               <p className="text-sm text-ceramic-text-secondary font-light">
-                Comece adicionando seu primeiro atleta ao SwimFlux
+                Comece adicionando seu primeiro atleta ao Flux
               </p>
             </div>
             <button className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">

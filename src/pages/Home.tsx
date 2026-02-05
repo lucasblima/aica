@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase } from 'lucide-react';
+import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase, Waves } from 'lucide-react';
 import { HeaderGlobal, ProfileModal, ConnectionArchetypes, ModuleCard } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
@@ -404,12 +404,49 @@ export default function Home({
                                  Podcast Copilot
                               </p>
                               <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                                 Transforme suas reflexões em episódios de podcast
+                                 Transforme suas reflexoes em episodios de podcast
                               </p>
                            </div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
                            <span>Gerar</span>
+                           <ChevronRight className="w-3 h-3" />
+                        </div>
+                     </div>
+                  </motion.div>
+
+                  {/* Flux - Swim Training */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={11}
+                     onClick={() => navigate('/flux')}
+                     className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+                     style={{
+                        background: 'linear-gradient(135deg, #F0EFE9 0%, #E6F2F5 100%)'
+                     }}
+                  >
+                     <Waves className="absolute -right-4 -bottom-4 w-32 h-32 text-cyan-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
+                     <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-3">
+                           <div className="ceramic-inset p-2">
+                              <Waves className="w-5 h-5 text-cyan-600" />
+                           </div>
+                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Flux</span>
+                        </div>
+                        <div className="flex-1 flex flex-col justify-center space-y-3">
+                           <div>
+                              <p className="text-sm font-bold text-ceramic-text-primary mb-1">
+                                 Treino de Natacao
+                              </p>
+                              <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                                 Gerencie atletas, prescreva treinos e acompanhe evolucao
+                              </p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
+                           <span>Abrir</span>
                            <ChevronRight className="w-3 h-3" />
                         </div>
                      </div>

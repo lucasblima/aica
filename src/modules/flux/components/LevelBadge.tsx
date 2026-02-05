@@ -1,7 +1,7 @@
 /**
  * LevelBadge - Athlete level indicator
  *
- * Displays athlete progression level (Iniciante I/II/III, Intermediário I/II/III, Avançado).
+ * Displays athlete progression level (Iniciante I/II/III, Intermediario I/II/III, Avancado).
  * Color-coded by level category with Ceramic styling.
  */
 

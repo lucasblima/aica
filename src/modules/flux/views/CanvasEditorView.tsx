@@ -8,14 +8,14 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSwimFlux } from '../context/SwimFluxContext';
+import { useFlux } from '../context/FluxContext';
 import { MOCK_WORKOUT_BLOCKS, getMockAthleteById } from '../mockData';
 import { ArrowLeft, Save, Grid, List, Plus, GripVertical } from 'lucide-react';
 
 export default function CanvasEditorView() {
   const navigate = useNavigate();
   const { blockId } = useParams<{ blockId: string }>();
-  const { actions } = useSwimFlux();
+  const { actions } = useFlux();
 
   // View toggle
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -28,10 +28,10 @@ export default function CanvasEditorView() {
   const handleBack = () => {
     if (athlete) {
       actions.viewAthleteDetail(athlete.id);
-      navigate(`/swimflux/athlete/${athlete.id}`);
+      navigate(`/flux/athlete/${athlete.id}`);
     } else {
       actions.viewDashboard();
-      navigate('/swimflux');
+      navigate('/flux');
     }
   };
 
@@ -45,10 +45,10 @@ export default function CanvasEditorView() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
         <p className="text-lg font-bold text-ceramic-text-primary mb-4">
-          Bloco de treino não encontrado
+          Bloco de treino nao encontrado
         </p>
         <button
-          onClick={() => navigate('/swimflux')}
+          onClick={() => navigate('/flux')}
           className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
         >
           Voltar ao Dashboard
@@ -102,7 +102,7 @@ export default function CanvasEditorView() {
           {/* Dates */}
           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-ceramic-text-secondary/10 text-xs text-ceramic-text-secondary">
             <div>
-              <span className="font-medium">Início:</span>{' '}
+              <span className="font-medium">Inicio:</span>{' '}
               {new Date(block.start_date).toLocaleDateString('pt-BR')}
             </div>
             <div>
@@ -156,8 +156,8 @@ export default function CanvasEditorView() {
                   Canvas em Desenvolvimento
                 </p>
                 <p className="text-sm text-ceramic-text-secondary font-light max-w-md mx-auto">
-                  A visualização em grade com drag-and-drop será implementada na Fase 2
-                  usando @dnd-kit. Por enquanto, use a visualização em lista abaixo.
+                  A visualizacao em grade com drag-and-drop sera implementada na Fase 2
+                  usando @dnd-kit. Por enquanto, use a visualizacao em lista abaixo.
                 </p>
               </div>
               <button
@@ -190,7 +190,7 @@ export default function CanvasEditorView() {
                     </p>
                     <p className="text-sm font-bold text-ceramic-text-primary">
                       {weekNumber <= 4
-                        ? 'Base Aeróbica'
+                        ? 'Base Aerobica'
                         : weekNumber <= 8
                         ? 'Intensidade Moderada'
                         : 'Alta Performance'}
@@ -265,7 +265,7 @@ export default function CanvasEditorView() {
             onClick={handleSave}
             className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors"
           >
-            Salvar Alterações
+            Salvar Alteracoes
           </button>
         </div>
       </div>

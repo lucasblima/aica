@@ -88,7 +88,7 @@ export function AthleteCard({
             </div>
             <div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
-                Adesão
+                Adesao
               </p>
               <p className={`text-sm font-bold ${adherenceColorClass}`}>
                 {adherenceRate}%
@@ -104,7 +104,7 @@ export function AthleteCard({
               </div>
               <div>
                 <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
-                  Último
+                  Ultimo
                 </p>
                 <p className="text-xs font-bold text-ceramic-text-primary">
                   {new Date(recentFeedbacks[0].created_at).toLocaleDateString('pt-BR', {
