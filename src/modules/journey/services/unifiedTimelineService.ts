@@ -17,8 +17,39 @@ import {
   QuestionEvent,
   SummaryEvent,
   ActivityEvent,
+  IntentCategory,
   DEFAULT_TIMELINE_FILTERS,
 } from '../types/unifiedEvent'
+
+/**
+ * Icon mapping for intent categories (Issue #91, #185)
+ */
+const INTENT_CATEGORY_ICONS: Record<IntentCategory, string> = {
+  question: '❓',
+  response: '💬',
+  scheduling: '📅',
+  document: '📄',
+  audio: '🎤',
+  social: '👋',
+  request: '📋',
+  update: '🔄',
+  media: '🖼️',
+}
+
+/**
+ * Color mapping for intent categories
+ */
+const INTENT_CATEGORY_COLORS: Record<IntentCategory, string> = {
+  question: '#8b5cf6',    // Purple
+  response: '#3b82f6',    // Blue
+  scheduling: '#f59e0b',  // Amber
+  document: '#6366f1',    // Indigo
+  audio: '#ec4899',       // Pink
+  social: '#10b981',      // Green
+  request: '#ef4444',     // Red
+  update: '#06b6d4',      // Cyan
+  media: '#84cc16',       // Lime
+}
 
 const log = createNamespacedLogger('UnifiedTimeline')
 
@@ -62,11 +93,33 @@ function enrichEventWithDisplayData(event: UnifiedEvent): UnifiedEvent {
   switch (event.source) {
     case 'whatsapp': {
       const whatsapp = event as WhatsAppEvent
+      // Use intent data for display (Issue #91, #185)
+      const category = whatsapp.intent_category
+      const isUrgent = (whatsapp.intent_urgency || 1) >= 4
+      const hasAction = whatsapp.intent_action_required
+
+      // Determine icon based on intent category or fallback to direction
+      let icon = whatsapp.direction === 'incoming' ? '💬' : '📤'
+      let color = whatsapp.direction === 'incoming' ? '#25D366' : '#128C7E'
+
+      if (category && INTENT_CATEGORY_ICONS[category]) {
+        icon = INTENT_CATEGORY_ICONS[category]
+        color = INTENT_CATEGORY_COLORS[category]
+      }
+
+      // Build label with intent info
+      let label = whatsapp.direction === 'incoming' ? 'Mensagem recebida' : 'Mensagem enviada'
+      if (isUrgent) {
+        label = '🔴 ' + label + ' (Urgente)'
+      } else if (hasAction) {
+        label = '📌 ' + label + ' (Ação necessária)'
+      }
+
       displayData = {
-        icon: whatsapp.direction === 'incoming' ? '💬' : '📤',
+        icon,
         title: whatsapp.contact_name || whatsapp.contact_number || 'WhatsApp',
-        label: whatsapp.direction === 'incoming' ? 'Mensagem recebida' : 'Mensagem enviada',
-        color: whatsapp.direction === 'incoming' ? '#25D366' : '#128C7E',
+        label,
+        color,
         preview: whatsapp.content.slice(0, 120) + (whatsapp.content.length > 120 ? '...' : ''),
       }
       break
@@ -165,19 +218,39 @@ function enrichEventWithDisplayData(event: UnifiedEvent): UnifiedEvent {
 
 /**
  * Fetch WhatsApp messages for timeline
+ * Updated for Issue #91, #185: Privacy-first intent-based display
  */
 async function fetchWhatsAppEvents(
   userId: string,
   dateFilter: string | null,
   limit: number,
-  offset: number
+  offset: number,
+  filters?: TimelineFilters
 ): Promise<WhatsAppEvent[]> {
   try {
     // JOIN with contact_network to get contact name and number
+    // Include intent fields for privacy-first display
     let query = supabase
       .from('whatsapp_messages')
       .select(`
-        *,
+        id,
+        user_id,
+        contact_id,
+        message_direction,
+        message_type,
+        message_timestamp,
+        media_type,
+        processing_status,
+        intent_summary,
+        intent_category,
+        intent_sentiment,
+        intent_urgency,
+        intent_topic,
+        intent_action_required,
+        intent_mentioned_date,
+        intent_mentioned_time,
+        intent_confidence,
+        created_at,
         contact_network!contact_id (
           name,
           phone_number,
@@ -192,6 +265,20 @@ async function fetchWhatsAppEvents(
       query = query.gte('message_timestamp', dateFilter)
     }
 
+    // Apply intent-based filters (Issue #91, #185)
+    if (filters?.intentCategories && filters.intentCategories.length > 0) {
+      query = query.in('intent_category', filters.intentCategories)
+    }
+    if (filters?.intentSentiments && filters.intentSentiments.length > 0) {
+      query = query.in('intent_sentiment', filters.intentSentiments)
+    }
+    if (filters?.minUrgency && filters.minUrgency > 1) {
+      query = query.gte('intent_urgency', filters.minUrgency)
+    }
+    if (filters?.actionRequired) {
+      query = query.eq('intent_action_required', true)
+    }
+
     const { data, error } = await query
 
     if (error) {
@@ -202,16 +289,31 @@ async function fetchWhatsAppEvents(
     const events = (data || []).map((msg): WhatsAppEvent => ({
       id: `whatsapp-${msg.id}`,
       source: 'whatsapp' as const,
-      created_at: msg.message_timestamp || msg.created_at, // Use message_timestamp for proper ordering
+      created_at: msg.message_timestamp || msg.created_at,
       user_id: msg.user_id,
-      content: msg.message_text || '', // Fixed: use correct column name
+      // Privacy-first: Use intent_summary instead of raw text (Issue #91)
+      content: msg.intent_summary || (msg.processing_status === 'pending' ? 'Processando...' : ''),
       contact_name: msg.contact_network?.name || msg.contact_network?.whatsapp_name || 'Contato Desconhecido',
       contact_number: msg.contact_network?.phone_number || '',
-      message_type: 'text', // Default to text (media types to be implemented later)
-      direction: msg.message_direction || 'incoming', // Fixed: use correct column name
-      sentiment: undefined, // To be enriched by AI analysis
-      tags: [], // To be enriched by AI analysis
-      displayData: { icon: '', title: '', label: '', color: '', preview: '' }, // Placeholder
+      contact_id: msg.contact_id,
+      message_type: msg.media_type || msg.message_type || 'text',
+      direction: msg.message_direction || 'incoming',
+      // Intent fields (Issue #91, #185)
+      intent_category: msg.intent_category,
+      intent_sentiment: msg.intent_sentiment,
+      intent_urgency: msg.intent_urgency,
+      intent_topic: msg.intent_topic,
+      intent_action_required: msg.intent_action_required,
+      intent_mentioned_date: msg.intent_mentioned_date,
+      intent_mentioned_time: msg.intent_mentioned_time,
+      intent_confidence: msg.intent_confidence,
+      processing_status: msg.processing_status,
+      // Map intent_sentiment to event sentiment
+      sentiment: msg.intent_sentiment === 'positive' ? 'positive' :
+                 msg.intent_sentiment === 'negative' ? 'negative' :
+                 msg.intent_sentiment === 'urgent' ? 'negative' : 'neutral',
+      tags: msg.intent_topic ? [msg.intent_topic] : [],
+      displayData: { icon: '', title: '', label: '', color: '', preview: '' },
     }))
 
     return events.map(enrichEventWithDisplayData) as WhatsAppEvent[]
@@ -516,7 +618,7 @@ export async function fetchUnifiedTimelineEvents(
   const fetchPromises: Promise<UnifiedEvent[]>[] = []
 
   if (filters.sources.includes('whatsapp')) {
-    fetchPromises.push(fetchWhatsAppEvents(userId, dateFilter, perSourceLimit, 0))
+    fetchPromises.push(fetchWhatsAppEvents(userId, dateFilter, perSourceLimit, 0, filters))
   }
   if (filters.sources.includes('moment')) {
     fetchPromises.push(fetchMomentEvents(userId, dateFilter, perSourceLimit, 0))

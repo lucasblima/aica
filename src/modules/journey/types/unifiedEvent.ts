@@ -43,17 +43,50 @@ export type EventSource =
 export type EventSentiment = 'positive' | 'neutral' | 'negative' | 'mixed'
 
 /**
- * WhatsApp message event
+ * Intent category types (Issue #91, #185)
+ * Privacy-first: We store semantic intent, not raw message content
+ */
+export type IntentCategory =
+  | 'question'
+  | 'response'
+  | 'scheduling'
+  | 'document'
+  | 'audio'
+  | 'social'
+  | 'request'
+  | 'update'
+  | 'media'
+
+/**
+ * Intent sentiment types (Issue #91)
+ */
+export type IntentSentiment = 'positive' | 'neutral' | 'negative' | 'urgent'
+
+/**
+ * WhatsApp message event with intent (Issue #91, #185)
+ * Privacy-first: content is intent_summary, not raw message text
  */
 export interface WhatsAppEvent extends BaseEvent {
   source: 'whatsapp'
+  /** Intent summary (privacy-safe, not raw content) */
   content: string
   contact_name?: string
   contact_number?: string
-  message_type: 'text' | 'audio' | 'image' | 'document' | 'video'
+  contact_id?: string
+  message_type: 'text' | 'audio' | 'image' | 'document' | 'video' | 'sticker'
   direction: 'incoming' | 'outgoing'
   sentiment?: EventSentiment
   tags?: string[]
+  // Intent fields (Issue #91, #185)
+  intent_category?: IntentCategory
+  intent_sentiment?: IntentSentiment
+  intent_urgency?: number // 1-5
+  intent_topic?: string
+  intent_action_required?: boolean
+  intent_mentioned_date?: string
+  intent_mentioned_time?: string
+  intent_confidence?: number
+  processing_status?: 'pending' | 'processing' | 'completed' | 'failed'
 }
 
 /**
@@ -186,6 +219,11 @@ export interface TimelineFilters {
   searchTerm?: string
   sentiments?: EventSentiment[]
   tags?: string[]
+  // Intent filters (Issue #91, #185)
+  intentCategories?: IntentCategory[]
+  intentSentiments?: IntentSentiment[]
+  minUrgency?: number // Filter messages with urgency >= this value
+  actionRequired?: boolean // Filter only action_required messages
 }
 
 /**
