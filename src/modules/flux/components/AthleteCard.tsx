@@ -7,7 +7,7 @@
 
 import React from 'react';
 import type { AthleteCardProps } from '../types';
-import { LEVEL_LABELS, STATUS_CONFIG } from '../types';
+import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { User, AlertCircle, TrendingUp, Calendar } from 'lucide-react';
@@ -55,13 +55,21 @@ export function AthleteCard({
             <User className="w-6 h-6 text-ceramic-text-secondary" />
           </div>
 
-          {/* Name + Level */}
+          {/* Name + Level + Modality */}
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-bold text-ceramic-text-primary truncate">
               {athlete.name}
             </h3>
-            <div className="mt-1">
+            <div className="mt-1 flex items-center gap-2">
               <LevelBadge level={athlete.level} size="sm" />
+              {athlete.modality && (
+                <span
+                  className="text-sm"
+                  title={MODALITY_CONFIG[athlete.modality]?.label}
+                >
+                  {MODALITY_CONFIG[athlete.modality]?.icon}
+                </span>
+              )}
             </div>
           </div>
 

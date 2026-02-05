@@ -23,6 +23,7 @@ export type {
   AlertType,
   AlertSeverity,
   ExerciseCategory,
+  TrainingModality,
 
   // Database Models
   Athlete,
@@ -61,4 +62,6 @@ export {
   LEVEL_LABELS,
   STATUS_CONFIG,
   SEVERITY_COLORS,
+  MODALITY_CONFIG,
+  TRAINING_MODALITIES,
 } from './flux';

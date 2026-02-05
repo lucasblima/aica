@@ -2,8 +2,8 @@
  * Flux Module - Mock Data
  *
  * Realistic mock data for testing and development.
- * Represents a typical coach with 8 athletes at various levels.
- * Supports multiple modalities: swimming, running, cycling, and strength.
+ * Represents a coach with 312 athletes across multiple modalities.
+ * Supports: swimming, running, cycling, and strength training.
  */
 
 import type {
@@ -13,176 +13,237 @@ import type {
   Alert,
   Exercise,
   AthleteWithMetrics,
+  TrainingModality,
+  AthleteLevel,
+  AthleteStatus,
+  AlertType,
+  AlertSeverity,
 } from './types';
+import { TRAINING_MODALITIES } from './types';
 
 // ============================================
-// MOCK ATHLETES
+// NAME GENERATION HELPERS
 // ============================================
 
-export const MOCK_ATHLETES: Athlete[] = [
-  {
-    id: 'athlete-1',
-    user_id: 'coach-1',
-    name: 'Joao Silva',
-    email: 'joao.silva@email.com',
-    phone: '+5511987654321',
-    level: 'intermediario_2',
-    status: 'active',
-    anamnesis: {
-      injuries: [],
-      chronic_pain: [],
-      sleep_quality: 'good',
-      stress_level: 'medium',
-    },
-    created_at: '2025-11-01T10:00:00Z',
-    updated_at: '2026-02-01T08:30:00Z',
-  },
-  {
-    id: 'athlete-2',
-    user_id: 'coach-1',
-    name: 'Maria Santos',
-    email: 'maria.santos@email.com',
-    phone: '+5511987654322',
-    level: 'iniciante_2',
-    status: 'active',
-    anamnesis: {
-      injuries: ['Tendinite ombro direito (2024)'],
-      chronic_pain: [],
-      sleep_quality: 'fair',
-      stress_level: 'high',
-    },
-    created_at: '2025-12-15T14:00:00Z',
-    updated_at: '2026-02-04T19:00:00Z',
-  },
-  {
-    id: 'athlete-3',
-    user_id: 'coach-1',
-    name: 'Pedro Oliveira',
-    email: 'pedro.oliveira@email.com',
-    phone: '+5511987654323',
-    level: 'avancado',
-    status: 'active',
-    anamnesis: {
-      injuries: [],
-      chronic_pain: [],
-      sleep_quality: 'excellent',
-      stress_level: 'low',
-    },
-    created_at: '2025-08-10T09:00:00Z',
-    updated_at: '2026-02-05T07:15:00Z',
-  },
-  {
-    id: 'athlete-4',
-    user_id: 'coach-1',
-    name: 'Ana Costa',
-    email: 'ana.costa@email.com',
-    phone: '+5511987654324',
-    level: 'intermediario_1',
-    status: 'active',
-    anamnesis: {
-      injuries: [],
-      chronic_pain: ['Dor lombar leve'],
-      sleep_quality: 'good',
-      stress_level: 'medium',
-    },
-    created_at: '2025-10-20T11:30:00Z',
-    updated_at: '2026-02-03T16:45:00Z',
-  },
-  {
-    id: 'athlete-5',
-    user_id: 'coach-1',
-    name: 'Lucas Ferreira',
-    email: 'lucas.ferreira@email.com',
-    phone: '+5511987654325',
-    level: 'iniciante_1',
-    status: 'trial',
-    trial_expires_at: '2026-02-15T23:59:59Z',
-    anamnesis: {
-      injuries: [],
-      chronic_pain: [],
-      sleep_quality: 'fair',
-      stress_level: 'low',
-    },
-    created_at: '2026-02-01T10:00:00Z',
-    updated_at: '2026-02-05T08:00:00Z',
-  },
-  {
-    id: 'athlete-6',
-    user_id: 'coach-1',
-    name: 'Carla Mendes',
-    email: 'carla.mendes@email.com',
-    phone: '+5511987654326',
-    level: 'intermediario_3',
-    status: 'paused',
-    anamnesis: {
-      injuries: ['Bursite no ombro'],
-      chronic_pain: [],
-      sleep_quality: 'poor',
-      stress_level: 'high',
-    },
-    created_at: '2025-09-05T13:00:00Z',
-    updated_at: '2026-01-28T10:00:00Z',
-  },
-  {
-    id: 'athlete-7',
-    user_id: 'coach-1',
-    name: 'Rafael Almeida',
-    email: 'rafael.almeida@email.com',
-    phone: '+5511987654327',
-    level: 'iniciante_3',
-    status: 'active',
-    anamnesis: {
-      injuries: [],
-      chronic_pain: [],
-      sleep_quality: 'good',
-      stress_level: 'low',
-    },
-    created_at: '2025-11-10T15:30:00Z',
-    updated_at: '2026-02-04T18:20:00Z',
-  },
-  {
-    id: 'athlete-8',
-    user_id: 'coach-1',
-    name: 'Juliana Rocha',
-    email: 'juliana.rocha@email.com',
-    phone: '+5511987654328',
-    level: 'intermediario_2',
-    status: 'active',
-    anamnesis: {
-      injuries: [],
-      chronic_pain: [],
-      sleep_quality: 'excellent',
-      stress_level: 'low',
-    },
-    created_at: '2025-10-01T08:00:00Z',
-    updated_at: '2026-02-05T09:30:00Z',
-  },
+const FIRST_NAMES = [
+  'Joao', 'Maria', 'Pedro', 'Ana', 'Lucas', 'Julia', 'Rafael', 'Camila',
+  'Felipe', 'Beatriz', 'Gabriel', 'Larissa', 'Bruno', 'Fernanda', 'Diego',
+  'Amanda', 'Thiago', 'Isabela', 'Rodrigo', 'Patricia', 'Matheus', 'Carolina',
+  'Gustavo', 'Mariana', 'Leonardo', 'Natalia', 'Eduardo', 'Bruna', 'Marcos',
+  'Renata', 'Vinicius', 'Leticia', 'Daniel', 'Adriana', 'Carlos', 'Juliana',
+  'Andre', 'Priscila', 'Ricardo', 'Daniela', 'Fernando', 'Vanessa', 'Paulo',
+  'Michele', 'Henrique', 'Raquel', 'Leandro', 'Aline', 'Marcelo', 'Cristina',
+  'Alexandre', 'Monica', 'Fabio', 'Claudia', 'Roberto', 'Sandra', 'Sergio',
+  'Luciana', 'Antonio', 'Simone', 'Luis', 'Tatiana', 'Jorge', 'Roberta',
 ];
+
+const LAST_NAMES = [
+  'Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Ferreira', 'Costa', 'Almeida',
+  'Pereira', 'Rodrigues', 'Martins', 'Nascimento', 'Araujo', 'Ribeiro', 'Gomes',
+  'Barbosa', 'Carvalho', 'Rocha', 'Moreira', 'Mendes', 'Cardoso', 'Melo',
+  'Dias', 'Castro', 'Nunes', 'Ramos', 'Monteiro', 'Andrade', 'Vieira', 'Campos',
+  'Lopes', 'Freitas', 'Moura', 'Correia', 'Teixeira', 'Machado', 'Pinto',
+  'Azevedo', 'Miranda', 'Farias', 'Soares', 'Cunha', 'Batista', 'Barros',
+  'Reis', 'Sales', 'Medeiros', 'Nogueira', 'Peixoto', 'Cavalcanti',
+];
+
+const LEVELS: AthleteLevel[] = [
+  'iniciante_1', 'iniciante_2', 'iniciante_3',
+  'intermediario_1', 'intermediario_2', 'intermediario_3',
+  'avancado',
+];
+
+const STATUSES: AthleteStatus[] = ['active', 'paused', 'trial', 'churned'];
+const STATUS_WEIGHTS = [70, 10, 15, 5]; // 70% active, etc.
+
+// ============================================
+// RANDOM HELPERS
+// ============================================
+
+function seededRandom(seed: number): () => number {
+  return function () {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+}
+
+const random = seededRandom(42); // Deterministic for consistent mock data
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(random() * arr.length)];
+}
+
+function pickWeighted<T>(items: T[], weights: number[]): T {
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = random() * total;
+  for (let i = 0; i < items.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return items[i];
+  }
+  return items[items.length - 1];
+}
+
+function generatePhone(index: number): string {
+  const base = 11900000000 + index;
+  return `+55${base}`;
+}
+
+function generateDate(daysAgo: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString();
+}
+
+// ============================================
+// GENERATE 312 ATHLETES
+// ============================================
+
+function generateAthletes(count: number): Athlete[] {
+  const athletes: Athlete[] = [];
+  const usedNames = new Set<string>();
+
+  for (let i = 1; i <= count; i++) {
+    let name: string;
+    do {
+      name = `${pickRandom(FIRST_NAMES)} ${pickRandom(LAST_NAMES)}`;
+    } while (usedNames.has(name));
+    usedNames.add(name);
+
+    const status = pickWeighted(STATUSES, STATUS_WEIGHTS);
+    const level = pickRandom(LEVELS);
+    const modality = pickRandom(TRAINING_MODALITIES);
+    const createdDaysAgo = Math.floor(random() * 365) + 30;
+    const updatedDaysAgo = Math.floor(random() * 7);
+
+    athletes.push({
+      id: `athlete-${i}`,
+      user_id: 'coach-1',
+      name,
+      email: `${name.toLowerCase().replace(' ', '.')}@email.com`,
+      phone: generatePhone(i),
+      level,
+      status,
+      modality,
+      trial_expires_at: status === 'trial' ? generateDate(-14) : undefined,
+      anamnesis: {
+        injuries: random() > 0.8 ? ['Lesao antiga'] : [],
+        chronic_pain: random() > 0.85 ? ['Dor cronica leve'] : [],
+        sleep_quality: pickRandom(['poor', 'fair', 'good', 'excellent']),
+        stress_level: pickRandom(['low', 'medium', 'high']),
+      },
+      created_at: generateDate(createdDaysAgo),
+      updated_at: generateDate(updatedDaysAgo),
+    });
+  }
+
+  return athletes;
+}
+
+export const MOCK_ATHLETES: Athlete[] = generateAthletes(312);
 
 // ============================================
 // MOCK ATHLETES WITH METRICS
 // ============================================
 
 export const MOCK_ATHLETES_WITH_METRICS: AthleteWithMetrics[] = MOCK_ATHLETES.map((athlete) => {
-  // Generate realistic metrics based on status and level
   const isActive = athlete.status === 'active';
   const baseAdherence = isActive ? 75 : 40;
   const levelBonus = athlete.level.includes('avancado') ? 15 : athlete.level.includes('intermediario') ? 10 : 0;
-  const adherence_rate = Math.min(95, baseAdherence + levelBonus + Math.random() * 10);
+  const adherence_rate = Math.min(95, baseAdherence + levelBonus + random() * 10);
 
-  const active_alerts_count = athlete.id === 'athlete-2' ? 2 : athlete.id === 'athlete-6' ? 1 : 0;
+  // ~5% of athletes have alerts
+  const hasAlert = random() < 0.05;
+  const active_alerts_count = hasAlert ? Math.floor(random() * 3) + 1 : 0;
 
   return {
     ...athlete,
-    current_week: isActive ? Math.floor(Math.random() * 12) + 1 : undefined,
+    current_week: isActive ? Math.floor(random() * 12) + 1 : undefined,
     adherence_rate: Math.round(adherence_rate),
     active_alerts_count,
-    last_feedback_at: isActive ? '2026-02-04T20:00:00Z' : undefined,
+    last_feedback_at: isActive ? generateDate(Math.floor(random() * 3)) : undefined,
   };
 });
 
 // ============================================
-// MOCK WORKOUT BLOCKS
+// GENERATE ALERTS FOR ATHLETES WITH ISSUES
+// ============================================
+
+const ALERT_TYPES: AlertType[] = ['health', 'motivation', 'absence', 'custom'];
+const ALERT_SEVERITIES: AlertSeverity[] = ['critical', 'high', 'medium', 'low'];
+const SEVERITY_WEIGHTS = [10, 20, 40, 30]; // 10% critical, 20% high, etc.
+
+const ALERT_MESSAGES: Record<AlertType, string[]> = {
+  health: [
+    'Senti dor forte no treino de hoje. Precisei parar.',
+    'Estou com cansaco extremo, nao dormi bem.',
+    'Minha lesao antiga voltou a incomodar.',
+    'Fiz exame medico e preciso descansar.',
+  ],
+  motivation: [
+    'Nao to conseguindo manter o ritmo. Desanimado.',
+    'Estou pensando em desistir, nao vejo resultados.',
+    'Perdi a motivacao ultimamente.',
+    'Muito dificil conciliar treino e trabalho.',
+  ],
+  absence: [
+    'Faltei ao treino, tive imprevisto no trabalho.',
+    'Nao consegui ir treinar hoje.',
+    'Perdi o treino da semana passada.',
+    'Viagem de trabalho, fiquei sem treinar.',
+  ],
+  custom: [
+    'Preciso conversar sobre ajustes no treino.',
+    'Mudanca de horario nos treinos.',
+    'Ferias programadas, preciso pausar.',
+  ],
+};
+
+const CRITICAL_KEYWORDS: Record<AlertType, string[]> = {
+  health: ['dor', 'parar', 'lesao', 'medico'],
+  motivation: ['desistir', 'desanimado', 'dificil'],
+  absence: ['faltei', 'perdi', 'nao consegui'],
+  custom: ['pausar', 'conversar'],
+};
+
+function generateAlerts(): Alert[] {
+  const alerts: Alert[] = [];
+  let alertId = 1;
+
+  const athletesWithAlerts = MOCK_ATHLETES_WITH_METRICS.filter((a) => a.active_alerts_count && a.active_alerts_count > 0);
+
+  for (const athlete of athletesWithAlerts) {
+    const numAlerts = athlete.active_alerts_count || 1;
+
+    for (let i = 0; i < numAlerts; i++) {
+      const alertType = pickRandom(ALERT_TYPES);
+      const severity = pickWeighted(ALERT_SEVERITIES, SEVERITY_WEIGHTS);
+      const message = pickRandom(ALERT_MESSAGES[alertType]);
+      const keywords = CRITICAL_KEYWORDS[alertType];
+      const daysAgo = Math.floor(random() * 7);
+      const acknowledged = random() > 0.6; // 40% unacknowledged
+
+      alerts.push({
+        id: `alert-${alertId++}`,
+        user_id: 'coach-1',
+        athlete_id: athlete.id,
+        feedback_id: `feedback-${alertId}`,
+        alert_type: alertType,
+        severity,
+        keywords_detected: keywords.slice(0, Math.floor(random() * 2) + 1),
+        message_preview: message,
+        acknowledged_at: acknowledged ? generateDate(daysAgo - 1) : undefined,
+        created_at: generateDate(daysAgo),
+      });
+    }
+  }
+
+  return alerts;
+}
+
+export const MOCK_ALERTS: Alert[] = generateAlerts();
+
+// ============================================
+// MOCK WORKOUT BLOCKS (Sample - not all 312)
 // ============================================
 
 export const MOCK_WORKOUT_BLOCKS: WorkoutBlock[] = [
@@ -266,7 +327,7 @@ export const MOCK_WORKOUT_BLOCKS: WorkoutBlock[] = [
 ];
 
 // ============================================
-// MOCK FEEDBACKS
+// MOCK FEEDBACKS (Sample)
 // ============================================
 
 export const MOCK_FEEDBACKS: Feedback[] = [
@@ -326,85 +387,6 @@ export const MOCK_FEEDBACKS: Feedback[] = [
     },
     created_at: '2026-02-04T19:30:00Z',
   },
-  {
-    id: 'feedback-3',
-    athlete_id: 'athlete-6',
-    weekly_plan_id: 'plan-3',
-    completed_workout: false,
-    volume_pct: 0,
-    intensity_pct: 0,
-    raw_message: 'Nao consegui ir treinar. To muito desanimada, nao to vendo resultado. Acho que vou desistir.',
-    parsed_data: {
-      completed: 0,
-      absence: true,
-      motivational_issue: true,
-    },
-    sentiment_score: -0.7,
-    has_critical_keywords: true,
-    critical_keywords: ['desanimada', 'desistir', 'nao consegui'],
-    ia_analysis: {
-      summary: 'Alerta de motivacao critica. Risco de churn alto.',
-      recommendations: [
-        'Agendar conversa individual urgente',
-        'Revisar objetivos e expectativas',
-        'Ajustar carga de treino',
-      ],
-      confidence_score: 0.95,
-    },
-    created_at: '2026-01-28T18:00:00Z',
-  },
-];
-
-// ============================================
-// MOCK ALERTS
-// ============================================
-
-export const MOCK_ALERTS: Alert[] = [
-  {
-    id: 'alert-1',
-    user_id: 'coach-1',
-    athlete_id: 'athlete-2',
-    feedback_id: 'feedback-1',
-    alert_type: 'health',
-    severity: 'critical',
-    keywords_detected: ['dor', 'parar'],
-    message_preview: 'Fiz so 60% do treino. Senti dor no ombro direito durante os 100m crawl...',
-    created_at: '2026-02-03T20:15:05Z',
-  },
-  {
-    id: 'alert-2',
-    user_id: 'coach-1',
-    athlete_id: 'athlete-6',
-    feedback_id: 'feedback-3',
-    alert_type: 'motivation',
-    severity: 'critical',
-    keywords_detected: ['desanimada', 'desistir', 'nao consegui'],
-    message_preview: 'Nao consegui ir treinar. To muito desanimada, nao to vendo resultado...',
-    created_at: '2026-01-28T18:00:05Z',
-  },
-  {
-    id: 'alert-3',
-    user_id: 'coach-1',
-    athlete_id: 'athlete-5',
-    feedback_id: 'feedback-4',
-    alert_type: 'absence',
-    severity: 'medium',
-    keywords_detected: ['faltei'],
-    message_preview: 'Faltei ao treino hoje, tive um imprevisto no trabalho.',
-    acknowledged_at: '2026-02-05T09:00:00Z',
-    created_at: '2026-02-04T21:30:00Z',
-  },
-  {
-    id: 'alert-4',
-    user_id: 'coach-1',
-    athlete_id: 'athlete-2',
-    feedback_id: 'feedback-5',
-    alert_type: 'health',
-    severity: 'high',
-    keywords_detected: ['cansaco extremo'],
-    message_preview: 'Terminei o treino mas to com cansaco extremo. Nao dormi bem essa semana.',
-    created_at: '2026-02-05T20:00:00Z',
-  },
 ];
 
 // ============================================
@@ -451,26 +433,26 @@ export const MOCK_EXERCISES: Exercise[] = [
   {
     id: 'exercise-4',
     user_id: 'coach-1',
-    name: 'Pernada - Prancha',
-    category: 'technique',
-    description: 'Treino de pernada com prancha',
-    default_sets: 4,
-    default_reps: '100m',
-    default_rest: '30s',
-    level_range: ['iniciante_1', 'iniciante_2', 'iniciante_3'],
-    tags: ['tecnica', 'pernada'],
+    name: 'Corrida Leve',
+    category: 'warmup',
+    description: 'Trote leve para aquecimento',
+    default_sets: 1,
+    default_reps: '2km',
+    default_rest: '0',
+    level_range: ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
+    tags: ['aquecimento', 'corrida'],
   },
   {
     id: 'exercise-5',
     user_id: 'coach-1',
-    name: 'Desaquecimento - Costas',
-    category: 'cooldown',
-    description: 'Nado costas leve para recuperacao',
-    default_sets: 1,
-    default_reps: '200m',
-    default_rest: '0',
-    level_range: ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
-    tags: ['desaquecimento', 'costas'],
+    name: 'Intervalado - Sprint',
+    category: 'main',
+    description: 'Tiros de 400m com recuperacao',
+    default_sets: 6,
+    default_reps: '400m',
+    default_rest: '90s',
+    level_range: ['intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
+    tags: ['intervalado', 'corrida'],
   },
 ];
 
@@ -529,4 +511,48 @@ export function getMockUnacknowledgedAlerts(): Alert[] {
  */
 export function getMockAlertsBySeverity(severity: Alert['severity']): Alert[] {
   return MOCK_ALERTS.filter((alert) => alert.severity === severity);
+}
+
+/**
+ * Get athletes by modality
+ */
+export function getMockAthletesByModality(modality: TrainingModality): Athlete[] {
+  return MOCK_ATHLETES.filter((a) => a.modality === modality);
+}
+
+/**
+ * Get athlete counts by modality
+ */
+export function getMockAthleteCountsByModality(): Record<TrainingModality, number> {
+  const counts: Record<TrainingModality, number> = {
+    swimming: 0,
+    running: 0,
+    cycling: 0,
+    strength: 0,
+  };
+
+  for (const athlete of MOCK_ATHLETES) {
+    counts[athlete.modality]++;
+  }
+
+  return counts;
+}
+
+/**
+ * Get alerts summary by severity
+ */
+export function getMockAlertsSummary(): Record<AlertSeverity, number> {
+  const unacknowledged = getMockUnacknowledgedAlerts();
+  const summary: Record<AlertSeverity, number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
+
+  for (const alert of unacknowledged) {
+    summary[alert.severity]++;
+  }
+
+  return summary;
 }

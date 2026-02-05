@@ -52,6 +52,11 @@ export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
  */
 export type ExerciseCategory = 'warmup' | 'main' | 'technique' | 'cooldown' | 'dryland';
 
+/**
+ * Training modalities supported by Flux
+ */
+export type TrainingModality = 'swimming' | 'running' | 'cycling' | 'strength';
+
 // ============================================
 // DATABASE MODELS
 // ============================================
@@ -67,6 +72,7 @@ export interface Athlete {
   phone: string; // WhatsApp format: +5511987654321
   level: AthleteLevel;
   status: AthleteStatus;
+  modality: TrainingModality; // Primary training modality
   trial_expires_at?: string; // ISO 8601
   onboarding_data?: Record<string, unknown>; // AI onboarding responses
   anamnesis?: AnamnesisData;
@@ -403,3 +409,18 @@ export const SEVERITY_COLORS: Record<AlertSeverity, string> = {
   medium: 'bg-amber-500',
   low: 'bg-blue-500',
 };
+
+/**
+ * Training modality configuration
+ */
+export const MODALITY_CONFIG: Record<TrainingModality, { label: string; icon: string; color: string }> = {
+  swimming: { label: 'Natacao', icon: '🏊', color: 'cyan' },
+  running: { label: 'Corrida', icon: '🏃', color: 'green' },
+  cycling: { label: 'Ciclismo', icon: '🚴', color: 'amber' },
+  strength: { label: 'Forca', icon: '🏋️', color: 'purple' },
+};
+
+/**
+ * All available training modalities
+ */
+export const TRAINING_MODALITIES: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength'];
