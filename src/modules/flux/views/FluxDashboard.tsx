@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import {
   MOCK_ATHLETES_WITH_METRICS,
+  MOCK_ALERTS,
   getMockAlertsForAthlete,
   getMockFeedbacksForAthlete,
   getMockUnacknowledgedAlerts,
@@ -84,12 +85,13 @@ export default function FluxDashboard() {
   // WhatsApp modal state
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
   const [selectedAthleteForWhatsApp, setSelectedAthleteForWhatsApp] = useState<AthleteWithMetrics | null>(null);
-  const [selectedAthleteAlerts, setSelectedAthleteAlerts] = useState<typeof MOCK_ALERTS>([]);
+  const [selectedAthleteAlerts, setSelectedAthleteAlerts] = useState<typeof MOCK_ALERTS[number][]>([]);
 
   // Mock data
   const allAthletes = MOCK_ATHLETES_WITH_METRICS;
   const unacknowledgedAlerts = getMockUnacknowledgedAlerts();
   const criticalAlerts = unacknowledgedAlerts.filter((a) => a.severity === 'critical');
+  const documentAlerts = unacknowledgedAlerts.filter((a) => a.alert_type === 'documents');
   const modalityCounts = getMockAthleteCountsByModality();
 
   // Calculate level counts
@@ -203,7 +205,7 @@ export default function FluxDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           {/* Active Athletes */}
           <div className="ceramic-card p-4 space-y-2">
             <div className="flex items-center gap-2">
@@ -233,24 +235,6 @@ export default function FluxDashboard() {
               {Math.round(avgAdherence)}%
             </p>
           </div>
-
-          {/* Critical Alerts */}
-          <div
-            onClick={handleAlertsClick}
-            className="ceramic-card p-4 space-y-2 cursor-pointer hover:scale-105 transition-transform"
-          >
-            <div className="flex items-center gap-2">
-              <div className="ceramic-inset p-2 bg-red-50">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-              </div>
-              <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                Alertas
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-red-600">
-              {criticalAlerts.length}
-            </p>
-          </div>
         </div>
 
         {/* Critical Alerts Preview */}
@@ -270,6 +254,15 @@ export default function FluxDashboard() {
                 <AlertBadge key={alert.id} alert={alert} compact />
               ))}
             </div>
+            {/* Exames pendentes */}
+            {documentAlerts.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-red-200 flex items-center gap-2">
+                <span className="text-lg">🩺</span>
+                <p className="text-sm font-medium text-red-700">
+                  {documentAlerts.length} exame(s) cardiologico(s) e atestado(s) pendente(s)
+                </p>
+              </div>
+            )}
           </div>
         )}
 

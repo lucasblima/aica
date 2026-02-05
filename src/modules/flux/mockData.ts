@@ -168,7 +168,7 @@ export const MOCK_ATHLETES_WITH_METRICS: AthleteWithMetrics[] = MOCK_ATHLETES.ma
 // GENERATE ALERTS FOR ATHLETES WITH ISSUES
 // ============================================
 
-const ALERT_TYPES: AlertType[] = ['health', 'motivation', 'absence', 'custom'];
+const ALERT_TYPES: AlertType[] = ['health', 'motivation', 'absence', 'documents', 'custom'];
 const ALERT_SEVERITIES: AlertSeverity[] = ['critical', 'high', 'medium', 'low'];
 const SEVERITY_WEIGHTS = [10, 20, 40, 30]; // 10% critical, 20% high, etc.
 
@@ -191,6 +191,12 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
     'Perdi o treino da semana passada.',
     'Viagem de trabalho, fiquei sem treinar.',
   ],
+  documents: [
+    'Exame cardiologico pendente - vencido ha 30 dias.',
+    'Atestado medico vencido - renovacao necessaria.',
+    'Exame cardiologico pendente - nunca apresentado.',
+    'Documentacao incompleta para treino.',
+  ],
   custom: [
     'Preciso conversar sobre ajustes no treino.',
     'Mudanca de horario nos treinos.',
@@ -202,6 +208,7 @@ const CRITICAL_KEYWORDS: Record<AlertType, string[]> = {
   health: ['dor', 'parar', 'lesao', 'medico'],
   motivation: ['desistir', 'desanimado', 'dificil'],
   absence: ['faltei', 'perdi', 'nao consegui'],
+  documents: ['vencido', 'pendente', 'incompleta'],
   custom: ['pausar', 'conversar'],
 };
 
@@ -240,7 +247,137 @@ function generateAlerts(): Alert[] {
   return alerts;
 }
 
-export const MOCK_ALERTS: Alert[] = generateAlerts();
+const generatedAlerts = generateAlerts();
+
+// ============================================
+// PENDING MEDICAL EXAMS/CERTIFICATES (11 total)
+// ============================================
+
+const PENDING_EXAM_ALERTS: Alert[] = [
+  {
+    id: 'alert-exam-1',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-5',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'critical',
+    keywords_detected: ['vencido', 'cardiologico'],
+    message_preview: 'Exame cardiologico vencido ha 45 dias. Treino suspenso ate regularizacao.',
+    created_at: generateDate(2),
+  },
+  {
+    id: 'alert-exam-2',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-12',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'critical',
+    keywords_detected: ['pendente', 'atestado'],
+    message_preview: 'Atestado medico nunca apresentado. Documentacao obrigatoria.',
+    created_at: generateDate(3),
+  },
+  {
+    id: 'alert-exam-3',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-23',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'critical',
+    keywords_detected: ['vencido', 'cardiologico'],
+    message_preview: 'Exame cardiologico vencido ha 60 dias. Regularizar urgente.',
+    created_at: generateDate(1),
+  },
+  {
+    id: 'alert-exam-4',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-34',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'high',
+    keywords_detected: ['pendente', 'cardiologico'],
+    message_preview: 'Exame cardiologico pendente - vence em 7 dias.',
+    created_at: generateDate(4),
+  },
+  {
+    id: 'alert-exam-5',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-47',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'high',
+    keywords_detected: ['vencido', 'atestado'],
+    message_preview: 'Atestado medico vencido ha 15 dias. Solicitar renovacao.',
+    created_at: generateDate(5),
+  },
+  {
+    id: 'alert-exam-6',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-58',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'high',
+    keywords_detected: ['pendente', 'cardiologico'],
+    message_preview: 'Exame cardiologico pendente - atleta novo sem documentacao.',
+    created_at: generateDate(2),
+  },
+  {
+    id: 'alert-exam-7',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-71',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'medium',
+    keywords_detected: ['pendente', 'atestado'],
+    message_preview: 'Atestado medico vence em 15 dias. Lembrar atleta.',
+    created_at: generateDate(6),
+  },
+  {
+    id: 'alert-exam-8',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-89',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'medium',
+    keywords_detected: ['pendente', 'cardiologico'],
+    message_preview: 'Exame cardiologico vence em 20 dias. Agendar renovacao.',
+    created_at: generateDate(3),
+  },
+  {
+    id: 'alert-exam-9',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-102',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'medium',
+    keywords_detected: ['incompleta', 'documentacao'],
+    message_preview: 'Documentacao incompleta - falta exame cardiologico.',
+    created_at: generateDate(7),
+  },
+  {
+    id: 'alert-exam-10',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-115',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'low',
+    keywords_detected: ['pendente', 'atestado'],
+    message_preview: 'Atestado medico vence em 30 dias. Planejar renovacao.',
+    created_at: generateDate(5),
+  },
+  {
+    id: 'alert-exam-11',
+    user_id: 'coach-1',
+    athlete_id: 'athlete-128',
+    feedback_id: 'system-check',
+    alert_type: 'documents',
+    severity: 'low',
+    keywords_detected: ['pendente', 'cardiologico'],
+    message_preview: 'Exame cardiologico vence em 25 dias. Lembrete preventivo.',
+    created_at: generateDate(4),
+  },
+];
+
+export const MOCK_ALERTS: Alert[] = [...generatedAlerts, ...PENDING_EXAM_ALERTS];
 
 // ============================================
 // MOCK WORKOUT BLOCKS (Sample - not all 312)

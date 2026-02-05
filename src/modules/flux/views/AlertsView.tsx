@@ -92,21 +92,31 @@ export default function AlertsView() {
           <div>
             <p className="text-xs text-ceramic-text-secondary mb-2 font-medium">Tipo</p>
             <div className="flex flex-wrap gap-2">
-              {(['all', 'health', 'motivation', 'absence', 'custom'] as const).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedType(type)}
-                  className={`
-                    px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
-                    ${selectedType === type
-                      ? 'bg-blue-500 text-white'
-                      : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
-                    }
-                  `}
-                >
-                  {type === 'all' ? 'Todos' : type}
-                </button>
-              ))}
+              {(['all', 'health', 'motivation', 'absence', 'documents', 'custom'] as const).map((type) => {
+                const typeLabels: Record<string, string> = {
+                  all: 'Todos',
+                  health: 'Saude',
+                  motivation: 'Motivacao',
+                  absence: 'Ausencia',
+                  documents: 'Documentos',
+                  custom: 'Outros',
+                };
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedType(type)}
+                    className={`
+                      px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
+                      ${selectedType === type
+                        ? 'bg-blue-500 text-white'
+                        : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
+                      }
+                    `}
+                  >
+                    {typeLabels[type]}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
