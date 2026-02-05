@@ -20,7 +20,10 @@ import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
 import { AlertBadge } from '../components/AlertBadge';
-import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter, GraduationCap } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+
+// Sort options
+type SortOrder = 'none' | 'asc' | 'desc';
 
 // Level category groupings
 type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado';
@@ -71,9 +74,10 @@ export default function FluxDashboard() {
   const navigate = useNavigate();
   const { actions } = useFlux();
 
-  // Filter states
+  // Filter and sort states
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
   const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
+  const [adherenceSort, setAdherenceSort] = useState<SortOrder>('none');
 
   // Mock data
   const allAthletes = MOCK_ATHLETES_WITH_METRICS;
@@ -99,9 +103,9 @@ export default function FluxDashboard() {
     return counts;
   }, [allAthletes]);
 
-  // Filter athletes by modality and level
+  // Filter and sort athletes
   const filteredAthletes = useMemo(() => {
-    let result = allAthletes;
+    let result = [...allAthletes];
 
     // Filter by modality
     if (selectedModality !== 'all') {
@@ -116,8 +120,26 @@ export default function FluxDashboard() {
       }
     }
 
+    // Sort by adherence rate
+    if (adherenceSort !== 'none') {
+      result.sort((a, b) => {
+        const aRate = a.adherence_rate || 0;
+        const bRate = b.adherence_rate || 0;
+        return adherenceSort === 'asc' ? aRate - bRate : bRate - aRate;
+      });
+    }
+
     return result;
-  }, [allAthletes, selectedModality, selectedLevel]);
+  }, [allAthletes, selectedModality, selectedLevel, adherenceSort]);
+
+  // Toggle sort order
+  const toggleAdherenceSort = () => {
+    setAdherenceSort((current) => {
+      if (current === 'none') return 'desc';
+      if (current === 'desc') return 'asc';
+      return 'none';
+    });
+  };
 
   // Aggregate stats (based on filtered athletes)
   const activeAthletes = filteredAthletes.filter((a) => a.status === 'active').length;
@@ -323,10 +345,39 @@ export default function FluxDashboard() {
               ({filteredAthletes.length})
             </span>
           </h2>
-          <button className="flex items-center gap-2 px-4 py-2 ceramic-card hover:scale-105 transition-transform">
-            <Plus className="w-4 h-4 text-ceramic-text-primary" />
-            <span className="text-sm font-bold text-ceramic-text-primary">Novo Atleta</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Sort by Adherence Button */}
+            <button
+              onClick={toggleAdherenceSort}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                adherenceSort !== 'none'
+                  ? 'ceramic-card bg-white shadow-md'
+                  : 'ceramic-inset hover:bg-white/50'
+              }`}
+              title={
+                adherenceSort === 'none'
+                  ? 'Ordenar por adesao'
+                  : adherenceSort === 'desc'
+                  ? 'Maior adesao primeiro'
+                  : 'Menor adesao primeiro'
+              }
+            >
+              {adherenceSort === 'none' && <ArrowUpDown className="w-4 h-4 text-ceramic-text-secondary" />}
+              {adherenceSort === 'desc' && <ArrowDown className="w-4 h-4 text-green-600" />}
+              {adherenceSort === 'asc' && <ArrowUp className="w-4 h-4 text-red-600" />}
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                adherenceSort !== 'none' ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
+              }`}>
+                Adesao
+              </span>
+            </button>
+
+            {/* New Athlete Button */}
+            <button className="flex items-center gap-2 px-4 py-2 ceramic-card hover:scale-105 transition-transform">
+              <Plus className="w-4 h-4 text-ceramic-text-primary" />
+              <span className="text-sm font-bold text-ceramic-text-primary">Novo Atleta</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid gap-4">
@@ -378,6 +429,7 @@ export default function FluxDashboard() {
               onClick={() => {
                 setSelectedModality('all');
                 setSelectedLevel('all');
+                setAdherenceSort('none');
               }}
               className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
             >
