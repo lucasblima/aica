@@ -54,6 +54,7 @@ export {
 // ============================================
 
 export { FluxCard } from './components/FluxCard';
+export { WhatsAppMessageModal } from './components/WhatsAppMessageModal';
 
 // ============================================
 // VIEWS (Lazy-loaded by router)

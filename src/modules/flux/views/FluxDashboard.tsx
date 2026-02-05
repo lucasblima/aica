@@ -20,6 +20,8 @@ import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
 import { AlertBadge } from '../components/AlertBadge';
+import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
+import type { AthleteWithMetrics } from '../types';
 import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 // Sort options
@@ -78,6 +80,11 @@ export default function FluxDashboard() {
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
   const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
   const [adherenceSort, setAdherenceSort] = useState<SortOrder>('none');
+
+  // WhatsApp modal state
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
+  const [selectedAthleteForWhatsApp, setSelectedAthleteForWhatsApp] = useState<AthleteWithMetrics | null>(null);
+  const [selectedAthleteAlerts, setSelectedAthleteAlerts] = useState<typeof MOCK_ALERTS>([]);
 
   // Mock data
   const allAthletes = MOCK_ATHLETES_WITH_METRICS;
@@ -158,6 +165,13 @@ export default function FluxDashboard() {
   const handleAlertsClick = () => {
     actions.manageAlerts({ unacknowledged_only: true });
     navigate('/flux/alerts');
+  };
+
+  // Handle WhatsApp message
+  const handleWhatsAppClick = (athlete: AthleteWithMetrics, alerts: typeof MOCK_ALERTS) => {
+    setSelectedAthleteForWhatsApp(athlete);
+    setSelectedAthleteAlerts(alerts);
+    setWhatsAppModalOpen(true);
   };
 
   return (
@@ -393,6 +407,7 @@ export default function FluxDashboard() {
                 activeAlerts={athleteAlerts}
                 adherenceRate={athlete.adherence_rate || 0}
                 onClick={() => handleAthleteClick(athlete.id)}
+                onWhatsAppClick={() => handleWhatsAppClick(athlete, athleteAlerts)}
               />
             );
           })}
@@ -440,6 +455,20 @@ export default function FluxDashboard() {
           </div>
         )}
       </div>
+
+      {/* WhatsApp Message Modal */}
+      {selectedAthleteForWhatsApp && (
+        <WhatsAppMessageModal
+          isOpen={whatsAppModalOpen}
+          onClose={() => {
+            setWhatsAppModalOpen(false);
+            setSelectedAthleteForWhatsApp(null);
+            setSelectedAthleteAlerts([]);
+          }}
+          athlete={selectedAthleteForWhatsApp}
+          alerts={selectedAthleteAlerts}
+        />
+      )}
     </div>
   );
 }

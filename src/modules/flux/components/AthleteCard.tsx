@@ -3,6 +3,7 @@
  *
  * Displays athlete name, level, adherence rate, and alert count.
  * Uses Ceramic Design System with colorimetric status feedback.
+ * Includes WhatsApp quick action for athlete follow-up.
  */
 
 import React from 'react';
@@ -10,7 +11,11 @@ import type { AthleteCardProps } from '../types';
 import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
-import { User, AlertCircle, TrendingUp, Calendar } from 'lucide-react';
+import { User, AlertCircle, TrendingUp, Calendar, MessageCircle } from 'lucide-react';
+
+interface ExtendedAthleteCardProps extends AthleteCardProps {
+  onWhatsAppClick?: () => void;
+}
 
 export function AthleteCard({
   athlete,
@@ -18,7 +23,8 @@ export function AthleteCard({
   activeAlerts = [],
   adherenceRate = 0,
   onClick,
-}: AthleteCardProps) {
+  onWhatsAppClick,
+}: ExtendedAthleteCardProps) {
   // Status configuration
   const statusConfig = STATUS_CONFIG[athlete.status];
 
@@ -148,6 +154,21 @@ export function AthleteCard({
                 </p>
               </div>
             </div>
+          )}
+
+          {/* WhatsApp Quick Action */}
+          {onWhatsAppClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onWhatsAppClick();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
+              title="Enviar mensagem via WhatsApp"
+            >
+              <MessageCircle className="w-4 h-4 text-green-700" />
+              <span className="text-xs font-bold text-green-700">WhatsApp</span>
+            </button>
           )}
         </div>
 
