@@ -101,7 +101,7 @@ export default function AthleteDetailView() {
 
             {/* Edit Button */}
             <button
-              onClick={() => alert('Editar atleta (em desenvolvimento)')}
+              onClick={() => console.log('Editar atleta (em desenvolvimento)')}
               className="ceramic-card p-3 hover:scale-105 transition-transform"
             >
               <Edit className="w-5 h-5 text-ceramic-text-primary" />

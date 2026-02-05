@@ -37,7 +37,7 @@ export default function CanvasEditorView() {
 
   // Handle save (mock)
   const handleSave = () => {
-    alert('Salvar treino (em desenvolvimento)');
+    console.log('Salvar treino (em desenvolvimento)');
   };
 
   // Not found
@@ -199,7 +199,7 @@ export default function CanvasEditorView() {
                 </div>
 
                 <button
-                  onClick={() => alert(`Editar Semana ${weekNumber}`)}
+                  onClick={() => console.log(`Editar Semana ${weekNumber}`)}
                   className="ceramic-card p-2 hover:scale-105 transition-transform"
                 >
                   <Plus className="w-4 h-4 text-ceramic-text-primary" />
@@ -231,7 +231,7 @@ export default function CanvasEditorView() {
 
               {/* Add Workout Button */}
               <button
-                onClick={() => alert(`Adicionar treino na Semana ${weekNumber}`)}
+                onClick={() => console.log(`Adicionar treino na Semana ${weekNumber}`)}
                 className="w-full py-2 ceramic-card text-xs font-bold text-ceramic-text-secondary hover:text-ceramic-text-primary hover:scale-105 transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="w-3.5 h-3.5" />
