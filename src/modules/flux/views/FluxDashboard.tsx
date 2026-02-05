@@ -17,10 +17,20 @@ import {
   getMockAthleteCountsByModality,
 } from '../mockData';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
-import type { TrainingModality } from '../types';
+import type { TrainingModality, AthleteLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
 import { AlertBadge } from '../components/AlertBadge';
-import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter, GraduationCap } from 'lucide-react';
+
+// Level category groupings
+type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado';
+
+const LEVEL_CATEGORIES: { id: LevelCategory; label: string; icon: string; levels: AthleteLevel[] }[] = [
+  { id: 'all', label: 'Todos', icon: '🎯', levels: [] },
+  { id: 'iniciante', label: 'Iniciante', icon: '🌱', levels: ['iniciante_1', 'iniciante_2', 'iniciante_3'] },
+  { id: 'intermediario', label: 'Intermediario', icon: '🌿', levels: ['intermediario_1', 'intermediario_2', 'intermediario_3'] },
+  { id: 'avancado', label: 'Avancado', icon: '🌳', levels: ['avancado'] },
+];
 
 // Modality filter tab component
 const ModalityTab: React.FC<{
@@ -61,8 +71,9 @@ export default function FluxDashboard() {
   const navigate = useNavigate();
   const { actions } = useFlux();
 
-  // Modality filter state
+  // Filter states
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
+  const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
 
   // Mock data
   const allAthletes = MOCK_ATHLETES_WITH_METRICS;
@@ -70,13 +81,43 @@ export default function FluxDashboard() {
   const criticalAlerts = unacknowledgedAlerts.filter((a) => a.severity === 'critical');
   const modalityCounts = getMockAthleteCountsByModality();
 
-  // Filter athletes by modality
-  const filteredAthletes = useMemo(() => {
-    if (selectedModality === 'all') {
-      return allAthletes;
+  // Calculate level counts
+  const levelCounts = useMemo(() => {
+    const counts: Record<LevelCategory, number> = {
+      all: allAthletes.length,
+      iniciante: 0,
+      intermediario: 0,
+      avancado: 0,
+    };
+
+    for (const athlete of allAthletes) {
+      if (athlete.level.startsWith('iniciante')) counts.iniciante++;
+      else if (athlete.level.startsWith('intermediario')) counts.intermediario++;
+      else if (athlete.level === 'avancado') counts.avancado++;
     }
-    return allAthletes.filter((a) => a.modality === selectedModality);
-  }, [allAthletes, selectedModality]);
+
+    return counts;
+  }, [allAthletes]);
+
+  // Filter athletes by modality and level
+  const filteredAthletes = useMemo(() => {
+    let result = allAthletes;
+
+    // Filter by modality
+    if (selectedModality !== 'all') {
+      result = result.filter((a) => a.modality === selectedModality);
+    }
+
+    // Filter by level category
+    if (selectedLevel !== 'all') {
+      const levelCategory = LEVEL_CATEGORIES.find((c) => c.id === selectedLevel);
+      if (levelCategory) {
+        result = result.filter((a) => levelCategory.levels.includes(a.level));
+      }
+    }
+
+    return result;
+  }, [allAthletes, selectedModality, selectedLevel]);
 
   // Aggregate stats (based on filtered athletes)
   const activeAthletes = filteredAthletes.filter((a) => a.status === 'active').length;
@@ -196,30 +237,68 @@ export default function FluxDashboard() {
           </div>
         )}
 
-        {/* Modality Filter Tabs */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-4 h-4 text-ceramic-text-secondary" />
-            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Filtrar por Modalidade
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <ModalityTab
-              modality="all"
-              isSelected={selectedModality === 'all'}
-              count={allAthletes.length}
-              onClick={() => setSelectedModality('all')}
-            />
-            {TRAINING_MODALITIES.map((modality) => (
+        {/* Filters Section */}
+        <div className="space-y-4 mb-4">
+          {/* Modality Filter Tabs */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="w-4 h-4 text-ceramic-text-secondary" />
+              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Modalidade
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
               <ModalityTab
-                key={modality}
-                modality={modality}
-                isSelected={selectedModality === modality}
-                count={modalityCounts[modality]}
-                onClick={() => setSelectedModality(modality)}
+                modality="all"
+                isSelected={selectedModality === 'all'}
+                count={allAthletes.length}
+                onClick={() => setSelectedModality('all')}
               />
-            ))}
+              {TRAINING_MODALITIES.map((modality) => (
+                <ModalityTab
+                  key={modality}
+                  modality={modality}
+                  isSelected={selectedModality === modality}
+                  count={modalityCounts[modality]}
+                  onClick={() => setSelectedModality(modality)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Level Filter Tabs */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <GraduationCap className="w-4 h-4 text-ceramic-text-secondary" />
+              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                Nivel
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {LEVEL_CATEGORIES.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedLevel(category.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                    selectedLevel === category.id
+                      ? 'ceramic-card bg-white shadow-md'
+                      : 'ceramic-inset hover:bg-white/50'
+                  }`}
+                >
+                  <span className="text-lg">{category.icon}</span>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${
+                    selectedLevel === category.id ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
+                  }`}>
+                    {category.label}
+                  </span>
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                    selectedLevel === category.id ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {levelCounts[category.id]}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -228,9 +307,18 @@ export default function FluxDashboard() {
       <div className="px-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-ceramic-text-primary">
-            {selectedModality === 'all'
+            {selectedModality === 'all' && selectedLevel === 'all'
               ? 'Meus Atletas'
-              : `Atletas de ${MODALITY_CONFIG[selectedModality].label}`}
+              : 'Atletas'}
+            {selectedModality !== 'all' && (
+              <span className="ml-1">de {MODALITY_CONFIG[selectedModality].label}</span>
+            )}
+            {selectedLevel !== 'all' && (
+              <span className="ml-1">
+                {selectedModality !== 'all' ? ' - ' : 'de nivel '}
+                {LEVEL_CATEGORIES.find((c) => c.id === selectedLevel)?.label}
+              </span>
+            )}
             <span className="ml-2 text-sm font-normal text-ceramic-text-secondary">
               ({filteredAthletes.length})
             </span>
@@ -276,18 +364,26 @@ export default function FluxDashboard() {
             </div>
             <div>
               <p className="text-lg font-bold text-ceramic-text-primary mb-2">
-                {selectedModality === 'all'
+                {selectedModality === 'all' && selectedLevel === 'all'
                   ? 'Nenhum atleta cadastrado'
-                  : `Nenhum atleta de ${MODALITY_CONFIG[selectedModality].label}`}
+                  : 'Nenhum atleta encontrado'}
               </p>
               <p className="text-sm text-ceramic-text-secondary font-light">
-                {selectedModality === 'all'
+                {selectedModality === 'all' && selectedLevel === 'all'
                   ? 'Gerencie treinos de natacao, corrida, ciclismo ou forca'
-                  : 'Cadastre atletas nesta modalidade ou selecione outra'}
+                  : 'Ajuste os filtros ou cadastre novos atletas'}
               </p>
             </div>
-            <button className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">
-              {selectedModality === 'all' ? 'Adicionar Primeiro Atleta' : 'Ver Todos os Atletas'}
+            <button
+              onClick={() => {
+                setSelectedModality('all');
+                setSelectedLevel('all');
+              }}
+              className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
+            >
+              {selectedModality === 'all' && selectedLevel === 'all'
+                ? 'Adicionar Primeiro Atleta'
+                : 'Limpar Filtros'}
             </button>
           </div>
         )}
