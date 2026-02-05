@@ -415,7 +415,7 @@ export default function Home({
                      </div>
                   </motion.div>
 
-                  {/* Flux - Swim Training */}
+                  {/* Flux - Training Management */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
@@ -438,10 +438,10 @@ export default function Home({
                         <div className="flex-1 flex flex-col justify-center space-y-3">
                            <div>
                               <p className="text-sm font-bold text-ceramic-text-primary mb-1">
-                                 Treino de Natacao
+                                 Gestao de Treinos
                               </p>
                               <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                                 Gerencie atletas, prescreva treinos e acompanhe evolucao
+                                 Natacao, corrida, ciclismo e forca. Prescreva treinos e acompanhe atletas.
                               </p>
                            </div>
                         </div>

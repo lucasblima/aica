@@ -3,6 +3,7 @@
  *
  * Realistic mock data for testing and development.
  * Represents a typical coach with 8 athletes at various levels.
+ * Supports multiple modalities: swimming, running, cycling, and strength.
  */
 
 import type {

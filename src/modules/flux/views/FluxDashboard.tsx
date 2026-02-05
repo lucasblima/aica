@@ -2,6 +2,7 @@
  * FluxDashboard - Main coach dashboard view
  *
  * Displays athlete grid with colorimetric status, alert summary, and quick stats.
+ * Supports multiple training modalities: swimming, running, cycling, and strength.
  * Entry point for the Flux module.
  */
 
@@ -60,11 +61,11 @@ export default function FluxDashboard() {
 
         <div className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 ceramic-card flex items-center justify-center">
-            <span className="text-3xl">🏊</span>
+            <span className="text-3xl">🏋️</span>
           </div>
           <div>
             <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-0.5">
-              Modulo
+              Gestao de Treinos
             </p>
             <h1 className="text-3xl font-black text-ceramic-text-primary text-etched">
               Flux
@@ -183,7 +184,7 @@ export default function FluxDashboard() {
                 Nenhum atleta cadastrado
               </p>
               <p className="text-sm text-ceramic-text-secondary font-light">
-                Comece adicionando seu primeiro atleta ao Flux
+                Gerencie treinos de natacao, corrida, ciclismo ou forca
               </p>
             </div>
             <button className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform">

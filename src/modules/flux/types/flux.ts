@@ -1,7 +1,8 @@
 /**
  * Flux Module - Core Types
  *
- * Type definitions for the Flux swim training management module.
+ * Type definitions for the Flux training management module.
+ * Supports multiple modalities: swimming, running, cycling, and strength training.
  * Based on PRD v1.0 - February 2026
  */
 

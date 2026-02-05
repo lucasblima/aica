@@ -1,7 +1,8 @@
 /**
  * Flux Module - Public API
  *
- * Barrel export for the Flux swim training management module.
+ * Barrel export for the Flux training management module.
+ * Supports swimming, running, cycling, and strength training.
  * Lazy-loaded by AppRouter.tsx
  */
 
