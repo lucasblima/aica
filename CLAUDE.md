@@ -462,6 +462,15 @@ serve(async (req) => {
 - [ ] Implementar agente de Captacao
 - [ ] Integrar com Supabase via Function Calling
 
+### 4. Context Caching do Gemini (Task #36 - COMPLETA)
+- [x] Criar `backend/agents/services/context_cache_service.py`
+- [x] Criar Edge Function `context-cache`
+- [x] Implementar hook `useContextCache.ts`
+- [x] Atualizar `GeminiClient` com actions de cache
+- [x] Adicionar documentacao em `docs/GEMINI_API_SETUP.md`
+
+**Economia estimada**: Ate 90% em tokens repetidos (perfil usuario + system instructions)
+
 ---
 
 ## Problemas Conhecidos

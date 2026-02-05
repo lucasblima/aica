@@ -46,6 +46,11 @@ const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
   'list_stores_v2': 'file-search-v2',
   // ADK Multi-Agent System (proxied to Cloud Run)
   'agent_chat': 'agent-proxy',
+  // Context Caching (Task #36 - Token Optimization)
+  'cache_get_or_create': 'context-cache',
+  'cache_get_stats': 'context-cache',
+  'cache_invalidate': 'context-cache',
+  'cache_refresh': 'context-cache',
 }
 
 /**

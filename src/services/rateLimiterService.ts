@@ -112,7 +112,15 @@ export const TOKEN_COSTS_BRL = {
  * Get or create the current 4-hour token window
  */
 export async function getCurrentWindow(): Promise<TokenWindow | null> {
-  const { data, error } = await supabase.rpc('get_or_create_current_window')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    log.warn('[rateLimiterService] getCurrentWindow: No authenticated user')
+    return null
+  }
+
+  const { data, error } = await supabase.rpc('get_or_create_current_window', {
+    p_user_id: user.id
+  })
 
   if (error) {
     log.error('[rateLimiterService] getCurrentWindow error:', { error: error })
@@ -286,7 +294,13 @@ export async function consumeTokens(
   tier: ModelTier,
   tokens: number
 ): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
   const { data, error } = await supabase.rpc('increment_token_usage', {
+    p_user_id: user.id,
     p_tier: tier,
     p_tokens: tokens,
   })
@@ -310,9 +324,15 @@ export async function useCreditsForBypass(
   tier: ModelTier,
   tokens: number
 ): Promise<{ success: boolean; cost: number; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, cost: 0, error: 'Not authenticated' }
+  }
+
   const cost = (tokens / 1000) * TOKEN_COSTS_BRL[tier]
 
   const { data, error } = await supabase.rpc('deduct_user_credits', {
+    p_user_id: user.id,
     p_amount: cost,
     p_description: `Bypass rate limit: ${tokens} ${tier} tokens`,
     p_tokens_used: tokens,
