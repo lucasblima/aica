@@ -1,21 +1,21 @@
-# Dependências
-node_modules
+# Node
+node_modules/
 npm-debug.log*
 
-# Build artifacts
-dist
-.cache
+# Build
+dist/
+.cache/
+.vite/
 
-# Development
-.vite
+# Environment
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
 # IDE
-.vscode
-.idea
+.vscode/
+.idea/
 *.swp
 *.swo
 
@@ -24,19 +24,15 @@ dist
 Thumbs.db
 
 # Git
-.git
+.git/
 .gitignore
 
 # Logs
-logs
+logs/
 *.log
 
 # Testing
-coverage
-
-# Misc
-*.md
-!README.md
+coverage/
 
 # Python
 .venv/
@@ -49,6 +45,10 @@ backend/agents/modules/__pycache__/
 backend/agents/tools/__pycache__/
 backend/adk_apps/
 
-# Temp files
+# Temp
 nul
 *.tmp
+
+# Large files
+*.zip
+*.tar.gz
