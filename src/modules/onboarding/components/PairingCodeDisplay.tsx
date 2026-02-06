@@ -54,16 +54,15 @@ export function PairingCodeDisplay({
   const hasGeneratedRef = React.useRef(false);
 
   useEffect(() => {
-    // Only generate once per phone number
-    if (phoneNumber && !code && !isLoading && !hasGeneratedRef.current) {
+    // Only generate once per phone number, and require a valid phone (country code + at least 10 digits)
+    const phoneDigits = phoneNumber?.replace(/\D/g, '') || '';
+    if (phoneDigits.length >= 12 && !code && !isLoading && !hasGeneratedRef.current) {
       hasGeneratedRef.current = true;
       generateCode(phoneNumber).then((result) => {
         if (result?.code) {
           onCodeGenerated?.(result.code);
-        } else {
-          // Reset flag if generation failed so user can retry
-          hasGeneratedRef.current = false;
         }
+        // Do NOT reset hasGeneratedRef on failure - user must click "Tentar novamente"
       });
     }
   }, [phoneNumber]); // Minimal dependencies - only phoneNumber

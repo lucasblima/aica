@@ -11,7 +11,7 @@
  * Epic: #122 - Multi-Instance WhatsApp Architecture
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/services/supabaseClient'
 import type { WhatsAppSession, WhatsAppSessionStatus } from '@/types/whatsappSession'
@@ -38,11 +38,15 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
   const [session, setSession] = useState<WhatsAppSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const hasInitiallyLoaded = useRef(false)
 
-  // Fetch session data
+  // Fetch session data (used for both initial load and refresh)
   const fetchSession = useCallback(async () => {
     try {
-      setIsLoading(true)
+      // Only show loading spinner on initial fetch, not on refresh
+      if (!hasInitiallyLoaded.current) {
+        setIsLoading(true)
+      }
       setError(null)
 
       const { data: { user } } = await supabase.auth.getUser()
@@ -69,6 +73,7 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
       setError(error)
       log.error('[useWhatsAppSessionSubscription] Fetch error:', error)
     } finally {
+      hasInitiallyLoaded.current = true
       setIsLoading(false)
     }
   }, [])
