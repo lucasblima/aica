@@ -526,8 +526,8 @@ export function AppRouter() {
                />
             )}
 
-            {/* Aica Chat FAB - Floating button for quick AI access */}
-            {isAuthenticated && <AicaChatFAB bottomOffset={shouldShowGlobalNav ? 80 : 16} />}
+            {/* Aica Chat FAB - Floating button for quick AI access (left to avoid MicrophoneFAB overlap) */}
+            {isAuthenticated && <AicaChatFAB position="bottom-left" bottomOffset={shouldShowGlobalNav ? 80 : 16} />}
 
             {/* Notification Toast Container */}
             <NotificationContainer />
