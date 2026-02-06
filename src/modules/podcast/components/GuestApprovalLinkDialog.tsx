@@ -25,10 +25,8 @@ import {
   Copy,
   ExternalLink,
 } from 'lucide-react';
-import {
 import { createNamespacedLogger } from '@/lib/logger';
-
-const log = createNamespacedLogger('GuestApprovalLinkDialog');
+import {
   sendApprovalLink,
   getOrCreateApprovalToken,
   validateEmail,
@@ -36,6 +34,8 @@ const log = createNamespacedLogger('GuestApprovalLinkDialog');
   formatPhoneForWhatsApp,
   ApprovalTokenData,
 } from '@/services/guestApprovalService';
+
+const log = createNamespacedLogger('GuestApprovalLinkDialog');
 
 // ============================================================================
 // TYPES

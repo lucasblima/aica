@@ -11,6 +11,9 @@ from ..tools.supabase_tools import (
     get_connection_spaces,
     get_space_members,
     search_connections,
+    add_contact,
+    log_interaction,
+    schedule_followup
 )
 
 CONNECTIONS_INSTRUCTION = """Voce e o agente de relacionamentos do Aica Life OS.
@@ -31,6 +34,9 @@ Ajuda o usuario a cultivar e gerenciar sua rede de contatos.
 - **search_connections**: Busca contatos por nome em todos os espacos.
   Use quando o usuario procurar alguem especifico.
 - **get_user_profile**: Mostra o perfil do usuario.
+- **add_contact**: Adiciona novo contato (space_id, name, email, phone, context_label, tags)
+- **log_interaction**: Registra interacao com contato (contact_id, interaction_type, notes)
+- **schedule_followup**: Agenda follow-up com contato (contact_id, date, reason)
 
 ## Regras
 - Privacidade e prioridade ABSOLUTA
@@ -52,5 +58,13 @@ connections_agent = LlmAgent(
     model="gemini-2.5-flash",
     description="Gestao de relacionamentos: contatos, networking, espacos de conexao, busca de contatos, follow-ups.",
     instruction=CONNECTIONS_INSTRUCTION,
-    tools=[get_connection_spaces, get_space_members, search_connections, get_user_profile],
+    tools=[
+        get_connection_spaces,
+        get_space_members,
+        search_connections,
+        get_user_profile,
+        add_contact,
+        log_interaction,
+        schedule_followup
+    ],
 )

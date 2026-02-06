@@ -50,10 +50,16 @@ export function AicaChatFAB({
   }, [isOpen, isMinimized])
 
   const handleToggle = () => {
-    if (isMinimized) {
+    if (!isOpen) {
+      // Open the chat
+      setIsOpen(true)
+      setIsMinimized(false)
+    } else if (isMinimized) {
+      // Expand if minimized
       setIsMinimized(false)
     } else {
-      setIsOpen(!isOpen)
+      // Minimize if open (instead of closing)
+      setIsMinimized(true)
     }
   }
 
@@ -63,6 +69,10 @@ export function AicaChatFAB({
 
   const handleClose = () => {
     setIsOpen(false)
+    setIsMinimized(false)
+  }
+
+  const handleExpand = () => {
     setIsMinimized(false)
   }
 
@@ -90,26 +100,32 @@ export function AicaChatFAB({
         } as React.CSSProperties}
       >
         {/* Drawer Header */}
-        <div className="aica-fab-drawer__header">
+        <div
+          className="aica-fab-drawer__header"
+          onClick={isMinimized ? handleExpand : undefined}
+          style={{ cursor: isMinimized ? 'pointer' : 'default' }}
+        >
           <div className="aica-fab-drawer__title">
             <div className="aica-fab-drawer__avatar">
               <MessageCircle size={18} />
             </div>
             <div>
               <h3>Aica</h3>
-              <span>Assistente IA</span>
+              <span>{isMinimized ? 'Clique para expandir' : 'Assistente IA'}</span>
             </div>
           </div>
           <div className="aica-fab-drawer__actions">
+            {!isMinimized && (
+              <button
+                onClick={handleMinimize}
+                className="aica-fab-drawer__action-btn"
+                title="Minimizar"
+              >
+                <Minimize2 size={18} />
+              </button>
+            )}
             <button
-              onClick={handleMinimize}
-              className="aica-fab-drawer__action-btn"
-              title="Minimizar"
-            >
-              <Minimize2 size={18} />
-            </button>
-            <button
-              onClick={handleClose}
+              onClick={(e) => { e.stopPropagation(); handleClose(); }}
               className="aica-fab-drawer__action-btn"
               title="Fechar"
             >

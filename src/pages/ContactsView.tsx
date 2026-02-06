@@ -22,9 +22,7 @@ const log = createNamespacedLogger('ContactsView');
 
 // WhatsApp Onboarding Components
 import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep';
-import { getWhatsAppSession } from '../modules/onboarding/services/onboardingService';
 import { useWhatsAppConnection } from '../modules/connections/hooks/useWhatsAppConnection';
-import type { WhatsAppSession } from '../modules/onboarding/types';
 
 export function ContactsView() {
   const { user } = useAuth();
@@ -37,11 +35,6 @@ export function ContactsView() {
   const [error, setError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<{ lastSyncAt: string | null; contactCount: number } | null>(null);
 
-  // WhatsApp session state
-  const [whatsappSession, setWhatsappSession] = useState<WhatsAppSession | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const [isSyncingStatus, setIsSyncingStatus] = useState(false);
-
   // Auto-sync state
   const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
@@ -53,86 +46,13 @@ export function ContactsView() {
   const hasAttemptedDatabaseSync = useRef(false);
   const configureWebhookRef = useRef<typeof configureWebhook | null>(null);
 
-  // Use WhatsApp connection hook for configureWebhook
-  const { configureWebhook, session: hookSession, isConnected } = useWhatsAppConnection();
+  // Use WhatsApp connection hook - single source of truth for session state
+  const { configureWebhook, session: whatsappSession, isConnected, isLoading: isCheckingSession } = useWhatsAppConnection();
 
   // Keep configureWebhook ref updated without causing re-renders
   useEffect(() => {
     configureWebhookRef.current = configureWebhook;
   }, [configureWebhook]);
-
-  // Sync database status with Evolution API if needed
-  // Uses refs to avoid dependency chain that causes infinite loops
-  const syncDatabaseWithEvolutionAPI = useCallback(async (instanceName: string) => {
-    if (!instanceName || !user?.id) return false;
-
-    log.debug(' Attempting to sync database status with Evolution API...');
-    setIsSyncingStatus(true);
-
-    try {
-      // Use ref to avoid recreating callback when configureWebhook changes
-      const result = await configureWebhookRef.current?.();
-      if (result?.success && result.connectionState === 'open') {
-        log.debug(' Database synced! Evolution API reports connected.');
-        // Refresh the session after sync
-        const session = await getWhatsAppSession(user.id);
-        setWhatsappSession(session);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      log.error(' Error syncing with Evolution API:', err);
-      return false;
-    } finally {
-      setIsSyncingStatus(false);
-    }
-  }, [user?.id]); // Minimal dependencies - only user.id which rarely changes
-
-  // Check WhatsApp session status
-  useEffect(() => {
-    const checkWhatsAppSession = async () => {
-      if (!user?.id) {
-        setIsCheckingSession(false);
-        return;
-      }
-
-      try {
-        const session = await getWhatsAppSession(user.id);
-        setWhatsappSession(session);
-
-        // If session exists but status isn't 'connected', try to sync with Evolution API
-        // This handles cases where the webhook didn't update the database properly
-        if (session && session.status !== 'connected' && session.instance_name) {
-          log.debug(' Session exists but not connected. Checking Evolution API...');
-        }
-      } catch (err) {
-        log.error(' Error checking WhatsApp session:', err);
-      } finally {
-        setIsCheckingSession(false);
-      }
-    };
-
-    checkWhatsAppSession();
-  }, [user?.id]);
-
-  // Auto-sync when session exists but status isn't connected
-  // DISABLED: This was causing infinite loops due to real-time subscription updates
-  // The webhook should handle status updates automatically
-  // If manual sync is needed, user can trigger it via the UI
-  // useEffect(() => {
-  //   const shouldSync =
-  //     !isCheckingSession &&
-  //     whatsappSession &&
-  //     whatsappSession.status !== 'connected' &&
-  //     whatsappSession.instance_name &&
-  //     !isSyncingStatus &&
-  //     !hasAttemptedDatabaseSync.current;
-  //
-  //   if (shouldSync) {
-  //     hasAttemptedDatabaseSync.current = true;
-  //     syncDatabaseWithEvolutionAPI(whatsappSession.instance_name);
-  //   }
-  // }, [isCheckingSession, whatsappSession?.status, whatsappSession?.instance_name, isSyncingStatus, syncDatabaseWithEvolutionAPI]);
 
   // Load contacts from database
   useEffect(() => {
@@ -297,15 +217,11 @@ export function ContactsView() {
 
   // Handle WhatsApp pairing success
   const handlePairingSuccess = async () => {
-    // Refresh session status
-    if (user?.id) {
-      const session = await getWhatsAppSession(user.id);
-      setWhatsappSession(session);
-      // Load contacts after successful pairing
-      if (session?.status === 'connected') {
-        loadContacts();
-        loadSyncStatus();
-      }
+    // The session is automatically refreshed via real-time subscription in useWhatsAppConnection
+    // Just load contacts after successful pairing
+    if (isConnected) {
+      loadContacts();
+      loadSyncStatus();
     }
   };
 
@@ -322,12 +238,7 @@ export function ContactsView() {
       if (result?.success) {
         log.debug('Webhook reconfigured successfully:', result);
 
-        // Refresh session to get updated status
-        if (user?.id) {
-          const session = await getWhatsAppSession(user.id);
-          setWhatsappSession(session);
-        }
-
+        // Session is automatically refreshed via real-time subscription in useWhatsAppConnection
         // Show success message
         alert(`✅ Conexão reconfigurada!\n\nWebhook: ${result.webhookConfigured ? 'OK' : 'Fallback'}\nStatus: ${result.connectionState || 'unknown'}`);
       } else {
