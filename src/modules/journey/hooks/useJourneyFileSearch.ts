@@ -148,7 +148,7 @@ ${moment.location ? `**Local**: ${moment.location}\n` : ''}
 
 ${moment.content}
 
-${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${moment.sentiment_data.sentiment}\n- **Confiança**: ${(moment.sentiment_data.confidence * 100).toFixed(1)}%\n` : ''}
+${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${moment.sentiment_data.sentiment}\n- **Score**: ${((moment.sentiment_data.sentimentScore + 1) * 50).toFixed(1)}%\n` : ''}
         `.trim();
 
         // Criar um "arquivo virtual" com o conteúdo
@@ -175,7 +175,7 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
             location: moment.location,
             has_audio: !!moment.audio_url,
             sentiment: moment.sentiment_data?.sentiment,
-            sentiment_confidence: moment.sentiment_data?.confidence,
+            sentiment_score: moment.sentiment_data?.sentimentScore,
             created_at: moment.created_at,
             character_count: moment.content.length,
             ...metadata,

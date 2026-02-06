@@ -359,13 +359,17 @@ async function fetchMomentEvents(
       created_at: moment.created_at,
       user_id: moment.user_id,
       content: moment.content || '',
-      title: moment.title,
+      // Issue #199: Map from actual Moment fields, not nonexistent columns
+      title: moment.content?.split('\n')[0]?.slice(0, 80),
       emotion: moment.emotion,
-      energy_level: moment.energy_level,
+      energy_level: moment.sentiment_data?.energyLevel,
       tags: moment.tags || [],
-      sentiment: moment.sentiment,
+      sentiment: moment.sentiment_data?.sentiment === 'very_positive' || moment.sentiment_data?.sentiment === 'positive'
+        ? 'positive'
+        : moment.sentiment_data?.sentiment === 'very_negative' || moment.sentiment_data?.sentiment === 'negative'
+        ? 'negative'
+        : moment.sentiment_data ? 'neutral' : undefined,
       has_audio: !!moment.audio_url,
-      audio_duration_seconds: moment.audio_duration,
       displayData: { icon: '', title: '', label: '', color: '', preview: '' }, // Placeholder
     }))
 
