@@ -21,7 +21,6 @@ interface AicaChatProps {
   className?: string
   showHeader?: boolean
   showRateLimitBar?: boolean
-  defaultTier?: ModelTier
 }
 
 // ============================================================================
@@ -200,6 +199,51 @@ function QueueStatus({ className }: QueueStatusProps) {
 }
 
 // ============================================================================
+// AUTO-ROUTING LOGIC
+// ============================================================================
+
+/**
+ * Automatically determines the best model tier based on message content.
+ * - Premium: Complex analysis, detailed explanations, strategic planning
+ * - Standard: General questions, moderate complexity
+ * - Lite: Simple queries, lists, quick answers
+ */
+function autoSelectTier(message: string): ModelTier {
+  const lowerMessage = message.toLowerCase()
+
+  // Premium triggers: complex analysis, detailed explanations, strategic tasks
+  const premiumKeywords = [
+    'analise detalhada', 'análise detalhada', 'explique detalhadamente',
+    'estratégia', 'estrategia', 'planejamento estratégico',
+    'compare', 'avalie', 'recomende', 'por que', 'porque',
+    'como funciona', 'me ajude a entender', 'profundamente',
+    'prós e contras', 'pros e contras', 'trade-off', 'tradeoff'
+  ]
+
+  // Lite triggers: simple queries, lists, quick tasks
+  const liteKeywords = [
+    'liste', 'listar', 'quais são', 'quais sao',
+    'o que tenho', 'tarefas de hoje', 'agenda',
+    'rápido', 'rapido', 'simples', 'resumido',
+    'sim ou não', 'sim ou nao', 'existe', 'tem',
+    'quantos', 'quantas', 'qual é', 'qual e'
+  ]
+
+  // Check for premium keywords
+  if (premiumKeywords.some(kw => lowerMessage.includes(kw))) {
+    return 'premium'
+  }
+
+  // Check for lite keywords or very short messages
+  if (liteKeywords.some(kw => lowerMessage.includes(kw)) || message.length < 30) {
+    return 'lite'
+  }
+
+  // Default to standard for balanced performance
+  return 'standard'
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -207,18 +251,15 @@ export function AicaChat({
   className,
   showHeader = true,
   showRateLimitBar = true,
-  defaultTier = 'standard',
 }: AicaChatProps) {
   const {
     messages,
     isSending,
     error,
     sendMessage,
-    rateLimitStatus,
   } = useChat()
 
   const [input, setInput] = useState('')
-  const [selectedTier, setSelectedTier] = useState<ModelTier>(defaultTier)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -232,13 +273,28 @@ export function AicaChat({
     inputRef.current?.focus()
   }, [])
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`
+    }
+  }, [input])
+
   const handleSend = useCallback(async () => {
     if (!input.trim() || isSending) return
 
     const message = input.trim()
+    const autoTier = autoSelectTier(message)
     setInput('')
-    await sendMessage(message, selectedTier)
-  }, [input, isSending, selectedTier, sendMessage])
+
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+    }
+
+    await sendMessage(message, autoTier)
+  }, [input, isSending, sendMessage])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -249,8 +305,6 @@ export function AicaChat({
     },
     [handleSend]
   )
-
-  const canSend = rateLimitStatus?.canSend ?? true
 
   return (
     <div className={cn('aica-chat', className)}>
@@ -298,47 +352,14 @@ export function AicaChat({
       )}
 
       <div className="aica-chat__input-container">
-        <div className="aica-chat__tier-selector">
-          <button
-            className={cn(
-              'aica-chat__tier-btn',
-              selectedTier === 'premium' && 'aica-chat__tier-btn--active'
-            )}
-            onClick={() => setSelectedTier('premium')}
-            title="Premium (mais capaz)"
-          >
-            ⭐
-          </button>
-          <button
-            className={cn(
-              'aica-chat__tier-btn',
-              selectedTier === 'standard' && 'aica-chat__tier-btn--active'
-            )}
-            onClick={() => setSelectedTier('standard')}
-            title="Standard (equilibrado)"
-          >
-            💡
-          </button>
-          <button
-            className={cn(
-              'aica-chat__tier-btn',
-              selectedTier === 'lite' && 'aica-chat__tier-btn--active'
-            )}
-            onClick={() => setSelectedTier('lite')}
-            title="Lite (mais rápido)"
-          >
-            ✨
-          </button>
-        </div>
-
         <textarea
           ref={inputRef}
           className="aica-chat__input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={canSend ? 'Digite sua mensagem...' : 'Limite atingido - mensagem será enfileirada'}
-          rows={1}
+          placeholder="Pergunte algo para a Aica..."
+          rows={2}
           disabled={isSending}
         />
 
