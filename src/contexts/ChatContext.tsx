@@ -297,23 +297,18 @@ export function ChatProvider({ children }: ChatProviderProps) {
       return
     }
 
-    // Create session if none exists
+    // Create or reuse session (graceful fallback if table doesn't exist)
     let sessionId = state.currentSession?.id
     if (!sessionId) {
       const newSession = await createSession()
-      if (!newSession) {
-        dispatch({ type: 'SET_ERROR', error: 'Failed to create chat session' })
-        dispatch({ type: 'SET_SENDING', isSending: false })
-        return
+      if (newSession) {
+        sessionId = newSession.id
+      } else {
+        // Fallback: use local UUID if chat_sessions table is not available
+        sessionId = crypto.randomUUID()
+        log.warn('Using local session ID - chat_sessions table may not exist')
       }
-      sessionId = newSession.id
     }
-
-    // Estimate tokens (rough calculation)
-    const estimatedTokens = Math.ceil(content.length / 4) + 1000
-
-    // Check rate limit
-    const rateLimitStatus = await rateLimiterService.checkRateLimit(preferredTier, estimatedTokens)
 
     // Add user message to UI immediately
     const userMessage: ChatMessage = {
@@ -324,50 +319,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
     dispatch({ type: 'ADD_MESSAGE', message: userMessage })
 
-    // Save user message to database
-    await supabase.from('chat_messages').insert({
+    // Save user message to database (best-effort, don't block on failure)
+    supabase.from('chat_messages').insert({
       id: userMessage.id,
       session_id: sessionId,
       user_id: user.id,
       role: 'user',
       content,
+    }).then(({ error: saveError }) => {
+      if (saveError) log.warn('Could not save message to DB:', saveError.message)
     })
-
-    // Handle based on rate limit status
-    if (!rateLimitStatus.canSend) {
-      // Queue the message
-      const { success, queuedMessage, error } = await rateLimiterService.queueMessage(content, {
-        preferredTier,
-        contextMessages: state.messages.slice(-10).map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-        estimatedTokens,
-      })
-
-      if (success && queuedMessage) {
-        const queuePosition = await rateLimiterService.getQueuePosition(queuedMessage.id)
-
-        // Add placeholder for assistant response (queued)
-        const queuedAssistantMessage: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: `Sua mensagem foi adicionada \u00e0 fila (posi\u00e7\u00e3o ${queuePosition}). Ela ser\u00e1 processada quando tokens estiverem dispon\u00edveis.`,
-          created_at: new Date().toISOString(),
-          is_queued: true,
-          queue_position: queuePosition,
-        }
-        dispatch({ type: 'ADD_MESSAGE', message: queuedAssistantMessage })
-
-        await refreshQueuedMessages()
-      } else {
-        dispatch({ type: 'SET_ERROR', error: error || 'Failed to queue message' })
-      }
-
-      dispatch({ type: 'SET_SENDING', isSending: false })
-      await refreshRateLimitStatus()
-      return
-    }
 
     // Send message to AI via Edge Function
     try {
