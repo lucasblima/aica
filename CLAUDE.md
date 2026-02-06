@@ -790,6 +790,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **docs/GEMINI_API_SETUP.md** - Setup de API
 - **docs/CERAMIC_DESIGN_SYSTEM_GUIDANCE.md** - Design System
 - **docs/PRIVACY_AND_SECURITY.md** - Seguranca
+- **docs/journey/EDGE_FUNCTIONS_MAP.md** - Mapeamento completo das integracoes AI do Journey
 - **.claude/AGENT_GUIDELINES.md** - Workflow multi-terminal detalhado
 - **.claude/WORK_QUEUE.md** - Branches ativas e prioridades
 
