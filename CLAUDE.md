@@ -43,10 +43,21 @@ git add -A && git commit -m "sua mensagem" && git push origin main
 ```
 
 ### Passo 2: Deploy Manual via Cloud Build
+
+**Staging (ambiente ativo):**
+```bash
+gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762 --substitutions=_SERVICE_NAME=aica-staging
+```
+
+**Producao (serviço `aica`):**
 ```bash
 gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762
 ```
+
 Deploy leva ~4 minutos.
+
+> **IMPORTANTE:** O `cloudbuild.yaml` usa `_SERVICE_NAME=aica` por padrao (producao).
+> Para staging, SEMPRE passe `--substitutions=_SERVICE_NAME=aica-staging`.
 
 ### Verificar Status
 ```bash
@@ -57,8 +68,12 @@ gcloud builds list --limit=5 --region=southamerica-east1 --project=gen-lang-clie
 gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=southamerica-east1 --project=gen-lang-client-0948335762) --region=southamerica-east1
 ```
 
-### Apos Deploy
-Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app
+### Servicos Cloud Run
+| Servico | URL | Uso |
+|---------|-----|-----|
+| `aica-staging` | https://aica-staging-5562559893.southamerica-east1.run.app | Desenvolvimento e testes |
+| `aica` | https://aica-5562559893.southamerica-east1.run.app | Producao |
+| `aica-agents` | https://aica-agents-5562559893.southamerica-east1.run.app | Backend ADK agents |
 
 ---
 
@@ -632,14 +647,20 @@ npm run build && npm run typecheck
 ## URLs de Ambientes
 
 ### Staging (Ambiente Ativo)
-- **App:** https://aica-staging-5p22u2w6jq-rj.a.run.app/
+- **App:** https://aica-staging-5562559893.southamerica-east1.run.app
+- **Cloud Run Service:** `aica-staging`
 - **Supabase:** https://uzywajqzbdbrfammshdg.supabase.co
 - **Region:** southamerica-east1 (Sao Paulo)
 - **Uso:** Desenvolvimento, testes e validacao do MVP
 
-### Producao (Pausado)
-- **Status:** Desativado ate MVP finalizar
-- **Motivo:** Foco total em staging, reducao de overhead de manutencao
+### Producao
+- **App:** https://aica-5562559893.southamerica-east1.run.app
+- **Cloud Run Service:** `aica`
+- **Status:** Ativo (mesmo Supabase que staging)
+
+### Agents Backend
+- **App:** https://aica-agents-5562559893.southamerica-east1.run.app
+- **Cloud Run Service:** `aica-agents`
 
 ---
 
