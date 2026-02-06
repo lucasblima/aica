@@ -376,38 +376,85 @@ async function fetchAllGroups(instanceName: string): Promise<WhatsAppContact[]> 
 }
 
 /**
+ * Upload profile picture to Supabase Storage
+ * Issue #180: WhatsApp CDN URLs expire, store in permanent storage
+ */
+async function uploadProfilePicture(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  whatsappId: string,
+  profilePicUrl: string | undefined
+): Promise<string | null> {
+  if (!profilePicUrl) return null
+
+  try {
+    const response = await fetch(profilePicUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'image/*',
+        'Referer': 'https://web.whatsapp.com/',
+      },
+    })
+
+    if (!response.ok) {
+      console.warn(`[sync] Failed to fetch pic for ${whatsappId}: ${response.status}`)
+      return null
+    }
+
+    const imageData = await response.arrayBuffer()
+    const contentType = response.headers.get('Content-Type') || 'image/jpeg'
+    const ext = contentType.includes('png') ? 'png' : 'jpg'
+    const sanitizedId = whatsappId.replace(/[@.:]/g, '_')
+    const filePath = `${userId}/${sanitizedId}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('whatsapp-avatars')
+      .upload(filePath, imageData, { contentType, upsert: true })
+
+    if (uploadError) {
+      console.warn(`[sync] Upload failed: ${uploadError.message}`)
+      return null
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('whatsapp-avatars')
+      .getPublicUrl(filePath)
+
+    return urlData.publicUrl
+  } catch (error) {
+    console.warn(`[sync] Pic upload error: ${(error as Error).message}`)
+    return null
+  }
+}
+
+/**
  * Sync individual contact to contact_network table
  *
  * Upserts contact data using whatsapp_id as conflict key.
  * Handles both individual contacts and groups.
- *
- * @param supabase - Supabase client with SERVICE_ROLE_KEY
- * @param userId - The authenticated user's ID
- * @param contact - WhatsApp contact data from Evolution API
- * @throws Error if upsert fails
+ * Issue #180: Uploads profile pictures to Supabase Storage
  */
 async function syncContactToDatabase(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   contact: WhatsAppContact
 ): Promise<void> {
-  // Extract phone number from remoteJid (e.g., "5521999999999@s.whatsapp.net" -> "5521999999999")
   const remoteJid = (contact as any).remoteJid || contact.id
   const phoneMatch = remoteJid.match(/^(\d+)@/)
   const phone = phoneMatch ? phoneMatch[1] : null
-
-  // Determine if this is a group
   const isGroup = remoteJid.includes('@g.us') || remoteJid.includes('@lid')
 
-  // Prepare contact data
+  // Issue #180: Upload profile picture to Storage (permanent URL)
+  const storedPicUrl = await uploadProfilePicture(supabase, userId, remoteJid, contact.profilePicUrl)
+
   const contactData = {
     user_id: userId,
     name: contact.pushName || contact.name || `WhatsApp ${phone || 'Contact'}`,
-    phone_number: phone ? `+${phone}` : null, // E.164 format for consistency
+    phone_number: phone ? `+${phone}` : null,
     whatsapp_phone: phone,
     whatsapp_id: remoteJid,
     whatsapp_name: contact.pushName || contact.name,
-    whatsapp_profile_pic_url: contact.profilePicUrl,
+    whatsapp_profile_pic_url: storedPicUrl || contact.profilePicUrl,
     whatsapp_sync_enabled: true,
     whatsapp_synced_at: new Date().toISOString(),
     last_whatsapp_message_at: contact.lastMessageTimestamp
@@ -417,16 +464,14 @@ async function syncContactToDatabase(
       isGroup,
       isMyContact: contact.isMyContact,
       syncedAt: new Date().toISOString(),
+      originalProfilePicUrl: contact.profilePicUrl,
     },
     tags: isGroup ? ['whatsapp', 'group'] : ['whatsapp'],
-    // Set relationship_type for categorization
     relationship_type: isGroup ? 'group' : 'contact',
-    // CRITICAL: Set sync_source so UI filtering works correctly
     sync_source: 'whatsapp',
     last_synced_at: new Date().toISOString(),
   }
 
-  // Upsert contact (update if exists, insert if new)
   const { error: upsertError } = await supabase
     .from('contact_network')
     .upsert(contactData, {

@@ -17,11 +17,18 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 /**
  * Get proxied URL for WhatsApp profile pictures
  * WhatsApp blocks direct hotlinking, so we proxy through our Edge Function
+ *
+ * Issue #180: Supports Supabase Storage URLs which don't need proxying
  */
 function getProxiedWhatsAppUrl(url: string | null | undefined): string | null {
   if (!url) return null;
 
-  // Only proxy WhatsApp URLs
+  // Supabase Storage URLs don't need proxying (Issue #180)
+  if (url.includes('supabase.co/storage') || url.includes('supabase.in/storage')) {
+    return url;
+  }
+
+  // Only proxy WhatsApp CDN URLs (they expire and block hotlinking)
   if (url.includes('pps.whatsapp.net') || url.includes('mmg.whatsapp.net')) {
     return `${SUPABASE_URL}/functions/v1/proxy-whatsapp-image?url=${encodeURIComponent(url)}`;
   }
