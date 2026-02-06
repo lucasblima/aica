@@ -291,6 +291,9 @@ export function ContactsView() {
             <WhatsAppPairingStep
               onSuccess={handlePairingSuccess}
               onBack={() => window.history.back()}
+              session={whatsappSession}
+              isConnected={isConnected}
+              sessionStatus={whatsappSession?.status ?? null}
             />
           </div>
         </main>

@@ -73,20 +73,24 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
   const {
     session,
     isConnected,
+    isLoading: isSubscriptionLoading,
     refresh: refreshSession,
   } = useWhatsAppSessionSubscription()
 
   const [connectionState, setConnectionState] = useState<ConnectionState | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isActionLoading, setIsActionLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [qrCode, setQrCode] = useState<string | null>(null)
+
+  // Combine subscription loading (initial fetch) with action loading (connect/disconnect/etc)
+  const isLoading = isSubscriptionLoading || isActionLoading
 
   /**
    * Create user instance via Edge Function
    */
   const connect = useCallback(async () => {
     try {
-      setIsLoading(true)
+      setIsActionLoading(true)
       setError(null)
 
       log.debug('[useWhatsAppConnection] Creating user instance...')
@@ -131,7 +135,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
       setError(new Error(errorMessage))
       log.error('[useWhatsAppConnection] Connect error:', errorMessage)
     } finally {
-      setIsLoading(false)
+      setIsActionLoading(false)
     }
   }, [refreshSession])
 
@@ -141,7 +145,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
    */
   const disconnect = useCallback(async () => {
     try {
-      setIsLoading(true)
+      setIsActionLoading(true)
       setError(null)
 
       if (!session?.id) {
@@ -195,7 +199,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
       setError(new Error(errorMessage))
       log.error('[useWhatsAppConnection] Disconnect error:', errorMessage)
     } finally {
-      setIsLoading(false)
+      setIsActionLoading(false)
     }
   }, [session, refreshSession])
 
@@ -219,7 +223,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
    */
   const checkConnection = useCallback(async () => {
     try {
-      setIsLoading(true)
+      setIsActionLoading(true)
       setError(null)
 
       if (!session?.instance_name) {
@@ -276,7 +280,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
       setError(new Error(errorMessage))
       log.error('[useWhatsAppConnection] Check connection error:', errorMessage)
     } finally {
-      setIsLoading(false)
+      setIsActionLoading(false)
     }
   }, [session, refreshSession])
 
@@ -287,7 +291,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
    */
   const configureWebhook = useCallback(async (): Promise<ConfigureWebhookResult | null> => {
     try {
-      setIsLoading(true)
+      setIsActionLoading(true)
       setError(null)
 
       log.debug('Configuring webhook...')
@@ -360,7 +364,6 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
 
         return {
           success: true,
-          message: 'Session updated via fallback',
           webhookConfigured: false,
           sessionUpdated: true,
           connectionState: 'open',
@@ -374,7 +377,7 @@ export function useWhatsAppConnection(): UseWhatsAppConnectionReturn {
       log.error('Configure webhook error:', errorMessage)
       return null
     } finally {
-      setIsLoading(false)
+      setIsActionLoading(false)
     }
   }, [session, refreshSession])
 

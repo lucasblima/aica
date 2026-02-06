@@ -11,12 +11,12 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
 import { supabase } from '@/services/supabaseClient';
-import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
 import { createNamespacedLogger } from '@/lib/logger';
+import type { WhatsAppSession } from '@/types/whatsappSession';
 import type { CreateInstanceResponse } from '@/types/whatsappSession';
 
 const log = createNamespacedLogger('WhatsAppPairingStep');
@@ -26,6 +26,12 @@ interface WhatsAppPairingStepProps {
   onSuccess: () => void;
   /** Callback to go back */
   onBack: () => void;
+  /** Session data from parent (avoids duplicate subscription) */
+  session?: WhatsAppSession | null;
+  /** Whether the session is connected */
+  isConnected?: boolean;
+  /** Session status string */
+  sessionStatus?: string | null;
   /** Optional className */
   className?: string;
 }
@@ -35,6 +41,9 @@ type PairingState = 'input' | 'creating' | 'pairing' | 'connected';
 export function WhatsAppPairingStep({
   onSuccess,
   onBack,
+  session,
+  isConnected = false,
+  sessionStatus,
   className = '',
 }: WhatsAppPairingStepProps) {
   const [state, setState] = useState<PairingState>('input');
@@ -43,23 +52,19 @@ export function WhatsAppPairingStep({
   const [instanceName, setInstanceName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCreatingInstance, setIsCreatingInstance] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-
-  // Subscribe to session changes for automatic connection detection
-  const { session, isConnected, status: sessionStatus, isLoading: isLoadingSession } = useWhatsAppSessionSubscription();
 
   // Check for existing session on mount - only run once
   const hasCheckedSessionRef = useRef(false);
 
   useEffect(() => {
-    if (isLoadingSession || hasCheckedSessionRef.current) return;
+    if (hasCheckedSessionRef.current) return;
 
     // Mark as checked to prevent re-running
     hasCheckedSessionRef.current = true;
 
     // If there's an existing session in connecting/pairing state, skip to pairing
-    if (session && (session.status === 'connecting' || session.status === 'pairing')) {
-      log.debug(' Found existing session in connecting state:', session.instance_name);
+    if (session && (session.status === 'connecting' || session.status === 'pending')) {
+      log.debug('Found existing session in connecting state:', session.instance_name);
       setInstanceName(session.instance_name);
       // Extract phone from session if available
       if (session.phone_number) {
@@ -72,8 +77,7 @@ export function WhatsAppPairingStep({
       }
       setState('pairing');
     }
-    setIsCheckingSession(false);
-  }, [session, isLoadingSession]);
+  }, [session]);
 
   // Auto-detect when WhatsApp is connected via webhook
   useEffect(() => {
@@ -174,16 +178,6 @@ export function WhatsAppPairingStep({
     log.debug('Pairing code generated:', code);
     // Could poll for connection status here
   }, []);
-
-  // Show loading while checking for existing session
-  if (isCheckingSession || isLoadingSession) {
-    return (
-      <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
-        <Loader2 className="w-8 h-8 text-green-600 animate-spin mb-4" />
-        <p className="text-ceramic-600">Verificando conexão existente...</p>
-      </div>
-    );
-  }
 
   return (
     <div className={`flex flex-col ${className}`}>
