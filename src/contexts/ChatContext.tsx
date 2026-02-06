@@ -178,18 +178,20 @@ export function ChatProvider({ children }: ChatProviderProps) {
     dispatch({ type: 'SET_QUEUED_MESSAGES', messages })
   }, [])
 
+  // TODO: Issue #190 - Re-enable when billing schema is deployed to Supabase
+  // Temporarily disabled to prevent infinite error loop from missing database objects
   // Refresh rate limit status periodically
-  useEffect(() => {
-    refreshRateLimitStatus()
-    refreshQueuedMessages()
-
-    const interval = setInterval(() => {
-      refreshRateLimitStatus()
-      refreshQueuedMessages()
-    }, 30000) // Every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [refreshRateLimitStatus, refreshQueuedMessages])
+  // useEffect(() => {
+  //   refreshRateLimitStatus()
+  //   refreshQueuedMessages()
+  //
+  //   const interval = setInterval(() => {
+  //     refreshRateLimitStatus()
+  //     refreshQueuedMessages()
+  //   }, 30000) // Every 30 seconds
+  //
+  //   return () => clearInterval(interval)
+  // }, [refreshRateLimitStatus, refreshQueuedMessages])
 
   // -------------------------------------------------------------------------
   // SESSION MANAGEMENT
