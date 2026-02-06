@@ -22,7 +22,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
 
 // Helper function to convert ArrayBuffer to hex string
 function arrayBufferToHex(buffer: ArrayBuffer): string {
@@ -640,8 +640,47 @@ function getExtensionForType(mediaType: string): string {
 }
 
 /**
- * Store incoming message
- * Updated to use current whatsapp_messages schema with contact_id FK
+ * Trigger intent extraction asynchronously (fire and forget)
+ * Issue #91, #185: Privacy-first intent extraction
+ *
+ * This function triggers the extract-intent Edge Function asynchronously
+ * to avoid blocking webhook response. The raw text is passed but NEVER stored.
+ */
+function triggerIntentExtraction(
+  messageId: string,
+  rawText: string,
+  mediaType?: string
+): void {
+  const supabaseUrl = SUPABASE_URL
+  const serviceRoleKey = SUPABASE_SERVICE_ROLE_KEY
+
+  // Fire and forget - don't block webhook
+  fetch(`${supabaseUrl}/functions/v1/extract-intent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify({
+      messageId,
+      rawText, // Passed for processing, NEVER stored
+      mediaType,
+    }),
+  }).catch(err => {
+    log('ERROR', '[webhook-evolution] Failed to trigger intent extraction', err.message)
+    // Mensagem fica com status 'pending', pode ser reprocessada depois
+  })
+}
+
+/**
+ * Store incoming message WITHOUT raw text (privacy-first)
+ * Updated for Issue #91, #185: NO raw text stored, only metadata
+ *
+ * Flow:
+ * 1. Get/create contact
+ * 2. Insert message with processing_status='pending' (NO text)
+ * 3. Trigger async intent extraction (fire and forget)
+ * 4. Intent extraction updates message with intent fields
  *
  * @returns Object with messageId and contactId, or null on failure
  */
@@ -696,24 +735,51 @@ async function storeMessage(
       messageTimestamp = new Date()
     }
 
-    // Insert with media fields (Issue #118: WhatsApp RAG)
+    // ===========================================================================
+    // INSERT MESSAGE WITHOUT RAW TEXT (Issue #91, #185)
+    // ===========================================================================
+    // Message is stored with processing_status='pending'
+    // Raw text is NEVER stored in the database
+    // Intent extraction happens asynchronously
+
+    const insertData: Record<string, unknown> = {
+      user_id: userId,
+      contact_id: contactId,
+      contact_phone: contactPhone,
+      contact_name: messageData.pushName || null,
+      message_direction: fromMe ? 'outgoing' : 'incoming',
+      message_type: messageType,
+      message_timestamp: messageTimestamp.toISOString(),
+      media_type: messageType !== 'text' ? messageType : null,
+      media_url: mediaUrl,
+      document_processed: false,
+      processing_status: 'pending', // Will be updated by extract-intent
+    }
+
+    // For media-only messages, add default intent immediately
+    if (!messageText && mediaUrl) {
+      insertData.intent_summary = messageType === 'image' ? 'Imagem compartilhada' :
+                                   messageType === 'audio' ? 'Audio compartilhado' :
+                                   messageType === 'video' ? 'Video compartilhado' :
+                                   messageType === 'document' ? 'Documento compartilhado' :
+                                   'Midia compartilhada'
+      insertData.intent_category = 'media'
+      insertData.intent_sentiment = 'neutral'
+      insertData.intent_urgency = 1
+      insertData.intent_topic = messageType
+      insertData.intent_action_required = false
+      insertData.intent_confidence = 1.0
+      insertData.processing_status = 'completed'
+    }
+
     const { data, error } = await supabase
       .from('whatsapp_messages')
-      .insert({
-        user_id: userId,
-        contact_id: contactId,
-        message_text: messageText || null, // Can be null if media-only
-        message_direction: fromMe ? 'outgoing' : 'incoming',
-        message_timestamp: messageTimestamp.toISOString(),
-        media_type: messageType !== 'text' ? messageType : null,
-        media_url: mediaUrl,
-        document_processed: false, // Will be set to true after processing
-      })
+      .insert(insertData)
       .select('id')
       .single()
 
     if (error) {
-      // Check if it's a duplicate (unlikely without message_id unique constraint)
+      // Check if it's a duplicate
       if (error.code === '23505') {
         log('DEBUG', 'Duplicate message, skipping', { messageId })
         return null
@@ -721,14 +787,25 @@ async function storeMessage(
       throw error
     }
 
-    log('INFO', 'Message stored', {
+    log('INFO', 'Message stored without raw text', {
       id: data.id,
       contactId,
       direction: fromMe ? 'outgoing' : 'incoming',
-      textLength: messageText?.length || 0,
+      hasText: !!messageText,
       hasMedia: !!mediaUrl,
-      mediaType: messageType
+      messageType
     })
+
+    // ===========================================================================
+    // TRIGGER ASYNC INTENT EXTRACTION (Issue #91, #185)
+    // ===========================================================================
+    // Call extract-intent Edge Function asynchronously (fire and forget)
+    // Raw text is passed for processing but NEVER stored
+
+    if (messageText) {
+      log('INFO', 'Triggering intent extraction', { messageId: data.id })
+      triggerIntentExtraction(data.id, messageText, mediaUrl ? messageType : undefined)
+    }
 
     // Queue document processing if message has media attachment (Issue #118: WhatsApp RAG)
     if (mediaUrl && messageType !== 'text') {

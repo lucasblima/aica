@@ -42,3 +42,7 @@ export { WhatsAppContactCard } from './WhatsAppContactCard';
 export { WhatsAppContactList } from './WhatsAppContactList';
 export { ContactFilters } from './ContactFilters';
 export { ContactSearchBar } from './ContactSearchBar';
+
+// WhatsApp Intent Timeline Components (Issue #186)
+export { IntentTimelineCard } from './IntentTimelineCard';
+export type { IntentTimelineCardProps } from './IntentTimelineCard';

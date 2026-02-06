@@ -438,6 +438,139 @@ case 'analyze_document':
 
 ---
 
+## 🚀 Context Caching (Task #36 - Token Optimization)
+
+### O que e Context Caching?
+
+Context caching permite economizar ate **90% em tokens repetidos** ao cachear:
+- Perfil do usuario (de `user_memory`)
+- System instructions
+- Contexto adicional persistente
+
+O cache tem TTL de 1 hora e e automaticamente invalidado quando o perfil do usuario muda.
+
+### Como Funciona
+
+```
+┌──────────────────┐
+│  Frontend (JS)   │
+│  useContextCache │
+└────────┬─────────┘
+         │ POST /context-cache
+         ↓
+┌───────────────────────────────┐
+│  Edge Function context-cache  │
+│  1. Busca user_memory         │
+│  2. Cria cached content       │
+│  3. Retorna cache_name        │
+└────────┬──────────────────────┘
+         │
+         ↓ Generate with cache
+┌─────────────────────────────────┐
+│  Gemini API                     │
+│  config: { cached_content: x }  │
+│  75% desconto em tokens cached  │
+└─────────────────────────────────┘
+```
+
+### Uso no Frontend
+
+```typescript
+import { useContextCache, AICA_COORDINATOR_INSTRUCTION } from '@/hooks/useContextCache'
+
+function MyComponent() {
+  const {
+    getOrCreateCache,
+    getCacheStats,
+    invalidateCache,
+    refreshCache,
+    stats
+  } = useContextCache()
+
+  // Obter ou criar cache
+  const result = await getOrCreateCache({
+    systemInstruction: AICA_COORDINATOR_INSTRUCTION,
+    extraContext: 'Contexto adicional opcional'
+  })
+
+  if (result?.cacheName) {
+    console.log(`Cache criado com ${result.tokenCount} tokens`)
+  }
+
+  // Ver estatisticas
+  await getCacheStats()
+  console.log(`Tokens economizados: ${stats?.totalTokensSaved}`)
+  console.log(`Economia estimada: $${stats?.estimatedCostSavingsUsd}`)
+}
+```
+
+### Uso no Backend (Python ADK)
+
+```python
+from backend.agents.services import get_cache_for_user, get_user_cache_stats
+
+# Obter cache para usuario
+cache_name = await get_cache_for_user(
+    user_id="user-uuid",
+    system_instruction="Your instruction..."
+)
+
+# Usar em generate_content
+if cache_name:
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=user_message,
+        config=types.GenerateContentConfig(cached_content=cache_name)
+    )
+
+# Ver estatisticas
+stats = get_user_cache_stats("user-uuid")
+print(f"Tokens salvos: {stats['total_tokens_saved']}")
+```
+
+### Requisitos
+
+- **Minimo de tokens**: 1024 para Flash, 4096 para Pro
+- **TTL padrao**: 1 hora (configuravel)
+- **Cache invalidado quando**: Perfil do usuario (user_memory) muda
+
+### Edge Function
+
+Deploy da funcao de context caching:
+```bash
+npx supabase functions deploy context-cache
+```
+
+### Monitorando Economia
+
+Via SQL:
+```sql
+-- Ver caches ativos (se persistidos)
+SELECT * FROM ai_usage_analytics
+WHERE operation_type LIKE '%cache%'
+ORDER BY created_at DESC;
+```
+
+Via Hook:
+```typescript
+const { stats } = useContextCache()
+await getCacheStats()
+
+// Metricas disponiveis:
+// - cachedTokens: tokens no cache
+// - totalTokensSaved: tokens economizados
+// - cacheHits: numero de reutilizacoes
+// - savingsPercentage: % de economia
+// - estimatedCostSavingsUsd: economia em dolar
+```
+
+### Referencias
+
+- [Gemini Context Caching](https://ai.google.dev/gemini-api/docs/caching)
+- [Caching API Reference](https://ai.google.dev/api/caching)
+
+---
+
 ## 📚 Referências
 
 - [Gemini API Documentation](https://ai.google.dev/gemini-api/docs)

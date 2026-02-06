@@ -14,13 +14,14 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createNamespacedLogger } from '@/lib/logger'
 import {
-import { createNamespacedLogger } from '@/lib/logger';
-const log = createNamespacedLogger('useContactSearch');
   searchContacts,
   ContactSearchResult,
   ContactSearchOptions,
 } from '@/services/contactSearchService'
+
+const log = createNamespacedLogger('useContactSearch')
 
 // ============================================================================
 // TYPES

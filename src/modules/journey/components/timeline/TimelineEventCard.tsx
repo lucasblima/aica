@@ -224,24 +224,79 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
  * Render expanded content based on event type
  */
 function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
-  // WhatsApp Message
+  // WhatsApp Message with Intent (Issue #91, #185)
   if (isWhatsAppEvent(event)) {
+    const urgencyColors: Record<number, string> = {
+      5: '#ef4444', // Red
+      4: '#f97316', // Orange
+      3: '#eab308', // Yellow
+      2: '#84cc16', // Lime
+      1: '#94a3b8', // Gray
+    }
+    const urgency = event.intent_urgency || 1
+    const urgencyColor = urgencyColors[urgency] || urgencyColors[1]
+
     return (
       <div className="space-y-3">
+        {/* Intent Summary */}
         {event.content && (
           <div>
-            <p className="text-sm font-medium text-[#5C554B] mb-1">Mensagem:</p>
-            <p className="text-sm text-[#5C554B] leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm font-medium text-[#5C554B] mb-1">Resumo:</p>
+            <p className="text-sm text-[#5C554B] leading-relaxed">
               {event.content}
             </p>
           </div>
         )}
 
-        {event.contact_name && (
-          <div className="text-xs text-[#948D82]">
-            Contato: <span className="font-medium">{event.contact_name}</span>
-          </div>
-        )}
+        {/* Intent Metadata */}
+        <div className="flex flex-wrap gap-2">
+          {/* Category */}
+          {event.intent_category && (
+            <span className="ceramic-inset-shallow px-2 py-1 text-xs text-[#5C554B] rounded-full capitalize">
+              {event.intent_category}
+            </span>
+          )}
+
+          {/* Urgency */}
+          {event.intent_urgency && event.intent_urgency > 1 && (
+            <span
+              className="px-2 py-1 text-xs text-white rounded-full"
+              style={{ backgroundColor: urgencyColor }}
+            >
+              Urgência: {event.intent_urgency}/5
+            </span>
+          )}
+
+          {/* Action Required */}
+          {event.intent_action_required && (
+            <span className="px-2 py-1 text-xs text-white bg-blue-500 rounded-full">
+              📋 Ação necessária
+            </span>
+          )}
+
+          {/* Mentioned Date/Time */}
+          {event.intent_mentioned_date && (
+            <span className="ceramic-inset-shallow px-2 py-1 text-xs text-[#5C554B] rounded-full">
+              📅 {event.intent_mentioned_date}
+              {event.intent_mentioned_time && ` às ${event.intent_mentioned_time}`}
+            </span>
+          )}
+        </div>
+
+        {/* Contact & Direction */}
+        <div className="flex flex-wrap gap-3 text-xs text-[#948D82]">
+          {event.contact_name && (
+            <span>
+              Contato: <span className="font-medium text-[#5C554B]">{event.contact_name}</span>
+            </span>
+          )}
+          <span>
+            {event.direction === 'incoming' ? '📥 Recebida' : '📤 Enviada'}
+          </span>
+          {event.processing_status === 'pending' && (
+            <span className="text-amber-600">⏳ Processando intent...</span>
+          )}
+        </div>
       </div>
     )
   }

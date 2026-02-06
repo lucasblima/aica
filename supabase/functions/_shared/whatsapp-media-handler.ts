@@ -7,7 +7,7 @@
  * @module whatsapp-media-handler
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { SupabaseClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm';
 import { createNamespacedLogger } from './logger.ts';
 
 const log = createNamespacedLogger('whatsapp-media-handler');

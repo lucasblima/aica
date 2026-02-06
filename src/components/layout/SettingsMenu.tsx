@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Settings, LogOut, User, DollarSign, FileSearch, Activity, MessageCircle } from 'lucide-react';
+import { Settings, LogOut, DollarSign, FileSearch } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -197,38 +197,6 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                             </div>
                             <span className="font-bold text-sm transition-colors">
                                 File Search Analytics
-                            </span>
-                        </button>
-
-                        {/* WhatsApp Analytics Button - Always visible */}
-                        <button
-                            onClick={() => {
-                                navigate('/connections/analytics/whatsapp');
-                                setIsOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
-                        >
-                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <MessageCircle className="w-4 h-4 text-ceramic-text-secondary group-hover:text-green-600" />
-                            </div>
-                            <span className="font-bold text-sm transition-colors">
-                                WhatsApp Analytics
-                            </span>
-                        </button>
-
-                        {/* WhatsApp Monitoring Button - Admin only */}
-                        <button
-                            onClick={() => {
-                                navigate('/admin/whatsapp-monitoring');
-                                setIsOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
-                        >
-                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Activity className="w-4 h-4 text-ceramic-text-secondary group-hover:text-green-600" />
-                            </div>
-                            <span className="font-bold text-sm transition-colors">
-                                WhatsApp Monitor
                             </span>
                         </button>
 

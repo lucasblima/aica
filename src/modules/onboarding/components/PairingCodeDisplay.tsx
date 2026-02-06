@@ -13,7 +13,7 @@
  * @see PR #120 - WhatsApp Onboarding Flow
  */
 
-import { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Copy, RefreshCw, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { usePairingCode } from '@/hooks/usePairingCode';
@@ -49,24 +49,36 @@ export function PairingCodeDisplay({
     reset,
   } = usePairingCode();
 
-  // Generate code on mount
+  // Generate code on mount - only once when phoneNumber is provided
+  // Using a ref to prevent multiple generations
+  const hasGeneratedRef = React.useRef(false);
+
   useEffect(() => {
-    if (phoneNumber && !code && !isLoading) {
+    // Only generate once per phone number
+    if (phoneNumber && !code && !isLoading && !hasGeneratedRef.current) {
+      hasGeneratedRef.current = true;
       generateCode(phoneNumber).then((result) => {
         if (result?.code) {
           onCodeGenerated?.(result.code);
+        } else {
+          // Reset flag if generation failed so user can retry
+          hasGeneratedRef.current = false;
         }
       });
     }
-  }, [phoneNumber, code, isLoading, generateCode, onCodeGenerated]);
+  }, [phoneNumber]); // Minimal dependencies - only phoneNumber
 
   // Handle regenerate
   const handleRegenerate = useCallback(async () => {
+    hasGeneratedRef.current = false; // Allow regeneration
     reset();
     clearError();
+    hasGeneratedRef.current = true; // Mark as generating
     const result = await generateCode(phoneNumber);
     if (result?.code) {
       onCodeGenerated?.(result.code);
+    } else {
+      hasGeneratedRef.current = false; // Allow retry on failure
     }
   }, [phoneNumber, generateCode, onCodeGenerated, reset, clearError]);
 

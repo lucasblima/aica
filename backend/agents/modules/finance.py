@@ -7,7 +7,11 @@ to access the user's financial data.
 """
 
 from google.adk.agents import LlmAgent
-from ..tools.supabase_tools import get_finance_summary
+from ..tools.supabase_tools import (
+    get_finance_summary,
+    categorize_transaction,
+    create_budget_alert
+)
 
 FINANCE_INSTRUCTION = """Voce e o Aica Finance, assistente financeiro pessoal do Aica Life OS.
 
@@ -43,7 +47,9 @@ FINANCE_INSTRUCTION = """Voce e o Aica Finance, assistente financeiro pessoal do
 4. **Sugestoes**: 2-3 acoes praticas para economizar
 
 ## Ferramentas Disponiveis
-Use get_finance_summary para ver o resumo financeiro do mes atual.
+- **get_finance_summary**: Ver resumo financeiro do mes atual (receitas, despesas, balanco)
+- **categorize_transaction**: Categorizar uma transacao (transaction_id, category, subcategory)
+- **create_budget_alert**: Criar alerta de orcamento para categoria (category, threshold, period)
 """
 
 finance_agent = LlmAgent(
@@ -51,5 +57,5 @@ finance_agent = LlmAgent(
     model="gemini-2.5-flash",
     description="Analise financeira: gastos, orcamento, extrato, economia, despesas e receitas.",
     instruction=FINANCE_INSTRUCTION,
-    tools=[get_finance_summary],
+    tools=[get_finance_summary, categorize_transaction, create_budget_alert],
 )

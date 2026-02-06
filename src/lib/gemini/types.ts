@@ -85,6 +85,12 @@ export type GeminiAction =
   // ADK Multi-Agent (proxied to Cloud Run)
   | 'agent_chat'
 
+  // Context Caching (Task #36)
+  | 'cache_get_or_create'
+  | 'cache_get_stats'
+  | 'cache_invalidate'
+  | 'cache_refresh'
+
 /**
  * Request base para chamadas ao Gemini
  */
@@ -190,4 +196,35 @@ export interface FileSearchStoreInfo {
   store_category: FileSearchCategory;
   display_name: string;
   created_at: string;
+}
+
+/**
+ * Context Cache Types (Task #36)
+ *
+ * Context caching reduces token costs by caching user profile and
+ * system instructions. Provides up to 90% savings on repeated context.
+ */
+
+export interface ContextCacheStats {
+  cacheName: string | null;
+  cachedTokens: number;
+  totalTokensSaved: number;
+  cacheHits: number;
+  createdAt: string | null;
+  expiresAt: string | null;
+  isActive: boolean;
+  savingsPercentage: number;
+  estimatedCostSavingsUsd: number;
+}
+
+export interface ContextCacheResult {
+  cacheName: string | null;
+  fromCache: boolean;
+  tokenCount: number;
+}
+
+export interface ContextCacheOptions {
+  systemInstruction: string;
+  extraContext?: string;
+  ttlSeconds?: number;
 }
