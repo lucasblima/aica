@@ -37,6 +37,10 @@ npx supabase functions serve  # Local Edge Functions
 
 ## DEPLOY - FLUXO VIA TERMINAL
 
+> **REGRA CRITICA:** Agentes Claude **NUNCA** devem executar `gcloud builds submit` ou qualquer comando de deploy automaticamente.
+> Deploy e uma acao **exclusiva do usuario**, feita manualmente apos testes locais (`npm run build && npm run typecheck`).
+> Se o usuario pedir deploy explicitamente, confirme antes de executar.
+
 ### Passo 1: Commit e Push
 ```bash
 git add -A && git commit -m "sua mensagem" && git push origin main
@@ -731,6 +735,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **NEVER** create backup files (.backup, .bak) - Git is the backup
 - **NEVER** call Gemini API client-side - use Edge Functions
 - **NEVER** expose API keys in frontend code
+- **NEVER** run `gcloud builds submit` or any deploy command unless the user explicitly requests it - deploy is manual after local testing
 - **ALWAYS** include RLS policies with new tables
 - **ALWAYS** use `@supabase/ssr` for authentication
 - **ALWAYS** include co-authorship in commits
