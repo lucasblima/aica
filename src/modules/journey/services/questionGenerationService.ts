@@ -633,8 +633,9 @@ export async function checkAndTriggerGenerationIfNeeded(
 
       // Trigger in background (don't await)
       triggerQuestionGeneration({ batchSize: 5 })
-        .catch(() => {
-          // Errors already logged in triggerQuestionGeneration
+        .catch((err) => {
+          // Issue #202: Safety net log in case internal logging also fails
+          log.warn('Background question generation failed:', err?.message || err)
         })
         .finally(() => {
           generationInProgress = false

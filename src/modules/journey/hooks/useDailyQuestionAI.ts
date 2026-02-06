@@ -197,6 +197,9 @@ export function useDailyQuestionAICached() {
   useEffect(() => {
     if (!user?.id || hook.question) return
 
+    // Issue #202: Guard localStorage access for SSR compatibility
+    if (typeof window === 'undefined') return
+
     const cacheKey = `daily_question_${user.id}`
     const cached = localStorage.getItem(cacheKey)
 
@@ -220,6 +223,9 @@ export function useDailyQuestionAICached() {
   // Cache new questions
   useEffect(() => {
     if (!user?.id || !hook.question) return
+
+    // Issue #202: Guard localStorage access for SSR compatibility
+    if (typeof window === 'undefined') return
 
     const cacheKey = `daily_question_${user.id}`
     const cacheData = {
