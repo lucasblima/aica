@@ -2900,3 +2900,308 @@ def get_holistic_user_view(tool_context: ToolContext) -> dict:
 
     except Exception as e:
         return {"status": "error", "message": f"Error getting holistic view: {str(e)}"}
+
+
+# ============================================================================
+# PRIVACY & LGPD COMPLIANCE TOOLS - Task #44
+# ============================================================================
+
+
+def export_my_data(tool_context: ToolContext) -> dict:
+    """Exporta todos os dados do usuario em formato JSON (Direito de Acesso LGPD).
+
+    Este tool implementa o direito de acesso previsto no Artigo 15 da LGPD
+    e o direito a portabilidade previsto no Artigo 18.
+
+    O usuario pode solicitar uma copia completa de todos os seus dados
+    armazenados no sistema, incluindo:
+    - Perfil e preferencias
+    - Memorias do agente (user_memory)
+    - Sessoes de conversa
+    - Tarefas e trabalhos
+    - Momentos e reflexoes
+    - Transacoes financeiras
+    - Projetos de captacao
+    - Contatos e espacos de conexao
+    - Consentimentos registrados
+
+    Returns:
+        dict: {
+            "status": "success",
+            "data": {...},  # Dados completos em formato estruturado
+            "record_counts": {"table": count, ...},
+            "exported_at": "ISO timestamp",
+            "lgpd_article": "15, 18"
+        }
+
+    Security:
+        - Apenas o proprio usuario pode exportar seus dados
+        - A operacao e registrada no audit log
+        - Dados sensiveis sao incluidos apenas se ha consentimento
+
+    Example:
+        result = export_my_data(tool_context)
+        if result["status"] == "success":
+            # Dados disponiveis em result["data"]
+            print(f"Exportados {sum(result['record_counts'].values())} registros")
+    """
+    user_id = _get_user_id(tool_context)
+    if not user_id:
+        return {"status": "error", "message": "User not authenticated"}
+
+    try:
+        from ..privacy import get_data_subject_rights, ExportFormat
+
+        rights = get_data_subject_rights()
+        result = _run_async(rights.export_user_data(user_id, ExportFormat.JSON))
+
+        if result.success:
+            return {
+                "status": "success",
+                "data": result.data,
+                "record_counts": result.record_counts,
+                "exported_at": result.exported_at.isoformat(),
+                "lgpd_article": "15, 18"
+            }
+        else:
+            return {"status": "error", "message": result.error}
+
+    except Exception as e:
+        return {"status": "error", "message": f"Error exporting data: {str(e)}"}
+
+
+def delete_my_data(
+    tool_context: ToolContext,
+    confirmation: str = None
+) -> dict:
+    """Solicita exclusao permanente de todos os dados (Direito ao Esquecimento LGPD).
+
+    ATENCAO: Esta operacao e IRREVERSIVEL. Todos os dados do usuario serao
+    permanentemente removidos do sistema.
+
+    Este tool implementa o direito ao esquecimento previsto no Artigo 17 da LGPD.
+
+    O usuario deve confirmar a exclusao passando confirmation="CONFIRMAR EXCLUSAO".
+
+    Args:
+        confirmation: Deve ser exatamente "CONFIRMAR EXCLUSAO" para prosseguir
+
+    Returns:
+        dict: {
+            "status": "success" | "pending" | "error",
+            "message": str,
+            "records_deleted": {"table": count, ...},  # Se executado
+            "lgpd_article": "17"
+        }
+
+    Security:
+        - Requer confirmacao explicita do usuario
+        - A operacao e registrada no audit log (log e preservado)
+        - Dados de consentimento sao removidos
+        - Logs de auditoria sao preservados por 2 anos (requisito legal)
+
+    Example:
+        # Primeiro, usuario pede para deletar:
+        result = delete_my_data(tool_context)
+        # {"status": "pending", "message": "Para confirmar, chame novamente com confirmation='CONFIRMAR EXCLUSAO'"}
+
+        # Depois, confirma:
+        result = delete_my_data(tool_context, confirmation="CONFIRMAR EXCLUSAO")
+        # {"status": "success", "records_deleted": {...}}
+    """
+    user_id = _get_user_id(tool_context)
+    if not user_id:
+        return {"status": "error", "message": "User not authenticated"}
+
+    # Require explicit confirmation
+    if confirmation != "CONFIRMAR EXCLUSAO":
+        return {
+            "status": "pending",
+            "message": "Para confirmar a exclusao permanente de todos os seus dados, "
+                       "chame novamente com confirmation='CONFIRMAR EXCLUSAO'. "
+                       "ATENCAO: Esta acao e irreversivel.",
+            "lgpd_article": "17"
+        }
+
+    try:
+        from ..privacy import get_data_subject_rights
+
+        rights = get_data_subject_rights()
+        result = _run_async(rights.delete_user_data(
+            user_id=user_id,
+            reason="user_request",
+            preserve_audit_logs=True
+        ))
+
+        if result.success:
+            return {
+                "status": "success",
+                "message": "Todos os seus dados foram permanentemente removidos.",
+                "records_deleted": result.records_deleted,
+                "deleted_at": result.deleted_at.isoformat(),
+                "lgpd_article": "17"
+            }
+        else:
+            return {"status": "error", "message": result.error}
+
+    except Exception as e:
+        return {"status": "error", "message": f"Error deleting data: {str(e)}"}
+
+
+def manage_consent(
+    tool_context: ToolContext,
+    action: str,
+    purposes: list = None
+) -> dict:
+    """Gerencia consentimentos de processamento de dados (LGPD Art. 8).
+
+    Este tool permite ao usuario:
+    - Visualizar status atual de consentimentos
+    - Conceder consentimento para propositos especificos
+    - Revogar consentimento a qualquer momento
+
+    Args:
+        action: Acao a executar:
+            - "status": Mostra status de todos os consentimentos
+            - "grant": Concede consentimento para os propositos listados
+            - "revoke": Revoga consentimento para os propositos listados
+        purposes: Lista de propositos (necessario para grant/revoke):
+            - "data_collection": Coleta basica de dados
+            - "ai_processing": Processamento por agentes IA
+            - "analytics": Analytics de uso
+            - "personalization": Personalizacao de experiencia
+            - "notifications": Notificacoes push/email
+            - "sentiment_analysis": Analise de sentimentos
+
+    Returns:
+        dict: {
+            "status": "success",
+            "consents": {...},  # Para action="status"
+            "message": str,
+            "lgpd_article": "8"
+        }
+
+    Examples:
+        # Ver status
+        manage_consent(tool_context, action="status")
+
+        # Conceder consentimento
+        manage_consent(tool_context, action="grant",
+                       purposes=["ai_processing", "personalization"])
+
+        # Revogar consentimento
+        manage_consent(tool_context, action="revoke",
+                       purposes=["analytics"])
+    """
+    user_id = _get_user_id(tool_context)
+    if not user_id:
+        return {"status": "error", "message": "User not authenticated"}
+
+    valid_actions = ["status", "grant", "revoke"]
+    if action not in valid_actions:
+        return {"status": "error", "message": f"Invalid action. Valid: {valid_actions}"}
+
+    valid_purposes = [
+        "data_collection", "ai_processing", "analytics",
+        "personalization", "notifications", "sentiment_analysis"
+    ]
+
+    try:
+        from ..privacy import get_consent_manager
+
+        consent_mgr = get_consent_manager()
+
+        if action == "status":
+            summary = _run_async(consent_mgr.get_consent_status_summary(user_id))
+            return {
+                "status": "success",
+                "consents": summary.get("consents", {}),
+                "policy_version": summary.get("policy_version"),
+                "last_updated": summary.get("last_updated"),
+                "lgpd_article": "8"
+            }
+
+        elif action == "grant":
+            if not purposes:
+                return {"status": "error", "message": "purposes required for grant action"}
+
+            # Validate purposes
+            invalid = [p for p in purposes if p not in valid_purposes]
+            if invalid:
+                return {"status": "error", "message": f"Invalid purposes: {invalid}. Valid: {valid_purposes}"}
+
+            success = _run_async(consent_mgr.grant_consent(
+                user_id=user_id,
+                purposes=purposes,
+                consent_method="api"
+            ))
+
+            return {
+                "status": "success" if success else "error",
+                "message": f"Consentimento concedido para: {', '.join(purposes)}" if success else "Falha ao registrar consentimento",
+                "purposes_granted": purposes,
+                "lgpd_article": "8"
+            }
+
+        elif action == "revoke":
+            if not purposes:
+                return {"status": "error", "message": "purposes required for revoke action"}
+
+            success = _run_async(consent_mgr.revoke_consent(
+                user_id=user_id,
+                purposes=purposes
+            ))
+
+            return {
+                "status": "success" if success else "error",
+                "message": f"Consentimento revogado para: {', '.join(purposes)}" if success else "Falha ao revogar consentimento",
+                "purposes_revoked": purposes,
+                "lgpd_article": "8"
+            }
+
+    except Exception as e:
+        return {"status": "error", "message": f"Error managing consent: {str(e)}"}
+
+
+def get_my_data_categories(tool_context: ToolContext) -> dict:
+    """Lista categorias de dados armazenados sobre o usuario.
+
+    Util para transparencia e para entender que tipos de dados
+    estao sendo mantidos antes de solicitar exportacao ou exclusao.
+
+    Returns:
+        dict: {
+            "status": "success",
+            "categories": {
+                "agent": {"tables": [...], "total_records": int},
+                "memory": {"tables": [...], "total_records": int},
+                ...
+            },
+            "total_records": int
+        }
+
+    Example:
+        result = get_my_data_categories(tool_context)
+        for category, info in result["categories"].items():
+            print(f"{category}: {info['total_records']} registros")
+    """
+    user_id = _get_user_id(tool_context)
+    if not user_id:
+        return {"status": "error", "message": "User not authenticated"}
+
+    try:
+        from ..privacy import get_data_subject_rights
+
+        rights = get_data_subject_rights()
+        categories = _run_async(rights.get_data_categories(user_id))
+
+        total = sum(c.get("total_records", 0) for c in categories.values())
+
+        return {
+            "status": "success",
+            "categories": categories,
+            "total_records": total
+        }
+
+    except Exception as e:
+        return {"status": "error", "message": f"Error getting data categories: {str(e)}"}
