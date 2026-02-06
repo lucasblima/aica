@@ -18,7 +18,7 @@ import { supabase } from '../services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('AgendaView');
-import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, GamificationWidget } from '../components';
+import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
 import { Task, Quadrant } from '../../types';
 // REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
@@ -28,7 +28,8 @@ import { Task, Quadrant } from '../../types';
 // import { ProjectList } from '../modules/atlas/components/ProjectList';
 // import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
-import { useTourAutoStart } from '../hooks/useTourAutoStart';
+// TODO: Re-enable onboarding tour after app functionality is stable
+// import { useTourAutoStart } from '../hooks/useTourAutoStart';
 import { TimelineEvent } from '../services/googleCalendarService';
 import { disconnectGoogleCalendar } from '../services/googleAuthService';
 import { notificationService } from '../services/notificationService';
@@ -40,8 +41,8 @@ interface AgendaViewProps {
 }
 
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
-    // Auto-start tour on first visit
-    useTourAutoStart('atlas-first-visit');
+    // TODO: Re-enable onboarding tour after app functionality is stable
+    // useTourAutoStart('atlas-first-visit');
 
     const [matrixTasks, setMatrixTasks] = useState<Record<Quadrant, Task[]>>({
         'urgent-important': [],
@@ -723,11 +724,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* XP and Level Display - Phase 3 Organic Onboarding */}
-                    <div data-tour="xp-badge">
-                        <GamificationWidget userId={userId} compact={true} />
-                    </div>
-
                     {/* Status minimalista do Calendar */}
                     <CalendarStatusDot
                         isConnected={isCalendarConnected}
