@@ -84,8 +84,11 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
   }, [fetchSession])
 
   // Set up real-time subscription
+  // Issue #196: Use ref + cancelled flag to handle React Strict Mode cleanup race
+  const channelRef = useRef<RealtimeChannel | null>(null)
+
   useEffect(() => {
-    let channel: RealtimeChannel | null = null
+    let cancelled = false
 
     const setupSubscription = async () => {
       try {
@@ -96,9 +99,12 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
           return
         }
 
+        // If cleanup already ran while we were awaiting, don't subscribe
+        if (cancelled) return
+
         log.debug('[useWhatsAppSessionSubscription] Setting up subscription for user:', user.id)
 
-        channel = supabase
+        const channel = supabase
           .channel(`whatsapp_sessions_${user.id}`)
           .on(
             'postgres_changes',
@@ -121,6 +127,15 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
           .subscribe((status) => {
             log.debug('[useWhatsAppSessionSubscription] Subscription status:', status)
           })
+
+        // Store in ref so cleanup always has the latest channel
+        channelRef.current = channel
+
+        // If cleanup ran while we were subscribing, remove immediately
+        if (cancelled) {
+          supabase.removeChannel(channel)
+          channelRef.current = null
+        }
       } catch (err) {
         log.error('[useWhatsAppSessionSubscription] Subscription setup error:', err)
       }
@@ -129,9 +144,11 @@ export function useWhatsAppSessionSubscription(): UseWhatsAppSessionSubscription
     setupSubscription()
 
     return () => {
-      if (channel) {
+      cancelled = true
+      if (channelRef.current) {
         log.debug('[useWhatsAppSessionSubscription] Cleaning up subscription')
-        supabase.removeChannel(channel)
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
       }
     }
   }, [])
