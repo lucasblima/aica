@@ -49,35 +49,35 @@ export function PairingCodeDisplay({
     reset,
   } = usePairingCode();
 
-  // Generate code on mount - only once when phoneNumber is provided
-  // Using a ref to prevent multiple generations
-  const hasGeneratedRef = React.useRef(false);
+  // Generate code on mount - only once per phone number
+  // Issue #195: Use state-based guard instead of ref to survive React Strict Mode remounts
+  const [hasAttempted, setHasAttempted] = React.useState(false);
 
   useEffect(() => {
     // Only generate once per phone number, and require a valid phone (country code + at least 10 digits)
     const phoneDigits = phoneNumber?.replace(/\D/g, '') || '';
-    if (phoneDigits.length >= 12 && !code && !isLoading && !hasGeneratedRef.current) {
-      hasGeneratedRef.current = true;
+    if (phoneDigits.length >= 12 && !code && !isLoading && !error && !hasAttempted) {
+      setHasAttempted(true);
       generateCode(phoneNumber).then((result) => {
         if (result?.code) {
           onCodeGenerated?.(result.code);
         }
-        // Do NOT reset hasGeneratedRef on failure - user must click "Tentar novamente"
+        // Do NOT reset hasAttempted on failure - user must click "Tentar novamente"
       });
     }
   }, [phoneNumber]); // Minimal dependencies - only phoneNumber
 
   // Handle regenerate
   const handleRegenerate = useCallback(async () => {
-    hasGeneratedRef.current = false; // Allow regeneration
+    setHasAttempted(false);
     reset();
     clearError();
-    hasGeneratedRef.current = true; // Mark as generating
+    setHasAttempted(true);
     const result = await generateCode(phoneNumber);
     if (result?.code) {
       onCodeGenerated?.(result.code);
     } else {
-      hasGeneratedRef.current = false; // Allow retry on failure
+      // Keep hasAttempted true - user must click "Tentar novamente" again
     }
   }, [phoneNumber, generateCode, onCodeGenerated, reset, clearError]);
 
