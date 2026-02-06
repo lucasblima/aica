@@ -1,0 +1,330 @@
+/**
+ * AicaChatFAB Styles
+ * Floating Action Button with slide-up drawer for Aica Chat
+ */
+
+/* ============================================================================
+   FAB BUTTON
+   ============================================================================ */
+
+.aica-fab-button {
+  position: fixed;
+  bottom: calc(var(--fab-bottom-offset, 80px) + 16px);
+  right: 16px;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 56px;
+  height: 56px;
+  padding: 0;
+
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 50%;
+  box-shadow:
+    0 4px 12px rgba(245, 158, 11, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+
+  color: white;
+  cursor: pointer;
+
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aica-fab-button:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 6px 16px rgba(245, 158, 11, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.aica-fab-button:active {
+  transform: scale(0.95);
+}
+
+.aica-fab-button--left {
+  right: auto;
+  left: 16px;
+}
+
+.aica-fab-button--hidden {
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.aica-fab-button__minimized {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.aica-fab-button__minimized span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Expand button when minimized */
+.aica-fab-button:has(.aica-fab-button__minimized) {
+  width: auto;
+  border-radius: 28px;
+  padding: 0 20px;
+}
+
+/* ============================================================================
+   BACKDROP
+   ============================================================================ */
+
+.aica-fab-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   DRAWER
+   ============================================================================ */
+
+.aica-fab-drawer {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  z-index: 1002;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  max-width: 420px;
+  height: 70vh;
+  max-height: 600px;
+
+  background: #faf8f5;
+  border-radius: 20px 20px 0 0;
+  box-shadow:
+    0 -4px 24px rgba(0, 0, 0, 0.15),
+    0 -1px 4px rgba(0, 0, 0, 0.05);
+
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aica-fab-drawer--open {
+  transform: translateY(0);
+}
+
+.aica-fab-drawer--minimized {
+  transform: translateY(calc(100% - 56px));
+  height: 56px;
+  border-radius: 20px 20px 0 0;
+}
+
+.aica-fab-drawer--left {
+  right: auto;
+  left: 0;
+}
+
+/* Desktop: position as side panel */
+@media (min-width: 768px) {
+  .aica-fab-drawer {
+    /* Use fixed value: bottomOffset (80px) + margin (16px) = 96px */
+    bottom: 96px;
+    right: 16px;
+    width: 380px;
+    height: 520px;
+    max-height: calc(100vh - 112px); /* 96px bottom + 16px top margin */
+    min-height: 400px;
+    border-radius: 16px;
+    transform: translateX(calc(100% + 32px)); /* Start off-screen to right */
+  }
+
+  .aica-fab-drawer--open {
+    transform: translateX(0);
+  }
+
+  .aica-fab-drawer--left {
+    right: auto;
+    left: 16px;
+    transform: translateX(calc(-100% - 32px)); /* Start off-screen to left */
+  }
+
+  .aica-fab-drawer--left.aica-fab-drawer--open {
+    transform: translateX(0);
+  }
+
+  .aica-fab-drawer--minimized {
+    transform: translateX(0);
+    height: 56px;
+    max-height: 56px;
+    min-height: 56px;
+  }
+
+  .aica-fab-drawer--left.aica-fab-drawer--minimized {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================================================
+   DRAWER HEADER
+   ============================================================================ */
+
+.aica-fab-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 12px 16px;
+
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 20px 20px 0 0;
+  color: white;
+}
+
+@media (min-width: 768px) {
+  .aica-fab-drawer__header {
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+.aica-fab-drawer__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aica-fab-drawer__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+}
+
+.aica-fab-drawer__title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.aica-fab-drawer__title span {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.aica-fab-drawer__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aica-fab-drawer__action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 32px;
+  height: 32px;
+  padding: 0;
+
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 8px;
+
+  color: white;
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.aica-fab-drawer__action-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================================================
+   DRAWER CONTENT
+   ============================================================================ */
+
+.aica-fab-drawer__content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Override AicaChat styles when inside FAB */
+.aica-fab-chat {
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.aica-fab-chat .aica-chat__messages {
+  flex: 1;
+  padding: 16px;
+}
+
+.aica-fab-chat .aica-chat__input-container {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: white;
+}
+
+/* Hide minimized drawer content */
+.aica-fab-drawer--minimized .aica-fab-drawer__content {
+  display: none;
+}
+
+.aica-fab-drawer--minimized .aica-fab-drawer__header {
+  border-radius: 20px 20px 0 0;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .aica-fab-drawer--minimized .aica-fab-drawer__header {
+    border-radius: 16px;
+  }
+}
+
+/* ============================================================================
+   DARK MODE
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  .aica-fab-drawer {
+    background: #1a1a1a;
+  }
+
+  .aica-fab-drawer__header {
+    background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  }
+
+  .aica-fab-chat .aica-chat__input-container {
+    background: #262626;
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+}
