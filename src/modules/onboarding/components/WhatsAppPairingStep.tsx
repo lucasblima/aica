@@ -62,20 +62,20 @@ export function WhatsAppPairingStep({
     // Mark as checked to prevent re-running
     hasCheckedSessionRef.current = true;
 
-    // If there's an existing session in connecting/pairing state, skip to pairing
+    // If there's an existing session in connecting state WITH a phone number, skip to pairing
     if (session && (session.status === 'connecting' || session.status === 'pending')) {
       log.debug('Found existing session in connecting state:', session.instance_name);
       setInstanceName(session.instance_name);
-      // Extract phone from session if available
-      if (session.phone_number) {
+      // Only skip to pairing if we have a valid phone number
+      if (session.phone_number && session.phone_number.replace(/\D/g, '').length >= 10) {
         const phone = session.phone_number.replace(/^55/, '');
         setPhoneNumber(phone);
-        // Format for display
         if (phone.length >= 10) {
           setFormattedPhone(`(${phone.slice(0, 2)}) ${phone.slice(2, 7)}-${phone.slice(7, 11)}`);
         }
+        setState('pairing');
       }
-      setState('pairing');
+      // If no phone number, stay on 'input' state so user can enter it
     }
   }, [session]);
 
