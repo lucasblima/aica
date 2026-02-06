@@ -1,0 +1,290 @@
+/**
+ * TokenMeter Styles
+ * Issue #132: AICA Billing, Rate Limiting & Unified Chat System
+ */
+
+/* ============================================================================
+   BASE
+   ============================================================================ */
+
+.token-meter {
+  font-family: inherit;
+}
+
+.token-meter--loading {
+  opacity: 0.5;
+}
+
+.token-meter__skeleton {
+  height: 100px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================================================
+   MINI VARIANT
+   ============================================================================ */
+
+.token-meter--mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.token-meter__mini-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--color-bg-tertiary, #e5e7eb);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.token-meter__mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+  transition: width 0.3s ease;
+}
+
+.token-meter__mini-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+/* ============================================================================
+   COMPACT VARIANT
+   ============================================================================ */
+
+.token-meter--compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg-secondary, #f9fafb);
+  border-radius: 8px;
+}
+
+.token-meter__compact-tiers {
+  display: flex;
+  gap: 8px;
+}
+
+.token-meter__compact-tier {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.token-meter__compact-icon {
+  font-size: 12px;
+}
+
+.token-meter__compact-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--color-bg-tertiary, #e5e7eb);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.token-meter__compact-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.token-meter__compact-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.token-meter__compact-time,
+.token-meter__compact-credits {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.token-meter__compact-credits {
+  color: var(--color-success, #10b981);
+}
+
+/* ============================================================================
+   FULL VARIANT
+   ============================================================================ */
+
+.token-meter--full {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-bg-primary, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+}
+
+.token-meter__warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-warning-bg, #fef3c7);
+  color: var(--color-warning-text, #92400e);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.token-meter__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.token-meter__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+}
+
+.token-meter__countdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.token-meter__tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.token-meter__tier {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.token-meter__tier--exhausted {
+  opacity: 0.5;
+}
+
+.token-meter__tier-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.token-meter__tier-icon {
+  font-size: 14px;
+}
+
+.token-meter__tier-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary, #111827);
+}
+
+.token-meter__tier-remaining {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.token-meter__tier-bar {
+  height: 8px;
+  background: var(--color-bg-tertiary, #e5e7eb);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.token-meter__tier-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.token-meter__tier-footer {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.token-meter__credits {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--color-success-bg, #d1fae5);
+  border-radius: 8px;
+}
+
+.token-meter__credits-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-success, #059669);
+}
+
+.token-meter__credits-info > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.token-meter__credits-label {
+  font-size: 11px;
+  color: var(--color-success-text, #065f46);
+}
+
+.token-meter__credits-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-success, #059669);
+}
+
+.token-meter__credits-hint {
+  font-size: 10px;
+  color: var(--color-success-text, #065f46);
+  opacity: 0.8;
+}
+
+/* ============================================================================
+   DARK MODE
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  .token-meter--full {
+    --color-bg-primary: #1f2937;
+    --color-bg-secondary: #111827;
+    --color-bg-tertiary: #374151;
+    --color-border: #374151;
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-tertiary: #9ca3af;
+    --color-success-bg: #064e3b;
+    --color-success-text: #a7f3d0;
+    --color-warning-bg: #78350f;
+    --color-warning-text: #fde68a;
+  }
+}
