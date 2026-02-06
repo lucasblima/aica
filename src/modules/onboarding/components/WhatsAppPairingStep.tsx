@@ -10,7 +10,7 @@
  * @see PR #120 - WhatsApp Onboarding Flow
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
@@ -48,9 +48,14 @@ export function WhatsAppPairingStep({
   // Subscribe to session changes for automatic connection detection
   const { session, isConnected, status: sessionStatus, isLoading: isLoadingSession } = useWhatsAppSessionSubscription();
 
-  // Check for existing session on mount
+  // Check for existing session on mount - only run once
+  const hasCheckedSessionRef = useRef(false);
+
   useEffect(() => {
-    if (isLoadingSession) return;
+    if (isLoadingSession || hasCheckedSessionRef.current) return;
+
+    // Mark as checked to prevent re-running
+    hasCheckedSessionRef.current = true;
 
     // If there's an existing session in connecting/pairing state, skip to pairing
     if (session && (session.status === 'connecting' || session.status === 'pairing')) {
