@@ -3,70 +3,16 @@
  * Displays recent contacts in a horizontal scroll widget on Home page
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Users, User } from 'lucide-react';
+import { ChevronRight, Users } from 'lucide-react';
 import type { ContactNetwork } from '../types/memoryTypes';
 import { getUserContacts } from '../services/contactNetworkService';
 import { useAuth } from '../hooks/useAuth';
+import { ContactAvatar } from '@/components/ui';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('RecentContactsWidget');
-
-// Color palette for avatar backgrounds based on name
-const AVATAR_COLORS = [
-  '#3B82F6', // blue
-  '#10B981', // emerald
-  '#8B5CF6', // violet
-  '#F59E0B', // amber
-  '#EF4444', // red
-  '#EC4899', // pink
-  '#06B6D4', // cyan
-  '#84CC16', // lime
-];
-
-function getAvatarColor(name: string): string {
-  const index = name.charCodeAt(0) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[index];
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(' ').filter(Boolean);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
-
-// Contact Avatar with fallback to initials
-function ContactAvatar({ contact }: { contact: ContactNetwork }) {
-  const [imageError, setImageError] = useState(false);
-  const avatarUrl = contact.avatar_url || contact.whatsapp_profile_pic_url;
-  const showImage = avatarUrl && !imageError;
-
-  const initials = useMemo(() => getInitials(contact.name), [contact.name]);
-  const bgColor = useMemo(() => getAvatarColor(contact.name), [contact.name]);
-
-  if (showImage) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={contact.name}
-        className="w-14 h-14 rounded-full object-cover"
-        onError={() => setImageError(true)}
-      />
-    );
-  }
-
-  return (
-    <div
-      className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm"
-      style={{ backgroundColor: bgColor }}
-    >
-      {initials}
-    </div>
-  );
-}
 
 interface RecentContactsWidgetProps {
   onViewAllClick?: () => void;
@@ -187,7 +133,12 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
               {/* Avatar with health score badge */}
               <div className="relative">
                 <div className="ceramic-inset rounded-full p-0.5 group-hover:scale-110 transition-transform">
-                  <ContactAvatar contact={contact} />
+                  <ContactAvatar
+                    name={contact.name}
+                    whatsappProfilePicUrl={contact.whatsapp_profile_pic_url}
+                    avatarUrl={contact.avatar_url}
+                    size="lg"
+                  />
                 </div>
                 {/* Health score badge */}
                 {contact.health_score != null && (

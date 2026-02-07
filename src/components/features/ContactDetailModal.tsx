@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import type { ContactNetwork } from '../../types/memoryTypes';
 import { ProcessWithAicaButton } from './ProcessWithAicaButton';
+import { ContactAvatar } from '@/components/ui';
 
 interface ContactDetailModalProps {
   contact: ContactNetwork;
@@ -61,20 +62,13 @@ export function ContactDetailModal({
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
               <div className="flex items-center gap-4">
-                {(contact.avatar_url || contact.whatsapp_profile_pic_url) ? (
-                  <img
-                    src={contact.avatar_url || contact.whatsapp_profile_pic_url || ''}
-                    alt={contact.name}
-                    className="w-16 h-16 rounded-full ceramic-inset object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <div className={`w-16 h-16 rounded-full ceramic-inset flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 text-white font-bold text-xl ${(contact.avatar_url || contact.whatsapp_profile_pic_url) ? 'hidden' : ''}`}>
-                  {contact.name?.charAt(0)?.toUpperCase() || '?'}
-                </div>
+                <ContactAvatar
+                  name={contact.name}
+                  whatsappProfilePicUrl={contact.whatsapp_profile_pic_url}
+                  avatarUrl={contact.avatar_url}
+                  size="xl"
+                  className="ceramic-inset"
+                />
                 <div>
                   <h2 className="text-2xl font-bold text-ceramic-text-primary">
                     {contact.name}
