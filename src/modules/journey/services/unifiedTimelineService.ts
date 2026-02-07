@@ -130,7 +130,7 @@ function enrichEventWithDisplayData(event: UnifiedEvent): UnifiedEvent {
       displayData = {
         icon: moment.emotion || '📝',
         title: moment.title || 'Momento',
-        label: moment.has_audio ? 'Momento de áudio' : 'Momento',
+        label: 'Momento',
         color: '#C4A574',
         preview: moment.content.slice(0, 120) + (moment.content.length > 120 ? '...' : ''),
       }
@@ -369,7 +369,6 @@ async function fetchMomentEvents(
         : moment.sentiment_data?.sentiment === 'very_negative' || moment.sentiment_data?.sentiment === 'negative'
         ? 'negative'
         : moment.sentiment_data ? 'neutral' : undefined,
-      has_audio: !!moment.audio_url,
       displayData: { icon: '', title: '', label: '', color: '', preview: '' }, // Placeholder
     }))
 

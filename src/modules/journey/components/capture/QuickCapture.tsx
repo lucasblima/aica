@@ -17,21 +17,17 @@ const log = createNamespacedLogger('QuickCapture');
 import {
   SparklesIcon,
   LightBulbIcon,
-  MicrophoneIcon,
   TagIcon,
 } from '@heroicons/react/24/solid';
 import { CreateMomentInput } from '../../types/moment';
 import { analyzeContentRealtime } from '../../services/aiAnalysisService';
-import { AudioRecorder } from './AudioRecorder';
 import { TagInput } from './TagInput';
 
 interface QuickCaptureProps {
   onSubmit: (moment: CreateMomentInput) => Promise<void>;
   onCancel?: () => void;
-  /** Initial content to pre-populate (e.g., from voice recording) */
+  /** Initial content to pre-populate */
   initialContent?: string;
-  /** Whether content is from audio transcription */
-  isFromAudio?: boolean;
 }
 
 interface AISuggestion {
@@ -44,7 +40,6 @@ export function QuickCapture({
   onSubmit,
   onCancel,
   initialContent = '',
-  isFromAudio = false,
 }: QuickCaptureProps) {
   const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,13 +48,12 @@ export function QuickCapture({
 
   // Advanced features (collapsed by default)
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [tags, setTags] = useState<string[]>([]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update content when initialContent changes (e.g., from voice recording)
+  // Update content when initialContent changes
   useEffect(() => {
     if (initialContent && initialContent !== content) {
       setContent(initialContent);
@@ -115,15 +109,13 @@ export function QuickCapture({
       setIsSubmitting(true);
 
       await onSubmit({
-        type: audioBlob ? 'both' : 'text',
+        type: 'text',
         content: content.trim(),
-        audio_blob: audioBlob || undefined,
         tags,
       });
 
       // Reset form
       setContent('');
-      setAudioBlob(null);
       setTags([]);
       setShowAdvanced(false);
       setAiSuggestion(null);
@@ -153,14 +145,10 @@ export function QuickCapture({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="ceramic-concave p-2 rounded-lg">
-            {isFromAudio ? (
-              <MicrophoneIcon className="h-5 w-5 text-amber-600" />
-            ) : (
-              <SparklesIcon className="h-5 w-5 text-purple-500" />
-            )}
+            <SparklesIcon className="h-5 w-5 text-purple-500" />
           </div>
           <h3 className="text-lg font-bold text-ceramic-text-primary">
-            {isFromAudio ? '🎙️ Transcrição de Áudio' : '💭 O que está te movendo agora?'}
+            {'💭 O que está te movendo agora?'}
           </h3>
         </div>
         {isAnalyzing && (
@@ -229,9 +217,8 @@ export function QuickCapture({
             </>
           ) : (
             <>
-              <MicrophoneIcon className="w-4 h-4" />
               <TagIcon className="w-4 h-4" />
-              <span>+ Adicionar áudio/tags</span>
+              <span>+ Adicionar tags</span>
             </>
           )}
         </button>
@@ -276,23 +263,6 @@ export function QuickCapture({
             transition={{ duration: 0.2 }}
             className="space-y-4 pt-4 border-t border-ceramic-text-secondary/10"
           >
-            {/* Audio Recorder */}
-            <div>
-              <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
-                <MicrophoneIcon className="w-4 h-4 inline mr-1" />
-                Áudio (opcional)
-              </label>
-              <AudioRecorder
-                onRecordingComplete={(blob) => setAudioBlob(blob)}
-                maxDuration={180}
-              />
-              {audioBlob && (
-                <p className="mt-2 text-sm text-green-600 dark:text-green-400">
-                  ✓ Áudio gravado ({(audioBlob.size / 1024).toFixed(0)} KB)
-                </p>
-              )}
-            </div>
-
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-ceramic-text-primary mb-2">

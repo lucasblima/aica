@@ -1,6 +1,6 @@
 /**
  * MomentCapture Component
- * Main container for capturing moments (audio, text, emotion)
+ * Main container for capturing moments (text + emotion)
  */
 
 import React, { useState } from 'react'
@@ -8,9 +8,8 @@ import { createNamespacedLogger } from '@/lib/logger'
 import { EmotionPicker } from './EmotionPicker'
 
 const log = createNamespacedLogger('MomentCapture')
-import { AudioRecorder } from './AudioRecorder'
 import { TagInput } from './TagInput'
-import { MomentType, EmotionValue, CreateMomentInput } from '../../types/moment'
+import { EmotionValue, CreateMomentInput } from '../../types/moment'
 import { SparklesIcon } from '@heroicons/react/24/solid'
 
 interface MomentCaptureProps {
@@ -19,9 +18,7 @@ interface MomentCaptureProps {
 }
 
 export function MomentCapture({ onSubmit, onCancel }: MomentCaptureProps) {
-  const [type, setType] = useState<MomentType>('text')
   const [content, setContent] = useState('')
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [emotion, setEmotion] = useState<EmotionValue | undefined>()
   const [tags, setTags] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -29,18 +26,8 @@ export function MomentCapture({ onSubmit, onCancel }: MomentCaptureProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (type === 'text' && !content.trim()) {
+    if (!content.trim()) {
       alert('Digite seu momento antes de salvar')
-      return
-    }
-
-    if (type === 'audio' && !audioBlob) {
-      alert('Grave um áudio antes de salvar')
-      return
-    }
-
-    if (type === 'both' && (!content.trim() || !audioBlob)) {
-      alert('Preencha o texto e grave o áudio')
       return
     }
 
@@ -48,16 +35,14 @@ export function MomentCapture({ onSubmit, onCancel }: MomentCaptureProps) {
       setIsSubmitting(true)
 
       await onSubmit({
-        type,
-        content: content.trim() || undefined,
-        audio_blob: audioBlob || undefined,
+        type: 'text',
+        content: content.trim(),
         emotion,
         tags,
       })
 
       // Reset form
       setContent('')
-      setAudioBlob(null)
       setEmotion(undefined)
       setTags([])
     } catch (error) {
@@ -76,77 +61,20 @@ export function MomentCapture({ onSubmit, onCancel }: MomentCaptureProps) {
         <h3 className="text-xl font-semibold text-gray-900">Registrar Momento</h3>
       </div>
 
-      {/* Type selector */}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setType('text')}
-          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-            type === 'text'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Texto
-        </button>
-        <button
-          type="button"
-          onClick={() => setType('audio')}
-          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-            type === 'audio'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Áudio
-        </button>
-        <button
-          type="button"
-          onClick={() => setType('both')}
-          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
-            type === 'both'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Ambos
-        </button>
-      </div>
-
       {/* Text input */}
-      {(type === 'text' || type === 'both') && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            O que você está vivenciando?
-          </label>
-          <textarea
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            placeholder="Escreva seu momento, pensamento, ou reflexão..."
-            rows={6}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-          />
-          <p className="mt-1 text-sm text-gray-500">{content.length} caracteres</p>
-        </div>
-      )}
-
-      {/* Audio recorder */}
-      {(type === 'audio' || type === 'both') && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Grave seu momento
-          </label>
-          <AudioRecorder
-            onRecordingComplete={blob => setAudioBlob(blob)}
-            maxDuration={180}
-          />
-          {audioBlob && (
-            <p className="mt-2 text-sm text-green-600">
-              ✓ Áudio gravado ({(audioBlob.size / 1024).toFixed(0)} KB)
-            </p>
-          )}
-        </div>
-      )}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          O que você está vivenciando?
+        </label>
+        <textarea
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          placeholder="Escreva seu momento, pensamento, ou reflexão..."
+          rows={6}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+        />
+        <p className="mt-1 text-sm text-gray-500">{content.length} caracteres</p>
+      </div>
 
       {/* Emotion picker */}
       <div>

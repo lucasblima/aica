@@ -23,7 +23,6 @@ export type MomentCategory = 'reflection' | 'milestone' | 'challenge' | 'learnin
 export interface CreateMomentEntryInput {
   userId: string
   content?: string // Text optional
-  audioFile?: Blob // Audio optional
   emotionSelected: string // Required: emotion value
   emotionIntensity: number // Required: 1-10 scale
   lifeAreas: LifeArea[] // Required: affected areas
@@ -40,8 +39,6 @@ export interface ProcessedMomentData {
   user_id: string
   type: MomentType
   content?: string
-  audio_url?: string
-  audio_transcribed_at?: string
   emotion_selected: string
   emotion_intensity: number
   sentiment_score?: number
@@ -89,19 +86,6 @@ export interface SentimentAnalysisResult {
   confidence: number // 0-1
   keywords: string[] // Detected keywords
   generatedAt: Date
-}
-
-/**
- * Audio transcription result
- */
-export interface TranscriptionResult {
-  text: string
-  duration: number // in seconds
-  language?: string
-  confidence: number // 0-1
-  success: boolean
-  error?: string
-  transcribedAt: Date
 }
 
 /**
@@ -167,7 +151,7 @@ export const SENTIMENT_COLORS: Record<string, string> = {
  * Error logging context
  */
 export interface ErrorContext {
-  operation: 'validation' | 'audio_upload' | 'transcription' | 'sentiment_analysis' | 'tagging' | 'db_insert' | 'cp_award' | 'streak_update'
+  operation: 'validation' | 'sentiment_analysis' | 'tagging' | 'db_insert' | 'cp_award' | 'streak_update'
   userId: string
   momentId?: string
   error: Error
@@ -180,7 +164,7 @@ export interface ErrorContext {
 export interface ProcessingQueueItem {
   momentId: string
   userId: string
-  operation: 'transcribe' | 'analyze_sentiment' | 'generate_tags'
+  operation: 'analyze_sentiment' | 'generate_tags'
   status: 'pending' | 'processing' | 'completed' | 'failed'
   retryCount: number
   maxRetries: number

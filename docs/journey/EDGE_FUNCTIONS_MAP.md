@@ -405,7 +405,6 @@ Cite momentos especificos quando relevante.
 | `hooks/useWeeklySummary.ts` | Summary fetch + generation |
 | `hooks/useJourneyFileSearch.ts` | File Search V1 (corpus) |
 | `hooks/useJourneyFileSearchV2.ts` | File Search V2 (managed RAG) |
-| `hooks/useAudioRecording.ts` | Audio capture + transcription |
 
 ### Types
 | Arquivo | Tipos |

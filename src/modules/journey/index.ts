@@ -15,7 +15,6 @@ export * from './hooks'
 // Components
 export { MomentCapture } from './components/capture/MomentCapture'
 export { EmotionPicker } from './components/capture/EmotionPicker'
-export { AudioRecorder } from './components/capture/AudioRecorder'
 export { TagInput } from './components/capture/TagInput'
 export { MomentCard } from './components/timeline/MomentCard'
 export { WeeklySummaryCard } from './components/insights/WeeklySummaryCard'

@@ -26,37 +26,13 @@ export async function createMoment(
   input: CreateMomentInput
 ): Promise<MomentWithCP> {
   try {
-    let audioUrl: string | undefined
-    let transcription: string | undefined
-
-    // Upload audio if provided
-    if (input.audio_blob) {
-      audioUrl = await uploadAudio(userId, input.audio_blob)
-    }
-
-    // Transcribe audio if type is 'audio' or 'both'
-    if (input.type === 'audio' || input.type === 'both') {
-      if (input.audio_blob) {
-        transcription = await transcribeAudio(input.audio_blob)
-      }
-    }
-
-    // Determine final content
-    const finalContent =
-      input.type === 'audio'
-        ? transcription
-        : input.type === 'both'
-        ? `${input.content}\n\n[Transcrição]: ${transcription}`
-        : input.content
-
     // Insert moment WITHOUT waiting for sentiment analysis (faster UX)
     const { data: moment, error: insertError } = await supabase
       .from('moments')
       .insert({
         user_id: userId,
-        type: input.type,
-        content: finalContent,
-        audio_url: audioUrl,
+        type: 'text',
+        content: input.content,
         emotion: input.emotion,
         sentiment_data: null, // Will be updated asynchronously
         tags: input.tags,
@@ -68,7 +44,7 @@ export async function createMoment(
     if (insertError) throw insertError
 
     // Analyze sentiment in background (non-blocking)
-    analyzeMomentSentiment(finalContent || '')
+    analyzeMomentSentiment(input.content || '')
       .then(async (sentimentData) => {
         // Update moment with sentiment data
         await supabase
@@ -221,12 +197,6 @@ export async function updateMoment(
  */
 export async function deleteMoment(userId: string, momentId: string): Promise<void> {
   try {
-    // Get moment to delete audio if exists
-    const moment = await getMoment(userId, momentId)
-    if (moment?.audio_url) {
-      await deleteAudio(moment.audio_url)
-    }
-
     const { error } = await supabase
       .from('moments')
       .delete()
@@ -278,60 +248,6 @@ export async function getMomentsCount(userId: string, filter?: MomentFilter): Pr
 // =====================================================
 // HELPER FUNCTIONS
 // =====================================================
-
-/**
- * Upload audio to Supabase Storage
- */
-async function uploadAudio(userId: string, audioBlob: Blob): Promise<string> {
-  try {
-    const fileName = `${userId}/${Date.now()}.webm`
-    const { data, error } = await supabase.storage
-      .from('moments-audio')
-      .upload(fileName, audioBlob, {
-        contentType: 'audio/webm',
-        cacheControl: '3600',
-        upsert: false,
-      })
-
-    if (error) throw error
-
-    const { data: urlData } = supabase.storage
-      .from('moments-audio')
-      .getPublicUrl(data.path)
-
-    return urlData.publicUrl
-  } catch (error) {
-    log.error('Error uploading audio:', error)
-    throw error
-  }
-}
-
-/**
- * Delete audio from Supabase Storage
- */
-async function deleteAudio(audioUrl: string): Promise<void> {
-  try {
-    const path = audioUrl.split('/moments-audio/')[1]
-    if (!path) return
-
-    const { error } = await supabase.storage.from('moments-audio').remove([path])
-
-    if (error) throw error
-  } catch (error) {
-    log.error('Error deleting audio:', error)
-  }
-}
-
-/**
- * Transcribe audio using Web Speech API or backend fallback
- * NOTE: This function is now deprecated in favor of real-time Web Speech API
- * in useAudioRecording hook. Kept for backward compatibility with audio uploads.
- */
-async function transcribeAudio(audioBlob: Blob): Promise<string> {
-  // For now, return placeholder for uploaded audio files
-  // Real-time transcription happens in useAudioRecording hook
-  return '[Transcrição de áudio enviado - em processamento...]'
-}
 
 /**
  * Analyze moment sentiment using Gemini
