@@ -100,8 +100,6 @@ export interface MomentEvent extends BaseEvent {
   energy_level?: number
   tags?: string[]
   sentiment?: EventSentiment
-  has_audio?: boolean
-  audio_duration_seconds?: number
 }
 
 /**

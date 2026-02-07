@@ -31,13 +31,6 @@ import { validateMomentInput, sanitizeText, checkRateLimit, estimateBaseCP } fro
 
 import { analyzeSentimentWithGemini, generateSentimentInsights } from '@/integrations/geminiSentimentAnalysis'
 
-import {
-  transcribeAudioWithWhisper,
-  validateAudioFile,
-  getAudioDuration,
-  postProcessTranscription,
-} from '@/integrations/whisperTranscription'
-
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentPersistence')
 
@@ -73,43 +66,14 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
       throw new Error('You are creating moments too quickly. Please wait before creating another.')
     }
 
-    // 3. PROCESS AUDIO
-    let audioUrl: string | undefined
-    let audioTranscription: string | undefined
-    let audioTranscribedAt: string | undefined
-
-    if (validatedInput.audioFile) {
-      log.debug('[momentPersistenceService] Processing audio...')
-
-      // Upload audio to storage
-      audioUrl = await uploadAudioToStorage(validatedInput.userId, validatedInput.audioFile)
-      log.debug('[momentPersistenceService] Audio uploaded:', audioUrl)
-
-      // Transcribe audio
-      try {
-        const transcriptionResult = await transcribeAudioWithWhisper(validatedInput.audioFile)
-
-        if (transcriptionResult.success && transcriptionResult.text) {
-          audioTranscription = postProcessTranscription(transcriptionResult.text)
-          audioTranscribedAt = transcriptionResult.transcribedAt.toISOString()
-          log.debug('[momentPersistenceService] Audio transcribed successfully')
-        } else {
-          log.warn('[momentPersistenceService] Transcription failed, continuing without text')
-        }
-      } catch (error) {
-        log.error('[momentPersistenceService] Transcription error:', error)
-        // Continue without transcription - not critical
-      }
-    }
-
-    // 4. COMBINE CONTENT SOURCES
-    const finalContent = combineContent(validatedInput.content, audioTranscription)
+    // 3. VALIDATE CONTENT
+    const finalContent = validatedInput.content?.trim()
 
     if (!finalContent) {
-      throw new Error('No content provided (neither text nor audio transcription)')
+      throw new Error('No content provided')
     }
 
-    log.debug('[momentPersistenceService] Final content combined, length:', finalContent.length)
+    log.debug('[momentPersistenceService] Content validated, length:', finalContent.length)
 
     // 5. ANALYZE SENTIMENT (Parallel with tagging)
     const [sentimentResult, taggingResult] = await Promise.all([
@@ -130,10 +94,8 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     // 7. PREPARE MOMENT DATA
     const processedData: ProcessedMomentData = {
       user_id: validatedInput.userId,
-      type: validatedInput.audioFile && validatedInput.content ? 'both' : validatedInput.audioFile ? 'audio' : 'text',
+      type: 'text',
       content: finalContent,
-      audio_url: audioUrl,
-      audio_transcribed_at: audioTranscribedAt,
       emotion_selected: validatedInput.emotionSelected,
       emotion_intensity: validatedInput.emotionIntensity,
       sentiment_score: sentimentResult.score,
@@ -192,7 +154,6 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
           emotionSelected: input.emotionSelected,
           lifeAreas: input.lifeAreas,
           hasContent: !!input.content,
-          hasAudio: !!input.audioFile,
         },
         processingTime,
       },
@@ -315,13 +276,6 @@ export async function updateMomentEntry(userId: string, momentId: string, update
  */
 export async function deleteMomentEntry(userId: string, momentId: string) {
   try {
-    // Get moment to delete audio if exists
-    const moment = await getMomentById(userId, momentId)
-
-    if (moment?.audio_url) {
-      await deleteAudioFromStorage(moment.audio_url)
-    }
-
     const { error } = await supabase
       .from('moment_entries')
       .delete()
@@ -365,74 +319,6 @@ export async function getUserStats(userId: string) {
 // =====================================================
 // HELPER FUNCTIONS
 // =====================================================
-
-/**
- * Combine text and transcription into final content
- */
-function combineContent(text?: string, transcription?: string): string {
-  const parts: string[] = []
-
-  if (text && text.trim()) {
-    parts.push(text.trim())
-  }
-
-  if (transcription && transcription.trim()) {
-    if (text) {
-      parts.push(`\n\n[Audio Transcription]:\n${transcription.trim()}`)
-    } else {
-      parts.push(transcription.trim())
-    }
-  }
-
-  return parts.join('\n')
-}
-
-/**
- * Upload audio file to Supabase Storage
- */
-async function uploadAudioToStorage(userId: string, audioFile: Blob): Promise<string> {
-  try {
-    const validation = validateAudioFile(audioFile)
-    if (!validation.valid) {
-      throw new Error(validation.error || 'Invalid audio file')
-    }
-
-    const timestamp = Date.now()
-    const fileName = `${userId}/${timestamp}.webm`
-
-    const { data, error } = await supabase.storage.from('moments-audio').upload(fileName, audioFile, {
-      contentType: audioFile.type,
-      cacheControl: '3600',
-      upsert: false,
-    })
-
-    if (error) throw error
-
-    const { data: urlData } = supabase.storage.from('moments-audio').getPublicUrl(data.path)
-
-    return urlData.publicUrl
-  } catch (error) {
-    log.error('[momentPersistenceService] Error uploading audio:', error)
-    throw error
-  }
-}
-
-/**
- * Delete audio from storage
- */
-async function deleteAudioFromStorage(audioUrl: string): Promise<void> {
-  try {
-    const path = audioUrl.split('/moments-audio/')[1]
-    if (!path) return
-
-    const { error } = await supabase.storage.from('moments-audio').remove([path])
-
-    if (error) throw error
-  } catch (error) {
-    log.error('[momentPersistenceService] Error deleting audio:', error)
-    // Don't throw - graceful degradation
-  }
-}
 
 /**
  * Generate auto-tags using Gemini

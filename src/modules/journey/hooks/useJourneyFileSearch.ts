@@ -173,7 +173,6 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
             emotion: moment.emotion,
             tags: moment.tags || [],
             location: moment.location,
-            has_audio: !!moment.audio_url,
             sentiment: moment.sentiment_data?.sentiment,
             sentiment_score: moment.sentiment_data?.sentimentScore,
             created_at: moment.created_at,

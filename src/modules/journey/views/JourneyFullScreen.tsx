@@ -10,7 +10,6 @@ import { AnimatePresence } from 'framer-motion'
 const log = createNamespacedLogger('JourneyFullScreen')
 import { useNavigate } from 'react-router-dom'
 import { QuickCapture } from '../components/capture/QuickCapture'
-import { MicrophoneFAB } from '../components/ceramic'
 import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
@@ -23,7 +22,6 @@ import { useDailyQuestion } from '../hooks/useDailyQuestion'
 import { useConsciousnessPoints, useCPAnimation } from '../hooks/useConsciousnessPoints'
 import { useJourneyFileSearch } from '../hooks/useJourneyFileSearch'
 import { useUnifiedTimeline } from '../hooks/useUnifiedTimeline'
-import { useAudioRecording } from '../hooks/useAudioRecording'
 import { generatePostCaptureInsight } from '../services/aiAnalysisService'
 import {
   PlusIcon,
@@ -74,18 +72,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
-
-  // Audio Recording Hook
-  const {
-    state: recordingState,
-    transcript,
-    interimTranscript,
-    isSupported: isSpeechSupported,
-    error: recordingError,
-    startRecording,
-    stopRecording,
-    cancelRecording,
-  } = useAudioRecording()
 
   // File Search integration
   const {
@@ -167,38 +153,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       log.error('Error creating moment:', error)
     }
   }
-
-  // Handle microphone FAB press
-  const handleMicrophonePress = () => {
-    if (recordingState === 'recording') {
-      // Stop recording and create moment with transcript
-      const finalTranscript = stopRecording()
-
-      if (finalTranscript && finalTranscript.length > 0) {
-        handleCreateMoment({
-          type: 'audio',
-          content: finalTranscript,
-        })
-      } else {
-        log.warn('No transcript available, cancelling recording')
-        cancelRecording()
-      }
-    } else if (recordingState === 'idle') {
-      // Start recording
-      startRecording()
-      setShowCapture(true) // Show capture UI for context
-    } else if (recordingState === 'error') {
-      // Reset on error
-      cancelRecording()
-    }
-  }
-
-  // Auto-populate QuickCapture with transcript when recording
-  React.useEffect(() => {
-    if (recordingState === 'recording' && transcript) {
-      log.debug('[Audio Recording] Transcript updated:', transcript.substring(0, 50))
-    }
-  }, [recordingState, transcript])
 
   // Handle question answer
   const handleAnswerQuestion = async (questionId: string, responseText: string) => {
@@ -312,14 +266,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               {showCapture ? (
                 <QuickCapture
                   onSubmit={handleCreateMoment}
-                  onCancel={() => {
-                    setShowCapture(false)
-                    if (recordingState === 'recording') {
-                      cancelRecording()
-                    }
-                  }}
-                  initialContent={transcript}
-                  isFromAudio={recordingState === 'recording'}
+                  onCancel={() => setShowCapture(false)}
                 />
               ) : (
                 <div className="space-y-6">
@@ -446,15 +393,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
           </div>
         </div>
       </div>
-
-      {/* Microphone FAB - The Voice Protagonist */}
-      <MicrophoneFAB
-        state={recordingState}
-        onPress={handleMicrophonePress}
-        disabled={!isSpeechSupported}
-        errorMessage={recordingError}
-        interimTranscript={interimTranscript}
-      />
 
       {/* CP Animation */}
       {showAnimation && (

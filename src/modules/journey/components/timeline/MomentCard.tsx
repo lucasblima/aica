@@ -9,7 +9,6 @@ import { getSentimentColor } from '../../types/sentiment'
 import {
   ClockIcon,
   MapPinIcon,
-  SpeakerWaveIcon,
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@heroicons/react/24/outline'
@@ -77,13 +76,6 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
 
       {/* Content preview */}
       <div className="mb-3">
-        {moment.type === 'audio' && moment.audio_url && !isExpanded && (
-          <div className="flex items-center gap-2 text-gray-600">
-            <SpeakerWaveIcon className="h-5 w-5" />
-            <span className="text-sm">Áudio gravado</span>
-          </div>
-        )}
-
         {moment.content && (
           <p className="text-gray-700 leading-relaxed">
             {isExpanded
@@ -112,17 +104,6 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
       {/* Expanded content */}
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
-          {/* Audio player */}
-          {moment.audio_url && (
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Áudio:</p>
-              <audio controls className="w-full">
-                <source src={moment.audio_url} type="audio/webm" />
-                Seu navegador não suporta reprodução de áudio.
-              </audio>
-            </div>
-          )}
-
           {/* Location */}
           {moment.location && (
             <div className="flex items-center gap-2 text-sm text-gray-600">

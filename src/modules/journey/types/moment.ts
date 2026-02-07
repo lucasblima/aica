@@ -5,7 +5,7 @@
 
 import { SentimentAnalysis } from './sentiment'
 
-export type MomentType = 'audio' | 'text' | 'both'
+export type MomentType = 'text'
 
 export interface Moment {
   id: string
@@ -13,8 +13,7 @@ export interface Moment {
 
   // Content
   type: MomentType
-  content?: string // Text or transcription
-  audio_url?: string // Supabase Storage URL
+  content?: string
 
   // Emotion & Sentiment
   emotion?: string // Selected emotion
@@ -32,7 +31,6 @@ export interface Moment {
 export interface CreateMomentInput {
   type: MomentType
   content?: string
-  audio_blob?: Blob
   emotion?: string
   tags?: string[]
   location?: string
