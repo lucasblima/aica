@@ -30,13 +30,12 @@ import {
   Sparkles,
   RefreshCw,
   Phone,
-  UserCircle,
   Clock,
   ArrowUp,
   ArrowDown,
   SortAsc,
 } from 'lucide-react';
-import { CeramicTabSelector } from '@/components/ui';
+import { CeramicTabSelector, ContactAvatar } from '@/components/ui';
 import {
   ConnectionStatusCard,
   ConsentManager,
@@ -265,29 +264,11 @@ const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onCl
     >
       <div className="flex items-center gap-3">
         {/* Profile Picture or Avatar */}
-        {contact.whatsapp_profile_pic_url ? (
-          <img
-            src={contact.whatsapp_profile_pic_url}
-            alt={displayName}
-            className="w-12 h-12 rounded-full object-cover"
-            onError={(e) => {
-              // Fallback to icon on error
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        ) : (
-          <div
-            className={`w-12 h-12 rounded-full flex items-center justify-center ceramic-concave ${
-              isGroup ? 'bg-purple-100' : 'bg-blue-100'
-            }`}
-          >
-            {isGroup ? (
-              <Users className="w-6 h-6 text-purple-600" />
-            ) : (
-              <UserCircle className="w-6 h-6 text-blue-600" />
-            )}
-          </div>
-        )}
+        <ContactAvatar
+          name={displayName}
+          whatsappProfilePicUrl={contact.whatsapp_profile_pic_url}
+          size="lg"
+        />
 
         {/* Contact Info */}
         <div className="flex-1 min-w-0">
