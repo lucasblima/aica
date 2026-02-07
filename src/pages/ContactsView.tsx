@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, MessageCircle, Loader2, Settings2, Smartphone, X, ChevronDown } from 'lucide-react';
+import { RefreshCw, MessageCircle, Settings2, X } from 'lucide-react';
 import { HeaderGlobal, ContactDetailModal, CreditBalanceWidget } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
@@ -165,13 +165,11 @@ export function ContactsView() {
     }
   };
 
-  // Handle contact click - open detail modal
   const handleContactClick = useCallback((contact: ContactNetwork) => {
     setSelectedContact(contact);
     setIsDetailModalOpen(true);
   }, []);
 
-  // Handle chat action - open WhatsApp
   const handleChatClick = useCallback((contact: ContactNetwork) => {
     const phone = contact.whatsapp_phone || contact.phone_number;
     if (phone) {
@@ -180,7 +178,6 @@ export function ContactsView() {
     }
   }, []);
 
-  // Handle favorite toggle
   const handleFavoriteToggle = useCallback((contact: ContactNetwork) => {
     setFavoriteIds(prev =>
       prev.includes(contact.id)
@@ -206,7 +203,6 @@ export function ContactsView() {
     }
   };
 
-  // Handle WhatsApp pairing success
   const handlePairingSuccess = async () => {
     setIsPairingExpanded(false);
     if (isConnected) {
@@ -215,7 +211,6 @@ export function ContactsView() {
     }
   };
 
-  // Issue #91: Handle reconnect/reconfigure webhook
   const handleReconnect = async () => {
     setIsReconnecting(true);
     setError(null);
@@ -243,113 +238,162 @@ export function ContactsView() {
 
   return (
     <div className="min-h-screen bg-ceramic-base">
-      {/* Header */}
       <HeaderGlobal
         title="Contatos"
         subtitle="Minha Rede de Conexões"
         userEmail={user?.email}
       />
 
-      {/* Main Content */}
-      <main className="p-6 space-y-6 max-w-7xl mx-auto">
-        {/* WhatsApp Connection Banner - shown when not connected */}
-        {needsPairing && !isCheckingSession && (
+      <main className="p-6 space-y-5 max-w-7xl mx-auto">
+        {/* ── WhatsApp Connection Banner ── */}
+        {(isPairingExpanded || (needsPairing && !isCheckingSession)) && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="ceramic-card overflow-hidden"
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden rounded-2xl"
+            style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              boxShadow: '0 4px 24px rgba(163, 158, 145, 0.08)',
+            }}
           >
-            {/* Collapsed state: compact banner */}
-            {!isPairingExpanded ? (
-              <button
-                onClick={() => setIsPairingExpanded(true)}
-                className="w-full p-5 flex items-center gap-4 hover:bg-ceramic-50/50 transition-colors text-left"
-              >
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                  <Smartphone className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-ceramic-900">
-                    Conectar WhatsApp
-                  </h3>
-                  <p className="text-sm text-ceramic-500 mt-0.5">
-                    Sincronize seus contatos do WhatsApp para ver sua rede de conexões
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-lg">
-                    Configurar
-                  </span>
-                  <ChevronDown className="w-5 h-5 text-ceramic-400" />
-                </div>
-              </button>
-            ) : (
-              /* Expanded state: full pairing flow */
-              <div>
-                <div className="flex items-center justify-between p-4 border-b border-ceramic-100">
-                  <h3 className="font-semibold text-ceramic-900 flex items-center gap-2">
-                    <Smartphone className="w-5 h-5 text-green-600" />
-                    Conectar WhatsApp
-                  </h3>
-                  <button
-                    onClick={() => setIsPairingExpanded(false)}
-                    className="p-1.5 rounded-lg hover:bg-ceramic-100 transition-colors"
+            <AnimatePresence mode="wait">
+              {!isPairingExpanded ? (
+                /* ── Collapsed: elegant CTA ── */
+                <motion.button
+                  key="collapsed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsPairingExpanded(true)}
+                  className="w-full p-6 flex items-center gap-5 hover:bg-white/40 transition-all duration-300 text-left group"
+                >
+                  {/* Breathing amber orb */}
+                  <motion.div
+                    className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center"
+                    animate={{
+                      scale: [1, 1.04, 1],
+                    }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                   >
-                    <X className="w-5 h-5 text-ceramic-400" />
-                  </button>
-                </div>
-                <div className="p-6">
-                  <WhatsAppPairingStep
-                    onSuccess={handlePairingSuccess}
-                    onBack={() => setIsPairingExpanded(false)}
-                    session={whatsappSession}
-                    isConnected={isConnected}
-                    sessionStatus={whatsappSession?.status ?? null}
-                  />
-                </div>
-              </div>
-            )}
+                    <div
+                      className="absolute inset-0 rounded-full opacity-20"
+                      style={{
+                        background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)',
+                      }}
+                    />
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                        boxShadow: '0 4px 12px rgba(217, 119, 6, 0.25)',
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                      </svg>
+                    </div>
+                  </motion.div>
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-ceramic-text-primary">
+                      Conectar WhatsApp
+                    </h3>
+                    <p className="text-sm text-ceramic-text-secondary mt-0.5">
+                      Sincronize seus contatos e comece a gerenciar sua rede
+                    </p>
+                  </div>
+
+                  <motion.span
+                    className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium text-white"
+                    style={{
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    }}
+                    whileHover={{ scale: 1.03 }}
+                  >
+                    Conectar
+                  </motion.span>
+                </motion.button>
+              ) : (
+                /* ── Expanded: pairing flow ── */
+                <motion.div
+                  key="expanded"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Header with close */}
+                  <div className="flex items-center justify-between px-6 pt-5 pb-0">
+                    <div /> {/* spacer */}
+                    <button
+                      onClick={() => setIsPairingExpanded(false)}
+                      className="p-2 rounded-full hover:bg-ceramic-cool/60 transition-colors"
+                    >
+                      <X className="w-4 h-4 text-ceramic-text-secondary" />
+                    </button>
+                  </div>
+                  <div className="px-6 pb-8">
+                    <WhatsAppPairingStep
+                      onSuccess={handlePairingSuccess}
+                      onBack={() => setIsPairingExpanded(false)}
+                      session={whatsappSession}
+                      isConnected={isConnected}
+                      sessionStatus={whatsappSession?.status ?? null}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
-        {/* Connected status + actions row */}
+        {/* ── Connected: actions row ── */}
         {!needsPairing && (
           <div className="flex items-start justify-between gap-4">
             <CreditBalanceWidget className="max-w-md" />
 
-            {/* Button Group */}
             <div className="flex items-center gap-2">
-              {/* Issue #91: Reconnect Button */}
               <button
                 onClick={handleReconnect}
                 disabled={isReconnecting}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isReconnecting
-                    ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
-                    : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
+                    ? 'bg-ceramic-cool text-ceramic-text-secondary cursor-not-allowed'
+                    : 'bg-white/70 backdrop-blur-sm text-ceramic-text-primary hover:bg-white'
                 }`}
-                title="Reconectar WhatsApp - reconfigura webhook para receber mensagens"
+                style={{
+                  border: '1px solid rgba(163, 158, 145, 0.12)',
+                  boxShadow: '0 2px 8px rgba(163, 158, 145, 0.06)',
+                }}
+                title="Reconectar WhatsApp"
               >
-                <Settings2 className={`w-4 h-4 ${isReconnecting ? 'animate-spin' : ''}`} />
+                <Settings2 className={`w-3.5 h-3.5 ${isReconnecting ? 'animate-spin' : ''}`} />
                 <span>{isReconnecting ? 'Reconectando...' : 'Reconectar'}</span>
               </button>
 
-              {/* Sync Button */}
               <button
                 onClick={handleWhatsAppSync}
                 disabled={isSyncing}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isSyncing
-                    ? 'ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
-                    : 'ceramic-card hover:scale-105 text-ceramic-text-primary'
+                    ? 'bg-ceramic-cool text-ceramic-text-secondary cursor-not-allowed'
+                    : 'bg-white/70 backdrop-blur-sm text-ceramic-text-primary hover:bg-white'
                 }`}
+                style={{
+                  border: '1px solid rgba(163, 158, 145, 0.12)',
+                  boxShadow: '0 2px 8px rgba(163, 158, 145, 0.06)',
+                }}
                 title={syncStatus?.lastSyncAt ? `Ultima sincronizacao: ${new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR')}` : 'Sincronizar contatos WhatsApp'}
               >
-                <MessageCircle className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
-                <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
-                {isSyncing && (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                {isSyncing ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <MessageCircle className="w-3.5 h-3.5" />
                 )}
+                <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
               </button>
             </div>
           </div>
@@ -360,9 +404,9 @@ export function ContactsView() {
           <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
             <MessageCircle className="w-3 h-3" />
             <span>
-              {syncStatus.contactCount} contatos WhatsApp
+              {syncStatus.contactCount} contatos
               {syncStatus.lastSyncAt && (
-                <> &bull; Ultima sincronizacao: {new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
+                <> &bull; {new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
               )}
             </span>
           </div>
@@ -373,51 +417,92 @@ export function ContactsView() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-3 p-4 ceramic-card bg-blue-50/30"
+            className="flex items-center gap-3 px-5 py-4 rounded-2xl"
+            style={{
+              background: 'rgba(255, 255, 255, 0.6)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(217, 119, 6, 0.1)',
+            }}
           >
-            <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+            <motion.div
+              className="w-5 h-5 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              }}
+              animate={{
+                scale: [1, 1.15, 1],
+                opacity: [0.7, 1, 0.7],
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            />
             <div>
-              <p className="text-sm font-medium text-blue-700">Sincronizando contatos...</p>
-              <p className="text-xs text-blue-500">Primeira sincronização em andamento</p>
+              <p className="text-sm font-medium text-ceramic-text-primary">Sincronizando contatos...</p>
+              <p className="text-xs text-ceramic-text-secondary">Primeira sincronização em andamento</p>
             </div>
           </motion.div>
         )}
 
-        {/* Error Message */}
+        {/* Error */}
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="ceramic-card p-4 bg-red-500/10 border border-red-500/20"
+            className="px-5 py-3.5 rounded-2xl"
+            style={{
+              background: 'rgba(155, 77, 58, 0.06)',
+              border: '1px solid rgba(155, 77, 58, 0.1)',
+            }}
           >
-            <p className="text-sm text-red-300 font-medium">{error}</p>
+            <p className="text-sm text-ceramic-negative font-medium">{error}</p>
           </motion.div>
         )}
 
         {/* Loading state for initial session check */}
         {isCheckingSession && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 text-green-500 animate-spin mx-auto mb-3" />
-              <p className="text-sm text-ceramic-text-secondary">Verificando conexão WhatsApp...</p>
-            </div>
+          <div className="flex flex-col items-center justify-center py-16">
+            <motion.div
+              className="w-8 h-8 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              }}
+              animate={{
+                scale: [1, 1.08, 1],
+                boxShadow: [
+                  '0 0 0 0 rgba(245, 158, 11, 0.3)',
+                  '0 0 0 10px rgba(245, 158, 11, 0)',
+                  '0 0 0 0 rgba(245, 158, 11, 0.3)',
+                ],
+              }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <p className="mt-6 text-sm text-ceramic-text-secondary">Verificando conexão...</p>
           </div>
         )}
 
-        {/* Contact List - always rendered */}
+        {/* ── Contact List ── */}
         {!isCheckingSession && (
-          <div className="ceramic-card">
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: 'rgba(255, 255, 255, 0.5)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 4px 24px rgba(163, 158, 145, 0.06)',
+            }}
+          >
             {needsPairing && contacts.length === 0 ? (
-              /* Empty state when not connected and no contacts */
-              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-ceramic-100 flex items-center justify-center mb-4">
-                  <MessageCircle className="w-8 h-8 text-ceramic-400" />
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
+                  style={{ backgroundColor: 'rgba(148, 141, 130, 0.06)' }}
+                >
+                  <MessageCircle className="w-6 h-6 text-ceramic-text-secondary/40" />
                 </div>
-                <h3 className="text-lg font-semibold text-ceramic-700 mb-2">
+                <h3 className="text-base font-semibold text-ceramic-text-primary mb-1.5">
                   Nenhum contato ainda
                 </h3>
-                <p className="text-sm text-ceramic-500 max-w-sm">
-                  Conecte seu WhatsApp acima para sincronizar seus contatos e começar a gerenciar sua rede de conexões.
+                <p className="text-sm text-ceramic-text-secondary max-w-xs">
+                  Conecte seu WhatsApp para sincronizar contatos e gerenciar sua rede.
                 </p>
               </div>
             ) : (
@@ -436,7 +521,6 @@ export function ContactsView() {
         )}
       </main>
 
-      {/* Contact Detail Modal */}
       <AnimatePresence>
         {isDetailModalOpen && selectedContact && (
           <ContactDetailModal

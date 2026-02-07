@@ -1,35 +1,23 @@
 /**
  * PairingCodeDisplay Component
- * Sprint: "Ordem ao Caos do WhatsApp"
- *
- * Displays the WhatsApp pairing code with:
- * - XXXX-XXXX format
- * - Expiration countdown timer
- * - Copy to clipboard functionality
- * - Regenerate button
- * - Step-by-step instructions
- * - Clear error states with retry
+ * Jony Ive-inspired design: breathing orb, glass panels, serif code display
  *
  * @see Issue #86 - PairingCodeDisplay Component
  * @see PR #120 - WhatsApp Onboarding Flow
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, RefreshCw, Clock, AlertCircle, KeyRound } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { RefreshCw, Clock, AlertCircle, KeyRound, Check } from 'lucide-react';
 import { usePairingCode } from '@/hooks/usePairingCode';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('PairingCodeDisplay');
 
 interface PairingCodeDisplayProps {
-  /** Phone number to generate code for */
   phoneNumber: string;
-  /** Callback when code is successfully generated */
   onCodeGenerated?: (code: string) => void;
-  /** Callback when pairing is successful */
   onPairingSuccess?: () => void;
-  /** Optional className */
   className?: string;
 }
 
@@ -52,21 +40,28 @@ function friendlyErrorMessage(error: string): { message: string; hint: string } 
   if (lower.includes('pairing') || lower.includes('código')) {
     return {
       message: 'Falha ao gerar código',
-      hint: 'A instância WhatsApp pode estar em estado inconsistente. Tente novamente em alguns segundos.',
+      hint: 'Tente novamente em alguns segundos.',
     };
   }
   if (lower.includes('instance') || lower.includes('instância')) {
     return {
-      message: 'Erro na instância WhatsApp',
+      message: 'Erro na instância',
       hint: 'Houve um problema ao preparar a conexão. Tente novamente.',
     };
   }
 
   return {
-    message: 'Erro inesperado',
+    message: 'Algo deu errado',
     hint: error,
   };
 }
+
+const steps = [
+  { title: 'Abra o WhatsApp', hint: 'No seu celular' },
+  { title: 'Dispositivos conectados', hint: 'Configurações > Dispositivos conectados' },
+  { title: 'Conectar dispositivo', hint: 'Escolha "Conectar com número de telefone"' },
+  { title: 'Digite o código', hint: 'Insira o código acima no WhatsApp' },
+];
 
 export function PairingCodeDisplay({
   phoneNumber,
@@ -85,16 +80,14 @@ export function PairingCodeDisplay({
     reset,
   } = usePairingCode();
 
+  const [copied, setCopied] = useState(false);
+
   // CRITICAL: useRef for guards, NOT useState.
   // React StrictMode double-invokes effects within the same commit phase.
-  // useState updates are batched and not visible to the second invocation,
-  // causing generateCode to fire twice → race condition → 400 error.
-  // useRef mutations are synchronous and immediately visible.
   const hasAttemptedRef = useRef(false);
   const hasAutoRetriedRef = useRef(false);
   const autoRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
@@ -105,19 +98,19 @@ export function PairingCodeDisplay({
   useEffect(() => {
     const phoneDigits = phoneNumber?.replace(/\D/g, '') || '';
     if (phoneDigits.length >= 12 && !code && !isLoading && !error && !hasAttemptedRef.current) {
-      hasAttemptedRef.current = true; // Synchronous - blocks StrictMode second invoke
+      hasAttemptedRef.current = true;
       generateCode(phoneNumber).then((result) => {
         if (result?.code) {
           onCodeGenerated?.(result.code);
         }
       });
     }
-  }, [phoneNumber]); // Minimal dependencies - only phoneNumber
+  }, [phoneNumber]);
 
-  // Auto-retry once: if first attempt failed (instance may need time to initialize)
+  // Auto-retry once on first failure
   useEffect(() => {
     if (error && hasAttemptedRef.current && !hasAutoRetriedRef.current && !code && !isLoading) {
-      hasAutoRetriedRef.current = true; // Synchronous guard
+      hasAutoRetriedRef.current = true;
       log.debug('First attempt failed, scheduling auto-retry in 3s...');
       autoRetryTimerRef.current = setTimeout(() => {
         log.debug('Auto-retrying pairing code generation...');
@@ -132,31 +125,30 @@ export function PairingCodeDisplay({
     }
   }, [error, code, isLoading]);
 
-  // Handle manual regenerate / retry
   const handleRetry = useCallback(async () => {
     if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
     reset();
     clearError();
     hasAttemptedRef.current = true;
-    hasAutoRetriedRef.current = true; // Don't auto-retry after manual retry
+    hasAutoRetriedRef.current = true;
     const result = await generateCode(phoneNumber);
     if (result?.code) {
       onCodeGenerated?.(result.code);
     }
   }, [phoneNumber, generateCode, onCodeGenerated, reset, clearError]);
 
-  // Handle copy to clipboard
   const handleCopy = useCallback(async () => {
     if (code) {
       try {
         await navigator.clipboard.writeText(code.replace('-', ''));
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       } catch (err) {
         log.error('Failed to copy code:', err);
       }
     }
   }, [code]);
 
-  // Format seconds to MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -166,166 +158,293 @@ export function PairingCodeDisplay({
   const errorInfo = error ? friendlyErrorMessage(error) : null;
   const isAuthError = error?.toLowerCase().includes('sessão') || error?.toLowerCase().includes('login') || error?.toLowerCase().includes('autenticad');
 
+  // Progress for timer ring (1.0 = full, 0.0 = expired)
+  const progress = code && !isExpired ? secondsRemaining / 60 : 0;
+
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Code Display */}
-      <div className="relative">
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-8"
-            >
-              <div className="w-12 h-12 border-4 border-ceramic-200 border-t-green-500 rounded-full animate-spin" />
-              <p className="mt-4 text-ceramic-500 text-sm">
-                Gerando código de pareamento...
-              </p>
-              <p className="mt-1 text-ceramic-400 text-xs">
-                Criando instância e configurando conexão
-              </p>
-            </motion.div>
-          ) : error ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="flex flex-col items-center py-8"
-            >
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                {isAuthError ? (
-                  <KeyRound className="w-8 h-8 text-red-500" />
-                ) : (
-                  <AlertCircle className="w-8 h-8 text-red-500" />
-                )}
-              </div>
-              <p className="text-red-700 font-medium text-center mb-1">
-                {errorInfo?.message}
-              </p>
-              <p className="text-red-500 text-sm text-center mb-4 max-w-sm">
-                {errorInfo?.hint}
-              </p>
-              {isAuthError ? (
-                <button
-                  onClick={() => window.location.reload()}
-                  className="flex items-center gap-2 px-4 py-2 bg-ceramic-800 text-white rounded-lg hover:bg-ceramic-700 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Recarregar página
-                </button>
-              ) : (
-                <button
-                  onClick={handleRetry}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Tentar novamente
-                </button>
-              )}
-            </motion.div>
-          ) : code ? (
-            <motion.div
-              key="code"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex flex-col items-center"
-            >
-              {/* Code Box */}
-              <div className="relative">
-                <div
-                  className={`
-                    px-8 py-6 rounded-2xl border-2 font-mono text-4xl font-bold tracking-widest
-                    ${
-                      isExpired
-                        ? 'bg-ceramic-100 border-ceramic-300 text-ceramic-400'
-                        : 'bg-green-50 border-green-200 text-ceramic-900'
-                    }
-                  `}
-                >
-                  {code}
-                </div>
-
-                {/* Copy Button */}
-                <button
-                  onClick={handleCopy}
-                  disabled={isExpired}
-                  className="absolute -right-3 -top-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow disabled:opacity-50"
-                  title="Copiar código"
-                >
-                  <Copy className="w-4 h-4 text-ceramic-600" />
-                </button>
-              </div>
-
-              {/* Timer */}
-              <div
-                className={`
-                  flex items-center gap-2 mt-4 text-sm
-                  ${isExpired ? 'text-red-500' : 'text-ceramic-500'}
-                `}
-              >
-                <Clock className="w-4 h-4" />
-                {isExpired ? (
-                  <span>Código expirado</span>
-                ) : (
-                  <span>Expira em {formatTime(secondsRemaining)}</span>
-                )}
-              </div>
-
-              {/* Regenerate Button */}
-              {isExpired && (
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={handleRetry}
-                  className="mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Gerar novo código
-                </motion.button>
-              )}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
-
-      {/* Instructions */}
-      {code && !isExpired && (
+    <div className={`${className}`}>
+      {/* ── Loading State ── */}
+      {isLoading && !code && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-4"
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center justify-center py-16"
         >
-          <h4 className="font-medium text-ceramic-800 text-center">
-            Como conectar seu WhatsApp
-          </h4>
+          {/* Breathing orb loader */}
+          <div className="relative w-20 h-20 flex items-center justify-center">
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.05) 70%, transparent 100%)',
+              }}
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.6, 0.3, 0.6],
+              }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              className="w-10 h-10 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              }}
+              animate={{
+                scale: [1, 1.06, 1],
+                boxShadow: [
+                  '0 0 0 0 rgba(245, 158, 11, 0.3)',
+                  '0 0 0 12px rgba(245, 158, 11, 0)',
+                  '0 0 0 0 rgba(245, 158, 11, 0.3)',
+                ],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </div>
 
-          <ol className="space-y-3">
-            {[
-              'Abra o WhatsApp no seu celular',
-              'Toque em Configurações > Dispositivos conectados',
-              'Toque em "Conectar dispositivo"',
-              'Quando aparecer a opção, escolha "Conectar com número de telefone"',
-              'Digite o código acima no seu WhatsApp',
-            ].map((step, index) => (
-              <motion.li
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + index * 0.1 }}
-                className="flex items-start gap-3"
+          <p className="mt-8 text-ceramic-text-secondary text-sm font-medium tracking-wide">
+            Preparando conexão...
+          </p>
+        </motion.div>
+      )}
+
+      {/* ── Error State ── */}
+      {!isLoading && error && !code && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          className="flex flex-col items-center py-12"
+        >
+          <motion.div
+            className="w-12 h-12 rounded-full flex items-center justify-center mb-6"
+            style={{ backgroundColor: 'rgba(155, 77, 58, 0.08)' }}
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+          >
+            {isAuthError ? (
+              <KeyRound className="w-5 h-5 text-ceramic-negative" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-ceramic-negative" />
+            )}
+          </motion.div>
+
+          <h3 className="text-base font-semibold text-ceramic-text-primary mb-1">
+            {errorInfo?.message}
+          </h3>
+          <p className="text-sm text-ceramic-text-secondary text-center max-w-xs mb-8">
+            {errorInfo?.hint}
+          </p>
+
+          <motion.button
+            onClick={isAuthError ? () => window.location.reload() : handleRetry}
+            className="px-6 py-2.5 rounded-full text-sm font-medium transition-all"
+            style={{
+              background: isAuthError ? '#5C554B' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: 'white',
+            }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            {isAuthError ? 'Recarregar página' : 'Tentar novamente'}
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* ── Code Display ── */}
+      {code && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center"
+        >
+          {/* Code card with glass panel */}
+          <motion.div
+            className="relative w-full max-w-sm"
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          >
+            {/* Breathing ambient glow */}
+            {!isExpired && (
+              <motion.div
+                className="absolute inset-0 rounded-3xl -z-10"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(245, 158, 11, 0.12) 0%, transparent 70%)',
+                  filter: 'blur(20px)',
+                }}
+                animate={{
+                  scale: [0.95, 1.05, 0.95],
+                  opacity: [0.5, 0.8, 0.5],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            )}
+
+            {/* Glass card */}
+            <div
+              className={`
+                relative rounded-3xl px-8 py-10 text-center transition-all duration-700
+                ${isExpired
+                  ? 'bg-ceramic-cool/60'
+                  : 'bg-white/70 backdrop-blur-sm'
+                }
+              `}
+              style={{
+                border: '1px solid rgba(255, 255, 255, 0.4)',
+                boxShadow: isExpired
+                  ? 'none'
+                  : '0 8px 32px rgba(163, 158, 145, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              {/* Label */}
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-ceramic-text-secondary mb-5">
+                Código de pareamento
+              </p>
+
+              {/* The code itself */}
+              <div
+                className={`
+                  text-5xl font-light tracking-[0.08em] mb-6 transition-colors duration-700
+                  ${isExpired ? 'text-ceramic-text-secondary/40' : 'text-ceramic-text-primary'}
+                `}
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-sm font-medium">
-                  {index + 1}
-                </span>
-                <span className="text-ceramic-600 text-sm">{step}</span>
-              </motion.li>
-            ))}
-          </ol>
+                {code.split('-').map((part, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <span className="mx-3 text-3xl text-ceramic-text-secondary/30 font-sans">
+                        ·
+                      </span>
+                    )}
+                    <span>{part}</span>
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Timer */}
+              <div className="flex items-center justify-center gap-2">
+                {!isExpired && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" className="opacity-40">
+                    <circle
+                      cx="8" cy="8" r="6.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      className="text-ceramic-text-secondary"
+                    />
+                    <circle
+                      cx="8" cy="8" r="6.5"
+                      fill="none"
+                      stroke="#D97706"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeDasharray={`${progress * 40.84} 40.84`}
+                      transform="rotate(-90 8 8)"
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                )}
+                <motion.span
+                  className="text-xs text-ceramic-text-secondary"
+                  animate={!isExpired ? { opacity: [0.5, 1, 0.5] } : {}}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  {isExpired ? 'Código expirado' : `Expira em ${formatTime(secondsRemaining)}`}
+                </motion.span>
+              </div>
+            </div>
+
+            {/* Action buttons below card */}
+            <div className="flex items-center justify-center gap-3 mt-5">
+              {!isExpired && (
+                <motion.button
+                  onClick={handleCopy}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium
+                    bg-white/80 backdrop-blur-sm text-ceramic-text-primary
+                    hover:bg-white transition-all"
+                  style={{
+                    border: '1px solid rgba(163, 158, 145, 0.15)',
+                    boxShadow: '0 2px 8px rgba(163, 158, 145, 0.08)',
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-ceramic-positive" />
+                      <span className="text-ceramic-positive">Copiado</span>
+                    </>
+                  ) : (
+                    <span>Copiar código</span>
+                  )}
+                </motion.button>
+              )}
+
+              {isExpired && (
+                <motion.button
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={handleRetry}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium text-white"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Gerar novo código
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+
+          {/* ── Instructions ── */}
+          {!isExpired && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="mt-12 w-full max-w-sm"
+            >
+              <p className="text-center text-xs text-ceramic-text-secondary mb-6 tracking-wide">
+                No seu celular, siga os passos:
+              </p>
+
+              <ol className="space-y-5">
+                {steps.map((step, i) => (
+                  <motion.li
+                    key={i}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + i * 0.08, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                    className="flex items-start gap-4"
+                  >
+                    <span
+                      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
+                      style={{
+                        background: 'rgba(217, 119, 6, 0.08)',
+                        color: '#D97706',
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="pt-0.5">
+                      <p className="text-sm font-medium text-ceramic-text-primary leading-tight">
+                        {step.title}
+                      </p>
+                      <p className="text-xs text-ceramic-text-secondary mt-0.5">
+                        {step.hint}
+                      </p>
+                    </div>
+                  </motion.li>
+                ))}
+              </ol>
+            </motion.div>
+          )}
         </motion.div>
       )}
     </div>
