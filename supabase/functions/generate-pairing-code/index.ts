@@ -86,6 +86,98 @@ async function configureInstanceWebhook(
 }
 
 /**
+ * Check the connection state of an Evolution API instance.
+ */
+async function checkInstanceState(
+  evolutionApiUrl: string,
+  evolutionApiKey: string,
+  instanceName: string,
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `${evolutionApiUrl}/instance/connectionState/${instanceName}`,
+      {
+        method: 'GET',
+        headers: { 'apikey': evolutionApiKey },
+      }
+    )
+    if (!response.ok) return null
+    const data = await response.json()
+    const state = data?.instance?.state || data?.state || null
+    console.log(`[generate-pairing-code] Instance ${instanceName} state: ${state}`)
+    return state
+  } catch (e) {
+    console.warn(`[generate-pairing-code] Could not check instance state:`, e)
+    return null
+  }
+}
+
+/**
+ * Delete an Evolution API instance so it can be recreated fresh.
+ */
+async function deleteInstance(
+  evolutionApiUrl: string,
+  evolutionApiKey: string,
+  instanceName: string,
+): Promise<boolean> {
+  try {
+    // First try to logout (graceful disconnect)
+    await fetch(`${evolutionApiUrl}/instance/logout/${instanceName}`, {
+      method: 'DELETE',
+      headers: { 'apikey': evolutionApiKey },
+    })
+
+    // Then delete the instance
+    const response = await fetch(`${evolutionApiUrl}/instance/delete/${instanceName}`, {
+      method: 'DELETE',
+      headers: { 'apikey': evolutionApiKey },
+    })
+
+    console.log(`[generate-pairing-code] Instance ${instanceName} deleted: ${response.ok}`)
+    return response.ok
+  } catch (e) {
+    console.warn(`[generate-pairing-code] Could not delete instance:`, e)
+    return false
+  }
+}
+
+/**
+ * Create a fresh Evolution API instance and configure its webhook.
+ */
+async function createInstance(
+  evolutionApiUrl: string,
+  evolutionApiKey: string,
+  instanceName: string,
+  supabaseUrl: string,
+): Promise<boolean> {
+  const createResponse = await fetch(
+    `${evolutionApiUrl}/instance/create`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': evolutionApiKey,
+      },
+      body: JSON.stringify({
+        instanceName: instanceName,
+        qrcode: false,
+        integration: 'WHATSAPP-BAILEYS',
+      }),
+    }
+  )
+
+  if (createResponse.ok) {
+    console.log(`[generate-pairing-code] Instance created: ${instanceName}`)
+    await configureInstanceWebhook(evolutionApiUrl, evolutionApiKey, instanceName, supabaseUrl)
+    return true
+  }
+
+  const errorBody = await createResponse.text()
+  console.error(`[generate-pairing-code] Instance creation failed: ${createResponse.status} - ${errorBody}`)
+  return false
+}
+
+/**
  * Ensure Evolution API instance exists using optimistic creation pattern.
  * Avoids TOCTOU race condition by attempting creation first and handling conflicts.
  *
@@ -274,19 +366,68 @@ serve(async (req: Request) => {
     const pairingData = await pairingResponse.json()
 
     // 10. Extract pairing code
-    const pairingCode = pairingData.pairingCode || pairingData.code
+    let pairingCode = pairingData.pairingCode || pairingData.code
 
     if (!pairingCode) {
-      // Check if already connected
-      if (pairingData.instance?.state === 'open') {
-        // Update session status
+      // Check instance state to determine recovery strategy
+      const instanceState = pairingData.instance?.state ||
+        await checkInstanceState(evolutionApiUrl, evolutionApiKey, session.instance_name)
+
+      if (instanceState === 'open') {
+        // Already connected — update DB and inform frontend
         await supabaseService.rpc('update_session_phone_info', {
           p_session_id: session.id,
           p_phone_number: cleanPhone,
         })
         throw new Error('Instance already connected. No pairing code needed.')
       }
-      throw new Error('Failed to generate pairing code. Please try again.')
+
+      // Instance is in a stale state (close, connecting, or unknown)
+      // Recovery: delete stale instance, recreate, and retry pairing code
+      console.log(`[generate-pairing-code] Pairing code was null (state: ${instanceState}). Recovering...`)
+
+      const deleted = await deleteInstance(evolutionApiUrl, evolutionApiKey, session.instance_name)
+      if (!deleted) {
+        throw new Error('Failed to recover stale instance. Please try again.')
+      }
+
+      const created = await createInstance(evolutionApiUrl, evolutionApiKey, session.instance_name, supabaseUrl)
+      if (!created) {
+        throw new Error('Failed to recreate instance. Please try again.')
+      }
+
+      // Wait for instance initialization
+      console.log(`[generate-pairing-code] Waiting 3s for fresh instance initialization...`)
+      await new Promise(resolve => setTimeout(resolve, 3000))
+
+      // Retry pairing code generation
+      console.log(`[generate-pairing-code] Retrying pairing code for fresh instance...`)
+      const retryResponse = await fetch(
+        `${evolutionApiUrl}/instance/connect/${session.instance_name}?number=${cleanPhone}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': evolutionApiKey,
+          },
+        }
+      )
+
+      if (!retryResponse.ok) {
+        const retryError = await retryResponse.text()
+        console.error(`[generate-pairing-code] Retry failed: ${retryResponse.status} - ${retryError}`)
+        throw new Error('Failed to generate pairing code after recovery. Please try again.')
+      }
+
+      const retryData = await retryResponse.json()
+      pairingCode = retryData.pairingCode || retryData.code
+
+      if (!pairingCode) {
+        console.error(`[generate-pairing-code] Retry still returned no code:`, retryData)
+        throw new Error('Failed to generate pairing code. Please try again.')
+      }
+
+      console.log(`[generate-pairing-code] Recovery successful! Code generated on retry.`)
     }
 
     // 11. Record pairing attempt and save phone number to session

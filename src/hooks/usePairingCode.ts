@@ -97,58 +97,16 @@ export function usePairingCode(): UsePairingCodeReturn {
     setError(null)
 
     try {
-      let accessToken: string | null = null
+      // Get current session token (does NOT trigger TOKEN_REFRESHED event)
+      // Using getSession() instead of refreshSession() to avoid auth state change
+      // that causes the parent component tree to remount and lose all hook state.
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
 
-      // STEP 1: Always try refresh first to get a fresh token
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
-
-      if (refreshData?.session?.access_token) {
-        // Refresh succeeded, use the new token
-        accessToken = refreshData.session.access_token
-      } else if (refreshError) {
-        // STEP 2: Refresh failed - determine if it's a network error or auth error
-        const errorMessage = refreshError.message?.toLowerCase() || ''
-        const isNetworkError =
-          errorMessage.includes('network') ||
-          errorMessage.includes('fetch') ||
-          errorMessage.includes('failed to fetch') ||
-          errorMessage.includes('networkerror') ||
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('connection')
-
-        if (!isNetworkError) {
-          // Auth error (invalid refresh token, session revoked, etc.) - force re-login
-          throw new Error('Sessão expirada. Por favor, faça login novamente.')
-        }
-
-        // Network error - check if cached session is still valid with buffer
-        const { data: { session: cachedSession } } = await supabase.auth.getSession()
-
-        if (cachedSession?.access_token && cachedSession?.expires_at) {
-          const expiresAtMs = cachedSession.expires_at * 1000 // Convert to milliseconds
-          const now = Date.now()
-          const bufferMs = 60 * 1000 // 1 minute buffer for safety
-
-          if (expiresAtMs > now + bufferMs) {
-            // Token is valid with sufficient buffer, safe to use
-            accessToken = cachedSession.access_token
-          } else {
-            // Token is expired or expiring too soon
-            throw new Error('Sessão expirada. Por favor, faça login novamente.')
-          }
-        } else {
-          // No cached session available
-          throw new Error('Não foi possível autenticar. Verifique sua conexão ou faça login novamente.')
-        }
-      } else {
-        // No refresh error but also no session - user not authenticated
-        throw new Error('Usuário não autenticado. Por favor, faça login novamente.')
+      if (!currentSession?.access_token) {
+        throw new Error('Sessão expirada. Por favor, faça login novamente.')
       }
 
-      // STEP 3: Verify we have a valid token before proceeding
-      if (!accessToken) {
-        throw new Error('Não foi possível obter token de autenticação. Faça login novamente.')
-      }
+      const accessToken = currentSession.access_token
 
       // CRITICAL FIX: @supabase/ssr with cookie-based auth does NOT automatically
       // include user JWT in Edge Function calls. We MUST pass it explicitly.
