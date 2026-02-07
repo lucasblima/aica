@@ -2,10 +2,11 @@
  * WhatsAppPairingStep Component
  * Sprint: "Ordem ao Caos do WhatsApp"
  *
- * Second step of the onboarding flow:
+ * Simplified pairing flow:
  * - Phone number input with country code
- * - Pairing code display with countdown
- * - Connection status polling
+ * - Validates phone → transitions directly to PairingCodeDisplay
+ * - PairingCodeDisplay handles all backend calls (session + instance + code)
+ * - Connection status via realtime subscription from parent
  *
  * @see PR #120 - WhatsApp Onboarding Flow
  */
@@ -14,10 +15,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
-import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { WhatsAppSession } from '@/types/whatsappSession';
-import type { CreateInstanceResponse } from '@/types/whatsappSession';
 
 const log = createNamespacedLogger('WhatsAppPairingStep');
 
@@ -36,7 +35,7 @@ interface WhatsAppPairingStepProps {
   className?: string;
 }
 
-type PairingState = 'input' | 'creating' | 'pairing' | 'connected';
+type PairingState = 'input' | 'pairing' | 'connected';
 
 export function WhatsAppPairingStep({
   onSuccess,
@@ -49,24 +48,18 @@ export function WhatsAppPairingStep({
   const [state, setState] = useState<PairingState>('input');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [formattedPhone, setFormattedPhone] = useState('');
-  const [instanceName, setInstanceName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isCreatingInstance, setIsCreatingInstance] = useState(false);
 
   // Check for existing session on mount - only run once
   const hasCheckedSessionRef = useRef(false);
 
   useEffect(() => {
     if (hasCheckedSessionRef.current) return;
-
-    // Mark as checked to prevent re-running
     hasCheckedSessionRef.current = true;
 
-    // If there's an existing session in connecting state WITH a phone number, skip to pairing
+    // If there's an existing session in connecting/pending state WITH a phone number, skip to pairing
     if (session && (session.status === 'connecting' || session.status === 'pending')) {
       log.debug('Found existing session in connecting state:', session.instance_name);
-      setInstanceName(session.instance_name);
-      // Only skip to pairing if we have a valid phone number
       if (session.phone_number && session.phone_number.replace(/\D/g, '').length >= 10) {
         const phone = session.phone_number.replace(/^55/, '');
         setPhoneNumber(phone);
@@ -75,16 +68,14 @@ export function WhatsAppPairingStep({
         }
         setState('pairing');
       }
-      // If no phone number, stay on 'input' state so user can enter it
     }
   }, [session]);
 
   // Auto-detect when WhatsApp is connected via webhook
   useEffect(() => {
-    if (isConnected && (state === 'pairing' || state === 'creating')) {
-      log.debug(' Connection detected via realtime subscription!');
+    if (isConnected && state === 'pairing') {
+      log.debug('Connection detected via realtime subscription!');
       setState('connected');
-      // Delay before advancing to next step
       setTimeout(() => {
         onSuccess();
       }, 1500);
@@ -96,7 +87,6 @@ export function WhatsAppPairingStep({
     const value = e.target.value.replace(/\D/g, '');
     setPhoneNumber(value);
 
-    // Format for display: (XX) XXXXX-XXXX
     if (value.length <= 2) {
       setFormattedPhone(value);
     } else if (value.length <= 7) {
@@ -108,58 +98,15 @@ export function WhatsAppPairingStep({
     }
   }, []);
 
-  // Handle form submit
+  // Handle form submit - just validate phone and go to pairing
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
+    (e: React.FormEvent) => {
       e.preventDefault();
       if (phoneNumber.length < 10) return;
 
-      try {
-        setError(null);
-        setIsCreatingInstance(true);
-        setState('creating');
-
-        log.debug(' Creating user instance...');
-
-        // CRITICAL: Create instance BEFORE generating pairing code
-        const { data: { session: authSession } } = await supabase.auth.getSession();
-
-        if (!authSession?.access_token) {
-          throw new Error('Usuário não autenticado. Por favor, faça login novamente.');
-        }
-
-        // Call create-user-instance Edge Function
-        const response = await supabase.functions.invoke('create-user-instance', {
-          body: {},
-          headers: {
-            Authorization: `Bearer ${authSession.access_token}`,
-          },
-        });
-
-        if (response.error) {
-          throw new Error(response.error.message || 'Falha ao criar instância WhatsApp');
-        }
-
-        const result = response.data as CreateInstanceResponse;
-
-        if (!result.success || !result.session) {
-          throw new Error(result.error || 'Falha ao criar instância WhatsApp');
-        }
-
-        log.debug(' Instance created:', result.session.instance_name);
-        setInstanceName(result.session.instance_name);
-        setIsCreatingInstance(false);
-        setState('pairing');
-
-        // Now proceed to pairing code display
-        // PairingCodeDisplay will handle code generation
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-        setError(errorMessage);
-        setIsCreatingInstance(false);
-        setState('input');
-        log.error(' Error creating instance:', errorMessage);
-      }
+      setError(null);
+      log.debug('Phone validated, transitioning to pairing state');
+      setState('pairing');
     },
     [phoneNumber]
   );
@@ -167,7 +114,6 @@ export function WhatsAppPairingStep({
   // Handle pairing success
   const handlePairingSuccess = useCallback(() => {
     setState('connected');
-    // Small delay before moving to next step
     setTimeout(() => {
       onSuccess();
     }, 1500);
@@ -176,7 +122,6 @@ export function WhatsAppPairingStep({
   // Handle code generated
   const handleCodeGenerated = useCallback((code: string) => {
     log.debug('Pairing code generated:', code);
-    // Could poll for connection status here
   }, []);
 
   return (
@@ -203,8 +148,6 @@ export function WhatsAppPairingStep({
             ? 'Erro ao conectar - Tente novamente'
             : state === 'input'
             ? 'Digite seu número de telefone para gerar o código'
-            : state === 'creating'
-            ? 'Preparando sua instância WhatsApp...'
             : state === 'pairing'
             ? 'Digite o código no WhatsApp do seu celular'
             : 'WhatsApp conectado com sucesso!'}
@@ -219,31 +162,6 @@ export function WhatsAppPairingStep({
           className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm"
         >
           {error}
-        </motion.div>
-      )}
-
-      {/* Creating Instance State */}
-      {state === 'creating' && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center py-12"
-        >
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6">
-            <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
-          </div>
-          <h3 className="text-lg font-semibold text-ceramic-900 mb-2">
-            Criando instância...
-          </h3>
-          <p className="text-ceramic-500 text-sm text-center max-w-sm">
-            Aguarde enquanto preparamos sua conexão WhatsApp
-          </p>
-          <div className="mt-4 p-3 bg-ceramic-50 rounded-xl">
-            <div className="flex items-center gap-2 text-sm text-ceramic-600">
-              <Phone className="w-4 h-4" />
-              <span>+55 {formattedPhone}</span>
-            </div>
-          </div>
         </motion.div>
       )}
 
@@ -296,7 +214,7 @@ export function WhatsAppPairingStep({
       )}
 
       {/* Pairing State */}
-      {state === 'pairing' && instanceName && (
+      {state === 'pairing' && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

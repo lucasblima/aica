@@ -92,7 +92,7 @@ const SUPPORTED_AUDIO_MIMETYPES = [
 // Audio processing limits
 const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024  // 25MB
 const AUDIO_TRANSCRIPTION_TIMEOUT_MS = 30000   // 30 seconds
-const GEMINI_AUDIO_MODEL = 'gemini-2.0-flash-exp'
+const GEMINI_AUDIO_MODEL = 'gemini-2.5-flash'
 
 // =============================================================================
 // LOGGING
@@ -274,7 +274,7 @@ Return ONLY the extracted text, without any additional formatting or comments.
   }
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -330,7 +330,7 @@ If there is no text in the image, return "No text detected".
   }
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

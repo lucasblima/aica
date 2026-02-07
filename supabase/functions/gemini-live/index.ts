@@ -283,7 +283,7 @@ async function handleChat(
   // Initialize Gemini
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash-exp', // Fast model for low latency
+    model: 'gemini-2.5-flash', // Fast model for low latency
     generationConfig: {
       temperature: 0.7,
       topP: 0.9,
@@ -406,7 +406,7 @@ async function handleEndSession(
     await supabase.from("llm_metrics").insert({
       user_id: userId,
       action: "gemini_live_session_end",
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-flash",
       latency_ms: durationMs,
       status: "success",
       input_tokens: messageCount, // Using as message count proxy
@@ -440,7 +440,7 @@ async function logChatMetrics(
     await supabase.from("llm_metrics").insert({
       user_id: userId,
       action: "gemini_live_chat",
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-flash",
       latency_ms: 0, // We don't track latency for streaming
       status: "success",
       input_tokens: Math.ceil(inputLength / 4), // Rough token estimate

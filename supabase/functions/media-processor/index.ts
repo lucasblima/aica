@@ -173,7 +173,7 @@ async function transcribeAudio(
 
     // Use Gemini 2.0 Flash for audio transcription
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         temperature: 0.1,
         maxOutputTokens: 4096,
@@ -221,7 +221,7 @@ async function extractImageText(
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         temperature: 0.1,
         maxOutputTokens: 2048,
@@ -271,7 +271,7 @@ async function extractPdfText(
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         temperature: 0.1,
         maxOutputTokens: 4096,
@@ -328,7 +328,7 @@ async function analyzeImage(
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         temperature: 0.3,
         maxOutputTokens: 512,

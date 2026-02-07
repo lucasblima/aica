@@ -6,10 +6,10 @@
  * Handles message sending, queueing, and token consumption.
  */
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useReducer, useCallback } from 'react'
 import { supabase } from '@/services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
-import rateLimiterService, {
+import type {
   RateLimitStatus,
   QueuedMessage,
   ModelTier,
@@ -169,13 +169,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
   // -------------------------------------------------------------------------
 
   const refreshRateLimitStatus = useCallback(async () => {
-    const status = await rateLimiterService.checkRateLimit()
-    dispatch({ type: 'SET_RATE_LIMIT_STATUS', status })
+    // TODO: Issue #190 - Re-enable when billing schema is deployed
+    log.debug('refreshRateLimitStatus: billing disabled')
   }, [])
 
   const refreshQueuedMessages = useCallback(async () => {
-    const messages = await rateLimiterService.getQueuedMessages()
-    dispatch({ type: 'SET_QUEUED_MESSAGES', messages })
+    // TODO: Issue #190 - Re-enable when billing schema is deployed
+    log.debug('refreshQueuedMessages: billing disabled')
   }, [])
 
   // TODO: Issue #190 - Re-enable when billing schema is deployed to Supabase
@@ -332,8 +332,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     // Send message to AI via Edge Function
     try {
-      const tierToUse = rateLimitStatus.availableTier || 'standard'
-
       // Add typing indicator
       const typingId = crypto.randomUUID()
       dispatch({
@@ -346,24 +344,27 @@ export function ChatProvider({ children }: ChatProviderProps) {
         },
       })
 
-      // Route to ADK multi-agent system via agent-proxy Edge Function
-      const { data, error } = await supabase.functions.invoke('agent-proxy', {
+      // Build conversation history for context
+      const history = state.messages.slice(-10).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }))
+
+      // Call gemini-chat Edge Function directly
+      const { data, error } = await supabase.functions.invoke('gemini-chat', {
         body: {
           message: content,
-          session_id: sessionId,
-          context: {
-            context_messages: state.messages.slice(-10).map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-          },
+          history,
+          systemPrompt: 'Você é a Aica, assistente pessoal inteligente do AICA Life OS. Responda em português brasileiro de forma útil, concisa e amigável. Você ajuda com produtividade, planejamento, organização e bem-estar.',
         },
       })
 
       if (error) throw error
 
-      if (!data.success && data.error) {
-        throw new Error(data.error)
+      // gemini-chat returns { response, success } for legacy chat
+      const responseText = data?.response || data?.result?.response || ''
+      if (!responseText) {
+        throw new Error(data?.error || 'Resposta vazia do assistente')
       }
 
       // Remove typing indicator and add real response
@@ -371,40 +372,29 @@ export function ChatProvider({ children }: ChatProviderProps) {
         type: 'UPDATE_MESSAGE',
         id: typingId,
         updates: {
-          content: data.response,
-          model_tier: tierToUse,
-          tokens_used: data.tokens_used,
-          agent: data.agent,
-          sources: data.sources,
+          content: responseText,
+          model_tier: preferredTier,
         },
       })
 
-      // Save assistant message to database
-      const messageMetadata: Record<string, unknown> = {}
-      if (data.agent) messageMetadata.agent = data.agent
-      if (data.sources?.length) messageMetadata.sources = data.sources
-
-      await supabase.from('chat_messages').insert({
+      // Save assistant message to database (best-effort)
+      supabase.from('chat_messages').insert({
         session_id: sessionId,
         user_id: user.id,
         role: 'assistant',
-        content: data.response,
-        model_tier: tierToUse,
-        tokens_used: data.tokens_used,
-        ...(Object.keys(messageMetadata).length > 0 && { metadata: messageMetadata }),
+        content: responseText,
+        model_tier: preferredTier,
+      }).then(({ error: saveErr }) => {
+        if (saveErr) log.warn('Could not save assistant message to DB:', saveErr.message)
       })
-
-      // Consume tokens
-      await rateLimiterService.consumeTokens(tierToUse, data.tokens_used || estimatedTokens)
     } catch (err) {
       const error = err as Error
       log.error(' sendMessage error:', error)
       dispatch({ type: 'SET_ERROR', error: error.message })
     } finally {
       dispatch({ type: 'SET_SENDING', isSending: false })
-      await refreshRateLimitStatus()
     }
-  }, [state.currentSession, state.messages, createSession, refreshRateLimitStatus, refreshQueuedMessages])
+  }, [state.currentSession, state.messages, createSession])
 
   // -------------------------------------------------------------------------
   // OTHER ACTIONS
@@ -414,12 +404,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
     dispatch({ type: 'CLEAR_MESSAGES' })
   }, [])
 
-  const cancelQueuedMessage = useCallback(async (messageId: string) => {
-    const { success } = await rateLimiterService.cancelQueuedMessage(messageId)
-    if (success) {
-      await refreshQueuedMessages()
-    }
-  }, [refreshQueuedMessages])
+  const cancelQueuedMessage = useCallback(async (_messageId: string) => {
+    // TODO: Issue #190 - Re-enable when billing schema is deployed
+    log.debug('cancelQueuedMessage: billing disabled')
+  }, [])
 
   // -------------------------------------------------------------------------
   // CONTEXT VALUE

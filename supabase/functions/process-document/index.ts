@@ -33,7 +33,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
 // Model configuration (configurable via env vars)
-const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-2.0-flash-exp' // Cost-optimized for production
+const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash' // Cost-optimized for production
 const EMBEDDING_MODEL = Deno.env.get('EMBEDDING_MODEL') || 'text-embedding-004' // 768 dimensions
 
 // Processing configuration (configurable via env vars)

@@ -81,7 +81,7 @@ async function executeDeepResearch(
   additionalContext?: string,
   depth: string = 'medium'
 ): Promise<ResearchResult> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
   // Step 1: Generate research plan
   const planPrompt = generateResearchPlan(theme, guestName, depth)

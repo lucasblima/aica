@@ -310,8 +310,8 @@ interface GuestProfile {
 // ============================================================================
 
 const MODELS = {
-  fast: 'gemini-2.0-flash-exp',
-  smart: 'gemini-2.0-flash-exp',
+  fast: 'gemini-2.5-flash',
+  smart: 'gemini-2.5-flash',
 } as const
 
 const SMART_MODEL_ACTIONS = [
