@@ -1,6 +1,6 @@
 /**
  * AicaChatFAB Styles
- * Floating Action Button — "Coming Soon" state
+ * Floating Action Button with chat interface
  */
 
 /* ============================================================================
@@ -90,7 +90,8 @@
 
   width: 100%;
   max-width: 380px;
-  height: auto;
+  height: 70vh;
+  max-height: 560px;
 
   background: #faf9f7;
   border-radius: 24px 24px 0 0;
@@ -98,6 +99,7 @@
 
   transform: translateY(100%);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 .aica-fab-drawer--open {
@@ -114,7 +116,8 @@
   .aica-fab-drawer {
     bottom: 96px;
     right: 16px;
-    width: 340px;
+    width: 360px;
+    height: 480px;
     border-radius: 24px;
     transform: translateY(24px);
     opacity: 0;
@@ -137,22 +140,78 @@
 }
 
 /* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.aica-fab-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 16px 20px;
+
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.aica-fab-header__orb {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.2);
+
+  animation: aica-breathe 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes aica-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+}
+
+.aica-fab-header__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.aica-fab-header__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.aica-fab-header__subtitle {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.4);
+  line-height: 1.2;
+}
+
+/* ============================================================================
    CLOSE BUTTON
    ============================================================================ */
 
 .aica-fab-drawer__close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 1;
-
   display: flex;
   align-items: center;
   justify-content: center;
 
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
+  flex-shrink: 0;
 
   background: rgba(0, 0, 0, 0.04);
   border: none;
@@ -169,90 +228,194 @@
 }
 
 /* ============================================================================
-   COMING SOON — The content
+   MESSAGES AREA
    ============================================================================ */
 
-.aica-fab-coming-soon {
+.aica-fab-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 8px;
+
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.aica-fab-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.aica-fab-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.aica-fab-messages::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+/* Empty state */
+.aica-fab-empty {
+  flex: 1;
+  display: flex;
   align-items: center;
-
-  padding: 56px 40px 48px;
-
-  text-align: center;
-  user-select: none;
+  justify-content: center;
 }
 
-/* The breathing orb */
-.aica-fab-coming-soon__orb {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 28px;
-
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.2);
-
-  animation: aica-breathe 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes aica-breathe {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.2);
-  }
-  50% {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 16px rgba(245, 158, 11, 0);
-  }
-}
-
-.aica-fab-coming-soon__title {
+.aica-fab-empty p {
   margin: 0;
-
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #1a1a1a;
-  line-height: 1;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.3);
+  font-weight: 400;
 }
 
-.aica-fab-coming-soon__subtitle {
-  margin: 6px 0 0;
+/* Message bubbles */
+.aica-fab-message {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  animation: aica-msg-in 0.2s ease-out;
+}
 
+@keyframes aica-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aica-fab-message p {
+  margin: 0;
   font-size: 13px;
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.4);
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.aica-fab-message--user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 16px 16px 4px 16px;
+}
+
+.aica-fab-message--user p {
+  color: white;
+}
+
+.aica-fab-message--assistant {
+  align-self: flex-start;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 16px 16px 16px 4px;
+}
+
+.aica-fab-message--assistant p {
+  color: #1a1a1a;
+}
+
+/* Loading spinner */
+.aica-fab-loading-icon {
+  animation: aica-spin 1s linear infinite;
+  color: rgba(0, 0, 0, 0.3);
+}
+
+@keyframes aica-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Error */
+.aica-fab-error {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.aica-fab-error p {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
   line-height: 1.4;
 }
 
-.aica-fab-coming-soon__divider {
-  width: 32px;
-  height: 1px;
-  margin: 24px 0;
+/* ============================================================================
+   INPUT BAR
+   ============================================================================ */
 
-  background: rgba(0, 0, 0, 0.08);
+.aica-fab-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: #faf9f7;
+  flex-shrink: 0;
 }
 
-.aica-fab-coming-soon__status {
-  margin: 0;
+.aica-fab-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
 
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #d97706;
-  line-height: 1;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+  outline: none;
+
+  font-size: 14px;
+  color: #1a1a1a;
+
+  transition: border-color 0.2s ease;
 }
 
-.aica-fab-coming-soon__detail {
-  margin: 12px 0 0;
-  max-width: 220px;
+.aica-fab-input::placeholder {
+  color: rgba(0, 0, 0, 0.3);
+}
 
-  font-size: 13px;
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.35);
-  line-height: 1.6;
+.aica-fab-input:focus {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.aica-fab-input:disabled {
+  opacity: 0.6;
+}
+
+.aica-fab-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  flex-shrink: 0;
+
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 50%;
+
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aica-fab-send:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.aica-fab-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.aica-fab-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ============================================================================
@@ -262,6 +425,18 @@
 @media (prefers-color-scheme: dark) {
   .aica-fab-drawer {
     background: #1c1c1e;
+  }
+
+  .aica-fab-header {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .aica-fab-header__title {
+    color: #f5f5f7;
+  }
+
+  .aica-fab-header__subtitle {
+    color: rgba(255, 255, 255, 0.4);
   }
 
   .aica-fab-drawer__close {
@@ -274,23 +449,46 @@
     color: rgba(255, 255, 255, 0.5);
   }
 
-  .aica-fab-coming-soon__title {
+  .aica-fab-empty p {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .aica-fab-message--assistant {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .aica-fab-message--assistant p {
     color: #f5f5f7;
   }
 
-  .aica-fab-coming-soon__subtitle {
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  .aica-fab-coming-soon__divider {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .aica-fab-coming-soon__status {
-    color: #f59e0b;
-  }
-
-  .aica-fab-coming-soon__detail {
+  .aica-fab-loading-icon {
     color: rgba(255, 255, 255, 0.3);
+  }
+
+  .aica-fab-error {
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  .aica-fab-input-bar {
+    border-top-color: rgba(255, 255, 255, 0.06);
+    background: #1c1c1e;
+  }
+
+  .aica-fab-input {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #f5f5f7;
+  }
+
+  .aica-fab-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .aica-fab-input:focus {
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+
+  .aica-fab-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
   }
 }

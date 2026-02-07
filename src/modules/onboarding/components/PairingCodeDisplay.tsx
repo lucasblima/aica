@@ -8,14 +8,15 @@
  * - Copy to clipboard functionality
  * - Regenerate button
  * - Step-by-step instructions
+ * - Clear error states with retry
  *
  * @see Issue #86 - PairingCodeDisplay Component
  * @see PR #120 - WhatsApp Onboarding Flow
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, RefreshCw, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Copy, RefreshCw, Clock, AlertCircle, KeyRound } from 'lucide-react';
 import { usePairingCode } from '@/hooks/usePairingCode';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -30,6 +31,41 @@ interface PairingCodeDisplayProps {
   onPairingSuccess?: () => void;
   /** Optional className */
   className?: string;
+}
+
+/** Map backend error messages to user-friendly PT-BR messages */
+function friendlyErrorMessage(error: string): { message: string; hint: string } {
+  const lower = error.toLowerCase();
+
+  if (lower.includes('sessão expirada') || lower.includes('faça login') || lower.includes('não autenticado')) {
+    return {
+      message: 'Sua sessão expirou',
+      hint: 'Recarregue a página e faça login novamente.',
+    };
+  }
+  if (lower.includes('conexão') || lower.includes('network') || lower.includes('fetch')) {
+    return {
+      message: 'Erro de conexão',
+      hint: 'Verifique sua internet e tente novamente.',
+    };
+  }
+  if (lower.includes('pairing') || lower.includes('código')) {
+    return {
+      message: 'Falha ao gerar código',
+      hint: 'A instância WhatsApp pode estar em estado inconsistente. Tente novamente em alguns segundos.',
+    };
+  }
+  if (lower.includes('instance') || lower.includes('instância')) {
+    return {
+      message: 'Erro na instância WhatsApp',
+      hint: 'Houve um problema ao preparar a conexão. Tente novamente.',
+    };
+  }
+
+  return {
+    message: 'Erro inesperado',
+    hint: error,
+  };
 }
 
 export function PairingCodeDisplay({
@@ -49,35 +85,63 @@ export function PairingCodeDisplay({
     reset,
   } = usePairingCode();
 
-  // Generate code on mount - only once per phone number
-  // Issue #195: Use state-based guard instead of ref to survive React Strict Mode remounts
-  const [hasAttempted, setHasAttempted] = React.useState(false);
+  // CRITICAL: useRef for guards, NOT useState.
+  // React StrictMode double-invokes effects within the same commit phase.
+  // useState updates are batched and not visible to the second invocation,
+  // causing generateCode to fire twice → race condition → 400 error.
+  // useRef mutations are synchronous and immediately visible.
+  const hasAttemptedRef = useRef(false);
+  const hasAutoRetriedRef = useRef(false);
+  const autoRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Cleanup on unmount
   useEffect(() => {
-    // Only generate once per phone number, and require a valid phone (country code + at least 10 digits)
+    return () => {
+      if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
+    };
+  }, []);
+
+  // Generate code on mount - exactly once per phone number
+  useEffect(() => {
     const phoneDigits = phoneNumber?.replace(/\D/g, '') || '';
-    if (phoneDigits.length >= 12 && !code && !isLoading && !error && !hasAttempted) {
-      setHasAttempted(true);
+    if (phoneDigits.length >= 12 && !code && !isLoading && !error && !hasAttemptedRef.current) {
+      hasAttemptedRef.current = true; // Synchronous - blocks StrictMode second invoke
       generateCode(phoneNumber).then((result) => {
         if (result?.code) {
           onCodeGenerated?.(result.code);
         }
-        // Do NOT reset hasAttempted on failure - user must click "Tentar novamente"
       });
     }
   }, [phoneNumber]); // Minimal dependencies - only phoneNumber
 
-  // Handle regenerate
-  const handleRegenerate = useCallback(async () => {
-    setHasAttempted(false);
+  // Auto-retry once: if first attempt failed (instance may need time to initialize)
+  useEffect(() => {
+    if (error && hasAttemptedRef.current && !hasAutoRetriedRef.current && !code && !isLoading) {
+      hasAutoRetriedRef.current = true; // Synchronous guard
+      log.debug('First attempt failed, scheduling auto-retry in 3s...');
+      autoRetryTimerRef.current = setTimeout(() => {
+        log.debug('Auto-retrying pairing code generation...');
+        reset();
+        clearError();
+        generateCode(phoneNumber).then((result) => {
+          if (result?.code) {
+            onCodeGenerated?.(result.code);
+          }
+        });
+      }, 3000);
+    }
+  }, [error, code, isLoading]);
+
+  // Handle manual regenerate / retry
+  const handleRetry = useCallback(async () => {
+    if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
     reset();
     clearError();
-    setHasAttempted(true);
+    hasAttemptedRef.current = true;
+    hasAutoRetriedRef.current = true; // Don't auto-retry after manual retry
     const result = await generateCode(phoneNumber);
     if (result?.code) {
       onCodeGenerated?.(result.code);
-    } else {
-      // Keep hasAttempted true - user must click "Tentar novamente" again
     }
   }, [phoneNumber, generateCode, onCodeGenerated, reset, clearError]);
 
@@ -86,7 +150,6 @@ export function PairingCodeDisplay({
     if (code) {
       try {
         await navigator.clipboard.writeText(code.replace('-', ''));
-        // Could add toast notification here
       } catch (err) {
         log.error('Failed to copy code:', err);
       }
@@ -99,6 +162,9 @@ export function PairingCodeDisplay({
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const errorInfo = error ? friendlyErrorMessage(error) : null;
+  const isAuthError = error?.toLowerCase().includes('sessão') || error?.toLowerCase().includes('login') || error?.toLowerCase().includes('autenticad');
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -117,6 +183,9 @@ export function PairingCodeDisplay({
               <p className="mt-4 text-ceramic-500 text-sm">
                 Gerando código de pareamento...
               </p>
+              <p className="mt-1 text-ceramic-400 text-xs">
+                Criando instância e configurando conexão
+              </p>
             </motion.div>
           ) : error ? (
             <motion.div
@@ -127,16 +196,35 @@ export function PairingCodeDisplay({
               className="flex flex-col items-center py-8"
             >
               <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                <AlertCircle className="w-8 h-8 text-red-500" />
+                {isAuthError ? (
+                  <KeyRound className="w-8 h-8 text-red-500" />
+                ) : (
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                )}
               </div>
-              <p className="text-red-600 text-center mb-4">{error}</p>
-              <button
-                onClick={handleRegenerate}
-                className="flex items-center gap-2 px-4 py-2 bg-ceramic-800 text-white rounded-lg hover:bg-ceramic-700 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Tentar novamente
-              </button>
+              <p className="text-red-700 font-medium text-center mb-1">
+                {errorInfo?.message}
+              </p>
+              <p className="text-red-500 text-sm text-center mb-4 max-w-sm">
+                {errorInfo?.hint}
+              </p>
+              {isAuthError ? (
+                <button
+                  onClick={() => window.location.reload()}
+                  className="flex items-center gap-2 px-4 py-2 bg-ceramic-800 text-white rounded-lg hover:bg-ceramic-700 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Recarregar página
+                </button>
+              ) : (
+                <button
+                  onClick={handleRetry}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Tentar novamente
+                </button>
+              )}
             </motion.div>
           ) : code ? (
             <motion.div
@@ -192,7 +280,7 @@ export function PairingCodeDisplay({
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  onClick={handleRegenerate}
+                  onClick={handleRetry}
                   className="mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -239,28 +327,6 @@ export function PairingCodeDisplay({
             ))}
           </ol>
         </motion.div>
-      )}
-
-      {/* Success State */}
-      {onPairingSuccess && (
-        <div className="hidden">
-          {/* This could be shown when pairing is detected as successful */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center py-8"
-          >
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <CheckCircle className="w-10 h-10 text-green-500" />
-            </div>
-            <h3 className="text-lg font-semibold text-ceramic-800">
-              WhatsApp conectado!
-            </h3>
-            <p className="text-ceramic-500 text-sm mt-1">
-              Seu WhatsApp foi pareado com sucesso
-            </p>
-          </motion.div>
-        </div>
       )}
     </div>
   );

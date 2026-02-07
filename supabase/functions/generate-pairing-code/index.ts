@@ -236,6 +236,10 @@ serve(async (req: Request) => {
 
     if (instanceResult.created) {
       console.log(`[generate-pairing-code] New instance created and webhook configured: ${session.instance_name}`)
+      // Wait for Evolution API to finish initializing the instance
+      // Without this delay, /instance/connect returns pairingCode: null
+      console.log(`[generate-pairing-code] Waiting 3s for instance initialization...`)
+      await new Promise(resolve => setTimeout(resolve, 3000))
     }
 
     // 9. Generate pairing code via Evolution API
@@ -285,7 +289,7 @@ serve(async (req: Request) => {
       throw new Error('Failed to generate pairing code. Please try again.')
     }
 
-    // 11. Record pairing attempt in database
+    // 11. Record pairing attempt and save phone number to session
     const expiresAt = new Date(Date.now() + PAIRING_CODE_EXPIRATION_SECONDS * 1000).toISOString()
 
     await supabaseService.rpc('record_pairing_attempt', {
@@ -293,6 +297,12 @@ serve(async (req: Request) => {
       p_pairing_code: pairingCode,
       p_expires_at: expiresAt,
     })
+
+    // Save phone number to session (used by frontend to resume pairing flow)
+    await supabaseService
+      .from('whatsapp_sessions')
+      .update({ phone_number: cleanPhone, status: 'connecting' })
+      .eq('id', session.id)
 
     // 12. Format and return response
     const response: PairingCodeResponse = {

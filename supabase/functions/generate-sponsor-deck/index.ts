@@ -199,7 +199,7 @@ async function generateDeckContent(
   projectData: ProjectData,
   language: 'pt-BR' | 'en-US'
 ): Promise<{ content: GeneratedContent; usageMetadata: any }> {
-  const modelName = Deno.env.get('GEMINI_MODEL_NAME') || 'gemini-2.0-flash-001'
+  const modelName = Deno.env.get('GEMINI_MODEL_NAME') || 'gemini-2.5-flash'
   const model = genAI.getGenerativeModel({ model: modelName })
 
   const langInstructions = language === 'pt-BR'

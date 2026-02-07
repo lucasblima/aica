@@ -240,7 +240,7 @@ async function handleQueryCorpus(
     };
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,7 +273,7 @@ async function handleQueryCorpus(
     await supabaseClient.from('ai_usage_analytics').insert({
       user_id: userId,
       operation_type: 'file_search_query',
-      ai_model: 'gemini-2.0-flash-exp',
+      ai_model: 'gemini-2.5-flash',
       total_tokens: result.usageMetadata?.totalTokenCount || 0,
       prompt_tokens: result.usageMetadata?.promptTokenCount || 0,
       completion_tokens: result.usageMetadata?.candidatesTokenCount || 0,

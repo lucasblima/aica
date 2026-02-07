@@ -398,7 +398,7 @@ serve(async (req) => {
     log('DEBUG', 'Calling Gemini for intent extraction')
 
     const geminiResponse = await callGeminiWithRetry(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         contents: [{ parts: [{ text: intentPrompt }] }],
         generationConfig: {

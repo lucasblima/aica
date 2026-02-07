@@ -257,7 +257,7 @@ async function handleSearchDocuments(
       return {
         answer: 'Nenhum documento encontrado nessas categorias.',
         citations: [],
-        model: 'gemini-2.0-flash-exp'
+        model: 'gemini-2.5-flash'
       };
     }
 
@@ -286,7 +286,7 @@ async function handleSearchDocuments(
     };
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -331,7 +331,7 @@ async function handleSearchDocuments(
     return {
       answer: text,
       citations,
-      model: 'gemini-2.0-flash-exp'
+      model: 'gemini-2.5-flash'
     };
   } catch (error) {
     console.error('[FileSearch] Erro na busca:', error);

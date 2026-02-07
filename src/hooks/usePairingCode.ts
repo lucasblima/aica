@@ -162,7 +162,38 @@ export function usePairingCode(): UsePairingCodeReturn {
       })
 
       if (response.error) {
-        throw new Error(response.error.message || 'Falha ao gerar código de pareamento')
+        // Supabase functions client wraps non-2xx responses:
+        // - error.message = generic "Edge Function returned a non-2xx status code"
+        // - error.context = Response object (must be read async) or parsed JSON
+        let edgeFnError = 'Falha ao gerar código de pareamento'
+
+        try {
+          const ctx = (response.error as any)?.context
+
+          if (ctx instanceof Response) {
+            // @supabase/ssr: context is a raw Response object
+            const body = await ctx.json()
+            edgeFnError = body?.error || body?.message || edgeFnError
+            console.error('[usePairingCode] Edge Function error body:', body)
+          } else if (ctx && typeof ctx === 'object') {
+            // Some versions: context is already parsed JSON
+            edgeFnError = ctx.error || edgeFnError
+            console.error('[usePairingCode] Edge Function error ctx:', ctx)
+          } else {
+            // Try response.data which may contain the error
+            edgeFnError =
+              response.data?.error ||
+              response.data?.message?.error ||
+              response.error.message ||
+              edgeFnError
+            console.error('[usePairingCode] Edge Function error fallback:', response.data, response.error.message)
+          }
+        } catch (parseErr) {
+          console.error('[usePairingCode] Could not parse error context:', parseErr)
+          edgeFnError = response.error.message || edgeFnError
+        }
+
+        throw new Error(edgeFnError)
       }
 
       const result = response.data as {
@@ -174,6 +205,7 @@ export function usePairingCode(): UsePairingCodeReturn {
       }
 
       if (!result.success || !result.code) {
+        console.error('[usePairingCode] No code in response:', result)
         throw new Error(result.error || 'Falha ao gerar código de pareamento')
       }
 
@@ -204,6 +236,7 @@ export function usePairingCode(): UsePairingCodeReturn {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
+      console.error('[usePairingCode] Error generating pairing code:', errorMessage)
       setError(errorMessage)
       return null
     } finally {

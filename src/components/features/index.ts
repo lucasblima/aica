@@ -9,7 +9,6 @@
 // prettier-ignore
 export { default as AchievementsView } from './AchievementsView';
 export { AgendaTimeline } from './AgendaTimeline';
-export { AicaChat } from './AicaChat';
 export { CalendarSyncIndicator } from './CalendarSyncIndicator';
 export { ConnectionArchetypes } from './ConnectionArchetypes';
 // prettier-ignore
@@ -47,10 +46,6 @@ export { NotificationBell } from './NotificationBell';
 // prettier-ignore
 export { default as OnboardingWizard } from './OnboardingWizard';
 export { PomodoroTimer } from './PomodoroTimer';
-export { QueueStatus } from './QueueStatus';
-export { TokenMeter } from './TokenMeter';
-export { UnifiedChatInterface } from './UnifiedChatInterface';
-export type { UnifiedChatInterfaceProps, QuickAction } from './UnifiedChatInterface';
 export { UnifiedJourneyCard } from './UnifiedJourneyCard';
 export { WeeklyCalendarView } from './WeeklyCalendarView';
 
