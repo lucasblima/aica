@@ -1,19 +1,16 @@
 /**
  * WhatsAppPairingStep Component
- * Sprint: "Ordem ao Caos do WhatsApp"
+ * Jony Ive-inspired: minimal, serene, confident whitespace
  *
- * Simplified pairing flow:
- * - Phone number input with country code
- * - Validates phone → transitions directly to PairingCodeDisplay
- * - PairingCodeDisplay handles all backend calls (session + instance + code)
- * - Connection status via realtime subscription from parent
+ * Flow: input → pairing → connected
+ * PairingCodeDisplay handles all backend calls
  *
  * @see PR #120 - WhatsApp Onboarding Flow
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { PairingCodeDisplay } from './PairingCodeDisplay';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { WhatsAppSession } from '@/types/whatsappSession';
@@ -21,17 +18,11 @@ import type { WhatsAppSession } from '@/types/whatsappSession';
 const log = createNamespacedLogger('WhatsAppPairingStep');
 
 interface WhatsAppPairingStepProps {
-  /** Callback when pairing is successful */
   onSuccess: () => void;
-  /** Callback to go back */
   onBack: () => void;
-  /** Session data from parent (avoids duplicate subscription) */
   session?: WhatsAppSession | null;
-  /** Whether the session is connected */
   isConnected?: boolean;
-  /** Session status string */
   sessionStatus?: string | null;
-  /** Optional className */
   className?: string;
 }
 
@@ -48,16 +39,13 @@ export function WhatsAppPairingStep({
   const [state, setState] = useState<PairingState>('input');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [formattedPhone, setFormattedPhone] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
-  // Check for existing session on mount - only run once
   const hasCheckedSessionRef = useRef(false);
 
   useEffect(() => {
     if (hasCheckedSessionRef.current) return;
     hasCheckedSessionRef.current = true;
 
-    // If there's an existing session in connecting/pending state WITH a phone number, skip to pairing
     if (session && (session.status === 'connecting' || session.status === 'pending')) {
       log.debug('Found existing session in connecting state:', session.instance_name);
       if (session.phone_number && session.phone_number.replace(/\D/g, '').length >= 10) {
@@ -71,18 +59,16 @@ export function WhatsAppPairingStep({
     }
   }, [session]);
 
-  // Auto-detect when WhatsApp is connected via webhook
   useEffect(() => {
     if (isConnected && state === 'pairing') {
       log.debug('Connection detected via realtime subscription!');
       setState('connected');
       setTimeout(() => {
         onSuccess();
-      }, 1500);
+      }, 2000);
     }
   }, [isConnected, state, onSuccess]);
 
-  // Format phone number as user types
   const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     setPhoneNumber(value);
@@ -98,91 +84,77 @@ export function WhatsAppPairingStep({
     }
   }, []);
 
-  // Handle form submit - just validate phone and go to pairing
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       if (phoneNumber.length < 10) return;
-
-      setError(null);
       log.debug('Phone validated, transitioning to pairing state');
       setState('pairing');
     },
     [phoneNumber]
   );
 
-  // Handle pairing success
   const handlePairingSuccess = useCallback(() => {
     setState('connected');
     setTimeout(() => {
       onSuccess();
-    }, 1500);
+    }, 2000);
   }, [onSuccess]);
 
-  // Handle code generated
   const handleCodeGenerated = useCallback((code: string) => {
     log.debug('Pairing code generated:', code);
   }, []);
 
+  const subtitleText = state === 'input'
+    ? 'Digite seu número para conectar'
+    : state === 'pairing'
+    ? 'Insira o código no WhatsApp'
+    : 'Conectado com sucesso';
+
   return (
     <div className={`flex flex-col ${className}`}>
-      {/* Header */}
+      {/* Header — minimal, confident */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+        className="mb-8"
       >
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-ceramic-500 hover:text-ceramic-700 transition-colors mb-4"
+          className="flex items-center gap-1.5 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors mb-6 text-sm"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Voltar</span>
         </button>
 
-        <h2 className="text-2xl font-bold text-ceramic-900">
+        <h2 className="text-xl font-semibold text-ceramic-text-primary tracking-tight">
           Conectar WhatsApp
         </h2>
-        <p className="text-ceramic-600 mt-1">
-          {error
-            ? 'Erro ao conectar - Tente novamente'
-            : state === 'input'
-            ? 'Digite seu número de telefone para gerar o código'
-            : state === 'pairing'
-            ? 'Digite o código no WhatsApp do seu celular'
-            : 'WhatsApp conectado com sucesso!'}
+        <p className="text-sm text-ceramic-text-secondary mt-1">
+          {subtitleText}
         </p>
       </motion.div>
 
-      {/* Error Display */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm"
-        >
-          {error}
-        </motion.div>
-      )}
-
-      {/* Phone Input State */}
+      {/* ── Phone Input ── */}
       {state === 'input' && (
         <motion.form
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
           onSubmit={handleSubmit}
-          className="space-y-6"
+          className="space-y-8"
         >
           <div>
             <label
               htmlFor="phone"
-              className="block text-sm font-medium text-ceramic-700 mb-2"
+              className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ceramic-text-secondary mb-3"
             >
               Número do WhatsApp
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                <span className="text-ceramic-500 font-medium">+55</span>
+              <div className="absolute inset-y-0 left-0 flex items-center pl-5">
+                <span className="text-ceramic-text-secondary text-sm font-medium">+55</span>
               </div>
               <input
                 type="tel"
@@ -190,50 +162,65 @@ export function WhatsAppPairingStep({
                 value={formattedPhone}
                 onChange={handlePhoneChange}
                 placeholder="(11) 98765-4321"
-                className="w-full pl-14 pr-4 py-4 text-lg border-2 border-ceramic-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
+                className="w-full pl-14 pr-5 py-4 text-lg bg-white/70 backdrop-blur-sm rounded-2xl
+                  border border-ceramic-cool-hover focus:border-ceramic-accent
+                  outline-none transition-all duration-300
+                  text-ceramic-text-primary placeholder:text-ceramic-text-secondary/40"
+                style={{
+                  boxShadow: '0 2px 8px rgba(163, 158, 145, 0.06)',
+                }}
                 maxLength={16}
                 autoFocus
               />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-                <Phone className="w-5 h-5 text-ceramic-400" />
-              </div>
             </div>
-            <p className="mt-2 text-sm text-ceramic-500">
-              Este deve ser o número vinculado ao seu WhatsApp
+            <p className="mt-3 text-xs text-ceramic-text-secondary">
+              O número vinculado ao seu WhatsApp
             </p>
           </div>
 
-          <button
+          <motion.button
             type="submit"
             disabled={phoneNumber.length < 10}
-            className="w-full py-4 bg-green-600 hover:bg-green-500 disabled:bg-ceramic-300 text-white font-semibold rounded-xl transition-colors disabled:cursor-not-allowed"
+            className="w-full py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 disabled:cursor-not-allowed"
+            style={{
+              background: phoneNumber.length >= 10
+                ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                : '#E8EBE9',
+              color: phoneNumber.length >= 10 ? 'white' : '#948D82',
+              boxShadow: phoneNumber.length >= 10
+                ? '0 4px 12px rgba(217, 119, 6, 0.25)'
+                : 'none',
+            }}
+            whileHover={phoneNumber.length >= 10 ? { scale: 1.01 } : {}}
+            whileTap={phoneNumber.length >= 10 ? { scale: 0.99 } : {}}
           >
             Gerar código de pareamento
-          </button>
+          </motion.button>
         </motion.form>
       )}
 
-      {/* Pairing State */}
+      {/* ── Pairing State ── */}
       {state === 'pairing' && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="space-y-4"
+          transition={{ duration: 0.4 }}
+          className="space-y-6"
         >
-          <div className="p-4 bg-ceramic-50 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-ceramic-500" />
-              <span className="text-ceramic-700">+55 {formattedPhone}</span>
-              <button
-                onClick={() => {
-                  setState('input');
-                  setError(null);
-                }}
-                className="ml-auto text-sm text-green-600 hover:text-green-500"
-              >
-                Alterar
-              </button>
-            </div>
+          {/* Phone number pill */}
+          <div
+            className="flex items-center justify-between px-5 py-3 rounded-2xl bg-white/60 backdrop-blur-sm"
+            style={{
+              border: '1px solid rgba(163, 158, 145, 0.1)',
+            }}
+          >
+            <span className="text-sm text-ceramic-text-primary">+55 {formattedPhone}</span>
+            <button
+              onClick={() => setState('input')}
+              className="text-xs font-medium text-ceramic-accent hover:text-ceramic-accent-dark transition-colors"
+            >
+              Alterar
+            </button>
           </div>
 
           <PairingCodeDisplay
@@ -242,19 +229,33 @@ export function WhatsAppPairingStep({
             onPairingSuccess={handlePairingSuccess}
           />
 
-          {/* Connection monitoring indicator */}
-          <div className="p-3 bg-blue-50 rounded-xl flex items-center gap-3">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-sm text-blue-700">
-              Aguardando conexão... {sessionStatus && `(${sessionStatus})`}
+          {/* Connection monitoring — breathing dot */}
+          <motion.div
+            className="flex items-center justify-center gap-2.5 py-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            <motion.div
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: '#D97706' }}
+              animate={{
+                scale: [1, 1.4, 1],
+                opacity: [0.4, 1, 0.4],
+              }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <span className="text-xs text-ceramic-text-secondary">
+              Aguardando conexão{sessionStatus === 'connecting' ? '...' : ''}
             </span>
-          </div>
+          </motion.div>
 
-          {/* Manual success button for testing */}
-          <div className="pt-4 border-t border-ceramic-100">
+          {/* Manual confirmation — subtle, not loud */}
+          <div className="pt-2">
             <button
               onClick={handlePairingSuccess}
-              className="w-full py-3 text-green-600 hover:bg-green-50 font-medium rounded-xl transition-colors"
+              className="w-full py-3 text-sm font-medium text-ceramic-text-secondary
+                hover:text-ceramic-text-primary hover:bg-ceramic-cool/50 rounded-xl transition-all"
             >
               Já conectei meu WhatsApp
             </button>
@@ -262,41 +263,50 @@ export function WhatsAppPairingStep({
         </motion.div>
       )}
 
-      {/* Connected State */}
+      {/* ── Connected State ── */}
       {state === 'connected' && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center py-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="flex flex-col items-center py-16"
         >
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
+          {/* Success orb */}
+          <div className="relative w-20 h-20 flex items-center justify-center mb-8">
             <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(107, 123, 92, 0.12) 0%, transparent 70%)',
+              }}
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.4, 0.7, 0.4],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(107, 123, 92, 0.1)' }}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 180, damping: 15 }}
             >
-              <svg
-                className="w-10 h-10 text-green-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+                <Check className="w-6 h-6 text-ceramic-positive" strokeWidth={2.5} />
+              </motion.div>
             </motion.div>
           </div>
 
-          <h3 className="text-xl font-bold text-ceramic-900">Conectado!</h3>
-          <p className="text-ceramic-600 mt-1">
-            Preparando sincronização...
+          <h3 className="text-lg font-semibold text-ceramic-text-primary">
+            Conectado
+          </h3>
+          <p className="text-sm text-ceramic-text-secondary mt-1">
+            Sincronizando contatos...
           </p>
-
-          <Loader2 className="w-6 h-6 text-green-600 animate-spin mt-6" />
         </motion.div>
       )}
     </div>
