@@ -285,13 +285,15 @@ class ContextCacheService:
             Dictionary grouped by category: {category: [memories]}
         """
         try:
-            result = self.supabase.table("user_memory") \
-                .select("category, module, key, value, confidence, source") \
-                .eq("user_id", user_id) \
-                .gte("confidence", 0.5)  # Only include memories with decent confidence \
-                .order("confidence", desc=True) \
-                .limit(limit) \
+            result = (
+                self.supabase.table("user_memory")
+                .select("category, module, key, value, confidence, source")
+                .eq("user_id", user_id)
+                .gte("confidence", 0.5)
+                .order("confidence", desc=True)
+                .limit(limit)
                 .execute()
+            )
 
             # Group by category
             grouped: Dict[str, List[Dict[str, Any]]] = {}

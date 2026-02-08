@@ -33,7 +33,6 @@ from .modules.connections import connections_agent
 
 # Import services
 from .services import (
-    SupabaseSessionService,
     extract_facts_callback,
     get_personalized_instruction,
     get_cross_module_context,
@@ -54,8 +53,8 @@ if not os.getenv("GOOGLE_API_KEY"):
     if gemini_key:
         os.environ["GOOGLE_API_KEY"] = gemini_key
 
-# Initialize session service (replaces InMemorySessionService)
-session_service = SupabaseSessionService(ttl_days=30)
+# Session service is managed by the Runner in main_agents.py
+# SupabaseSessionService available for production use when needed
 
 # ============================================================================
 # CONTEXT CACHING INTEGRATION (Task #36)
@@ -255,8 +254,6 @@ root_agent = LlmAgent(
         generate_cross_module_insights,
         get_cross_module_context_tool,
     ],
-    # Enable persistent sessions via Supabase
-    session_service=session_service,
     # Enable automatic fact extraction after conversations (Task #38)
     after_agent_callback=_after_conversation_callback,
 )
