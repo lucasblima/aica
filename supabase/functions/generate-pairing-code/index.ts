@@ -222,7 +222,8 @@ async function ensureInstanceExists(
     errorBody.toLowerCase().includes('already in use')
 
   if (isAlreadyExists) {
-    console.log(`[generate-pairing-code] Instance already exists: ${instanceName}`)
+    console.log(`[generate-pairing-code] Instance already exists: ${instanceName}, re-configuring webhook...`)
+    await configureInstanceWebhook(evolutionApiUrl, evolutionApiKey, instanceName, supabaseUrl)
     return { success: true, created: false }
   }
 
