@@ -2183,7 +2183,12 @@ serve(async (req) => {
     }
 
     // Route to appropriate handler
-    switch (event) {
+    // Evolution API v1 uses dot.notation (e.g. 'connection.update')
+    // Evolution API v2 uses SCREAMING_SNAKE (e.g. 'CONNECTION_UPDATE')
+    // We handle both formats to ensure compatibility across versions.
+    const normalizedEvent = event.toLowerCase().replace(/_/g, '.')
+
+    switch (normalizedEvent) {
       case 'messages.upsert':
         await handleMessagesUpsert(supabase, instance, data as { data: MessageData })
         break
@@ -2202,12 +2207,13 @@ serve(async (req) => {
       case 'chats.upsert':
       case 'chats.update':
       case 'contacts.upsert':
+      case 'contacts.update':
         // Log but don't process these events
         log('DEBUG', `Event ${event} received but not processed`)
         break
 
       default:
-        log('WARN', `Unknown event type: ${event}`)
+        log('WARN', `Unknown event type: ${event} (normalized: ${normalizedEvent})`)
     }
 
     return new Response(
