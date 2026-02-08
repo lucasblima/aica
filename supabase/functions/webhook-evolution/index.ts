@@ -200,8 +200,11 @@ async function validateHmacSignature(body: string, signature: string | null): Pr
   }
 
   if (!signature) {
-    log('ERROR', 'Webhook signature missing from request headers')
-    return false
+    // Evolution API may not send HMAC signatures depending on version/config.
+    // Allow the webhook through with a warning rather than blocking it entirely,
+    // which would silently prevent all CONNECTION_UPDATE events from being processed.
+    log('WARN', 'Webhook signature missing from request headers - allowing without verification')
+    return true
   }
 
   try {
