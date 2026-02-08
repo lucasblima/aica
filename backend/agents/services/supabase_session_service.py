@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 from supabase import create_client, Client
 
 # ADK imports
-from google.adk.sessions import Session, SessionService
+from google.adk.sessions import Session, BaseSessionService
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ DEFAULT_SESSION_TTL_DAYS = 30
 EPHEMERAL_STATE_PREFIXES = ["temp:", "cache:", "_"]
 
 
-class SupabaseSessionService(SessionService):
+class SupabaseSessionService(BaseSessionService):
     """
     Production-ready SessionService that persists sessions in Supabase.
 
