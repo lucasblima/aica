@@ -461,7 +461,7 @@ export function AppRouter() {
 
       // Define focused modes where global nav should be hidden (Contextual Descent)
       const focusedModes: ViewState[] = [
-         'association_detail', 'finance', 'finance_agent', 'grants', 'ai-cost', 'file-search-analytics', 'journey',
+         'association_detail', 'finance', 'finance_agent', 'grants', 'ai-cost', 'file-search-analytics',
          // Life Area Modules
          'health', 'education', 'legal', 'professional'
       ];
