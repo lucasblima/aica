@@ -1,13 +1,18 @@
 /**
  * Edge Function: extract-intent
- * Issue #91: Extract intent from WhatsApp messages (privacy-first approach)
+ * Issue #91 + #211: Extract intent from messages (privacy-first approach)
  *
  * Purpose:
  * - Generate intent summary (safe for display, no raw text storage)
  * - Classify message category and sentiment
  * - Extract temporal references (dates, times)
  * - Generate 768-dimensional embedding for semantic search
- * - Update whatsapp_messages table with extracted intent
+ * - Update whatsapp_messages table with extracted intent (WhatsApp source only)
+ *
+ * Universal Input Funnel (Phase 1):
+ * - Supports multiple input sources: whatsapp, web_chat, journey, voice, flux
+ * - Non-WhatsApp sources: returns intent + embedding without DB writes
+ * - Caller handles storage for non-WhatsApp sources
  *
  * CRITICAL PRIVACY REQUIREMENT:
  * - rawText is NEVER stored in database
@@ -15,11 +20,12 @@
  * - Complies with WhatsApp Terms of Service and LGPD data minimization
  *
  * Called by:
- * - webhook-evolution (on new message received)
- * - Frontend (for semantic search queries - with skipDbUpdate=true)
+ * - webhook-evolution (on new message received) — source: 'whatsapp'
+ * - Frontend (for semantic search queries — with skipDbUpdate=true)
+ * - Journey module (for moment intent extraction — source: 'journey')
  *
  * Gemini Models:
- * - gemini-1.5-flash: Intent extraction (cost-effective)
+ * - gemini-2.5-flash: Intent extraction (cost-effective)
  * - text-embedding-004: Embedding generation (768 dimensions)
  *
  * Endpoint: POST /functions/v1/extract-intent
@@ -47,16 +53,33 @@ type IntentCategory =
 // Sentiment classification matching database enum whatsapp_intent_sentiment
 type IntentSentiment = 'positive' | 'neutral' | 'negative' | 'urgent'
 
+// Input source for Universal Input Funnel
+type InputSource = 'whatsapp' | 'web_chat' | 'journey' | 'voice' | 'flux'
+
+// Content type classification
+type ContentType = 'text' | 'audio_transcription' | 'ocr' | 'document_extract'
+
 /**
  * Request body for extract-intent Edge Function
+ *
+ * Supports both WhatsApp (original) and Universal Input Funnel sources.
+ * For WhatsApp: messageId is required, DB writes to whatsapp_messages.
+ * For other sources: userId is required, no DB writes (caller handles storage).
  */
 interface IntentExtractionRequest {
-  messageId: string           // UUID of message in whatsapp_messages table
-  rawText: string             // Raw message text (WILL BE DISCARDED after processing)
+  // WhatsApp path (backward compatible)
+  messageId?: string          // UUID of message in whatsapp_messages table (required for WhatsApp)
+  rawText: string             // Raw text (WILL BE DISCARDED after processing)
   mediaType?: string          // image, audio, video, document, sticker
   contactName?: string        // Contact name for context
   conversationContext?: string[] // Last 3 messages for context (optional)
-  skipDbUpdate?: boolean      // If true, only return intent without updating DB (for search queries)
+  skipDbUpdate?: boolean      // If true, only return intent without updating DB
+
+  // Universal Input Funnel parameters (Phase 1)
+  source?: InputSource        // Input source (default: 'whatsapp')
+  content_type?: ContentType  // Content type (default: 'text')
+  userId?: string             // Required for non-WhatsApp sources
+  moduleContext?: string      // Which module originated the request
 }
 
 /**
@@ -80,6 +103,8 @@ interface ExtractedIntent {
 interface IntentExtractionResponse {
   success: boolean
   intent?: ExtractedIntent
+  embedding?: number[]        // Raw embedding for caller to store (non-WhatsApp sources)
+  source?: InputSource        // Echo back source
   error?: string
 }
 
@@ -201,13 +226,28 @@ function calculateConfidence(intentData: Record<string, unknown>, originalText: 
 }
 
 /**
+ * Get human-readable source label for prompt
+ */
+function getSourceLabel(source: InputSource): string {
+  const labels: Record<InputSource, string> = {
+    whatsapp: 'mensagem de WhatsApp',
+    web_chat: 'mensagem do chat web',
+    journey: 'momento de reflexao pessoal',
+    voice: 'transcricao de audio',
+    flux: 'feedback de treino',
+  }
+  return labels[source] || 'mensagem'
+}
+
+/**
  * Build the intent extraction prompt in Portuguese
  */
 function buildIntentPrompt(
   rawText: string,
   mediaType: string | undefined,
   contactName: string | undefined,
-  conversationContext: string[] | undefined
+  conversationContext: string[] | undefined,
+  source: InputSource = 'whatsapp'
 ): string {
   // Get current date for temporal extraction
   const today = new Date()
@@ -221,8 +261,10 @@ function buildIntentPrompt(
     ? conversationContext.map((msg, i) => `[${i + 1}] ${msg}`).join('\n')
     : 'Nenhum contexto anterior disponivel'
 
+  const sourceLabel = getSourceLabel(source)
+
   return `Voce e um sistema de extracao de intencao para um app de produtividade pessoal.
-Analise a mensagem WhatsApp abaixo e extraia sua INTENCAO em portugues.
+Analise a ${sourceLabel} abaixo e extraia sua INTENCAO em portugues.
 
 REGRAS:
 1. NUNCA inclua o conteudo real da mensagem na resposta
@@ -293,6 +335,7 @@ serve(async (req) => {
 
   let messageId: string | undefined
   let supabase: ReturnType<typeof createClient> | undefined
+  let isWhatsAppPath = true
 
   try {
     // Validate environment
@@ -312,34 +355,50 @@ serve(async (req) => {
       contactName,
       conversationContext,
       skipDbUpdate,
+      source = 'whatsapp',
+      content_type = 'text',
+      userId,
+      moduleContext,
     } = requestBody
 
     messageId = reqMessageId
 
-    // Validate required fields
-    if (!messageId) {
-      throw new Error('messageId is required')
+    // Determine if this is a WhatsApp path or Universal Input Funnel
+    isWhatsAppPath = source === 'whatsapp'
+
+    // Validate required fields based on source
+    if (isWhatsAppPath && !messageId) {
+      throw new Error('messageId is required for WhatsApp source')
+    }
+    if (!isWhatsAppPath && !userId) {
+      throw new Error('userId is required for non-WhatsApp sources')
     }
     if (!rawText && mediaType !== 'sticker') {
       throw new Error('rawText is required for non-sticker messages')
     }
 
+    // For non-WhatsApp sources, always skip DB update to whatsapp_messages
+    const shouldUpdateDb = isWhatsAppPath && !skipDbUpdate
+
     log('INFO', 'Processing intent extraction', {
       messageId,
+      source,
+      content_type,
       textLength: rawText?.length || 0,
       mediaType,
       hasContext: !!conversationContext?.length,
-      skipDbUpdate,
+      shouldUpdateDb,
+      moduleContext,
     })
 
     // Initialize Supabase client with service role (bypasses RLS)
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     // =========================================================================
-    // STEP 1: Mark processing_status = 'processing'
+    // STEP 1: Mark processing_status = 'processing' (WhatsApp only)
     // =========================================================================
 
-    if (!skipDbUpdate) {
+    if (shouldUpdateDb && messageId) {
       const { error: updateError } = await supabase
         .from('whatsapp_messages')
         .update({
@@ -376,24 +435,24 @@ serve(async (req) => {
         confidence: 1.0,
       }
 
-      // Update database with default intent
-      if (!skipDbUpdate) {
+      // Update database with default intent (WhatsApp only)
+      if (shouldUpdateDb && messageId) {
         await updateMessageIntent(supabase, messageId, defaultIntent, [])
       }
 
-      log('INFO', 'Media-only message processed with default intent', { messageId, mediaType })
+      log('INFO', 'Media-only message processed with default intent', { messageId, mediaType, source })
 
       return new Response(
-        JSON.stringify({ success: true, intent: defaultIntent }),
+        JSON.stringify({ success: true, intent: defaultIntent, source }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     // =========================================================================
-    // STEP 3: Call Gemini 1.5 Flash for intent extraction
+    // STEP 3: Call Gemini 2.5 Flash for intent extraction
     // =========================================================================
 
-    const intentPrompt = buildIntentPrompt(rawText, mediaType, contactName, conversationContext)
+    const intentPrompt = buildIntentPrompt(rawText, mediaType, contactName, conversationContext, source)
 
     log('DEBUG', 'Calling Gemini for intent extraction')
 
@@ -448,6 +507,7 @@ serve(async (req) => {
       category: intentData.category,
       urgency: intentData.urgency,
       confidence,
+      source,
     })
 
     // =========================================================================
@@ -509,10 +569,10 @@ serve(async (req) => {
     }
 
     // =========================================================================
-    // STEP 6: Update whatsapp_messages with intent and embedding
+    // STEP 6: Update whatsapp_messages with intent and embedding (WhatsApp only)
     // =========================================================================
 
-    if (!skipDbUpdate) {
+    if (shouldUpdateDb && messageId) {
       await updateMessageIntent(supabase, messageId, extractedIntent, embedding)
       log('INFO', 'Message intent updated in database', { messageId })
     }
@@ -520,11 +580,15 @@ serve(async (req) => {
     // =========================================================================
     // STEP 7: Return success response
     // NOTE: rawText has been used only in memory and is NOT returned or stored
+    // For non-WhatsApp sources, embedding is returned so caller can store it
     // =========================================================================
 
     const response: IntentExtractionResponse = {
       success: true,
       intent: extractedIntent,
+      source,
+      // Return embedding for non-WhatsApp sources (caller handles storage)
+      ...(!isWhatsAppPath && embedding.length > 0 ? { embedding } : {}),
     }
 
     return new Response(
@@ -536,8 +600,8 @@ serve(async (req) => {
     const errorMessage = (error as Error).message
     log('ERROR', 'Intent extraction failed', errorMessage)
 
-    // Mark message as failed if we have messageId and supabase client
-    if (messageId && supabase) {
+    // Mark message as failed if we have messageId and supabase client (WhatsApp only)
+    if (isWhatsAppPath && messageId && supabase) {
       try {
         await supabase
           .from('whatsapp_messages')
@@ -621,12 +685,23 @@ async function updateMessageIntent(
  * 3. Test locally:
  *    npx supabase functions serve extract-intent
  *
+ *    # WhatsApp path (original):
  *    curl -X POST http://localhost:54321/functions/v1/extract-intent \
  *      -H "Content-Type: application/json" \
  *      -d '{
  *        "messageId": "uuid-here",
  *        "rawText": "Oi! Podemos conversar amanha as 15h?",
  *        "contactName": "Maria"
+ *      }'
+ *
+ *    # Universal Input Funnel path (new):
+ *    curl -X POST http://localhost:54321/functions/v1/extract-intent \
+ *      -H "Content-Type: application/json" \
+ *      -d '{
+ *        "source": "journey",
+ *        "userId": "user-uuid",
+ *        "rawText": "Hoje percebi que estou mais calmo em reunioes",
+ *        "content_type": "text"
  *      }'
  *
  * 4. Integration with webhook-evolution:
@@ -637,7 +712,7 @@ async function updateMessageIntent(
  * COST ESTIMATION (per 1000 messages)
  * =============================================================================
  *
- * Gemini 1.5 Flash (intent extraction):
+ * Gemini 2.5 Flash (intent extraction):
  * - Input: ~200 tokens/message (prompt + content)
  * - Output: ~50 tokens/message
  * - Cost: ~$0.02/1K messages

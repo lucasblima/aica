@@ -14,6 +14,7 @@ import {
   MomentFilter,
 } from '../types/moment'
 import { SentimentAnalysis } from '../types/sentiment'
+import { transcribeAudio } from './momentPersistenceService'
 
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentService')
@@ -26,13 +27,22 @@ export async function createMoment(
   input: CreateMomentInput
 ): Promise<MomentWithCP> {
   try {
+    // Transcribe audio if provided (must complete before insert)
+    let finalContent = input.content
+    let momentType: 'text' | 'audio' = input.type || 'text'
+    if (input.audioBlob && input.audioBlob.size > 0) {
+      const transcription = await transcribeAudio(input.audioBlob)
+      finalContent = finalContent ? `${finalContent}\n\n${transcription}` : transcription
+      momentType = 'audio'
+    }
+
     // Insert moment WITHOUT waiting for sentiment analysis (faster UX)
     const { data: moment, error: insertError } = await supabase
       .from('moments')
       .insert({
         user_id: userId,
-        type: 'text',
-        content: input.content,
+        type: momentType,
+        content: finalContent,
         emotion: input.emotion,
         sentiment_data: null, // Will be updated asynchronously
         tags: input.tags,
@@ -44,7 +54,7 @@ export async function createMoment(
     if (insertError) throw insertError
 
     // Analyze sentiment in background (non-blocking)
-    analyzeMomentSentiment(input.content || '')
+    analyzeMomentSentiment(finalContent || '')
       .then(async (sentimentData) => {
         // Update moment with sentiment data
         await supabase
