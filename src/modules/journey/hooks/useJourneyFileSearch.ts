@@ -480,6 +480,9 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
     removeMoment,
     hasIndexedMoments,
 
+    // Initialize corpus on demand (for lazy loading)
+    initialize: ensureCorpus,
+
     // Ações do base hook (se necessário)
     clearSearchResults: baseHook.clearSearchResults,
     clearError: baseHook.clearError,
@@ -501,7 +504,7 @@ ${moment.sentiment_data ? `\n## Análise de Sentimento\n\n- **Sentimento**: ${mo
  * ```
  */
 export function useJourneyQuickSearch(userId: string) {
-  const { searchInMoments, ensureCorpus } = useJourneyFileSearch({
+  const { searchInMoments, initialize } = useJourneyFileSearch({
     userId,
     autoLoad: true,
   });
@@ -509,14 +512,14 @@ export function useJourneyQuickSearch(userId: string) {
   const quickSearch = useCallback(
     async (query: string, resultCount: number = 5) => {
       try {
-        await ensureCorpus();
+        await initialize();
         return await searchInMoments(query, resultCount);
       } catch (error) {
         log.error('[useJourneyQuickSearch] error:', error);
         throw error;
       }
     },
-    [searchInMoments, ensureCorpus]
+    [searchInMoments, initialize]
   );
 
   return { quickSearch };

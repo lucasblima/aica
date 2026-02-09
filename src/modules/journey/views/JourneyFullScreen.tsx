@@ -3,9 +3,9 @@
  * Full-screen view with 3 zones: Momento Presente, Atividades (Unified Timeline), Insights & Patterns
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const log = createNamespacedLogger('JourneyFullScreen')
 import { useNavigate } from 'react-router-dom'
@@ -13,6 +13,7 @@ import { QuickCapture } from '../components/capture/QuickCapture'
 import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
+import { PatternDashboard } from '../components/insights/PatternDashboard'
 import { ConsciousnessScore } from '../components/gamification/ConsciousnessScore'
 import { JourneySearchPanel } from '../components/JourneySearchPanel'
 import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
@@ -37,6 +38,95 @@ import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
 import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
 import { SettingsMenu, HelpButton } from '@/components'
+
+// ── Skeleton Components ──────────────────────────────────────────
+
+function ConsciousnessScoreSkeleton() {
+  return (
+    <div className="ceramic-card p-6 animate-pulse">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="h-12 w-12 bg-[#E0DDD5] rounded-full" />
+        <div className="flex-1">
+          <div className="h-4 w-24 bg-[#E0DDD5] rounded mb-2" />
+          <div className="h-3 w-16 bg-[#E0DDD5] rounded" />
+        </div>
+      </div>
+      <div className="h-3 w-full bg-[#E0DDD5] rounded mb-4" />
+      <div className="grid grid-cols-3 gap-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-10 bg-[#E0DDD5] rounded" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DailyQuestionSkeleton() {
+  return (
+    <div className="ceramic-card p-6 space-y-4 animate-pulse">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 bg-[#E0DDD5] rounded-full" />
+        <div className="flex-1">
+          <div className="h-3 w-24 bg-[#E0DDD5] rounded mb-2" />
+          <div className="h-3 w-16 bg-[#E0DDD5] rounded" />
+        </div>
+        <div className="h-6 w-14 bg-[#E0DDD5] rounded-full" />
+      </div>
+      <div className="h-5 w-full bg-[#E0DDD5] rounded" />
+      <div className="h-5 w-3/4 bg-[#E0DDD5] rounded" />
+      <div className="h-24 w-full bg-[#E0DDD5] rounded" />
+      <div className="flex gap-3">
+        <div className="h-10 w-24 bg-[#E0DDD5] rounded-full" />
+        <div className="h-10 w-20 bg-[#E0DDD5] rounded-full" />
+      </div>
+    </div>
+  )
+}
+
+function WeeklySummarySkeleton() {
+  return (
+    <div className="ceramic-card p-6 space-y-4 animate-pulse">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="h-6 w-6 bg-[#E0DDD5] rounded" />
+        <div className="h-5 w-40 bg-[#E0DDD5] rounded" />
+      </div>
+      <div className="h-4 w-full bg-[#E0DDD5] rounded" />
+      <div className="h-4 w-5/6 bg-[#E0DDD5] rounded" />
+      <div className="h-4 w-2/3 bg-[#E0DDD5] rounded" />
+      <div className="grid grid-cols-3 gap-3 mt-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-16 bg-[#E0DDD5] rounded" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function InsightsEmptyState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="ceramic-tile p-12 text-center"
+    >
+      <ChartBarIcon className="h-12 w-12 text-[#C4A574] mx-auto mb-3" />
+      <h3 className="text-base font-semibold text-[#5C554B] mb-2">
+        Sem resumo semanal disponível ainda
+      </h3>
+      <p className="text-sm text-[#948D82] max-w-sm mx-auto">
+        Registre alguns momentos e responda perguntas durante a semana. Seus insights e padrões aparecerão aqui.
+      </p>
+    </motion.div>
+  )
+}
+
+// ── Tab animation variants ──────────────────────────────────────
+
+const tabContentVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+}
 
 interface JourneyFullScreenProps {
   onBack?: () => void;
@@ -67,7 +157,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
   const { user } = useAuth()
   const { moments, create: createMoment } = useMoments()
-  const { summary, addReflection } = useCurrentWeeklySummary()
+  const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
   const { question, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, triggerAnimation } = useCPAnimation()
@@ -86,9 +176,26 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
     clearSearchResults,
     indexMoment,
     isIndexing,
-  } = useJourneyFileSearch({ userId: user?.id, autoLoad: true })
+    initialize: initializeFileSearch,
+  } = useJourneyFileSearch({ userId: user?.id, autoLoad: false })
 
   const hasIndexedMoments = documents.length > 0
+
+  // Lazy load: fetch weekly summary only when insights tab is selected
+  useEffect(() => {
+    if (activeTab === 'insights' && !summary && !isLoadingSummary) {
+      refreshSummary()
+    }
+  }, [activeTab, summary, isLoadingSummary, refreshSummary])
+
+  // Lazy load: initialize File Search only when search tab is selected
+  useEffect(() => {
+    if (activeTab === 'search') {
+      initializeFileSearch().catch((err) => {
+        log.warn('File search initialization failed (non-critical):', err)
+      })
+    }
+  }, [activeTab, initializeFileSearch])
 
   // Handle moment creation
   const handleCreateMoment = async (input: CreateMomentInput) => {
@@ -220,7 +327,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               </button>
 
               <SparklesIcon className="h-8 w-8 text-amber-600" />
-              <h1 className="text-3xl font-bold text-etched">Minha Jornada</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-etched">Minha Jornada</h1>
             </div>
 
             <div className="flex items-center gap-3">
@@ -259,7 +366,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       {/* Main content - 3 zones */}
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Zone 1: Momento Presente (Capture) */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
@@ -271,19 +378,33 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               ) : (
                 <div className="space-y-6">
                   {/* CP Score detailed - Consciousness Points */}
-                  {stats && (
-                    <div data-tour="consciousness-points">
+                  {stats ? (
+                    <motion.div
+                      data-tour="consciousness-points"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
                       <ConsciousnessScore stats={stats} size="md" showDetails={true} />
-                    </div>
+                    </motion.div>
+                  ) : (
+                    <ConsciousnessScoreSkeleton />
                   )}
 
                   {/* Daily Question */}
-                  {question && (
-                    <DailyQuestionCard
-                      question={question}
-                      onAnswer={handleAnswerQuestion}
-                      onSkip={skipQuestion}
-                    />
+                  {question ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 }}
+                    >
+                      <DailyQuestionCard
+                        question={question}
+                        onAnswer={handleAnswerQuestion}
+                        onSkip={skipQuestion}
+                      />
+                    </motion.div>
+                  ) : (
+                    <DailyQuestionSkeleton />
                   )}
                 </div>
               )}
@@ -328,68 +449,90 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               </button>
             </div>
 
-            {/* Timeline Tab */}
-            {activeTab === 'timeline' && (
-              <div className="space-y-4">
-                {/* Unified Timeline - Aggregated user activities */}
-                <UnifiedTimelineView userId={user?.id} />
-              </div>
-            )}
+            {/* Tab Content with crossfade animation */}
+            <AnimatePresence mode="wait">
+              {/* Timeline Tab */}
+              {activeTab === 'timeline' && (
+                <motion.div
+                  key="timeline"
+                  variants={tabContentVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  <UnifiedTimelineView userId={user?.id} />
+                </motion.div>
+              )}
 
-            {/* Insights Tab */}
-            {activeTab === 'insights' && (
-              <div className="space-y-6">
-                {/* Weekly Summary */}
-                {summary ? (
-                  <WeeklySummaryCard
-                    summary={summary}
-                    onAddReflection={handleAddReflection}
+              {/* Insights Tab */}
+              {activeTab === 'insights' && (
+                <motion.div
+                  key="insights"
+                  variants={tabContentVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
+                >
+                  {isLoadingSummary ? (
+                    <WeeklySummarySkeleton />
+                  ) : summary ? (
+                    <WeeklySummaryCard
+                      summary={summary}
+                      onAddReflection={handleAddReflection}
+                    />
+                  ) : (
+                    <InsightsEmptyState />
+                  )}
+
+                  {/* Pattern Dashboard */}
+                  <PatternDashboard userId={user?.id} />
+                </motion.div>
+              )}
+
+              {/* Search Tab */}
+              {activeTab === 'search' && (
+                <motion.div
+                  key="search"
+                  variants={tabContentVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.2 }}
+                  className="ceramic-card p-6"
+                >
+                  <JourneySearchPanel
+                    onSearch={async (query) => {
+                      const results = await searchInMoments(query, 10);
+                      return results;
+                    }}
+                    onSearchEmotion={async (emotion) => {
+                      const results = await findByEmotion(emotion, 10);
+                      return results;
+                    }}
+                    onSearchTag={async (tag) => {
+                      const results = await findByTag(tag, 10);
+                      return results;
+                    }}
+                    onSearchGrowth={async () => {
+                      const results = await findGrowthMoments(10);
+                      return results;
+                    }}
+                    onSearchInsights={async (question) => {
+                      const results = await findInsights(question, 10);
+                      return results;
+                    }}
+                    results={searchResults}
+                    isSearching={isSearching}
+                    hasMoments={hasIndexedMoments}
+                    onClear={clearSearchResults}
                   />
-                ) : (
-                  <div className="text-center py-12">
-                    <ChartBarIcon className="h-12 w-12 text-[#948D82] mx-auto mb-3" />
-                    <p className="text-[#5C554B] mb-2">
-                      Sem resumo semanal disponível ainda.
-                    </p>
-                    <p className="text-sm text-[#948D82]">
-                      Registre alguns momentos durante a semana para gerar insights.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Search Tab */}
-            {activeTab === 'search' && (
-              <div className="ceramic-card p-6">
-                <JourneySearchPanel
-                  onSearch={async (query) => {
-                    const results = await searchInMoments(query, 10);
-                    return results;
-                  }}
-                  onSearchEmotion={async (emotion) => {
-                    const results = await findByEmotion(emotion, 10);
-                    return results;
-                  }}
-                  onSearchTag={async (tag) => {
-                    const results = await findByTag(tag, 10);
-                    return results;
-                  }}
-                  onSearchGrowth={async () => {
-                    const results = await findGrowthMoments(10);
-                    return results;
-                  }}
-                  onSearchInsights={async (question) => {
-                    const results = await findInsights(question, 10);
-                    return results;
-                  }}
-                  results={searchResults}
-                  isSearching={isSearching}
-                  hasMoments={hasIndexedMoments}
-                  onClear={clearSearchResults}
-                />
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

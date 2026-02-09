@@ -37,10 +37,11 @@ export async function generateWeeklySummary(
   weekNumber: number
 ): Promise<WeeklySummary> {
   try {
-    // Check if summary already exists
+    // Check if summary already exists — return cached to avoid unnecessary Gemini call
     const existing = await getWeeklySummary(userId, year, weekNumber)
     if (existing) {
-      log.debug('Weekly summary already exists, regenerating...')
+      log.debug('Weekly summary already exists, returning cached')
+      return existing
     }
 
     // Get week date range
