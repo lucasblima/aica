@@ -68,7 +68,7 @@ export function useJourneyPatterns(userId?: string) {
 
         // 3. Recent moments for tag aggregation
         supabase
-          .from('moment_entries')
+          .from('moments')
           .select('tags')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
