@@ -22,6 +22,7 @@ import {
 import { CreateMomentInput } from '../../types/moment';
 import { analyzeContentRealtime } from '../../services/aiAnalysisService';
 import { TagInput } from './TagInput';
+import { AudioRecorder } from './AudioRecorder';
 
 interface QuickCaptureProps {
   onSubmit: (moment: CreateMomentInput) => Promise<void>;
@@ -45,6 +46,7 @@ export function QuickCapture({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   // Advanced features (collapsed by default)
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -100,7 +102,7 @@ export function QuickCapture({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!content.trim()) {
+    if (!content.trim() && !audioBlob) {
       textareaRef.current?.focus();
       return;
     }
@@ -109,13 +111,15 @@ export function QuickCapture({
       setIsSubmitting(true);
 
       await onSubmit({
-        type: 'text',
-        content: content.trim(),
+        type: audioBlob ? 'audio' : 'text',
+        content: content.trim() || undefined,
+        audioBlob: audioBlob || undefined,
         tags,
       });
 
       // Reset form
       setContent('');
+      setAudioBlob(null);
       setTags([]);
       setShowAdvanced(false);
       setAiSuggestion(null);
@@ -204,24 +208,47 @@ export function QuickCapture({
         )}
       </AnimatePresence>
 
+      {/* Audio Recording Indicator */}
+      {audioBlob && (
+        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
+          <span className="text-sm text-green-700 dark:text-green-400">
+            Audio gravado ({(audioBlob.size / 1024).toFixed(0)} KB)
+          </span>
+          <button
+            type="button"
+            onClick={() => setAudioBlob(null)}
+            className="text-xs text-red-500 hover:text-red-600 underline"
+          >
+            Remover
+          </button>
+        </div>
+      )}
+
       {/* Advanced Features Toggle */}
       <div className="flex items-center justify-between pt-2 border-t border-ceramic-text-secondary/10">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex items-center gap-2 text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-        >
-          {showAdvanced ? (
-            <>
-              <span>− Menos opções</span>
-            </>
-          ) : (
-            <>
-              <TagIcon className="w-4 h-4" />
-              <span>+ Adicionar tags</span>
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-2 text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+          >
+            {showAdvanced ? (
+              <>
+                <span>− Menos opções</span>
+              </>
+            ) : (
+              <>
+                <TagIcon className="w-4 h-4" />
+                <span>+ Tags</span>
+              </>
+            )}
+          </button>
+
+          <AudioRecorder
+            onRecordingComplete={(blob) => setAudioBlob(blob)}
+            disabled={isSubmitting}
+          />
+        </div>
 
         <div className="flex items-center gap-2">
           {onCancel && (
@@ -235,7 +262,7 @@ export function QuickCapture({
           )}
           <button
             type="submit"
-            disabled={isSubmitting || !content.trim()}
+            disabled={isSubmitting || (!content.trim() && !audioBlob)}
             className="ceramic-convex px-6 py-2 text-sm font-bold bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
           >
             {isSubmitting ? (

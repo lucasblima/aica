@@ -5,7 +5,7 @@
 
 import { SentimentAnalysis } from './sentiment'
 
-export type MomentType = 'text'
+export type MomentType = 'text' | 'audio'
 
 export interface Moment {
   id: string
@@ -31,6 +31,7 @@ export interface Moment {
 export interface CreateMomentInput {
   type: MomentType
   content?: string
+  audioBlob?: Blob
   emotion?: string
   tags?: string[]
   location?: string

@@ -66,8 +66,15 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
       throw new Error('You are creating moments too quickly. Please wait before creating another.')
     }
 
-    // 3. VALIDATE CONTENT
-    const finalContent = validatedInput.content?.trim()
+    // 3. TRANSCRIBE AUDIO IF PROVIDED
+    let textFromAudio: string | undefined
+    if (input.audioBlob && input.audioBlob.size > 0) {
+      log.debug('[momentPersistenceService] Transcribing audio input...')
+      textFromAudio = await transcribeAudio(input.audioBlob)
+    }
+
+    // 4. VALIDATE CONTENT (text input or audio transcription)
+    const finalContent = (validatedInput.content?.trim() || textFromAudio?.trim())
 
     if (!finalContent) {
       throw new Error('No content provided')
@@ -75,7 +82,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
 
     log.debug('[momentPersistenceService] Content validated, length:', finalContent.length)
 
-    // 5. ANALYZE SENTIMENT (Parallel with tagging)
+    // 5. ANALYZE SENTIMENT (Parallel with tagging) - renumbered after audio step
     const [sentimentResult, taggingResult] = await Promise.all([
       analyzeSentimentWithGemini(finalContent),
       generateAutoTags(finalContent, validatedInput.lifeAreas),
@@ -94,7 +101,7 @@ export async function createMomentEntry(input: CreateMomentEntryInput): Promise<
     // 7. PREPARE MOMENT DATA
     const processedData: ProcessedMomentData = {
       user_id: validatedInput.userId,
-      type: 'text',
+      type: textFromAudio ? 'audio' : 'text',
       content: finalContent,
       emotion_selected: validatedInput.emotionSelected,
       emotion_intensity: validatedInput.emotionIntensity,
@@ -313,6 +320,76 @@ export async function getUserStats(userId: string) {
   } catch (error) {
     log.error('[momentPersistenceService] Error fetching user stats:', error)
     return null
+  }
+}
+
+// =====================================================
+// AUDIO TRANSCRIPTION (Universal Input Funnel - Phase 0)
+// =====================================================
+
+/**
+ * Transcribe audio blob to text using Gemini via gemini-chat Edge Function
+ *
+ * @param audioBlob - Audio Blob from MediaRecorder or file input
+ * @returns Transcribed text string
+ */
+export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  const startTime = Date.now()
+
+  try {
+    // Convert Blob to base64
+    const arrayBuffer = await audioBlob.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+    let binary = ''
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    const audioBase64 = btoa(binary)
+
+    const mimeType = audioBlob.type || 'audio/webm'
+
+    log.debug('[momentPersistenceService] Transcribing audio', {
+      mimeType,
+      sizeBytes: audioBlob.size,
+    })
+
+    const response = await geminiClient.call({
+      action: 'transcribe_audio',
+      payload: {
+        audioBase64,
+        mimeType,
+      },
+    })
+
+    const transcription = response.result?.transcription || response.result?.text || ''
+
+    // Track AI usage (non-blocking)
+    trackAIUsage({
+      operation_type: 'audio_transcription',
+      ai_model: 'gemini-2.5-flash',
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      module_type: 'journey',
+      duration_seconds: (Date.now() - startTime) / 1000,
+      request_metadata: {
+        function_name: 'transcribeAudio',
+        operation: 'audio_transcription',
+        audio_size_bytes: audioBlob.size,
+        audio_mime_type: mimeType,
+      },
+    }).catch(error => {
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message)
+    })
+
+    log.debug('[momentPersistenceService] Audio transcribed', {
+      transcriptionLength: transcription.length,
+      durationMs: Date.now() - startTime,
+    })
+
+    return transcription
+  } catch (error) {
+    log.error('[momentPersistenceService] Error transcribing audio:', error)
+    throw new Error('Falha na transcricao do audio. Tente novamente.')
   }
 }
 

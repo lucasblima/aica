@@ -1,24 +1,21 @@
 {
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Analyze this user message and suggest the appropriate specialized agent. Available agents: backend-architect-supabase (database/migrations), testing-qa-playwright (E2E tests), gamification-engine (XP/achievements), podcast-production-copilot (podcast), calendar-executive (Google Calendar), gemini-integration-specialist (AI/Gemini), security-privacy-auditor (security/LGPD), ux-design-guardian (UI/UX), atlas-task-manager (tasks), master-architect-planner (multi-domain planning). If the task matches a specialized agent, respond with ONLY: 'Agent suggestion: [agent-name]'. If no specific agent matches or it's a simple question, respond with 'No delegation needed'. User message: $ARGUMENTS",
-            "model": "claude-haiku-4-20250514",
-            "statusMessage": "Analyzing task routing..."
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q 'supabase.*migration\\|npx supabase migration' && echo '⚠️  MIGRATION DETECTED!\n\nSafety Checklist:\n✅ RLS policies defined for new tables?\n✅ SECURITY DEFINER functions reviewed?\n✅ Migration tested locally first?\n✅ Rollback plan documented?\n✅ No PII in migration (passwords, tokens, etc.)?\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'supabase.*migration\\|npx supabase migration' && echo '⚠️  MIGRATION DETECTED!\n\nSafety Checklist:\n- RLS policies defined for new tables?\n- SECURITY DEFINER functions reviewed?\n- Migration tested locally first?\n- Rollback plan documented?\n- No PII in migration (passwords, tokens, etc.)?\n' || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | grep -q 'gcloud builds submit' && echo '⚠️  DEPLOY DETECTED!\n\nConfirm with user before proceeding.\nDeploy is a manual, user-initiated action only.\n' || true"
           }
         ]
       },
@@ -27,7 +24,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.(backup|bak|old|~)$' && echo '❌ BLOCKED: Manual backup files violate \"Git is backup\" principle.\n\nInstead, use Git:\n- git show HEAD~1:path/to/file (view previous version)\n- git checkout [commit] -- path/to/file (restore version)\n- git diff HEAD~1 path/to/file (compare changes)\n- Create feature branch for experiments\n' && exit 1 || true"
+            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.(backup|bak|old|~)$' && echo 'BLOCKED: Manual backup files violate \"Git is backup\" principle.\n\nUse Git instead:\n- git show HEAD~1:path/to/file (view previous version)\n- git checkout [commit] -- path/to/file (restore version)\n- git diff HEAD~1 path/to/file (compare changes)\n' && exit 1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.(env|env\\.local|env\\.production)$' && echo '⚠️  ENV FILE WRITE DETECTED!\n\nVerify no secrets/API keys are being committed.\nUse Supabase Secrets or GCP Secret Manager for sensitive values.\n' || true"
           }
         ]
       }
@@ -38,14 +44,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q '^git checkout' && echo '\n📍 Branch switched!\n\nReminder:\n1. Update WORK_QUEUE.md status to 🟢 ATIVA\n2. Run: git pull origin main (sync with latest)\n3. Check for active work: git log main..HEAD --oneline\n' || true"
+            "command": "jq -r '.tool_input.command // empty' | grep -q '^git checkout' && echo '\n📍 Branch switched!\n\nReminder:\n1. Update WORK_QUEUE.md status\n2. Run: git pull origin main (sync)\n3. Check active work: git log main..HEAD --oneline\n' || true"
           }
         ]
       }
     ]
   },
   "env": {
-    "CLAUDE_CODE_GIT_COAUTHOR": "Claude Sonnet 4.5 <noreply@anthropic.com>"
+    "CLAUDE_CODE_GIT_COAUTHOR": "Claude Opus 4.6 <noreply@anthropic.com>"
   },
   "permissions": {
     "allow": [

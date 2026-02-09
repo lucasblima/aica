@@ -23,6 +23,7 @@ export type MomentCategory = 'reflection' | 'milestone' | 'challenge' | 'learnin
 export interface CreateMomentEntryInput {
   userId: string
   content?: string // Text optional
+  audioBlob?: Blob // Optional: audio recording for transcription
   emotionSelected: string // Required: emotion value
   emotionIntensity: number // Required: 1-10 scale
   lifeAreas: LifeArea[] // Required: affected areas
