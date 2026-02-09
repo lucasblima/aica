@@ -389,8 +389,12 @@ async function callEdgeFunction(
 
   if (response.error) {
     // Extract actual error from Edge Function response body (response.data has the JSON body)
-    const serverError = (response.data as any)?.error
+    const serverData = response.data as any
+    const serverError = serverData?.error
+    const failedStep = serverData?.failed_step
     const errorMsg = serverError || response.error.message || 'Generation failed'
+
+    log.warn('Edge Function error details:', { serverError, failedStep, errorType: serverData?.error_type, rawData: serverData })
 
     // Parse status from error message if available
     let status = 500
