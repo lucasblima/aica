@@ -42,6 +42,9 @@ export function ActivityHeatmap({ data, days = 90 }: ActivityHeatmapProps) {
     const weeks = Math.ceil(days / 7)
     const cells: { date: string; count: number; col: number; row: number }[] = []
 
+    // Fill grid backwards: iterate from last week (w = weeks-1) to first (w = 0).
+    // For each week, iterate from Monday (d = 0) to Sunday (d = 6).
+    // The offset (6 - d) places Sunday closest to today.
     for (let w = weeks - 1; w >= 0; w--) {
       for (let d = 0; d < 7; d++) {
         const date = new Date(today)

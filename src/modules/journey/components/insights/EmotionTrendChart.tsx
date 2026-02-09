@@ -23,6 +23,14 @@ const TREND_COLORS: Record<string, string> = {
   volatile: '#a855f7',
 }
 
+const TREND_LABELS: Record<string, string> = {
+  ascending: 'Ascendente',
+  stable: 'Estável',
+  neutral: 'Neutro',
+  descending: 'Descendente',
+  volatile: 'Volátil',
+}
+
 interface EmotionTrendChartProps {
   data: EmotionTrendPoint[]
 }
@@ -129,7 +137,7 @@ export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
         {Object.entries(TREND_COLORS).filter(([k]) => k !== 'neutral').map(([key, color]) => (
           <div key={key} className="flex items-center gap-1">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-            <span className="text-[10px] text-[#948D82] capitalize">{key === 'ascending' ? 'Ascendente' : key === 'stable' ? 'Estável' : key === 'descending' ? 'Descendente' : 'Volátil'}</span>
+            <span className="text-[10px] text-[#948D82] capitalize">{TREND_LABELS[key] ?? key}</span>
           </div>
         ))}
       </div>
