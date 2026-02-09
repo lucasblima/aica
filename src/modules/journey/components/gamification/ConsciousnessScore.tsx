@@ -25,10 +25,10 @@ export function ConsciousnessScore({
   const sizeClasses = {
     sm: {
       container: 'p-3',
-      title: 'text-xs',
-      points: 'text-2xl',
-      level: 'text-sm',
-      badge: 'w-12 h-12 text-xl',
+      title: 'text-[10px]',
+      points: 'text-xl',
+      level: 'text-xs',
+      badge: 'w-10 h-10 text-lg',
     },
     md: {
       container: 'p-4',
@@ -51,7 +51,7 @@ export function ConsciousnessScore({
   return (
     <div className={`bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl ${classes.container}`} data-tour="consciousness-score">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className={`flex items-center justify-between ${size === 'sm' ? 'mb-2' : 'mb-4'}`}>
         <div className="flex items-center gap-2">
           <SparklesIcon className="h-5 w-5 text-blue-500" />
           <span className={`font-medium text-gray-700 ${classes.title}`}>
@@ -71,7 +71,7 @@ export function ConsciousnessScore({
       </div>
 
       {/* Main display */}
-      <div className="flex items-center gap-4">
+      <div className={`flex items-center ${size === 'sm' ? 'gap-3' : 'gap-4'}`}>
         {/* Level badge */}
         <div
           className={`flex items-center justify-center rounded-full font-bold text-white shadow-lg ${classes.badge}`}
@@ -93,49 +93,45 @@ export function ConsciousnessScore({
 
       {/* Progress to next level */}
       {showDetails && progress.next_level && (
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-            <span>Progresso para Nível {progress.next_level}</span>
+        <div className={size === 'sm' ? 'mt-2' : 'mt-4'}>
+          <div className={`flex items-center justify-between ${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600 mb-1`}>
+            <span>Nível {progress.next_level}</span>
             <span className="font-medium">
-              {progress.points_to_next} CP restantes
+              {progress.points_to_next} CP
             </span>
           </div>
 
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className={`w-full ${size === 'sm' ? 'h-1.5' : 'h-2'} bg-gray-200 rounded-full overflow-hidden`}>
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
               style={{ width: `${progress.progress_percentage}%` }}
             />
-          </div>
-
-          <div className="text-xs text-gray-500 mt-1 text-right">
-            {progress.progress_percentage.toFixed(0)}%
           </div>
         </div>
       )}
 
       {/* Stats */}
       {showDetails && (
-        <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray-200">
+        <div className={`grid grid-cols-3 ${size === 'sm' ? 'gap-1 mt-2 pt-2' : 'gap-2 mt-4 pt-4'} border-t border-gray-200`}>
           <div className="text-center">
-            <div className="text-lg font-bold text-gray-900">
+            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-gray-900`}>
               {stats.total_moments}
             </div>
-            <div className="text-xs text-gray-600">Momentos</div>
+            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600`}>Momentos</div>
           </div>
 
           <div className="text-center">
-            <div className="text-lg font-bold text-gray-900">
+            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-gray-900`}>
               {stats.total_questions_answered}
             </div>
-            <div className="text-xs text-gray-600">Perguntas</div>
+            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600`}>Perguntas</div>
           </div>
 
           <div className="text-center">
-            <div className="text-lg font-bold text-gray-900">
+            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-gray-900`}>
               {stats.longest_streak}
             </div>
-            <div className="text-xs text-gray-600">Recorde</div>
+            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600`}>Recorde</div>
           </div>
         </div>
       )}

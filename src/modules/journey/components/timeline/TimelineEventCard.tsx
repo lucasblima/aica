@@ -22,6 +22,7 @@ import {
 export interface TimelineEventCardProps {
   event: UnifiedEvent
   onClick?: (event: UnifiedEvent) => void
+  compact?: boolean
 }
 
 /**
@@ -64,7 +65,7 @@ function formatEventTime(timestamp: string): { relative: string; absolute: strin
   return { relative, absolute }
 }
 
-export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
+export function TimelineEventCard({ event, onClick, compact = false }: TimelineEventCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
 
@@ -91,7 +92,7 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
       onMouseLeave={() => setIsHovered(false)}
       className={`
         ceramic-tile
-        p-4
+        ${compact ? 'p-3' : 'p-4'}
         transition-all
         duration-300
         cursor-pointer
@@ -104,7 +105,7 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {/* Icon */}
           <motion.span
-            className="text-2xl flex-shrink-0"
+            className={`${compact ? 'text-xl' : 'text-2xl'} flex-shrink-0`}
             style={{ color: event.displayData.color }}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -182,7 +183,7 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
         {/* Tags */}
         {'tags' in event &&
           event.tags &&
-          event.tags.slice(0, 3).map((tag, index) => (
+          event.tags.slice(0, compact ? 2 : 3).map((tag, index) => (
             <motion.span
               key={`${tag}-${index}`}
               initial={{ opacity: 0, scale: 0.8 }}
@@ -195,9 +196,9 @@ export function TimelineEventCard({ event, onClick }: TimelineEventCardProps) {
           ))}
 
         {/* More tags indicator */}
-        {'tags' in event && event.tags && event.tags.length > 3 && (
+        {'tags' in event && event.tags && event.tags.length > (compact ? 2 : 3) && (
           <span className="text-xs text-[#948D82]">
-            +{event.tags.length - 3} mais
+            +{event.tags.length - (compact ? 2 : 3)} mais
           </span>
         )}
       </div>

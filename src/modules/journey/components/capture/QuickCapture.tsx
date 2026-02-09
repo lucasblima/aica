@@ -29,6 +29,8 @@ interface QuickCaptureProps {
   onCancel?: () => void;
   /** Initial content to pre-populate */
   initialContent?: string;
+  /** Compact mode for sidebar display */
+  compact?: boolean;
 }
 
 interface AISuggestion {
@@ -41,6 +43,7 @@ export function QuickCapture({
   onSubmit,
   onCancel,
   initialContent = '',
+  compact = false,
 }: QuickCaptureProps) {
   const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,16 +146,16 @@ export function QuickCapture({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       onSubmit={handleSubmit}
-      className="ceramic-card p-6 space-y-4"
+      className={`ceramic-card ${compact ? 'p-4 space-y-3' : 'p-6 space-y-4'}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="ceramic-concave p-2 rounded-lg">
-            <SparklesIcon className="h-5 w-5 text-purple-500" />
+          <div className={`ceramic-concave ${compact ? 'p-1.5' : 'p-2'} rounded-lg`}>
+            <SparklesIcon className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} text-purple-500`} />
           </div>
-          <h3 className="text-lg font-bold text-ceramic-text-primary">
-            {'💭 O que está te movendo agora?'}
+          <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
+            {compact ? 'Novo Momento' : '💭 O que está te movendo agora?'}
           </h3>
         </div>
         {isAnalyzing && (
@@ -170,8 +173,8 @@ export function QuickCapture({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Comece a escrever... A IA vai te ajudar a refletir."
-          rows={6}
+          placeholder={compact ? "O que está te movendo agora?" : "Comece a escrever... A IA vai te ajudar a refletir."}
+          rows={compact ? 3 : 6}
           className="w-full px-4 py-3 border-2 border-ceramic-text-secondary/20 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none resize-none transition-all text-base"
         />
         <div className="flex items-center justify-between mt-2">
@@ -189,12 +192,12 @@ export function QuickCapture({
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="ceramic-tray rounded-lg p-4 border-2 border-purple-500/20 bg-purple-500/5"
+            className={`ceramic-tray rounded-lg ${compact ? 'p-3' : 'p-4'} border-2 border-purple-500/20 bg-purple-500/5`}
           >
-            <div className="flex items-start gap-3">
-              <LightBulbIcon className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2">
+              <LightBulbIcon className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-purple-500 flex-shrink-0 mt-0.5`} />
               <div className="flex-1">
-                <p className="text-xs font-bold text-purple-700 dark:text-purple-400 mb-1">
+                <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-purple-700 dark:text-purple-400 mb-1`}>
                   {aiSuggestion.type === 'reflection' && '💭 Reflexão sugerida'}
                   {aiSuggestion.type === 'question' && '🤔 Pergunta para aprofundar'}
                   {aiSuggestion.type === 'pattern' && '📊 Padrão identificado'}
@@ -263,7 +266,7 @@ export function QuickCapture({
           <button
             type="submit"
             disabled={isSubmitting || (!content.trim() && !audioBlob)}
-            className="ceramic-convex px-6 py-2 text-sm font-bold bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2"
+            className={`ceramic-convex ${compact ? 'px-4 py-1.5 text-xs' : 'px-6 py-2 text-sm'} font-bold bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2`}
           >
             {isSubmitting ? (
               <>
@@ -303,12 +306,14 @@ export function QuickCapture({
       </AnimatePresence>
 
       {/* Info Footer */}
-      <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-        <SparklesIcon className="h-4 w-4 text-purple-500 flex-shrink-0" />
-        <p className="text-xs text-purple-900 dark:text-purple-300">
-          Seu momento será indexado com IA para descobrir padrões e insights.
-        </p>
-      </div>
+      {!compact && (
+        <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
+          <SparklesIcon className="h-4 w-4 text-purple-500 flex-shrink-0" />
+          <p className="text-xs text-purple-900 dark:text-purple-300">
+            Seu momento será indexado com IA para descobrir padrões e insights.
+          </p>
+        </div>
+      )}
     </motion.form>
   );
 }

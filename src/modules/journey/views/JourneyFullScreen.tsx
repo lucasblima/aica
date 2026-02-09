@@ -25,8 +25,6 @@ import { useJourneyFileSearch } from '../hooks/useJourneyFileSearch'
 import { useUnifiedTimeline } from '../hooks/useUnifiedTimeline'
 import { generatePostCaptureInsight } from '../services/aiAnalysisService'
 import {
-  PlusIcon,
-  XMarkIcon,
   SparklesIcon,
   ClockIcon,
   ChartBarIcon,
@@ -38,6 +36,7 @@ import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
 import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
 import { SettingsMenu, HelpButton } from '@/components'
+import { CeramicFilterTab } from '@/components/ui'
 
 // ── Skeleton Components ──────────────────────────────────────────
 
@@ -145,7 +144,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   }, []);
 
   const navigate = useNavigate()
-  const [showCapture, setShowCapture] = useState(false)
   const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search'>('timeline')
   const [showInsight, setShowInsight] = useState(false)
   const [currentInsight, setCurrentInsight] = useState<{
@@ -201,9 +199,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const handleCreateMoment = async (input: CreateMomentInput) => {
     try {
       const result = await createMoment(input)
-
-      // Close capture modal IMMEDIATELY (don't wait for background tasks)
-      setShowCapture(false)
 
       // Trigger CP animation immediately
       triggerAnimation(
@@ -331,27 +326,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowCapture(!showCapture)}
-                data-tour="add-moment-button"
-                className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${showCapture
-                  ? 'ceramic-pressed text-[#5C554B]'
-                  : 'ceramic-card hover:ceramic-elevated text-[#5C554B]'
-                  }`}
-              >
-                {showCapture ? (
-                  <>
-                    <XMarkIcon className="h-5 w-5" />
-                    <span>Cancelar</span>
-                  </>
-                ) : (
-                  <>
-                    <PlusIcon className="h-5 w-5 text-amber-600" />
-                    <span>Novo Momento</span>
-                  </>
-                )}
-              </button>
-
               {/* Help Button - Optional tour */}
               <HelpButton tourKey="journey-first-visit" />
 
@@ -366,87 +340,53 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       {/* Main content - 3 zones */}
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Zone 1: Momento Presente (Capture) */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-6">
-              {showCapture ? (
-                <QuickCapture
-                  onSubmit={handleCreateMoment}
-                  onCancel={() => setShowCapture(false)}
-                />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Sidebar: CP Score + QuickCapture (25%) */}
+          <div className="lg:col-span-3">
+            <div className="sticky top-6 space-y-4">
+              {/* CP Score compact */}
+              {stats ? (
+                <motion.div
+                  data-tour="consciousness-points"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <ConsciousnessScore stats={stats} size="sm" showDetails={true} />
+                </motion.div>
               ) : (
-                <div className="space-y-6">
-                  {/* CP Score detailed - Consciousness Points */}
-                  {stats ? (
-                    <motion.div
-                      data-tour="consciousness-points"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                    >
-                      <ConsciousnessScore stats={stats} size="md" showDetails={true} />
-                    </motion.div>
-                  ) : (
-                    <ConsciousnessScoreSkeleton />
-                  )}
-
-                  {/* Daily Question */}
-                  {question ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 }}
-                    >
-                      <DailyQuestionCard
-                        question={question}
-                        onAnswer={handleAnswerQuestion}
-                        onSkip={skipQuestion}
-                      />
-                    </motion.div>
-                  ) : (
-                    <DailyQuestionSkeleton />
-                  )}
-                </div>
+                <ConsciousnessScoreSkeleton />
               )}
+
+              {/* QuickCapture always visible */}
+              <QuickCapture
+                onSubmit={handleCreateMoment}
+                compact
+              />
             </div>
           </div>
 
-          {/* Zone 2 & 3: Timeline + Insights */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Tabs - Ceramic Tray */}
-            <div className="ceramic-tray p-2 flex gap-2">
-              <button
+          {/* Main content area (75%) */}
+          <div className="lg:col-span-9 space-y-6">
+            {/* Tabs - Ceramic Filter Tabs */}
+            <div className="flex gap-2 mb-4">
+              <CeramicFilterTab
+                icon={<ClockIcon className="h-4 w-4" />}
+                label="Atividades"
+                isActive={activeTab === 'timeline'}
                 onClick={() => setActiveTab('timeline')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${activeTab === 'timeline'
-                  ? 'ceramic-card text-amber-700'
-                  : 'text-[#948D82] hover:text-[#5C554B]'
-                  }`}
-              >
-                <ClockIcon className="h-5 w-5" />
-                <span>Atividades</span>
-              </button>
-
-              <button
+              />
+              <CeramicFilterTab
+                icon={<ChartBarIcon className="h-4 w-4" />}
+                label="Insights"
+                isActive={activeTab === 'insights'}
                 onClick={() => setActiveTab('insights')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${activeTab === 'insights'
-                  ? 'ceramic-card text-amber-700'
-                  : 'text-[#948D82] hover:text-[#5C554B]'
-                  }`}
-              >
-                <ChartBarIcon className="h-5 w-5" />
-                <span>Insights & Patterns</span>
-              </button>
-
-              <button
+              />
+              <CeramicFilterTab
+                icon={<MagnifyingGlassIcon className="h-4 w-4" />}
+                label="Busca"
+                isActive={activeTab === 'search'}
                 onClick={() => setActiveTab('search')}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all rounded-full ${activeTab === 'search'
-                  ? 'ceramic-card text-amber-700'
-                  : 'text-[#948D82] hover:text-[#5C554B]'
-                  }`}
-              >
-                <MagnifyingGlassIcon className="h-5 w-5" />
-                <span>Busca</span>
-              </button>
+              />
             </div>
 
             {/* Tab Content with crossfade animation */}
@@ -462,7 +402,24 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <UnifiedTimelineView userId={user?.id} />
+                  {/* Daily Question - prominent in main content */}
+                  {question ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 }}
+                    >
+                      <DailyQuestionCard
+                        question={question}
+                        onAnswer={handleAnswerQuestion}
+                        onSkip={skipQuestion}
+                      />
+                    </motion.div>
+                  ) : (
+                    <DailyQuestionSkeleton />
+                  )}
+
+                  <UnifiedTimelineView userId={user?.id} layout="masonry" />
                 </motion.div>
               )}
 
