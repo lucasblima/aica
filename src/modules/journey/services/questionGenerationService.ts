@@ -113,7 +113,7 @@ class CircuitBreaker {
 }
 
 // Singleton circuit breaker for Edge Function
-const edgeFunctionCircuit = new CircuitBreaker(3, 60000) // 3 failures, 1 min reset
+const edgeFunctionCircuit = new CircuitBreaker(2, 300000) // 2 failures, 5 min reset
 
 // =============================================================================
 // RETRY LOGIC (from API Integrations skill)
@@ -388,7 +388,9 @@ async function callEdgeFunction(
   })
 
   if (response.error) {
-    const errorMsg = response.error.message || 'Generation failed'
+    // Extract actual error from Edge Function response body (response.data has the JSON body)
+    const serverError = (response.data as any)?.error
+    const errorMsg = serverError || response.error.message || 'Generation failed'
 
     // Parse status from error message if available
     let status = 500
@@ -454,8 +456,8 @@ export async function triggerQuestionGeneration(
     const result = await withRetry(
       () => callEdgeFunction(session.token!, options || {}),
       {
-        maxRetries: 2,
-        baseDelayMs: 1000,
+        maxRetries: 1,
+        baseDelayMs: 2000,
         retryCondition: (err) => {
           if (err instanceof EdgeFunctionError) {
             // Only retry server errors, not auth errors
@@ -583,7 +585,7 @@ export async function updateUserContext(
 // Guard to prevent multiple concurrent generation attempts
 let generationInProgress = false
 let lastGenerationAttempt = 0
-const GENERATION_COOLDOWN_MS = 30000 // 30 seconds between attempts
+const GENERATION_COOLDOWN_MS = 120000 // 2 minutes between attempts
 
 /**
  * Check and trigger generation if needed (non-blocking)
