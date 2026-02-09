@@ -327,6 +327,53 @@ const SMART_MODEL_ACTIONS = [
 ]
 
 // ============================================================================
+// ROBUST JSON EXTRACTION
+// ============================================================================
+
+/**
+ * Extract JSON from Gemini response text, handling:
+ * - Pure JSON responses
+ * - JSON wrapped in ```json ... ``` code fences
+ * - JSON preceded by preamble text ("Here is the analysis:\n{...}")
+ * - JSON followed by trailing text
+ */
+function extractJSON<T = any>(text: string): T {
+  // 1. Strip code fences
+  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').trim()
+
+  // 2. Try direct parse first
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    // continue to fallback strategies
+  }
+
+  // 3. Find first { or [ and match to last } or ]
+  const objStart = cleaned.indexOf('{')
+  const arrStart = cleaned.indexOf('[')
+  let start = -1
+  let end = -1
+
+  if (objStart >= 0 && (arrStart < 0 || objStart < arrStart)) {
+    start = objStart
+    end = cleaned.lastIndexOf('}')
+  } else if (arrStart >= 0) {
+    start = arrStart
+    end = cleaned.lastIndexOf(']')
+  }
+
+  if (start >= 0 && end > start) {
+    try {
+      return JSON.parse(cleaned.substring(start, end + 1))
+    } catch {
+      // fall through
+    }
+  }
+
+  throw new Error(`Falha ao extrair JSON da resposta do modelo: ${text.substring(0, 200)}`)
+}
+
+// ============================================================================
 // PROMPT TEMPLATES
 // ============================================================================
 
@@ -363,11 +410,7 @@ async function handleAnalyzeMomentSentiment(genAI: GoogleGenerativeAI, payload: 
   const text = result.response.text()
 
   let parsed: Omit<SentimentAnalysisResult, 'timestamp'>
-  try {
-    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
-    throw new Error('Falha ao processar resposta do modelo')
-  }
+  parsed = extractJSON(text)
 
   const validSentiments = ['very_positive', 'positive', 'neutral', 'negative', 'very_negative']
   if (!validSentiments.includes(parsed.sentiment)) parsed.sentiment = 'neutral'
@@ -388,11 +431,7 @@ async function handleGenerateWeeklySummary(genAI: GoogleGenerativeAI, payload: W
   const text = result.response.text()
 
   let parsed: WeeklySummaryResult
-  try {
-    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
-    throw new Error('Falha ao processar resposta do modelo')
-  }
+  parsed = extractJSON(text)
 
   const validTrends = ['ascending', 'stable', 'descending', 'volatile']
   if (!validTrends.includes(parsed.emotionalTrend)) parsed.emotionalTrend = 'stable'
@@ -412,11 +451,7 @@ async function handleGenerateDossier(genAI: GoogleGenerativeAI, payload: Generat
   const text = result.response.text()
 
   let parsed: DossierResult
-  try {
-    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
-    throw new Error('Falha ao processar resposta do modelo')
-  }
+  parsed = extractJSON(text)
 
   parsed.biography = parsed.biography || 'Nao foi possivel gerar biografia'
   parsed.controversies = Array.isArray(parsed.controversies) ? parsed.controversies : []
@@ -434,11 +469,7 @@ async function handleGenerateIceBreakers(genAI: GoogleGenerativeAI, payload: Ice
   const text = result.response.text()
 
   let parsed: IceBreakerResult
-  try {
-    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
-    throw new Error('Falha ao processar resposta do modelo')
-  }
+  parsed = extractJSON(text)
 
   parsed.iceBreakers = Array.isArray(parsed.iceBreakers) ? parsed.iceBreakers.slice(0, 5) : []
   return parsed
@@ -453,11 +484,7 @@ async function handleGeneratePautaQuestions(genAI: GoogleGenerativeAI, payload: 
   const text = result.response.text()
 
   let parsed: PautaQuestionsResult
-  try {
-    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
-    throw new Error('Falha ao processar resposta do modelo')
-  }
+  parsed = extractJSON(text)
 
   parsed.questions = Array.isArray(parsed.questions) ? parsed.questions.slice(0, 20) : []
   return parsed
@@ -472,11 +499,7 @@ async function handleGeneratePautaOutline(genAI: GoogleGenerativeAI, payload: Pa
   const text = result.response.text()
 
   let parsed: PautaOutlineResult
-  try {
-    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
-  } catch {
-    throw new Error('Falha ao processar resposta do modelo')
-  }
+  parsed = extractJSON(text)
 
   parsed.title = parsed.title || 'Entrevista sem titulo'
   parsed.mainSections = Array.isArray(parsed.mainSections) ? parsed.mainSections : []
@@ -1229,7 +1252,7 @@ IMPORTANTE: Retorne APENAS o objeto JSON, sem markdown, sem blocos de codigo, se
 
   let parsed: Omit<GuestProfile, 'researched_at'>
   try {
-    parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
+    parsed = extractJSON(text)
   } catch {
     console.error('[research_guest] Failed to parse JSON response:', text)
     throw new Error('Falha ao processar resposta do modelo')
