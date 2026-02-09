@@ -11,7 +11,7 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT DATE(m.created_at) as activity_date, COUNT(*)::BIGINT as moment_count
-  FROM moment_entries m
+  FROM moments m
   WHERE m.user_id = p_user_id
     AND m.created_at >= NOW() - (p_days || ' days')::INTERVAL
   GROUP BY DATE(m.created_at)
