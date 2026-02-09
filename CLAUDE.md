@@ -41,19 +41,44 @@ npx supabase functions serve  # Local Edge Functions
 > Deploy e uma acao **exclusiva do usuario**, feita manualmente apos testes locais (`npm run build && npm run typecheck`).
 > Se o usuario pedir deploy explicitamente, confirme antes de executar.
 
+### Pipeline de Deploy (OBRIGATORIO)
+
+O fluxo de deploy segue uma pipeline rigorosa. **NUNCA** pular etapas:
+
+```
+1. Desenvolvimento local (npm run dev)
+   ↓
+2. Build + Typecheck local (npm run build && npm run typecheck)
+   ↓
+3. Deploy para STAGING (aica-staging)
+   ↓
+4. Testes E2E em staging (manuais ou Playwright)
+   ↓
+5. Validacao do usuario em staging
+   ↓
+6. Deploy para PRODUCAO (aica) — SOMENTE apos aprovacao em staging
+```
+
+> **REGRA ABSOLUTA:** Deploy para producao (`aica`) so pode acontecer DEPOIS de:
+> 1. O codigo ter sido deployado e testado em staging (`aica-staging`)
+> 2. O usuario ter validado o comportamento em staging
+> 3. O usuario pedir EXPLICITAMENTE o deploy para producao
+>
+> **NUNCA** fazer deploy direto para producao sem passar por staging primeiro.
+> **NUNCA** fazer deploy para producao e staging simultaneamente.
+> Se o usuario pedir "deploy", SEMPRE assumir que e para staging, a menos que diga explicitamente "producao".
+
 ### Passo 1: Commit e Push
 ```bash
 git add -A && git commit -m "sua mensagem" && git push origin main
 ```
 
-### Passo 2: Deploy Manual via Cloud Build
-
-**Staging (ambiente ativo):**
+### Passo 2: Deploy para Staging (SEMPRE primeiro)
 ```bash
 gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762 --substitutions=_SERVICE_NAME=aica-staging
 ```
 
-**Producao (serviço `aica`):**
+### Passo 3: Deploy para Producao (SOMENTE apos validacao em staging)
 ```bash
 gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762
 ```
@@ -734,6 +759,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **NEVER** call Gemini API client-side - use Edge Functions
 - **NEVER** expose API keys in frontend code
 - **NEVER** run `gcloud builds submit` or any deploy command unless the user explicitly requests it - deploy is manual after local testing
+- **NEVER** deploy to production without the code being tested in staging first - pipeline: staging → E2E tests → user approval → production
+- **ALWAYS** assume "deploy" means staging unless the user says "producao" explicitly
 - **ALWAYS** include RLS policies with new tables
 - **ALWAYS** use `@supabase/ssr` for authentication
 - **ALWAYS** include co-authorship in commits
