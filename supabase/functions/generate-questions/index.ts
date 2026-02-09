@@ -128,6 +128,43 @@ function extractJSON<T = any>(text: string): T {
   throw new Error(`Failed to extract JSON from model response: ${text.substring(0, 200)}`)
 }
 
+/**
+ * Recover complete objects from a truncated JSON array.
+ * Finds the last complete `}` before truncation and closes the array.
+ */
+function recoverTruncatedArray(text: string): GeneratedQuestion[] {
+  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').trim()
+  const arrStart = cleaned.indexOf('[')
+  if (arrStart < 0) return []
+
+  const content = cleaned.substring(arrStart + 1)
+
+  // Find all complete objects by matching balanced braces
+  const objects: GeneratedQuestion[] = []
+  let depth = 0
+  let objStart = -1
+
+  for (let i = 0; i < content.length; i++) {
+    if (content[i] === '{') {
+      if (depth === 0) objStart = i
+      depth++
+    } else if (content[i] === '}') {
+      depth--
+      if (depth === 0 && objStart >= 0) {
+        try {
+          const obj = JSON.parse(content.substring(objStart, i + 1))
+          if (obj.question && obj.category) {
+            objects.push(obj)
+          }
+        } catch { /* skip malformed object */ }
+        objStart = -1
+      }
+    }
+  }
+
+  return objects
+}
+
 // =============================================================================
 // CONTEXT FETCHING
 // =============================================================================
@@ -399,7 +436,8 @@ async function generateQuestionsWithGemini(
     generationConfig: {
       temperature: 0.8,  // Higher for creativity
       topP: 0.9,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 4096,
+      responseMimeType: 'application/json',
     },
   }
 
@@ -418,7 +456,13 @@ async function generateQuestionsWithGemini(
   }
 
   const result = await response.json()
-  const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
+  const candidate = result.candidates?.[0]
+  const text = candidate?.content?.parts?.[0]?.text || '[]'
+  const finishReason = candidate?.finishReason
+
+  if (finishReason === 'MAX_TOKENS') {
+    log('WARN', 'Gemini response truncated (MAX_TOKENS), attempting partial recovery')
+  }
 
   // Parse JSON from response (robust extraction handles preamble, code fences, etc.)
   try {
@@ -426,8 +470,20 @@ async function generateQuestionsWithGemini(
     log('INFO', 'Successfully parsed questions', { count: questions.length })
     return questions
   } catch (parseError) {
-    log('ERROR', 'Failed to parse Gemini response', { text: text.substring(0, 500) })
-    throw new Error(`Failed to parse generated questions: ${(parseError as Error).message}`)
+    // If truncated, try to recover partial array by closing it
+    if (finishReason === 'MAX_TOKENS' || text.includes('[')) {
+      try {
+        const recovered = recoverTruncatedArray(text)
+        if (recovered.length > 0) {
+          log('INFO', 'Recovered partial questions from truncated response', { count: recovered.length })
+          return recovered
+        }
+      } catch {
+        // Fall through to error
+      }
+    }
+    log('WARN', 'Failed to parse Gemini response, returning empty', { text: text.substring(0, 500), finishReason })
+    return []
   }
 }
 
@@ -498,10 +554,13 @@ async function updateContextBankAfterGeneration(
     log('WARN', 'Failed to update context bank', error.message)
   }
 
-  // Increment generation count
-  await supabase.rpc('increment_generation_count', { p_user_id: userId }).catch(() => {
-    // RPC might not exist, that's ok
-  })
+  // Increment generation count (RPC might not exist, that's ok)
+  try {
+    const { error: rpcErr } = await supabase.rpc('increment_generation_count', { p_user_id: userId })
+    if (rpcErr) log('DEBUG', 'increment_generation_count RPC not available', rpcErr.message)
+  } catch {
+    // Ignore - RPC may not exist
+  }
 }
 
 // =============================================================================
@@ -525,6 +584,7 @@ serve(async (req) => {
   }
 
   const startTime = Date.now()
+  let currentStep = 'init'
 
   try {
     // Validate API key
@@ -600,9 +660,14 @@ serve(async (req) => {
     })
 
     // Check if generation is allowed (unless forced)
+    currentStep = 'check_should_generate'
     if (!request.force_regenerate) {
-      const { data: checkResult } = await supabase
+      const { data: checkResult, error: rpcError } = await supabase
         .rpc('check_should_generate_questions', { p_user_id: user.id })
+
+      if (rpcError) {
+        log('WARN', 'check_should_generate RPC failed, proceeding anyway', rpcError.message)
+      }
 
       if (checkResult && checkResult.length > 0) {
         const check = checkResult[0]
@@ -628,18 +693,23 @@ serve(async (req) => {
     }
 
     // Get user context and recent data
+    currentStep = 'fetch_context'
+    log('DEBUG', 'Fetching user context and recent data')
     const [context, recentResponses, recentQuestions] = await Promise.all([
       getOrCreateContextBank(supabase, user.id),
       getRecentResponses(supabase, user.id, 10),
       getRecentQuestions(supabase, user.id, 20),
     ])
 
-    // ✅ NOVA: Analisa respostas para inferir contexto
+    // Analisa respostas para inferir contexto
+    currentStep = 'analyze_responses'
     const inferredContext = await analyzeRecentResponses(recentResponses)
 
     log('DEBUG', 'Inferred context from responses', inferredContext)
 
     // Build prompt and generate questions
+    currentStep = 'call_gemini'
+    log('INFO', 'Calling Gemini API')
     const prompt = buildGenerationPrompt(
       context,
       recentResponses,
@@ -652,8 +722,10 @@ serve(async (req) => {
     const promptHash = btoa(prompt.substring(0, 100)).substring(0, 32)
 
     const generatedQuestions = await generateQuestionsWithGemini(prompt)
+    log('INFO', 'Gemini returned questions', { count: generatedQuestions.length })
 
     // Filter out any questions too similar to existing ones
+    currentStep = 'filter_duplicates'
     const uniqueQuestions = generatedQuestions.filter(q => {
       const lowerQuestion = q.question.toLowerCase()
       return !recentQuestions.some(rq =>
@@ -663,6 +735,8 @@ serve(async (req) => {
     })
 
     // Store questions
+    currentStep = 'store_questions'
+    log('INFO', 'Storing questions', { unique: uniqueQuestions.length })
     const storedCount = await storeGeneratedQuestions(
       supabase,
       user.id,
@@ -670,7 +744,8 @@ serve(async (req) => {
       promptHash
     )
 
-    // ✅ Update context bank with inferred data
+    // Update context bank with inferred data
+    currentStep = 'update_context'
     await updateContextBankAfterGeneration(supabase, user.id, storedCount, inferredContext)
 
     const processingTimeMs = Date.now() - startTime
@@ -703,13 +778,15 @@ serve(async (req) => {
 
   } catch (error) {
     const err = error as Error
-    log('ERROR', 'Request processing failed', { message: err.message, stack: err.stack })
+    const step = typeof currentStep !== 'undefined' ? currentStep : 'unknown'
+    log('ERROR', `Failed at step: ${step}`, { message: err.message, stack: err.stack })
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: err.message || 'Internal server error',
+        error: `[${step}] ${err.message || 'Internal server error'}`,
         error_type: err.constructor?.name || 'Error',
+        failed_step: step,
       }),
       { status: 500, headers: corsHeaders }
     )
