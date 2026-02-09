@@ -38,6 +38,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://aica-staging-5562559893.southamerica-east1.run.app',
+  'https://aica-5562559893.southamerica-east1.run.app',
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {
@@ -102,6 +103,29 @@ function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?:
   const timestamp = new Date().toISOString()
   const logData = data ? `: ${JSON.stringify(data)}` : ''
   console.log(`[${timestamp}] [${level}] [generate-questions] ${message}${logData}`)
+}
+
+/**
+ * Robust JSON extraction from Gemini responses.
+ * Handles preamble text, code fences, and trailing content.
+ */
+function extractJSON<T = any>(text: string): T {
+  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').trim()
+  // Direct parse
+  try { return JSON.parse(cleaned) } catch { /* continue */ }
+  // Find JSON boundaries
+  const arrStart = cleaned.indexOf('[')
+  const objStart = cleaned.indexOf('{')
+  let start = -1, end = -1
+  if (arrStart >= 0 && (objStart < 0 || arrStart < objStart)) {
+    start = arrStart; end = cleaned.lastIndexOf(']')
+  } else if (objStart >= 0) {
+    start = objStart; end = cleaned.lastIndexOf('}')
+  }
+  if (start >= 0 && end > start) {
+    try { return JSON.parse(cleaned.substring(start, end + 1)) } catch { /* continue */ }
+  }
+  throw new Error(`Failed to extract JSON from model response: ${text.substring(0, 200)}`)
 }
 
 // =============================================================================
@@ -396,26 +420,14 @@ async function generateQuestionsWithGemini(
   const result = await response.json()
   const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
 
-  // Parse JSON from response (handle potential markdown wrapping)
-  let jsonStr = text.trim()
-  if (jsonStr.startsWith('```json')) {
-    jsonStr = jsonStr.slice(7)
-  }
-  if (jsonStr.startsWith('```')) {
-    jsonStr = jsonStr.slice(3)
-  }
-  if (jsonStr.endsWith('```')) {
-    jsonStr = jsonStr.slice(0, -3)
-  }
-  jsonStr = jsonStr.trim()
-
+  // Parse JSON from response (robust extraction handles preamble, code fences, etc.)
   try {
-    const questions = JSON.parse(jsonStr) as GeneratedQuestion[]
+    const questions = extractJSON<GeneratedQuestion[]>(text)
     log('INFO', 'Successfully parsed questions', { count: questions.length })
     return questions
   } catch (parseError) {
     log('ERROR', 'Failed to parse Gemini response', { text: text.substring(0, 500) })
-    throw new Error('Failed to parse generated questions')
+    throw new Error(`Failed to parse generated questions: ${(parseError as Error).message}`)
   }
 }
 
@@ -691,12 +703,13 @@ serve(async (req) => {
 
   } catch (error) {
     const err = error as Error
-    log('ERROR', 'Request processing failed', err.message)
+    log('ERROR', 'Request processing failed', { message: err.message, stack: err.stack })
 
     return new Response(
       JSON.stringify({
         success: false,
         error: err.message || 'Internal server error',
+        error_type: err.constructor?.name || 'Error',
       }),
       { status: 500, headers: corsHeaders }
     )
