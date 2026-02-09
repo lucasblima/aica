@@ -231,10 +231,18 @@ GRANT EXECUTE ON FUNCTION log_ai_usage(UUID, TEXT, TEXT, INTEGER, INTEGER, INTEG
 GRANT EXECUTE ON FUNCTION log_tracking_error(UUID, TEXT, TEXT, TEXT, JSONB) TO authenticated;
 
 -- =====================================================
--- 2. QUESTION GENERATION RPCs (from 20260126000001)
+-- 2. QUESTION GENERATION (from 20260126000001)
 -- =====================================================
 
--- Ensure context bank table exists
+-- 2a. Ensure daily_questions has all required columns
+ALTER TABLE daily_questions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE daily_questions ADD COLUMN IF NOT EXISTS created_by_ai BOOLEAN DEFAULT FALSE;
+ALTER TABLE daily_questions ADD COLUMN IF NOT EXISTS generation_context JSONB DEFAULT NULL;
+ALTER TABLE daily_questions ADD COLUMN IF NOT EXISTS generation_prompt_hash TEXT DEFAULT NULL;
+ALTER TABLE daily_questions ADD COLUMN IF NOT EXISTS parent_question_id UUID;
+ALTER TABLE daily_questions ADD COLUMN IF NOT EXISTS relevance_score DECIMAL(3,2) DEFAULT 1.0;
+
+-- 2b. Ensure context bank table exists with all columns
 CREATE TABLE IF NOT EXISTS user_question_context_bank (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -248,6 +256,19 @@ CREATE TABLE IF NOT EXISTS user_question_context_bank (
   created_at TIMESTAMPTZ DEFAULT now(),
   CONSTRAINT unique_user_context UNIQUE(user_id)
 );
+
+-- Add columns that may be missing from partial migration
+ALTER TABLE user_question_context_bank ADD COLUMN IF NOT EXISTS mentioned_areas TEXT[] DEFAULT '{}';
+ALTER TABLE user_question_context_bank ADD COLUMN IF NOT EXISTS sentiment_trend TEXT DEFAULT 'neutral';
+ALTER TABLE user_question_context_bank ADD COLUMN IF NOT EXISTS engagement_score DECIMAL(3,2) DEFAULT 0.5;
+ALTER TABLE user_question_context_bank ADD COLUMN IF NOT EXISTS avoided_topics TEXT[] DEFAULT '{}';
+ALTER TABLE user_question_context_bank ADD COLUMN IF NOT EXISTS generation_count INT DEFAULT 0;
+
+-- 2c. RLS for daily_questions user-specific questions
+DROP POLICY IF EXISTS "Users can view questions" ON daily_questions;
+CREATE POLICY "Users can view questions" ON daily_questions
+  FOR SELECT TO authenticated
+  USING (user_id IS NULL OR user_id = auth.uid());
 
 -- RPC: check_should_generate_questions
 CREATE OR REPLACE FUNCTION check_should_generate_questions(p_user_id UUID)
