@@ -294,7 +294,7 @@ curl -i -X POST https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/generate-q
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://aica-staging-5p22u2w6jq-rj.a.run.app',  // ✅ Deve estar aqui
+  'https://aica-staging-5562559893.southamerica-east1.run.app',  // ✅ Deve estar aqui
 ]
 ```
 

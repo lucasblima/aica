@@ -120,7 +120,7 @@ whatsapp   |              3 |           524288 | ...
 
 ### Passo 4: Recarregar Dashboard
 
-1. Volte para https://aica-staging-5p22u2w6jq-rj.a.run.app/file-search
+1. Volte para https://aica-staging-5562559893.southamerica-east1.run.app/file-search
 2. Pressione **Ctrl+Shift+R** (hard reload)
 3. Dashboard deve carregar com dados
 

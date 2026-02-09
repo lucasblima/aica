@@ -256,5 +256,5 @@ After running this script successfully:
    SELECT * FROM ai_usage_analytics ORDER BY created_at DESC LIMIT 5;
 
 4. ✅ Check the dashboard:
-   https://aica-staging-5p22u2w6jq-rj.a.run.app/ai-cost-dashboard
+   https://aica-staging-5562559893.southamerica-east1.run.app/ai-cost-dashboard
 */

@@ -21,7 +21,7 @@
 **Objetivo:** Confirmar que a navegação funciona
 
 **Passos:**
-1. Acesse a aplicação staging: https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. Acesse a aplicação staging: https://aica-staging-5562559893.southamerica-east1.run.app/
 2. Faça login (se necessário)
 3. Clique no ícone ⚙️ **Settings** (canto superior direito)
 4. Localize o item **"WhatsApp Analytics"** 💬 (deve estar entre "File Search Analytics" e "WhatsApp Monitor")

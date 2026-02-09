@@ -7,7 +7,7 @@ Este guia contém o passo a passo para validar o deploy do PR #79 em staging.
 **Deploy Information:**
 - **Date:** 2026-01-09 ~11:36 UTC
 - **PR:** #79 - AI Cost Tracking, WhatsApp Integration, Database Security
-- **Environment:** https://aica-staging-5p22u2w6jq-rj.a.run.app/
+- **Environment:** https://aica-staging-5562559893.southamerica-east1.run.app/
 - **Database:** Supabase (https://uzywajqzbdbrfammshdg.supabase.co)
 
 ---
@@ -198,7 +198,7 @@ WHERE version >= '20260109';
 
 ### 1. AI Cost Dashboard
 
-**URL:** https://aica-staging-5p22u2w6jq-rj.a.run.app/ai-cost-dashboard
+**URL:** https://aica-staging-5562559893.southamerica-east1.run.app/ai-cost-dashboard
 
 **Testes:**
 1. Dashboard carrega sem erros
@@ -215,7 +215,7 @@ WHERE version >= '20260109';
 
 ### 2. Grants Module AI Generation
 
-**URL:** https://aica-staging-5p22u2w6jq-rj.a.run.app/grants
+**URL:** https://aica-staging-5562559893.southamerica-east1.run.app/grants
 
 **Testes:**
 1. Criar novo projeto de edital
@@ -233,7 +233,7 @@ WHERE version >= '20260109';
 
 ### 3. Journey Module AI Analysis
 
-**URL:** https://aica-staging-5p22u2w6jq-rj.a.run.app/journey
+**URL:** https://aica-staging-5562559893.southamerica-east1.run.app/journey
 
 **Testes:**
 1. Criar um novo momento
@@ -251,7 +251,7 @@ WHERE version >= '20260109';
 
 ### 4. Finance Module Statement Parse
 
-**URL:** https://aica-staging-5p22u2w6jq-rj.a.run.app/finance
+**URL:** https://aica-staging-5562559893.southamerica-east1.run.app/finance
 
 **Testes:**
 1. Fazer upload de extrato PDF

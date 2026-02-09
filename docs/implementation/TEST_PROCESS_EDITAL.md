@@ -77,7 +77,7 @@ curl -X POST \
   },
   "headers": {
     "authorization": "✅ Present",
-    "origin": "https://aica-staging-5p22u2w6jq-rj.a.run.app"
+    "origin": "https://aica-staging-5562559893.southamerica-east1.run.app"
   },
   "apiKeyValidation": {
     "geminiKeyExists": true,

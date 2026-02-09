@@ -579,10 +579,8 @@ if (code && !isExpired) {
 #### Webhook not updating status
 - **Symptom:** Status stays 'connecting' after entering code
 - **Check:**
-  1. `EVOLUTION_WEBHOOK_SECRET` matches in:
-     - Supabase Edge Function secrets
-     - Evolution API webhook configuration
-  2. HMAC signature validation (see `webhook-evolution/index.ts`)
+  1. Webhook event name format: Evolution API v2 sends `CONNECTION_UPDATE` (SCREAMING_SNAKE), our handler normalizes to `connection.update`
+  2. Note: Evolution API does NOT send HMAC signatures (see `webhook-evolution/index.ts` comments)
 - **Debug:** `npx supabase functions logs webhook-evolution --tail`
 
 #### Real-time lag or not working
@@ -605,7 +603,7 @@ Required in Edge Functions -> Secrets:
 ```bash
 EVOLUTION_API_URL=https://your-evolution-api.com
 EVOLUTION_API_KEY=your-api-key
-EVOLUTION_WEBHOOK_SECRET=your-webhook-secret
+EVOLUTION_WEBHOOK_SECRET=your-webhook-secret  # Optional: Evolution API does not send HMAC signatures
 SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```

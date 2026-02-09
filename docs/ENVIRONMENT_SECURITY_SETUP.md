@@ -31,7 +31,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 VITE_GOOGLE_OAUTH_CLIENT_ID=5562559893-j9n4ec5vo4dlo4c30hpefca1nf8md0bo.apps.googleusercontent.com
 
 # Public URLs
-VITE_FRONTEND_URL=https://aica-staging-5p22u2w6jq-rj.a.run.app
+VITE_FRONTEND_URL=https://aica-staging-5562559893.southamerica-east1.run.app
 VITE_API_URL=http://localhost:3000
 ```
 
@@ -206,10 +206,10 @@ git push origin main
 
 ```bash
 # Check that Edge Functions have secrets
-curl https://aica-staging-5p22u2w6jq-rj.a.run.app/functions/v1/health
+curl https://aica-staging-5562559893.southamerica-east1.run.app/functions/v1/health
 
 # Check that frontend bundle does NOT have secrets
-curl https://aica-staging-5p22u2w6jq-rj.a.run.app/index.html | grep EVOLUTION_API_KEY
+curl https://aica-staging-5562559893.southamerica-east1.run.app/index.html | grep EVOLUTION_API_KEY
 # Should return: nothing (secret not exposed)
 ```
 

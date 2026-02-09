@@ -12,7 +12,7 @@
        ▼
 ┌─────────────────────────────────────────────────────────┐
 │  Frontend (Aica Life OS)                                │
-│  https://aica-staging-5p22u2w6jq-rj.a.run.app     │
+│  https://aica-staging-5562559893.southamerica-east1.run.app     │
 ├─────────────────────────────────────────────────────────┤
 │  - Generates code_verifier (random 128 chars)           │
 │  - Calculates code_challenge = SHA256(code_verifier)    │
@@ -22,7 +22,7 @@
        │
        │ 2. Redirect to Google with:
        │    - client_id
-       │    - redirect_uri = https://aica-staging-5p22u2w6jq-rj.a.run.app...
+       │    - redirect_uri = https://aica-staging-5562559893.southamerica-east1.run.app...
        │    - code_challenge
        ▼
 ┌─────────────────────────────────────────────────────────┐
@@ -34,7 +34,7 @@
 └──────┬──────────────────────────────────────────────────┘
        │
        │ 3. Redirects back with authorization code
-       │    https://aica-staging-5p22u2w6jq-rj.a.run.app.../auth/callback?code=XXX
+       │    https://aica-staging-5562559893.southamerica-east1.run.app.../auth/callback?code=XXX
        ▼
 ┌─────────────────────────────────────────────────────────┐
 │  Frontend (Aica Life OS)                                │
@@ -150,7 +150,7 @@ For complete Aica Life OS OAuth support:
 ```
 Authorized redirect URIs:
 1. https://uzywajqzbdbrfammshdg.supabase.co/auth/v1/callback  ← CRITICAL for Supabase Auth
-2. https://aica-staging-5p22u2w6jq-rj.a.run.app         ← Production frontend
+2. https://aica-staging-5562559893.southamerica-east1.run.app         ← Production frontend
 3. http://localhost:5173                                       ← Local dev (Vite default)
 4. http://localhost:3000                                       ← Local dev (alternative)
 ```

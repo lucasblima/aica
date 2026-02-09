@@ -37,7 +37,7 @@ http://localhost:3003/diagnostics
 
 ### Staging
 ```
-https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
 ```
 
 ### Passos:
@@ -162,7 +162,7 @@ Se você ver **Status: 200 OK**, o **Sprint 2 está 100% COMPLETO!** 🎊
 ## 🔗 Links Rápidos
 
 - **Diagnostics (Local):** http://localhost:3003/diagnostics
-- **Diagnostics (Staging):** https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+- **Diagnostics (Staging):** https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
 - **Dashboard Functions:** https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions
 - **Logs da Edge Function:** https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions/sync-whatsapp-contacts/logs
 

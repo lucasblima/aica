@@ -113,7 +113,7 @@ Deployed function sync-whatsapp-contacts to https://uzywajqzbdbrfammshdg.supabas
 
 ### 5.1. Via Diagnostics Page
 
-1. Acesse: **https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics**
+1. Acesse: **https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics**
 2. Clique em **"🚀 Testar Edge Function"**
 
 ### 5.2. Resultado Esperado ✅

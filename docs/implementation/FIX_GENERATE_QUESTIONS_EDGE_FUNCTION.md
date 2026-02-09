@@ -159,7 +159,7 @@ log('INFO', 'Generation completed', {
    const ALLOWED_ORIGINS = [
      'http://localhost:3000',
      'http://localhost:5173',
-     'https://aica-staging-5p22u2w6jq-rj.a.run.app',
+     'https://aica-staging-5562559893.southamerica-east1.run.app',
    ]
    ```
 
@@ -298,7 +298,7 @@ const trend = detectTrend(sentimentScores)
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://aica-staging-5p22u2w6jq-rj.a.run.app',  // ✅ Staging
+  'https://aica-staging-5562559893.southamerica-east1.run.app',  // ✅ Staging
 ]
 ```
 

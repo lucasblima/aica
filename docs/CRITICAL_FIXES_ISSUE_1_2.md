@@ -308,7 +308,7 @@ REVOKE EXECUTE ON FUNCTION public.update_session_sync_stats(UUID, INTEGER, INTEG
 ### Test Issue #1 Fix
 
 1. **Login to staging app**
-   - URL: https://aica-staging-5p22u2w6jq-rj.a.run.app/
+   - URL: https://aica-staging-5562559893.southamerica-east1.run.app/
    - Use Google OAuth
 
 2. **Check browser console**

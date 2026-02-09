@@ -149,7 +149,7 @@ LIMIT 5;
 - ✅ Preview do texto extraído
 
 #### Passo 3: Buscar no Journey
-1. Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. Acesse: https://aica-staging-5562559893.southamerica-east1.run.app/
 2. Vá em **Minha Jornada**
 3. Clique na aba **"Busca"**
 4. Digite uma palavra-chave do PDF enviado

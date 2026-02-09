@@ -164,7 +164,7 @@ LIMIT 5;
 
 ### Teste 3: Buscar no Journey
 
-1. Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. Acesse: https://aica-staging-5562559893.southamerica-east1.run.app/
 2. Navegue: **Minha Jornada → Busca**
 3. Digite uma **palavra-chave** que existe no PDF enviado
 4. ✅ **Deve aparecer o documento** nos resultados

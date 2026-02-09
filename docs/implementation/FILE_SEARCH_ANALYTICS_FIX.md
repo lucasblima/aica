@@ -154,7 +154,7 @@ const MODULE_CONFIG = {
 Enviar pelo menos 1 documento pelo WhatsApp (conforme WHATSAPP_RAG_DEPLOYMENT.md).
 
 ### Teste 1: Acessar Dashboard
-1. Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app/file-search
+1. Acesse: https://aica-staging-5562559893.southamerica-east1.run.app/file-search
 2. Ou: Settings Menu → "File Search Analytics"
 
 **Esperado:**

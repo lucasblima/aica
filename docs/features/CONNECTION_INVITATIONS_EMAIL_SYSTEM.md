@@ -186,7 +186,7 @@ Adicionar no **Supabase Dashboard → Edge Functions → Secrets**:
 RESEND_API_KEY=re_xxxxxxxxxxxxx
 SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-APP_BASE_URL=https://aica-staging-5p22u2w6jq-rj.a.run.app
+APP_BASE_URL=https://aica-staging-5562559893.southamerica-east1.run.app
 ```
 
 ---

@@ -2,7 +2,7 @@
 
 **Data:** 2026-01-23
 **Issue:** #118 - WhatsApp Input de Documentos
-**Ambiente:** Staging (https://aica-staging-5p22u2w6jq-rj.a.run.app/)
+**Ambiente:** Staging (https://aica-staging-5562559893.southamerica-east1.run.app/)
 **Commit:** 59a1f2b
 
 ---

@@ -11,7 +11,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://aica-staging-5p22u2w6jq-rj.a.run.app';
+const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://aica-staging-5562559893.southamerica-east1.run.app';
 
 interface InvitationRequest {
   invitation_id: string;

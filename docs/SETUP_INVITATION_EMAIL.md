@@ -53,13 +53,13 @@ SELECT typname FROM pg_type WHERE typname IN ('connection_invitation_status', 'e
 3. Adicionar:
    ```
    RESEND_API_KEY = re_xxxxxxxxxxxxxxxxxx
-   APP_BASE_URL = https://aica-staging-5p22u2w6jq-rj.a.run.app
+   APP_BASE_URL = https://aica-staging-5562559893.southamerica-east1.run.app
    ```
 
 **Via CLI:**
 ```bash
 npx supabase secrets set RESEND_API_KEY=re_xxxxxxxxx --project-ref uzywajqzbdbrfammshdg
-npx supabase secrets set APP_BASE_URL=https://aica-staging-5p22u2w6jq-rj.a.run.app --project-ref uzywajqzbdbrfammshdg
+npx supabase secrets set APP_BASE_URL=https://aica-staging-5562559893.southamerica-east1.run.app --project-ref uzywajqzbdbrfammshdg
 ```
 
 ---
@@ -86,7 +86,7 @@ curl -X POST \
 
 ### 4.1. Via Frontend (Recommended)
 
-1. Login no app: https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. Login no app: https://aica-staging-5562559893.southamerica-east1.run.app/
 2. Navigate to **Connections**
 3. Create/open connection space
 4. Click **"Convidar Membro"**

@@ -92,7 +92,7 @@ Applying migration 20260121000005_grant_whatsapp_rpc_permissions.sql...
 
 ### Test 1: User Profile (Issue #1)
 
-1. **Open staging app:** https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. **Open staging app:** https://aica-staging-5562559893.southamerica-east1.run.app/
 2. **Login with Google OAuth**
 3. **Open browser DevTools console** (F12)
 4. **Check for errors:**
