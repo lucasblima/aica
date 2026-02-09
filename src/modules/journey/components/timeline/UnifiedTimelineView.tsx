@@ -156,6 +156,72 @@ function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
   )
 }
 
+/**
+ * Renders day events in masonry layout, splitting full-width and compact events.
+ * Full-width events (summaries, questions) render outside the grid.
+ * Compact events (moments, whatsapp, tasks, activities) render in 2-col masonry.
+ */
+function MasonryDayEvents({ events, onEventClick }: { events: UnifiedEvent[]; onEventClick?: (event: UnifiedEvent) => void }) {
+  const isFullWidth = (event: UnifiedEvent) => event.source === 'summary' || event.source === 'question'
+
+  // Group consecutive compact events into chunks, interleaved with full-width events
+  const chunks: { type: 'masonry' | 'full'; events: UnifiedEvent[] }[] = []
+  let currentCompact: UnifiedEvent[] = []
+
+  events.forEach((event) => {
+    if (isFullWidth(event)) {
+      if (currentCompact.length > 0) {
+        chunks.push({ type: 'masonry', events: currentCompact })
+        currentCompact = []
+      }
+      chunks.push({ type: 'full', events: [event] })
+    } else {
+      currentCompact.push(event)
+    }
+  })
+  if (currentCompact.length > 0) {
+    chunks.push({ type: 'masonry', events: currentCompact })
+  }
+
+  let eventIndex = 0
+  return (
+    <div className="space-y-3">
+      {chunks.map((chunk, chunkIdx) => {
+        if (chunk.type === 'full') {
+          const idx = eventIndex++
+          return (
+            <motion.div
+              key={chunk.events[0].id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.03 }}
+            >
+              <TimelineEventCard event={chunk.events[0]} onClick={onEventClick} />
+            </motion.div>
+          )
+        }
+        return (
+          <MasonryGrid key={`masonry-${chunkIdx}`} columns={2} gap={3}>
+            {chunk.events.map((event) => {
+              const idx = eventIndex++
+              return (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03 }}
+                >
+                  <TimelineEventCard event={event} onClick={onEventClick} compact />
+                </motion.div>
+              )
+            })}
+          </MasonryGrid>
+        )
+      })}
+    </div>
+  )
+}
+
 export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }: UnifiedTimelineViewProps) {
   const {
     events,
@@ -264,24 +330,7 @@ export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }:
 
               {/* Events for this day */}
               {layout === 'masonry' ? (
-                <MasonryGrid columns={2} gap={3}>
-                  {dayGroup.events.map((event, eventIndex) => {
-                    const isFullWidth = event.source === 'summary' || event.source === 'question'
-                    const isCompact = event.source === 'moment' || event.source === 'whatsapp' || event.source === 'task' || event.source === 'activity'
-                    return (
-                      <motion.div
-                        key={event.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: eventIndex * 0.03 }}
-                        className={isFullWidth ? 'column-span-all' : ''}
-                        style={isFullWidth ? { columnSpan: 'all' } : undefined}
-                      >
-                        <TimelineEventCard event={event} onClick={onEventClick} compact={isCompact} />
-                      </motion.div>
-                    )
-                  })}
-                </MasonryGrid>
+                <MasonryDayEvents events={dayGroup.events} onEventClick={onEventClick} />
               ) : (
                 <div className="space-y-3 relative">
                   {/* Timeline vertical line (optional decorative element) */}
