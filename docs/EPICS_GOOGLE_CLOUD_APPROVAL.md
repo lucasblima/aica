@@ -186,7 +186,7 @@ const GOOGLE_CALENDAR_SCOPES = GOOGLE_CALENDAR_SCOPES_READONLY;
 
 A URL de produção atual é um domínio genérico do Cloud Run:
 ```
-https://aica-5p22u2w6jq-rj.a.run.app
+https://aica-5562559893.southamerica-east1.run.app
 ```
 
 **Por que é problemático:**

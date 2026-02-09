@@ -50,7 +50,7 @@ O token fornecido tem problema de permissões. **Vamos usar o Dashboard** que é
 ### 1. Acessar Diagnostics
 
 ```
-https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
 ```
 
 ### 2. Clicar Botão

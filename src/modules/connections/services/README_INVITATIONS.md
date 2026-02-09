@@ -393,7 +393,7 @@ function generateInviteLink(token: string): string
 **Example:**
 ```typescript
 const link = generateInviteLink('abc123def456');
-// Returns: "https://aica-staging-5p22u2w6jq-rj.a.run.app/invite/abc123def456"
+// Returns: "https://aica-staging-5562559893.southamerica-east1.run.app/invite/abc123def456"
 ```
 
 ---

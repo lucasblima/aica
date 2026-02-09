@@ -110,7 +110,7 @@ VALUES
 - Should NOT see: User 2's error (connection_error)
 
 **Manual Test (via App):**
-1. Open app: https://aica-staging-5p22u2w6jq-rj.a.run.app
+1. Open app: https://aica-staging-5562559893.southamerica-east1.run.app
 2. Login as: `test.user1@staging.test`
 3. Navigate to errors/logs page (if available)
 4. **Verify:** Only see their own rate_limit error

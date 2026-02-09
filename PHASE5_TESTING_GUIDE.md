@@ -276,7 +276,7 @@ npm run test:e2e -- --grep "@accessibility"
 npm install -g @google/lighthouse
 
 # Test locally
-lighthouse https://aica-staging-5p22u2w6jq-rj.a.run.app/ --chrome-flags="--headless"
+lighthouse https://aica-staging-5562559893.southamerica-east1.run.app/ --chrome-flags="--headless"
 
 # Or use DevTools (F12 > Lighthouse)
 ```

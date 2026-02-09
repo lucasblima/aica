@@ -50,7 +50,7 @@ Você está recebendo erro 401 porque a Edge Function no Supabase Dashboard **ai
 
 ### Passo 6: Testar
 
-1. Volte para: https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+1. Volte para: https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
 2. Clique no botão **"🚀 Testar Edge Function"**
 3. Você deve ver:
    ```

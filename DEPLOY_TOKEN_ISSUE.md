@@ -97,7 +97,7 @@ curl -L -X POST 'https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/sync-what
 ```
 
 Para obter o JWT token:
-1. Acesse: https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+1. Acesse: https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
 2. Clique em **"👤 Verificar Sessão"**
 3. Copie o token que aparece no log
 

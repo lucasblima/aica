@@ -81,7 +81,7 @@ Addresses TODO on line 165 of invitationService.ts with production-ready impleme
 **Supabase Secrets:**
 ```bash
 RESEND_API_KEY=re_xxxxxxxxxxxxx
-APP_BASE_URL=https://aica-staging-5p22u2w6jq-rj.a.run.app
+APP_BASE_URL=https://aica-staging-5562559893.southamerica-east1.run.app
 ```
 
 **Deployment:**

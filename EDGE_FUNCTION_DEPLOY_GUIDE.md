@@ -93,7 +93,7 @@ http://localhost:3003/diagnostics
 
 **Staging:**
 ```
-https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
 ```
 
 ### 3.2. Executar Teste

@@ -3,7 +3,7 @@
 
 **Data:** 2 de Janeiro de 2026
 **Projeto:** AICA - Life OS
-**URL de Produção:** https://aica-5p22u2w6jq-rj.a.run.app
+**URL de Produção:** https://aica-5562559893.southamerica-east1.run.app
 **Status:** 🟡 Parcialmente Pronto (Requer Ajustes)
 
 ---
@@ -169,7 +169,7 @@ O logo principal (`logo-aica-blue.png`) apresenta:
 
 ```yaml
 _VITE_GOOGLE_OAUTH_CLIENT_ID: '5562559893-1ufv0knok8k4679kr35p7aqdhp55drg0.apps.googleusercontent.com'
-_VITE_FRONTEND_URL: https://aica-5p22u2w6jq-rj.a.run.app
+_VITE_FRONTEND_URL: https://aica-5562559893.southamerica-east1.run.app
 ```
 
 ### Redirect URIs Configurados
@@ -181,7 +181,7 @@ De acordo com `docs/features/GOOGLE_CALENDAR_INTEGRATION.md`:
 ### ⚠️ Problemas de Domínio
 
 1. **URL de Produção é Cloud Run genérico**
-   - `aica-5p22u2w6jq-rj.a.run.app` não é um domínio próprio
+   - `aica-5562559893.southamerica-east1.run.app` não é um domínio próprio
    - Google pode rejeitar por não ser domínio verificável
 
 2. **Domínios mencionados nos emails não correspondem**

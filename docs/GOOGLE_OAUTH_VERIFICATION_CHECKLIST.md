@@ -427,7 +427,7 @@ Thank you for reviewing our integration."
 
 | Componente | URL |
 |------------|-----|
-| Frontend | https://aica-staging-5p22u2w6jq-rj.a.run.app |
+| Frontend | https://aica-staging-5562559893.southamerica-east1.run.app |
 | Supabase | https://uzywajqzbdbrfammshdg.supabase.co |
 | Region | southamerica-east1 (Sao Paulo) |
 
@@ -438,7 +438,7 @@ Thank you for reviewing our integration."
 VITE_GOOGLE_OAUTH_CLIENT_ID=[client-id-do-google-cloud]
 
 # URLs (atuais - precisam ser substituidas por dominio proprio)
-VITE_FRONTEND_URL=https://aica-staging-5p22u2w6jq-rj.a.run.app
+VITE_FRONTEND_URL=https://aica-staging-5562559893.southamerica-east1.run.app
 
 # Supabase
 VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
@@ -455,8 +455,8 @@ https://aicalifeos.com/auth/callback
 https://aicalifeos.com/
 
 # Staging (temporario - NAO sera aceito para verificacao)
-https://aica-staging-5p22u2w6jq-rj.a.run.app/auth/callback
-https://aica-staging-5p22u2w6jq-rj.a.run.app/
+https://aica-staging-5562559893.southamerica-east1.run.app/auth/callback
+https://aica-staging-5562559893.southamerica-east1.run.app/
 ```
 
 ### Arquivos Relevantes

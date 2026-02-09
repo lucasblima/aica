@@ -66,7 +66,7 @@ NOTICE: RPC function works!
 
 ## ✅ TEST IN BROWSER
 
-1. Open https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. Open https://aica-staging-5562559893.southamerica-east1.run.app/
 2. Login with Google
 3. Navigate to "Vida" (Journey module)
 4. Open DevTools → Console

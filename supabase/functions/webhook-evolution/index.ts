@@ -5,11 +5,14 @@
  * Multi-instance architecture: routes events to correct user based on instance name.
  *
  * Endpoint: POST /functions/v1/webhook-evolution
- * Headers: x-evolution-signature (HMAC-SHA256)
  * Events: CONNECTION_UPDATE, MESSAGES_UPSERT, QRCODE_UPDATED, CONTACTS_UPDATE
  *
+ * Security note: Evolution API does NOT send HMAC signatures on webhook requests.
+ * Webhook authentication relies on instance-name-to-user resolution and Supabase
+ * service role access. HMAC validation code is kept as defense-in-depth in case
+ * Evolution API adds signature support in the future.
+ *
  * Features:
- * - HMAC-SHA256 signature validation
  * - Message storage with deduplication
  * - Consent keyword processing (LGPD compliance)
  * - Media download to Supabase Storage
@@ -179,10 +182,12 @@ function getCorsHeaders(request: Request): Record<string, string> {
 }
 
 /**
- * Validate HMAC-SHA256 signature from Evolution API
+ * Validate HMAC-SHA256 signature (defense-in-depth)
  *
- * SECURITY: Signature validation is REQUIRED in production.
- * Set EVOLUTION_WEBHOOK_SECRET in Supabase Edge Function secrets.
+ * NOTE: Evolution API v2 does NOT send HMAC signatures on webhook requests.
+ * See: https://github.com/EvolutionAPI/evolution-api/issues/1933
+ * This function allows unsigned requests through (the normal case) but will
+ * validate signatures if Evolution API ever adds support in the future.
  */
 async function validateHmacSignature(body: string, signature: string | null): Promise<boolean> {
   // P0 FIX: Reject webhooks when secret is not configured (security vulnerability)
@@ -200,10 +205,10 @@ async function validateHmacSignature(body: string, signature: string | null): Pr
   }
 
   if (!signature) {
-    // Evolution API may not send HMAC signatures depending on version/config.
-    // Allow the webhook through with a warning rather than blocking it entirely,
-    // which would silently prevent all CONNECTION_UPDATE events from being processed.
-    log('WARN', 'Webhook signature missing from request headers - allowing without verification')
+    // Evolution API v2 does NOT send HMAC signatures (confirmed via source code review).
+    // This is the expected path for all real webhook requests.
+    // Ref: https://github.com/EvolutionAPI/evolution-api/issues/1933
+    log('DEBUG', 'No webhook signature header (expected - Evolution API does not sign requests)')
     return true
   }
 

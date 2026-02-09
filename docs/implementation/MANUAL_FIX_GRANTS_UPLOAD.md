@@ -108,7 +108,7 @@ Resposta esperada:
 
 ## Passo 4: Verificar Correção
 
-1. Acesse a aplicação em https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. Acesse a aplicação em https://aica-staging-5562559893.southamerica-east1.run.app/
 2. Vá para o módulo Grants
 3. Faça upload de um PDF
 4. Verifique se não há mais erros 500 no console

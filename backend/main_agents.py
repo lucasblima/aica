@@ -63,7 +63,6 @@ PROACTIVE_TRIGGER_SECRET = os.getenv("PROACTIVE_TRIGGER_SECRET", "dev-secret-cha
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://aica-staging-5p22u2w6jq-rj.a.run.app",
     "https://aica-staging-5562559893.southamerica-east1.run.app",
 ]
 

@@ -11,7 +11,7 @@ Erro 401 Unauthorized ao fazer login em staging causado por **cookies do projeto
 
 1. **Acesse a página de diagnóstico:**
    ```
-   https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+   https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
    ```
 
 2. **Clique no botão:**
@@ -20,7 +20,7 @@ Erro 401 Unauthorized ao fazer login em staging causado por **cookies do projeto
    ```
 
 3. **Faça logout e login novamente:**
-   - Abra: https://aica-staging-5p22u2w6jq-rj.a.run.app/
+   - Abra: https://aica-staging-5562559893.southamerica-east1.run.app/
    - Faça logout (se estiver logado)
    - Faça login novamente com Google
 
@@ -33,11 +33,11 @@ Erro 401 Unauthorized ao fazer login em staging causado por **cookies do projeto
 
 ### Opção 2: Limpar Manualmente no DevTools
 
-1. **Abra DevTools** (F12) em https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. **Abra DevTools** (F12) em https://aica-staging-5562559893.southamerica-east1.run.app/
 
 2. **Vá para aba Application:**
    - Application → Storage → Cookies
-   - Selecione `https://aica-staging-5p22u2w6jq-rj.a.run.app`
+   - Selecione `https://aica-staging-5562559893.southamerica-east1.run.app`
 
 3. **Delete todos os cookies que começam com:**
    - `sb-gppebtrshbvuzatmebhr-` (cookies antigos - DELETE TODOS)
@@ -53,7 +53,7 @@ Erro 401 Unauthorized ao fazer login em staging causado por **cookies do projeto
 
 2. **Acesse:**
    ```
-   https://aica-staging-5p22u2w6jq-rj.a.run.app/
+   https://aica-staging-5562559893.southamerica-east1.run.app/
    ```
 
 3. **Faça login normalmente**
@@ -113,7 +113,7 @@ https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/token?grant_type=pkce → 401 U
    - Authentication → URL Configuration
    - Adicionar em "Redirect URLs":
      ```
-     https://aica-staging-5p22u2w6jq-rj.a.run.app/**
+     https://aica-staging-5562559893.southamerica-east1.run.app/**
      ```
 
 4. **Desative extensões do navegador:**
@@ -123,7 +123,7 @@ https://gppebtrshbvuzatmebhr.supabase.co/auth/v1/token?grant_type=pkce → 401 U
 
 ## ✅ Checklist de Verificação
 
-- [ ] Acessei https://aica-staging-5p22u2w6jq-rj.a.run.app/diagnostics
+- [ ] Acessei https://aica-staging-5562559893.southamerica-east1.run.app/diagnostics
 - [ ] Cliquei em "🧹 Limpar Cookies Auth"
 - [ ] Fiz logout e login novamente
 - [ ] Verifiquei cookies com "🍪 Verificar Cookies"

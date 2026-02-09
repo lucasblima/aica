@@ -69,7 +69,7 @@ npx supabase secrets set GEMINI_API_KEY=sua_api_key_aqui --project-ref uzywajqzb
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://aica-staging-5p22u2w6jq-rj.a.run.app',  // ✅ Staging
+  'https://aica-staging-5562559893.southamerica-east1.run.app',  // ✅ Staging
   'https://aica-life-os.web.app',  // ✅ Production
 ]
 ```
@@ -108,7 +108,7 @@ npx supabase functions deploy process-edital --project-ref uzywajqzbdbrfammshdg
 ```
 
 ### Passo 3: Testar Upload Novamente
-1. Acessar Aica Staging: https://aica-staging-5p22u2w6jq-rj.a.run.app/
+1. Acessar Aica Staging: https://aica-staging-5562559893.southamerica-east1.run.app/
 2. Navegar para Módulo Captação
 3. Tentar upload do PDF novamente
 4. Abrir DevTools (F12) → Network tab
