@@ -563,6 +563,52 @@ async function handleClusterMomentsByTheme(genAI: GoogleGenerativeAI, payload: a
 }
 
 // ============================================================================
+// AUDIO TRANSCRIPTION HANDLER (Universal Input Funnel - Phase 0)
+// ============================================================================
+
+async function handleTranscribeAudio(genAI: GoogleGenerativeAI, payload: any): Promise<{ transcription: string; language: string; confidence: number }> {
+  const { audioBase64, mimeType = 'audio/webm' } = payload
+
+  if (!audioBase64) {
+    throw new Error('audioBase64 is required')
+  }
+
+  const model = genAI.getGenerativeModel({ model: MODELS.fast })
+  const result = await model.generateContent([
+    {
+      inlineData: {
+        mimeType,
+        data: audioBase64,
+      },
+    },
+    { text: 'Transcreva o audio acima em portugues. Retorne APENAS o texto transcrito, sem formatacao adicional.' },
+  ])
+
+  const transcription = result.response.text().trim()
+
+  return {
+    transcription,
+    language: 'pt-BR',
+    confidence: 0.9,
+    __usageMetadata: result.response.usageMetadata,
+  } as any
+}
+
+// ============================================================================
+// AUTO-TAGGING HANDLER
+// ============================================================================
+
+async function handleGenerateTags(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
+  const { prompt, temperature, maxOutputTokens } = payload
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.7, maxOutputTokens: maxOutputTokens || 200 } })
+  const result = await model.generateContent(prompt)
+  return {
+    text: result.response.text(),
+    __usageMetadata: result.response.usageMetadata,
+  } as any
+}
+
+// ============================================================================
 // DAILY REPORT HANDLER
 // ============================================================================
 
@@ -1305,6 +1351,12 @@ serve(async (req) => {
           break
         case 'research_guest':
           result = await handleResearchGuest(genAI, payload as ResearchGuestPayload)
+          break
+        case 'transcribe_audio':
+          result = await handleTranscribeAudio(genAI, payload)
+          break
+        case 'generate_tags':
+          result = await handleGenerateTags(genAI, payload)
           break
         default:
           return new Response(JSON.stringify({ error: `Action desconhecida: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
