@@ -15,6 +15,7 @@ import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
 import { AdminGuard } from '../components/guards/AdminGuard';
+import { AuthGuard } from '../components/guards/AuthGuard';
 import { AicaChatFAB } from '../components/features/AicaChatFAB';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -605,99 +606,47 @@ export function AppRouter() {
                />
 
                {/* Onboarding Flow - Protected, for new users */}
-               {isAuthenticated && (
-                  <Route
-                     path="/onboarding"
-                     element={<OnboardingFlow />}
-                  />
-               )}
+               <Route
+                  path="/onboarding"
+                  element={<AuthGuard><OnboardingFlow /></AuthGuard>}
+               />
 
-               {/* Connections Module Routes - Protected */}
-               {isAuthenticated && (
-                  <>
-                     {/* Global navigation visible on main connections views */}
-                     <Route path="/connections" element={<ConnectionsLayout><ConnectionsPage /></ConnectionsLayout>} />
-                     <Route path="/connections/:archetype" element={<ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout>} />
-
-                     {/* Contextual descent: Detail and section views have back button, no bottom nav */}
-                     <Route path="/connections/:archetype/:spaceId" element={<SpaceDetailPage />} />
-                     <Route path="/connections/:archetype/:spaceId/:section" element={<SpaceSectionPage />} />
-
-                     {/* WhatsApp Analytics View - Emotional Intelligence Dashboard */}
-                     <Route path="/connections/analytics/whatsapp" element={<WhatsAppAnalyticsPage />} />
-                  </>
-               )}
+               {/* Connections Module Routes - Protected (unconditional for stable React tree) */}
+               <Route path="/connections" element={<AuthGuard><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></AuthGuard>} />
+               <Route path="/connections/:archetype" element={<AuthGuard><ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout></AuthGuard>} />
+               <Route path="/connections/:archetype/:spaceId" element={<AuthGuard><SpaceDetailPage /></AuthGuard>} />
+               <Route path="/connections/:archetype/:spaceId/:section" element={<AuthGuard><SpaceSectionPage /></AuthGuard>} />
+               <Route path="/connections/analytics/whatsapp" element={<AuthGuard><WhatsAppAnalyticsPage /></AuthGuard>} />
 
                {/* Studio Module Routes - Protected */}
-               {isAuthenticated && (
-                  <>
-                     {/* Main Studio route with new StudioMainView */}
-                     <Route
-                        path="/studio"
-                        element={
-                           <StudioProvider>
-                              <StudioMainView />
-                           </StudioProvider>
-                        }
-                     />
-                  </>
-               )}
+               <Route
+                  path="/studio"
+                  element={
+                     <AuthGuard>
+                        <StudioProvider>
+                           <StudioMainView />
+                        </StudioProvider>
+                     </AuthGuard>
+                  }
+               />
 
                {/* Flux Module Routes - Protected */}
-               {isAuthenticated && (
-                  <>
-                     {/* Main Dashboard */}
-                     <Route
-                        path="/flux"
-                        element={
-                           <FluxProvider>
-                              <FluxDashboard />
-                           </FluxProvider>
-                        }
-                     />
-                     {/* Athlete Detail */}
-                     <Route
-                        path="/flux/athlete/:athleteId"
-                        element={
-                           <FluxProvider>
-                              <FluxAthleteDetailView />
-                           </FluxProvider>
-                        }
-                     />
-                     {/* Canvas Editor */}
-                     <Route
-                        path="/flux/canvas/:blockId"
-                        element={
-                           <FluxProvider>
-                              <FluxCanvasEditorView />
-                           </FluxProvider>
-                        }
-                     />
-                     {/* Alerts Center */}
-                     <Route
-                        path="/flux/alerts"
-                        element={
-                           <FluxProvider>
-                              <FluxAlertsView />
-                           </FluxProvider>
-                        }
-                     />
-                  </>
-               )}
+               <Route path="/flux" element={<AuthGuard><FluxProvider><FluxDashboard /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/athlete/:athleteId" element={<AuthGuard><FluxProvider><FluxAthleteDetailView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/canvas/:blockId" element={<AuthGuard><FluxProvider><FluxCanvasEditorView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/alerts" element={<AuthGuard><FluxProvider><FluxAlertsView /></FluxProvider></AuthGuard>} />
 
                {/* Contacts Module Routes - Protected */}
-               {isAuthenticated && (
-                  <>
-                     <Route
-                        path="/contacts"
-                        element={
-                           <ConnectionsLayout>
-                              <ContactsView />
-                           </ConnectionsLayout>
-                        }
-                     />
-                  </>
-               )}
+               <Route
+                  path="/contacts"
+                  element={
+                     <AuthGuard>
+                        <ConnectionsLayout>
+                           <ContactsView />
+                        </ConnectionsLayout>
+                     </AuthGuard>
+                  }
+               />
 
                {/* Diagnostics Page - PUBLIC (needs to be accessible to fix auth issues) */}
                <Route
@@ -706,45 +655,37 @@ export function AppRouter() {
                />
 
                {/* Admin Pages - Issue #129: WhatsApp Monitoring Dashboard */}
-               {isAuthenticated && (
-                  <Route
-                     path="/admin/whatsapp-monitoring"
-                     element={
-                        <AdminGuard>
-                           <WhatsAppMonitoringDashboard />
-                        </AdminGuard>
-                     }
-                  />
-               )}
+               <Route
+                  path="/admin/whatsapp-monitoring"
+                  element={
+                     <AdminGuard>
+                        <WhatsAppMonitoringDashboard />
+                     </AdminGuard>
+                  }
+               />
 
                {/* AI Cost Dashboard - Protected */}
-               {isAuthenticated && userId && (
-                  <Route
-                     path="/ai-cost"
-                     element={<AICostDashboard userId={userId} onBack={() => navigate('/')} />}
-                  />
-               )}
+               <Route
+                  path="/ai-cost"
+                  element={<AuthGuard><AICostDashboard userId={userId || ''} onBack={() => navigate('/')} /></AuthGuard>}
+               />
 
                {/* File Search Analytics - Protected */}
-               {isAuthenticated && userId && (
-                  <Route
-                     path="/file-search"
-                     element={<FileSearchAnalyticsView userId={userId} onBack={() => navigate('/')} mode="fullpage" />}
-                  />
-               )}
+               <Route
+                  path="/file-search"
+                  element={<AuthGuard><FileSearchAnalyticsView userId={userId || ''} onBack={() => navigate('/')} mode="fullpage" /></AuthGuard>}
+               />
 
                {/* Profile Page - Protected */}
-               {isAuthenticated && (
-                  <Route
-                     path="/profile"
-                     element={<ProfilePage />}
-                  />
-               )}
+               <Route
+                  path="/profile"
+                  element={<AuthGuard><ProfilePage /></AuthGuard>}
+               />
 
                {/* Main App - Authenticated users */}
                <Route
                   path="/*"
-                  element={isAuthenticated ? renderMainApp() : <Navigate to="/landing" replace />}
+                  element={<AuthGuard>{renderMainApp()}</AuthGuard>}
                />
             </Routes>
             </Suspense>

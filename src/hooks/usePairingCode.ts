@@ -39,11 +39,43 @@ interface UsePairingCodeReturn {
   reset: () => void
 }
 
+const STORAGE_KEY = 'aica:pairingCode'
+
+/** Restore pairing state from sessionStorage (survives tab-switch remounts) */
+function restorePairingState(): { code: string | null; expiresAt: string | null } {
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY)
+    if (!stored) return { code: null, expiresAt: null }
+    const { code, expiresAt } = JSON.parse(stored)
+    // Only restore if not expired
+    if (expiresAt && new Date(expiresAt).getTime() > Date.now()) {
+      return { code, expiresAt }
+    }
+    sessionStorage.removeItem(STORAGE_KEY)
+  } catch { /* ignore parse errors */ }
+  return { code: null, expiresAt: null }
+}
+
+/** Save pairing state to sessionStorage */
+function savePairingState(code: string, expiresAt: string) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ code, expiresAt }))
+  } catch { /* ignore quota errors */ }
+}
+
+/** Clear pairing state from sessionStorage */
+function clearPairingState() {
+  try { sessionStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+}
+
 export function usePairingCode(): UsePairingCodeReturn {
+  // Restore from sessionStorage on init (survives component remounts)
+  const restored = restorePairingState()
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [code, setCode] = useState<string | null>(null)
-  const [expiresAt, setExpiresAt] = useState<string | null>(null)
+  const [code, setCode] = useState<string | null>(restored.code)
+  const [expiresAt, setExpiresAt] = useState<string | null>(restored.expiresAt)
   const [secondsRemaining, setSecondsRemaining] = useState(0)
   const [serverTimeOffset, setServerTimeOffset] = useState<number>(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -185,8 +217,10 @@ export function usePairingCode(): UsePairingCodeReturn {
         ? result.code
         : `${result.code.slice(0, 4)}-${result.code.slice(4)}`
 
+      const finalExpiresAt = result.expiresAt || new Date(Date.now() + 60000).toISOString()
       setCode(formattedCode)
-      setExpiresAt(result.expiresAt || new Date(Date.now() + 60000).toISOString())
+      setExpiresAt(finalExpiresAt)
+      savePairingState(formattedCode, finalExpiresAt)
 
       return {
         code: formattedCode,
@@ -213,6 +247,7 @@ export function usePairingCode(): UsePairingCodeReturn {
     setSecondsRemaining(0)
     setServerTimeOffset(0)
     expiredCallbackFired.current = false
+    clearPairingState()
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null

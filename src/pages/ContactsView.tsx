@@ -41,8 +41,15 @@ export function ContactsView() {
   const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
-  // Pairing flow expanded state (inline card)
-  const [isPairingExpanded, setIsPairingExpanded] = useState(false);
+  // Pairing flow expanded state — persisted to sessionStorage to survive tab-switch remounts
+  const [isPairingExpanded, setIsPairingExpanded] = useState(() => {
+    try { return sessionStorage.getItem('aica:pairingExpanded') === 'true' } catch { return false }
+  });
+
+  // Sync isPairingExpanded to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem('aica:pairingExpanded', String(isPairingExpanded)) } catch { /* ignore */ }
+  }, [isPairingExpanded]);
 
   // Issue #91: Reconnect/reconfigure webhook state
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -205,6 +212,7 @@ export function ContactsView() {
 
   const handlePairingSuccess = async () => {
     setIsPairingExpanded(false);
+    try { sessionStorage.removeItem('aica:pairingExpanded'); sessionStorage.removeItem('aica:pairingCode') } catch { /* ignore */ }
     if (isConnected) {
       loadContacts();
       loadSyncStatus();
