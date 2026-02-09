@@ -18,10 +18,12 @@ import {
   SparklesIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline'
+import { MasonryGrid } from '@/components/ui'
 
 export interface UnifiedTimelineViewProps {
   userId?: string
   onEventClick?: (event: UnifiedEvent) => void
+  layout?: 'single' | 'masonry'
 }
 
 /**
@@ -154,7 +156,7 @@ function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
   )
 }
 
-export function UnifiedTimelineView({ userId, onEventClick }: UnifiedTimelineViewProps) {
+export function UnifiedTimelineView({ userId, onEventClick, layout = 'single' }: UnifiedTimelineViewProps) {
   const {
     events,
     isLoading,
@@ -261,26 +263,47 @@ export function UnifiedTimelineView({ userId, onEventClick }: UnifiedTimelineVie
               </div>
 
               {/* Events for this day */}
-              <div className="space-y-3 relative">
-                {/* Timeline vertical line (optional decorative element) */}
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#C4A574] via-[#E0DDD5] to-transparent opacity-30" />
-
-                <div className="pl-6 space-y-3">
-                  <AnimatePresence mode="popLayout">
-                    {dayGroup.events.map((event, eventIndex) => (
+              {layout === 'masonry' ? (
+                <MasonryGrid columns={2} gap={3}>
+                  {dayGroup.events.map((event, eventIndex) => {
+                    const isFullWidth = event.source === 'summary' || event.source === 'question'
+                    const isCompact = event.source === 'moment' || event.source === 'whatsapp' || event.source === 'task' || event.source === 'activity'
+                    return (
                       <motion.div
                         key={event.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: eventIndex * 0.03 }}
+                        className={isFullWidth ? 'column-span-all' : ''}
+                        style={isFullWidth ? { columnSpan: 'all' } : undefined}
                       >
-                        <TimelineEventCard event={event} onClick={onEventClick} />
+                        <TimelineEventCard event={event} onClick={onEventClick} compact={isCompact} />
                       </motion.div>
-                    ))}
-                  </AnimatePresence>
+                    )
+                  })}
+                </MasonryGrid>
+              ) : (
+                <div className="space-y-3 relative">
+                  {/* Timeline vertical line (optional decorative element) */}
+                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#C4A574] via-[#E0DDD5] to-transparent opacity-30" />
+
+                  <div className="pl-6 space-y-3">
+                    <AnimatePresence mode="popLayout">
+                      {dayGroup.events.map((event, eventIndex) => (
+                        <motion.div
+                          key={event.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          transition={{ delay: eventIndex * 0.03 }}
+                        >
+                          <TimelineEventCard event={event} onClick={onEventClick} />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
