@@ -159,6 +159,9 @@ export function useAuth() {
     initializeAuth()
 
     // Listen for auth changes (sign in, sign out, token refresh)
+    // CRITICAL: For TOKEN_REFRESHED, only update state if the session actually changed.
+    // Without this check, every tab-focus triggers TOKEN_REFRESHED → new object reference
+    // → AppRouter re-renders → ContactsView unmounts → all local state (pairing code, etc.) lost.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
@@ -166,8 +169,25 @@ export function useAuth() {
         log.debug('Auth state changed:', event)
       }
       if (isMounted) {
-        setSession(newSession)
-        setUser(newSession?.user ?? null)
+        if (event === 'TOKEN_REFRESHED') {
+          // Only update if access_token or user actually changed
+          setSession(prev => {
+            if (prev?.access_token === newSession?.access_token &&
+                prev?.user?.id === newSession?.user?.id) {
+              return prev // Same reference — no re-render
+            }
+            return newSession
+          })
+          setUser(prev => {
+            const newUser = newSession?.user ?? null
+            if (prev?.id === newUser?.id) return prev
+            return newUser
+          })
+        } else {
+          // For SIGNED_IN, SIGNED_OUT, etc. — always update
+          setSession(newSession)
+          setUser(newSession?.user ?? null)
+        }
         setIsLoading(false)
       }
     })

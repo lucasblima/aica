@@ -32,49 +32,39 @@ const QUESTION_CONFIG = {
  */
 export async function getDailyQuestion(userId: string): Promise<QuestionWithResponse | null> {
   try {
-    // Get all active questions (global + user-specific)
-    const { data: questions, error: questionsError } = await supabase
-      .from('daily_questions')
-      .select('*')
-      .eq('active', true)
-      .or(`user_id.is.null,user_id.eq.${userId}`)
+    // Single RPC call replaces 2 queries + JS filtering
+    const { data: unansweredQuestions, error: rpcError } = await supabase.rpc(
+      'get_unanswered_question',
+      { p_user_id: userId, p_limit: 3 }
+    )
 
-    if (questionsError) {
-      log.error('Error fetching questions:', questionsError)
-      throw questionsError
+    if (rpcError) {
+      log.error('Error fetching unanswered questions via RPC:', rpcError)
+      throw rpcError
     }
 
-    log.debug('Active questions found:', questions?.length || 0)
+    log.debug('Unanswered questions from RPC:', unansweredQuestions?.length || 0)
 
-    if (!questions || questions.length === 0) {
-      log.warn('No active questions found in database')
-      // Trigger generation (protected by circuit breaker and session validation)
+    // If no unanswered questions, trigger generation and fall back to any active question
+    if (!unansweredQuestions || unansweredQuestions.length === 0) {
+      log.info('No unanswered questions, triggering generation')
       checkAndTriggerGenerationIfNeeded(userId).catch(() => {
         // Errors logged in service
       })
-      return null
+
+      // Fall back: pick any active question for re-answering
+      const { data: anyQuestion, error: fallbackError } = await supabase
+        .from('daily_questions')
+        .select('*')
+        .eq('active', true)
+        .limit(1)
+
+      if (fallbackError || !anyQuestion?.length) return null
+
+      return { ...anyQuestion[0], user_response: undefined }
     }
-
-    // Get user's answered question IDs
-    const { data: responses, error: responsesError } = await supabase
-      .from('question_responses')
-      .select('question_id')
-      .eq('user_id', userId)
-
-    if (responsesError) {
-      log.error('Error fetching responses:', responsesError)
-      throw responsesError
-    }
-
-    const answeredIds = new Set(responses?.map(r => r.question_id) || [])
-    log.debug('Questions answered by user:', answeredIds.size)
-
-    // Filter unanswered questions
-    const unansweredQuestions = questions.filter(q => !answeredIds.has(q.id))
-    log.debug('Unanswered questions:', unansweredQuestions.length)
 
     // Check if we need to generate more questions (non-blocking)
-    // Protected by circuit breaker and session validation
     if (unansweredQuestions.length < QUESTION_CONFIG.MIN_UNANSWERED_THRESHOLD) {
       log.info('Low on unanswered questions, triggering generation', {
         unansweredCount: unansweredQuestions.length,
@@ -85,39 +75,19 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
       })
     }
 
-    // If all answered, allow re-answering any question
-    const availableQuestions =
-      unansweredQuestions.length > 0 ? unansweredQuestions : questions
-
-    // Pick random question (prefer higher relevance_score for AI-generated)
-    let selectedQuestion: DailyQuestion
-
-    if (availableQuestions.some(q => q.relevance_score)) {
-      // Sort by relevance and pick from top 3
-      const sorted = [...availableQuestions].sort((a, b) =>
-        (b.relevance_score || 0.5) - (a.relevance_score || 0.5)
-      )
-      const topQuestions = sorted.slice(0, Math.min(3, sorted.length))
-      const randomIndex = Math.floor(Math.random() * topQuestions.length)
-      selectedQuestion = topQuestions[randomIndex]
-    } else {
-      const randomIndex = Math.floor(Math.random() * availableQuestions.length)
-      selectedQuestion = availableQuestions[randomIndex]
-    }
+    // Pick random from top results (RPC already sorted by relevance)
+    const randomIndex = Math.floor(Math.random() * unansweredQuestions.length)
+    const selectedQuestion = unansweredQuestions[randomIndex] as DailyQuestion
 
     log.debug('Selected question for user', {
       questionId: selectedQuestion.id,
       category: selectedQuestion.category,
       isAiGenerated: selectedQuestion.created_by_ai || false,
-      isReanswering: unansweredQuestions.length === 0,
-      totalQuestions: questions?.length,
-      totalAnswered: answeredIds.size,
     })
 
-    // Don't include user_response when returning - we want fresh questions
     return {
       ...selectedQuestion,
-      user_response: undefined, // Always allow answering again
+      user_response: undefined,
     }
   } catch (error) {
     log.error('Error fetching daily question:', error)

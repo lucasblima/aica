@@ -22,7 +22,8 @@ import {
  * useCurrentWeeklySummary Hook
  * Hook for managing current week's summary
  */
-export function useCurrentWeeklySummary() {
+export function useCurrentWeeklySummary(options?: { immediate?: boolean }) {
+  const { immediate = false } = options || {}
   const { user } = useAuth()
   const [summary, setSummary] = useState<WeeklySummary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -103,12 +104,12 @@ export function useCurrentWeeklySummary() {
     [user?.id, summary]
   )
 
-  // Auto-fetch on mount
+  // Only auto-fetch on mount when immediate=true (lazy by default)
   useEffect(() => {
-    if (user?.id) {
+    if (immediate && user?.id) {
       fetchSummary()
     }
-  }, [user?.id, fetchSummary])
+  }, [immediate, user?.id, fetchSummary])
 
   return {
     summary,
