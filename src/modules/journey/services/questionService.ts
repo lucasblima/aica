@@ -45,23 +45,16 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
 
     log.debug('Unanswered questions from RPC:', unansweredQuestions?.length || 0)
 
-    // If no unanswered questions, trigger generation and fall back to any active question
+    // If no unanswered questions, trigger generation in background and return null
+    // IMPORTANT: Do NOT re-serve answered questions with user_response stripped —
+    // that causes the card to show the answer form again, creating an infinite loop
     if (!unansweredQuestions || unansweredQuestions.length === 0) {
-      log.info('No unanswered questions, triggering generation')
+      log.info('No unanswered questions available, triggering generation in background')
       checkAndTriggerGenerationIfNeeded(userId).catch(() => {
         // Errors logged in service
       })
 
-      // Fall back: pick any active question for re-answering
-      const { data: anyQuestion, error: fallbackError } = await supabase
-        .from('daily_questions')
-        .select('*')
-        .eq('active', true)
-        .limit(1)
-
-      if (fallbackError || !anyQuestion?.length) return null
-
-      return { ...anyQuestion[0], user_response: undefined }
+      return null
     }
 
     // Check if we need to generate more questions (non-blocking)

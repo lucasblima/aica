@@ -233,37 +233,42 @@ interface SessionValidation {
  */
 async function validateSession(): Promise<SessionValidation> {
   try {
-    // First, validate with getUser() - this triggers token refresh if needed
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-
-    if (userError) {
-      return { isValid: false, error: userError.message }
-    }
-
-    if (!userData.user) {
-      return { isValid: false, error: 'No user in session' }
-    }
-
-    // Force token refresh to ensure we have a fresh token for Edge Functions
-    // This fixes 401 errors when token is close to expiration
-    await supabase.auth.refreshSession()
-
-    // Get the refreshed session token
+    // Get current session — DO NOT call refreshSession() here.
+    // Supabase auto-refreshes tokens when needed via getSession().
+    // Forced refreshSession() causes TOKEN_REFRESHED events that cascade
+    // into re-renders and can exhaust rate limits, causing logout.
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
 
     if (sessionError) {
       return { isValid: false, error: sessionError.message }
     }
 
-    const token = sessionData.session?.access_token
-    if (!token) {
-      return { isValid: false, error: 'No access token in session' }
+    const session = sessionData.session
+    if (!session?.access_token || !session.user) {
+      return { isValid: false, error: 'No active session' }
+    }
+
+    // Only refresh if token expires within 60 seconds
+    const expiresAt = session.expires_at
+    if (expiresAt) {
+      const expiresInSec = expiresAt - Math.floor(Date.now() / 1000)
+      if (expiresInSec < 60) {
+        log.debug('Token expiring soon, refreshing', { expiresInSec })
+        const { data: refreshed } = await supabase.auth.refreshSession()
+        if (refreshed.session?.access_token) {
+          return {
+            isValid: true,
+            token: refreshed.session.access_token,
+            userId: session.user.id,
+          }
+        }
+      }
     }
 
     return {
       isValid: true,
-      token,
-      userId: userData.user.id,
+      token: session.access_token,
+      userId: session.user.id,
     }
   } catch (error) {
     return { isValid: false, error: (error as Error).message }
@@ -612,14 +617,7 @@ export async function checkAndTriggerGenerationIfNeeded(
       return false
     }
 
-    // First validate session before doing anything
-    const session = await validateSession()
-    if (!session.isValid) {
-      log.debug('Skipping generation - session not valid:', session.error)
-      return false
-    }
-
-    // Check circuit breaker
+    // Check circuit breaker (session validation happens inside triggerQuestionGeneration)
     if (!edgeFunctionCircuit.canExecute()) {
       log.debug('Skipping generation - circuit breaker open')
       return false

@@ -156,7 +156,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { user } = useAuth()
   const { moments, create: createMoment } = useMoments()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
-  const { question, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
+  const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
@@ -280,10 +280,10 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       refreshStats()
 
-      // Fetch next question after a short delay to show success feedback
-      setTimeout(() => {
-        refreshQuestion()
-      }, 2000)
+      // Do NOT auto-refresh question here.
+      // The DailyQuestionCard shows "answered" state locally.
+      // Auto-refreshing when no unanswered questions exist caused an infinite loop:
+      // refresh → no questions → re-serve same question → user answers again → loop
     } catch (error) {
       log.error('Error answering question:', error)
       // Re-throw to let the card component handle UI state
@@ -403,7 +403,9 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                   className="space-y-4"
                 >
                   {/* Daily Question - prominent in main content */}
-                  {question ? (
+                  {isLoadingQuestion ? (
+                    <DailyQuestionSkeleton />
+                  ) : question ? (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -415,9 +417,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                         onSkip={skipQuestion}
                       />
                     </motion.div>
-                  ) : (
-                    <DailyQuestionSkeleton />
-                  )}
+                  ) : null}
 
                   <UnifiedTimelineView userId={user?.id} layout="masonry" />
                 </motion.div>
