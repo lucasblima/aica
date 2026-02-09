@@ -13,6 +13,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboarding } from '../hooks/useOnboarding';
+import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
 import { WelcomeStep } from './WelcomeStep';
 import { WhatsAppPairingStep } from './WhatsAppPairingStep';
 import { ContactsSyncStep } from './ContactsSyncStep';
@@ -49,6 +50,13 @@ export function OnboardingFlow() {
     goToPreviousStep,
     complete,
   } = useOnboarding();
+
+  // Real-time WhatsApp session subscription for auto-detecting connection
+  const {
+    session: whatsAppSession,
+    isConnected: whatsAppConnected,
+    status: whatsAppStatus,
+  } = useWhatsAppSessionSubscription();
 
   // Track direction for animations
   const [direction, setDirection] = useState(0);
@@ -223,6 +231,9 @@ export function OnboardingFlow() {
                 <WhatsAppPairingStep
                   onSuccess={handleNext}
                   onBack={handleBack}
+                  session={whatsAppSession}
+                  isConnected={whatsAppConnected}
+                  sessionStatus={whatsAppStatus}
                 />
               )}
 
