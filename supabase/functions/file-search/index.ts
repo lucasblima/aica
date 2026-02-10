@@ -7,8 +7,10 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://yourdomain.com', // TODO: Replace with actual production domain
-  'https://www.yourdomain.com', // TODO: Replace with actual production domain
+  'https://aica-staging-5562559893.southamerica-east1.run.app',
+  'https://aica-5562559893.southamerica-east1.run.app',
+  'https://dev.aica.guru',
+  'https://aica.guru',
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {

@@ -98,11 +98,11 @@ gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=s
 ```
 
 ### Servicos Cloud Run
-| Servico | URL | Uso |
-|---------|-----|-----|
-| `aica-staging` | https://aica-staging-5562559893.southamerica-east1.run.app | Desenvolvimento e testes |
-| `aica` | https://aica-5562559893.southamerica-east1.run.app | Producao |
-| `aica-agents` | https://aica-agents-5562559893.southamerica-east1.run.app | Backend ADK agents |
+| Servico | Dominio | Cloud Run URL | Uso |
+|---------|---------|---------------|-----|
+| `aica-staging` | https://dev.aica.guru | https://aica-staging-5562559893.southamerica-east1.run.app | Desenvolvimento e testes |
+| `aica` | https://aica.guru | https://aica-5562559893.southamerica-east1.run.app | Producao |
+| `aica-agents` | — | https://aica-agents-5562559893.southamerica-east1.run.app | Backend ADK agents |
 
 ---
 
@@ -674,14 +674,16 @@ npm run build && npm run typecheck
 ## URLs de Ambientes
 
 ### Staging (Ambiente Ativo)
-- **App:** https://aica-staging-5562559893.southamerica-east1.run.app
+- **Dominio:** https://dev.aica.guru
+- **Cloud Run:** https://aica-staging-5562559893.southamerica-east1.run.app
 - **Cloud Run Service:** `aica-staging`
 - **Supabase:** https://uzywajqzbdbrfammshdg.supabase.co
 - **Region:** southamerica-east1 (Sao Paulo)
 - **Uso:** Desenvolvimento, testes e validacao do MVP
 
 ### Producao
-- **App:** https://aica-5562559893.southamerica-east1.run.app
+- **Dominio:** https://aica.guru
+- **Cloud Run:** https://aica-5562559893.southamerica-east1.run.app
 - **Cloud Run Service:** `aica`
 - **Status:** Ativo (mesmo Supabase que staging)
 
