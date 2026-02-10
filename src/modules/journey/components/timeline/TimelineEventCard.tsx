@@ -26,26 +26,6 @@ export interface TimelineEventCardProps {
 }
 
 /**
- * Get sentiment badge emoji and color
- */
-function getSentimentDisplay(
-  sentiment?: string,
-  sentimentScore?: number
-): { emoji: string; color: string; label: string } | null {
-  if (!sentiment) return null
-
-  const scoreNum = sentimentScore || 0
-
-  if (sentiment === 'positive' || scoreNum > 0.3) {
-    return { emoji: '😊', color: '#10b981', label: 'Positivo' }
-  }
-  if (sentiment === 'negative' || scoreNum < -0.3) {
-    return { emoji: '😞', color: '#ef4444', label: 'Negativo' }
-  }
-  return { emoji: '😐', color: '#94a3b8', label: 'Neutro' }
-}
-
-/**
  * Format timestamp with relative time
  */
 function formatEventTime(timestamp: string): { relative: string; absolute: string } {
@@ -70,9 +50,6 @@ export function TimelineEventCard({ event, onClick, compact = false }: TimelineE
   const [isHovered, setIsHovered] = useState(false)
 
   const { relative, absolute } = formatEventTime(event.created_at)
-  // Access sentiment from event if it has it
-  const eventSentiment = 'sentiment' in event ? event.sentiment : undefined
-  const sentiment = getSentimentDisplay(eventSentiment, undefined)
 
   const handleClick = () => {
     if (onClick) {
@@ -153,37 +130,24 @@ export function TimelineEventCard({ event, onClick, compact = false }: TimelineE
         </div>
       )}
 
-      {/* Badges: Sentiment + Tags */}
+      {/* Badges: Emotion + Tags */}
       <div className="flex flex-wrap gap-2 items-center">
-        {/* Sentiment Badge */}
-        {sentiment && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="ceramic-inset-shallow px-2 py-1 rounded-full flex items-center gap-1"
-            style={{ borderColor: sentiment.color }}
-          >
-            <span className="text-sm">{sentiment.emoji}</span>
-            <span className="text-xs text-[#5C554B]">{sentiment.label}</span>
-          </motion.div>
-        )}
-
-        {/* Emotion */}
+        {/* Emotion (extract just emoji from "emoji label" format) */}
         {'emotion' in event && event.emotion && (
           <motion.span
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-xl"
-            title="Emoção"
+            title={event.emotion}
           >
-            {event.emotion}
+            {event.emotion.match(/^\p{Emoji}/u)?.[0] || event.emotion}
           </motion.span>
         )}
 
         {/* Tags */}
         {'tags' in event &&
           event.tags &&
-          event.tags.slice(0, compact ? 2 : 3).map((tag, index) => (
+          event.tags.slice(0, compact ? 2 : 4).map((tag, index) => (
             <motion.span
               key={`${tag}-${index}`}
               initial={{ opacity: 0, scale: 0.8 }}
@@ -196,9 +160,9 @@ export function TimelineEventCard({ event, onClick, compact = false }: TimelineE
           ))}
 
         {/* More tags indicator */}
-        {'tags' in event && event.tags && event.tags.length > (compact ? 2 : 3) && (
+        {'tags' in event && event.tags && event.tags.length > (compact ? 2 : 4) && (
           <span className="text-xs text-[#948D82]">
-            +{event.tags.length - (compact ? 2 : 3)} mais
+            +{event.tags.length - (compact ? 2 : 4)} mais
           </span>
         )}
       </div>
