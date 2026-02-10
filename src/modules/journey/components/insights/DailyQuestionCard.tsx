@@ -3,9 +3,11 @@
  * Displays daily voluntary question with answer interface
  */
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
 import { QuestionWithResponse } from '../../types/dailyQuestion'
+import { AudioRecorder } from '../capture/AudioRecorder'
+import { transcribeAudio } from '../../services/momentPersistenceService'
 
 const log = createNamespacedLogger('DailyQuestionCard')
 import {
@@ -23,6 +25,7 @@ interface DailyQuestionCardProps {
 export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionCardProps) {
   const [responseText, setResponseText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const [isAnswered, setIsAnswered] = useState(!!question.user_response)
   const [savedResponse, setSavedResponse] = useState(question.user_response?.response_text || '')
   const [lastQuestionId, setLastQuestionId] = useState(question.id)
@@ -44,6 +47,21 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
 
   const categoryColor = QUESTION_CATEGORY_COLORS[question.category]
   const categoryIcon = QUESTION_CATEGORY_ICONS[question.category]
+
+  const handleRecordingComplete = useCallback(async (blob: Blob) => {
+    try {
+      setIsTranscribing(true)
+      log.debug('Transcribing audio for question answer', { size: blob.size })
+      const text = await transcribeAudio(blob)
+      if (text) {
+        setResponseText(prev => prev ? `${prev}\n${text}` : text)
+      }
+    } catch (err) {
+      log.error('Transcription failed:', err)
+    } finally {
+      setIsTranscribing(false)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,11 +149,20 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
         <textarea
           value={responseText}
           onChange={e => setResponseText(e.target.value)}
-          placeholder="Digite sua resposta..."
+          placeholder={isTranscribing ? 'Transcrevendo áudio...' : 'Digite ou grave sua resposta...'}
           rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+          disabled={isTranscribing}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none disabled:bg-gray-50"
         />
-        <p className="mt-1 text-xs text-gray-500">{responseText.length} caracteres</p>
+        <div className="mt-1 flex items-center justify-between">
+          <p className="text-xs text-gray-500">
+            {isTranscribing ? 'Transcrevendo...' : `${responseText.length} caracteres`}
+          </p>
+          <AudioRecorder
+            onRecordingComplete={handleRecordingComplete}
+            disabled={isSubmitting || isTranscribing}
+          />
+        </div>
       </div>
 
       {/* Actions */}
