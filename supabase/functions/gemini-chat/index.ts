@@ -10,7 +10,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://aica-staging-5562559893.southamerica-east1.run.app',
-  // Production URL will be added when it goes live: https://aica.comtxae.com
+  'https://aica-5562559893.southamerica-east1.run.app',
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {
@@ -405,12 +405,17 @@ async function handleAnalyzeMomentSentiment(genAI: GoogleGenerativeAI, payload: 
   if (!payload.content || typeof payload.content !== 'string') throw new Error('Campo "content" e obrigatorio')
   if (payload.content.trim().length < 3) throw new Error('Conteudo muito curto para analise')
 
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.3, topP: 0.8, topK: 40, maxOutputTokens: 512 } })
+  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.3, topP: 0.8, topK: 40, maxOutputTokens: 512, responseMimeType: 'application/json' } })
   const result = await model.generateContent(PROMPTS.analyze_moment_sentiment(payload.content))
   const text = result.response.text()
 
   let parsed: Omit<SentimentAnalysisResult, 'timestamp'>
-  parsed = extractJSON(text)
+  try {
+    parsed = extractJSON(text)
+  } catch (e) {
+    console.warn('[analyze_moment_sentiment] JSON parse failed, using defaults:', (e as Error).message)
+    parsed = { sentiment: 'neutral', sentimentScore: 0, emotions: [], triggers: [], energyLevel: 50 } as any
+  }
 
   const validSentiments = ['very_positive', 'positive', 'neutral', 'negative', 'very_negative']
   if (!validSentiments.includes(parsed.sentiment)) parsed.sentiment = 'neutral'
@@ -655,7 +660,13 @@ async function handleAnalyzeMoment(genAI: GoogleGenerativeAI, payload: AnalyzeMo
 
   const model = genAI.getGenerativeModel({
     model: MODELS.fast,
-    generationConfig: { temperature: 0.3, topP: 0.8, topK: 40, maxOutputTokens: 512 },
+    generationConfig: {
+      temperature: 0.3,
+      topP: 0.8,
+      topK: 40,
+      maxOutputTokens: 512,
+      responseMimeType: 'application/json',
+    },
   })
 
   const prompt = `Analise o seguinte momento de diario pessoal escrito em portugues:
@@ -669,13 +680,26 @@ Retorne um JSON com:
 - sentimentScore: numero de -1 (muito negativo) a 1 (muito positivo)
 - emotions: lista de emocoes detectadas (maximo 5, em portugues)
 - triggers: lista de gatilhos/contextos (maximo 3)
-- energyLevel: nivel de energia percebido de 0 a 100
-
-Retorne APENAS o JSON.`
+- energyLevel: nivel de energia percebido de 0 a 100`
 
   const result = await model.generateContent(prompt)
   const text = result.response.text()
-  const parsed: AnalyzeMomentResult = extractJSON(text)
+
+  let parsed: AnalyzeMomentResult
+  try {
+    parsed = extractJSON(text)
+  } catch (e) {
+    console.warn('[analyze_moment] JSON parse failed, using defaults:', (e as Error).message)
+    parsed = {
+      tags: [],
+      mood: { emoji: '😐', label: 'Neutro' },
+      sentiment: 'neutral',
+      sentimentScore: 0,
+      emotions: [],
+      triggers: [],
+      energyLevel: 50,
+    }
+  }
 
   // Validate and normalize
   parsed.tags = Array.isArray(parsed.tags) ? parsed.tags.slice(0, 7).map(t => String(t).toLowerCase()) : []
