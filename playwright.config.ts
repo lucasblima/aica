@@ -62,7 +62,7 @@ export default defineConfig({
     // Unauthenticated project - for Landing Page tests
     {
       name: 'unauthenticated',
-      testMatch: [/onboarding\.spec\.ts/, /auth-sheet\.spec\.ts/],
+      testMatch: [/auth-sheet\.spec\.ts/],
       use: {
         ...devices['Desktop Chrome'],
         // NO storageState - tests run without authentication
