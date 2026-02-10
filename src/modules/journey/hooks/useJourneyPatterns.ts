@@ -98,6 +98,14 @@ export function useJourneyPatterns(userId?: string) {
           .limit(100),
       ])
 
+      // Debug: log query results to identify failures
+      if (summariesResult.status === 'rejected') log.warn('weekly_summaries query failed:', summariesResult.reason)
+      else if (summariesResult.value.error) log.warn('weekly_summaries error:', summariesResult.value.error)
+      if (heatmapResult.status === 'rejected') log.warn('heatmap RPC failed:', heatmapResult.reason)
+      else if (heatmapResult.value.error) log.warn('heatmap RPC error:', heatmapResult.value.error)
+      if (momentsResult.status === 'rejected') log.warn('moments tags query failed:', momentsResult.reason)
+      else if (momentsResult.value.error) log.warn('moments tags error:', momentsResult.value.error)
+
       // Process emotion trends
       let emotionTrends: EmotionTrendPoint[] = []
       if (summariesResult.status === 'fulfilled' && summariesResult.value.data) {
