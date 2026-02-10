@@ -4,10 +4,12 @@
  */
 
 import React from 'react'
+import { TagIcon } from '@heroicons/react/24/outline'
 import type { ThemeEntry } from '../../hooks/useJourneyPatterns'
 
 interface ThemeClustersProps {
   themes: ThemeEntry[]
+  isBackfilling?: boolean
 }
 
 const PILL_COLORS = [
@@ -19,13 +21,28 @@ const PILL_COLORS = [
   { bg: 'bg-teal-100', text: 'text-teal-800' },
 ]
 
-export function ThemeClusters({ themes }: ThemeClustersProps) {
+export function ThemeClusters({ themes, isBackfilling }: ThemeClustersProps) {
   if (themes.length === 0) {
     return (
-      <div className="ceramic-tile p-4 text-center">
-        <p className="text-sm text-[#948D82]">
-          Nenhum tema identificado ainda. Adicione tags aos seus momentos.
-        </p>
+      <div className="ceramic-tile p-4">
+        <h4 className="text-sm font-semibold text-[#5C554B] mb-3">Temas Frequentes</h4>
+        <div className="flex flex-col items-center py-3">
+          {isBackfilling ? (
+            <>
+              <div className="h-5 w-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-xs text-[#948D82] text-center">
+                Analisando seus momentos com IA para identificar temas...
+              </p>
+            </>
+          ) : (
+            <>
+              <TagIcon className="h-6 w-6 text-[#C4A574] mb-2" />
+              <p className="text-xs text-[#948D82] text-center">
+                Temas serao identificados automaticamente conforme voce registra momentos.
+              </p>
+            </>
+          )}
+        </div>
       </div>
     )
   }

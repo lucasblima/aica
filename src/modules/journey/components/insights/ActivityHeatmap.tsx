@@ -74,7 +74,9 @@ export function ActivityHeatmap({ data, days = 90 }: ActivityHeatmapProps) {
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold text-[#5C554B]">Atividade</h4>
         <span className="text-xs text-[#948D82]">
-          {totalMoments} momentos em {activeDays} dias
+          {totalMoments === 0
+            ? `Ultimos ${days} dias`
+            : `${totalMoments} momentos em ${activeDays} dias`}
         </span>
       </div>
 

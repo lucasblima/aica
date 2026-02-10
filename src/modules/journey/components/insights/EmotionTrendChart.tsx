@@ -38,11 +38,12 @@ interface EmotionTrendChartProps {
 export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
   if (data.length < 2) {
     return (
-      <div className="ceramic-tile p-6 text-center">
-        <p className="text-sm text-[#948D82]">
-          Dados insuficientes para gráfico de tendência.
-          <br />
-          Continue registrando momentos semanalmente.
+      <div className="ceramic-tile p-4">
+        <h4 className="text-sm font-semibold text-[#5C554B] mb-3">Tendencia Emocional</h4>
+        <p className="text-xs text-[#948D82] text-center py-3">
+          {data.length === 0
+            ? 'Seus resumos semanais alimentam este grafico. O primeiro sera gerado ao final da semana.'
+            : 'Uma semana a mais de dados e este grafico ganha vida.'}
         </p>
       </div>
     )
