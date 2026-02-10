@@ -75,10 +75,10 @@ const log = createNamespacedLogger('PautaStage');
 // ============================================
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'quebra-gelo': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-  'geral': 'bg-blue-100 text-blue-700 border-blue-200',
+  'quebra-gelo': 'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/30',
+  'geral': 'bg-ceramic-info-bg text-ceramic-info border-ceramic-info/30',
   'patrocinador': 'bg-amber-100 text-amber-700 border-amber-200',
-  'polêmicas': 'bg-red-100 text-red-700 border-red-200',
+  'polêmicas': 'bg-ceramic-error-bg text-ceramic-error border-ceramic-error/30',
 };
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -158,9 +158,9 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
 
       <button
         onClick={() => onToggle(topic.id)}
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${topic.completed
-          ? 'bg-green-500 border-green-500 text-white'
-          : 'border-ceramic-tertiary hover:border-green-400'
+        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success ${topic.completed
+          ? 'bg-ceramic-success border-ceramic-success text-white'
+          : 'border-ceramic-tertiary hover:border-ceramic-success'
         }`}
         aria-label={topic.completed ? `Marcar tópico como não concluído: ${topic.text}` : `Marcar tópico como concluído: ${topic.text}`}
         aria-pressed={topic.completed}
@@ -206,11 +206,11 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
 
       <button
         onClick={() => onDelete(topic.id)}
-        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 transition-all focus:outline-none focus:opacity-100 focus:ring-2 focus:ring-red-500"
+        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-ceramic-error-bg transition-all focus:outline-none focus:opacity-100 focus:ring-2 focus:ring-ceramic-error"
         title="Remover tópico"
         aria-label={`Remover tópico: ${topic.text}`}
       >
-        <Trash2 className="w-4 h-4 text-red-500" aria-hidden="true" />
+        <Trash2 className="w-4 h-4 text-ceramic-error" aria-hidden="true" />
       </button>
     </div>
   );
@@ -440,12 +440,12 @@ export default function PautaStage() {
           <div className="flex items-center gap-2">
             {/* Version History Indicator */}
             {versions.length > 0 && (
-              <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+              <div className="flex items-center gap-1 text-xs text-ceramic-success bg-ceramic-success-bg px-3 py-2 rounded-lg border border-ceramic-success/30">
                 <History className="w-3 h-3" aria-hidden="true" />
                 <span>{versions.length} versao{versions.length > 1 ? 'es' : ''}</span>
                 <button
                   onClick={() => setShowVersionHistory(!showVersionHistory)}
-                  className="ml-1 p-0.5 hover:bg-green-100 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="ml-1 p-0.5 hover:bg-ceramic-success/10 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success"
                   title="Ver historico de versoes"
                   aria-label="Ver historico de versoes da pauta"
                   aria-expanded={showVersionHistory}
@@ -512,22 +512,22 @@ export default function PautaStage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden bg-green-50 border-b border-green-200"
+            className="overflow-hidden bg-ceramic-success-bg border-b border-ceramic-success/30"
             role="region"
             aria-label="Histórico de versões da pauta"
           >
             <div className="p-4 space-y-2">
-              <p className="text-xs font-medium text-green-700 uppercase">Versões Salvas</p>
+              <p className="text-xs font-medium text-ceramic-success uppercase">Versões Salvas</p>
               <div className="space-y-1 max-h-48 overflow-y-auto" role="list">
                 {versions.map((version) => (
                   <button
                     key={version.id}
                     onClick={() => handleSwapVersion(version.id)}
                     disabled={isSwappingVersion}
-                    className={`w-full p-2 rounded text-left text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                    className={`w-full p-2 rounded text-left text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success ${
                       activePauta?.pauta.id === version.id
-                        ? 'bg-green-200 text-green-800 font-medium'
-                        : 'bg-ceramic-surface text-ceramic-secondary hover:bg-green-100'
+                        ? 'bg-ceramic-success/20 text-ceramic-success font-medium'
+                        : 'bg-ceramic-surface text-ceramic-secondary hover:bg-ceramic-success-bg'
                     }`}
                     role="listitem"
                     aria-label={`Versão ${version.version}, criada em ${new Date(version.created_at).toLocaleDateString('pt-BR')}`}
@@ -604,7 +604,7 @@ export default function PautaStage() {
                     className="space-y-2"
                   >
                     {/* Category Header */}
-                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${CATEGORY_COLORS[category.id] || 'bg-gray-100 text-gray-700'} border`} role="heading" aria-level={2}>
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${CATEGORY_COLORS[category.id] || 'bg-ceramic-base text-ceramic-text-primary'} border`} role="heading" aria-level={2}>
                       <span className="text-lg" aria-hidden="true">{CATEGORY_ICONS[category.id] || '📌'}</span>
                       <span className="font-bold text-sm">{category.name}</span>
                       <span className="text-xs opacity-70">
@@ -666,7 +666,7 @@ export default function PautaStage() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 ${
                   selectedCategory === cat.id
-                    ? CATEGORY_COLORS[cat.id] || 'bg-gray-200'
+                    ? CATEGORY_COLORS[cat.id] || 'bg-ceramic-cool'
                     : 'bg-ceramic-border text-ceramic-secondary hover:bg-ceramic-surface border border-transparent'
                 }`}
                 aria-label={`Categoria ${cat.name}`}
@@ -707,7 +707,7 @@ export default function PautaStage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => actions.setStage('production')}
-            className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white font-bold rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:ring-offset-2"
             aria-label="Ir para próxima etapa: Gravação"
           >
             Próximo: Gravação

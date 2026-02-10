@@ -37,7 +37,7 @@ export const SharedResourceCard: React.FC<SharedResourceCardProps> = ({
 
   if (compact) {
     return (
-      <div className="bg-white rounded-xl p-3 border border-ceramic-200 hover:shadow-md transition-shadow">
+      <div className="bg-ceramic-base rounded-xl p-3 border border-ceramic-border hover:shadow-md transition-shadow">
         <div className="flex items-center gap-3">
           {/* Icon/Image */}
           <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-[#9B4D3A]/20 to-[#9B4D3A]/10 rounded-lg flex items-center justify-center">
@@ -63,9 +63,9 @@ export const SharedResourceCard: React.FC<SharedResourceCardProps> = ({
           {/* Status */}
           <div className="flex-shrink-0">
             {isAvailable ? (
-              <span className="inline-block w-2 h-2 bg-green-500 rounded-full" />
+              <span className="inline-block w-2 h-2 bg-ceramic-success rounded-full" />
             ) : (
-              <span className="inline-block w-2 h-2 bg-red-500 rounded-full" />
+              <span className="inline-block w-2 h-2 bg-ceramic-error rounded-full" />
             )}
           </div>
         </div>
@@ -75,10 +75,10 @@ export const SharedResourceCard: React.FC<SharedResourceCardProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-2xl overflow-hidden border-2 transition-all ${
+      className={`bg-ceramic-base rounded-2xl overflow-hidden border-2 transition-all ${
         isAvailable
           ? 'border-[#9B4D3A]/20 hover:border-[#9B4D3A]/40 hover:shadow-lg'
-          : 'border-ceramic-200'
+          : 'border-ceramic-border'
       }`}
     >
       {/* Image */}
@@ -91,7 +91,7 @@ export const SharedResourceCard: React.FC<SharedResourceCardProps> = ({
           />
           {!isAvailable && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <div className="bg-white px-4 py-2 rounded-full text-sm font-medium text-ceramic-900">
+              <div className="bg-ceramic-base px-4 py-2 rounded-full text-sm font-medium text-ceramic-text-primary">
                 Em uso
               </div>
             </div>
@@ -126,7 +126,7 @@ export const SharedResourceCard: React.FC<SharedResourceCardProps> = ({
         <div className="flex items-center gap-2">
           <div
             className={`w-3 h-3 rounded-full ${
-              isAvailable ? 'bg-green-500' : 'bg-red-500'
+              isAvailable ? 'bg-ceramic-success' : 'bg-ceramic-error'
             }`}
           />
           <span className="text-sm font-medium text-ceramic-900">
@@ -165,14 +165,14 @@ export const SharedResourceCard: React.FC<SharedResourceCardProps> = ({
 
         {/* Usage Notes */}
         {resource.usageNotes && (
-          <div className="p-3 bg-blue-50 rounded-lg">
+          <div className="p-3 bg-ceramic-info/10 rounded-lg">
             <div className="flex items-start gap-2">
-              <span className="text-blue-600">ℹ️</span>
+              <span className="text-ceramic-info">ℹ️</span>
               <div>
-                <div className="text-xs font-medium text-blue-900 mb-1">
+                <div className="text-xs font-medium text-ceramic-info mb-1">
                   Instruções de uso:
                 </div>
-                <p className="text-sm text-blue-800">{resource.usageNotes}</p>
+                <p className="text-sm text-ceramic-info">{resource.usageNotes}</p>
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ export const SharedResourceCard: React.FC<SharedResourceCardProps> = ({
           resource.currentHolder?.userId === 'current-user' && (
             <button
               onClick={onReturn}
-              className="w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors"
+              className="w-full py-3 bg-ceramic-success text-white rounded-xl font-medium hover:bg-ceramic-success/90 transition-colors"
             >
               Devolver
             </button>

@@ -90,7 +90,7 @@ export function StatusPieChart({
     return (
       <div className={`flex flex-col items-center ${className}`}>
         <div className="w-48 h-48 flex items-center justify-center">
-          <div className="text-center text-ceramic-400">
+          <div className="text-center text-ceramic-text-tertiary">
             <p className="text-lg">Sem dados</p>
             <p className="text-sm">Nenhuma instância encontrada</p>
           </div>
@@ -131,8 +131,8 @@ export function StatusPieChart({
 
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold text-ceramic-900">{total}</span>
-          <span className="text-xs text-ceramic-500">Total</span>
+          <span className="text-3xl font-bold text-ceramic-text-primary">{total}</span>
+          <span className="text-xs text-ceramic-text-secondary">Total</span>
         </div>
       </div>
 
@@ -147,17 +147,17 @@ export function StatusPieChart({
               key={segment.status}
               onClick={() => onStatusClick?.(isSelected ? null : segment.status)}
               className={`flex items-center gap-2 px-2 py-1 rounded-md transition-colors ${
-                isSelected ? colors.bg : 'hover:bg-gray-50'
+                isSelected ? colors.bg : 'hover:bg-ceramic-cool'
               }`}
             >
               <span
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: PIE_COLORS[segment.status] }}
               />
-              <span className="text-sm text-ceramic-700">
+              <span className="text-sm text-ceramic-text-primary">
                 {STATUS_LABELS[segment.status]}
               </span>
-              <span className="text-sm font-medium text-ceramic-900">
+              <span className="text-sm font-medium text-ceramic-text-primary">
                 {segment.count}
               </span>
             </button>
@@ -169,7 +169,7 @@ export function StatusPieChart({
       {selectedStatus && (
         <button
           onClick={() => onStatusClick?.(null)}
-          className="mt-2 text-xs text-ceramic-500 hover:text-ceramic-700"
+          className="mt-2 text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary"
         >
           Limpar filtro
         </button>

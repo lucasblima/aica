@@ -64,10 +64,10 @@ export function ProcessingEstimateModal({
           className="bg-ceramic-base w-full max-w-md rounded-2xl shadow-2xl border border-ceramic-text-secondary/10 overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-ceramic-text-secondary/10 bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
+          <div className="flex items-center justify-between p-5 border-b border-ceramic-text-secondary/10 bg-gradient-to-r from-ceramic-accent/10 to-ceramic-warning/10">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-xl">
-                <Sparkles className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-ceramic-accent/10 rounded-xl">
+                <Sparkles className="w-5 h-5 text-ceramic-accent" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-ceramic-text-primary">
@@ -115,23 +115,23 @@ export function ProcessingEstimateModal({
             </div>
 
             {/* Credit cost - highlighted */}
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-100">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-ceramic-accent/10 to-ceramic-warning/10 rounded-xl border border-ceramic-accent/20">
               <div className="flex items-center gap-3">
-                <Coins className="w-6 h-6 text-purple-500" />
+                <Coins className="w-6 h-6 text-ceramic-accent" />
                 <span className="font-bold text-ceramic-text-primary">Custo</span>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-black text-purple-600">
+                <span className="text-2xl font-black text-ceramic-accent">
                   {estimate.creditCost}
                 </span>
-                <span className="text-purple-600 ml-1">créditos</span>
+                <span className="text-ceramic-accent ml-1">créditos</span>
               </div>
             </div>
 
             {/* Balance */}
             <div className="flex items-center justify-between px-2 text-sm">
               <span className="text-ceramic-text-secondary">Seu saldo</span>
-              <span className={`font-bold ${estimate.canAfford ? 'text-green-500' : 'text-red-500'}`}>
+              <span className={`font-bold ${estimate.canAfford ? 'text-ceramic-success' : 'text-ceramic-error'}`}>
                 {estimate.userBalance} créditos
               </span>
             </div>
@@ -141,12 +141,12 @@ export function ProcessingEstimateModal({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100"
+                className="flex items-start gap-3 p-4 bg-ceramic-error/10 rounded-xl border border-ceramic-error/20"
               >
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-red-700">Créditos insuficientes</p>
-                  <p className="text-sm text-red-600 mt-1">
+                  <p className="font-bold text-ceramic-error">Créditos insuficientes</p>
+                  <p className="text-sm text-ceramic-error/80 mt-1">
                     Você precisa de mais{' '}
                     <strong>{estimate.creditCost - estimate.userBalance}</strong> créditos.
                     Complete tarefas ou volte amanhã para créditos diários!
@@ -157,9 +157,9 @@ export function ProcessingEstimateModal({
 
             {/* Re-analysis notice */}
             {estimate.hasExistingAnalysis && estimate.lastAnalyzedAt && (
-              <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                <RefreshCw className="w-4 h-4 text-amber-600" />
-                <span className="text-sm text-amber-700">
+              <div className="flex items-center gap-2 p-3 bg-ceramic-warning/10 rounded-xl border border-ceramic-warning/20">
+                <RefreshCw className="w-4 h-4 text-ceramic-warning" />
+                <span className="text-sm text-ceramic-text-secondary">
                   Última análise:{' '}
                   {new Date(estimate.lastAnalyzedAt).toLocaleDateString('pt-BR', {
                     day: '2-digit',
@@ -183,7 +183,7 @@ export function ProcessingEstimateModal({
             <button
               onClick={onConfirm}
               disabled={!estimate.canAfford || isProcessing}
-              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold hover:from-purple-600 hover:to-indigo-600 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
+              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-ceramic-accent to-ceramic-warning text-white font-bold hover:from-ceramic-accent/90 hover:to-ceramic-warning/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-ceramic-accent/20"
             >
               {isProcessing ? (
                 <>

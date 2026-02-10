@@ -108,7 +108,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 <motion.p
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="text-xs text-red-600 mt-2 ml-1"
+                  className="text-xs text-ceramic-error mt-2 ml-1"
                 >
                   {error}
                 </motion.p>

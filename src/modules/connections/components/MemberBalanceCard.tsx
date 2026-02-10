@@ -22,9 +22,9 @@ export const MemberBalanceCard: React.FC<MemberBalanceCardProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border-2 border-stone-200 p-6 animate-pulse">
-        <div className="h-6 bg-stone-200 rounded w-1/2 mb-4" />
-        <div className="h-20 bg-stone-100 rounded" />
+      <div className="bg-ceramic-base rounded-xl border-2 border-ceramic-border p-6 animate-pulse">
+        <div className="h-6 bg-ceramic-border rounded w-1/2 mb-4" />
+        <div className="h-20 bg-ceramic-cool rounded" />
       </div>
     );
   }
@@ -46,23 +46,23 @@ export const MemberBalanceCard: React.FC<MemberBalanceCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border-2 border-stone-200 p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-stone-800 mb-4">Seu Saldo</h3>
+    <div className="bg-ceramic-base rounded-xl border-2 border-ceramic-border p-6 shadow-sm">
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Seu Saldo</h3>
 
       {/* Balance Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Total Owed */}
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-          <div className="text-sm text-red-700 font-medium mb-1">Você deve</div>
-          <div className="text-2xl font-bold text-red-800">
+        <div className="bg-ceramic-error-bg border-2 border-ceramic-error/20 rounded-lg p-4">
+          <div className="text-sm text-ceramic-error font-medium mb-1">Você deve</div>
+          <div className="text-2xl font-bold text-ceramic-error">
             {formatCurrency(balance.totalOwed)}
           </div>
         </div>
 
         {/* Total to Receive */}
-        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-          <div className="text-sm text-green-700 font-medium mb-1">A receber</div>
-          <div className="text-2xl font-bold text-green-800">
+        <div className="bg-ceramic-success-bg border-2 border-ceramic-success/20 rounded-lg p-4">
+          <div className="text-sm text-ceramic-success font-medium mb-1">A receber</div>
+          <div className="text-2xl font-bold text-ceramic-success">
             {formatCurrency(balance.totalToReceive)}
           </div>
         </div>
@@ -71,20 +71,20 @@ export const MemberBalanceCard: React.FC<MemberBalanceCardProps> = ({
         <div
           className={`border-2 rounded-lg p-4 ${
             balance.netBalance >= 0
-              ? 'bg-blue-50 border-blue-200'
-              : 'bg-orange-50 border-orange-200'
+              ? 'bg-ceramic-info-bg border-ceramic-info/20'
+              : 'bg-ceramic-warning/10 border-ceramic-warning/20'
           }`}
         >
           <div className="text-sm font-medium mb-1">
             <span
-              className={balance.netBalance >= 0 ? 'text-blue-700' : 'text-orange-700'}
+              className={balance.netBalance >= 0 ? 'text-ceramic-info' : 'text-ceramic-warning'}
             >
               Saldo líquido
             </span>
           </div>
           <div
             className={`text-2xl font-bold ${
-              balance.netBalance >= 0 ? 'text-blue-800' : 'text-orange-800'
+              balance.netBalance >= 0 ? 'text-ceramic-info' : 'text-ceramic-warning'
             }`}
           >
             {formatCurrency(Math.abs(balance.netBalance))}
@@ -95,27 +95,27 @@ export const MemberBalanceCard: React.FC<MemberBalanceCardProps> = ({
       {/* Pending Items */}
       {balance.pendingItems.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-stone-700 mb-3">Itens Pendentes</h4>
+          <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3">Itens Pendentes</h4>
           <div className="space-y-2">
             {balance.pendingItems.map((item, idx) => (
               <div
                 key={idx}
                 className={`p-4 rounded-lg border-2 ${
                   item.type === 'owed'
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-green-50 border-green-200'
+                    ? 'bg-ceramic-error-bg border-ceramic-error/20'
+                    : 'bg-ceramic-success-bg border-ceramic-success/20'
                 }`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="font-medium text-stone-800">{item.description}</div>
-                    <div className="text-xs text-stone-600 mt-1">
+                    <div className="font-medium text-ceramic-text-primary">{item.description}</div>
+                    <div className="text-xs text-ceramic-text-secondary mt-1">
                       {formatDate(item.date)}
                     </div>
                   </div>
                   <div
                     className={`text-lg font-bold ${
-                      item.type === 'owed' ? 'text-red-800' : 'text-green-800'
+                      item.type === 'owed' ? 'text-ceramic-error' : 'text-ceramic-success'
                     }`}
                   >
                     {formatCurrency(item.amount)}
@@ -126,8 +126,8 @@ export const MemberBalanceCard: React.FC<MemberBalanceCardProps> = ({
                   <span
                     className={`text-xs px-2 py-1 rounded-full font-medium ${
                       item.type === 'owed'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-green-100 text-green-700'
+                        ? 'bg-ceramic-error-bg text-ceramic-error'
+                        : 'bg-ceramic-success-bg text-ceramic-success'
                     }`}
                   >
                     {item.type === 'owed' ? 'Você deve' : 'A receber'}
@@ -136,7 +136,7 @@ export const MemberBalanceCard: React.FC<MemberBalanceCardProps> = ({
                   {item.type === 'owed' && (
                     <button
                       onClick={() => onPaymentClick?.(item.transactionId)}
-                      className="ml-auto px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                      className="ml-auto px-3 py-1.5 bg-ceramic-error text-white text-sm font-medium rounded-lg hover:bg-ceramic-error/90 transition-colors"
                     >
                       Marcar como pago
                     </button>
@@ -150,10 +150,10 @@ export const MemberBalanceCard: React.FC<MemberBalanceCardProps> = ({
 
       {/* No Pending Items */}
       {balance.pendingItems.length === 0 && (
-        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 text-center">
+        <div className="bg-ceramic-success-bg border-2 border-ceramic-success/20 rounded-lg p-6 text-center">
           <div className="text-4xl mb-2">✓</div>
-          <div className="font-medium text-green-800">Tudo em dia!</div>
-          <div className="text-sm text-green-600 mt-1">
+          <div className="font-medium text-ceramic-success">Tudo em dia!</div>
+          <div className="text-sm text-ceramic-success/80 mt-1">
             Não há pagamentos pendentes
           </div>
         </div>

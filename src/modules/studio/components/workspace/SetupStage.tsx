@@ -327,7 +327,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 htmlFor="guest-name-input"
                 className="block text-sm font-medium text-ceramic-primary mb-2"
               >
-                Nome do Convidado <span className="text-red-500" aria-label="obrigatório">*</span>
+                Nome do Convidado <span className="text-ceramic-error" aria-label="obrigatório">*</span>
               </label>
               <input
                 id="guest-name-input"
@@ -337,7 +337,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 placeholder="Digite o nome do convidado"
                 required
                 aria-required="true"
-                className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
               />
             </div>
 
@@ -358,7 +358,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     onChange={(e) => actions.updateSetup({ guestReference: e.target.value })}
                     placeholder="Ex: CEO da Empresa X, Autor do Livro Y"
                     aria-describedby="guest-reference-help"
-                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
                   />
                   <p
                     id="guest-reference-help"
@@ -375,7 +375,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     onClick={handleSearchProfile}
                     disabled={isSearching || !setup.guestName.trim()}
                     aria-label={isSearching ? 'Buscando perfil com IA' : 'Buscar perfil com IA'}
-                    className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-ceramic-disabled disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+                    className="w-full px-4 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-ceramic-disabled disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 focus:outline-none focus:ring-4 focus:ring-amber-500/20"
                   >
                     {isSearching ? (
                       <>
@@ -396,15 +396,15 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   <div
                     role="alert"
                     aria-live="polite"
-                    className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3"
+                    className="p-4 bg-ceramic-error-bg border border-ceramic-error/30 rounded-lg flex items-start space-x-3"
                   >
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" aria-hidden="true" />
                     <div>
-                      <p className="text-sm text-red-800">{searchError}</p>
+                      <p className="text-sm text-ceramic-error">{searchError}</p>
                       <button
                         type="button"
                         onClick={handleSearchProfile}
-                        className="mt-2 text-sm text-red-600 hover:text-red-700 underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+                        className="mt-2 text-sm text-ceramic-error hover:text-ceramic-error/80 underline focus:outline-none focus:ring-2 focus:ring-ceramic-error rounded"
                       >
                         Tentar novamente
                       </button>
@@ -417,10 +417,10 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   <div
                     role="status"
                     aria-live="polite"
-                    className="p-4 bg-green-50 border border-green-200 rounded-lg"
+                    className="p-4 bg-ceramic-success-bg border border-ceramic-success/30 rounded-lg"
                   >
                     <div className="flex items-start space-x-3 mb-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" aria-hidden="true" />
                       <div className="flex-1">
                         <h3 className="font-semibold text-ceramic-primary mb-1">Perfil encontrado!</h3>
                         {profileData.full_name && (
@@ -447,7 +447,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                       <button
                         type="button"
                         onClick={handleConfirmProfile}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm focus:outline-none focus:ring-4 focus:ring-green-500/20"
+                        className="px-4 py-2 bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success/90 transition-colors text-sm focus:outline-none focus:ring-4 focus:ring-ceramic-success/20"
                       >
                         Confirmar Perfil
                       </button>
@@ -484,7 +484,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     value={setup.guestReference}
                     onChange={(e) => actions.updateSetup({ guestReference: e.target.value })}
                     placeholder="Ex: Empreendedor, Professor, Atleta"
-                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
                   />
                 </div>
 
@@ -501,7 +501,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     onChange={(e) => actions.updateSetup({ guestBio: e.target.value })}
                     placeholder="Informações relevantes sobre o convidado, experiências, projetos..."
                     rows={4}
-                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent resize-none bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent resize-none bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
                   />
                 </div>
               </div>
@@ -524,7 +524,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   onChange={(e) => actions.updateSetup({ phone: e.target.value })}
                   placeholder="+55 11 99999-9999"
                   autoComplete="tel"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
               <div>
@@ -541,7 +541,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   onChange={(e) => actions.updateSetup({ email: e.target.value })}
                   placeholder="email@exemplo.com"
                   autoComplete="email"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
             </div>
@@ -636,7 +636,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 htmlFor="episode-theme-input"
                 className="block text-sm font-medium text-ceramic-primary mb-2"
               >
-                Tema <span className="text-red-500" aria-label="obrigatório">*</span>
+                Tema <span className="text-ceramic-error" aria-label="obrigatório">*</span>
               </label>
               <input
                 id="episode-theme-input"
@@ -646,7 +646,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 placeholder={setup.themeMode === 'auto' ? 'Tema será sugerido pela IA' : 'Digite o tema do episódio'}
                 required
                 aria-required="true"
-                className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
               />
             </div>
 
@@ -667,9 +667,9 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
 
             {/* AI Theme Suggestions - Loading State */}
             {setup.themeMode === 'auto' && isGeneratingThemes && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="p-4 bg-ceramic-info-bg border border-ceramic-info/30 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" role="status" aria-label="Gerando sugestões" />
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-ceramic-info" role="status" aria-label="Gerando sugestões" />
                   <div>
                     <p className="font-medium text-ceramic-primary">Gerando sugestões de tema...</p>
                     <p className="text-sm text-ceramic-secondary">A IA está analisando as informações do convidado</p>
@@ -683,16 +683,16 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               <div
                 role="alert"
                 aria-live="polite"
-                className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3"
+                className="p-4 bg-ceramic-error-bg border border-ceramic-error/30 rounded-lg flex items-start space-x-3"
               >
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" aria-hidden="true" />
                 <div className="flex-1">
-                  <p className="font-medium text-red-800 mb-1">Erro ao gerar sugestões</p>
-                  <p className="text-sm text-red-700 mb-3">{themeError}</p>
+                  <p className="font-medium text-ceramic-error mb-1">Erro ao gerar sugestões</p>
+                  <p className="text-sm text-ceramic-error/80 mb-3">{themeError}</p>
                   <button
                     type="button"
                     onClick={handleGenerateThemeSuggestions}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm inline-flex items-center space-x-2 focus:outline-none focus:ring-4 focus:ring-red-500/20"
+                    className="px-4 py-2 bg-ceramic-error text-white rounded-lg hover:bg-ceramic-error/90 transition-colors text-sm inline-flex items-center space-x-2 focus:outline-none focus:ring-4 focus:ring-ceramic-error/20"
                   >
                     <span>Tentar Novamente</span>
                   </button>
@@ -705,7 +705,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-ceramic-primary flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 text-blue-500" aria-hidden="true" />
+                    <Sparkles className="w-4 h-4 text-ceramic-info" aria-hidden="true" />
                     <span>Selecione um tema sugerido pela IA:</span>
                   </p>
                   <button
@@ -726,13 +726,13 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                       key={index}
                       type="button"
                       onClick={() => handleSelectThemeSuggestion(suggestion)}
-                      className="w-full text-left px-4 py-3 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/20 group"
+                      className="w-full text-left px-4 py-3 bg-ceramic-base border-2 border-ceramic-info/30 rounded-lg hover:border-ceramic-info hover:bg-ceramic-info-bg transition-all focus:outline-none focus:ring-4 focus:ring-amber-500/20 group"
                     >
                       <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-semibold group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-ceramic-info-bg flex items-center justify-center text-ceramic-info text-xs font-semibold group-hover:bg-amber-500 group-hover:text-white transition-colors">
                           {index + 1}
                         </div>
-                        <p className="flex-1 text-sm text-ceramic-primary group-hover:text-blue-700 transition-colors">
+                        <p className="flex-1 text-sm text-ceramic-primary group-hover:text-amber-600 transition-colors">
                           {suggestion}
                         </p>
                       </div>
@@ -781,7 +781,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     type="date"
                     value={setup.scheduledDate}
                     onChange={(e) => actions.updateSetup({ scheduledDate: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white transition-all text-ceramic-primary"
+                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-primary"
                   />
                   {!setup.scheduledDate && (
                     <p className="text-xs text-ceramic-tertiary mt-1">Selecione a data</p>
@@ -800,7 +800,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     type="time"
                     value={setup.scheduledTime}
                     onChange={(e) => actions.updateSetup({ scheduledTime: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white transition-all text-ceramic-primary"
+                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-primary"
                   />
                   {!setup.scheduledTime && (
                     <p className="text-xs text-ceramic-tertiary mt-1">Defina o horário</p>
@@ -825,7 +825,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   value={setup.location}
                   onChange={(e) => actions.updateSetup({ location: e.target.value })}
                   placeholder="Ex: Estúdio A, Remoto (Zoom), Casa do convidado"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent transition-all hover:border-ceramic-primary/50 bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent transition-all hover:border-ceramic-primary/50 bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
               <div>
@@ -841,7 +841,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   value={setup.season}
                   onChange={(e) => actions.updateSetup({ season: e.target.value })}
                   placeholder="Ex: T1 E05, Temporada 1"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent transition-all hover:border-ceramic-primary/50 bg-white text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent transition-all hover:border-ceramic-primary/50 bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
             </div>
@@ -856,19 +856,19 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 <p className="text-xs font-medium text-ceramic-tertiary mb-1">RESUMO</p>
                 <div className="flex flex-wrap gap-2">
                   {setup.scheduledDate && (
-                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-white border border-ceramic-border rounded text-xs text-ceramic-primary">
+                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-primary">
                       <Calendar className="w-3 h-3" aria-hidden="true" />
                       <span>{new Date(setup.scheduledDate + 'T00:00').toLocaleDateString('pt-BR')}</span>
                     </span>
                   )}
                   {setup.scheduledTime && (
-                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-white border border-ceramic-border rounded text-xs text-ceramic-primary">
+                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-primary">
                       <Clock className="w-3 h-3" aria-hidden="true" />
                       <span>{setup.scheduledTime}</span>
                     </span>
                   )}
                   {setup.location && (
-                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-white border border-ceramic-border rounded text-xs text-ceramic-primary">
+                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-primary">
                       <MapPin className="w-3 h-3" aria-hidden="true" />
                       <span>{setup.location}</span>
                     </span>
@@ -887,7 +887,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               onClick={() => actions.setStage('research')}
               disabled={!setup.guestName || !setup.theme}
               aria-label={!setup.guestName || !setup.theme ? 'Preencha nome do convidado e tema para continuar' : 'Ir para próxima etapa: Pesquisa'}
-              className="px-6 py-3 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:border disabled:border-gray-400 transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
+              className="px-6 py-3 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed disabled:border disabled:border-ceramic-border transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
             >
               <span>Próximo: Pesquisa</span>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

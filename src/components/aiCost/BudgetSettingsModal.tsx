@@ -80,7 +80,7 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
               autoFocus
             />
           </div>
-          {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+          {error && <p className="text-xs text-ceramic-error mt-2">{error}</p>}
 
           <p className="text-xs text-ceramic-text-secondary mt-2">
             Você receberá alertas ao atingir 80%, 90% e 100% do orçamento.

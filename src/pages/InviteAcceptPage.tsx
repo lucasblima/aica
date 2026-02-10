@@ -117,8 +117,8 @@ export function InviteAcceptPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
-            <AlertCircle className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 mx-auto rounded-full bg-ceramic-error/10 flex items-center justify-center mb-4">
+            <AlertCircle className="w-8 h-8 text-ceramic-error" />
           </div>
           <h1 className="text-xl font-bold text-ceramic-text-primary mb-2">
             Convite Inválido
@@ -148,8 +148,8 @@ export function InviteAcceptPage() {
         >
           {/* Ticket decoration */}
           <div className="relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse opacity-30" />
-            <div className="absolute inset-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full animate-pulse opacity-30" />
+            <div className="absolute inset-2 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center">
               <Ticket className="w-8 h-8 text-white" />
             </div>
           </div>
@@ -231,12 +231,12 @@ export function InviteAcceptPage() {
         >
           {/* Success animation */}
           <motion.div
-            className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-6"
+            className="w-20 h-20 mx-auto rounded-full bg-ceramic-success/10 flex items-center justify-center mb-6"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', delay: 0.2 }}
           >
-            <Check className="w-10 h-10 text-green-500" />
+            <Check className="w-10 h-10 text-ceramic-success" />
           </motion.div>
 
           <h1 className="text-2xl font-bold text-ceramic-text-primary mb-2">
@@ -284,8 +284,8 @@ export function InviteAcceptPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
-            <AlertCircle className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 mx-auto rounded-full bg-ceramic-error/10 flex items-center justify-center mb-4">
+            <AlertCircle className="w-8 h-8 text-ceramic-error" />
           </div>
           <h1 className="text-xl font-bold text-ceramic-text-primary mb-2">
             Erro ao aceitar convite

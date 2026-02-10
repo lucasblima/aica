@@ -109,7 +109,7 @@ export const UnifiedJourneyCard: React.FC<UnifiedJourneyCardProps> = ({
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <div className="flex items-center gap-1 justify-end">
-                    <Flame className="w-3 h-3 text-orange-500" />
+                    <Flame className="w-3 h-3 text-ceramic-warning" />
                     <span className="text-xs font-bold text-ceramic-text-primary">
                       {streakDays} dias
                     </span>
@@ -313,7 +313,7 @@ export const UnifiedJourneyCard: React.FC<UnifiedJourneyCardProps> = ({
                     <div>
                       <p className="text-xs font-bold text-ceramic-text-primary">{levelName}</p>
                       <p className="text-[10px] text-ceramic-text-secondary flex items-center gap-1">
-                        <Flame className="w-3 h-3 text-orange-500" />
+                        <Flame className="w-3 h-3 text-ceramic-warning" />
                         {streakDays} dias de sequência
                       </p>
                     </div>

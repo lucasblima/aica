@@ -32,15 +32,15 @@ const getCredentialIcon = (type?: string): string => {
  */
 const getCredentialColor = (type?: string): string => {
   const colors: Record<string, string> = {
-    certificate: 'from-blue-50 to-blue-100 border-blue-200',
-    diploma: 'from-purple-50 to-purple-100 border-purple-200',
-    badge: 'from-amber-50 to-amber-100 border-amber-200',
-    publication: 'from-emerald-50 to-emerald-100 border-emerald-200',
-    award: 'from-rose-50 to-rose-100 border-rose-200',
+    certificate: 'from-ceramic-info/10 to-ceramic-info/15 border-ceramic-info/30',
+    diploma: 'from-ceramic-accent/10 to-ceramic-accent/15 border-ceramic-accent/30',
+    badge: 'from-ceramic-warning/10 to-ceramic-warning/15 border-ceramic-warning/30',
+    publication: 'from-ceramic-success/10 to-ceramic-success/15 border-ceramic-success/30',
+    award: 'from-ceramic-error/10 to-ceramic-error/15 border-ceramic-error/30',
   };
   return type && colors[type]
     ? colors[type]
-    : 'from-stone-50 to-stone-100 border-stone-200';
+    : 'from-ceramic-cool to-ceramic-cool border-ceramic-border';
 };
 
 /**
@@ -114,7 +114,7 @@ export const CredentialCard: React.FC<CredentialCardProps> = ({
           <path
             d="M100,0 L100,100 L0,100 Z"
             fill="currentColor"
-            className="text-stone-900"
+            className="text-ceramic-text-primary"
           />
         </svg>
       </div>
@@ -130,7 +130,7 @@ export const CredentialCard: React.FC<CredentialCardProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-emerald-600 hover:text-emerald-700 transition-colors"
+            className="text-ceramic-success hover:text-ceramic-success/80 transition-colors"
             title="Verify credential"
           >
             <svg
@@ -149,19 +149,19 @@ export const CredentialCard: React.FC<CredentialCardProps> = ({
       </div>
 
       {/* Title */}
-      <h3 className="text-lg font-normal text-stone-900 mb-1 leading-tight">
+      <h3 className="text-lg font-normal text-ceramic-text-primary mb-1 leading-tight">
         {title}
       </h3>
 
       {/* Issuer */}
-      <p className="text-sm text-stone-700 font-light mb-4">{issuer}</p>
+      <p className="text-sm text-ceramic-text-primary font-light mb-4">{issuer}</p>
 
       {/* Metadata */}
-      <div className="space-y-2 text-xs text-stone-600 font-light">
+      <div className="space-y-2 text-xs text-ceramic-text-secondary font-light">
         {/* Issue date */}
         <div className="flex items-center gap-2">
           <svg
-            className="w-4 h-4 text-stone-400"
+            className="w-4 h-4 text-ceramic-text-tertiary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -180,7 +180,7 @@ export const CredentialCard: React.FC<CredentialCardProps> = ({
         {credential_id && (
           <div className="flex items-center gap-2">
             <svg
-              className="w-4 h-4 text-stone-400"
+              className="w-4 h-4 text-ceramic-text-tertiary"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -203,10 +203,10 @@ export const CredentialCard: React.FC<CredentialCardProps> = ({
               flex items-center gap-2 pt-2 border-t
               ${
                 expired
-                  ? 'border-rose-300 text-rose-700'
+                  ? 'border-ceramic-error/30 text-ceramic-error'
                   : expiringSoon
-                  ? 'border-amber-300 text-amber-700'
-                  : 'border-stone-300'
+                  ? 'border-ceramic-warning/30 text-ceramic-warning'
+                  : 'border-ceramic-border'
               }
             `}
           >
@@ -247,7 +247,7 @@ export const CredentialCard: React.FC<CredentialCardProps> = ({
             ) : (
               <>
                 <svg
-                  className="w-4 h-4 text-stone-400"
+                  className="w-4 h-4 text-ceramic-text-tertiary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

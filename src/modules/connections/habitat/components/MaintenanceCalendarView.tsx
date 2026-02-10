@@ -172,17 +172,17 @@ export function MaintenanceCalendarView({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header with Controls */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Calendário de Manutenção</h2>
+          <h2 className="text-2xl font-bold text-ceramic-text-primary">Calendário de Manutenção</h2>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('week')}
               className={`px-3 py-2 text-sm font-medium rounded ${
                 viewMode === 'week'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-ceramic-base text-ceramic-text-primary hover:bg-ceramic-cool'
               }`}
             >
               Semana
@@ -191,8 +191,8 @@ export function MaintenanceCalendarView({
               onClick={() => setViewMode('month')}
               className={`px-3 py-2 text-sm font-medium rounded ${
                 viewMode === 'month'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-ceramic-base text-ceramic-text-primary hover:bg-ceramic-cool'
               }`}
             >
               Mês
@@ -204,16 +204,16 @@ export function MaintenanceCalendarView({
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={handlePreviousPeriod}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+            className="px-4 py-2 text-sm font-medium text-ceramic-text-primary bg-ceramic-base rounded hover:bg-ceramic-cool"
           >
             ← Anterior
           </button>
 
-          <h3 className="text-lg font-semibold text-gray-900 capitalize">{monthYear}</h3>
+          <h3 className="text-lg font-semibold text-ceramic-text-primary capitalize">{monthYear}</h3>
 
           <button
             onClick={handleNextPeriod}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+            className="px-4 py-2 text-sm font-medium text-ceramic-text-primary bg-ceramic-base rounded hover:bg-ceramic-cool"
           >
             Próximo →
           </button>
@@ -223,12 +223,12 @@ export function MaintenanceCalendarView({
         <div className="flex items-center gap-3">
           <button
             onClick={handleSetupAutoSync}
-            className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded hover:bg-green-600"
+            className="px-4 py-2 text-sm font-medium text-white bg-ceramic-success rounded hover:bg-ceramic-success/90"
           >
             🔄 Ativar Sincronização Automática
           </button>
 
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-ceramic-text-secondary">
             {events.length} evento{events.length !== 1 ? 's' : ''} este período
           </span>
         </div>
@@ -262,13 +262,13 @@ export function MaintenanceCalendarView({
         <div className="space-y-6">
           {/* Event Details */}
           {selectedEvent ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h4 className="text-lg font-bold text-gray-900 mb-4">{selectedEvent.title}</h4>
+            <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-6">
+              <h4 className="text-lg font-bold text-ceramic-text-primary mb-4">{selectedEvent.title}</h4>
 
               <div className="space-y-3 text-sm">
                 <div>
-                  <p className="text-gray-600 font-medium">Data e Hora</p>
-                  <p className="text-gray-900">
+                  <p className="text-ceramic-text-secondary font-medium">Data e Hora</p>
+                  <p className="text-ceramic-text-primary">
                     {new Date(selectedEvent.starts_at).toLocaleDateString('pt-BR')}{' '}
                     {new Date(selectedEvent.starts_at).toLocaleTimeString('pt-BR', {
                       hour: '2-digit',
@@ -279,21 +279,21 @@ export function MaintenanceCalendarView({
 
                 {selectedEvent.location && (
                   <div>
-                    <p className="text-gray-600 font-medium">Local</p>
-                    <p className="text-gray-900">{selectedEvent.location}</p>
+                    <p className="text-ceramic-text-secondary font-medium">Local</p>
+                    <p className="text-ceramic-text-primary">{selectedEvent.location}</p>
                   </div>
                 )}
 
                 {selectedEvent.description && (
                   <div>
-                    <p className="text-gray-600 font-medium">Descrição</p>
-                    <p className="text-gray-900">{selectedEvent.description}</p>
+                    <p className="text-ceramic-text-secondary font-medium">Descrição</p>
+                    <p className="text-ceramic-text-primary">{selectedEvent.description}</p>
                   </div>
                 )}
               </div>
 
               {/* Sync Button */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="mt-6 pt-6 border-t border-ceramic-border">
                 <CalendarSyncButton
                   eventId={selectedEvent.id}
                   spaceId={habitatSpaceId}
@@ -304,14 +304,14 @@ export function MaintenanceCalendarView({
 
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="w-full mt-4 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+                className="w-full mt-4 px-4 py-2 text-sm font-medium text-ceramic-text-primary bg-ceramic-base rounded hover:bg-ceramic-cool"
               >
                 Fechar
               </button>
             </div>
           ) : (
-            <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
-              <p className="text-sm text-blue-800 font-medium">
+            <div className="bg-ceramic-info-bg rounded-lg border border-ceramic-info/20 p-6">
+              <p className="text-sm text-ceramic-info font-medium">
                 Selecione um evento para ver detalhes
               </p>
             </div>
@@ -328,7 +328,7 @@ export function MaintenanceCalendarView({
       </div>
 
       {/* Settings Section */}
-      <div className="mt-8 pt-8 border-t border-gray-200">
+      <div className="mt-8 pt-8 border-t border-ceramic-border">
         <SpaceCalendarSettings spaceId={habitatSpaceId} />
       </div>
     </div>
@@ -356,11 +356,11 @@ function MonthCalendarGrid({
   const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-6">
       {/* Day Headers */}
       <div className="grid grid-cols-7 gap-1 mb-4">
         {dayNames.map((day) => (
-          <div key={day} className="text-center font-semibold text-sm text-gray-700 py-2">
+          <div key={day} className="text-center font-semibold text-sm text-ceramic-text-primary py-2">
             {day}
           </div>
         ))}
@@ -380,13 +380,13 @@ function MonthCalendarGrid({
               key={idx}
               className={`
                 min-h-24 p-2 border rounded
-                ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
-                ${isToday ? 'border-blue-300 bg-blue-50' : 'border-gray-200'}
+                ${isCurrentMonth ? 'bg-ceramic-base' : 'bg-ceramic-base'}
+                ${isToday ? 'border-amber-300 bg-ceramic-info-bg' : 'border-ceramic-border'}
               `}
             >
               <p
                 className={`text-xs font-semibold mb-1 ${
-                  isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                  isCurrentMonth ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
                 }`}
               >
                 {dayNum}
@@ -398,7 +398,7 @@ function MonthCalendarGrid({
                   <button
                     key={event.id}
                     onClick={() => onEventClick(event)}
-                    className="w-full text-left text-xs p-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 truncate"
+                    className="w-full text-left text-xs p-1 bg-ceramic-info-bg text-ceramic-info rounded hover:bg-ceramic-info-bg/80 truncate"
                     title={event.title}
                   >
                     {event.title}
@@ -406,7 +406,7 @@ function MonthCalendarGrid({
                 ))}
 
                 {dayEvents.length > 2 && (
-                  <p className="text-xs text-gray-600">+{dayEvents.length - 2} mais</p>
+                  <p className="text-xs text-ceramic-text-secondary">+{dayEvents.length - 2} mais</p>
                 )}
               </div>
             </div>
@@ -434,21 +434,21 @@ function WeekCalendarView({
   isLoading: boolean;
 }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-6">
       <div className="space-y-4">
         {events.length === 0 ? (
-          <p className="text-center text-gray-600 py-8">Nenhum evento esta semana</p>
+          <p className="text-center text-ceramic-text-secondary py-8">Nenhum evento esta semana</p>
         ) : (
           events.map((event) => (
             <div
               key={event.id}
               onClick={() => onEventClick(event)}
-              className="p-4 border border-gray-200 rounded-lg hover:shadow-md cursor-pointer transition-all"
+              className="p-4 border border-ceramic-border rounded-lg hover:shadow-md cursor-pointer transition-all"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{event.title}</p>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="font-semibold text-ceramic-text-primary">{event.title}</p>
+                  <p className="text-sm text-ceramic-text-secondary mt-1">
                     {new Date(event.starts_at).toLocaleDateString('pt-BR')} às{' '}
                     {new Date(event.starts_at).toLocaleTimeString('pt-BR', {
                       hour: '2-digit',

@@ -302,7 +302,7 @@ function VentureCard({ entity, onEdit, onDelete, onNavigate }: VentureCardProps)
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-ceramic-text-secondary/10 py-1 min-w-[140px] z-20"
+              className="absolute right-0 top-10 bg-ceramic-base rounded-lg shadow-lg border border-ceramic-border py-1 min-w-[140px] z-20"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -320,7 +320,7 @@ function VentureCard({ entity, onEdit, onDelete, onNavigate }: VentureCardProps)
                   onDelete(entity.id);
                   setShowMenu(false);
                 }}
-                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                className="w-full px-4 py-2 text-left text-sm text-ceramic-error hover:bg-ceramic-error/10 flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
                 Excluir
@@ -344,9 +344,9 @@ function VentureCard({ entity, onEdit, onDelete, onNavigate }: VentureCardProps)
         {/* Health Badge */}
         <div className={`
           ceramic-inset px-3 py-1 rounded-full
-          ${healthStatus === 'healthy' ? 'bg-green-50' : ''}
-          ${healthStatus === 'warning' ? 'bg-yellow-50' : ''}
-          ${healthStatus === 'critical' ? 'bg-red-50' : ''}
+          ${healthStatus === 'healthy' ? 'bg-ceramic-success/10' : ''}
+          ${healthStatus === 'warning' ? 'bg-ceramic-warning/10' : ''}
+          ${healthStatus === 'critical' ? 'bg-ceramic-error/10' : ''}
         `}>
           <span className={`
             text-xs font-bold
@@ -682,8 +682,8 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, isLoading, entityName 
         className="bg-ceramic-base w-full max-w-md rounded-2xl shadow-2xl p-6"
       >
         <div className="text-center">
-          <div className="ceramic-concave w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-red-50">
-            <Trash2 className="w-8 h-8 text-red-500" />
+          <div className="ceramic-concave w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-ceramic-error/10">
+            <Trash2 className="w-8 h-8 text-ceramic-error" />
           </div>
           <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">
             Excluir Venture?
@@ -702,7 +702,7 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, isLoading, entityName 
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1 ceramic-card py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 ceramic-card py-3 rounded-xl bg-ceramic-error text-white font-bold hover:bg-ceramic-error/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>

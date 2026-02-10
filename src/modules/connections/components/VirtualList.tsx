@@ -51,7 +51,7 @@ export function VirtualList<T>({
       <div className={`${className} flex items-center justify-center`}>
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📦</div>
-          <p className="text-stone-600">{emptyMessage}</p>
+          <p className="text-ceramic-text-secondary">{emptyMessage}</p>
         </div>
       </div>
     );
@@ -140,7 +140,7 @@ export function VirtualGrid<T>({
       <div className={`${className} flex items-center justify-center`}>
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📦</div>
-          <p className="text-stone-600">{emptyMessage}</p>
+          <p className="text-ceramic-text-secondary">{emptyMessage}</p>
         </div>
       </div>
     );

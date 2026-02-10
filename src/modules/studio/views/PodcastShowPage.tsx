@@ -153,14 +153,14 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
                   <div className="flex items-center gap-3 mb-2">
                     <button
                       onClick={onBack}
-                      className="text-stone-500 hover:text-stone-700 transition-colors"
+                      className="text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
                       title="Voltar para biblioteca"
                     >
                       <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <h1 className="text-2xl font-bold text-stone-800">{showTitle}</h1>
+                    <h1 className="text-2xl font-bold text-ceramic-text-primary">{showTitle}</h1>
                   </div>
-                  <p className="text-stone-600 mt-1 text-sm">
+                  <p className="text-ceramic-text-secondary mt-1 text-sm">
                     {show?.description || 'Sem descrição'}
                   </p>
 
@@ -186,7 +186,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
             </div>
 
             {/* Tabs */}
-            <nav className="bg-white border-b border-stone-200 px-6 sticky top-0 z-10">
+            <nav className="bg-ceramic-base border-b border-ceramic-border px-6 sticky top-0 z-10">
               <div className="flex gap-6">
                 <TabButton active={activeTab === 'episodes'} onClick={() => setActiveTab('episodes')}>
                   Episódios
@@ -239,14 +239,14 @@ interface StatProps {
 
 const Stat: React.FC<StatProps> = ({ label, value, color = 'stone' }) => {
   const colorClasses = {
-    green: 'text-green-700 bg-green-100',
+    green: 'text-ceramic-success bg-ceramic-success-bg',
     amber: 'text-amber-700 bg-amber-100',
-    stone: 'text-stone-700 bg-stone-100',
+    stone: 'text-ceramic-text-primary bg-ceramic-base',
   };
 
   return (
     <div className="flex flex-col">
-      <span className="text-xs text-stone-500 uppercase tracking-wide">{label}</span>
+      <span className="text-xs text-ceramic-text-secondary uppercase tracking-wide">{label}</span>
       <span className={`text-lg font-bold mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg ${colorClasses[color]} w-fit`}>
         {value}
       </span>
@@ -267,7 +267,7 @@ const TabButton: React.FC<TabButtonProps> = ({ active, onClick, children }) => (
       py-3 px-1 border-b-2 font-medium text-sm transition-colors
       ${active
         ? 'border-amber-500 text-amber-600'
-        : 'border-transparent text-stone-500 hover:text-stone-700'}
+        : 'border-transparent text-ceramic-text-secondary hover:text-ceramic-text-primary'}
     `}
   >
     {children}
@@ -315,7 +315,7 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
         <select
           value={sortBy}
           onChange={e => onSortChange(e.target.value as SortType)}
-          className="px-3 py-2 rounded-lg border border-stone-200 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="px-3 py-2 rounded-lg border border-ceramic-border text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500"
         >
           <option value="newest">Mais recentes</option>
           <option value="oldest">Mais antigos</option>
@@ -341,7 +341,7 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
       {/* Empty state */}
       {episodes.length === 0 && (
         <div className="text-center py-12 mt-8">
-          <p className="text-stone-500">Nenhum episódio encontrado com os filtros selecionados</p>
+          <p className="text-ceramic-text-secondary">Nenhum episodio encontrado com os filtros selecionados</p>
         </div>
       )}
     </div>
@@ -361,7 +361,7 @@ const FilterChip: React.FC<FilterChipProps> = ({ active, onClick, children }) =>
       px-3 py-1.5 rounded-lg text-sm font-medium transition-all
       ${active
         ? 'bg-amber-500 text-white shadow-sm'
-        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}
+        : 'bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool'}
     `}
   >
     {children}
@@ -389,9 +389,9 @@ interface EpisodeCardProps {
 
 const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
   const statusConfig = {
-    draft: { bg: 'bg-stone-100', text: 'text-stone-600', label: 'Rascunho' },
+    draft: { bg: 'bg-ceramic-base', text: 'text-ceramic-text-secondary', label: 'Rascunho' },
     in_progress: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Em progresso' },
-    published: { bg: 'bg-green-100', text: 'text-green-700', label: 'Publicado' },
+    published: { bg: 'bg-ceramic-success-bg', text: 'text-ceramic-success', label: 'Publicado' },
   };
 
   const status = statusConfig[episode.status];
@@ -401,8 +401,8 @@ const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
     <button
       onClick={onClick}
       className="
-        bg-white rounded-2xl p-4 text-left
-        border border-stone-200
+        bg-ceramic-base rounded-2xl p-4 text-left
+        border border-ceramic-border
         hover:border-amber-300 hover:shadow-lg
         transition-all duration-200
         group
@@ -414,27 +414,27 @@ const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
       </div>
 
       {/* Content */}
-      <h3 className="font-medium text-stone-800 line-clamp-2 group-hover:text-amber-600 transition-colors">
-        {episode.title || 'Sem título'}
+      <h3 className="font-medium text-ceramic-text-primary line-clamp-2 group-hover:text-amber-600 transition-colors">
+        {episode.title || 'Sem titulo'}
       </h3>
 
-      <p className="text-sm text-stone-500 mt-1 line-clamp-1">
+      <p className="text-sm text-ceramic-text-secondary mt-1 line-clamp-1">
         {episode.guest_name || 'Sem convidado'}
       </p>
 
       {episode.episode_theme && (
-        <p className="text-xs text-stone-400 mt-1 line-clamp-1">
+        <p className="text-xs text-ceramic-text-secondary mt-1 line-clamp-1">
           Tema: {episode.episode_theme}
         </p>
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100">
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-ceramic-border">
         <span className={`text-xs px-2 py-1 rounded-full ${status.bg} ${status.text}`}>
           {status.label}
         </span>
 
-        <span className="text-xs text-stone-400">{relativeDate}</span>
+        <span className="text-xs text-ceramic-text-secondary">{relativeDate}</span>
       </div>
     </button>
   );
@@ -445,10 +445,10 @@ const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: strin
   onSelectEpisode,
 }) => (
   <div>
-    <h2 className="text-lg font-bold text-stone-800 mb-4">Rascunhos</h2>
+    <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Rascunhos</h2>
     {episodes.length === 0 ? (
       <div className="text-center py-12">
-        <p className="text-stone-500">Nenhum rascunho</p>
+        <p className="text-ceramic-text-secondary">Nenhum rascunho</p>
       </div>
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -462,11 +462,11 @@ const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: strin
 
 const FilesSection: React.FC<{ showId: string }> = ({ showId }) => (
   <div className="text-center py-12">
-    <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
-      <FolderOpen className="w-8 h-8 text-stone-400" />
+    <div className="w-16 h-16 bg-ceramic-base rounded-full flex items-center justify-center mx-auto mb-4">
+      <FolderOpen className="w-8 h-8 text-ceramic-text-secondary" />
     </div>
-    <h3 className="text-lg font-medium text-stone-700">Arquivos do Podcast</h3>
-    <p className="text-stone-500 mt-1">Em breve: gerencie logos, intros, músicas e assets</p>
+    <h3 className="text-lg font-medium text-ceramic-text-primary">Arquivos do Podcast</h3>
+    <p className="text-ceramic-text-secondary mt-1">Em breve: gerencie logos, intros, musicas e assets</p>
     <button className="mt-4 text-amber-600 hover:text-amber-700 font-medium transition-colors">
       Fazer upload
     </button>
@@ -475,27 +475,27 @@ const FilesSection: React.FC<{ showId: string }> = ({ showId }) => (
 
 const SettingsSection: React.FC<{ show: PodcastShow | null; onRefresh: () => void }> = ({ show, onRefresh }) => (
   <div className="max-w-2xl">
-    <h2 className="text-lg font-bold text-stone-800 mb-4">Configurações do Podcast</h2>
+    <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Configuracoes do Podcast</h2>
     <div className="ceramic-card p-6 rounded-2xl space-y-4">
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">Nome do Podcast</label>
+        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Nome do Podcast</label>
         <input
           type="text"
           defaultValue={show?.title || ''}
           disabled
-          className="w-full px-3 py-2 border border-stone-200 rounded-lg text-stone-800 bg-stone-50"
+          className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1">Descrição</label>
+        <label className="block text-sm font-medium text-ceramic-text-primary mb-1">Descricao</label>
         <textarea
           defaultValue={show?.description || ''}
           disabled
           rows={4}
-          className="w-full px-3 py-2 border border-stone-200 rounded-lg text-stone-800 bg-stone-50"
+          className="w-full px-3 py-2 border border-ceramic-border rounded-lg text-ceramic-text-primary bg-ceramic-base"
         />
       </div>
-      <p className="text-xs text-stone-500 italic">
+      <p className="text-xs text-ceramic-text-secondary italic">
         Em breve: edição de configurações do podcast
       </p>
     </div>

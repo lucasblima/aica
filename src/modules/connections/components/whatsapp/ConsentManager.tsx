@@ -127,7 +127,7 @@ const ConsentToggle: React.FC<ConsentToggleProps> = ({
         className={`
           relative inline-flex h-8 w-14 items-center rounded-full
           transition-colors duration-200
-          ${isGranted ? 'bg-ceramic-positive' : 'bg-gray-300'}
+          ${isGranted ? 'bg-ceramic-positive' : 'bg-ceramic-cool'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
         aria-label={`Toggle ${CONSENT_LABELS[consentType]}`}
@@ -149,16 +149,16 @@ const ConsentToggle: React.FC<ConsentToggleProps> = ({
  */
 const PrivacyNotice: React.FC = () => {
   return (
-    <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+    <div className="p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
       <div className="flex items-start gap-3">
         <div className="ceramic-concave w-10 h-10 flex items-center justify-center rounded-lg flex-shrink-0">
           <Shield className="w-5 h-5 text-ceramic-accent" />
         </div>
         <div>
-          <p className="text-sm text-blue-900 font-bold mb-2">
+          <p className="text-sm text-ceramic-text-primary font-bold mb-2">
             🔒 Privacidade Garantida
           </p>
-          <ul className="text-xs text-blue-800 space-y-1">
+          <ul className="text-xs text-ceramic-info space-y-1">
             <li>• Armazenamos apenas embeddings vetoriais, NUNCA mensagens completas</li>
             <li>• Seus dados são criptografados com SHA256</li>
             <li>• Você pode revogar consentimento a qualquer momento</li>
@@ -192,7 +192,7 @@ const ConsentHistoryItem: React.FC<ConsentHistoryItemProps> = ({ record }) => {
     <div className="ceramic-inset p-3 rounded-lg flex items-start gap-3">
       <div className={`
         ceramic-concave w-8 h-8 flex items-center justify-center rounded-full
-        ${isGranted ? 'bg-green-50' : 'bg-red-50'}
+        ${isGranted ? 'bg-ceramic-success/10' : 'bg-ceramic-error/10'}
       `}>
         {isGranted ? (
           <Check className="w-4 h-4 text-ceramic-positive" />
@@ -207,7 +207,7 @@ const ConsentHistoryItem: React.FC<ConsentHistoryItemProps> = ({ record }) => {
           </p>
           <span className={`
             text-xs px-2 py-0.5 rounded-full font-medium
-            ${isGranted ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+            ${isGranted ? 'bg-ceramic-success/15 text-ceramic-success' : 'bg-ceramic-error/15 text-ceramic-error'}
           `}>
             {isGranted ? 'Concedido' : 'Revogado'}
           </span>
@@ -437,11 +437,11 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="p-4 bg-green-50 border border-green-200 rounded-xl"
+            className="p-4 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl"
           >
             <div className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-600" />
-              <p className="text-sm text-green-800 font-medium">{successMessage}</p>
+              <Check className="w-5 h-5 text-ceramic-success" />
+              <p className="text-sm text-ceramic-success font-medium">{successMessage}</p>
             </div>
           </motion.div>
         )}
@@ -451,11 +451,11 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="p-4 bg-red-50 border border-red-200 rounded-xl"
+            className="p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl"
           >
             <div className="flex items-center gap-2">
-              <X className="w-5 h-5 text-red-600" />
-              <p className="text-sm text-red-800 font-medium">{errorMessage}</p>
+              <X className="w-5 h-5 text-ceramic-error" />
+              <p className="text-sm text-ceramic-error font-medium">{errorMessage}</p>
             </div>
           </motion.div>
         )}

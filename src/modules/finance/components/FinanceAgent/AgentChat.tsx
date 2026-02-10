@@ -229,7 +229,7 @@ Como posso ajudar hoje?`,
     const html = content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded">$1</code>')
+      .replace(/`(.*?)`/g, '<code class="bg-ceramic-base px-1 rounded">$1</code>')
       .replace(/\n/g, '<br />');
 
     // Sanitize HTML to prevent XSS attacks
@@ -252,15 +252,15 @@ Como posso ajudar hoje?`,
               className={`
                 max-w-[80%] p-4 rounded-2xl
                 ${message.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-md'
+                  ? 'bg-amber-500 text-white rounded-br-md'
                   : 'ceramic-card rounded-bl-md'
                 }
               `}
             >
               {message.role === 'assistant' && (
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                  <span className="text-xs font-medium text-purple-600">Aica Finance</span>
+                  <Sparkles className="w-4 h-4 text-ceramic-accent" />
+                  <span className="text-xs font-medium text-ceramic-accent">Aica Finance</span>
                 </div>
               )}
               <div
@@ -269,7 +269,7 @@ Como posso ajudar hoje?`,
                 dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
               />
               <p
-                className={`text-xs mt-2 ${message.role === 'user' ? 'text-blue-200' : 'text-ceramic-text-secondary'
+                className={`text-xs mt-2 ${message.role === 'user' ? 'text-amber-200' : 'text-ceramic-text-secondary'
                   }`}
               >
                 {message.timestamp.toLocaleTimeString('pt-BR', {
@@ -285,7 +285,7 @@ Como posso ajudar hoje?`,
           <div className="flex justify-start">
             <div className="ceramic-card p-4 rounded-2xl rounded-bl-md">
               <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-purple-500 animate-spin" />
+                <Loader2 className="w-4 h-4 text-ceramic-accent animate-spin" />
                 <span className="text-sm text-ceramic-text-secondary">Pensando...</span>
               </div>
             </div>
@@ -315,7 +315,7 @@ Como posso ajudar hoje?`,
       )}
 
       {/* Input Area */}
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-ceramic-border">
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -325,12 +325,12 @@ Como posso ajudar hoje?`,
             onKeyPress={handleKeyPress}
             placeholder="Digite sua pergunta sobre financas..."
             disabled={isLoading}
-            className="flex-1 px-4 py-3 ceramic-inset rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="flex-1 px-4 py-3 ceramic-inset rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isLoading}
-            className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-5 h-5" />
           </button>

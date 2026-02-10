@@ -44,3 +44,9 @@ export { CeramicFilterTab } from './CeramicFilterTab';
 export { CeramicBadge } from './CeramicBadge';
 export { InfoCard } from './InfoCard';
 export { MasonryGrid } from './MasonryGrid';
+
+// Ceramic Renaissance foundation components (Issue #216)
+export { PageShell } from './PageShell';
+export { CeramicLoadingState } from './CeramicLoadingState';
+export { CeramicErrorState } from './CeramicErrorState';
+export { AIThinkingState } from './AIThinkingState';

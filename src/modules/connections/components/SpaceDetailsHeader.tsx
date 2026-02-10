@@ -14,10 +14,10 @@ interface SpaceDetailsHeaderProps {
 
 // Archetype color mappings
 const ARCHETYPE_COLORS = {
-  habitat: 'amber-600',
-  ventures: 'slate-600',
-  academia: 'blue-700',
-  tribo: 'emerald-600',
+  habitat: 'ceramic-warning',
+  ventures: 'ceramic-text-secondary',
+  academia: 'ceramic-info',
+  tribo: 'ceramic-success',
 } as const;
 
 export const SpaceDetailsHeader: React.FC<SpaceDetailsHeaderProps> = ({

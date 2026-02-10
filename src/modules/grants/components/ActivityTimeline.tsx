@@ -94,14 +94,14 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
     <div
       className={`
         relative flex gap-4 pb-6 cursor-pointer
-        hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors
+        hover:bg-ceramic-base -mx-2 px-2 rounded-lg transition-colors
       `}
       onClick={onClick}
     >
       {/* Timeline connector */}
       {!isLast && (
         <div
-          className="absolute left-[19px] top-10 bottom-0 w-0.5 bg-gray-200"
+          className="absolute left-[19px] top-10 bottom-0 w-0.5 bg-ceramic-cool"
           aria-hidden="true"
         />
       )}
@@ -119,12 +119,12 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="font-medium text-gray-900">{activity.title}</p>
-            <p className="text-sm text-gray-500">
+            <p className="font-medium text-ceramic-text-primary">{activity.title}</p>
+            <p className="text-sm text-ceramic-text-secondary">
               {ACTIVITY_TYPE_LABELS[activity.activity_type]}
             </p>
           </div>
-          <div className="flex-shrink-0 flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex-shrink-0 flex items-center gap-2 text-xs text-ceramic-text-secondary">
             <Clock className="w-3 h-3" />
             {formatDate(activity.activity_date)}
           </div>
@@ -132,13 +132,13 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
 
         {/* Sponsor info (when showing multiple sponsors) */}
         {showSponsorInfo && activity.sponsor && (
-          <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
+          <div className="mt-1 flex items-center gap-2 text-sm text-ceramic-text-secondary">
             <Building2 className="w-4 h-4" />
             <span>{activity.sponsor.company_name || activity.sponsor.contact_name}</span>
             {activity.sponsor.project && (
               <>
-                <ChevronRight className="w-3 h-3 text-gray-400" />
-                <span className="text-gray-400">{activity.sponsor.project.project_name}</span>
+                <ChevronRight className="w-3 h-3 text-ceramic-text-secondary" />
+                <span className="text-ceramic-text-secondary">{activity.sponsor.project.project_name}</span>
               </>
             )}
           </div>
@@ -146,7 +146,7 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
 
         {/* Description */}
         {activity.description && (
-          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+          <p className="mt-2 text-sm text-ceramic-text-secondary line-clamp-2">
             {activity.description}
           </p>
         )}
@@ -168,14 +168,14 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
 
         {/* Next action */}
         {activity.next_action && (
-          <div className="mt-2 p-2 bg-blue-50 rounded-lg text-sm">
-            <div className="flex items-center gap-2 text-blue-700">
+          <div className="mt-2 p-2 bg-ceramic-info-bg rounded-lg text-sm">
+            <div className="flex items-center gap-2 text-ceramic-info">
               <RefreshCw className="w-4 h-4" />
               <span className="font-medium">Proxima acao:</span>
             </div>
-            <p className="mt-1 text-blue-600">{activity.next_action}</p>
+            <p className="mt-1 text-ceramic-info">{activity.next_action}</p>
             {activity.next_action_date && (
-              <p className="mt-1 text-xs text-blue-500 flex items-center gap-1">
+              <p className="mt-1 text-xs text-ceramic-info flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {new Date(activity.next_action_date).toLocaleDateString('pt-BR')}
               </p>
@@ -185,7 +185,7 @@ function ActivityItem({ activity, showSponsorInfo, isLast, onClick }: ActivityIt
 
         {/* Duration (for calls and meetings) */}
         {activity.duration_minutes && (
-          <p className="mt-2 text-xs text-gray-400">
+          <p className="mt-2 text-xs text-ceramic-text-secondary">
             Duracao: {activity.duration_minutes} min
           </p>
         )}
@@ -213,11 +213,11 @@ export function ActivityTimeline({
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex gap-4 animate-pulse">
-            <div className="w-10 h-10 rounded-full bg-gray-200" />
+            <div className="w-10 h-10 rounded-full bg-ceramic-cool" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-              <div className="h-3 bg-gray-200 rounded w-1/2" />
-              <div className="h-3 bg-gray-200 rounded w-full" />
+              <div className="h-4 bg-ceramic-cool rounded w-3/4" />
+              <div className="h-3 bg-ceramic-cool rounded w-1/2" />
+              <div className="h-3 bg-ceramic-cool rounded w-full" />
             </div>
           </div>
         ))}
@@ -227,7 +227,7 @@ export function ActivityTimeline({
 
   if (activities.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-ceramic-text-secondary">
         <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
         <p>{emptyMessage}</p>
       </div>
@@ -249,7 +249,7 @@ export function ActivityTimeline({
       {hasMore && (
         <div className="text-center pt-2">
           <button
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sm text-ceramic-info hover:text-ceramic-info font-medium"
             onClick={() => {
               // Poderia disparar um evento para mostrar mais
             }}
@@ -293,7 +293,7 @@ export function ActivitySummary({ activities, className }: ActivitySummaryProps)
 
   if (activities.length === 0) {
     return (
-      <div className={`text-sm text-gray-400 ${className}`}>
+      <div className={`text-sm text-ceramic-text-secondary ${className}`}>
         Sem atividades registradas
       </div>
     );
@@ -301,10 +301,10 @@ export function ActivitySummary({ activities, className }: ActivitySummaryProps)
 
   return (
     <div className={`text-sm ${className}`}>
-      <div className="flex items-center gap-4 text-gray-600">
+      <div className="flex items-center gap-4 text-ceramic-text-secondary">
         <span>{stats.total} atividades</span>
         {stats.lastActivity && (
-          <span className="text-gray-400">
+          <span className="text-ceramic-text-secondary">
             Ultima: {ACTIVITY_TYPE_LABELS[stats.lastActivity.activity_type]}
           </span>
         )}

@@ -76,13 +76,13 @@ export function WhatsAppMonitoringDashboard() {
   if (error) {
     return (
       <div className="min-h-screen bg-ceramic-base flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+        <div className="bg-ceramic-base rounded-xl shadow-lg p-8 max-w-md text-center">
+          <AlertTriangle className="w-12 h-12 text-ceramic-error mx-auto mb-4" />
           <h2 className="text-xl font-bold text-ceramic-900 mb-2">Erro ao carregar dados</h2>
           <p className="text-ceramic-600 mb-4">{error.message}</p>
           <button
             onClick={refresh}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="px-4 py-2 bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success/80 transition-colors"
           >
             Tentar novamente
           </button>
@@ -94,7 +94,7 @@ export function WhatsAppMonitoringDashboard() {
   return (
     <div className="min-h-screen bg-ceramic-base">
       {/* Header */}
-      <header className="bg-white border-b border-ceramic-200 sticky top-0 z-10">
+      <header className="bg-ceramic-base border-b border-ceramic-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -144,10 +144,10 @@ export function WhatsAppMonitoringDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
         >
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-200">
+          <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Activity className="w-5 h-5 text-green-600" />
+              <div className="p-2 bg-ceramic-success/10 rounded-lg">
+                <Activity className="w-5 h-5 text-ceramic-success" />
               </div>
               <div>
                 <p className="text-sm text-ceramic-500">Total Instâncias</p>
@@ -158,10 +158,10 @@ export function WhatsAppMonitoringDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-200">
+          <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-ceramic-info/10 rounded-lg">
+                <Users className="w-5 h-5 text-ceramic-info" />
               </div>
               <div>
                 <p className="text-sm text-ceramic-500">Total Contatos</p>
@@ -172,10 +172,10 @@ export function WhatsAppMonitoringDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-200">
+          <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <MessageSquare className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-ceramic-accent/10 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-ceramic-accent" />
               </div>
               <div>
                 <p className="text-sm text-ceramic-500">Mensagens Sync</p>
@@ -186,10 +186,10 @@ export function WhatsAppMonitoringDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-ceramic-200">
+          <div className="bg-ceramic-base rounded-xl p-4 shadow-sm border border-ceramic-200">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <div className="p-2 bg-ceramic-warning/10 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-ceramic-warning" />
               </div>
               <div>
                 <p className="text-sm text-ceramic-500">Com Erros</p>
@@ -209,7 +209,7 @@ export function WhatsAppMonitoringDashboard() {
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           {/* Capacity Gauge */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-ceramic-200">
+          <div className="bg-ceramic-base rounded-xl p-6 shadow-sm border border-ceramic-200">
             <h3 className="text-lg font-semibold text-ceramic-900 mb-4 text-center">
               Capacidade do Servidor
             </h3>
@@ -221,7 +221,7 @@ export function WhatsAppMonitoringDashboard() {
           </div>
 
           {/* Status Pie Chart */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-ceramic-200">
+          <div className="bg-ceramic-base rounded-xl p-6 shadow-sm border border-ceramic-200">
             <h3 className="text-lg font-semibold text-ceramic-900 mb-4 text-center">
               Status das Instâncias
             </h3>
@@ -260,7 +260,7 @@ export function WhatsAppMonitoringDashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-ceramic-200 mt-8">
+      <footer className="bg-ceramic-base border-t border-ceramic-200 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between text-sm text-ceramic-500">
             <p>

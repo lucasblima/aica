@@ -32,13 +32,13 @@ const getJourneyTypeIcon = (type: string): string => {
  */
 const getStatusColor = (status: string): string => {
   const colors: Record<string, string> = {
-    planned: 'text-stone-400 bg-stone-50',
-    active: 'text-emerald-700 bg-emerald-50',
-    paused: 'text-amber-700 bg-amber-50',
-    completed: 'text-green-700 bg-green-50',
-    abandoned: 'text-rose-700 bg-rose-50',
+    planned: 'text-ceramic-text-tertiary bg-ceramic-cool',
+    active: 'text-ceramic-success bg-ceramic-success/10',
+    paused: 'text-ceramic-warning bg-ceramic-warning/10',
+    completed: 'text-ceramic-success bg-ceramic-success/10',
+    abandoned: 'text-ceramic-error bg-ceramic-error/10',
   };
-  return colors[status] || 'text-stone-400 bg-stone-50';
+  return colors[status] || 'text-ceramic-text-tertiary bg-ceramic-cool';
 };
 
 /**
@@ -69,7 +69,7 @@ const ProgressRing: React.FC<{ progress: number; size?: number }> = ({
           stroke="currentColor"
           strokeWidth={strokeWidth}
           fill="none"
-          className="text-stone-200"
+          className="text-ceramic-border"
         />
         {/* Progress circle */}
         <circle
@@ -81,13 +81,13 @@ const ProgressRing: React.FC<{ progress: number; size?: number }> = ({
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className="text-emerald-600 transition-all duration-500"
+          className="text-ceramic-success transition-all duration-500"
           strokeLinecap="round"
         />
       </svg>
       {/* Progress text */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-lg font-light text-stone-900">{progress}%</span>
+        <span className="text-lg font-light text-ceramic-text-primary">{progress}%</span>
       </div>
     </div>
   );
@@ -111,7 +111,7 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onClick }) =>
     <div
       onClick={onClick}
       className={`
-        bg-white border border-stone-200 rounded-sm p-6
+        bg-ceramic-base border border-ceramic-border rounded-sm p-6
         hover:shadow-md transition-all duration-200
         ${onClick ? 'cursor-pointer' : ''}
       `}
@@ -121,11 +121,11 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onClick }) =>
         <div className="flex items-start gap-3 flex-1">
           <span className="text-3xl">{getJourneyTypeIcon(journey_type)}</span>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-normal text-stone-900 mb-1 truncate">
+            <h3 className="text-lg font-normal text-ceramic-text-primary mb-1 truncate">
               {title}
             </h3>
             {(provider || instructor) && (
-              <p className="text-xs text-stone-500 font-light tracking-wide">
+              <p className="text-xs text-ceramic-text-secondary font-light tracking-wide">
                 {provider && instructor
                   ? `${provider} • ${instructor}`
                   : provider || instructor}
@@ -154,10 +154,10 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onClick }) =>
       <div className="space-y-2 mb-4">
         {total_modules && (
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-stone-500 font-light tracking-wide">
+            <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
               Modules
             </span>
-            <span className="text-sm text-stone-700 font-light">
+            <span className="text-sm text-ceramic-text-primary font-light">
               {completed_modules} / {total_modules}
             </span>
           </div>
@@ -165,10 +165,10 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onClick }) =>
 
         {(logged_hours > 0 || estimated_hours) && (
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-stone-500 font-light tracking-wide">
+            <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
               Time
             </span>
-            <span className="text-sm text-stone-700 font-light">
+            <span className="text-sm text-ceramic-text-primary font-light">
               {logged_hours}h
               {estimated_hours && ` / ${estimated_hours}h`}
             </span>
@@ -178,8 +178,8 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onClick }) =>
 
       {/* Footer - Next Milestone or Completion */}
       {status === 'completed' ? (
-        <div className="pt-3 border-t border-stone-100">
-          <div className="flex items-center gap-2 text-green-700">
+        <div className="pt-3 border-t border-ceramic-border">
+          <div className="flex items-center gap-2 text-ceramic-success">
             <svg
               className="w-4 h-4"
               fill="none"
@@ -197,8 +197,8 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onClick }) =>
           </div>
         </div>
       ) : status === 'active' && total_modules ? (
-        <div className="pt-3 border-t border-stone-100">
-          <span className="text-xs text-stone-500 font-light tracking-wide">
+        <div className="pt-3 border-t border-ceramic-border">
+          <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
             Next: Module {completed_modules + 1}
           </span>
         </div>

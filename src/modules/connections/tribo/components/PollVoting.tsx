@@ -52,7 +52,7 @@ export const PollVoting: React.FC<PollVotingProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#9B4D3A]/20 overflow-hidden">
+    <div className="bg-ceramic-base rounded-2xl border-2 border-[#9B4D3A]/20 overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-ceramic-100 bg-gradient-to-r from-[#9B4D3A]/5 to-transparent">
         <div className="flex items-center gap-2 mb-3">
@@ -100,8 +100,8 @@ export const PollVoting: React.FC<PollVotingProps> = ({
         </div>
 
         {userVote && (
-          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-            <div className="flex items-center gap-2 text-blue-800 text-sm">
+          <div className="mt-3 p-3 bg-ceramic-info/10 rounded-lg">
+            <div className="flex items-center gap-2 text-ceramic-info text-sm">
               <span>✓</span>
               <span>Você já votou nesta enquete</span>
             </div>
@@ -126,8 +126,8 @@ export const PollVoting: React.FC<PollVotingProps> = ({
                 isUserVote
                   ? 'bg-[#9B4D3A]/10 border-[#9B4D3A] shadow-lg'
                   : isWinning && totalVotes > 0
-                  ? 'bg-green-50 border-green-300'
-                  : 'bg-white border-ceramic-200 hover:border-[#9B4D3A]/40 hover:shadow-md'
+                  ? 'bg-ceramic-success/10 border-ceramic-success/30'
+                  : 'bg-ceramic-base border-ceramic-border hover:border-[#9B4D3A]/40 hover:shadow-md'
               } ${
                 !canVote || userVote ? 'cursor-default' : 'cursor-pointer'
               }`}
@@ -157,7 +157,7 @@ export const PollVoting: React.FC<PollVotingProps> = ({
                   </span>
 
                   {isWinning && totalVotes > 0 && (
-                    <span className="text-green-600 text-lg">👑</span>
+                    <span className="text-ceramic-success text-lg">👑</span>
                   )}
                 </div>
 
@@ -182,7 +182,7 @@ export const PollVoting: React.FC<PollVotingProps> = ({
                       isUserVote
                         ? 'bg-[#9B4D3A]'
                         : isWinning
-                        ? 'bg-green-500'
+                        ? 'bg-ceramic-success'
                         : 'bg-ceramic-400'
                     }`}
                     style={{ width: `${percentage}%` }}
@@ -201,13 +201,13 @@ export const PollVoting: React.FC<PollVotingProps> = ({
             Resultado Final
           </h3>
           {winningOptions.length === 1 ? (
-            <div className="flex items-center gap-3 p-4 bg-green-100 rounded-lg">
+            <div className="flex items-center gap-3 p-4 bg-ceramic-success/15 rounded-lg">
               <span className="text-2xl">🎉</span>
               <div>
-                <div className="font-semibold text-green-900">
+                <div className="font-semibold text-ceramic-success">
                   Opção vencedora
                 </div>
-                <div className="text-green-800">
+                <div className="text-ceramic-success">
                   "{winningOptions[0].text}" com {maxVotes}{' '}
                   {maxVotes === 1 ? 'voto' : 'votos'} (
                   {((maxVotes / totalVotes) * 100).toFixed(0)}%)
@@ -215,11 +215,11 @@ export const PollVoting: React.FC<PollVotingProps> = ({
               </div>
             </div>
           ) : winningOptions.length > 1 ? (
-            <div className="flex items-center gap-3 p-4 bg-yellow-100 rounded-lg">
+            <div className="flex items-center gap-3 p-4 bg-ceramic-warning/15 rounded-lg">
               <span className="text-2xl">🤝</span>
               <div>
-                <div className="font-semibold text-yellow-900">Empate</div>
-                <div className="text-yellow-800">
+                <div className="font-semibold text-ceramic-warning">Empate</div>
+                <div className="text-ceramic-warning">
                   {winningOptions.length} opções empatadas com {maxVotes}{' '}
                   {maxVotes === 1 ? 'voto' : 'votos'}
                 </div>

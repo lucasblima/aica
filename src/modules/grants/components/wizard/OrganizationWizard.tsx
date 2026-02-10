@@ -61,10 +61,10 @@ function FieldInput({
     w-full px-4 py-3 border rounded-xl
     focus:outline-none focus:ring-2 focus:border-transparent
     transition-all duration-200
-    placeholder:text-gray-400
+    placeholder:text-ceramic-text-secondary
     ${hasError
-      ? 'border-red-300 focus:ring-red-500 bg-red-50'
-      : 'border-gray-200 focus:ring-amber-500'
+      ? 'border-ceramic-error/30 focus:ring-ceramic-error bg-ceramic-error-bg'
+      : 'border-ceramic-border focus:ring-amber-500'
     }
   `;
 
@@ -130,7 +130,7 @@ function FieldInput({
                       px-3 py-1.5 rounded-full text-sm font-medium transition-all
                       ${isSelected
                         ? 'bg-amber-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool'
                       }
                     `}
                     whileHover={{ scale: 1.05 }}
@@ -142,7 +142,7 @@ function FieldInput({
               })}
             </div>
             {selectedValues.length > 0 && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ceramic-text-secondary">
                 {selectedValues.length} selecionado(s)
               </p>
             )}
@@ -177,10 +177,10 @@ function FieldInput({
 
       case 'image':
         return (
-          <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-amber-300 transition-colors cursor-pointer">
-            <Building2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">{field.placeholder || 'Clique para fazer upload'}</p>
-            <p className="text-xs text-gray-400 mt-1">PNG, JPG ate 5MB</p>
+          <div className="border-2 border-dashed border-ceramic-border rounded-xl p-6 text-center hover:border-amber-300 transition-colors cursor-pointer">
+            <Building2 className="w-8 h-8 text-ceramic-text-secondary mx-auto mb-2" />
+            <p className="text-sm text-ceramic-text-secondary">{field.placeholder || 'Clique para fazer upload'}</p>
+            <p className="text-xs text-ceramic-text-secondary mt-1">PNG, JPG ate 5MB</p>
           </div>
         );
 
@@ -202,9 +202,9 @@ function FieldInput({
   return (
     <div className="relative">
       <label className="block mb-2">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-ceramic-text-primary">
           {field.label}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
+          {field.required && <span className="text-ceramic-error ml-1">*</span>}
         </span>
         <span className="float-right text-xs text-amber-500">
           +{field.xpValue} XP
@@ -219,7 +219,7 @@ function FieldInput({
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="flex items-center gap-1.5 mt-1.5 text-red-600"
+            className="flex items-center gap-1.5 mt-1.5 text-ceramic-error"
           >
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="text-xs">{validationError}</span>
@@ -303,10 +303,10 @@ function StepContent({ fields, formData, fieldXpMap, onFieldChange }: StepConten
         >
           {String.fromCodePoint(0x1F389)}
         </motion.div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+        <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">
           Revisao Final
         </h3>
-        <p className="text-gray-500">
+        <p className="text-ceramic-text-secondary">
           Revise os dados e clique em Finalizar para salvar sua organizacao.
         </p>
       </div>
@@ -429,26 +429,26 @@ export function OrganizationWizard({
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           />
-          <p className="text-gray-500">Carregando...</p>
+          <p className="text-ceramic-text-secondary">Carregando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div data-testid="organization-wizard" className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-4xl mx-auto">
+    <div data-testid="organization-wizard" className="bg-ceramic-base rounded-2xl shadow-xl overflow-hidden max-w-4xl mx-auto">
       {/* Header */}
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-6 border-b border-ceramic-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
               <Building2 className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-ceramic-text-primary">
                 Cadastro de Organizacao
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-ceramic-text-secondary">
                 Complete seu perfil para ganhar XP e desbloquear recursos
               </p>
             </div>
@@ -457,7 +457,7 @@ export function OrganizationWizard({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-secondary hover:bg-ceramic-base rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -482,14 +482,14 @@ export function OrganizationWizard({
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3"
+                className="mt-3 p-3 bg-ceramic-success/10 border border-ceramic-success/30 rounded-xl flex items-center gap-3"
               >
-                <Sparkles className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <Sparkles className="w-5 h-5 text-ceramic-success flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-green-700">
+                  <p className="text-sm font-medium text-ceramic-success">
                     {autoFilledFields.length} campo(s) preenchido(s) automaticamente!
                   </p>
-                  <p className="text-xs text-green-600">
+                  <p className="text-xs text-ceramic-success">
                     +{autoFilledFields.reduce((sum, f) => {
                       const field = WIZARD_STEPS.flatMap(s => s.fields).find(fl => fl.name === f.fieldName);
                       return sum + (field?.xpValue || 0);
@@ -553,7 +553,7 @@ export function OrganizationWizard({
           {/* Error Display */}
           {error && (
             <motion.div
-              className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg text-sm"
+              className="mt-4 p-4 bg-ceramic-error-bg text-ceramic-error rounded-lg text-sm"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -578,25 +578,25 @@ export function OrganizationWizard({
           />
 
           {/* Stats */}
-          <div className="p-4 bg-gray-50 rounded-xl">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
+          <div className="p-4 bg-ceramic-base rounded-xl">
+            <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3">
               Seu Progresso
             </h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Campos preenchidos</span>
+                <span className="text-ceramic-text-secondary">Campos preenchidos</span>
                 <span className="font-medium">
                   {progress.filledFieldsCount}/{progress.totalFieldsCount}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Obrigatorios</span>
+                <span className="text-ceramic-text-secondary">Obrigatorios</span>
                 <span className="font-medium">
                   {progress.filledRequiredCount}/{progress.requiredFieldsCount}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Etapas concluidas</span>
+                <span className="text-ceramic-text-secondary">Etapas concluidas</span>
                 <span className="font-medium">
                   {progress.completedStepsCount}/{progress.totalStepsCount}
                 </span>
@@ -606,7 +606,7 @@ export function OrganizationWizard({
 
           {/* Auto-save indicator */}
           {state.lastSavedAt && (
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-ceramic-text-secondary text-center">
               Salvo automaticamente as {new Date(state.lastSavedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </p>
           )}

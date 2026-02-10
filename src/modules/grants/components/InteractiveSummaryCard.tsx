@@ -29,8 +29,8 @@ export const InteractiveSummaryCard: React.FC<InteractiveSummaryCardProps> = ({
 
   const iconColors = {
     default: 'text-ceramic-accent',
-    success: 'text-green-600',
-    warning: 'text-orange-600'
+    success: 'text-ceramic-success',
+    warning: 'text-ceramic-warning'
   };
 
   return (

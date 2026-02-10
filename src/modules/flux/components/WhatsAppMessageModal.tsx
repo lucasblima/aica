@@ -168,7 +168,7 @@ export function WhatsAppMessageModal({
   if (!isOpen) return null;
 
   const adherence = athlete.adherence_rate || 0;
-  const adherenceColor = adherence >= 80 ? 'text-green-600' : adherence >= 60 ? 'text-amber-600' : 'text-red-600';
+  const adherenceColor = adherence >= 80 ? 'text-ceramic-success' : adherence >= 60 ? 'text-ceramic-warning' : 'text-ceramic-error';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -176,8 +176,8 @@ export function WhatsAppMessageModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-ceramic-text-secondary/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 rounded-full bg-ceramic-success/20 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-ceramic-success" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-ceramic-text-primary">
@@ -216,8 +216,8 @@ export function WhatsAppMessageModal({
           {/* Alert indicators */}
           {alerts.length > 0 && (
             <div className="mt-3 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <span className="text-xs text-amber-700 font-medium">
+              <AlertCircle className="w-4 h-4 text-ceramic-warning" />
+              <span className="text-xs text-ceramic-warning font-medium">
                 {alerts.length} alerta(s) ativo(s)
               </span>
             </div>
@@ -227,8 +227,8 @@ export function WhatsAppMessageModal({
         {/* AI Generated Badge */}
         <div className="px-4 pt-4">
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-purple-600" />
-            <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">
+            <Sparkles className="w-4 h-4 text-ceramic-accent" />
+            <span className="text-xs font-bold text-ceramic-accent uppercase tracking-wider">
               Mensagem gerada por IA
             </span>
           </div>
@@ -240,13 +240,13 @@ export function WhatsAppMessageModal({
             <textarea
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
-              className="w-full h-48 p-4 bg-white rounded-xl border border-ceramic-text-secondary/20 text-sm text-ceramic-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-green-500/50"
+              className="w-full h-48 p-4 bg-ceramic-base rounded-xl border border-ceramic-text-secondary/20 text-sm text-ceramic-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-ceramic-success/50"
               placeholder="Digite sua mensagem..."
             />
           ) : (
             <div
               onClick={handleStartEdit}
-              className="w-full h-48 p-4 bg-white rounded-xl border border-ceramic-text-secondary/20 text-sm text-ceramic-text-primary whitespace-pre-wrap overflow-y-auto cursor-text hover:border-green-500/50 transition-colors"
+              className="w-full h-48 p-4 bg-ceramic-base rounded-xl border border-ceramic-text-secondary/20 text-sm text-ceramic-text-primary whitespace-pre-wrap overflow-y-auto cursor-text hover:border-ceramic-success/50 transition-colors"
             >
               {generatedMessage}
             </div>
@@ -277,7 +277,7 @@ export function WhatsAppMessageModal({
 
           <button
             onClick={handleSendWhatsApp}
-            className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-6 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg transition-colors"
           >
             <Send className="w-4 h-4" />
             <span className="font-bold">Enviar</span>

@@ -54,10 +54,10 @@ function FloatingMessageCard({
   const shouldReduceMotion = useReducedMotion();
 
   const categoryColorClasses = {
-    atlas: 'bg-blue-500',
-    journey: 'bg-purple-500',
-    studio: 'bg-orange-500',
-    connections: 'bg-emerald-500'
+    atlas: 'bg-ceramic-info',
+    journey: 'bg-ceramic-accent',
+    studio: 'bg-ceramic-warning',
+    connections: 'bg-ceramic-success'
   };
 
   // Posicao aleatoria mas deterministica (baseada no index)
@@ -66,7 +66,7 @@ function FloatingMessageCard({
   const randomRotate = (index * 23.5) % 30 - 15;
   const zIndex = total - index;
 
-  const categoryColorClass = message.category ? categoryColorClasses[message.category] : 'bg-gray-500';
+  const categoryColorClass = message.category ? categoryColorClasses[message.category] : 'bg-ceramic-text-secondary';
 
   const formatRelativeDate = (date: Date) => {
     const now = new Date();
@@ -113,24 +113,24 @@ function FloatingMessageCard({
       </p>
 
       {/* Footer */}
-      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-100">
+      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-ceramic-border">
         <span className="text-xs">
           {message.sender === 'user' ? '📤' : '📥'}
         </span>
         <span className="text-xs font-bold text-ceramic-text-primary">
           {message.senderName}
         </span>
-        <span className="text-[10px] text-gray-400">
+        <span className="text-[10px] text-ceramic-text-secondary">
           • {formatRelativeDate(message.timestamp)}
         </span>
         {/* Chaos Level Indicator */}
         <div className="ml-auto flex items-center gap-1">
           <div
-            className="w-8 h-1 rounded-full bg-gray-200 overflow-hidden"
+            className="w-8 h-1 rounded-full bg-ceramic-cool overflow-hidden"
             title={`Nivel de caos: ${message.chaos_level}%`}
           >
             <div
-              className="h-full bg-orange-400 rounded-full"
+              className="h-full bg-ceramic-warning rounded-full"
               style={{ width: `${message.chaos_level}%` }}
             />
           </div>

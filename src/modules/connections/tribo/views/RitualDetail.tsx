@@ -64,9 +64,9 @@ export const RitualDetail: React.FC<RitualDetailProps> = ({
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-white to-ceramic-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-ceramic-base to-ceramic-50">
       {/* Header */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-100">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <button
             onClick={() => navigate(-1)}
@@ -120,29 +120,29 @@ export const RitualDetail: React.FC<RitualDetailProps> = ({
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* RSVP Summary */}
-        <div className="bg-white rounded-2xl border-2 border-ceramic-200 p-6">
+        <div className="bg-ceramic-base rounded-2xl border-2 border-ceramic-200 p-6">
           <h2 className="text-xl font-semibold text-ceramic-900 mb-4">
             📊 Confirmações
           </h2>
 
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-green-50 rounded-xl">
-              <div className="text-3xl font-bold text-green-600">
+            <div className="text-center p-4 bg-ceramic-success/10 rounded-xl">
+              <div className="text-3xl font-bold text-ceramic-success">
                 {rsvpCounts.yes}
               </div>
-              <div className="text-sm text-green-700">Confirmados</div>
+              <div className="text-sm text-ceramic-success">Confirmados</div>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-xl">
-              <div className="text-3xl font-bold text-yellow-600">
+            <div className="text-center p-4 bg-ceramic-warning/10 rounded-xl">
+              <div className="text-3xl font-bold text-ceramic-warning">
                 {rsvpCounts.maybe}
               </div>
-              <div className="text-sm text-yellow-700">Talvez</div>
+              <div className="text-sm text-ceramic-warning">Talvez</div>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-xl">
-              <div className="text-3xl font-bold text-red-600">
+            <div className="text-center p-4 bg-ceramic-error/10 rounded-xl">
+              <div className="text-3xl font-bold text-ceramic-error">
                 {rsvpCounts.no}
               </div>
-              <div className="text-sm text-red-700">Não vão</div>
+              <div className="text-sm text-ceramic-error">Não vão</div>
             </div>
           </div>
 
@@ -164,7 +164,7 @@ export const RitualDetail: React.FC<RitualDetailProps> = ({
                     </div>
                     <button
                       onClick={() => setShowRSVPModal(true)}
-                      className="px-4 py-2 bg-white text-[#9B4D3A] rounded-lg font-medium hover:bg-ceramic-50 transition-colors"
+                      className="px-4 py-2 bg-ceramic-base text-[#9B4D3A] rounded-lg font-medium hover:bg-ceramic-50 transition-colors"
                     >
                       Alterar
                     </button>
@@ -184,18 +184,18 @@ export const RitualDetail: React.FC<RitualDetailProps> = ({
 
         {/* Notes */}
         {occurrence.notes && (
-          <div className="bg-blue-50 rounded-2xl border-2 border-blue-200 p-6">
-            <h2 className="text-xl font-semibold text-blue-900 mb-3">
+          <div className="bg-ceramic-info/10 rounded-2xl border-2 border-ceramic-info/30 p-6">
+            <h2 className="text-xl font-semibold text-ceramic-info mb-3">
               📝 Informações Importantes
             </h2>
-            <p className="text-blue-800 whitespace-pre-wrap">
+            <p className="text-ceramic-info whitespace-pre-wrap">
               {occurrence.notes}
             </p>
           </div>
         )}
 
         {/* Bring List */}
-        <div className="bg-white rounded-2xl border-2 border-ceramic-200 p-6">
+        <div className="bg-ceramic-base rounded-2xl border-2 border-ceramic-200 p-6">
           <BringListEditor
             occurrenceId={occurrence.id}
             bringList={occurrence.bringList}
@@ -206,12 +206,12 @@ export const RitualDetail: React.FC<RitualDetailProps> = ({
 
         {/* Past Event Info */}
         {occurrence.status === 'completed' && (
-          <div className="bg-green-50 rounded-2xl border-2 border-green-200 p-6">
-            <h2 className="text-xl font-semibold text-green-900 mb-3">
+          <div className="bg-ceramic-success/10 rounded-2xl border-2 border-ceramic-success/30 p-6">
+            <h2 className="text-xl font-semibold text-ceramic-success mb-3">
               ✓ Evento Realizado
             </h2>
             {occurrence.actualAttendance && (
-              <p className="text-green-800">
+              <p className="text-ceramic-success">
                 Presença: {occurrence.actualAttendance} pessoas
               </p>
             )}
@@ -219,8 +219,8 @@ export const RitualDetail: React.FC<RitualDetailProps> = ({
         )}
 
         {occurrence.status === 'cancelled' && (
-          <div className="bg-red-50 rounded-2xl border-2 border-red-200 p-6">
-            <h2 className="text-xl font-semibold text-red-900 mb-3">
+          <div className="bg-ceramic-error/10 rounded-2xl border-2 border-ceramic-error/30 p-6">
+            <h2 className="text-xl font-semibold text-ceramic-error mb-3">
               ✗ Evento Cancelado
             </h2>
           </div>

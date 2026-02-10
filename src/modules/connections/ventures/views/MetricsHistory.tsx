@@ -40,26 +40,26 @@ export function MetricsHistory() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-neutral-900 mb-2">Erro ao carregar métricas</h2>
-          <p className="text-sm text-neutral-600">{error}</p>
+          <h2 className="text-xl font-semibold text-ceramic-text-primary mb-2">Erro ao carregar métricas</h2>
+          <p className="text-sm text-ceramic-text-secondary">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-ceramic-base">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">
           <button
             onClick={() => navigate(-1)}
-            className="text-sm text-neutral-600 hover:text-neutral-900 mb-2"
+            className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary mb-2"
           >
             ← Voltar
           </button>
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-neutral-900">Histórico de Métricas</h1>
+            <h1 className="text-2xl font-bold text-ceramic-text-primary">Histórico de Métricas</h1>
 
             {/* Period Selector */}
             <div className="flex gap-2">
@@ -72,7 +72,7 @@ export function MetricsHistory() {
                     ${
                       selectedPeriod === period
                         ? 'bg-amber-700 text-white'
-                        : 'bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50'
+                        : 'bg-ceramic-base text-ceramic-text-primary border border-ceramic-border hover:bg-ceramic-cool'
                     }
                   `}
                 >
@@ -86,7 +86,7 @@ export function MetricsHistory() {
         {/* Current Metrics Summary */}
         {currentMetrics && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">Período Atual</h2>
+            <h2 className="text-lg font-semibold text-ceramic-text-primary mb-4">Período Atual</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <MetricsCard
                 label="MRR"
@@ -119,41 +119,41 @@ export function MetricsHistory() {
         {/* MRR Chart */}
         {filteredMetrics.length > 0 && (
           <div className="mb-8">
-            <div className="bg-white rounded-lg border border-neutral-200 p-6">
+            <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-6">
               <MRRChart metricsHistory={filteredMetrics} showARR={true} />
             </div>
           </div>
         )}
 
         {/* Metrics Table */}
-        <div className="bg-white rounded-lg border border-neutral-200">
+        <div className="bg-ceramic-base rounded-lg border border-ceramic-border">
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">Histórico Detalhado</h2>
+            <h2 className="text-lg font-semibold text-ceramic-text-primary mb-4">Histórico Detalhado</h2>
 
             {filteredMetrics.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-neutral-200">
-                      <th className="text-left text-xs font-semibold text-neutral-700 pb-3 pr-4">
+                    <tr className="border-b border-ceramic-border">
+                      <th className="text-left text-xs font-semibold text-ceramic-text-primary pb-3 pr-4">
                         Período
                       </th>
-                      <th className="text-right text-xs font-semibold text-neutral-700 pb-3 pr-4">
+                      <th className="text-right text-xs font-semibold text-ceramic-text-primary pb-3 pr-4">
                         MRR
                       </th>
-                      <th className="text-right text-xs font-semibold text-neutral-700 pb-3 pr-4">
+                      <th className="text-right text-xs font-semibold text-ceramic-text-primary pb-3 pr-4">
                         Revenue
                       </th>
-                      <th className="text-right text-xs font-semibold text-neutral-700 pb-3 pr-4">
+                      <th className="text-right text-xs font-semibold text-ceramic-text-primary pb-3 pr-4">
                         Expenses
                       </th>
-                      <th className="text-right text-xs font-semibold text-neutral-700 pb-3 pr-4">
+                      <th className="text-right text-xs font-semibold text-ceramic-text-primary pb-3 pr-4">
                         Margin
                       </th>
-                      <th className="text-right text-xs font-semibold text-neutral-700 pb-3 pr-4">
+                      <th className="text-right text-xs font-semibold text-ceramic-text-primary pb-3 pr-4">
                         Customers
                       </th>
-                      <th className="text-right text-xs font-semibold text-neutral-700 pb-3">
+                      <th className="text-right text-xs font-semibold text-ceramic-text-primary pb-3">
                         Runway
                       </th>
                     </tr>
@@ -168,18 +168,18 @@ export function MetricsHistory() {
                       return (
                         <tr
                           key={metric.id}
-                          className="border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50"
+                          className="border-b border-ceramic-border/50 last:border-b-0 hover:bg-ceramic-cool"
                         >
                           {/* Period */}
                           <td className="py-3 pr-4">
-                            <div className="text-sm font-medium text-neutral-900">
+                            <div className="text-sm font-medium text-ceramic-text-primary">
                               {new Date(metric.period_start).toLocaleDateString('pt-BR', {
                                 month: 'short',
                                 year: 'numeric',
                               })}
                             </div>
                             {metric.is_projected && (
-                              <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                              <span className="text-xs text-ceramic-info bg-ceramic-info/10 px-1.5 py-0.5 rounded">
                                 Projeção
                               </span>
                             )}
@@ -187,13 +187,13 @@ export function MetricsHistory() {
 
                           {/* MRR */}
                           <td className="py-3 pr-4 text-right">
-                            <div className="text-sm font-semibold text-neutral-900">
+                            <div className="text-sm font-semibold text-ceramic-text-primary">
                               {formatCurrency(metric.mrr)}
                             </div>
                             {mrrGrowth !== null && (
                               <div
                                 className={`text-xs ${
-                                  mrrGrowth >= 0 ? 'text-green-600' : 'text-red-600'
+                                  mrrGrowth >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'
                                 }`}
                               >
                                 {mrrGrowth >= 0 ? '↑' : '↓'} {Math.abs(mrrGrowth).toFixed(1)}%
@@ -202,24 +202,24 @@ export function MetricsHistory() {
                           </td>
 
                           {/* Revenue */}
-                          <td className="py-3 pr-4 text-right text-sm text-neutral-700">
+                          <td className="py-3 pr-4 text-right text-sm text-ceramic-text-primary">
                             {formatCurrency(metric.total_revenue)}
                           </td>
 
                           {/* Expenses */}
-                          <td className="py-3 pr-4 text-right text-sm text-neutral-700">
+                          <td className="py-3 pr-4 text-right text-sm text-ceramic-text-primary">
                             {formatCurrency(metric.total_expenses)}
                           </td>
 
                           {/* Margin */}
                           <td className="py-3 pr-4 text-right">
-                            <div className="text-sm text-neutral-700">
+                            <div className="text-sm text-ceramic-text-primary">
                               {formatPercentage(metric.gross_margin_pct)}
                             </div>
                           </td>
 
                           {/* Customers */}
-                          <td className="py-3 pr-4 text-right text-sm text-neutral-700">
+                          <td className="py-3 pr-4 text-right text-sm text-ceramic-text-primary">
                             {metric.active_customers?.toLocaleString('pt-BR') || '-'}
                           </td>
 
@@ -228,12 +228,12 @@ export function MetricsHistory() {
                             <div
                               className={`text-sm font-medium ${
                                 !metric.runway_months
-                                  ? 'text-neutral-400'
+                                  ? 'text-ceramic-text-tertiary'
                                   : metric.runway_months >= 12
-                                  ? 'text-green-700'
+                                  ? 'text-ceramic-success'
                                   : metric.runway_months >= 6
-                                  ? 'text-amber-700'
-                                  : 'text-red-700'
+                                  ? 'text-ceramic-warning'
+                                  : 'text-ceramic-error'
                               }`}
                             >
                               {metric.runway_months ? `${metric.runway_months}m` : '-'}
@@ -248,8 +248,8 @@ export function MetricsHistory() {
             ) : (
               <div className="text-center py-12">
                 <div className="text-4xl mb-2">📊</div>
-                <p className="text-sm text-neutral-600">Nenhuma métrica registrada</p>
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-sm text-ceramic-text-secondary">Nenhuma métrica registrada</p>
+                <p className="text-xs text-ceramic-text-tertiary mt-1">
                   Adicione métricas para acompanhar o desempenho do seu negócio
                 </p>
               </div>

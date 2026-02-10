@@ -122,39 +122,39 @@ export function SpaceCalendarSettings({
   return (
     <div
       className={`
-        bg-white rounded-lg border border-gray-200 p-6
+        bg-ceramic-base rounded-lg border border-ceramic-border p-6
         ${className}
       `}
     >
       {/* Header */}
       <div className="mb-6">
-        <h3 className="text-lg font-bold text-gray-900">Configurações de Calendário</h3>
-        <p className="text-sm text-gray-600 mt-1">
+        <h3 className="text-lg font-bold text-ceramic-text-primary">Configurações de Calendário</h3>
+        <p className="text-sm text-ceramic-text-secondary mt-1">
           Sincronize automaticamente os eventos deste espaço com Google Calendar
         </p>
       </div>
 
       {/* Status Messages */}
       {successMessage && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-800">{successMessage}</p>
+        <div className="mb-4 p-3 bg-ceramic-success-bg border border-ceramic-success/20 rounded-lg">
+          <p className="text-sm text-ceramic-success">{successMessage}</p>
         </div>
       )}
 
       {errorMessage && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">{errorMessage}</p>
+        <div className="mb-4 p-3 bg-ceramic-error-bg border border-ceramic-error/20 rounded-lg">
+          <p className="text-sm text-ceramic-error">{errorMessage}</p>
         </div>
       )}
 
       {/* Auto-Sync Toggle */}
-      <div className="mb-6 pb-6 border-b border-gray-200">
+      <div className="mb-6 pb-6 border-b border-ceramic-border">
         <div className="flex items-center justify-between">
           <div>
-            <label className="text-sm font-semibold text-gray-900 block">
+            <label className="text-sm font-semibold text-ceramic-text-primary block">
               Sincronização Automática
             </label>
-            <p className="text-xs text-gray-600 mt-1">
+            <p className="text-xs text-ceramic-text-secondary mt-1">
               {isAutoSyncEnabled
                 ? 'Os eventos serão sincronizados automaticamente em intervalos regulares'
                 : 'Ative para sincronizar eventos automaticamente'}
@@ -168,15 +168,15 @@ export function SpaceCalendarSettings({
               transition-colors font-medium
               ${
                 isAutoSyncEnabled
-                  ? 'bg-green-500 hover:bg-green-600'
-                  : 'bg-gray-300 hover:bg-gray-400'
+                  ? 'bg-ceramic-success hover:bg-ceramic-success/90'
+                  : 'bg-ceramic-cool hover:bg-ceramic-border'
               }
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
           >
             <span
               className={`
-                inline-block h-6 w-6 transform rounded-full bg-white
+                inline-block h-6 w-6 transform rounded-full bg-ceramic-base
                 transition-transform
                 ${isAutoSyncEnabled ? 'translate-x-7' : 'translate-x-1'}
               `}
@@ -187,8 +187,8 @@ export function SpaceCalendarSettings({
 
       {/* Sync Interval Settings */}
       {isAutoSyncEnabled && (
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <label className="text-sm font-semibold text-gray-900 block mb-3">
+        <div className="mb-6 pb-6 border-b border-ceramic-border">
+          <label className="text-sm font-semibold text-ceramic-text-primary block mb-3">
             Intervalo de Sincronização
           </label>
 
@@ -202,16 +202,16 @@ export function SpaceCalendarSettings({
                   checked={syncIntervalMinutes === minutes}
                   onChange={() => handleIntervalChange(minutes)}
                   disabled={isSaving}
-                  className="w-4 h-4 text-blue-600"
+                  className="w-4 h-4 text-amber-600"
                 />
-                <span className="ml-3 text-sm text-gray-700">
+                <span className="ml-3 text-sm text-ceramic-text-primary">
                   A cada {minutes} minuto{minutes > 1 ? 's' : ''}
                 </span>
               </label>
             ))}
           </div>
 
-          <p className="text-xs text-gray-600 mt-3">
+          <p className="text-xs text-ceramic-text-secondary mt-3">
             Intervalos menores sincronizam com mais frequência (usa mais bateria e dados)
           </p>
         </div>
@@ -219,11 +219,11 @@ export function SpaceCalendarSettings({
 
       {/* Last Sync Info */}
       {syncStatus?.last_sync_at && (
-        <div className="mb-6 pb-6 border-b border-gray-200">
-          <label className="text-sm font-semibold text-gray-900 block mb-2">
+        <div className="mb-6 pb-6 border-b border-ceramic-border">
+          <label className="text-sm font-semibold text-ceramic-text-primary block mb-2">
             Última Sincronização
           </label>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ceramic-text-secondary">
             {new Date(syncStatus.last_sync_at).toLocaleString('pt-BR')}
           </p>
         </div>
@@ -231,7 +231,7 @@ export function SpaceCalendarSettings({
 
       {/* Sync Status */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-gray-900 block mb-2">
+        <label className="text-sm font-semibold text-ceramic-text-primary block mb-2">
           Status da Sincronização
         </label>
         <div
@@ -239,8 +239,8 @@ export function SpaceCalendarSettings({
             inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium
             ${
               isAutoSyncEnabled
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-800'
+                ? 'bg-ceramic-success-bg text-ceramic-success'
+                : 'bg-ceramic-base text-ceramic-text-primary'
             }
           `}
         >
@@ -252,9 +252,9 @@ export function SpaceCalendarSettings({
       </div>
 
       {/* Google Calendar Info */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-900 font-medium mb-2">Informações do Google Calendar</p>
-        <ul className="text-xs text-blue-800 space-y-1">
+      <div className="mt-6 p-4 bg-ceramic-info-bg border border-ceramic-info/20 rounded-lg">
+        <p className="text-sm text-ceramic-info font-medium mb-2">Informações do Google Calendar</p>
+        <ul className="text-xs text-ceramic-info/80 space-y-1">
           <li>
             • Os eventos serão criados no seu calendário padrão (Primary Calendar)
           </li>
@@ -271,7 +271,7 @@ export function SpaceCalendarSettings({
       </div>
 
       {/* Info Text */}
-      <p className="text-xs text-gray-500 mt-6">
+      <p className="text-xs text-ceramic-text-secondary mt-6">
         Certifique-se de que o Google Calendar está autorizado em suas configurações de conta.
       </p>
     </div>

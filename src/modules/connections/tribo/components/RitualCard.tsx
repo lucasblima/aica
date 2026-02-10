@@ -48,7 +48,7 @@ export const RitualCard: React.FC<RitualCardProps> = ({
 
   if (compact) {
     return (
-      <div className="bg-white rounded-xl p-3 border border-ceramic-200 hover:shadow-md transition-shadow">
+      <div className="bg-ceramic-base rounded-xl p-3 border border-ceramic-border hover:shadow-md transition-shadow">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-[#9B4D3A]/20 to-[#9B4D3A]/10 rounded-lg flex flex-col items-center justify-center">
             <div className="text-xs font-medium text-[#9B4D3A]">
@@ -70,9 +70,9 @@ export const RitualCard: React.FC<RitualCardProps> = ({
 
           {userRSVP && (
             <div className="flex-shrink-0">
-              {userRSVP === 'yes' && <span className="text-green-600">✓</span>}
-              {userRSVP === 'no' && <span className="text-red-600">✗</span>}
-              {userRSVP === 'maybe' && <span className="text-yellow-600">?</span>}
+              {userRSVP === 'yes' && <span className="text-ceramic-success">✓</span>}
+              {userRSVP === 'no' && <span className="text-ceramic-error">✗</span>}
+              {userRSVP === 'maybe' && <span className="text-ceramic-warning">?</span>}
             </div>
           )}
         </div>
@@ -82,9 +82,9 @@ export const RitualCard: React.FC<RitualCardProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-2xl p-4 border-2 transition-all ${
+      className={`bg-ceramic-base rounded-2xl p-4 border-2 transition-all ${
         isPast
-          ? 'border-ceramic-200 opacity-60'
+          ? 'border-ceramic-border opacity-60'
           : 'border-[#9B4D3A]/20 hover:border-[#9B4D3A]/40 hover:shadow-lg'
       }`}
     >
@@ -131,19 +131,19 @@ export const RitualCard: React.FC<RitualCardProps> = ({
       {/* RSVP Summary */}
       <div className="flex items-center gap-3 mb-3 text-sm">
         {rsvpCounts.yes > 0 && (
-          <div className="flex items-center gap-1 text-green-600">
+          <div className="flex items-center gap-1 text-ceramic-success">
             <span>✓</span>
             <span>{rsvpCounts.yes}</span>
           </div>
         )}
         {rsvpCounts.maybe > 0 && (
-          <div className="flex items-center gap-1 text-yellow-600">
+          <div className="flex items-center gap-1 text-ceramic-warning">
             <span>?</span>
             <span>{rsvpCounts.maybe}</span>
           </div>
         )}
         {rsvpCounts.no > 0 && (
-          <div className="flex items-center gap-1 text-red-600">
+          <div className="flex items-center gap-1 text-ceramic-error">
             <span>✗</span>
             <span>{rsvpCounts.no}</span>
           </div>
@@ -180,8 +180,8 @@ export const RitualCard: React.FC<RitualCardProps> = ({
             disabled={rsvpMutation.isPending}
             className={`flex-1 py-2 rounded-lg font-medium text-sm transition-all ${
               userRSVP === 'yes'
-                ? 'bg-green-600 text-white'
-                : 'bg-green-50 text-green-700 hover:bg-green-100'
+                ? 'bg-ceramic-success text-white'
+                : 'bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/15'
             }`}
           >
             Vou
@@ -191,8 +191,8 @@ export const RitualCard: React.FC<RitualCardProps> = ({
             disabled={rsvpMutation.isPending}
             className={`flex-1 py-2 rounded-lg font-medium text-sm transition-all ${
               userRSVP === 'maybe'
-                ? 'bg-yellow-500 text-white'
-                : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                ? 'bg-ceramic-warning text-white'
+                : 'bg-ceramic-warning/10 text-ceramic-warning hover:bg-ceramic-warning/15'
             }`}
           >
             Talvez
@@ -202,8 +202,8 @@ export const RitualCard: React.FC<RitualCardProps> = ({
             disabled={rsvpMutation.isPending}
             className={`flex-1 py-2 rounded-lg font-medium text-sm transition-all ${
               userRSVP === 'no'
-                ? 'bg-red-600 text-white'
-                : 'bg-red-50 text-red-700 hover:bg-red-100'
+                ? 'bg-ceramic-error text-white'
+                : 'bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/15'
             }`}
           >
             Não vou

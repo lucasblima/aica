@@ -108,7 +108,7 @@ export default function AlertsView() {
                     className={`
                       px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
                       ${selectedType === type
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-ceramic-info text-white'
                         : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
                       }
                     `}
@@ -131,7 +131,7 @@ export default function AlertsView() {
                   className={`
                     px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all
                     ${selectedSeverity === severity
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-ceramic-info text-white'
                       : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
                     }
                   `}
@@ -148,7 +148,7 @@ export default function AlertsView() {
               onClick={() => setShowAcknowledged(!showAcknowledged)}
               className={`
                 w-5 h-5 ceramic-inset rounded flex items-center justify-center transition-all
-                ${showAcknowledged ? 'bg-blue-500' : ''}
+                ${showAcknowledged ? 'bg-ceramic-info' : ''}
               `}
             >
               {showAcknowledged && <CheckCircle className="w-3.5 h-3.5 text-white" />}
@@ -166,8 +166,8 @@ export default function AlertsView() {
         {criticalAlerts.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <h2 className="text-sm font-bold text-red-600 uppercase tracking-wider">
+              <div className="w-2 h-2 rounded-full bg-ceramic-error" />
+              <h2 className="text-sm font-bold text-ceramic-error uppercase tracking-wider">
                 Criticos ({criticalAlerts.length})
               </h2>
             </div>
@@ -187,8 +187,8 @@ export default function AlertsView() {
         {highAlerts.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-orange-500" />
-              <h2 className="text-sm font-bold text-orange-600 uppercase tracking-wider">
+              <div className="w-2 h-2 rounded-full bg-ceramic-warning" />
+              <h2 className="text-sm font-bold text-ceramic-warning uppercase tracking-wider">
                 Alta ({highAlerts.length})
               </h2>
             </div>
@@ -208,8 +208,8 @@ export default function AlertsView() {
         {mediumAlerts.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-amber-500" />
-              <h2 className="text-sm font-bold text-amber-600 uppercase tracking-wider">
+              <div className="w-2 h-2 rounded-full bg-ceramic-warning" />
+              <h2 className="text-sm font-bold text-ceramic-warning uppercase tracking-wider">
                 Media ({mediumAlerts.length})
               </h2>
             </div>
@@ -229,8 +229,8 @@ export default function AlertsView() {
         {lowAlerts.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <h2 className="text-sm font-bold text-blue-600 uppercase tracking-wider">
+              <div className="w-2 h-2 rounded-full bg-ceramic-info" />
+              <h2 className="text-sm font-bold text-ceramic-info uppercase tracking-wider">
                 Baixa ({lowAlerts.length})
               </h2>
             </div>
@@ -250,7 +250,7 @@ export default function AlertsView() {
         {filteredAlerts.length === 0 && (
           <div className="ceramic-inset p-12 text-center space-y-4">
             <div className="w-16 h-16 mx-auto ceramic-card flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <CheckCircle className="w-8 h-8 text-ceramic-success" />
             </div>
             <div>
               <p className="text-lg font-bold text-ceramic-text-primary mb-2">

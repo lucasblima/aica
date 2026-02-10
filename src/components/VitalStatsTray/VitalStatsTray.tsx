@@ -86,7 +86,7 @@ export function VitalStatsTray({
         <StatItem
           value={streak}
           label="Sequencia"
-          icon={<Flame className="w-5 h-5 text-orange-500" />}
+          icon={<Flame className="w-5 h-5 text-ceramic-warning" />}
           delay={0}
         />
         <StatItem
@@ -98,7 +98,7 @@ export function VitalStatsTray({
         <StatItem
           value={reflections}
           label="Reflexoes"
-          icon={<BookOpen className="w-5 h-5 text-blue-500" />}
+          icon={<BookOpen className="w-5 h-5 text-ceramic-info" />}
           delay={0.2}
         />
       </div>

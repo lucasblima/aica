@@ -78,7 +78,7 @@ export default function SwimFluxDashboard() {
           <div className="ceramic-card p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="ceramic-inset p-2">
-                <Users className="w-4 h-4 text-blue-600" />
+                <Users className="w-4 h-4 text-ceramic-info" />
               </div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
                 Atletas
@@ -93,13 +93,13 @@ export default function SwimFluxDashboard() {
           <div className="ceramic-card p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="ceramic-inset p-2">
-                <TrendingUp className="w-4 h-4 text-green-600" />
+                <TrendingUp className="w-4 h-4 text-ceramic-success" />
               </div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
                 Adesão Média
               </p>
             </div>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-ceramic-success">
               {Math.round(avgAdherence)}%
             </p>
           </div>
@@ -110,14 +110,14 @@ export default function SwimFluxDashboard() {
             className="ceramic-card p-4 space-y-2 cursor-pointer hover:scale-105 transition-transform"
           >
             <div className="flex items-center gap-2">
-              <div className="ceramic-inset p-2 bg-red-50">
-                <AlertCircle className="w-4 h-4 text-red-600" />
+              <div className="ceramic-inset p-2 bg-ceramic-error/10">
+                <AlertCircle className="w-4 h-4 text-ceramic-error" />
               </div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
                 Alertas
               </p>
             </div>
-            <p className="text-2xl font-bold text-red-600">
+            <p className="text-2xl font-bold text-ceramic-error">
               {criticalAlerts.length}
             </p>
           </div>
@@ -127,11 +127,11 @@ export default function SwimFluxDashboard() {
         {criticalAlerts.length > 0 && (
           <div
             onClick={handleAlertsClick}
-            className="ceramic-card p-4 mb-6 bg-red-50 border border-red-200 cursor-pointer hover:scale-[1.02] transition-transform"
+            className="ceramic-card p-4 mb-6 bg-ceramic-error/10 border border-ceramic-error/20 cursor-pointer hover:scale-[1.02] transition-transform"
           >
             <div className="flex items-center gap-3 mb-3">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-sm font-bold text-red-700">
+              <AlertCircle className="w-5 h-5 text-ceramic-error" />
+              <p className="text-sm font-bold text-ceramic-error">
                 {criticalAlerts.length} alerta(s) crítico(s) requer(em) atenção
               </p>
             </div>

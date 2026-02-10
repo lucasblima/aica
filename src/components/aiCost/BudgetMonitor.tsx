@@ -110,9 +110,9 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-        <div className="h-24 bg-gray-100 rounded"></div>
+      <div className="bg-ceramic-base rounded-2xl border border-ceramic-border p-6 animate-pulse">
+        <div className="h-8 bg-ceramic-cool rounded w-1/3 mb-4"></div>
+        <div className="h-24 bg-ceramic-base rounded"></div>
       </div>
     );
   }
@@ -142,7 +142,7 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
+        className="ceramic-card p-6"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -151,8 +151,8 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
               <DollarSign className={`w-6 h-6 text-${statusColor}-600`} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Orçamento Mensal de IA</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-lg font-bold text-ceramic-text-primary">Orçamento Mensal de IA</h3>
+              <p className="text-sm text-ceramic-text-secondary">
                 {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
               </p>
             </div>
@@ -161,10 +161,10 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
           {onConfigureBudget && (
             <button
               onClick={onConfigureBudget}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-ceramic-cool transition-colors"
               title="Configurar orçamento"
             >
-              <Settings className="w-5 h-5 text-gray-600" />
+              <Settings className="w-5 h-5 text-ceramic-text-secondary" />
             </button>
           )}
         </div>
@@ -172,34 +172,34 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="flex justify-between items-baseline mb-2">
-            <span className="text-2xl font-bold text-gray-900">
+            <span className="text-2xl font-bold text-ceramic-text-primary">
               ${total_spend_usd.toFixed(4)}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-ceramic-text-secondary">
               de ${budget_limit_usd.toFixed(2)}
             </span>
           </div>
 
-          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-ceramic-cool rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, percentage_used)}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className={`h-full rounded-full ${
                 percentage_used >= 100
-                  ? 'bg-red-600'
+                  ? 'bg-ceramic-error'
                   : percentage_used >= 80
-                  ? 'bg-orange-500'
-                  : 'bg-green-500'
+                  ? 'bg-ceramic-warning'
+                  : 'bg-ceramic-success'
               }`}
             />
           </div>
 
           <div className="flex justify-between items-center mt-2">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-ceramic-text-secondary">
               {percentage_used.toFixed(1)}% utilizado
             </span>
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-ceramic-text-primary">
               ${remaining.toFixed(4)} restante
             </span>
           </div>
@@ -227,12 +227,12 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`bg-white rounded-xl border-l-4 p-4 shadow-sm ${
+              className={`ceramic-card rounded-xl border-l-4 p-4 ${
                 alert.severity === 'critical'
-                  ? 'border-red-500 bg-red-50'
+                  ? 'border-ceramic-error bg-ceramic-error/5'
                   : alert.severity === 'warning'
-                  ? 'border-orange-500 bg-orange-50'
-                  : 'border-blue-500 bg-blue-50'
+                  ? 'border-ceramic-warning bg-ceramic-warning/5'
+                  : 'border-ceramic-info bg-ceramic-info/5'
               }`}
             >
               <div className="flex items-start justify-between">
@@ -241,25 +241,25 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
                     <AlertTriangle
                       className={`w-4 h-4 ${
                         alert.severity === 'critical'
-                          ? 'text-red-600'
+                          ? 'text-ceramic-error'
                           : alert.severity === 'warning'
-                          ? 'text-orange-600'
-                          : 'text-blue-600'
+                          ? 'text-ceramic-warning'
+                          : 'text-ceramic-info'
                       }`}
                     />
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                    <span className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
                       {alert.alert_type.replace('_', ' ')}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 font-medium">{alert.message}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-ceramic-text-primary font-medium">{alert.message}</p>
+                  <p className="text-xs text-ceramic-text-tertiary mt-1">
                     {new Date(alert.created_at).toLocaleString('pt-BR')}
                   </p>
                 </div>
 
                 <button
                   onClick={() => acknowledgeAlert(alert.id)}
-                  className="ml-4 text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+                  className="ml-4 text-xs font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary underline"
                 >
                   Dispensar
                 </button>
@@ -271,23 +271,23 @@ export const BudgetMonitor: React.FC<BudgetMonitorProps> = ({ userId, onConfigur
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-xs text-gray-500 mb-1">Gasto Hoje</p>
-          <p className="text-lg font-bold text-gray-900">
+        <div className="ceramic-card p-4 text-center">
+          <p className="text-xs text-ceramic-text-secondary mb-1">Gasto Hoje</p>
+          <p className="text-lg font-bold text-ceramic-text-primary">
             ${(total_spend_usd * 0.1).toFixed(4)}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-xs text-gray-500 mb-1">Média Diária</p>
-          <p className="text-lg font-bold text-gray-900">
+        <div className="ceramic-card p-4 text-center">
+          <p className="text-xs text-ceramic-text-secondary mb-1">Média Diária</p>
+          <p className="text-lg font-bold text-ceramic-text-primary">
             ${(total_spend_usd / new Date().getDate()).toFixed(4)}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-xs text-gray-500 mb-1">Projeção Mensal</p>
-          <p className="text-lg font-bold text-gray-900">
+        <div className="ceramic-card p-4 text-center">
+          <p className="text-xs text-ceramic-text-secondary mb-1">Projeção Mensal</p>
+          <p className="text-lg font-bold text-ceramic-text-primary">
             ${((total_spend_usd / new Date().getDate()) * 30).toFixed(2)}
           </p>
         </div>

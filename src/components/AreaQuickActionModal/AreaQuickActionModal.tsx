@@ -36,20 +36,20 @@ export interface AreaQuickActionModalProps {
 const STATUS_CONFIG = {
   healthy: {
     icon: CheckCircle,
-    color: 'text-green-600',
-    bg: 'bg-green-100',
+    color: 'text-ceramic-success',
+    bg: 'bg-ceramic-success/10',
     label: 'Saudavel',
   },
   attention: {
     icon: AlertTriangle,
-    color: 'text-amber-600',
-    bg: 'bg-amber-100',
+    color: 'text-ceramic-warning',
+    bg: 'bg-ceramic-warning/10',
     label: 'Atencao',
   },
   critical: {
     icon: AlertCircle,
-    color: 'text-red-600',
-    bg: 'bg-red-100',
+    color: 'text-ceramic-error',
+    bg: 'bg-ceramic-error/10',
     label: 'Critico',
   },
 };

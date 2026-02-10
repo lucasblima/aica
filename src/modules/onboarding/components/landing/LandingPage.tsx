@@ -132,7 +132,7 @@ export function LandingPage() {
           >
             <h1 className="text-5xl md:text-8xl font-black text-ceramic-text-primary mb-8 leading-[0.9] tracking-tighter">
               A essência da <br />
-              <span className="bg-gradient-to-r from-blue-600 via-purple-500 to-orange-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-ceramic-info via-ceramic-accent to-ceramic-warning bg-clip-text text-transparent">
                 ordem
               </span>{' '}
               em meio ao caos.
@@ -274,7 +274,7 @@ export function LandingPage() {
             transition={{ duration: 0.8 }}
             className="p-16 ceramic-card relative overflow-hidden"
           >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 opacity-40" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-ceramic-info via-ceramic-accent to-ceramic-warning opacity-40" />
             <h2 className="text-4xl md:text-6xl font-black text-ceramic-text-primary mb-8 tracking-tighter leading-tight">
               A curiosidade é o primeiro passo <br /> para a ordem.
             </h2>

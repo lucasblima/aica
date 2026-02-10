@@ -162,7 +162,7 @@ export function QuickCapture({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`ceramic-concave ${compact ? 'p-1.5' : 'p-2'} rounded-lg`}>
-            <SparklesIcon className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} text-purple-500`} />
+            <SparklesIcon className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} text-ceramic-accent`} />
           </div>
           <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
             {compact ? 'Novo Momento' : 'O que esta te movendo agora?'}
@@ -170,7 +170,7 @@ export function QuickCapture({
         </div>
         {(isAnalyzing || isTranscribing) && (
           <div className="flex items-center gap-2 text-xs text-ceramic-text-tertiary">
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+            <div className="w-2 h-2 bg-ceramic-accent rounded-full animate-pulse" />
             {isTranscribing ? 'Transcrevendo...' : 'Analisando...'}
           </div>
         )}
@@ -186,7 +186,7 @@ export function QuickCapture({
           placeholder={isTranscribing ? 'Transcrevendo audio...' : (compact ? 'O que esta te movendo agora?' : 'Comece a escrever... A IA vai te ajudar a refletir.')}
           rows={compact ? 3 : 6}
           disabled={isTranscribing}
-          className="w-full px-4 py-3 border-2 border-ceramic-text-secondary/20 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:outline-none resize-none transition-all text-base disabled:opacity-60 disabled:bg-ceramic-50"
+          className="w-full px-4 py-3 border-2 border-ceramic-text-secondary/20 rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent focus:outline-none resize-none transition-all text-base disabled:opacity-60 disabled:bg-ceramic-50"
         />
         {/* Character count + AudioRecorder inline */}
         <div className="flex items-center justify-between mt-2">
@@ -213,12 +213,12 @@ export function QuickCapture({
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className={`ceramic-tray rounded-lg ${compact ? 'p-3' : 'p-4'} border-2 border-purple-500/20 bg-purple-500/5`}
+            className={`ceramic-tray rounded-lg ${compact ? 'p-3' : 'p-4'} border-2 border-ceramic-accent/20 bg-ceramic-accent/5`}
           >
             <div className="flex items-start gap-2">
-              <LightBulbIcon className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-purple-500 flex-shrink-0 mt-0.5`} />
+              <LightBulbIcon className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-ceramic-accent flex-shrink-0 mt-0.5`} />
               <div className="flex-1">
-                <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-purple-700 dark:text-purple-400 mb-1`}>
+                <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold text-ceramic-accent mb-1`}>
                   {aiSuggestion.type === 'reflection' && 'Reflexao sugerida'}
                   {aiSuggestion.type === 'question' && 'Pergunta para aprofundar'}
                   {aiSuggestion.type === 'pattern' && 'Padrao identificado'}
@@ -251,7 +251,7 @@ export function QuickCapture({
           <button
             type="submit"
             disabled={isSubmitting || isTranscribing || !content.trim()}
-            className={`ceramic-convex ${compact ? 'px-4 py-1.5 text-xs' : 'px-6 py-2 text-sm'} font-bold bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2`}
+            className={`ceramic-convex ${compact ? 'px-4 py-1.5 text-xs' : 'px-6 py-2 text-sm'} font-bold bg-gradient-to-r from-ceramic-accent to-ceramic-info text-white hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center gap-2`}
           >
             {isSubmitting ? (
               <>
@@ -270,9 +270,9 @@ export function QuickCapture({
 
       {/* Info Footer */}
       {!compact && (
-        <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-          <SparklesIcon className="h-4 w-4 text-purple-500 flex-shrink-0" />
-          <p className="text-xs text-purple-900 dark:text-purple-300">
+        <div className="flex items-center gap-2 p-3 bg-ceramic-accent/10 rounded-lg">
+          <SparklesIcon className="h-4 w-4 text-ceramic-accent flex-shrink-0" />
+          <p className="text-xs text-ceramic-accent">
             Seu momento sera indexado com IA para descobrir padroes e insights.
           </p>
         </div>

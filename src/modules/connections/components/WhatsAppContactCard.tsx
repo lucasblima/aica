@@ -144,7 +144,7 @@ const IntentPreview: React.FC<IntentPreviewProps> = ({ contact }) => {
   const urgency = contact.last_intent_urgency || 1;
 
   const Icon = INTENT_ICONS[category] || MessageCircleQuestion;
-  const sentimentColor = INTENT_SENTIMENT_COLORS[sentiment] || 'text-gray-600';
+  const sentimentColor = INTENT_SENTIMENT_COLORS[sentiment] || 'text-ceramic-text-secondary';
 
   return (
     <div className="flex items-center gap-2 text-sm mt-1">
@@ -153,7 +153,7 @@ const IntentPreview: React.FC<IntentPreviewProps> = ({ contact }) => {
         {contact.last_intent_preview}
       </span>
       {urgency >= 4 && (
-        <span className="flex-shrink-0 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium">
+        <span className="flex-shrink-0 px-1.5 py-0.5 bg-ceramic-warning/15 text-ceramic-warning text-xs rounded font-medium">
           Urgente
         </span>
       )}
@@ -318,7 +318,7 @@ export function WhatsAppContactCard({
           <button
             onClick={handleChatClick}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium
-                       bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                       bg-ceramic-success-bg text-ceramic-success hover:bg-ceramic-success-bg/80 transition-colors"
             aria-label={`Abrir chat com ${displayName}`}
           >
             <MessageCircle className="w-3.5 h-3.5" />
@@ -333,8 +333,8 @@ export function WhatsAppContactCard({
             className={cn(
               'p-1.5 rounded-lg transition-colors',
               isFavorite
-                ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                : 'bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool'
             )}
             aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
             aria-pressed={isFavorite}
@@ -347,7 +347,7 @@ export function WhatsAppContactCard({
         {onMoreClick && (
           <button
             onClick={handleMoreClick}
-            className="p-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+            className="p-1.5 rounded-lg bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool transition-colors"
             aria-label="Mais opcoes"
           >
             <MoreVertical className="w-4 h-4" />

@@ -224,23 +224,23 @@ export const GuestApprovalPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-ceramic-base to-ceramic-cool p-6">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-4"
+            className="flex items-center gap-2 text-ceramic-accent hover:text-ceramic-accent/80 font-medium mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </button>
-          <div className="bg-white rounded-2xl shadow-sm border border-blue-200 p-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6">
+            <h1 className="text-3xl font-bold text-ceramic-text-primary mb-2">
               Aprovação de Informações
             </h1>
             {guestData && (
-              <p className="text-gray-600">
+              <p className="text-ceramic-text-secondary">
                 Olá <span className="font-semibold">{guestData.guestName}</span>! Por favor, revise suas
                 informações abaixo e confirme se estão corretas.
               </p>
@@ -250,22 +250,22 @@ export const GuestApprovalPage: React.FC = () => {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="bg-white rounded-2xl shadow-sm border border-blue-200 p-12 flex flex-col items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-4 animate-spin">
-              <Loader2 className="w-6 h-6 text-blue-600" />
+          <div className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-12 flex flex-col items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-ceramic-accent/10 flex items-center justify-center mb-4 animate-spin">
+              <Loader2 className="w-6 h-6 text-ceramic-accent" />
             </div>
-            <p className="text-gray-600 font-medium">Carregando dados...</p>
+            <p className="text-ceramic-text-secondary font-medium">Carregando dados...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && !isLoading && (
-          <div className="bg-red-50 rounded-2xl shadow-sm border border-red-200 p-6 mb-6">
+          <div className="bg-ceramic-error/10 rounded-2xl shadow-sm border border-ceramic-error/30 p-6 mb-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-6 h-6 text-ceramic-error flex-shrink-0 mt-0.5" />
               <div>
-                <h2 className="font-bold text-red-700 mb-1">Erro ao Carregar</h2>
-                <p className="text-red-600 text-sm">{error}</p>
+                <h2 className="font-bold text-ceramic-error mb-1">Erro ao Carregar</h2>
+                <p className="text-ceramic-error text-sm">{error}</p>
               </div>
             </div>
           </div>
@@ -279,14 +279,14 @@ export const GuestApprovalPage: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-sm border border-blue-200 p-6"
+                className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6"
               >
-                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                <h2 className="text-xl font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-ceramic-accent" />
                   Biografia
                 </h2>
                 <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-ceramic-text-primary whitespace-pre-wrap leading-relaxed">
                     {guestData.biography}
                   </p>
                 </div>
@@ -299,14 +299,14 @@ export const GuestApprovalPage: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl shadow-sm border border-blue-200 p-6"
+                className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6"
               >
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Fatos Principais</h2>
+                <h2 className="text-xl font-bold text-ceramic-text-primary mb-4">Fatos Principais</h2>
                 <ul className="space-y-2">
                   {guestData.keyFacts.map((fact, idx) => (
                     <li key={idx} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{fact}</span>
+                      <Check className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" />
+                      <span className="text-ceramic-text-primary">{fact}</span>
                     </li>
                   ))}
                 </ul>
@@ -319,16 +319,16 @@ export const GuestApprovalPage: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl shadow-sm border border-blue-200 p-6"
+                className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6"
               >
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Ficha Técnica</h2>
+                <h2 className="text-xl font-bold text-ceramic-text-primary mb-4">Ficha Técnica</h2>
                 <div className="space-y-3">
                   {Object.entries(guestData.technicalSheet || {}).map(([key, value]) => (
-                    <div key={key} className="border-b border-gray-200 pb-2 last:border-b-0">
-                      <p className="text-sm font-medium text-gray-600 capitalize">
+                    <div key={key} className="border-b border-ceramic-border pb-2 last:border-b-0">
+                      <p className="text-sm font-medium text-ceramic-text-secondary capitalize">
                         {key.replace(/_/g, ' ')}
                       </p>
-                      <p className="text-gray-800 mt-1">
+                      <p className="text-ceramic-text-primary mt-1">
                         {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                       </p>
                     </div>
@@ -343,22 +343,22 @@ export const GuestApprovalPage: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-yellow-50 rounded-2xl shadow-sm border border-yellow-200 p-6"
+                className="bg-ceramic-warning/10 rounded-2xl shadow-sm border border-ceramic-warning/30 p-6"
               >
-                <h2 className="text-xl font-bold text-yellow-900 mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                <h2 className="text-xl font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-ceramic-warning" />
                   Possíveis Controvérsias
                 </h2>
                 <div className="space-y-3">
                   {guestData.controversies.map((controversy, idx) => (
-                    <div key={idx} className="bg-white p-3 rounded-lg border border-yellow-200">
-                      <p className="text-sm text-gray-700">
+                    <div key={idx} className="bg-ceramic-base p-3 rounded-lg border border-ceramic-warning/30">
+                      <p className="text-sm text-ceramic-text-primary">
                         {typeof controversy === 'object'
                           ? controversy.title || JSON.stringify(controversy)
                           : String(controversy)}
                       </p>
                       {typeof controversy === 'object' && controversy.description && (
-                        <p className="text-xs text-gray-600 mt-1">{controversy.description}</p>
+                        <p className="text-xs text-ceramic-text-secondary mt-1">{controversy.description}</p>
                       )}
                     </div>
                   ))}
@@ -373,15 +373,15 @@ export const GuestApprovalPage: React.FC = () => {
               transition={{ delay: 0.4 }}
               className={`rounded-2xl shadow-sm border p-6 ${
                 approvalStatus.approved === null
-                  ? 'bg-blue-50 border-blue-200'
+                  ? 'bg-ceramic-accent/10 border-ceramic-accent/30'
                   : approvalStatus.approved
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200'
+                    ? 'bg-ceramic-success/10 border-ceramic-success/30'
+                    : 'bg-ceramic-error/10 border-ceramic-error/30'
               }`}
             >
               {approvalStatus.approved === null ? (
                 <>
-                  <h3 className="text-lg font-bold text-blue-900 mb-4">
+                  <h3 className="text-lg font-bold text-ceramic-text-primary mb-4">
                     O que você acha destas informações?
                   </h3>
                   <div className="space-y-3">
@@ -394,13 +394,13 @@ export const GuestApprovalPage: React.FC = () => {
                         })
                       }
                       placeholder="Se houver correções necessárias, descreva aqui (obrigatório para rejeição)..."
-                      className="w-full p-3 border border-blue-300 rounded-lg text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none resize-vertical min-h-24"
+                      className="w-full p-3 border border-ceramic-accent/40 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-tertiary focus:ring-2 focus:ring-ceramic-accent focus:border-transparent outline-none resize-vertical min-h-24"
                     />
                     <div className="flex gap-3">
                       <button
                         onClick={handleApprove}
                         disabled={isSubmitting}
-                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
                       >
                         {isSubmitting ? (
                           <>
@@ -417,7 +417,7 @@ export const GuestApprovalPage: React.FC = () => {
                       <button
                         onClick={handleReject}
                         disabled={isSubmitting || !approvalStatus.notes.trim()}
-                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-ceramic-error to-ceramic-error/80 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
                       >
                         {isSubmitting ? (
                           <>
@@ -439,21 +439,21 @@ export const GuestApprovalPage: React.FC = () => {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${
                       approvalStatus.approved
-                        ? 'bg-green-100'
-                        : 'bg-red-100'
+                        ? 'bg-ceramic-success/10'
+                        : 'bg-ceramic-error/10'
                     }`}
                   >
                     {approvalStatus.approved ? (
-                      <Check className="w-6 h-6 text-green-600" />
+                      <Check className="w-6 h-6 text-ceramic-success" />
                     ) : (
-                      <AlertCircle className="w-6 h-6 text-red-600" />
+                      <AlertCircle className="w-6 h-6 text-ceramic-error" />
                     )}
                   </div>
                   <h3
                     className={`text-lg font-bold mb-2 ${
                       approvalStatus.approved
-                        ? 'text-green-900'
-                        : 'text-red-900'
+                        ? 'text-ceramic-text-primary'
+                        : 'text-ceramic-text-primary'
                     }`}
                   >
                     {approvalStatus.approved
@@ -463,8 +463,8 @@ export const GuestApprovalPage: React.FC = () => {
                   <p
                     className={`text-sm mb-4 ${
                       approvalStatus.approved
-                        ? 'text-green-700'
-                        : 'text-red-700'
+                        ? 'text-ceramic-success'
+                        : 'text-ceramic-error'
                     }`}
                   >
                     {approvalStatus.approvedAt &&
@@ -474,8 +474,8 @@ export const GuestApprovalPage: React.FC = () => {
                     <div
                       className={`mt-4 p-3 rounded-lg text-left ${
                         approvalStatus.approved
-                          ? 'bg-green-100 border border-green-200'
-                          : 'bg-red-100 border border-red-200'
+                          ? 'bg-ceramic-success/10 border border-ceramic-success/30'
+                          : 'bg-ceramic-error/10 border border-ceramic-error/30'
                       }`}
                     >
                       <p className="text-xs font-medium mb-1 flex items-center gap-1">
@@ -485,8 +485,8 @@ export const GuestApprovalPage: React.FC = () => {
                       <p
                         className={`text-sm whitespace-pre-wrap ${
                           approvalStatus.approved
-                            ? 'text-green-900'
-                            : 'text-red-900'
+                            ? 'text-ceramic-text-primary'
+                            : 'text-ceramic-text-primary'
                         }`}
                       >
                         {approvalStatus.notes}
@@ -499,9 +499,9 @@ export const GuestApprovalPage: React.FC = () => {
 
             {/* Error Message */}
             {submissionStatus === 'error' && (
-              <div className="bg-red-50 rounded-2xl shadow-sm border border-red-200 p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700">
+              <div className="bg-ceramic-error/10 rounded-2xl shadow-sm border border-ceramic-error/30 p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-ceramic-error">
                   Erro ao salvar sua resposta. Por favor, tente novamente.
                 </p>
               </div>

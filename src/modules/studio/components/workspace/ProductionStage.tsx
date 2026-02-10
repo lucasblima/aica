@@ -47,10 +47,10 @@ import {
 
 // Category configuration for visual styling
 const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; emoji: string; bgColor: string }> = {
-  'geral': { icon: Mic, emoji: '🎤', bgColor: 'bg-blue-50' },
+  'geral': { icon: Mic, emoji: '🎤', bgColor: 'bg-ceramic-info-bg' },
   'quebra-gelo': { icon: Snowflake, emoji: '❄️', bgColor: 'bg-cyan-50' },
   'patrocinador': { icon: Gift, emoji: '🎁', bgColor: 'bg-amber-50' },
-  'polêmicas': { icon: AlertCircle, emoji: '⚠️', bgColor: 'bg-red-50' },
+  'polêmicas': { icon: AlertCircle, emoji: '⚠️', bgColor: 'bg-ceramic-error-bg' },
 };
 
 export default function ProductionStage() {
@@ -191,7 +191,7 @@ export default function ProductionStage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-ceramic-border px-8 py-6">
+        <div className="bg-ceramic-base border-b border-ceramic-border px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3 mb-2">
@@ -225,7 +225,7 @@ export default function ProductionStage() {
         {/* Main Content */}
         <div className="flex-1 overflow-hidden flex flex-col p-8">
           {/* Central Control Area */}
-          <div className="bg-white rounded-lg shadow-sm p-12 mb-8 flex-none">
+          <div className="bg-ceramic-base rounded-lg shadow-sm p-12 mb-8 flex-none">
             {/* Timer Display with aria-live for screen readers */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center space-x-4 p-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border-2 border-orange-200 mb-6">
@@ -246,7 +246,7 @@ export default function ProductionStage() {
                 {!production.isRecording ? (
                   <button
                     onClick={handleStartRecording}
-                    className="flex items-center space-x-2 px-8 py-4 bg-ceramic-danger text-white rounded-full hover:bg-red-600 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 font-semibold focus:outline-none focus:ring-2 focus:ring-ceramic-danger focus:ring-offset-2"
+                    className="flex items-center space-x-2 px-8 py-4 bg-ceramic-danger text-white rounded-full hover:bg-ceramic-danger/90 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 font-semibold focus:outline-none focus:ring-2 focus:ring-ceramic-danger focus:ring-offset-2"
                     aria-label="Iniciar gravação"
                     aria-keyshortcuts="Control+R"
                   >
@@ -260,8 +260,8 @@ export default function ProductionStage() {
                       onClick={handleTogglePause}
                       className={`flex items-center space-x-2 px-8 py-4 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                         production.isPaused
-                          ? 'bg-green-500 text-white hover:bg-green-600 focus:ring-green-500'
-                          : 'bg-ceramic-warning text-white hover:bg-yellow-600 focus:ring-ceramic-warning'
+                          ? 'bg-ceramic-success text-white hover:bg-ceramic-success-hover focus:ring-ceramic-success'
+                          : 'bg-ceramic-warning text-white hover:bg-ceramic-warning-hover focus:ring-ceramic-warning'
                       }`}
                       aria-label={production.isPaused ? 'Retomar gravação' : 'Pausar gravação'}
                       aria-pressed={production.isPaused}
@@ -283,7 +283,7 @@ export default function ProductionStage() {
                     {/* Stop Button */}
                     <button
                       onClick={handleStopRecording}
-                      className="flex items-center space-x-2 px-8 py-4 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      className="flex items-center space-x-2 px-8 py-4 bg-amber-500 text-white rounded-full hover:bg-amber-600 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
                       aria-label="Finalizar gravação"
                       aria-keyshortcuts="Control+S"
                     >
@@ -298,7 +298,7 @@ export default function ProductionStage() {
               <button
                 onClick={() => setShowTeleprompter(true)}
                 disabled={pauta.topics.length === 0}
-                className="mt-6 flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-ceramic-secondary rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                className="mt-6 flex items-center justify-center space-x-2 px-6 py-3 bg-ceramic-base text-ceramic-secondary rounded-lg hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-border focus:ring-offset-2"
                 aria-label="Abrir teleprompter"
                 aria-disabled={pauta.topics.length === 0}
               >
@@ -311,13 +311,13 @@ export default function ProductionStage() {
             {pauta.topics.length > 0 && (
               <div className="mt-6 pt-6 border-t border-ceramic-border">
                 <div className="flex items-center space-x-3 mb-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" aria-hidden="true" />
+                  <CheckCircle2 className="w-5 h-5 text-ceramic-success" aria-hidden="true" />
                   <span className="text-sm font-semibold text-ceramic-secondary">
                     Progresso: {completedCount} de {pauta.topics.length} tópicos abordados
                   </span>
                 </div>
                 <div
-                  className="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
+                  className="w-full bg-ceramic-cool rounded-full h-2 overflow-hidden"
                   role="progressbar"
                   aria-valuenow={completedCount}
                   aria-valuemin={0}
@@ -337,7 +337,7 @@ export default function ProductionStage() {
 
           {/* Topics Checklist */}
           {pauta.topics.length > 0 ? (
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col flex-1">
+            <div className="bg-ceramic-base rounded-lg shadow-sm overflow-hidden flex flex-col flex-1">
               {/* Topics Header */}
               <div className="px-6 py-4 border-b border-ceramic-border bg-ceramic-surface">
                 <h2 className="font-bold text-lg text-ceramic-primary flex items-center space-x-2">
@@ -364,11 +364,11 @@ export default function ProductionStage() {
                       key={topic.id}
                       data-topic-id={topic.id}
                       onClick={() => handleSelectTopic(topic.id)}
-                      className={`px-6 py-4 border-b border-gray-100 cursor-pointer transition-all ${
+                      className={`px-6 py-4 border-b border-ceramic-border cursor-pointer transition-all ${
                         isCurrentTopic
                           ? 'bg-orange-50 border-l-4 border-l-orange-500'
-                          : 'hover:bg-gray-50'
-                      } ${topic.completed ? 'bg-gray-50' : ''}`}
+                          : 'hover:bg-ceramic-base'
+                      } ${topic.completed ? 'bg-ceramic-base' : ''}`}
                       role="listitem"
                       aria-current={isCurrentTopic ? 'true' : undefined}
                     >
@@ -398,7 +398,7 @@ export default function ProductionStage() {
                             <span
                               className={`text-lg font-bold ${
                                 topic.completed
-                                  ? 'line-through text-gray-400'
+                                  ? 'line-through text-ceramic-text-secondary'
                                   : 'text-ceramic-primary'
                               }`}
                             >
@@ -422,7 +422,7 @@ export default function ProductionStage() {
                               Tópico {index + 1}
                             </span>
                             {topic.completed && (
-                              <span className="flex items-center space-x-1 text-xs text-green-600 font-semibold">
+                              <span className="flex items-center space-x-1 text-xs text-ceramic-success font-semibold">
                                 <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                                 <span>Concluído</span>
                               </span>
@@ -447,7 +447,7 @@ export default function ProductionStage() {
                                   handleTopicComplete(topic.id);
                                 }}
                                 disabled={topic.completed}
-                                className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-bold hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                className="px-3 py-1.5 bg-ceramic-success-bg text-ceramic-success rounded-lg text-xs font-bold hover:bg-ceramic-success/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:ring-offset-2"
                                 aria-label={`Concluir tópico "${topic.text}"`}
                               >
                                 {topic.completed ? 'Pronto' : 'Concluir'}
@@ -469,7 +469,7 @@ export default function ProductionStage() {
                 <button
                   onClick={handleNextTopic}
                   disabled={currentTopicIndex >= pauta.topics.length - 1}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:cursor-not-allowed transition-colors text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                   aria-label="Ir para próximo tópico"
                 >
                   Próximo Tópico
@@ -478,9 +478,9 @@ export default function ProductionStage() {
             </div>
           ) : (
             /* Empty State */
-            <div className="bg-white rounded-lg shadow-sm p-12 flex-1 flex items-center justify-center">
+            <div className="bg-ceramic-base rounded-lg shadow-sm p-12 flex-1 flex items-center justify-center">
               <div className="text-center">
-                <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" aria-hidden="true" />
+                <AlertCircle className="w-16 h-16 text-ceramic-cool mx-auto mb-4" aria-hidden="true" />
                 <p className="text-ceramic-secondary text-lg">
                   Nenhum tópico criado. Complete a pauta antes de gravar.
                 </p>

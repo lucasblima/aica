@@ -151,12 +151,12 @@ export function IncentiveLawCard({
     <div
       onClick={handleClick}
       className={`
-        relative bg-white dark:bg-gray-800 rounded-xl border
+        relative bg-ceramic-base dark:bg-ceramic-cool rounded-xl border
         transition-all duration-200
-        ${onClick ? 'cursor-pointer hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600' : ''}
+        ${onClick ? 'cursor-pointer hover:shadow-md hover:border-amber-300 dark:hover:border-amber-600' : ''}
         ${selected
-          ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md'
-          : 'border-gray-200 dark:border-gray-700'
+          ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md'
+          : 'border-ceramic-border dark:border-ceramic-border'
         }
         ${sizeStyles.padding}
         ${className}
@@ -176,14 +176,14 @@ export function IncentiveLawCard({
 
           {/* Title & Law number */}
           <div className="min-w-0 flex-1">
-            <h3 className={`font-semibold text-gray-900 dark:text-white truncate ${sizeStyles.titleSize}`}>
+            <h3 className={`font-semibold text-ceramic-text-primary dark:text-ceramic-text-primary truncate ${sizeStyles.titleSize}`}>
               {cardData.short_name}
             </h3>
-            <p className={`text-gray-500 dark:text-gray-400 truncate ${sizeStyles.textSize}`}>
+            <p className={`text-ceramic-text-secondary dark:text-ceramic-text-secondary truncate ${sizeStyles.textSize}`}>
               {cardData.name}
             </p>
             {cardData.law_number && (
-              <p className={`text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-0.5 ${sizeStyles.textSize}`}>
+              <p className={`text-ceramic-text-secondary dark:text-ceramic-text-secondary flex items-center gap-1 mt-0.5 ${sizeStyles.textSize}`}>
                 <Scale className="w-3 h-3" />
                 {cardData.law_number}
               </p>
@@ -195,7 +195,7 @@ export function IncentiveLawCard({
         {showExternalLink && cardData.official_url && (
           <button
             onClick={handleExternalClick}
-            className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+            className="flex-shrink-0 p-1.5 rounded-lg text-ceramic-text-secondary hover:text-amber-600 hover:bg-ceramic-base dark:hover:bg-ceramic-cool transition-colors"
             title="Abrir site oficial"
           >
             <ExternalLink className="w-4 h-4" />
@@ -232,7 +232,7 @@ export function IncentiveLawCard({
 
         {/* Deduction percentage badge */}
         <span
-          className={`inline-flex items-center gap-1 rounded-full font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 ${sizeStyles.badgeSize}`}
+          className={`inline-flex items-center gap-1 rounded-full font-medium bg-ceramic-success-bg text-ceramic-success dark:bg-ceramic-success/20 dark:text-ceramic-success ${sizeStyles.badgeSize}`}
         >
           <Percent className="w-3 h-3" />
           {cardData.deductionLabel}
@@ -241,8 +241,8 @@ export function IncentiveLawCard({
 
       {/* Description */}
       {showDescription && cardData.benefits_summary && (
-        <div className={`mt-3 pt-3 border-t border-gray-100 dark:border-gray-700`}>
-          <p className={`text-gray-600 dark:text-gray-300 line-clamp-2 ${sizeStyles.textSize}`}>
+        <div className={`mt-3 pt-3 border-t border-ceramic-border dark:border-ceramic-border`}>
+          <p className={`text-ceramic-text-secondary dark:text-ceramic-text-secondary line-clamp-2 ${sizeStyles.textSize}`}>
             {cardData.benefits_summary}
           </p>
         </div>
@@ -251,7 +251,7 @@ export function IncentiveLawCard({
       {/* Selected indicator */}
       {selected && (
         <div className="absolute top-2 right-2">
-          <div className="w-3 h-3 rounded-full bg-indigo-500 animate-pulse" />
+          <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
         </div>
       )}
     </div>
@@ -286,10 +286,10 @@ export function IncentiveLawCardCompact({
       className={`
         flex items-center gap-3 p-3 rounded-lg border
         transition-all duration-150
-        ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''}
+        ${onClick ? 'cursor-pointer hover:bg-ceramic-base dark:hover:bg-ceramic-cool' : ''}
         ${selected
-          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+          ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+          : 'border-ceramic-border dark:border-ceramic-border bg-ceramic-base dark:bg-ceramic-cool'
         }
         ${className}
       `}
@@ -305,22 +305,22 @@ export function IncentiveLawCardCompact({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-900 dark:text-white text-sm">
+          <span className="font-medium text-ceramic-text-primary dark:text-ceramic-text-primary text-sm">
             {cardData.short_name}
           </span>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-ceramic-text-secondary">
             {cardData.location}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-gray-500">{cardData.taxTypeLabel}</span>
-          <span className="text-xs text-green-600 font-medium">{cardData.deductionLabel}</span>
+          <span className="text-xs text-ceramic-text-secondary">{cardData.taxTypeLabel}</span>
+          <span className="text-xs text-ceramic-success font-medium">{cardData.deductionLabel}</span>
         </div>
       </div>
 
       {/* Selected indicator */}
       {selected && (
-        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-500" />
+        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-amber-500" />
       )}
     </div>
   );
@@ -354,7 +354,7 @@ export function IncentiveLawCardList({
 }: IncentiveLawCardListProps) {
   if (laws.length === 0) {
     return (
-      <div className={`text-center py-8 text-gray-500 dark:text-gray-400 ${className}`}>
+      <div className={`text-center py-8 text-ceramic-text-secondary dark:text-ceramic-text-secondary ${className}`}>
         <Info className="w-8 h-8 mx-auto mb-2 opacity-50" />
         <p>{emptyMessage}</p>
       </div>

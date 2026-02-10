@@ -96,7 +96,7 @@ export function CreditBalanceWidget({
       <div className="flex items-center justify-between">
         {/* Balance Display */}
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl">
+          <div className="p-2.5 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl">
             <Coins className="w-6 h-6 text-amber-600" />
           </div>
           <div>
@@ -124,7 +124,7 @@ export function CreditBalanceWidget({
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={handleClaimDaily}
               disabled={isClaiming}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50 shadow-lg shadow-amber-500/20"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-bold hover:from-amber-600 hover:to-amber-700 transition-all disabled:opacity-50 shadow-lg shadow-amber-500/20"
             >
               {isClaiming ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -140,7 +140,7 @@ export function CreditBalanceWidget({
               key="claimed-badge"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-bold"
+              className="flex items-center gap-2 px-3 py-1.5 bg-ceramic-success/10 text-ceramic-success rounded-full text-xs font-bold"
             >
               <Check className="w-3 h-3" />
               Resgatado hoje
@@ -158,7 +158,7 @@ export function CreditBalanceWidget({
             exit={{ opacity: 0, y: -10, height: 0 }}
             className={`mt-3 p-2 rounded-lg text-sm font-medium text-center ${
               claimSuccess
-                ? 'bg-green-100 text-green-700'
+                ? 'bg-ceramic-success/10 text-ceramic-success'
                 : 'bg-amber-100 text-amber-700'
             }`}
           >

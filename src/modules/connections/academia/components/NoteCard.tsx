@@ -21,9 +21,9 @@ interface NoteCardProps {
  */
 const getNoteTypeBadge = (type: NoteType): { color: string; label: string } => {
   const badges: Record<NoteType, { color: string; label: string }> = {
-    fleeting: { color: 'bg-amber-100 text-amber-800', label: 'Fleeting' },
-    literature: { color: 'bg-blue-100 text-blue-800', label: 'Literature' },
-    permanent: { color: 'bg-emerald-100 text-emerald-800', label: 'Permanent' },
+    fleeting: { color: 'bg-ceramic-warning/15 text-ceramic-warning', label: 'Fleeting' },
+    literature: { color: 'bg-ceramic-info/15 text-ceramic-info', label: 'Literature' },
+    permanent: { color: 'bg-ceramic-success/15 text-ceramic-success', label: 'Permanent' },
   };
   return badges[type];
 };
@@ -45,7 +45,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     <div
       onClick={onClick}
       className={`
-        ceramic-card bg-white border border-stone-200 rounded-sm
+        ceramic-card bg-ceramic-base border border-ceramic-border rounded-sm
         hover:shadow-md transition-all duration-200
         ${onClick ? 'cursor-pointer' : ''}
         ${compact ? 'p-3' : 'p-4'}
@@ -55,7 +55,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       <div className="flex items-start justify-between mb-2">
         <h4
           className={`
-          font-normal text-stone-900 flex-1
+          font-normal text-ceramic-text-primary flex-1
           ${compact ? 'text-sm' : 'text-base'}
         `}
         >
@@ -73,7 +73,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
       {/* Content Preview */}
       {!compact && (
-        <p className="text-sm text-stone-600 font-light leading-relaxed mb-3">
+        <p className="text-sm text-ceramic-text-secondary font-light leading-relaxed mb-3">
           {previewContent}
         </p>
       )}
@@ -84,13 +84,13 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           {note.tags.slice(0, compact ? 2 : 5).map((tag) => (
             <span
               key={tag}
-              className="text-xs text-stone-500 font-light bg-stone-100 px-2 py-0.5 rounded-sm"
+              className="text-xs text-ceramic-text-secondary font-light bg-ceramic-cool px-2 py-0.5 rounded-sm"
             >
               {tag}
             </span>
           ))}
           {note.tags.length > (compact ? 2 : 5) && (
-            <span className="text-xs text-stone-400 font-light">
+            <span className="text-xs text-ceramic-text-tertiary font-light">
               +{note.tags.length - (compact ? 2 : 5)} more
             </span>
           )}
@@ -99,8 +99,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
       {/* Linked Notes Indicator */}
       {note.linked_note_ids && note.linked_note_ids.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-stone-100">
-          <span className="text-xs text-stone-400 font-light">
+        <div className="mt-2 pt-2 border-t border-ceramic-border">
+          <span className="text-xs text-ceramic-text-tertiary font-light">
             {note.linked_note_ids.length} linked note
             {note.linked_note_ids.length > 1 ? 's' : ''}
           </span>

@@ -106,9 +106,9 @@ export function OnboardingFlow() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-ceramic-base flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-ceramic-success animate-spin mx-auto mb-4" />
           <p className="text-ceramic-600">Carregando...</p>
         </div>
       </div>
@@ -118,9 +118,9 @@ export function OnboardingFlow() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-6">
+      <div className="min-h-screen bg-ceramic-base flex items-center justify-center p-6">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-ceramic-error/10 flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">!</span>
           </div>
           <h2 className="text-xl font-bold text-ceramic-900 mb-2">
@@ -139,7 +139,7 @@ export function OnboardingFlow() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-ceramic-base flex flex-col">
       {/* Progress Header */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-ceramic-100">
         <div className="max-w-2xl mx-auto px-6 py-4">
@@ -158,9 +158,9 @@ export function OnboardingFlow() {
                     w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors
                     ${
                       index < stepIndex
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-ceramic-success text-white'
                         : index === stepIndex
-                        ? 'bg-green-100 text-green-600 ring-2 ring-green-500 ring-offset-2'
+                        ? 'bg-ceramic-success/10 text-ceramic-success ring-2 ring-ceramic-success ring-offset-2'
                         : 'bg-ceramic-100 text-ceramic-400'
                     }
                   `}
@@ -189,7 +189,7 @@ export function OnboardingFlow() {
                   <div
                     className={`
                       flex-1 h-0.5 mx-2 transition-colors
-                      ${index < stepIndex ? 'bg-green-500' : 'bg-ceramic-200'}
+                      ${index < stepIndex ? 'bg-ceramic-success' : 'bg-ceramic-200'}
                     `}
                   />
                 )}
@@ -265,7 +265,7 @@ export function OnboardingFlow() {
           </div>
           <div className="mt-2 h-1 bg-ceramic-100 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-green-500"
+              className="h-full bg-ceramic-success"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.3 }}

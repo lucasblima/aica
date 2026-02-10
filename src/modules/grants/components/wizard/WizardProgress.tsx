@@ -59,12 +59,12 @@ export function WizardProgress({
           >
             {xpEarned} XP
           </motion.span>
-          <span className="text-xs text-gray-400">/ {xpPotential}</span>
+          <span className="text-xs text-ceramic-text-secondary">/ {xpPotential}</span>
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden mb-6">
+      <div className="relative h-3 bg-ceramic-base rounded-full overflow-hidden mb-6">
         <motion.div
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
@@ -80,7 +80,7 @@ export function WizardProgress({
           {[25, 50, 80].map((marker) => (
             <div
               key={marker}
-              className="absolute h-full w-0.5 bg-white/50"
+              className="absolute h-full w-0.5 bg-ceramic-base/50"
               style={{ left: `${marker}%` }}
             />
           ))}
@@ -107,8 +107,8 @@ export function WizardProgress({
                   ${isCurrent
                     ? 'bg-amber-500 text-white ring-4 ring-amber-100'
                     : isCompleted
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-100 text-gray-400'
+                      ? 'bg-ceramic-success text-white'
+                      : 'bg-ceramic-base text-ceramic-text-secondary'
                   }
                 `}
                 whileHover={isClickable ? { scale: 1.1 } : undefined}
@@ -121,7 +121,7 @@ export function WizardProgress({
                 )}
 
                 {/* Tooltip */}
-                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap hidden sm:block">
+                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-ceramic-text-secondary whitespace-nowrap hidden sm:block">
                   {step.title}
                 </span>
               </motion.button>
@@ -146,9 +146,9 @@ export function WizardProgress({
       </div>
 
       {/* Current Step Label (Mobile) */}
-      <p className="mt-8 text-center text-sm text-gray-600 sm:hidden">
+      <p className="mt-8 text-center text-sm text-ceramic-text-secondary sm:hidden">
         <span className="font-semibold">{WIZARD_STEPS[currentStepIndex].title}</span>
-        <span className="text-gray-400"> - Passo {currentStepIndex + 1} de {WIZARD_STEPS.length}</span>
+        <span className="text-ceramic-text-secondary"> - Passo {currentStepIndex + 1} de {WIZARD_STEPS.length}</span>
       </p>
     </div>
   );

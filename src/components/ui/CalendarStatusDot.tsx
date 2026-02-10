@@ -23,10 +23,10 @@ export const CalendarStatusDot: React.FC<CalendarStatusDotProps> = ({
 
   // Determinar estado visual do badge
   const getStatusBadge = () => {
-    if (hasError) return { color: 'bg-red-500', icon: AlertCircle };
+    if (hasError) return { color: 'bg-ceramic-error', icon: AlertCircle };
     if (!isConnected) return { color: 'bg-ceramic-text-secondary/40', icon: null };
     if (isSyncing) return { color: 'bg-amber-500', icon: null };
-    return { color: 'bg-emerald-500', icon: Check };
+    return { color: 'bg-ceramic-success', icon: Check };
   };
 
   const statusBadge = getStatusBadge();
@@ -107,7 +107,7 @@ export const CalendarStatusDot: React.FC<CalendarStatusDotProps> = ({
                   {onDisconnect && (
                     <button
                       onClick={() => { onDisconnect(); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ceramic-error hover:bg-ceramic-error/10 rounded-lg transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
                       Desconectar

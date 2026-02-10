@@ -103,7 +103,7 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="ceramic-inset p-2">
-            <Users className="w-5 h-5 text-blue-600" />
+            <Users className="w-5 h-5 text-ceramic-info" />
           </div>
           <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
             Contatos Recentes
@@ -166,11 +166,11 @@ export function RecentContactsWidget({ onViewAllClick, onContactClick }: RecentC
       {/* Source indicator */}
       <div className="mt-4 flex items-center gap-2 text-[10px] text-ceramic-text-secondary">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+          <div className="w-2 h-2 bg-ceramic-info rounded-full" />
           <span>Google</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+          <div className="w-2 h-2 bg-ceramic-success rounded-full" />
           <span>WhatsApp</span>
         </div>
       </div>

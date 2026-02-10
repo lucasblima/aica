@@ -65,7 +65,7 @@ export const DraftingStage: React.FC = () => {
                 {approvedCount} / {totalFields}
               </span>
               {isComplete && (
-                <span className="px-2 py-0.5 bg-green-100 text-green-600 text-xs font-bold rounded-full">
+                <span className="px-2 py-0.5 bg-ceramic-success-bg text-ceramic-success text-xs font-bold rounded-full">
                   Completo!
                 </span>
               )}
@@ -161,15 +161,15 @@ export const DraftingStage: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="ceramic-card p-6 bg-green-50 border border-green-200"
+          className="ceramic-card p-6 bg-ceramic-success-bg border border-ceramic-success/20"
         >
           <div className="flex items-start gap-4">
-            <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0" />
+            <CheckCircle2 className="w-8 h-8 text-ceramic-success flex-shrink-0" />
             <div>
-              <h3 className="text-lg font-bold text-green-700 mb-1">
+              <h3 className="text-lg font-bold text-ceramic-success mb-1">
                 Proposta Completa!
               </h3>
-              <p className="text-sm text-green-600">
+              <p className="text-sm text-ceramic-success">
                 Todos os campos foram preenchidos e aprovados. Copie as respostas para
                 o sistema externo do edital.
               </p>
@@ -256,7 +256,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
   };
 
   const getStatusColor = () => {
-    if (isApproved) return 'border-green-400 bg-green-50';
+    if (isApproved) return 'border-ceramic-success bg-ceramic-success-bg';
     if (hasContent) return 'border-amber-400 bg-amber-50';
     return 'border-transparent';
   };
@@ -278,7 +278,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
               isApproved
-                ? 'bg-green-500 text-white'
+                ? 'bg-ceramic-success text-white'
                 : hasContent
                 ? 'bg-amber-500 text-white'
                 : 'bg-[#5C554B] text-white'
@@ -291,7 +291,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
           <div className="flex-1 min-w-0">
             <h4 className="text-sm sm:text-base font-bold text-[#5C554B] truncate">
               {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
+              {field.required && <span className="text-ceramic-error ml-1">*</span>}
             </h4>
             <div className="flex items-center gap-2 text-xs text-[#948D82]">
               <span>
@@ -299,7 +299,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
                 {field.max_chars && ` / ${field.max_chars}`} chars
               </span>
               {isApproved && (
-                <span className="text-green-600 font-bold">Aprovado</span>
+                <span className="text-ceramic-success font-bold">Aprovado</span>
               )}
               {hasContent && !isApproved && (
                 <span className="text-amber-600 font-bold">Gerado</span>
@@ -318,7 +318,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
                 e.stopPropagation();
                 onApprove();
               }}
-              className="ceramic-concave px-3 py-1.5 text-xs font-bold text-green-600 hover:scale-95 transition-transform flex items-center gap-1"
+              className="ceramic-concave px-3 py-1.5 text-xs font-bold text-ceramic-success hover:scale-95 transition-transform flex items-center gap-1"
             >
               <Check className="w-4 h-4" />
               <span className="hidden sm:inline">Aprovar</span>
@@ -378,7 +378,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
                   <div className="flex items-center justify-between">
                     <span
                       className={`text-xs ${
-                        exceedsMax ? 'text-red-600' : 'text-[#948D82]'
+                        exceedsMax ? 'text-ceramic-error' : 'text-[#948D82]'
                       }`}
                     >
                       {editContent.length}
@@ -410,7 +410,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
                   <div className="flex items-center justify-between">
                     <span
                       className={`text-xs ${
-                        exceedsMax ? 'text-red-600' : 'text-[#948D82]'
+                        exceedsMax ? 'text-ceramic-error' : 'text-[#948D82]'
                       }`}
                     >
                       {charCount}
@@ -427,7 +427,7 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
                       <button
                         onClick={handleCopy}
                         className={`ceramic-concave px-3 py-1.5 text-xs font-bold hover:scale-95 transition-transform flex items-center gap-1 ${
-                          copySuccess ? 'text-green-600' : 'text-[#5C554B]'
+                          copySuccess ? 'text-ceramic-success' : 'text-[#5C554B]'
                         }`}
                       >
                         {copySuccess ? (
@@ -473,8 +473,8 @@ const DraftingFieldCard: React.FC<DraftingFieldCardProps> = ({
 
               {/* Character Warning */}
               {exceedsMax && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-xs text-red-600 font-medium">
+                <div className="mt-3 p-3 bg-ceramic-error-bg border border-ceramic-error/20 rounded-lg">
+                  <p className="text-xs text-ceramic-error font-medium">
                     Texto excede o limite maximo de {field.max_chars} caracteres
                   </p>
                 </div>

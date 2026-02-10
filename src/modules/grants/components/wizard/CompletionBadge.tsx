@@ -115,7 +115,7 @@ export function CompletionBadge({
 
       {/* Percentage */}
       {showProgress && (
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-ceramic-text-secondary">
           {percentage}% completo
         </span>
       )}
@@ -142,7 +142,7 @@ export function LevelProgressCard({
 }: LevelProgressCardProps) {
   return (
     <motion.div
-      className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100"
+      className="p-4 bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -155,8 +155,8 @@ export function LevelProgressCard({
           {currentLevel.icon}
         </div>
         <div>
-          <p className="font-semibold text-gray-900">{currentLevel.name}</p>
-          <p className="text-sm text-gray-500">{currentLevel.description}</p>
+          <p className="font-semibold text-ceramic-text-primary">{currentLevel.name}</p>
+          <p className="text-sm text-ceramic-text-secondary">{currentLevel.description}</p>
         </div>
       </div>
 
@@ -164,13 +164,13 @@ export function LevelProgressCard({
       {nextLevel && (
         <div>
           <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-gray-500">Proximo nivel</span>
+            <span className="text-ceramic-text-secondary">Proximo nivel</span>
             <span className="font-medium" style={{ color: nextLevel.color }}>
               {nextLevel.name} {nextLevel.icon}
             </span>
           </div>
 
-          <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="relative h-2 bg-ceramic-base rounded-full overflow-hidden">
             <motion.div
               className="absolute inset-y-0 left-0 rounded-full"
               style={{
@@ -182,7 +182,7 @@ export function LevelProgressCard({
             />
           </div>
 
-          <p className="mt-2 text-xs text-gray-400 text-center">
+          <p className="mt-2 text-xs text-ceramic-text-secondary text-center">
             {nextLevel.minPercentage - percentage}% restante para {nextLevel.name}
           </p>
         </div>
@@ -192,7 +192,7 @@ export function LevelProgressCard({
       {!nextLevel && (
         <div className="text-center py-2">
           <span className="text-2xl">🎉</span>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-ceramic-text-secondary mt-1">
             Nivel maximo alcancado!
           </p>
         </div>
@@ -235,7 +235,7 @@ export function LevelBadgesOverview({ currentPercentage }: LevelBadgesOverviewPr
             >
               {level.name}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-ceramic-text-secondary">
               {level.minPercentage}%+
             </span>
           </motion.div>

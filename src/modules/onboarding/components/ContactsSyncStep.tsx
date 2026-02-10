@@ -242,7 +242,7 @@ export function ContactsSyncStep({
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 200 }}
               >
-                <CheckCircle className="w-12 h-12 text-green-500" />
+                <CheckCircle className="w-12 h-12 text-ceramic-success" />
               </motion.div>
             ) : isError ? (
               <motion.div
@@ -251,14 +251,14 @@ export function ContactsSyncStep({
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 200 }}
               >
-                <AlertCircle className="w-12 h-12 text-red-500" />
+                <AlertCircle className="w-12 h-12 text-ceramic-error" />
               </motion.div>
             ) : (
               <motion.div
                 key="spinner"
                 exit={{ opacity: 0, scale: 0.5 }}
               >
-                <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
+                <Loader2 className="w-10 h-10 text-ceramic-success animate-spin" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -273,7 +273,7 @@ export function ContactsSyncStep({
         key={currentPhase}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`mb-8 ${isError ? 'text-red-600' : 'text-ceramic-600'}`}
+        className={`mb-8 ${isError ? 'text-ceramic-error' : 'text-ceramic-600'}`}
       >
         {getPhaseLabel()}
       </motion.p>
@@ -302,8 +302,8 @@ export function ContactsSyncStep({
         className="grid grid-cols-2 gap-4 w-full max-w-sm"
       >
         <div className="p-4 bg-ceramic-50 rounded-xl text-center">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
-            <Users className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center mx-auto mb-2">
+            <Users className="w-5 h-5 text-ceramic-info" />
           </div>
           <motion.p
             className="text-2xl font-bold text-ceramic-900"
@@ -315,8 +315,8 @@ export function ContactsSyncStep({
         </div>
 
         <div className="p-4 bg-ceramic-50 rounded-xl text-center">
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
-            <MessageSquare className="w-5 h-5 text-purple-600" />
+          <div className="w-10 h-10 rounded-full bg-ceramic-accent/10 flex items-center justify-center mx-auto mb-2">
+            <MessageSquare className="w-5 h-5 text-ceramic-accent" />
           </div>
           <motion.p
             className="text-2xl font-bold text-ceramic-900"
@@ -348,12 +348,12 @@ export function ContactsSyncStep({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="mt-8 p-4 bg-green-50 rounded-xl flex items-start gap-3 max-w-sm"
+        className="mt-8 p-4 bg-ceramic-success/10 rounded-xl flex items-start gap-3 max-w-sm"
       >
-        <Shield className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+        <Shield className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" />
         <div className="text-sm">
-          <p className="font-medium text-green-800">Sua privacidade importa</p>
-          <p className="text-green-700 mt-1">
+          <p className="font-medium text-ceramic-text-primary">Sua privacidade importa</p>
+          <p className="text-ceramic-success mt-1">
             Sincronizamos apenas metadados (nomes e números). O conteúdo das
             mensagens só é analisado quando você solicita explicitamente.
           </p>

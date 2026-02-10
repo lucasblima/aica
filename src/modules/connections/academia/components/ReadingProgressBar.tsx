@@ -34,7 +34,7 @@ export const ReadingProgressBar: React.FC<ReadingProgressBarProps> = ({
           {label && (
             <span
               className={`
-              text-stone-600 font-light
+              text-ceramic-text-secondary font-light
               ${compact ? 'text-xs' : 'text-sm'}
             `}
             >
@@ -44,7 +44,7 @@ export const ReadingProgressBar: React.FC<ReadingProgressBarProps> = ({
           {showPercentage && (
             <span
               className={`
-              text-stone-500 font-light
+              text-ceramic-text-secondary font-light
               ${compact ? 'text-xs' : 'text-sm'}
             `}
             >
@@ -55,16 +55,16 @@ export const ReadingProgressBar: React.FC<ReadingProgressBarProps> = ({
       )}
 
       {/* Progress Bar */}
-      <div className="relative w-full bg-stone-100 rounded-full overflow-hidden h-2">
+      <div className="relative w-full bg-ceramic-cool rounded-full overflow-hidden h-2">
         <div
-          className="absolute top-0 left-0 h-full bg-emerald-600 transition-all duration-500 ease-out rounded-full"
+          className="absolute top-0 left-0 h-full bg-ceramic-success transition-all duration-500 ease-out rounded-full"
           style={{ width: `${percentage}%` }}
         />
       </div>
 
       {/* Milestone Markers (optional enhancement) */}
       {!compact && total >= 10 && (
-        <div className="flex justify-between text-xs text-stone-400 font-light">
+        <div className="flex justify-between text-xs text-ceramic-text-tertiary font-light">
           <span>Start</span>
           <span>Complete</span>
         </div>

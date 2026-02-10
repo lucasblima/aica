@@ -23,7 +23,7 @@ const ARCHETYPES: Archetype[] = [
     description: 'Condomínio e residência',
     icon: Home,
     action: 'Conectar',
-    gradient: 'from-blue-500 to-cyan-500'
+    gradient: 'from-ceramic-info to-ceramic-info/80'
   },
   {
     id: 'ventures',
@@ -31,7 +31,7 @@ const ARCHETYPES: Archetype[] = [
     description: 'Projetos e empresas',
     icon: Briefcase,
     action: 'Iniciar',
-    gradient: 'from-purple-500 to-pink-500'
+    gradient: 'from-ceramic-accent to-ceramic-accent/80'
   },
   {
     id: 'academia',
@@ -39,7 +39,7 @@ const ARCHETYPES: Archetype[] = [
     description: 'Cursos e mentorias',
     icon: GraduationCap,
     action: 'Explorar',
-    gradient: 'from-amber-500 to-orange-500'
+    gradient: 'from-ceramic-warning to-ceramic-warning/80'
   },
   {
     id: 'tribo',
@@ -47,7 +47,7 @@ const ARCHETYPES: Archetype[] = [
     description: 'Clubes e grupos',
     icon: Users,
     action: 'Participar',
-    gradient: 'from-green-500 to-emerald-500'
+    gradient: 'from-ceramic-success to-ceramic-success/80'
   }
 ];
 

@@ -84,9 +84,9 @@ export function EquityTable({
             {formatPercentage(totalAllocated)}
           </div>
         </div>
-        <div className="bg-neutral-50 rounded-lg p-4 border border-neutral-200">
-          <div className="text-xs font-medium text-neutral-700 mb-1">Disponível</div>
-          <div className="text-2xl font-bold text-neutral-900">
+        <div className="bg-ceramic-cool rounded-lg p-4 border border-ceramic-border">
+          <div className="text-xs font-medium text-ceramic-text-primary mb-1">Disponível</div>
+          <div className="text-2xl font-bold text-ceramic-text-primary">
             {formatPercentage(available)}
           </div>
         </div>
@@ -96,24 +96,24 @@ export function EquityTable({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-neutral-200">
-              <th className="text-left text-xs font-semibold text-neutral-700 pb-2 pr-4">
+            <tr className="border-b border-ceramic-border">
+              <th className="text-left text-xs font-semibold text-ceramic-text-primary pb-2 pr-4">
                 Nome/Tipo
               </th>
-              <th className="text-left text-xs font-semibold text-neutral-700 pb-2 pr-4">
+              <th className="text-left text-xs font-semibold text-ceramic-text-primary pb-2 pr-4">
                 Equity
               </th>
               {showVesting && (
                 <>
-                  <th className="text-left text-xs font-semibold text-neutral-700 pb-2 pr-4">
+                  <th className="text-left text-xs font-semibold text-ceramic-text-primary pb-2 pr-4">
                     Vesting
                   </th>
-                  <th className="text-left text-xs font-semibold text-neutral-700 pb-2 pr-4">
+                  <th className="text-left text-xs font-semibold text-ceramic-text-primary pb-2 pr-4">
                     Vested
                   </th>
                 </>
               )}
-              <th className="text-left text-xs font-semibold text-neutral-700 pb-2">
+              <th className="text-left text-xs font-semibold text-ceramic-text-primary pb-2">
                 Shares
               </th>
             </tr>
@@ -128,19 +128,19 @@ export function EquityTable({
                   key={stakeholder.id}
                   onClick={() => onStakeholderClick?.(stakeholder)}
                   className={`
-                    border-b border-neutral-100 last:border-b-0
-                    hover:bg-neutral-50
+                    border-b border-ceramic-border/50 last:border-b-0
+                    hover:bg-ceramic-cool
                     ${onStakeholderClick ? 'cursor-pointer' : ''}
                   `}
                 >
                   {/* Name/Type */}
                   <td className="py-3 pr-4">
-                    <div className="text-sm font-medium text-neutral-900">
+                    <div className="text-sm font-medium text-ceramic-text-primary">
                       {stakeholder.role_title ||
                         typeLabels[stakeholder.stakeholder_type] ||
                         stakeholder.stakeholder_type}
                     </div>
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-xs text-ceramic-text-secondary">
                       {stakeholder.stakeholder_type}
                     </div>
                   </td>
@@ -157,17 +157,17 @@ export function EquityTable({
                       {/* Vesting Schedule */}
                       <td className="py-3 pr-4">
                         {stakeholder.vesting_period_months ? (
-                          <div className="text-xs text-neutral-600">
+                          <div className="text-xs text-ceramic-text-secondary">
                             {stakeholder.vesting_period_months}m
                             {stakeholder.vesting_cliff_months && (
-                              <span className="text-neutral-500">
+                              <span className="text-ceramic-text-secondary">
                                 {' '}
                                 (cliff: {stakeholder.vesting_cliff_months}m)
                               </span>
                             )}
                           </div>
                         ) : (
-                          <div className="text-xs text-neutral-400">Sem vesting</div>
+                          <div className="text-xs text-ceramic-text-tertiary">Sem vesting</div>
                         )}
                       </td>
 
@@ -175,22 +175,22 @@ export function EquityTable({
                       <td className="py-3 pr-4">
                         {stakeholder.vesting_period_months ? (
                           <div>
-                            <div className="text-sm font-medium text-green-700">
+                            <div className="text-sm font-medium text-ceramic-success">
                               {formatPercentage(vestedEquity)}
                             </div>
-                            <div className="text-xs text-neutral-500">
+                            <div className="text-xs text-ceramic-text-secondary">
                               {vestedPct.toFixed(0)}% vested
                             </div>
                             {/* Vesting Progress Bar */}
-                            <div className="w-full bg-neutral-100 rounded-full h-1.5 mt-1">
+                            <div className="w-full bg-ceramic-cool rounded-full h-1.5 mt-1">
                               <div
-                                className="bg-green-500 h-1.5 rounded-full transition-all"
+                                className="bg-ceramic-success h-1.5 rounded-full transition-all"
                                 style={{ width: `${vestedPct}%` }}
                               />
                             </div>
                           </div>
                         ) : (
-                          <div className="text-sm font-medium text-green-700">
+                          <div className="text-sm font-medium text-ceramic-success">
                             {formatPercentage(stakeholder.equity_pct)}
                           </div>
                         )}
@@ -201,16 +201,16 @@ export function EquityTable({
                   {/* Shares Count */}
                   <td className="py-3">
                     {stakeholder.shares_count ? (
-                      <div className="text-sm text-neutral-700">
+                      <div className="text-sm text-ceramic-text-primary">
                         {stakeholder.shares_count.toLocaleString('pt-BR')}
                         {stakeholder.share_class && (
-                          <span className="text-xs text-neutral-500 ml-1">
+                          <span className="text-xs text-ceramic-text-secondary ml-1">
                             ({stakeholder.share_class})
                           </span>
                         )}
                       </div>
                     ) : (
-                      <div className="text-xs text-neutral-400">-</div>
+                      <div className="text-xs text-ceramic-text-tertiary">-</div>
                     )}
                   </td>
                 </tr>
@@ -222,10 +222,10 @@ export function EquityTable({
 
       {/* Empty State */}
       {stakeholdersWithEquity.length === 0 && (
-        <div className="text-center py-12 border-t border-neutral-200">
+        <div className="text-center py-12 border-t border-ceramic-border">
           <div className="text-4xl mb-2">📊</div>
-          <p className="text-sm text-neutral-600">Nenhuma equity alocada ainda</p>
-          <p className="text-xs text-neutral-500 mt-1">
+          <p className="text-sm text-ceramic-text-secondary">Nenhuma equity alocada ainda</p>
+          <p className="text-xs text-ceramic-text-secondary mt-1">
             Adicione stakeholders com participação acionária para visualizar o cap table
           </p>
         </div>
@@ -233,12 +233,12 @@ export function EquityTable({
 
       {/* Warning if over-allocated */}
       {totalAllocated > 100 && (
-        <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
+        <div className="mt-4 bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg p-3">
           <div className="flex items-start gap-2">
-            <span className="text-red-600 text-lg">⚠️</span>
+            <span className="text-ceramic-error text-lg">⚠️</span>
             <div>
-              <div className="text-sm font-semibold text-red-900">Equity sobre-alocada</div>
-              <div className="text-xs text-red-700 mt-0.5">
+              <div className="text-sm font-semibold text-ceramic-error">Equity sobre-alocada</div>
+              <div className="text-xs text-ceramic-error/80 mt-0.5">
                 O total de equity alocada ({formatPercentage(totalAllocated)}) excede 100%.
                 Revise a distribuição de participação.
               </div>

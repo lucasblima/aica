@@ -20,19 +20,19 @@ interface ErrorsLogProps {
 }
 
 const getErrorIcon = (status: WhatsAppSessionStatus, hasError: boolean) => {
-  if (status === 'banned') return <Ban className="w-4 h-4 text-red-700" />
-  if (status === 'error') return <AlertCircle className="w-4 h-4 text-red-500" />
-  if (status === 'disconnected') return <WifiOff className="w-4 h-4 text-gray-500" />
-  if (hasError) return <AlertTriangle className="w-4 h-4 text-amber-500" />
-  return <AlertCircle className="w-4 h-4 text-gray-400" />
+  if (status === 'banned') return <Ban className="w-4 h-4 text-ceramic-error" />
+  if (status === 'error') return <AlertCircle className="w-4 h-4 text-ceramic-error" />
+  if (status === 'disconnected') return <WifiOff className="w-4 h-4 text-ceramic-text-secondary" />
+  if (hasError) return <AlertTriangle className="w-4 h-4 text-ceramic-warning" />
+  return <AlertCircle className="w-4 h-4 text-ceramic-text-tertiary" />
 }
 
 const getSeverityColor = (status: WhatsAppSessionStatus, consecutiveErrors: number) => {
-  if (status === 'banned') return 'border-l-red-700 bg-red-50'
-  if (status === 'error' || consecutiveErrors >= 5) return 'border-l-red-500 bg-red-50'
-  if (consecutiveErrors >= 3) return 'border-l-amber-500 bg-amber-50'
-  if (status === 'disconnected') return 'border-l-gray-400 bg-gray-50'
-  return 'border-l-gray-300 bg-white'
+  if (status === 'banned') return 'border-l-ceramic-error bg-ceramic-error/5'
+  if (status === 'error' || consecutiveErrors >= 5) return 'border-l-ceramic-error bg-ceramic-error/5'
+  if (consecutiveErrors >= 3) return 'border-l-ceramic-warning bg-ceramic-warning/5'
+  if (status === 'disconnected') return 'border-l-ceramic-text-tertiary bg-ceramic-base'
+  return 'border-l-ceramic-border bg-ceramic-base'
 }
 
 export function ErrorsLog({
@@ -42,7 +42,7 @@ export function ErrorsLog({
 }: ErrorsLogProps) {
   if (errors.length === 0) {
     return (
-      <div className={`bg-white rounded-xl shadow-sm border border-ceramic-200 p-6 ${className}`}>
+      <div className={`bg-ceramic-base rounded-xl shadow-sm border border-ceramic-border p-6 ${className}`}>
         <h3 className="text-lg font-semibold text-ceramic-900 mb-4">Erros Recentes</h3>
         <div className="flex flex-col items-center justify-center py-8 text-ceramic-400">
           <AlertCircle className="w-12 h-12 mb-2" />
@@ -54,7 +54,7 @@ export function ErrorsLog({
   }
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-ceramic-200 ${className}`}>
+    <div className={`bg-ceramic-base rounded-xl shadow-sm border border-ceramic-border ${className}`}>
       <div className="p-4 border-b border-ceramic-200 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-ceramic-900">Erros Recentes</h3>
         <span className="text-sm text-ceramic-500">{errors.length} registros</span>
@@ -99,7 +99,7 @@ export function ErrorsLog({
                   )}
 
                   {error.error_message && (
-                    <p className="mt-1 text-sm text-red-600 line-clamp-2">
+                    <p className="mt-1 text-sm text-ceramic-error line-clamp-2">
                       {error.error_message}
                     </p>
                   )}
@@ -108,17 +108,17 @@ export function ErrorsLog({
                     <span
                       className={`px-2 py-0.5 rounded-full ${
                         error.status === 'banned'
-                          ? 'bg-red-100 text-red-700'
+                          ? 'bg-ceramic-error/10 text-ceramic-error'
                           : error.status === 'error'
-                          ? 'bg-red-100 text-red-600'
-                          : 'bg-gray-100 text-gray-600'
+                          ? 'bg-ceramic-error/10 text-ceramic-error'
+                          : 'bg-ceramic-cool text-ceramic-text-secondary'
                       }`}
                     >
                       {error.status}
                     </span>
 
                     {error.consecutive_errors > 0 && (
-                      <span className="text-amber-600">
+                      <span className="text-ceramic-warning">
                         {error.consecutive_errors} erros consecutivos
                       </span>
                     )}

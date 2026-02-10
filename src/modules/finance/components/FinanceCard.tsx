@@ -85,9 +85,9 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
     if (loading) {
         return (
             <div className="ceramic-card p-5 animate-pulse h-full min-h-[180px]">
-                <div className="h-4 bg-gray-200 rounded w-20 mb-3"></div>
-                <div className="h-10 bg-gray-200 rounded w-28 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-ceramic-cool rounded w-20 mb-3"></div>
+                <div className="h-10 bg-ceramic-cool rounded w-28 mb-2"></div>
+                <div className="h-3 bg-ceramic-cool rounded w-16"></div>
             </div>
         );
     }
@@ -113,13 +113,13 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
             whileTap="pressed"
         >
             {/* Decorative Background Icon */}
-            <Wallet className="absolute -right-6 -bottom-6 w-40 h-40 text-emerald-200 opacity-10" />
+            <Wallet className="absolute -right-6 -bottom-6 w-40 h-40 text-ceramic-success/20 opacity-10" />
 
             {/* Header with Module Name and Visibility Toggle */}
             <div className="flex items-center justify-between mb-3 relative z-10">
                 <div className="flex items-center gap-2">
                     <div className="ceramic-concave w-7 h-7 flex items-center justify-center">
-                        <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                        <Wallet className="w-3.5 h-3.5 text-ceramic-success" />
                     </div>
                     <span className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider font-bold">
                         Finanças

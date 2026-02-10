@@ -27,16 +27,16 @@ export const CalendarSyncIndicator: React.FC<CalendarSyncIndicatorProps> = ({
       <button
         onClick={() => setShowTooltip(!showTooltip)}
         className={`relative ceramic-card p-2 rounded-full transition-all duration-200 hover:scale-105 ${
-          !isConnected ? 'ring-2 ring-red-300' : ''
+          !isConnected ? 'ring-2 ring-ceramic-error/30' : ''
         }`}
       >
         <Calendar className={`w-5 h-5 ${
-          isConnected ? 'text-ceramic-text-secondary' : 'text-red-500'
+          isConnected ? 'text-ceramic-text-secondary' : 'text-ceramic-error'
         }`} />
 
         {/* Ponto de status */}
         {!isConnected && (
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-ceramic-error rounded-full animate-pulse" />
         )}
 
         {isSyncing && (
@@ -75,9 +75,9 @@ export const CalendarSyncIndicator: React.FC<CalendarSyncIndicatorProps> = ({
             {isConnected ? (
               <>
                 {/* Status Conectado */}
-                <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-green-50">
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-700">Conectado</span>
+                <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-ceramic-success/10">
+                  <Check className="w-4 h-4 text-ceramic-success" />
+                  <span className="text-sm text-ceramic-success">Conectado</span>
                 </div>
 
                 {lastSyncTime && (
@@ -98,7 +98,7 @@ export const CalendarSyncIndicator: React.FC<CalendarSyncIndicatorProps> = ({
                 {onDisconnect && (
                   <button
                     onClick={() => { onDisconnect(); setShowTooltip(false); }}
-                    className="w-full mt-2 py-2 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-2 py-2 text-sm font-medium text-ceramic-error hover:text-ceramic-error/80 hover:bg-ceramic-error/5 rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
                     <LogOut className="w-4 h-4" />
                     Desconectar
@@ -108,9 +108,9 @@ export const CalendarSyncIndicator: React.FC<CalendarSyncIndicatorProps> = ({
             ) : (
               <>
                 {/* Status Desconectado */}
-                <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-red-50">
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                  <span className="text-sm text-red-700">Não conectado</span>
+                <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-ceramic-error/10">
+                  <AlertCircle className="w-4 h-4 text-ceramic-error" />
+                  <span className="text-sm text-ceramic-error">Não conectado</span>
                 </div>
 
                 <p className="text-xs text-ceramic-text-secondary mb-3">

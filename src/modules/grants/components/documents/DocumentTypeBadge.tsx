@@ -73,81 +73,81 @@ const DOCUMENT_TYPE_CONFIG: Record<string, TypeConfig> = {
     label: 'Rouanet',
     fullLabel: 'Projeto Lei Rouanet',
     icon: BookOpen,
-    bgColor: 'bg-indigo-50',
-    textColor: 'text-indigo-700',
-    borderColor: 'border-indigo-200',
+    bgColor: 'bg-amber-50',
+    textColor: 'text-amber-700',
+    borderColor: 'border-amber-200',
   },
   proac: {
     label: 'ProAC',
     fullLabel: 'Projeto ProAC',
     icon: BookOpen,
-    bgColor: 'bg-purple-50',
-    textColor: 'text-purple-700',
-    borderColor: 'border-purple-200',
+    bgColor: 'bg-ceramic-accent/10',
+    textColor: 'text-ceramic-accent',
+    borderColor: 'border-ceramic-accent/20',
   },
   estatuto: {
     label: 'Estatuto',
     fullLabel: 'Estatuto Social',
     icon: ScrollText,
-    bgColor: 'bg-blue-50',
-    textColor: 'text-blue-700',
-    borderColor: 'border-blue-200',
+    bgColor: 'bg-ceramic-info-bg',
+    textColor: 'text-ceramic-info',
+    borderColor: 'border-ceramic-border',
   },
   relatorio: {
     label: 'Relatorio',
     fullLabel: 'Relatorio de Execucao',
     icon: FileBarChart,
-    bgColor: 'bg-green-50',
-    textColor: 'text-green-700',
-    borderColor: 'border-green-200',
+    bgColor: 'bg-ceramic-success-bg',
+    textColor: 'text-ceramic-success',
+    borderColor: 'border-ceramic-success/30',
   },
   apresentacao: {
     label: 'Apresentacao',
     fullLabel: 'Apresentacao Institucional',
     icon: Presentation,
-    bgColor: 'bg-orange-50',
-    textColor: 'text-orange-700',
-    borderColor: 'border-orange-200',
+    bgColor: 'bg-ceramic-warning/10',
+    textColor: 'text-ceramic-warning',
+    borderColor: 'border-ceramic-warning/20',
   },
   contrato: {
     label: 'Contrato',
     fullLabel: 'Contrato',
     icon: FileSignature,
-    bgColor: 'bg-red-50',
-    textColor: 'text-red-700',
-    borderColor: 'border-red-200',
+    bgColor: 'bg-ceramic-error-bg',
+    textColor: 'text-ceramic-error',
+    borderColor: 'border-ceramic-error/30',
   },
   edital: {
     label: 'Edital',
     fullLabel: 'Edital de Abertura',
     icon: Megaphone,
-    bgColor: 'bg-yellow-50',
-    textColor: 'text-yellow-700',
-    borderColor: 'border-yellow-200',
+    bgColor: 'bg-ceramic-warning/10',
+    textColor: 'text-ceramic-warning',
+    borderColor: 'border-ceramic-warning/20',
   },
   proposta: {
     label: 'Proposta',
     fullLabel: 'Proposta de Projeto',
     icon: FileInput,
-    bgColor: 'bg-cyan-50',
-    textColor: 'text-cyan-700',
-    borderColor: 'border-cyan-200',
+    bgColor: 'bg-ceramic-info/10',
+    textColor: 'text-ceramic-info',
+    borderColor: 'border-ceramic-info/20',
   },
   ata: {
     label: 'Ata',
     fullLabel: 'Ata de Reuniao',
     icon: Users,
-    bgColor: 'bg-teal-50',
-    textColor: 'text-teal-700',
-    borderColor: 'border-teal-200',
+    bgColor: 'bg-ceramic-success/10',
+    textColor: 'text-ceramic-success',
+    borderColor: 'border-ceramic-success/20',
   },
   outros: {
     label: 'Outros',
     fullLabel: 'Outros Documentos',
     icon: FileText,
-    bgColor: 'bg-gray-50',
-    textColor: 'text-gray-700',
-    borderColor: 'border-gray-200',
+    bgColor: 'bg-ceramic-base',
+    textColor: 'text-ceramic-text-primary',
+    borderColor: 'border-ceramic-border',
   },
 };
 
@@ -191,10 +191,10 @@ function normalizeType(type: string | null | undefined): string {
 }
 
 function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.8) return 'text-green-600';
-  if (confidence >= 0.6) return 'text-yellow-600';
-  if (confidence >= 0.4) return 'text-orange-600';
-  return 'text-red-600';
+  if (confidence >= 0.8) return 'text-ceramic-success';
+  if (confidence >= 0.6) return 'text-ceramic-warning';
+  if (confidence >= 0.4) return 'text-ceramic-warning';
+  return 'text-ceramic-error';
 }
 
 // =============================================================================

@@ -429,9 +429,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
     minChars?: number,
     maxChars?: number
   ): string => {
-    if (minChars && length < minChars) return 'text-orange-600';
-    if (maxChars && length > maxChars) return 'text-red-600';
-    return 'text-green-600';
+    if (minChars && length < minChars) return 'text-ceramic-warning';
+    if (maxChars && length > maxChars) return 'text-ceramic-error';
+    return 'text-ceramic-success';
   };
 
   const completion = calculateCompletion();
@@ -473,7 +473,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                 </div>
                 <div className="ceramic-trough p-2">
                   <motion.div
-                    className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"
+                    className="h-2 rounded-full bg-gradient-to-r from-ceramic-info to-ceramic-accent"
                     initial={{ width: '0%' }}
                     animate={{ width: `${(transferProgress.current / transferProgress.total) * 100}%` }}
                     transition={{ duration: 0.3 }}
@@ -583,7 +583,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
           {/* Row 3: Progress Bar - Thin */}
           <div className="ceramic-trough p-1.5">
             <motion.div
-              className="h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"
+              className="h-1.5 rounded-full bg-gradient-to-r from-ceramic-info to-ceramic-accent"
               initial={{ width: 0 }}
               animate={{ width: `${completion}%` }}
               transition={{ duration: 0.3 }}
@@ -616,14 +616,14 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                   className="w-full p-6 flex items-center justify-between hover:bg-black/5 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`ceramic-concave w-12 h-12 flex items-center justify-center ${meetsRequirement && !exceedsMax ? 'text-green-600' : 'text-ceramic-text-secondary'
+                    <div className={`ceramic-concave w-12 h-12 flex items-center justify-center ${meetsRequirement && !exceedsMax ? 'text-ceramic-success' : 'text-ceramic-text-secondary'
                       }`}>
                       <FileText className="w-5 h-5" />
                     </div>
                     <div className="text-left">
                       <h3 className="text-lg font-bold text-ceramic-text-primary">
                         {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                        {field.required && <span className="text-ceramic-error ml-1">*</span>}
                       </h3>
                       <p className="text-sm text-ceramic-text-secondary">
                         {field.ai_prompt_hint || 'Preencha este campo com as informações solicitadas'}
@@ -633,7 +633,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                   <div className="flex items-center gap-3">
                     {charCount > 0 && (
                       <span
-                        className={`text-sm font-medium ${exceedsMax ? 'text-red-600' : 'text-ceramic-text-secondary'
+                        className={`text-sm font-medium ${exceedsMax ? 'text-ceramic-error' : 'text-ceramic-text-secondary'
                           }`}
                       >
                         {charCount}
@@ -641,9 +641,9 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                       </span>
                     )}
                     {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-ceramic-text-tertiary" />
+                      <ChevronUp className="w-5 h-5 text-ceramic-text-secondary" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-ceramic-text-tertiary" />
+                      <ChevronDown className="w-5 h-5 text-ceramic-text-secondary" />
                     )}
                   </div>
                 </button>
@@ -675,8 +675,8 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                           <span
                             className={
                               meetsRequirement
-                                ? 'text-green-600'
-                                : 'text-ceramic-text-tertiary'
+                                ? 'text-ceramic-success'
+                                : 'text-ceramic-text-secondary'
                             }
                           >
                             {meetsRequirement
@@ -684,7 +684,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                               : field.required ? 'Campo obrigatório' : 'Campo opcional'}
                           </span>
                           {field.max_chars && charCount > field.max_chars * 0.9 && (
-                            <span className={exceedsMax ? 'text-red-600' : 'text-orange-600'}>
+                            <span className={exceedsMax ? 'text-ceramic-error' : 'text-ceramic-warning'}>
                               {exceedsMax
                                 ? `Excedeu em ${charCount - field.max_chars} caracteres!`
                                 : `${field.max_chars - charCount} caracteres restantes`
@@ -747,7 +747,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
               <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
                 <div className="flex items-center gap-3">
                   <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-purple-500" />
+                    <FileText className="w-5 h-5 text-ceramic-accent" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-ceramic-text-primary">
@@ -812,7 +812,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
               <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
                 <div className="flex items-center gap-3">
                   <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                    <FolderOpen className="w-5 h-5 text-blue-500" />
+                    <FolderOpen className="w-5 h-5 text-ceramic-info" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-ceramic-text-primary">
@@ -838,7 +838,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingDocument}
-                      className="ceramic-convex px-4 py-2 text-xs font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:scale-95 disabled:opacity-50 transition-all flex items-center gap-2"
+                      className="ceramic-convex px-4 py-2 text-xs font-bold bg-gradient-to-r from-ceramic-info to-ceramic-info/90 text-white hover:scale-95 disabled:opacity-50 transition-all flex items-center gap-2"
                     >
                       {isUploadingDocument ? (
                         <>
@@ -885,7 +885,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                         className="ceramic-tray p-4 flex items-center justify-between hover:scale-[1.01] transition-transform"
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="ceramic-concave w-10 h-10 flex-shrink-0 flex items-center justify-center text-green-600">
+                          <div className="ceramic-concave w-10 h-10 flex-shrink-0 flex items-center justify-center text-ceramic-success">
                             <FileCheck className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -899,7 +899,7 @@ export const ProjectBriefingView: React.FC<ProjectBriefingViewProps> = ({
                         </div>
                         <button
                           onClick={() => handleRemoveDocument(doc.id, doc.file_name)}
-                          className="ceramic-concave w-9 h-9 flex-shrink-0 flex items-center justify-center text-red-600 hover:scale-95 transition-transform ml-3"
+                          className="ceramic-concave w-9 h-9 flex-shrink-0 flex items-center justify-center text-ceramic-error hover:scale-95 transition-transform ml-3"
                           title="Remover documento"
                         >
                           <X className="w-4 h-4" />

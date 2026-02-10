@@ -128,7 +128,7 @@ export function InstanceTable({
   }
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-ceramic-200 ${className}`}>
+    <div className={`bg-ceramic-base rounded-xl shadow-sm border border-ceramic-border ${className}`}>
       {/* Header */}
       <div className="p-4 border-b border-ceramic-200">
         <div className="flex items-center justify-between gap-4">
@@ -142,7 +142,7 @@ export function InstanceTable({
               placeholder="Buscar por instância, email, telefone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-ceramic-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-ceramic-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ceramic-accent/30"
             />
           </div>
 
@@ -288,7 +288,7 @@ export function InstanceTable({
                   {/* Errors */}
                   <td className="px-4 py-3">
                     {instance.consecutive_errors > 0 ? (
-                      <div className="flex items-center gap-1 text-red-600">
+                      <div className="flex items-center gap-1 text-ceramic-error">
                         <AlertCircle className="w-4 h-4" />
                         <span className="text-sm font-medium">{instance.consecutive_errors}</span>
                       </div>
@@ -310,7 +310,7 @@ export function InstanceTable({
                       </button>
 
                       {openMenuId === instance.id && (
-                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-ceramic-200 py-1 z-10">
+                        <div className="absolute right-0 mt-1 w-48 bg-ceramic-base rounded-lg shadow-lg border border-ceramic-border py-1 z-10">
                           {instance.status === 'connected' && (
                             <button
                               onClick={() => {
@@ -319,7 +319,7 @@ export function InstanceTable({
                               }}
                               className="w-full px-4 py-2 text-sm text-left hover:bg-ceramic-50 flex items-center gap-2"
                             >
-                              <Power className="w-4 h-4 text-red-500" />
+                              <Power className="w-4 h-4 text-ceramic-error" />
                               Desconectar
                             </button>
                           )}
@@ -336,7 +336,7 @@ export function InstanceTable({
                             </button>
                           )}
                           {instance.error_message && (
-                            <div className="px-4 py-2 text-xs text-red-600 border-t border-ceramic-100">
+                            <div className="px-4 py-2 text-xs text-ceramic-error border-t border-ceramic-border/50">
                               <p className="font-medium">Último erro:</p>
                               <p className="truncate">{instance.error_message}</p>
                             </div>

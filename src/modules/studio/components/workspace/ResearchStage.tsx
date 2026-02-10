@@ -184,7 +184,7 @@ export default function ResearchStage() {
                 <button
                   onClick={handleGenerateDossier}
                   disabled={research.isGenerating}
-                  className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                  className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                   aria-label={research.isGenerating ? 'Gerando dossier' : 'Gerar dossier do convidado'}
                   aria-busy={research.isGenerating}
                 >
@@ -204,7 +204,7 @@ export default function ResearchStage() {
                 <button
                   onClick={handleRegenerateDossier}
                   disabled={research.isGenerating}
-                  className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="w-full px-4 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-ceramic-cool disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
                   aria-label={research.isGenerating ? 'Regenerando dossier' : 'Regenerar dossier do convidado'}
                   aria-busy={research.isGenerating}
                 >
@@ -224,7 +224,7 @@ export default function ResearchStage() {
 
               <button
                 onClick={() => setShowSourcesModal(true)}
-                className="w-full px-4 py-3 bg-ceramic-surface-secondary text-ceramic-primary rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                className="w-full px-4 py-3 bg-ceramic-surface-secondary text-ceramic-primary rounded-lg hover:bg-ceramic-cool transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                 aria-label="Adicionar fontes personalizadas de pesquisa"
               >
                 <Plus className="w-5 h-5" aria-hidden="true" />
@@ -235,12 +235,12 @@ export default function ResearchStage() {
             {/* Error Alert */}
             {research.error && (
               <div
-                className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3"
+                className="mt-4 p-3 bg-ceramic-error-bg border border-ceramic-error/30 rounded-lg flex items-start space-x-3"
                 role="alert"
                 aria-live="polite"
               >
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                <p className="text-sm text-red-700">{research.error}</p>
+                <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-sm text-ceramic-error">{research.error}</p>
               </div>
             )}
 
@@ -311,19 +311,19 @@ export default function ResearchStage() {
                   <div key={source.id} className="flex items-start justify-between gap-2 p-2 bg-ceramic-base rounded border border-ceramic-border text-xs" role="listitem">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        {source.type === 'url' && <LinkIcon className="w-3 h-3 text-blue-500 flex-shrink-0" aria-hidden="true" />}
-                        {source.type === 'file' && <Upload className="w-3 h-3 text-green-500 flex-shrink-0" aria-hidden="true" />}
-                        {source.type === 'text' && <FileText className="w-3 h-3 text-gray-500 flex-shrink-0" aria-hidden="true" />}
+                        {source.type === 'url' && <LinkIcon className="w-3 h-3 text-ceramic-info flex-shrink-0" aria-hidden="true" />}
+                        {source.type === 'file' && <Upload className="w-3 h-3 text-ceramic-success flex-shrink-0" aria-hidden="true" />}
+                        {source.type === 'text' && <FileText className="w-3 h-3 text-ceramic-text-secondary flex-shrink-0" aria-hidden="true" />}
                         <span className="font-medium text-ceramic-primary truncate">{source.label || source.content.substring(0, 30)}</span>
                       </div>
                       <span className="text-ceramic-tertiary">{source.type === 'url' ? 'URL' : source.type === 'file' ? 'Arquivo' : 'Texto'}</span>
                     </div>
                     <button
                       onClick={() => handleRemoveSource(source.id)}
-                      className="p-1 hover:bg-red-100 rounded transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="p-1 hover:bg-ceramic-error-bg rounded transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-ceramic-error"
                       aria-label={`Remover fonte: ${source.label || source.content.substring(0, 30)}`}
                     >
-                      <X className="w-4 h-4 text-red-500" aria-hidden="true" />
+                      <X className="w-4 h-4 text-ceramic-error" aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -339,7 +339,7 @@ export default function ResearchStage() {
             {!research.dossier ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center py-12">
-                  <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" aria-hidden="true" />
+                  <Sparkles className="w-16 h-16 text-ceramic-text-tertiary mx-auto mb-4" aria-hidden="true" />
                   <h3 className="text-lg font-semibold text-ceramic-primary mb-2">Dossier não gerado</h3>
                   <p className="text-ceramic-secondary max-w-sm">
                     Clique em Gerar Dossier para começar
@@ -400,7 +400,7 @@ export default function ResearchStage() {
                             <ul className="space-y-2">
                               {research.dossier.technicalSheet.keyFacts.map((fact, idx) => (
                                 <li key={idx} className="text-ceramic-secondary flex items-start gap-2">
-                                  <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                                  <Check className="w-4 h-4 text-ceramic-success mt-0.5 flex-shrink-0" aria-hidden="true" />
                                   <span>{fact}</span>
                                 </li>
                               ))}
@@ -425,7 +425,7 @@ export default function ResearchStage() {
                         <h3 className="text-lg font-semibold text-ceramic-primary mb-4">Controvérsias</h3>
                         <div className="space-y-3">
                           {research.dossier.controversies.map((controversy, idx) => (
-                            <div key={idx} className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div key={idx} className="p-4 bg-ceramic-error-bg border border-ceramic-error/30 rounded-lg">
                               <p className="text-ceramic-primary">{controversy}</p>
                             </div>
                           ))}
@@ -437,7 +437,7 @@ export default function ResearchStage() {
                         <h3 className="text-lg font-semibold text-ceramic-primary mb-4">Quebra-Gelo</h3>
                         <div className="space-y-3">
                           {research.dossier.iceBreakers.map((breaker, idx) => (
-                            <div key={idx} className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div key={idx} className="p-4 bg-ceramic-info-bg border border-ceramic-info/30 rounded-lg">
                               <p className="text-ceramic-primary">{breaker}</p>
                             </div>
                           ))}
@@ -463,8 +463,8 @@ export default function ResearchStage() {
                 <div className="flex items-center gap-1">
                   {connectionState === 'connected' && (
                     <>
-                      <Wifi className="w-3 h-3 text-green-500" aria-hidden="true" />
-                      <span className="text-xs text-green-600">Conectado</span>
+                      <Wifi className="w-3 h-3 text-ceramic-success" aria-hidden="true" />
+                      <span className="text-xs text-ceramic-success">Conectado</span>
                     </>
                   )}
                   {connectionState === 'connecting' && (
@@ -475,13 +475,13 @@ export default function ResearchStage() {
                   )}
                   {connectionState === 'error' && (
                     <>
-                      <WifiOff className="w-3 h-3 text-red-500" aria-hidden="true" />
-                      <span className="text-xs text-red-600">Erro</span>
+                      <WifiOff className="w-3 h-3 text-ceramic-error" aria-hidden="true" />
+                      <span className="text-xs text-ceramic-error">Erro</span>
                     </>
                   )}
                   {connectionState === 'disconnected' && (
                     <>
-                      <div className="w-2 h-2 rounded-full bg-gray-400" aria-hidden="true" />
+                      <div className="w-2 h-2 rounded-full bg-ceramic-text-tertiary" aria-hidden="true" />
                       <span className="text-xs text-ceramic-tertiary">Pronto</span>
                     </>
                   )}
@@ -510,7 +510,7 @@ export default function ResearchStage() {
                 {chatMessages.length === 0 && !currentResponse && (
                   <div className="flex items-center justify-center h-full text-center">
                     <div className="space-y-2">
-                      <Sparkles className="w-8 h-8 text-gray-300 mx-auto" aria-hidden="true" />
+                      <Sparkles className="w-8 h-8 text-ceramic-text-tertiary mx-auto" aria-hidden="true" />
                       <p className="text-ceramic-tertiary text-sm">
                         Faca perguntas sobre {setup.guestName || 'o convidado'}
                       </p>
@@ -578,7 +578,7 @@ export default function ResearchStage() {
                     <button
                       type="button"
                       onClick={handleCancelChat}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      className="px-4 py-2 bg-ceramic-error text-white rounded-lg hover:bg-ceramic-error-hover transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-error focus:ring-offset-2"
                       aria-label="Cancelar resposta"
                     >
                       <StopCircle className="w-4 h-4" aria-hidden="true" />
@@ -587,7 +587,7 @@ export default function ResearchStage() {
                     <button
                       type="submit"
                       disabled={!chatInput.trim()}
-                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                       aria-label="Enviar pergunta"
                     >
                       <Send className="w-4 h-4" aria-hidden="true" />
@@ -660,7 +660,7 @@ export default function ResearchStage() {
               <button
                 onClick={handleAddCustomSource}
                 disabled={isProcessingSources}
-                className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 aria-label={isProcessingSources ? 'Adicionando fonte' : 'Adicionar fonte'}
                 aria-busy={isProcessingSources}
               >

@@ -53,7 +53,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
             {pdfCharCount && pdfCharCount > 0 && onShowPdf && (
               <button
                 onClick={onShowPdf}
-                className="ceramic-concave px-2 sm:px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:scale-95 transition-transform"
+                className="ceramic-concave px-2 sm:px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-ceramic-accent hover:scale-95 transition-transform"
                 title="Ver conteudo do edital"
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -67,12 +67,12 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
             {onShowDocuments && (
               <button
                 onClick={onShowDocuments}
-                className="ceramic-concave px-2 sm:px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:scale-95 transition-transform"
+                className="ceramic-concave px-2 sm:px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-ceramic-info hover:scale-95 transition-transform"
                 title="Gerenciar documentos"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Docs</span>
-                <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full">
+                <span className="text-[10px] bg-ceramic-info-bg text-ceramic-info px-1.5 rounded-full">
                   {documentCount}
                 </span>
               </button>

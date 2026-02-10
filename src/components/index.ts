@@ -21,6 +21,7 @@ export { default as ErrorBoundary } from './ui/ErrorBoundary';
 export { FloatingActionButton } from './ui/FloatingActionButton';
 // prettier-ignore
 export { default as LoadingScreen } from './ui/LoadingScreen';
+export { CeramicLoadingState } from './ui/CeramicLoadingState';
 export { NotificationContainer } from './ui/NotificationContainer';
 // prettier-ignore
 export { default as AuthLoadingScreen } from './ui/AuthLoadingScreen';

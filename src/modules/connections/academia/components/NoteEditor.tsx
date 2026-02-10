@@ -120,18 +120,18 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const isValid = title.trim().length > 0 && content.trim().length > 0;
 
   return (
-    <div className="bg-white border border-stone-200 rounded-sm overflow-hidden">
+    <div className="bg-ceramic-base border border-ceramic-border rounded-sm overflow-hidden">
       {/* Header */}
-      <div className="border-b border-stone-200 p-6">
+      <div className="border-b border-ceramic-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-light text-stone-900">
+          <h2 className="text-xl font-light text-ceramic-text-primary">
             {note ? 'Edit Note' : 'New Note'}
           </h2>
 
           {/* Preview Toggle */}
           <button
             onClick={() => setShowPreview(!showPreview)}
-            className="text-xs text-stone-600 hover:text-stone-900 font-light tracking-wide transition-colors"
+            className="text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary font-light tracking-wide transition-colors"
           >
             {showPreview ? 'Edit' : 'Preview'}
           </button>
@@ -143,7 +143,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Note title..."
-          className="w-full text-2xl font-light text-stone-900 placeholder-stone-300 border-none outline-none focus:ring-0 p-0"
+          className="w-full text-2xl font-light text-ceramic-text-primary placeholder-ceramic-text-tertiary border-none outline-none focus:ring-0 p-0"
         />
 
         {/* Note Type Selector */}
@@ -156,8 +156,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 px-3 py-1 text-xs font-light tracking-wide rounded-sm transition-colors
                 ${
                   noteType === option.value
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                    : 'bg-stone-50 text-stone-600 border border-stone-200 hover:bg-stone-100'
+                    ? 'bg-ceramic-success/15 text-ceramic-success border border-ceramic-success/20'
+                    : 'bg-ceramic-cool text-ceramic-text-secondary border border-ceramic-border hover:bg-ceramic-cool'
                 }
               `}
               title={option.description}
@@ -172,8 +172,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       <div className="p-6">
         {showPreview ? (
           /* Preview Mode */
-          <div className="prose prose-stone max-w-none">
-            <div className="text-stone-800 font-light leading-relaxed whitespace-pre-wrap">
+          <div className="prose max-w-none">
+            <div className="text-ceramic-text-primary font-light leading-relaxed whitespace-pre-wrap">
               {content || 'Nothing to preview...'}
             </div>
           </div>
@@ -183,16 +183,16 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Start writing your note... (Markdown supported)"
-            className="w-full min-h-[400px] text-base font-light text-stone-800 placeholder-stone-300 border-none outline-none focus:ring-0 p-0 resize-none leading-relaxed"
+            className="w-full min-h-[400px] text-base font-light text-ceramic-text-primary placeholder-ceramic-text-tertiary border-none outline-none focus:ring-0 p-0 resize-none leading-relaxed"
           />
         )}
       </div>
 
       {/* Metadata Section */}
-      <div className="border-t border-stone-200 p-6 space-y-4 bg-stone-50">
+      <div className="border-t border-ceramic-border p-6 space-y-4 bg-ceramic-cool">
         {/* Source Reference */}
         <div>
-          <label className="block text-xs text-stone-500 font-light tracking-wide mb-2">
+          <label className="block text-xs text-ceramic-text-secondary font-light tracking-wide mb-2">
             Source Reference (optional)
           </label>
           <input
@@ -200,25 +200,25 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             value={sourceReference}
             onChange={(e) => setSourceReference(e.target.value)}
             placeholder="Book, article, URL, etc."
-            className="w-full px-3 py-2 border border-stone-200 rounded-sm text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+            className="w-full px-3 py-2 border border-ceramic-border rounded-sm text-sm font-light focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:border-transparent bg-ceramic-base"
           />
         </div>
 
         {/* Tags */}
         <div>
-          <label className="block text-xs text-stone-500 font-light tracking-wide mb-2">
+          <label className="block text-xs text-ceramic-text-secondary font-light tracking-wide mb-2">
             Tags
           </label>
           <div className="flex gap-2 mb-2 flex-wrap">
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-stone-200 rounded-sm text-xs font-light text-stone-700"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded-sm text-xs font-light text-ceramic-text-primary"
               >
                 {tag}
                 <button
                   onClick={() => handleRemoveTag(tag)}
-                  className="text-stone-400 hover:text-stone-600"
+                  className="text-ceramic-text-tertiary hover:text-ceramic-text-secondary"
                 >
                   ×
                 </button>
@@ -237,12 +237,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 }
               }}
               placeholder="Add tag..."
-              className="flex-1 px-3 py-2 border border-stone-200 rounded-sm text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+              className="flex-1 px-3 py-2 border border-ceramic-border rounded-sm text-sm font-light focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:border-transparent bg-ceramic-base"
             />
             <button
               onClick={handleAddTag}
               disabled={!tagInput.trim()}
-              className="px-4 py-2 bg-white border border-stone-200 text-sm font-light text-stone-700 rounded-sm hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-ceramic-base border border-ceramic-border text-sm font-light text-ceramic-text-primary rounded-sm hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Add
             </button>
@@ -251,12 +251,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="border-t border-stone-200 p-6 flex justify-end gap-3">
+      <div className="border-t border-ceramic-border p-6 flex justify-end gap-3">
         {onCancel && (
           <button
             onClick={onCancel}
             disabled={isSaving}
-            className="px-6 py-2 text-sm font-light text-stone-600 hover:text-stone-900 transition-colors"
+            className="px-6 py-2 text-sm font-light text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
           >
             Cancel
           </button>
@@ -264,14 +264,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         <button
           onClick={handleSave}
           disabled={!isValid || isSaving}
-          className="px-6 py-2 bg-emerald-600 text-white text-sm font-light tracking-wide rounded-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-6 py-2 bg-ceramic-success text-white text-sm font-light tracking-wide rounded-sm hover:bg-ceramic-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSaving ? 'Saving...' : note ? 'Update Note' : 'Create Note'}
         </button>
       </div>
 
       {/* Character count */}
-      <div className="px-6 pb-4 flex justify-between text-xs text-stone-400 font-light">
+      <div className="px-6 pb-4 flex justify-between text-xs text-ceramic-text-tertiary font-light">
         <span>{content.length} characters</span>
         <span>{content.split(/\s+/).filter(Boolean).length} words</span>
       </div>

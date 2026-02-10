@@ -116,7 +116,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
 
           {/* Header */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div className={`w-16 h-16 ceramic-tray rounded-2xl flex items-center justify-center mb-4 ${hasPdf ? 'text-green-600' : 'text-orange-600'}`}>
+            <div className={`w-16 h-16 ceramic-tray rounded-2xl flex items-center justify-center mb-4 ${hasPdf ? 'text-ceramic-success' : 'text-ceramic-warning'}`}>
               <FileText size={32} />
             </div>
             <h3 className="text-xl font-black text-ceramic-text-primary">
@@ -137,7 +137,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
               <div className="ceramic-tray rounded-2xl p-4 mb-6 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-ceramic-text-tertiary uppercase tracking-wide">Status</span>
-                  <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                  <span className="text-xs font-bold text-ceramic-success bg-ceramic-success-bg px-2 py-1 rounded-full">
                     Processado
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                     <a
                       href={pdfUrl}
                       download
-                      className="ceramic-convex flex items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
+                      className="ceramic-convex flex items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
                     >
                       <Download size={16} /> Baixar PDF
                     </a>
@@ -178,7 +178,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="w-full ceramic-concave p-3 rounded-xl text-red-500 font-bold text-sm hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full ceramic-concave p-3 rounded-xl text-ceramic-error font-bold text-sm hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isDeleting ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -192,7 +192,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
             <>
               {/* No PDF State */}
               <div className="ceramic-tray rounded-2xl p-6 mb-6 text-center">
-                <AlertCircle className="w-8 h-8 text-orange-500 mx-auto mb-3" />
+                <AlertCircle className="w-8 h-8 text-ceramic-warning mx-auto mb-3" />
                 <p className="text-sm text-ceramic-text-secondary mb-2">
                   Nenhum PDF do edital foi enviado ainda.
                 </p>
@@ -210,7 +210,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                   disabled={isUploading}
                   className="hidden"
                 />
-                <div className="ceramic-convex p-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2">
+                <div className="ceramic-convex p-4 rounded-xl bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2">
                   {isUploading ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />

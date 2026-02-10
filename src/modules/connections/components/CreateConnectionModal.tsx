@@ -844,7 +844,7 @@ export const CreateConnectionModal: React.FC<CreateConnectionModalProps> = ({
                         </div>
                         <button
                           onClick={() => removeInvite(invite.email)}
-                          className="p-2 text-ceramic-negative hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-ceramic-negative hover:bg-ceramic-error/10 rounded-lg transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>

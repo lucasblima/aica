@@ -102,14 +102,14 @@ export function WhatsAppStepContent({
       {/* Header com XP disponivel */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 text-green-600" />
+          <div className="w-12 h-12 rounded-2xl bg-ceramic-success-bg flex items-center justify-center">
+            <MessageCircle className="w-6 h-6 text-ceramic-success" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 className="text-lg font-bold text-ceramic-text-primary">
               Conectar WhatsApp
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ceramic-text-secondary">
               {isConnected
                 ? 'WhatsApp conectado com sucesso!'
                 : 'Vincule o WhatsApp da sua organizacao'
@@ -123,7 +123,7 @@ export function WhatsAppStepContent({
           <div className={`
             px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5
             ${isConnected
-              ? 'bg-green-100 text-green-600'
+              ? 'bg-ceramic-success-bg text-ceramic-success'
               : 'bg-amber-100 text-amber-600'
             }
           `}>
@@ -152,17 +152,17 @@ export function WhatsAppStepContent({
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="p-6 bg-green-50 border border-green-200 rounded-2xl"
+          className="p-6 bg-ceramic-success-bg border border-ceramic-success/20 rounded-2xl"
         >
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 rounded-full bg-ceramic-success-bg flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-ceramic-success" />
             </div>
             <div className="flex-1">
-              <h4 className="text-lg font-bold text-green-800">
+              <h4 className="text-lg font-bold text-ceramic-success">
                 WhatsApp Conectado!
               </h4>
-              <p className="text-sm text-green-600">
+              <p className="text-sm text-ceramic-success">
                 Sua organizacao agora pode receber notificacoes e se comunicar
                 com parceiros diretamente pelo WhatsApp.
               </p>
@@ -179,13 +179,13 @@ export function WhatsAppStepContent({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="p-4 bg-gray-50 rounded-xl"
+                className="p-4 bg-ceramic-base rounded-xl"
               >
-                <benefit.icon className="w-5 h-5 text-green-600 mb-2" />
-                <h4 className="text-sm font-bold text-gray-900">
+                <benefit.icon className="w-5 h-5 text-ceramic-success mb-2" />
+                <h4 className="text-sm font-bold text-ceramic-text-primary">
                   {benefit.title}
                 </h4>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-ceramic-text-secondary mt-1">
                   {benefit.description}
                 </p>
               </motion.div>
@@ -194,13 +194,13 @@ export function WhatsAppStepContent({
 
           {/* Phone Number Info */}
           {organizationPhone && (
-            <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <Phone className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center gap-3 p-4 bg-ceramic-info-bg border border-ceramic-info/20 rounded-xl">
+              <Phone className="w-5 h-5 text-ceramic-info" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-900">
+                <p className="text-sm font-medium text-ceramic-info">
                   Numero detectado: {organizationPhone}
                 </p>
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-ceramic-info">
                   Usaremos este numero para gerar o codigo de pareamento
                 </p>
               </div>
@@ -218,11 +218,11 @@ export function WhatsAppStepContent({
           />
 
           {/* Skip Option */}
-          <div className="text-center pt-4 border-t border-gray-100">
-            <p className="text-sm text-gray-500 mb-2">
+          <div className="text-center pt-4 border-t border-ceramic-border">
+            <p className="text-sm text-ceramic-text-secondary mb-2">
               Voce pode pular esta etapa e conectar depois
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-ceramic-text-secondary">
               O WhatsApp pode ser configurado a qualquer momento nas configuracoes
             </p>
           </div>

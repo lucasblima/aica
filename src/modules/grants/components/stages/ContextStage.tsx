@@ -377,9 +377,9 @@ export const ContextStage: React.FC = () => {
             ${isDragging
               ? 'border-[#D97706] bg-[#D97706]/5'
               : hasContent
-                ? 'border-green-400 bg-green-50'
+                ? 'border-ceramic-success bg-ceramic-success-bg'
                 : hasError
-                  ? 'border-red-400 bg-red-50'
+                  ? 'border-ceramic-error bg-ceramic-error-bg'
                   : 'border-[#948D82]/30 hover:border-[#948D82]/50'
             }
           `}
@@ -408,8 +408,8 @@ export const ContextStage: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center"
             >
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <Check className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-ceramic-success-bg rounded-full flex items-center justify-center mb-4">
+                <Check className="w-8 h-8 text-ceramic-success" />
               </div>
               <p className="text-sm font-bold text-[#5C554B]">
                 PDF processado com sucesso!
@@ -427,7 +427,7 @@ export const ContextStage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="ceramic-concave px-4 py-2 text-xs font-bold text-red-600 hover:scale-95 transition-transform flex items-center gap-2"
+                  className="ceramic-concave px-4 py-2 text-xs font-bold text-ceramic-error hover:scale-95 transition-transform flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Remover
@@ -443,10 +443,10 @@ export const ContextStage: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center"
             >
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 bg-ceramic-error-bg rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-ceramic-error" />
               </div>
-              <p className="text-sm font-bold text-red-600">
+              <p className="text-sm font-bold text-ceramic-error">
                 Erro ao processar PDF
               </p>
               <p className="text-xs text-[#948D82] mt-1">
@@ -496,18 +496,18 @@ export const ContextStage: React.FC = () => {
       </div>
 
       {/* Opportunity Documents Section - COLLAPSIBLE (Edital-level) */}
-      <div className="ceramic-card p-6 sm:p-8 border-2 border-blue-200">
+      <div className="ceramic-card p-6 sm:p-8 border-2 border-ceramic-border">
         {/* Header with collapse toggle */}
         <div
           className="flex items-center justify-between cursor-pointer mb-4"
           onClick={() => setIsOpportunityDocsExpanded(!isOpportunityDocsExpanded)}
         >
           <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-blue-600" />
+            <FileText className="w-5 h-5 text-ceramic-info" />
             <div>
               <h3 className="text-lg font-bold text-[#5C554B] flex items-center gap-2">
                 Documentos Adicionais do Edital
-                <span className="ceramic-concave px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                <span className="ceramic-concave px-2 py-0.5 text-[10px] font-bold text-ceramic-info">
                   COMPARTILHADO
                 </span>
               </h3>
@@ -518,7 +518,7 @@ export const ContextStage: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             {opportunityDocs.length > 0 && (
-              <span className="ceramic-concave px-3 py-1 text-xs font-bold text-blue-600">
+              <span className="ceramic-concave px-3 py-1 text-xs font-bold text-ceramic-info">
                 {opportunityDocs.length} {opportunityDocs.length === 1 ? 'arquivo' : 'arquivos'}
               </span>
             )}
@@ -549,12 +549,12 @@ export const ContextStage: React.FC = () => {
                     ceramic-tray p-6 rounded-xl border-2 border-dashed transition-all
                     flex flex-col items-center justify-center text-center
                     ${isOpportunityDocsDragging
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-blue-300 hover:border-blue-400'
+                      ? 'border-ceramic-info bg-ceramic-info-bg'
+                      : 'border-ceramic-info/30 hover:border-ceramic-info/50'
                     }
                   `}
                 >
-                  <Plus className="w-8 h-8 text-blue-600 mb-2" />
+                  <Plus className="w-8 h-8 text-ceramic-info mb-2" />
                   <p className="text-sm font-bold text-[#5C554B] mb-1">
                     Adicionar documentos do edital
                   </p>
@@ -571,7 +571,7 @@ export const ContextStage: React.FC = () => {
                   />
                   <button
                     onClick={() => opportunityDocsInputRef.current?.click()}
-                    className="ceramic-concave px-4 py-2 text-xs font-bold text-blue-600 hover:scale-95 transition-transform"
+                    className="ceramic-concave px-4 py-2 text-xs font-bold text-ceramic-info hover:scale-95 transition-transform"
                   >
                     Selecionar Arquivos
                   </button>
@@ -589,10 +589,10 @@ export const ContextStage: React.FC = () => {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="ceramic-tray p-4 rounded-lg flex items-center justify-between gap-4 border border-blue-200"
+                            className="ceramic-tray p-4 rounded-lg flex items-center justify-between gap-4 border border-ceramic-info/20"
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <FileIcon className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                              <FileIcon className="w-5 h-5 text-ceramic-info flex-shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-[#5C554B] truncate">
                                   {doc.name}
@@ -613,20 +613,20 @@ export const ContextStage: React.FC = () => {
                               )}
                               {doc.status === 'processing' && (
                                 <div className="flex items-center gap-2">
-                                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                                  <span className="text-xs text-blue-600">Processando...</span>
+                                  <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
+                                  <span className="text-xs text-ceramic-info">Processando...</span>
                                 </div>
                               )}
                               {doc.status === 'done' && (
                                 <div className="flex items-center gap-2">
-                                  <Check className="w-4 h-4 text-green-600" />
-                                  <span className="text-xs text-green-600">Concluido</span>
+                                  <Check className="w-4 h-4 text-ceramic-success" />
+                                  <span className="text-xs text-ceramic-success">Concluido</span>
                                 </div>
                               )}
                               {doc.status === 'error' && (
                                 <div className="flex items-center gap-2">
-                                  <AlertCircle className="w-4 h-4 text-red-600" />
-                                  <span className="text-xs text-red-600" title={doc.error}>
+                                  <AlertCircle className="w-4 h-4 text-ceramic-error" />
+                                  <span className="text-xs text-ceramic-error" title={doc.error}>
                                     Erro
                                   </span>
                                 </div>
@@ -774,14 +774,14 @@ export const ContextStage: React.FC = () => {
                               )}
                               {doc.status === 'done' && (
                                 <div className="flex items-center gap-2">
-                                  <Check className="w-4 h-4 text-green-600" />
-                                  <span className="text-xs text-green-600">Concluido</span>
+                                  <Check className="w-4 h-4 text-ceramic-success" />
+                                  <span className="text-xs text-ceramic-success">Concluido</span>
                                 </div>
                               )}
                               {doc.status === 'error' && (
                                 <div className="flex items-center gap-2">
-                                  <AlertCircle className="w-4 h-4 text-red-600" />
-                                  <span className="text-xs text-red-600" title={doc.error}>
+                                  <AlertCircle className="w-4 h-4 text-ceramic-error" />
+                                  <span className="text-xs text-ceramic-error" title={doc.error}>
                                     Erro
                                   </span>
                                 </div>

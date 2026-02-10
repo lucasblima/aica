@@ -128,12 +128,12 @@ export function ContactDetailModal({
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-500" />
+                      <Sparkles className="w-4 h-4 text-ceramic-accent" />
                       Análise Aica
                     </h3>
                     {contact.health_score !== undefined && contact.health_score !== null && (
                       <p className="text-sm text-ceramic-text-secondary mt-1">
-                        Health Score atual: <span className="font-bold text-purple-600">{contact.health_score}</span>
+                        Health Score atual: <span className="font-bold text-ceramic-accent">{contact.health_score}</span>
                         {contact.last_analyzed_at && (
                           <span className="text-xs ml-2">
                             ({new Date(contact.last_analyzed_at).toLocaleDateString('pt-BR')})

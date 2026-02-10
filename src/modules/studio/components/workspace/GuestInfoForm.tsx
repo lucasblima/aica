@@ -222,7 +222,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             htmlFor="guest-name-input"
             className="block text-sm font-medium text-ceramic-primary mb-1"
           >
-            Nome Completo <span className="text-red-500" aria-label="obrigatório">*</span>
+            Nome Completo <span className="text-ceramic-error" aria-label="obrigatório">*</span>
           </label>
           <div className="relative">
             <User
@@ -243,20 +243,20 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               aria-invalid={!!(errors.name && touched.name)}
               aria-describedby={errors.name && touched.name ? 'guest-name-error' : undefined}
               className={`
-                w-full pl-10 pr-10 py-2 border rounded-lg bg-white text-ceramic-primary placeholder:text-ceramic-tertiary
+                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary
                 focus:ring-2 focus:ring-ceramic-primary focus:border-transparent
                 ${
                   errors.name && touched.name
-                    ? 'border-red-500'
+                    ? 'border-ceramic-error'
                     : isFieldValid('name')
-                    ? 'border-green-500'
+                    ? 'border-ceramic-success'
                     : 'border-ceramic-border'
                 }
               `}
             />
             {isFieldValid('name') && (
               <Check
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ceramic-success"
                 aria-hidden="true"
               />
             )}
@@ -265,7 +265,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             <div
               id="guest-name-error"
               role="alert"
-              className="flex items-center gap-1 mt-1 text-xs text-red-600"
+              className="flex items-center gap-1 mt-1 text-xs text-ceramic-error"
             >
               <AlertCircle className="w-3 h-3" aria-hidden="true" />
               <span>{errors.name}</span>
@@ -279,7 +279,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             htmlFor="guest-email-input"
             className="block text-sm font-medium text-ceramic-primary mb-1"
           >
-            Email <span className="text-red-500" aria-label="obrigatório">*</span>
+            Email <span className="text-ceramic-error" aria-label="obrigatório">*</span>
           </label>
           <div className="relative">
             <Mail
@@ -300,20 +300,20 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               aria-invalid={!!(errors.email && touched.email)}
               aria-describedby={errors.email && touched.email ? 'guest-email-error' : undefined}
               className={`
-                w-full pl-10 pr-10 py-2 border rounded-lg bg-white text-ceramic-primary placeholder:text-ceramic-tertiary
+                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary
                 focus:ring-2 focus:ring-ceramic-primary focus:border-transparent
                 ${
                   errors.email && touched.email
-                    ? 'border-red-500'
+                    ? 'border-ceramic-error'
                     : isFieldValid('email')
-                    ? 'border-green-500'
+                    ? 'border-ceramic-success'
                     : 'border-ceramic-border'
                 }
               `}
             />
             {isFieldValid('email') && (
               <Check
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ceramic-success"
                 aria-hidden="true"
               />
             )}
@@ -322,7 +322,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             <div
               id="guest-email-error"
               role="alert"
-              className="flex items-center gap-1 mt-1 text-xs text-red-600"
+              className="flex items-center gap-1 mt-1 text-xs text-ceramic-error"
             >
               <AlertCircle className="w-3 h-3" aria-hidden="true" />
               <span>{errors.email}</span>
@@ -336,7 +336,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             htmlFor="guest-phone-input"
             className="block text-sm font-medium text-ceramic-primary mb-1"
           >
-            Telefone/WhatsApp <span className="text-red-500" aria-label="obrigatório">*</span>
+            Telefone/WhatsApp <span className="text-ceramic-error" aria-label="obrigatório">*</span>
           </label>
           <div className="relative">
             <Phone
@@ -357,20 +357,20 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               aria-invalid={!!(errors.phone && touched.phone)}
               aria-describedby={errors.phone && touched.phone ? 'guest-phone-error' : undefined}
               className={`
-                w-full pl-10 pr-10 py-2 border rounded-lg bg-white text-ceramic-primary placeholder:text-ceramic-tertiary
+                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary
                 focus:ring-2 focus:ring-ceramic-primary focus:border-transparent
                 ${
                   errors.phone && touched.phone
-                    ? 'border-red-500'
+                    ? 'border-ceramic-error'
                     : isFieldValid('phone')
-                    ? 'border-green-500'
+                    ? 'border-ceramic-success'
                     : 'border-ceramic-border'
                 }
               `}
             />
             {isFieldValid('phone') && (
               <Check
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ceramic-success"
                 aria-hidden="true"
               />
             )}
@@ -379,7 +379,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
             <div
               id="guest-phone-error"
               role="alert"
-              className="flex items-center gap-1 mt-1 text-xs text-red-600"
+              className="flex items-center gap-1 mt-1 text-xs text-ceramic-error"
             >
               <AlertCircle className="w-3 h-3" aria-hidden="true" />
               <span>{errors.phone}</span>
@@ -388,13 +388,13 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
         </div>
 
         {/* Info Box */}
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="mt-4 p-3 bg-ceramic-info-bg rounded-lg border border-ceramic-info/30">
           <div className="flex items-start gap-2">
             <Check
-              className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"
+              className="w-4 h-4 text-ceramic-info mt-0.5 flex-shrink-0"
               aria-hidden="true"
             />
-            <p className="text-xs text-blue-800">
+            <p className="text-xs text-ceramic-info">
               Essas informações serão usadas para enviar a pauta e lembretes da entrevista.
             </p>
           </div>

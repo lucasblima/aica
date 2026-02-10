@@ -106,9 +106,9 @@ export const InventoryGridOptimized: React.FC<InventoryGridProps> = ({ propertyI
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-stone-800">Inventário</h3>
+          <h3 className="text-2xl font-bold text-ceramic-text-primary">Inventário</h3>
           {items.length > 0 && (
-            <p className="text-sm text-stone-500 mt-1">
+            <p className="text-sm text-ceramic-text-secondary mt-1">
               {items.length} {items.length === 1 ? 'item' : 'itens'}
               {useVirtualization && ' (virtualização ativa)'}
             </p>
@@ -126,16 +126,16 @@ export const InventoryGridOptimized: React.FC<InventoryGridProps> = ({ propertyI
           value={searchTerm}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Buscar itens..."
-          className="w-full px-4 py-3 pl-10 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none"
+          className="w-full px-4 py-3 pl-10 border-2 border-ceramic-border rounded-lg focus:border-amber-500 focus:outline-none"
         />
-        <span className="absolute left-3 top-3.5 text-stone-400">🔍</span>
+        <span className="absolute left-3 top-3.5 text-ceramic-text-tertiary">🔍</span>
         {searchTerm && (
           <button
             onClick={() => {
               setSearchTerm('');
               clearFilters();
             }}
-            className="absolute right-3 top-3.5 text-stone-400 hover:text-stone-600"
+            className="absolute right-3 top-3.5 text-ceramic-text-tertiary hover:text-ceramic-text-secondary"
           >
             ✕
           </button>
@@ -144,7 +144,7 @@ export const InventoryGridOptimized: React.FC<InventoryGridProps> = ({ propertyI
 
       {/* Category Filters */}
       <div>
-        <div className="text-sm font-medium text-stone-600 mb-2">Categoria</div>
+        <div className="text-sm font-medium text-ceramic-text-secondary mb-2">Categoria</div>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(categoryLabels) as InventoryCategory[]).map((category) => (
             <button
@@ -153,7 +153,7 @@ export const InventoryGridOptimized: React.FC<InventoryGridProps> = ({ propertyI
               className={`px-3 py-1 rounded-full text-sm font-medium border-2 transition-colors ${
                 selectedCategory === category
                   ? 'bg-amber-700 text-white border-amber-700'
-                  : 'bg-stone-50 text-stone-700 border-stone-300 hover:bg-stone-100'
+                  : 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border hover:bg-ceramic-cool'
               }`}
             >
               {categoryLabels[category]}
@@ -164,7 +164,7 @@ export const InventoryGridOptimized: React.FC<InventoryGridProps> = ({ propertyI
 
       {/* Status Filters */}
       <div>
-        <div className="text-sm font-medium text-stone-600 mb-2">Status</div>
+        <div className="text-sm font-medium text-ceramic-text-secondary mb-2">Status</div>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(statusLabels) as InventoryStatus[]).map((status) => (
             <button
@@ -173,7 +173,7 @@ export const InventoryGridOptimized: React.FC<InventoryGridProps> = ({ propertyI
               className={`px-3 py-1 rounded-full text-sm font-medium border-2 transition-colors ${
                 selectedStatus === status
                   ? 'bg-amber-700 text-white border-amber-700'
-                  : 'bg-stone-50 text-stone-700 border-stone-300 hover:bg-stone-100'
+                  : 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border hover:bg-ceramic-cool'
               }`}
             >
               {statusLabels[status]}
@@ -186,8 +186,8 @@ export const InventoryGridOptimized: React.FC<InventoryGridProps> = ({ propertyI
       {items.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📦</div>
-          <p className="text-stone-600 text-lg">Nenhum item encontrado</p>
-          <p className="text-stone-500 text-sm mt-2">
+          <p className="text-ceramic-text-secondary text-lg">Nenhum item encontrado</p>
+          <p className="text-ceramic-text-secondary text-sm mt-2">
             {searchTerm || selectedCategory || selectedStatus
               ? 'Tente ajustar os filtros'
               : 'Comece adicionando itens ao seu inventário'}

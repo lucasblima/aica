@@ -7,24 +7,24 @@ import { Transition, Variants } from 'framer-motion';
 /** Spring para elevação de cards - peso tátil perceptível */
 export const springElevation: Transition = {
   type: 'spring',
-  stiffness: 350,
-  damping: 28,
-  mass: 1.1,
+  stiffness: 300,
+  damping: 30,
+  mass: 1.0,
 };
 
 /** Spring para deslizamento de tabs - inércia suave */
 export const springSlide: Transition = {
   type: 'spring',
-  stiffness: 320,
-  damping: 30,
-  mass: 1.3,
+  stiffness: 280,
+  damping: 32,
+  mass: 1.2,
 };
 
 /** Spring para hover - resposta rápida */
 export const springHover: Transition = {
   type: 'spring',
-  stiffness: 400,
-  damping: 28,
+  stiffness: 380,
+  damping: 30,
   mass: 0.8,
 };
 
@@ -45,24 +45,24 @@ export const cardElevationVariants: Variants = {
   rest: {
     scale: 1,
     y: 0,
-    boxShadow: '3px 3px 6px rgba(163, 158, 145, 0.35), -3px -3px 6px rgba(255, 255, 255, 1.0)',
+    boxShadow: '3px 3px 6px rgba(163, 158, 145, 0.25), -3px -3px 6px rgba(255, 255, 255, 0.95)',
   },
   hover: {
     scale: 1.02,
     y: -2,
-    boxShadow: '6px 6px 12px rgba(163, 158, 145, 0.35), -6px -6px 12px rgba(255, 255, 255, 1.0)',
+    boxShadow: '5px 5px 10px rgba(163, 158, 145, 0.25), -5px -5px 10px rgba(255, 255, 255, 0.95)',
     transition: springHover,
   },
   pressed: {
     scale: 0.98,
     y: 1,
-    boxShadow: 'inset 3px 3px 6px rgba(163, 158, 145, 0.35), inset -3px -3px 6px rgba(255, 255, 255, 1.0)',
+    boxShadow: 'inset 3px 3px 6px rgba(163, 158, 145, 0.25), inset -3px -3px 6px rgba(255, 255, 255, 0.95)',
     transition: springPress,
   },
   selected: {
     scale: 1,
     y: -4,
-    boxShadow: '8px 8px 16px rgba(163, 158, 145, 0.35), -8px -8px 16px rgba(255, 255, 255, 1.0)',
+    boxShadow: '6px 6px 14px rgba(163, 158, 145, 0.25), -6px -6px 14px rgba(255, 255, 255, 0.95)',
     transition: springElevation,
   },
 };
@@ -71,16 +71,16 @@ export const cardElevationVariants: Variants = {
 export const cardInsetVariants: Variants = {
   rest: {
     scale: 1,
-    boxShadow: 'inset 4px 4px 8px rgba(163, 158, 145, 0.35), inset -4px -4px 8px rgba(255, 255, 255, 1.0)',
+    boxShadow: 'inset 3px 3px 6px rgba(163, 158, 145, 0.25), inset -3px -3px 6px rgba(255, 255, 255, 0.95)',
   },
   hover: {
     scale: 1.01,
-    boxShadow: 'inset 3px 3px 6px rgba(163, 158, 145, 0.35), inset -3px -3px 6px rgba(255, 255, 255, 1.0)',
+    boxShadow: 'inset 2px 2px 5px rgba(163, 158, 145, 0.25), inset -2px -2px 5px rgba(255, 255, 255, 0.95)',
     transition: springHover,
   },
   selected: {
     scale: 1,
-    boxShadow: '6px 6px 12px rgba(163, 158, 145, 0.35), -6px -6px 12px rgba(255, 255, 255, 1.0)',
+    boxShadow: '5px 5px 10px rgba(163, 158, 145, 0.25), -5px -5px 10px rgba(255, 255, 255, 0.95)',
     transition: springElevation,
   },
 };
@@ -157,8 +157,8 @@ export const staggerContainer: Variants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
+      staggerChildren: 0.06,
+      delayChildren: 0.08,
     },
   },
 };
@@ -171,5 +171,33 @@ export const staggerItem: Variants = {
     y: 0,
     scale: 1,
     transition: springElevation,
+  },
+};
+
+// ============================================
+// PAGE TRANSITIONS
+// ============================================
+
+/** Variantes para transicao entre paginas/views */
+export const pageTransitionVariants: Variants = {
+  initial: {
+    opacity: 0,
+    y: 12,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: [0.4, 0, 0.2, 1],
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    transition: {
+      duration: 0.25,
+      ease: [0.4, 0, 1, 1],
+    },
   },
 };

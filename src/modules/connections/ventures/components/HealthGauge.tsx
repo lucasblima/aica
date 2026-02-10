@@ -27,20 +27,20 @@ export function HealthGauge({
     { color: string; bgColor: string; label: string; icon: string }
   > = {
     healthy: {
-      color: 'text-green-700',
-      bgColor: 'bg-green-50 border-green-200',
+      color: 'text-ceramic-success',
+      bgColor: 'bg-ceramic-success/10 border-ceramic-success/30',
       label: 'Saudável',
       icon: '✓',
     },
     warning: {
-      color: 'text-amber-700',
-      bgColor: 'bg-amber-50 border-amber-200',
+      color: 'text-ceramic-warning',
+      bgColor: 'bg-ceramic-warning/10 border-ceramic-warning/30',
       label: 'Atenção',
       icon: '⚠',
     },
     critical: {
-      color: 'text-red-700',
-      bgColor: 'bg-red-50 border-red-200',
+      color: 'text-ceramic-error',
+      bgColor: 'bg-ceramic-error/10 border-ceramic-error/30',
       label: 'Crítico',
       icon: '!',
     },
@@ -52,16 +52,16 @@ export function HealthGauge({
     <div className={`rounded-xl border-2 p-6 ${config.bgColor} ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-neutral-600">Saúde do Negócio</h3>
+        <h3 className="text-sm font-medium text-ceramic-text-secondary">Saúde do Negócio</h3>
         <span
-          className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${config.color} bg-white border border-current text-xs font-bold`}
+          className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${config.color} bg-ceramic-base border border-current text-xs font-bold`}
         >
           {config.icon}
         </span>
       </div>
 
       {/* Status Badge */}
-      <div className={`inline-block px-3 py-1 rounded-full ${config.color} bg-white mb-4`}>
+      <div className={`inline-block px-3 py-1 rounded-full ${config.color} bg-ceramic-base mb-4`}>
         <span className="text-sm font-semibold">{config.label}</span>
       </div>
 
@@ -71,21 +71,21 @@ export function HealthGauge({
         {runwayMonths !== undefined && (
           <div>
             <div className="flex items-baseline justify-between mb-1">
-              <span className="text-xs text-neutral-600">Runway</span>
+              <span className="text-xs text-ceramic-text-secondary">Runway</span>
               <span className={`text-2xl font-bold ${config.color}`}>
                 {runwayMonths}
                 <span className="text-sm font-normal ml-1">meses</span>
               </span>
             </div>
             {/* Progress bar */}
-            <div className="w-full bg-white rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-ceramic-base rounded-full h-2 overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 ${
                   healthStatus === 'healthy'
-                    ? 'bg-green-500'
+                    ? 'bg-ceramic-success'
                     : healthStatus === 'warning'
-                    ? 'bg-amber-500'
-                    : 'bg-red-500'
+                    ? 'bg-ceramic-warning'
+                    : 'bg-ceramic-error'
                 }`}
                 style={{
                   width: `${Math.min(100, (runwayMonths / 24) * 100)}%`,
@@ -98,8 +98,8 @@ export function HealthGauge({
         {/* Burn Rate */}
         {burnRate !== undefined && burnRate > 0 && (
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-neutral-600">Burn Rate</span>
-            <span className="text-sm font-semibold text-neutral-700">
+            <span className="text-xs text-ceramic-text-secondary">Burn Rate</span>
+            <span className="text-sm font-semibold text-ceramic-text-primary">
               R$ {(burnRate / 1000).toFixed(0)}k/mês
             </span>
           </div>
@@ -108,8 +108,8 @@ export function HealthGauge({
         {/* Cash Balance */}
         {cashBalance !== undefined && (
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-neutral-600">Caixa Atual</span>
-            <span className="text-sm font-semibold text-neutral-700">
+            <span className="text-xs text-ceramic-text-secondary">Caixa Atual</span>
+            <span className="text-sm font-semibold text-ceramic-text-primary">
               R$ {(cashBalance / 1000).toFixed(0)}k
             </span>
           </div>
@@ -118,16 +118,16 @@ export function HealthGauge({
 
       {/* Recommendation */}
       {healthStatus === 'warning' && (
-        <div className="mt-4 pt-4 border-t border-amber-200">
-          <p className="text-xs text-amber-700">
+        <div className="mt-4 pt-4 border-t border-ceramic-warning/30">
+          <p className="text-xs text-ceramic-warning">
             Considere reduzir custos ou buscar nova rodada de investimento.
           </p>
         </div>
       )}
 
       {healthStatus === 'critical' && (
-        <div className="mt-4 pt-4 border-t border-red-200">
-          <p className="text-xs text-red-700 font-medium">
+        <div className="mt-4 pt-4 border-t border-ceramic-error/30">
+          <p className="text-xs text-ceramic-error font-medium">
             Ação urgente necessária. Runway crítico.
           </p>
         </div>

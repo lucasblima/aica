@@ -130,19 +130,19 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
                         </h3>
                         <div className="space-y-3">
                             <div className="flex items-start gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" />
                                 <span className="text-sm text-[#5C554B]">
                                     <strong>Visão unificada</strong> - Todos seus compromissos em um só lugar
                                 </span>
                             </div>
                             <div className="flex items-start gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" />
                                 <span className="text-sm text-[#5C554B]">
                                     <strong>Timeline inteligente</strong> - Organize melhor seu tempo
                                 </span>
                             </div>
                             <div className="flex items-start gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" />
                                 <span className="text-sm text-[#5C554B]">
                                     <strong>Sempre sincronizado</strong> - Mudanças refletem automaticamente
                                 </span>

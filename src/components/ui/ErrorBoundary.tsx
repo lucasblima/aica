@@ -77,21 +77,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Fallback padrão
       return (
-        <div className="flex flex-col items-center justify-center min-h-[200px] p-6 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex flex-col items-center justify-center min-h-[200px] p-6 bg-ceramic-error-bg border-l-4 border-ceramic-error rounded-[20px]">
           <div className="text-center max-w-md">
-            <h2 className="text-xl font-semibold text-red-800 mb-2">
-              ⚠️ Algo deu errado
+            <h2 className="text-xl font-semibold text-ceramic-error mb-2">
+              Algo deu errado
             </h2>
-            <p className="text-red-600 mb-4">
+            <p className="text-ceramic-text-secondary mb-4">
               Este componente encontrou um erro, mas o resto do sistema continua funcionando.
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-sm text-red-700 font-mono mb-2">
+                <summary className="cursor-pointer text-sm text-ceramic-error font-mono mb-2">
                   Detalhes do erro (dev only)
                 </summary>
-                <pre className="text-xs bg-red-100 p-2 rounded overflow-auto max-h-40 text-red-900">
+                <pre className="text-xs bg-ceramic-error-bg p-2 rounded-lg overflow-auto max-h-40 text-ceramic-text-primary">
                   {this.state.error.toString()}
                   {'\n\n'}
                   {this.state.errorInfo?.componentStack}
@@ -101,7 +101,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <button
               onClick={this.handleReset}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+              className="mt-4 px-4 py-2 ceramic-button-secondary rounded-lg transition"
             >
               Tentar novamente
             </button>
@@ -124,19 +124,23 @@ export const ModuleErrorFallback: React.FC<{ moduleName: string; onReset?: () =>
 }) => (
   <div className="flex flex-col items-center justify-center min-h-[300px] p-8">
     <div className="text-center max-w-md">
-      <div className="text-4xl mb-4">⚠️</div>
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-ceramic-error-bg flex items-center justify-center">
+        <svg className="w-6 h-6 text-ceramic-error" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
         Erro ao carregar {moduleName}
       </h3>
-      <p className="text-gray-600 mb-4">
+      <p className="text-ceramic-text-secondary mb-4">
         Não foi possível carregar este módulo. Outros módulos continuam disponíveis no menu lateral.
       </p>
       {onReset && (
         <button
           onClick={onReset}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="px-6 py-2 ceramic-button-secondary rounded-lg transition"
         >
-          Recarregar módulo
+          Tentar novamente
         </button>
       )}
     </div>
@@ -147,7 +151,7 @@ export const DataFetchErrorFallback: React.FC<{ onRetry?: () => void }> = ({ onR
   <div className="flex flex-col items-center justify-center p-6 ceramic-tray border border-ceramic-accent/20 rounded-lg">
     <div className="text-center">
       <p className="text-ceramic-text-primary font-bold mb-3">
-        ⚠️ Erro ao carregar dados
+        Erro ao carregar dados
       </p>
       {onRetry && (
         <button

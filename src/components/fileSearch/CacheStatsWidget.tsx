@@ -56,12 +56,12 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
 
   if (!stats) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+      <div className="ceramic-card p-6 animate-pulse">
+        <div className="h-8 bg-ceramic-cool rounded w-1/2 mb-4"></div>
         <div className="space-y-3">
-          <div className="h-4 bg-gray-100 rounded"></div>
-          <div className="h-4 bg-gray-100 rounded"></div>
-          <div className="h-4 bg-gray-100 rounded"></div>
+          <div className="h-4 bg-ceramic-base rounded"></div>
+          <div className="h-4 bg-ceramic-base rounded"></div>
+          <div className="h-4 bg-ceramic-base rounded"></div>
         </div>
       </div>
     );
@@ -76,33 +76,33 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
+        className="ceramic-card p-4"
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-blue-600" />
-            <h4 className="text-sm font-bold text-gray-900">Cache</h4>
+            <Database className="w-4 h-4 text-ceramic-info" />
+            <h4 className="text-sm font-bold text-ceramic-text-primary">Cache</h4>
           </div>
           {showControls && (
             <button
               onClick={handleRefresh}
-              className="p-1 rounded hover:bg-gray-100 transition-colors"
+              className="p-1 rounded hover:bg-ceramic-cool transition-colors"
             >
-              <RefreshCw className={`w-3 h-3 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3 h-3 text-ceramic-text-secondary ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="text-center">
-            <p className="text-xs text-gray-500">Hit Rate</p>
+            <p className="text-xs text-ceramic-text-secondary">Hit Rate</p>
             <p className={`text-lg font-bold text-${hitRateColor}-600`}>
               {stats.hitRate.toFixed(1)}%
             </p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500">Entries</p>
-            <p className="text-lg font-bold text-gray-900">{stats.totalEntries}</p>
+            <p className="text-xs text-ceramic-text-secondary">Entries</p>
+            <p className="text-lg font-bold text-ceramic-text-primary">{stats.totalEntries}</p>
           </div>
         </div>
       </motion.div>
@@ -113,17 +113,17 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
+      className="ceramic-card p-6"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center`}>
-            <Database className="w-6 h-6 text-blue-600" />
+          <div className={`w-12 h-12 rounded-full bg-ceramic-info/10 flex items-center justify-center`}>
+            <Database className="w-6 h-6 text-ceramic-info" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Cache Performance</h3>
-            <p className="text-xs text-gray-500">
+            <h3 className="text-lg font-bold text-ceramic-text-primary">Cache Performance</h3>
+            <p className="text-xs text-ceramic-text-secondary">
               Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')}
             </p>
           </div>
@@ -133,17 +133,17 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
           <div className="flex gap-2">
             <button
               onClick={handleRefresh}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-ceramic-cool transition-colors"
               title="Atualizar"
             >
-              <RefreshCw className={`w-5 h-5 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 text-ceramic-text-secondary ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={handleClearCache}
-              className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+              className="p-2 rounded-lg hover:bg-ceramic-error/10 transition-colors"
               title="Limpar cache"
             >
-              <Trash2 className="w-5 h-5 text-red-600" />
+              <Trash2 className="w-5 h-5 text-ceramic-error" />
             </button>
           </div>
         )}
@@ -152,28 +152,28 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
       {/* Hit Rate - Main Metric */}
       <div className="mb-6">
         <div className="flex justify-between items-baseline mb-2">
-          <span className="text-sm font-medium text-gray-700">Hit Rate</span>
+          <span className="text-sm font-medium text-ceramic-text-secondary">Hit Rate</span>
           <span className={`text-3xl font-bold text-${hitRateColor}-600`}>
             {stats.hitRate.toFixed(1)}%
           </span>
         </div>
 
-        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+        <div className="w-full h-3 bg-ceramic-cool rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${stats.hitRate}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className={`h-full rounded-full ${
               stats.hitRate >= 70
-                ? 'bg-green-500'
+                ? 'bg-ceramic-success'
                 : stats.hitRate >= 50
-                ? 'bg-orange-500'
-                : 'bg-red-500'
+                ? 'bg-ceramic-warning'
+                : 'bg-ceramic-error'
             }`}
           />
         </div>
 
-        <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+        <div className="flex justify-between items-center mt-2 text-xs text-ceramic-text-tertiary">
           <span>{stats.totalHits} hits</span>
           <span>{stats.totalMisses} misses</span>
         </div>
@@ -182,71 +182,71 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         {/* Total Entries */}
-        <div className="bg-blue-50 rounded-xl p-4">
+        <div className="bg-ceramic-info/10 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Database className="w-4 h-4 text-blue-600" />
-            <span className="text-xs font-medium text-blue-700">Total Entries</span>
+            <Database className="w-4 h-4 text-ceramic-info" />
+            <span className="text-xs font-medium text-ceramic-text-primary">Total Entries</span>
           </div>
-          <p className="text-2xl font-bold text-blue-900">{stats.totalEntries}</p>
-          <p className="text-xs text-blue-600 mt-1">
+          <p className="text-2xl font-bold text-ceramic-text-primary">{stats.totalEntries}</p>
+          <p className="text-xs text-ceramic-text-secondary mt-1">
             Mem: {stats.memoryEntries} | Storage: {stats.storageEntries}
           </p>
         </div>
 
         {/* Memory Usage */}
-        <div className="bg-purple-50 rounded-xl p-4">
+        <div className="bg-ceramic-accent/10 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <MemoryStick className="w-4 h-4 text-purple-600" />
-            <span className="text-xs font-medium text-purple-700">Memory</span>
+            <MemoryStick className="w-4 h-4 text-ceramic-accent" />
+            <span className="text-xs font-medium text-ceramic-text-primary">Memory</span>
           </div>
-          <p className="text-2xl font-bold text-purple-900">
+          <p className="text-2xl font-bold text-ceramic-text-primary">
             {stats.memoryUsageKB.toFixed(1)}
           </p>
-          <p className="text-xs text-purple-600 mt-1">KB em memória</p>
+          <p className="text-xs text-ceramic-text-secondary mt-1">KB em memória</p>
         </div>
 
         {/* Storage Usage */}
-        <div className="bg-green-50 rounded-xl p-4">
+        <div className="bg-ceramic-success/10 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <HardDrive className="w-4 h-4 text-green-600" />
-            <span className="text-xs font-medium text-green-700">Storage</span>
+            <HardDrive className="w-4 h-4 text-ceramic-success" />
+            <span className="text-xs font-medium text-ceramic-text-primary">Storage</span>
           </div>
-          <p className="text-2xl font-bold text-green-900">
+          <p className="text-2xl font-bold text-ceramic-text-primary">
             {stats.storageUsageKB.toFixed(1)}
           </p>
-          <p className="text-xs text-green-600 mt-1">KB em localStorage</p>
+          <p className="text-xs text-ceramic-text-secondary mt-1">KB em localStorage</p>
         </div>
 
         {/* Performance Boost */}
-        <div className="bg-orange-50 rounded-xl p-4">
+        <div className="bg-ceramic-warning/10 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-orange-600" />
-            <span className="text-xs font-medium text-orange-700">Boost</span>
+            <TrendingUp className="w-4 h-4 text-ceramic-warning" />
+            <span className="text-xs font-medium text-ceramic-text-primary">Boost</span>
           </div>
-          <p className="text-2xl font-bold text-orange-900">
+          <p className="text-2xl font-bold text-ceramic-text-primary">
             {stats.hitRate > 0 ? '96%' : '0%'}
           </p>
-          <p className="text-xs text-orange-600 mt-1">mais rápido (cache hit)</p>
+          <p className="text-xs text-ceramic-text-secondary mt-1">mais rápido (cache hit)</p>
         </div>
       </div>
 
       {/* Health Status */}
       <div
         className={`rounded-lg p-3 ${
-          isHealthy ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+          isHealthy ? 'bg-ceramic-success/10 border-ceramic-success' : 'bg-ceramic-error/10 border-ceramic-error'
         } border`}
       >
         <div className="flex items-center gap-2">
           <div
-            className={`w-2 h-2 rounded-full ${isHealthy ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}
+            className={`w-2 h-2 rounded-full ${isHealthy ? 'bg-ceramic-success' : 'bg-ceramic-error'} animate-pulse`}
           />
-          <span className={`text-sm font-medium ${isHealthy ? 'text-green-700' : 'text-red-700'}`}>
+          <span className={`text-sm font-medium ${isHealthy ? 'text-ceramic-text-primary' : 'text-ceramic-text-primary'}`}>
             {isHealthy ? 'Cache operando normalmente' : 'Cache com problemas (storage alto)'}
           </span>
         </div>
 
         {!isHealthy && (
-          <p className="text-xs text-red-600 mt-2">
+          <p className="text-xs text-ceramic-error mt-2">
             Considere limpar entradas antigas ou reduzir maxStorageEntries.
           </p>
         )}
@@ -257,10 +257,10 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3"
+          className="mt-4 bg-ceramic-warning/10 border border-ceramic-warning rounded-lg p-3"
         >
-          <p className="text-sm font-medium text-yellow-800 mb-1">⚠️ Hit rate baixo</p>
-          <p className="text-xs text-yellow-700">
+          <p className="text-sm font-medium text-ceramic-text-primary mb-1">⚠️ Hit rate baixo</p>
+          <p className="text-xs text-ceramic-text-secondary">
             Queries muito variadas reduzem eficiência do cache. Considere aumentar TTL ou analisar
             padrão de buscas.
           </p>
@@ -269,14 +269,14 @@ export const CacheStatsWidget: React.FC<CacheStatsWidgetProps> = ({
 
       {/* Cost Savings Estimate */}
       {stats.totalHits > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-ceramic-border">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Economia estimada</span>
-            <span className="text-lg font-bold text-green-600">
+            <span className="text-sm text-ceramic-text-secondary">Economia estimada</span>
+            <span className="text-lg font-bold text-ceramic-success">
               ${((stats.totalHits * 0.0007)).toFixed(4)}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-ceramic-text-tertiary mt-1">
             Baseado em {stats.totalHits} cache hits @ $0.0007/query
           </p>
         </div>

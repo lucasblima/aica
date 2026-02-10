@@ -34,7 +34,7 @@ const TrailCard: React.FC<TrailCardProps> = ({ trail, isSelected, onToggle }) =>
       className={`relative w-full p-6 rounded-xl transition-all duration-200 text-left border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer ${
         isSelected
           ? 'border-current bg-opacity-10 ring-2 ring-offset-2'
-          : 'border-transparent hover:border-[#E8E6E0] bg-white'
+          : 'border-transparent hover:border-[#E8E6E0] bg-ceramic-base'
       }`}
       style={{
         backgroundColor: isSelected ? `${trail.color}20` : '#FFFFFF',

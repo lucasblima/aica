@@ -54,13 +54,13 @@ export function SpaceCard({
   const getThemeColors = () => {
     switch (space.color_theme) {
       case 'earth':
-        return 'bg-blue-50 text-blue-600';
+        return 'bg-ceramic-info/10 text-ceramic-info';
       case 'amber':
         return 'bg-amber-50 text-amber-600';
       case 'paper':
-        return 'bg-orange-50 text-orange-600';
+        return 'bg-ceramic-warning/10 text-ceramic-warning';
       case 'warm':
-        return 'bg-green-50 text-green-600';
+        return 'bg-ceramic-success/10 text-ceramic-success';
       default:
         return 'bg-ceramic-accent/10 text-ceramic-accent';
     }

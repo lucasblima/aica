@@ -26,12 +26,12 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border-2 border-stone-200 p-6 animate-pulse">
-        <div className="h-6 bg-stone-200 rounded w-1/3 mb-4" />
+      <div className="bg-ceramic-base rounded-xl border-2 border-ceramic-border p-6 animate-pulse">
+        <div className="h-6 bg-ceramic-border rounded w-1/3 mb-4" />
         <div className="space-y-3">
-          <div className="h-16 bg-stone-100 rounded" />
-          <div className="h-16 bg-stone-100 rounded" />
-          <div className="h-16 bg-stone-100 rounded" />
+          <div className="h-16 bg-ceramic-cool rounded" />
+          <div className="h-16 bg-ceramic-cool rounded" />
+          <div className="h-16 bg-ceramic-cool rounded" />
         </div>
       </div>
     );
@@ -39,9 +39,9 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
 
   if (!summary) {
     return (
-      <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 text-center">
+      <div className="bg-ceramic-warning/10 border-2 border-ceramic-warning/20 rounded-xl p-6 text-center">
         <div className="text-4xl mb-2">📊</div>
-        <p className="text-stone-600">Nenhuma transação encontrada</p>
+        <p className="text-ceramic-text-secondary">Nenhuma transação encontrada</p>
       </div>
     );
   }
@@ -54,29 +54,29 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border-2 border-stone-200 p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-stone-800 mb-4">Resumo Financeiro</h3>
+    <div className="bg-ceramic-base rounded-xl border-2 border-ceramic-border p-6 shadow-sm">
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Resumo Financeiro</h3>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Total Income */}
-        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+        <div className="bg-ceramic-success-bg border-2 border-ceramic-success/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">💰</span>
-            <span className="text-sm text-green-700 font-medium">Receitas</span>
+            <span className="text-sm text-ceramic-success font-medium">Receitas</span>
           </div>
-          <div className="text-2xl font-bold text-green-800">
+          <div className="text-2xl font-bold text-ceramic-success">
             {formatCurrency(summary.totalIncome)}
           </div>
         </div>
 
         {/* Total Expenses */}
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+        <div className="bg-ceramic-error-bg border-2 border-ceramic-error/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">💸</span>
-            <span className="text-sm text-red-700 font-medium">Despesas</span>
+            <span className="text-sm text-ceramic-error font-medium">Despesas</span>
           </div>
-          <div className="text-2xl font-bold text-red-800">
+          <div className="text-2xl font-bold text-ceramic-error">
             {formatCurrency(summary.totalExpenses)}
           </div>
         </div>
@@ -85,15 +85,15 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
         <div
           className={`border-2 rounded-lg p-4 ${
             summary.netBalance >= 0
-              ? 'bg-blue-50 border-blue-200'
-              : 'bg-orange-50 border-orange-200'
+              ? 'bg-ceramic-info-bg border-ceramic-info/20'
+              : 'bg-ceramic-warning/10 border-ceramic-warning/20'
           }`}
         >
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">📈</span>
             <span
               className={`text-sm font-medium ${
-                summary.netBalance >= 0 ? 'text-blue-700' : 'text-orange-700'
+                summary.netBalance >= 0 ? 'text-ceramic-info' : 'text-ceramic-warning'
               }`}
             >
               Saldo
@@ -101,7 +101,7 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
           </div>
           <div
             className={`text-2xl font-bold ${
-              summary.netBalance >= 0 ? 'text-blue-800' : 'text-orange-800'
+              summary.netBalance >= 0 ? 'text-ceramic-info' : 'text-ceramic-warning'
             }`}
           >
             {formatCurrency(summary.netBalance)}
@@ -111,12 +111,12 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
 
       {/* Pending Payments Alert */}
       {summary.pendingPayments > 0 && (
-        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-6">
+        <div className="bg-ceramic-warning/10 border-2 border-ceramic-warning/30 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⏳</span>
             <div>
-              <div className="font-semibold text-amber-900">Pagamentos Pendentes</div>
-              <div className="text-sm text-amber-700">
+              <div className="font-semibold text-ceramic-warning">Pagamentos Pendentes</div>
+              <div className="text-sm text-ceramic-warning">
                 {formatCurrency(summary.pendingPayments)} aguardando confirmação
               </div>
             </div>
@@ -127,7 +127,7 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
       {/* Category Breakdown */}
       {summary.byCategory.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-stone-700 mb-3">Por Categoria</h4>
+          <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3">Por Categoria</h4>
           <div className="space-y-2">
             {summary.byCategory.slice(0, 5).map((cat, idx) => {
               const percentage = summary.totalExpenses > 0
@@ -137,14 +137,14 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
               return (
                 <div key={idx}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-stone-700 capitalize">{cat.category}</span>
-                    <span className="text-sm font-medium text-stone-800">
+                    <span className="text-sm text-ceramic-text-primary capitalize">{cat.category}</span>
+                    <span className="text-sm font-medium text-ceramic-text-primary">
                       {formatCurrency(cat.amount)}
                     </span>
                   </div>
-                  <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-ceramic-cool rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all"
+                      className="h-full bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80 transition-all"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -158,19 +158,19 @@ export const SpaceFinanceSummary: React.FC<SpaceFinanceSummaryProps> = ({
       {/* Member Contributions */}
       {summary.byMember.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-stone-700 mb-3">Por Membro</h4>
+          <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3">Por Membro</h4>
           <div className="space-y-2">
             {summary.byMember.map((member, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-3 bg-stone-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-ceramic-cool rounded-lg"
               >
                 <div className="flex-1">
-                  <div className="font-medium text-stone-800">{member.name}</div>
-                  <div className="text-xs text-stone-600">
+                  <div className="font-medium text-ceramic-text-primary">{member.name}</div>
+                  <div className="text-xs text-ceramic-text-secondary">
                     Pago: {formatCurrency(member.paid)}
                     {member.pending > 0 && (
-                      <span className="text-amber-600 ml-2">
+                      <span className="text-ceramic-warning ml-2">
                         • Pendente: {formatCurrency(member.pending)}
                       </span>
                     )}

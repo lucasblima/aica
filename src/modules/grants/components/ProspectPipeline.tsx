@@ -109,9 +109,9 @@ function DroppableColumn({ column, onSponsorClick, onQuickAction }: DroppableCol
     <div
       ref={setNodeRef}
       className={`
-        flex flex-col bg-gray-50 rounded-lg min-w-[280px] max-w-[320px]
+        flex flex-col bg-ceramic-base rounded-lg min-w-[280px] max-w-[320px]
         transition-colors duration-200
-        ${isOver ? 'bg-blue-50 ring-2 ring-blue-300' : ''}
+        ${isOver ? 'bg-ceramic-info-bg ring-2 ring-amber-300' : ''}
       `}
     >
       {/* Column Header */}
@@ -125,13 +125,13 @@ function DroppableColumn({ column, onSponsorClick, onQuickAction }: DroppableCol
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: column.color }}
             />
-            <h3 className="font-medium text-gray-900">{column.title}</h3>
+            <h3 className="font-medium text-ceramic-text-primary">{column.title}</h3>
           </div>
-          <span className="text-sm text-gray-500 bg-white px-2 py-0.5 rounded-full">
+          <span className="text-sm text-ceramic-text-secondary bg-ceramic-base px-2 py-0.5 rounded-full">
             {column.sponsors.length}
           </span>
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-ceramic-text-secondary">
           {formatCurrency(column.total_value)}
         </p>
       </div>
@@ -154,7 +154,7 @@ function DroppableColumn({ column, onSponsorClick, onQuickAction }: DroppableCol
 
         {/* Empty state */}
         {column.sponsors.length === 0 && (
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-ceramic-text-secondary">
             <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Nenhum prospect</p>
           </div>
@@ -256,14 +256,14 @@ export function ProspectPipeline({
       <div className="flex items-center justify-between mb-4 px-2">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-gray-500" />
-            <span className="text-sm text-gray-600">
+            <Users className="w-5 h-5 text-ceramic-text-secondary" />
+            <span className="text-sm text-ceramic-text-secondary">
               <strong>{totalCount}</strong> prospects
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-500" />
-            <span className="text-sm text-gray-600">
+            <TrendingUp className="w-5 h-5 text-ceramic-success" />
+            <span className="text-sm text-ceramic-text-secondary">
               Pipeline: <strong>{formatCurrency(totalValue)}</strong>
             </span>
           </div>
@@ -272,17 +272,17 @@ export function ProspectPipeline({
         <div className="flex items-center gap-2">
           {onRefresh && (
             <button
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-ceramic-base rounded-lg transition-colors"
               onClick={onRefresh}
               disabled={loading}
               title="Atualizar"
             >
-              <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-ceramic-text-secondary ${loading ? 'animate-spin' : ''}`} />
             </button>
           )}
           {onAddSponsor && (
             <button
-              className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
               onClick={onAddSponsor}
             >
               <Plus className="w-4 h-4" />
@@ -325,8 +325,8 @@ export function ProspectPipeline({
 
       {/* Loading overlay */}
       {loading && (
-        <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
-          <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+        <div className="absolute inset-0 bg-ceramic-base/50 flex items-center justify-center">
+          <RefreshCw className="w-8 h-8 text-ceramic-info animate-spin" />
         </div>
       )}
     </div>

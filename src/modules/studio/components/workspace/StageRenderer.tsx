@@ -71,7 +71,7 @@ export default function StageRenderer({ currentStage }: StageRendererProps) {
       default:
         return (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">Estágio desconhecido: {currentStage}</p>
+            <p className="text-ceramic-text-secondary">Estágio desconhecido: {currentStage}</p>
           </div>
         );
     }

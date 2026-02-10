@@ -307,10 +307,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl bg-ceramic-base rounded-3xl shadow-2xl overflow-hidden"
       >
         {/* Progress Bar */}
-        <div className="h-1 bg-gray-200 relative">
+        <div className="h-1 bg-ceramic-cool relative">
           <motion.div
             role="progressbar"
             aria-valuenow={progressPercentage}
@@ -325,7 +325,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         </div>
 
         {/* Step Indicators */}
-        <div className="flex justify-center items-center gap-2 py-4 px-8 bg-gray-50 border-b border-gray-200">
+        <div className="flex justify-center items-center gap-2 py-4 px-8 bg-ceramic-base border-b border-ceramic-border">
           {[0, 1, 2].map((stepIndex) => (
             <div key={stepIndex} className="flex items-center">
               <div
@@ -333,8 +333,8 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                   stepIndex === step
                     ? 'bg-amber-500 text-white shadow-lg'
                     : stepIndex < step
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-300 text-gray-600'
+                    ? 'bg-ceramic-success text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-secondary'
                 }`}
               >
                 {stepIndex < step ? '✓' : stepIndex + 1}
@@ -343,10 +343,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 <div
                   className={`w-8 h-1 mx-2 ${
                     stepIndex < step
-                      ? 'bg-green-500'
+                      ? 'bg-ceramic-success'
                       : stepIndex === step
                       ? 'bg-amber-500'
-                      : 'bg-gray-300'
+                      : 'bg-ceramic-cool'
                   }`}
                 />
               )}
@@ -367,10 +367,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 className="space-y-6"
               >
                 <div className="text-center space-y-2">
-                  <h2 id="wizard-title" className="text-3xl font-bold text-gray-900">
+                  <h2 id="wizard-title" className="text-3xl font-bold text-ceramic-text-primary">
                     Novo Projeto
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-ceramic-text-secondary">
                     Escolha o tipo de projeto que deseja criar
                   </p>
                 </div>
@@ -391,13 +391,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                           type.enabled
                             ? isSelected
                               ? 'border-amber-500 bg-amber-50 shadow-lg cursor-pointer'
-                              : 'border-gray-200 bg-white hover:border-gray-300 cursor-pointer'
-                            : 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-60'
+                              : 'border-ceramic-border bg-ceramic-base hover:border-ceramic-cool cursor-pointer'
+                            : 'border-ceramic-border bg-ceramic-base cursor-not-allowed opacity-60'
                         }`}
                       >
                         {/* Badge for disabled types */}
                         {!type.enabled && (
-                          <div className="absolute -top-2 -right-2 px-3 py-1 bg-gray-400 text-white text-xs font-bold rounded-full">
+                          <div className="absolute -top-2 -right-2 px-3 py-1 bg-ceramic-border text-white text-xs font-bold rounded-full">
                             {type.badge}
                           </div>
                         )}
@@ -418,22 +418,22 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                             className={`w-16 h-16 rounded-xl flex items-center justify-center transition-all ${
                               type.enabled && isSelected
                                 ? 'bg-amber-500'
-                                : 'bg-gray-100'
+                                : 'bg-ceramic-base'
                             }`}
                           >
                             <Icon
                               className={`w-8 h-8 ${
                                 type.enabled && isSelected
                                   ? 'text-white'
-                                  : 'text-gray-600'
+                                  : 'text-ceramic-text-secondary'
                               }`}
                             />
                           </div>
                           <div>
-                            <h3 className="font-bold text-gray-900">
+                            <h3 className="font-bold text-ceramic-text-primary">
                               {type.label}
                             </h3>
-                            <p className="text-xs text-gray-600 mt-1">
+                            <p className="text-xs text-ceramic-text-secondary mt-1">
                               {type.description}
                             </p>
                           </div>
@@ -447,7 +447,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                   <button
                     data-testid="wizard-cancel-button"
                     onClick={handleCancel}
-                    className="flex-1 py-3 px-6 rounded-xl text-gray-600 font-bold hover:bg-gray-100 transition-all"
+                    className="flex-1 py-3 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-ceramic-base transition-all"
                   >
                     Cancelar
                   </button>
@@ -465,10 +465,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 className="space-y-6"
               >
                 <div className="text-center space-y-2">
-                  <h2 className="text-3xl font-bold text-gray-900">
+                  <h2 className="text-3xl font-bold text-ceramic-text-primary">
                     Informações Básicas
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-ceramic-text-secondary">
                     Complete os detalhes do seu {formData.projectType}
                   </p>
                 </div>
@@ -476,7 +476,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 <div className="space-y-4">
                   {/* Title */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                       Título
                     </label>
                     <input
@@ -488,13 +488,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                       }
                       placeholder="Ex: Conversa com Eduardo Paes"
                       autoFocus
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary placeholder-ceramic-text-secondary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
                     />
                   </div>
 
                   {/* Description */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                       Descrição (Opcional)
                     </label>
                     <textarea
@@ -508,13 +508,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                       }
                       placeholder="Adicione detalhes sobre o episódio..."
                       rows={3}
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary placeholder-ceramic-text-secondary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all resize-none"
                     />
                   </div>
 
                   {/* Theme */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                       Tema
                     </label>
                     <input
@@ -524,7 +524,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                         setFormData(prev => ({ ...prev, theme: e.target.value }))
                       }
                       placeholder="Ex: Políticas Públicas, Inovação"
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary placeholder-ceramic-text-secondary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
                     />
                   </div>
 
@@ -533,10 +533,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3"
+                      className="p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-error/30 flex items-start gap-3"
                     >
-                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-red-700">{error}</p>
+                      <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-ceramic-error">{error}</p>
                     </motion.div>
                   )}
                 </div>
@@ -546,7 +546,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                   <button
                     data-testid="wizard-back-button"
                     onClick={handleBack}
-                    className="flex-1 py-3 px-6 rounded-xl text-gray-600 font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-ceramic-base transition-all flex items-center justify-center gap-2"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Voltar
@@ -574,10 +574,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 className="space-y-6"
               >
                 <div className="text-center space-y-2">
-                  <h2 className="text-3xl font-bold text-gray-900">
+                  <h2 className="text-3xl font-bold text-ceramic-text-primary">
                     Configurar Convidado
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-ceramic-text-secondary">
                     Defina os detalhes do episódio
                   </p>
                 </div>
@@ -585,7 +585,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                 <div className="space-y-4">
                   {/* Guest Type */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                       Tipo de Convidado
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -603,13 +603,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                           className={`p-3 rounded-lg border-2 text-center transition-all ${
                             formData.guestType === guestTypeOption.id
                               ? 'border-amber-500 bg-amber-50'
-                              : 'border-gray-200 bg-white hover:border-gray-300'
+                              : 'border-ceramic-border bg-ceramic-base hover:border-ceramic-cool'
                           }`}
                         >
-                          <div className="text-sm font-bold text-gray-900">
+                          <div className="text-sm font-bold text-ceramic-text-primary">
                             {guestTypeOption.label}
                           </div>
-                          <div className="text-xs text-gray-600 mt-1">
+                          <div className="text-xs text-ceramic-text-secondary mt-1">
                             {guestTypeOption.description}
                           </div>
                         </motion.button>
@@ -619,7 +619,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
 
                   {/* Guest Name */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                       <User className="w-3 h-3 inline mr-1" />
                       Nome do Convidado
                     </label>
@@ -635,7 +635,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                       }
                       placeholder="Ex: João Silva"
                       autoFocus
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary placeholder-ceramic-text-secondary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
                     />
                   </div>
 
@@ -643,7 +643,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                   <div className="grid grid-cols-2 gap-4">
                     {/* Date */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                         <Calendar className="w-3 h-3 inline mr-1" />
                         Data (Opcional)
                       </label>
@@ -656,13 +656,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                             scheduledDate: e.target.value
                           }))
                         }
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
                       />
                     </div>
 
                     {/* Time */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                         Hora (Opcional)
                       </label>
                       <input
@@ -674,13 +674,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                             scheduledTime: e.target.value
                           }))
                         }
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
                       />
                     </div>
 
                     {/* Location */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                         <MapPin className="w-3 h-3 inline mr-1" />
                         Local (Opcional)
                       </label>
@@ -692,7 +692,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                             location: e.target.value
                           }))
                         }
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
                       >
                         {LOCATIONS.map(loc => (
                           <option key={loc} value={loc}>
@@ -704,7 +704,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
 
                     {/* Season */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
                         <Hash className="w-3 h-3 inline mr-1" />
                         Temporada (Opcional)
                       </label>
@@ -718,7 +718,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                             season: e.target.value
                           }))
                         }
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 text-gray-900 border-2 border-gray-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -728,10 +728,10 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3"
+                      className="p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-error/30 flex items-start gap-3"
                     >
-                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-red-700">{error}</p>
+                      <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-ceramic-error">{error}</p>
                     </motion.div>
                   )}
                 </div>
@@ -741,7 +741,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
                   <button
                     onClick={handleBack}
                     disabled={isCreatingProject}
-                    className="flex-1 py-3 px-6 rounded-xl text-gray-600 font-bold hover:bg-gray-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-ceramic-base disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Voltar
@@ -786,17 +786,17 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-2xl"
+              className="bg-ceramic-base rounded-2xl p-6 max-w-sm mx-4 shadow-2xl"
             >
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                   <AlertCircle className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <h3 className="text-lg font-bold text-ceramic-text-primary">
                     Cancelar criação?
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-ceramic-text-secondary mt-1">
                     Você perderá todas as informações preenchidas.
                   </p>
                 </div>
@@ -804,13 +804,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCancelConfirmation(false)}
-                  className="flex-1 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary font-bold hover:bg-ceramic-cool transition-colors"
                 >
                   Continuar
                 </button>
                 <button
                   onClick={confirmCancel}
-                  className="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors"
+                  className="flex-1 px-4 py-3 rounded-xl bg-ceramic-error text-white font-bold hover:bg-ceramic-error/90 transition-colors"
                 >
                   Cancelar
                 </button>

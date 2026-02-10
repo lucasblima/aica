@@ -34,8 +34,8 @@ export interface ContextCardProps {
 }
 
 const SOURCE_CONFIG = {
-  event: { icon: Calendar, label: 'Evento', color: 'text-blue-600' },
-  journey: { icon: Map, label: 'Trilha', color: 'text-purple-600' },
+  event: { icon: Calendar, label: 'Evento', color: 'text-ceramic-info' },
+  journey: { icon: Map, label: 'Trilha', color: 'text-ceramic-accent' },
   daily: { icon: Sparkles, label: 'Reflexão', color: 'text-amber-600' },
 };
 
@@ -102,9 +102,9 @@ export function ContextCard({
               initial={{ scale: 0, rotate: -45 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"
+              className="w-12 h-12 rounded-full bg-ceramic-success/10 flex items-center justify-center"
             >
-              <Check className="w-6 h-6 text-green-600" />
+              <Check className="w-6 h-6 text-ceramic-success" />
             </motion.div>
             <span className="text-ceramic-text-primary font-medium">
               {confirmationMessage || 'Registrado com sucesso!'}

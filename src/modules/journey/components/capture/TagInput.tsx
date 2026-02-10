@@ -50,18 +50,18 @@ export function TagInput({ value, onChange, maxTags = 5 }: TagInputProps) {
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap gap-2 p-3 border border-gray-300 rounded-lg bg-white min-h-[50px]">
+      <div className="flex flex-wrap gap-2 p-3 border border-ceramic-border rounded-lg bg-ceramic-base min-h-[50px]">
         {/* Selected tags */}
         {value.map(tag => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+            className="inline-flex items-center gap-1 px-3 py-1 bg-ceramic-warm text-ceramic-accent-dark rounded-full text-sm"
           >
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+              className="hover:bg-ceramic-warm-hover rounded-full p-0.5 transition-colors"
             >
               <XMarkIcon className="h-3 w-3" />
             </button>
@@ -89,13 +89,13 @@ export function TagInput({ value, onChange, maxTags = 5 }: TagInputProps) {
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-ceramic-base border border-ceramic-border rounded-lg shadow-ceramic-elevated z-50 max-h-48 overflow-y-auto">
           {suggestions.map(tag => (
             <button
               key={tag}
               type="button"
               onClick={() => addTag(tag)}
-              className="w-full px-3 py-2 text-left hover:bg-gray-100 text-sm transition-colors"
+              className="w-full px-3 py-2 text-left hover:bg-ceramic-cool text-sm transition-colors"
             >
               {tag}
             </button>
@@ -104,7 +104,7 @@ export function TagInput({ value, onChange, maxTags = 5 }: TagInputProps) {
       )}
 
       {/* Help text */}
-      <p className="mt-1 text-xs text-gray-500">
+      <p className="mt-1 text-xs text-ceramic-text-secondary">
         {value.length}/{maxTags} tags • Digite ou selecione tags rápidas
       </p>
     </div>

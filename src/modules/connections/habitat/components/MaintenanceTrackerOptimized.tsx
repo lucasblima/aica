@@ -14,10 +14,10 @@ interface MaintenanceTrackerProps {
 }
 
 const urgencyColors: Record<MaintenanceUrgency, string> = {
-  baixa: 'bg-blue-100 text-blue-800 border-blue-300',
-  normal: 'bg-gray-100 text-gray-800 border-gray-300',
-  alta: 'bg-orange-100 text-orange-800 border-orange-300',
-  emergencia: 'bg-red-100 text-red-800 border-red-300',
+  baixa: 'bg-ceramic-info/15 text-ceramic-info border-ceramic-info/30',
+  normal: 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border',
+  alta: 'bg-ceramic-warning/15 text-ceramic-warning border-ceramic-warning/30',
+  emergencia: 'bg-ceramic-error/15 text-ceramic-error border-ceramic-error/30',
 };
 
 const urgencyLabels: Record<MaintenanceUrgency, string> = {
@@ -72,20 +72,20 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white border-2 border-stone-200 rounded-lg p-6">
+      <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-6">
         <ListItemSkeleton count={3} />
       </div>
     );
   }
 
   return (
-    <div className="bg-white border-2 border-stone-200 rounded-lg p-6">
+    <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xl font-bold text-stone-800">Manutenções</h3>
+          <h3 className="text-xl font-bold text-ceramic-text-primary">Manutenções</h3>
           {records.length > 0 && (
-            <p className="text-sm text-stone-500 mt-1">
+            <p className="text-sm text-ceramic-text-secondary mt-1">
               {records.length} {records.length === 1 ? 'registro' : 'registros'}
             </p>
           )}
@@ -104,7 +104,7 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
             className={`px-3 py-1 rounded-full text-sm font-medium border-2 transition-colors ${
               selectedStatus === status
                 ? 'bg-amber-700 text-white border-amber-700'
-                : 'bg-stone-50 text-stone-700 border-stone-300 hover:bg-stone-100'
+                : 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border hover:bg-ceramic-cool'
             }`}
           >
             {statusLabels[status]}
@@ -116,7 +116,7 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
               setSelectedStatus(null);
               clearFilters();
             }}
-            className="px-3 py-1 rounded-full text-sm font-medium bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
+            className="px-3 py-1 rounded-full text-sm font-medium bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-border transition-colors"
           >
             Limpar filtros
           </button>
@@ -127,7 +127,7 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
       {records.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🔧</div>
-          <p className="text-stone-600">
+          <p className="text-ceramic-text-secondary">
             {selectedStatus
               ? `Nenhuma manutenção com status "${statusLabels[selectedStatus as MaintenanceStatus]}"`
               : 'Nenhuma manutenção registrada'}
@@ -139,12 +139,12 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
             {paginatedRecords.map((record) => (
               <div
                 key={record.id}
-                className="border-2 border-stone-200 rounded-lg p-4 hover:border-amber-300 transition-colors"
+                className="border-2 border-ceramic-border rounded-lg p-4 hover:border-amber-300 transition-colors"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-stone-800">{record.title}</h4>
+                      <h4 className="font-semibold text-ceramic-text-primary">{record.title}</h4>
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
                           urgencyColors[record.urgency]
@@ -154,15 +154,15 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
                       </span>
                     </div>
                     {record.description && (
-                      <p className="text-sm text-stone-600">{record.description}</p>
+                      <p className="text-sm text-ceramic-text-secondary">{record.description}</p>
                     )}
                   </div>
                   <div className="text-right ml-4">
-                    <div className="text-sm font-medium text-stone-700">
+                    <div className="text-sm font-medium text-ceramic-text-primary">
                       {statusLabels[record.status]}
                     </div>
                     {record.estimated_cost && (
-                      <div className="text-xs text-stone-500">
+                      <div className="text-xs text-ceramic-text-secondary">
                         R$ {record.estimated_cost.toFixed(2)}
                       </div>
                     )}
@@ -170,7 +170,7 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
                 </div>
 
                 {/* Details */}
-                <div className="flex flex-wrap gap-4 text-xs text-stone-500 mt-3">
+                <div className="flex flex-wrap gap-4 text-xs text-ceramic-text-secondary mt-3">
                   {record.scheduled_date && (
                     <div className="flex items-center gap-1">
                       <span>📅</span>
@@ -196,15 +196,15 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t border-stone-200">
-              <div className="text-sm text-stone-600">
+            <div className="flex items-center justify-between pt-4 border-t border-ceramic-border">
+              <div className="text-sm text-ceramic-text-secondary">
                 Página {currentPage} de {totalPages}
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 bg-stone-100 text-stone-700 rounded hover:bg-stone-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1 bg-ceramic-cool text-ceramic-text-primary rounded hover:bg-ceramic-border disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   ← Anterior
                 </button>
@@ -230,7 +230,7 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
                         className={`w-8 h-8 rounded ${
                           currentPage === pageNum
                             ? 'bg-amber-700 text-white'
-                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                            : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-border'
                         } transition-colors`}
                       >
                         {pageNum}
@@ -242,7 +242,7 @@ export const MaintenanceTrackerOptimized: React.FC<MaintenanceTrackerProps> = ({
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 bg-stone-100 text-stone-700 rounded hover:bg-stone-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1 bg-ceramic-cool text-ceramic-text-primary rounded hover:bg-ceramic-border disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Próxima →
                 </button>

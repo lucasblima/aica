@@ -185,8 +185,8 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
           onClick={() => setSearchMode('free')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
             searchMode === 'free'
-              ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+              ? 'bg-ceramic-info/10 text-ceramic-info border-2 border-ceramic-info/30'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight border-2 border-transparent'
           }`}
         >
           <Search className="w-4 h-4" />
@@ -198,7 +198,7 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
             searchMode === 'emotion'
               ? 'bg-pink-100 text-pink-700 border-2 border-pink-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight border-2 border-transparent'
           }`}
         >
           <Heart className="w-4 h-4" />
@@ -209,8 +209,8 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
           onClick={() => setSearchMode('tag')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
             searchMode === 'tag'
-              ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+              ? 'bg-ceramic-accent/10 text-ceramic-accent border-2 border-ceramic-accent/30'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight border-2 border-transparent'
           }`}
         >
           <Hash className="w-4 h-4" />
@@ -221,8 +221,8 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
           onClick={() => setSearchMode('growth')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
             searchMode === 'growth'
-              ? 'bg-green-100 text-green-700 border-2 border-green-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+              ? 'bg-ceramic-success/10 text-ceramic-success border-2 border-ceramic-success/30'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight border-2 border-transparent'
           }`}
         >
           <TrendingUp className="w-4 h-4" />
@@ -234,7 +234,7 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap ${
             searchMode === 'insights'
               ? 'bg-amber-100 text-amber-700 border-2 border-amber-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight border-2 border-transparent'
           }`}
         >
           <Lightbulb className="w-4 h-4" />
@@ -246,7 +246,7 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
       <form onSubmit={handleSearch} className="space-y-4">
         {searchMode === 'emotion' ? (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ceramic-text-primary">
               Selecione uma emoção:
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -258,18 +258,18 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
                   className={`p-3 rounded-lg border-2 transition-all ${
                     selectedEmotion === emotion.value
                       ? 'border-pink-400 bg-pink-50 shadow-sm'
-                      : 'border-gray-200 hover:border-pink-200 hover:bg-gray-50'
+                      : 'border-ceramic-text-secondary/10 hover:border-pink-200 hover:bg-ceramic-cool'
                   }`}
                 >
                   <div className="text-2xl mb-1">{emotion.icon}</div>
-                  <div className="text-sm font-medium text-gray-700">{emotion.label}</div>
+                  <div className="text-sm font-medium text-ceramic-text-primary">{emotion.label}</div>
                 </button>
               ))}
             </div>
           </div>
         ) : searchMode === 'growth' ? (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-800">
+          <div className="p-4 bg-ceramic-success/10 border border-ceramic-success/30 rounded-lg">
+            <p className="text-sm text-ceramic-success">
               Clique em <strong>Buscar</strong> para encontrar momentos de aprendizado, crescimento pessoal e vitórias.
             </p>
           </div>
@@ -289,14 +289,14 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
                   ? 'Faça uma pergunta sobre seus padrões...'
                   : placeholder
               }
-              className="w-full pl-10 pr-10 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full pl-10 pr-10 py-3 border-2 border-ceramic-text-secondary/10 rounded-lg focus:border-ceramic-info focus:ring-2 focus:ring-ceramic-info/20 transition-all"
               disabled={isSearching}
             />
             {query && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-ceramic-text-tertiary hover:text-ceramic-text-secondary"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -309,7 +309,7 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
           <button
             type="submit"
             disabled={isSearching || (!query.trim() && searchMode !== 'growth' && searchMode !== 'emotion')}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-ceramic-info text-white rounded-lg font-medium hover:bg-ceramic-info/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
           >
             {isSearching ? (
               <>
@@ -328,7 +328,7 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
+              className="px-6 py-3 border-2 border-ceramic-text-secondary/20 text-ceramic-text-primary rounded-lg font-medium hover:bg-ceramic-cool transition-all"
             >
               Limpar
             </button>
@@ -336,9 +336,9 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
         </div>
 
         {/* Mode Indicator */}
-        <div className="text-sm text-gray-500 flex items-center gap-2">
+        <div className="text-sm text-ceramic-text-secondary flex items-center gap-2">
           <Sparkles className="w-4 h-4" />
-          Modo: <span className="font-semibold text-gray-700">{getModeLabel()}</span>
+          Modo: <span className="font-semibold text-ceramic-text-primary">{getModeLabel()}</span>
         </div>
       </form>
 
@@ -349,12 +349,12 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3"
+            className="p-4 bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg flex items-start gap-3"
           >
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-red-800">Erro na busca</p>
-              <p className="text-sm text-red-600 mt-1">{error}</p>
+              <p className="text-sm font-medium text-ceramic-error">Erro na busca</p>
+              <p className="text-sm text-ceramic-error/80 mt-1">{error}</p>
             </div>
           </motion.div>
         )}
@@ -370,12 +370,12 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
             className="space-y-3"
           >
             {/* Results Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-              <h4 className="font-semibold text-gray-900">
+            <div className="flex items-center justify-between pb-2 border-b border-ceramic-text-secondary/10">
+              <h4 className="font-semibold text-ceramic-text-primary">
                 {results.length === 0 ? 'Nenhum resultado' : `${results.length} resultado${results.length !== 1 ? 's' : ''}`}
               </h4>
               {results.length > 0 && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-ceramic-text-secondary">
                   Relevância decrescente
                 </span>
               )}
@@ -391,18 +391,18 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: (resultIndex * result.citations.length + citationIndex) * 0.05 }}
-                      className="p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+                      className="p-4 bg-ceramic-base border border-ceramic-text-secondary/10 rounded-lg hover:border-ceramic-info/50 hover:shadow-sm transition-all"
                     >
                       {/* Result Header */}
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-700">
+                          <Calendar className="w-4 h-4 text-ceramic-text-tertiary" />
+                          <span className="text-sm font-medium text-ceramic-text-primary">
                             {citation.title || 'Momento sem nome'}
                           </span>
                         </div>
                         {citation.score && (
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <div className="flex items-center gap-1.5 text-xs text-ceramic-text-secondary">
                             <Sparkles className="w-3.5 h-3.5" />
                             {(citation.score * 100).toFixed(0)}% relevante
                           </div>
@@ -410,13 +410,13 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
                       </div>
 
                       {/* Result Content */}
-                      <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                      <p className="text-sm text-ceramic-text-secondary leading-relaxed mb-3">
                         {citation.text || citation.source || 'Sem conteúdo'}
                       </p>
 
                       {/* Citation Source */}
                       {citation.source && (
-                        <div className="flex items-center gap-3 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                        <div className="flex items-center gap-3 text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-cool">
                           <div className="flex items-center gap-1">
                             <FileSearch className="w-3.5 h-3.5" />
                             {citation.source}
@@ -429,9 +429,9 @@ export const JourneySearchPanel: React.FC<JourneySearchPanelProps> = ({
               </div>
             ) : (
               <div className="p-8 text-center">
-                <FileSearch className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium mb-1">Nenhum momento encontrado</p>
-                <p className="text-sm text-gray-400">
+                <FileSearch className="w-12 h-12 text-ceramic-highlight mx-auto mb-3" />
+                <p className="text-ceramic-text-secondary font-medium mb-1">Nenhum momento encontrado</p>
+                <p className="text-sm text-ceramic-text-tertiary">
                   Tente outra busca ou ajuste os filtros
                 </p>
               </div>

@@ -49,21 +49,21 @@ export function ConsciousnessScore({
   const classes = sizeClasses[size]
 
   return (
-    <div className={`bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl ${classes.container}`} data-tour="consciousness-score">
+    <div className={`bg-gradient-to-br from-ceramic-info/10 to-ceramic-accent/10 rounded-xl ${classes.container}`} data-tour="consciousness-score">
       {/* Header */}
       <div className={`flex items-center justify-between ${size === 'sm' ? 'mb-2' : 'mb-4'}`}>
         <div className="flex items-center gap-2">
-          <SparklesIcon className="h-5 w-5 text-blue-500" />
-          <span className={`font-medium text-gray-700 ${classes.title}`}>
+          <SparklesIcon className="h-5 w-5 text-ceramic-info" />
+          <span className={`font-medium text-ceramic-text-primary ${classes.title}`}>
             Pontos de Consciência
           </span>
         </div>
 
         {/* Streak indicator */}
         {stats.current_streak > 0 && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 rounded-full">
-            <FireIcon className="h-4 w-4 text-orange-500" />
-            <span className="text-xs font-bold text-orange-700">
+          <div className="flex items-center gap-1 px-2 py-1 bg-ceramic-warning/10 rounded-full">
+            <FireIcon className="h-4 w-4 text-ceramic-warning" />
+            <span className="text-xs font-bold text-ceramic-warning">
               {stats.current_streak}
             </span>
           </div>
@@ -82,7 +82,7 @@ export function ConsciousnessScore({
 
         {/* Points and level name */}
         <div className="flex-1">
-          <div className={`font-bold text-gray-900 ${classes.points}`}>
+          <div className={`font-bold text-ceramic-text-primary ${classes.points}`}>
             {stats.total_points.toLocaleString()}
           </div>
           <div className={`font-medium ${classes.level}`} style={{ color: levelColor }}>
@@ -94,16 +94,16 @@ export function ConsciousnessScore({
       {/* Progress to next level */}
       {showDetails && progress.next_level && (
         <div className={size === 'sm' ? 'mt-2' : 'mt-4'}>
-          <div className={`flex items-center justify-between ${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600 mb-1`}>
+          <div className={`flex items-center justify-between ${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary mb-1`}>
             <span>Nível {progress.next_level}</span>
             <span className="font-medium">
               {progress.points_to_next} CP
             </span>
           </div>
 
-          <div className={`w-full ${size === 'sm' ? 'h-1.5' : 'h-2'} bg-gray-200 rounded-full overflow-hidden`}>
+          <div className={`w-full ${size === 'sm' ? 'h-1.5' : 'h-2'} bg-ceramic-highlight rounded-full overflow-hidden`}>
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-ceramic-info to-ceramic-accent rounded-full transition-all duration-500"
               style={{ width: `${progress.progress_percentage}%` }}
             />
           </div>
@@ -112,26 +112,26 @@ export function ConsciousnessScore({
 
       {/* Stats */}
       {showDetails && (
-        <div className={`grid grid-cols-3 ${size === 'sm' ? 'gap-1 mt-2 pt-2' : 'gap-2 mt-4 pt-4'} border-t border-gray-200`}>
+        <div className={`grid grid-cols-3 ${size === 'sm' ? 'gap-1 mt-2 pt-2' : 'gap-2 mt-4 pt-4'} border-t border-ceramic-text-secondary/10`}>
           <div className="text-center">
-            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-gray-900`}>
+            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
               {stats.total_moments}
             </div>
-            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600`}>Momentos</div>
+            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary`}>Momentos</div>
           </div>
 
           <div className="text-center">
-            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-gray-900`}>
+            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
               {stats.total_questions_answered}
             </div>
-            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600`}>Perguntas</div>
+            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary`}>Perguntas</div>
           </div>
 
           <div className="text-center">
-            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-gray-900`}>
+            <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
               {stats.longest_streak}
             </div>
-            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-gray-600`}>Recorde</div>
+            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary`}>Recorde</div>
           </div>
         </div>
       )}

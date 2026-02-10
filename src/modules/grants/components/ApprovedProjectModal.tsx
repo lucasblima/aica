@@ -138,7 +138,7 @@ export function ApprovedProjectModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           {/* Error message */}
           {error && (
-            <div className="p-4 rounded-xl border-2 border-ceramic-negative bg-red-50 text-ceramic-negative font-semibold text-sm">
+            <div className="p-4 rounded-xl border-2 border-ceramic-negative bg-ceramic-error-bg text-ceramic-negative font-semibold text-sm">
               {error}
             </div>
           )}

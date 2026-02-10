@@ -27,8 +27,8 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
   // Determine status color
   const getStatusColor = (): string => {
     if (is_over_budget) return 'text-ceramic-negative';
-    if (percentage_used >= 90) return 'text-orange-600';
-    if (percentage_used >= 80) return 'text-yellow-600';
+    if (percentage_used >= 90) return 'text-ceramic-warning';
+    if (percentage_used >= 80) return 'text-ceramic-warning';
     return 'text-ceramic-positive';
   };
 
@@ -88,12 +88,12 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
               <div
                 className={`h-full transition-all duration-500 ${
                   is_over_budget
-                    ? 'bg-gradient-to-r from-red-500 to-red-600'
+                    ? 'bg-gradient-to-r from-ceramic-error to-ceramic-error/80'
                     : percentage_used >= 90
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+                    ? 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80'
                     : percentage_used >= 80
-                    ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
-                    : 'bg-gradient-to-r from-green-500 to-green-600'
+                    ? 'bg-gradient-to-r from-ceramic-warning/80 to-ceramic-warning/60'
+                    : 'bg-gradient-to-r from-ceramic-success to-ceramic-success/80'
                 }`}
                 style={{ width: `${Math.min(percentage_used, 100)}%` }}
               />

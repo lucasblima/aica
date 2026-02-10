@@ -161,7 +161,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             htmlFor="guest-name"
             className="block text-sm font-medium text-ceramic-text-primary mb-2"
           >
-            Nome completo <span className="text-red-500">*</span>
+            Nome completo <span className="text-ceramic-error">*</span>
           </label>
           <input
             id="guest-name"
@@ -173,11 +173,11 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             onBlur={() => handleBlur('name')}
             className={`
               ceramic-input w-full
-              ${touched.name && errors.name ? 'border-red-400 focus:ring-red-400' : ''}
+              ${touched.name && errors.name ? 'border-ceramic-error focus:ring-ceramic-error' : ''}
             `}
           />
           {touched.name && errors.name && (
-            <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+            <p className="text-ceramic-error text-sm mt-1">{errors.name}</p>
           )}
         </div>
 
@@ -187,7 +187,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             htmlFor="guest-phone"
             className="block text-sm font-medium text-ceramic-text-primary mb-2"
           >
-            Telefone <span className="text-red-500">*</span>
+            Telefone <span className="text-ceramic-error">*</span>
           </label>
           <input
             id="guest-phone"
@@ -199,11 +199,11 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             onBlur={() => handleBlur('phone')}
             className={`
               ceramic-input w-full
-              ${touched.phone && errors.phone ? 'border-red-400 focus:ring-red-400' : ''}
+              ${touched.phone && errors.phone ? 'border-ceramic-error focus:ring-ceramic-error' : ''}
             `}
           />
           {touched.phone && errors.phone && (
-            <p className="text-red-400 text-sm mt-1">{errors.phone}</p>
+            <p className="text-ceramic-error text-sm mt-1">{errors.phone}</p>
           )}
         </div>
 
@@ -213,7 +213,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             htmlFor="guest-email"
             className="block text-sm font-medium text-ceramic-text-primary mb-2"
           >
-            Email <span className="text-red-500">*</span>
+            Email <span className="text-ceramic-error">*</span>
           </label>
           <input
             id="guest-email"
@@ -225,11 +225,11 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             onBlur={() => handleBlur('email')}
             className={`
               ceramic-input w-full
-              ${touched.email && errors.email ? 'border-red-400 focus:ring-red-400' : ''}
+              ${touched.email && errors.email ? 'border-ceramic-error focus:ring-ceramic-error' : ''}
             `}
           />
           {touched.email && errors.email && (
-            <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+            <p className="text-ceramic-error text-sm mt-1">{errors.email}</p>
           )}
         </div>
       </div>
@@ -269,7 +269,7 @@ export const GuestManualForm: React.FC<GuestManualFormProps> = ({
             ${
               isFormValid
                 ? 'ceramic-button-primary'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-ceramic-cool text-ceramic-text-tertiary cursor-not-allowed'
             }
           `}
         >

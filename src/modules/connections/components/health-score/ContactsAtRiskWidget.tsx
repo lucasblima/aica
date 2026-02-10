@@ -168,7 +168,7 @@ export function ContactsAtRiskWidget({
             className="ceramic-concave p-3 rounded-xl"
             style={{ backgroundColor: '#EF444415' }}
           >
-            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <AlertTriangle className="w-5 h-5 text-ceramic-error" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-ceramic-text-primary">
@@ -218,8 +218,8 @@ export function ContactsAtRiskWidget({
 
       {/* Error State */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
+          <p className="text-sm text-ceramic-error">{error}</p>
         </div>
       )}
 
@@ -231,12 +231,12 @@ export function ContactsAtRiskWidget({
               key={i}
               className="flex items-center gap-4 p-3 rounded-xl animate-pulse"
             >
-              <div className="w-10 h-10 rounded-full bg-gray-200" />
+              <div className="w-10 h-10 rounded-full bg-ceramic-cool" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
+                <div className="h-4 bg-ceramic-cool rounded w-3/4" />
+                <div className="h-3 bg-ceramic-cool rounded w-1/2" />
               </div>
-              <div className="w-8 h-6 bg-gray-200 rounded-full" />
+              <div className="w-8 h-6 bg-ceramic-cool rounded-full" />
             </div>
           ))}
         </div>
@@ -262,7 +262,7 @@ export function ContactsAtRiskWidget({
             className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
             style={{ backgroundColor: '#22C55E15' }}
           >
-            <MessageSquare className="w-6 h-6 text-green-500" />
+            <MessageSquare className="w-6 h-6 text-ceramic-success" />
           </div>
           <p className="text-sm font-medium text-ceramic-text-primary">
             Todos os relacionamentos saudáveis!

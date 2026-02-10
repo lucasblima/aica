@@ -82,14 +82,14 @@ function getInitials(name: string | null | undefined): string {
  */
 function getBackgroundColor(name: string | null | undefined): string {
   const colors = [
-    'bg-blue-500',
-    'bg-green-500',
-    'bg-yellow-500',
-    'bg-purple-500',
+    'bg-ceramic-info',
+    'bg-ceramic-success',
+    'bg-amber-500',
+    'bg-ceramic-accent',
     'bg-pink-500',
-    'bg-indigo-500',
+    'bg-ceramic-accent',
     'bg-teal-500',
-    'bg-orange-500',
+    'bg-ceramic-warning',
     'bg-cyan-500',
     'bg-rose-500',
   ];
@@ -209,7 +209,7 @@ export function ContactAvatar({
           className={cn(
             'absolute bottom-0 right-0 rounded-full border-white',
             sizes.indicator,
-            isOnline ? 'bg-green-500' : 'bg-gray-400'
+            isOnline ? 'bg-ceramic-success' : 'bg-ceramic-text-tertiary'
           )}
           aria-label={isOnline ? 'Online' : 'Offline'}
         />

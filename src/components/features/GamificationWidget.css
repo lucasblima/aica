@@ -1,10 +1,10 @@
 /* Gamification Widget Styles */
 
 .gamification-widget {
-  background: white;
+  background: var(--ceramic-base, #F5F1EB);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(163, 158, 145, 0.15);
 }
 
 .gamification-widget.compact {
@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: center;
   min-height: 200px;
-  color: #666;
+  color: var(--ceramic-text-secondary, #8C8275);
   font-size: 14px;
 }
 
@@ -27,7 +27,7 @@
   align-items: center;
   margin-bottom: 24px;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #D4A574 0%, #C4883A 100%);
   border-radius: 12px;
   color: white;
 }
@@ -91,7 +91,7 @@
 
 .xp-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4caf50, #8bc34a);
+  background: linear-gradient(90deg, #6B7B5C, #8A9A6B);
   border-radius: 6px;
   transition: width 0.6s ease;
 }
@@ -107,26 +107,26 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background: #fff9e6;
+  background: #FDF6E9;
   border-radius: 12px;
-  border: 2px solid #ffc107;
+  border: 2px solid #C4883A;
   margin-bottom: 20px;
   transition: all 0.3s ease;
 }
 
 .streak-section.active {
-  background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
-  border-color: #ffc107;
+  background: linear-gradient(135deg, #FDF6E9 0%, #F5EBDA 100%);
+  border-color: #C4883A;
 }
 
 .streak-section.grace-period {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  border-color: #4caf50;
+  background: linear-gradient(135deg, #EFF3EB 0%, #DDE5D5 100%);
+  border-color: #6B7B5C;
 }
 
 .streak-section.recovering {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  border-color: #2196f3;
+  background: linear-gradient(135deg, #EEF2F5 0%, #DCE4EA 100%);
+  border-color: #7B8FA2;
 }
 
 /* Trend Display */
@@ -152,7 +152,7 @@
 
 .trend-label {
   font-size: 12px;
-  color: #666;
+  color: var(--ceramic-text-secondary, #8C8275);
   text-transform: uppercase;
   font-weight: 600;
   margin-top: 2px;
@@ -161,7 +161,7 @@
 /* Trend Progress Bar */
 .trend-progress-container {
   height: 8px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(163, 158, 145, 0.15);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -179,7 +179,7 @@
 
 .recovery-label {
   font-size: 12px;
-  color: #666;
+  color: var(--ceramic-text-secondary, #8C8275);
   margin-bottom: 8px;
 }
 
@@ -191,19 +191,19 @@
 .recovery-step {
   flex: 1;
   height: 12px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(163, 158, 145, 0.15);
   border-radius: 6px;
   transition: background-color 0.3s ease;
 }
 
 .recovery-step.completed {
-  background: #4caf50;
+  background: #6B7B5C;
 }
 
 /* Grace Period Info */
 .grace-period-info {
   font-size: 12px;
-  color: #4caf50;
+  color: #6B7B5C;
   font-weight: 500;
   text-align: center;
   padding: 4px 0;
@@ -221,26 +221,26 @@
 }
 
 .compassionate-message.trend_celebration {
-  background: rgba(255, 193, 7, 0.1);
+  background: rgba(196, 136, 58, 0.1);
 }
 
 .compassionate-message.grace_period_active,
 .compassionate-message.grace_period_available {
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(107, 123, 92, 0.1);
 }
 
 .compassionate-message.recovery_available,
 .compassionate-message.recovery_in_progress {
-  background: rgba(33, 150, 243, 0.1);
+  background: rgba(123, 143, 162, 0.1);
 }
 
 .compassionate-message.recovery_complete,
 .compassionate-message.comeback_celebration {
-  background: rgba(156, 39, 176, 0.1);
+  background: rgba(155, 122, 90, 0.1);
 }
 
 .compassionate-message.gentle_reminder {
-  background: rgba(158, 158, 158, 0.1);
+  background: rgba(163, 158, 145, 0.1);
 }
 
 .message-emoji {
@@ -255,13 +255,13 @@
 .message-title {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--ceramic-text-primary, #2B1B17);
   margin-bottom: 2px;
 }
 
 .message-text {
   font-size: 12px;
-  color: #666;
+  color: var(--ceramic-text-secondary, #8C8275);
   line-height: 1.4;
 }
 
@@ -271,7 +271,7 @@
   font-size: 12px;
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #D4A574 0%, #C4883A 100%);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -288,17 +288,17 @@
 
 .action-loading {
   font-size: 12px;
-  color: #666;
+  color: var(--ceramic-text-secondary, #8C8275);
   font-style: italic;
 }
 
 /* Legacy streak display */
 .streak-best {
   font-size: 11px;
-  color: #999;
+  color: var(--ceramic-text-tertiary, #A89F91);
   text-align: center;
   padding-top: 8px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(163, 158, 145, 0.15);
 }
 
 /* Badges Section */
@@ -310,7 +310,7 @@
   margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--ceramic-text-primary, #2B1B17);
   text-transform: uppercase;
 }
 
@@ -329,7 +329,7 @@
   border-radius: 12px;
   border: 2px solid;
   text-align: center;
-  background: white;
+  background: var(--ceramic-base, #F5F1EB);
   transition: transform 0.2s;
 }
 
@@ -338,24 +338,24 @@
 }
 
 .badge-common {
-  border-color: #95a5a6;
-  background: #f8f8f8;
+  border-color: #A89F91;
+  background: #F0EDE7;
 }
 
 .badge-rare {
-  border-color: #3498db;
-  background: #e3f2fd;
+  border-color: #7B8FA2;
+  background: #EEF2F5;
 }
 
 .badge-epic {
-  border-color: #9b59b6;
-  background: #f3e5f5;
+  border-color: #9B7A5A;
+  background: #F5EDE4;
 }
 
 .badge-legendary {
-  border-color: #f39c12;
-  background: #fff8e1;
-  box-shadow: 0 0 8px rgba(243, 156, 18, 0.2);
+  border-color: #C4883A;
+  background: #FDF6E9;
+  box-shadow: 0 0 8px rgba(196, 136, 58, 0.2);
 }
 
 .badge-icon {
@@ -365,12 +365,12 @@
 .badge-name {
   font-size: 11px;
   font-weight: 600;
-  color: #333;
+  color: var(--ceramic-text-primary, #2B1B17);
 }
 
 .badge-xp {
   font-size: 10px;
-  color: #667eea;
+  color: #D4A574;
   font-weight: 500;
 }
 
@@ -380,7 +380,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--ceramic-cool, #E8E6DB);
   border-radius: 12px;
 }
 
@@ -393,7 +393,7 @@
 
 .stat-label {
   font-size: 12px;
-  color: #666;
+  color: var(--ceramic-text-secondary, #8C8275);
   text-transform: uppercase;
   font-weight: 600;
 }
@@ -401,7 +401,7 @@
 .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: #333;
+  color: var(--ceramic-text-primary, #2B1B17);
 }
 
 /* Responsive */

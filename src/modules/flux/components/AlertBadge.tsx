@@ -32,31 +32,31 @@ export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps)
     switch (alert.severity) {
       case 'critical':
         return {
-          bg: 'bg-red-50',
-          text: 'text-red-700',
-          icon: 'text-red-600',
-          border: 'border-red-200',
+          bg: 'bg-ceramic-error/10',
+          text: 'text-ceramic-error',
+          icon: 'text-ceramic-error',
+          border: 'border-ceramic-error/20',
         };
       case 'high':
         return {
-          bg: 'bg-orange-50',
-          text: 'text-orange-700',
-          icon: 'text-orange-600',
-          border: 'border-orange-200',
+          bg: 'bg-ceramic-warning/10',
+          text: 'text-ceramic-warning',
+          icon: 'text-ceramic-warning',
+          border: 'border-ceramic-warning/20',
         };
       case 'medium':
         return {
-          bg: 'bg-amber-50',
-          text: 'text-amber-700',
-          icon: 'text-amber-600',
-          border: 'border-amber-200',
+          bg: 'bg-ceramic-warning/10',
+          text: 'text-ceramic-warning',
+          icon: 'text-ceramic-warning',
+          border: 'border-ceramic-warning/20',
         };
       case 'low':
         return {
-          bg: 'bg-blue-50',
-          text: 'text-blue-700',
-          icon: 'text-blue-600',
-          border: 'border-blue-200',
+          bg: 'bg-ceramic-info/10',
+          text: 'text-ceramic-info',
+          icon: 'text-ceramic-info',
+          border: 'border-ceramic-info/20',
         };
     }
   };
@@ -159,7 +159,7 @@ export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps)
         </span>
 
         {isAcknowledged && (
-          <span className="font-medium text-green-600">Reconhecido</span>
+          <span className="font-medium text-ceramic-success">Reconhecido</span>
         )}
       </div>
     </div>

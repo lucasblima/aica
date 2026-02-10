@@ -284,7 +284,7 @@ const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onCl
         {/* Metrics Badge */}
         <div className="flex flex-col items-end gap-1">
           {messageCount > 0 && (
-            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
+            <span className="px-2 py-0.5 bg-ceramic-info/10 text-ceramic-info text-xs rounded-full font-medium">
               {messageCount} msg
             </span>
           )}
@@ -432,7 +432,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-6 bg-blue-50">
+      <div className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-6 bg-ceramic-info/10">
         <MessageSquare className="w-12 h-12 text-ceramic-accent" />
       </div>
       <h3 className="text-xl font-bold text-ceramic-text-primary mb-3">
@@ -556,7 +556,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all ${
                 isSyncLoading || syncStatus.status === 'syncing'
                   ? 'bg-ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-500 text-white'
+                  : 'bg-ceramic-success hover:bg-ceramic-success/90 text-white'
               }`}
             >
               <RefreshCw
@@ -583,7 +583,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
               </div>
               <div className="w-full h-2 bg-ceramic-inset rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-green-500 rounded-full"
+                  className="h-full bg-ceramic-success rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${syncStatus.progress}%` }}
                   transition={{ duration: 0.3 }}
@@ -594,18 +594,18 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
 
           {/* Sync Error */}
           {syncError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <div className="mt-4 p-3 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
-                <p className="text-sm text-red-800">{syncError}</p>
+                <AlertTriangle className="w-4 h-4 text-ceramic-error mt-0.5" />
+                <p className="text-sm text-ceramic-error">{syncError}</p>
               </div>
             </div>
           )}
 
           {/* Sync Result */}
           {syncStatus.status === 'completed' && syncStatus.result && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-sm text-green-800">
+            <div className="mt-4 p-3 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
+              <p className="text-sm text-ceramic-success">
                 ✓ {syncStatus.result.synced} contatos sincronizados
                 {syncStatus.result.skipped > 0 && ` • ${syncStatus.result.skipped} ignorados`}
               </p>
@@ -709,14 +709,14 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
         </div>
 
         {/* Privacy Guarantee Notice */}
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl mb-6">
+        <div className="p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl mb-6">
           <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5" />
+            <Sparkles className="w-5 h-5 text-ceramic-info mt-0.5" />
             <div>
-              <p className="text-sm font-bold text-blue-900 mb-1">
+              <p className="text-sm font-bold text-ceramic-text-primary mb-1">
                 Privacidade Garantida
               </p>
-              <p className="text-xs text-blue-800">
+              <p className="text-xs text-ceramic-info">
                 Armazenamos apenas embeddings vetoriais e agregados estatísticos.
                 Suas mensagens NUNCA são salvas no sistema.
               </p>

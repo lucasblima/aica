@@ -83,18 +83,18 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
   return (
     <div className="space-y-8">
       {/* Overall Progress */}
-      <div className="bg-white border border-stone-200 rounded-sm p-6">
+      <div className="bg-ceramic-base border border-ceramic-border rounded-sm p-6">
         <div className="flex items-baseline justify-between mb-4">
-          <h3 className="text-lg font-normal text-stone-900">Overall Progress</h3>
-          <span className="text-2xl font-light text-stone-900">
+          <h3 className="text-lg font-normal text-ceramic-text-primary">Overall Progress</h3>
+          <span className="text-2xl font-light text-ceramic-text-primary">
             {journey.progress_pct}%
           </span>
         </div>
 
         {/* Progress bar */}
-        <div className="relative h-2 bg-stone-100 rounded-full overflow-hidden">
+        <div className="relative h-2 bg-ceramic-cool rounded-full overflow-hidden">
           <div
-            className="absolute inset-y-0 left-0 bg-emerald-600 transition-all duration-500"
+            className="absolute inset-y-0 left-0 bg-ceramic-success transition-all duration-500"
             style={{ width: `${journey.progress_pct}%` }}
           />
         </div>
@@ -102,38 +102,38 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="text-center space-y-1">
-            <div className="text-2xl font-light text-stone-900">
+            <div className="text-2xl font-light text-ceramic-text-primary">
               {journey.completed_modules}
             </div>
-            <div className="text-xs text-stone-500 font-light tracking-wider uppercase">
+            <div className="text-xs text-ceramic-text-secondary font-light tracking-wider uppercase">
               Completed
             </div>
           </div>
           <div className="text-center space-y-1">
-            <div className="text-2xl font-light text-stone-900">
+            <div className="text-2xl font-light text-ceramic-text-primary">
               {journey.total_modules
                 ? journey.total_modules - journey.completed_modules
                 : '-'}
             </div>
-            <div className="text-xs text-stone-500 font-light tracking-wider uppercase">
+            <div className="text-xs text-ceramic-text-secondary font-light tracking-wider uppercase">
               Remaining
             </div>
           </div>
           <div className="text-center space-y-1">
-            <div className="text-2xl font-light text-stone-900">
+            <div className="text-2xl font-light text-ceramic-text-primary">
               {journey.logged_hours}h
             </div>
-            <div className="text-xs text-stone-500 font-light tracking-wider uppercase">
+            <div className="text-xs text-ceramic-text-secondary font-light tracking-wider uppercase">
               Time Logged
             </div>
           </div>
         </div>
 
         {estimatedCompletion && (
-          <div className="mt-4 pt-4 border-t border-stone-100 text-center">
-            <span className="text-xs text-stone-500 font-light tracking-wide">
+          <div className="mt-4 pt-4 border-t border-ceramic-border text-center">
+            <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
               Estimated completion:{' '}
-              <span className="text-stone-700">{estimatedCompletion}</span>
+              <span className="text-ceramic-text-primary">{estimatedCompletion}</span>
             </span>
           </div>
         )}
@@ -141,8 +141,8 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
 
       {/* Module Checklist */}
       {journey.total_modules && (
-        <div className="bg-white border border-stone-200 rounded-sm p-6">
-          <h3 className="text-lg font-normal text-stone-900 mb-4">Modules</h3>
+        <div className="bg-ceramic-base border border-ceramic-border rounded-sm p-6">
+          <h3 className="text-lg font-normal text-ceramic-text-primary mb-4">Modules</h3>
 
           <div className="space-y-2">
             {Array.from({ length: journey.total_modules }, (_, i) => i + 1).map(
@@ -159,8 +159,8 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
                       transition-all duration-200
                       ${
                         isCompleted
-                          ? 'bg-emerald-50 border border-emerald-200'
-                          : 'bg-stone-50 border border-stone-200 hover:bg-stone-100'
+                          ? 'bg-ceramic-success/10 border border-ceramic-success/20'
+                          : 'bg-ceramic-cool border border-ceramic-border hover:bg-ceramic-cool'
                       }
                       ${onUpdateProgress ? 'cursor-pointer' : 'cursor-default'}
                     `}
@@ -172,8 +172,8 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
                         transition-colors duration-200
                         ${
                           isCompleted
-                            ? 'bg-emerald-600 border-emerald-600'
-                            : 'border-stone-300'
+                            ? 'bg-ceramic-success border-ceramic-success'
+                            : 'border-ceramic-border'
                         }
                       `}
                     >
@@ -198,7 +198,7 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
                     <span
                       className={`
                         flex-1 text-left text-sm font-light tracking-wide
-                        ${isCompleted ? 'text-emerald-900' : 'text-stone-700'}
+                        ${isCompleted ? 'text-ceramic-success' : 'text-ceramic-text-primary'}
                       `}
                     >
                       Module {moduleNum}
@@ -213,8 +213,8 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
 
       {/* Time Tracking */}
       {onLogTime && (
-        <div className="bg-white border border-stone-200 rounded-sm p-6">
-          <h3 className="text-lg font-normal text-stone-900 mb-4">
+        <div className="bg-ceramic-base border border-ceramic-border rounded-sm p-6">
+          <h3 className="text-lg font-normal text-ceramic-text-primary mb-4">
             Time Tracking
           </h3>
 
@@ -226,12 +226,12 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
               placeholder="Hours"
               step="0.5"
               min="0"
-              className="flex-1 px-4 py-2 border border-stone-200 rounded-sm text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="flex-1 px-4 py-2 border border-ceramic-border rounded-sm text-sm font-light focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:border-transparent"
             />
             <button
               onClick={handleLogTime}
               disabled={!timeToLog || isLoggingTime}
-              className="px-6 py-2 bg-emerald-600 text-white text-sm font-light tracking-wide rounded-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 bg-ceramic-success text-white text-sm font-light tracking-wide rounded-sm hover:bg-ceramic-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoggingTime ? 'Logging...' : 'Log Time'}
             </button>
@@ -239,18 +239,18 @@ export const JourneyProgress: React.FC<JourneyProgressProps> = ({
 
           {/* Time breakdown */}
           {journey.estimated_hours && (
-            <div className="mt-4 pt-4 border-t border-stone-100">
+            <div className="mt-4 pt-4 border-t border-ceramic-border">
               <div className="flex justify-between items-baseline mb-2">
-                <span className="text-xs text-stone-500 font-light tracking-wide">
+                <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
                   Progress
                 </span>
-                <span className="text-sm text-stone-700 font-light">
+                <span className="text-sm text-ceramic-text-primary font-light">
                   {journey.logged_hours}h / {journey.estimated_hours}h
                 </span>
               </div>
-              <div className="relative h-1 bg-stone-100 rounded-full overflow-hidden">
+              <div className="relative h-1 bg-ceramic-cool rounded-full overflow-hidden">
                 <div
-                  className="absolute inset-y-0 left-0 bg-emerald-600 transition-all duration-500"
+                  className="absolute inset-y-0 left-0 bg-ceramic-success transition-all duration-500"
                   style={{
                     width: `${Math.min(
                       100,

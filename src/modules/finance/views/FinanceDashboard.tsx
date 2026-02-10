@@ -196,25 +196,25 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       case 'completed':
         return {
           text: 'Processado',
-          className: 'bg-green-100 text-green-700 border-green-200',
+          className: 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/20',
           icon: <CheckCircle2 className="w-3 h-3" />
         };
       case 'processing':
         return {
           text: 'Processando',
-          className: 'bg-blue-100 text-blue-700 border-blue-200',
+          className: 'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/20',
           icon: <Loader2 className="w-3 h-3 animate-spin" />
         };
       case 'failed':
         return {
           text: 'Erro',
-          className: 'bg-red-100 text-red-700 border-red-200',
+          className: 'bg-ceramic-error/10 text-ceramic-error border-ceramic-error/20',
           icon: null
         };
       default:
         return {
           text: 'Pendente',
-          className: 'bg-gray-100 text-gray-700 border-gray-200',
+          className: 'bg-ceramic-base text-ceramic-text-primary border-ceramic-border',
           icon: null
         };
     }
@@ -357,9 +357,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     return (
       <div className="h-screen bg-ceramic-base flex items-center justify-center">
         <div className="animate-pulse space-y-4 w-full max-w-2xl px-6">
-          <div className="h-8 bg-gray-200 rounded w-48" />
-          <div className="h-32 bg-gray-200 rounded-2xl" />
-          <div className="h-64 bg-gray-200 rounded-2xl" />
+          <div className="h-8 bg-ceramic-cool rounded w-48" />
+          <div className="h-32 bg-ceramic-cool rounded-2xl" />
+          <div className="h-64 bg-ceramic-cool rounded-2xl" />
         </div>
       </div>
     );
@@ -393,10 +393,10 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               <span className="text-sm font-bold text-ceramic-text-primary">Calendário & Extratos</span>
             </button>
             <button
-              className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-blue-50 to-transparent"
+              className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-ceramic-info-bg to-transparent"
             >
-              <Target className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-bold text-blue-600">Orçamento</span>
+              <Target className="w-4 h-4 text-ceramic-info" />
+              <span className="text-sm font-bold text-ceramic-info">Orçamento</span>
             </button>
           </div>
         </div>
@@ -429,10 +429,10 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         {/* View Toggle */}
         <div className="flex gap-2 mb-4">
           <button
-            className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-blue-50 to-transparent"
+            className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-ceramic-info-bg to-transparent"
           >
-            <Calendar className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-bold text-blue-600">Calendário & Extratos</span>
+            <Calendar className="w-4 h-4 text-ceramic-info" />
+            <span className="text-sm font-bold text-ceramic-info">Calendário & Extratos</span>
           </button>
           <button
             onClick={() => setActiveView('budget')}
@@ -479,7 +479,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               className="ceramic-card p-3 hover:scale-105 transition-transform"
               title="Debug Statements"
             >
-              <span className="text-xs font-bold text-red-600">DEBUG</span>
+              <span className="text-xs font-bold text-ceramic-error">DEBUG</span>
             </button>
             <button
               onClick={() => setShowUpload(!showUpload)}
@@ -493,7 +493,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               className="ceramic-card p-3 hover:scale-105 transition-transform"
               title="Assistente Financeiro"
             >
-              <MessageSquare className="w-5 h-5 text-purple-600" />
+              <MessageSquare className="w-5 h-5 text-ceramic-accent" />
             </button>
           </div>
         </div>
@@ -566,13 +566,13 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <TrendingUp className="w-4 h-4 text-ceramic-success" />
                   </div>
                   <span className="text-xs font-medium text-ceramic-text-secondary">
                     Receitas
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-ceramic-success">
                   {formatCurrency(summary.totalIncome)}
                 </p>
               </div>
@@ -580,13 +580,13 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-red-600 rotate-180" />
+                    <TrendingUp className="w-4 h-4 text-ceramic-error rotate-180" />
                   </div>
                   <span className="text-xs font-medium text-ceramic-text-secondary">
                     Despesas
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-2xl font-bold text-ceramic-error">
                   {formatCurrency(summary.totalExpenses)}
                 </p>
               </div>
@@ -629,8 +629,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                   <div
                     className={`ceramic-inset px-3 py-1.5 text-xs font-bold ${
                       burnRate.trend === 'decreasing'
-                        ? 'text-green-700'
-                        : 'text-red-700'
+                        ? 'text-ceramic-success'
+                        : 'text-ceramic-error'
                     }`}
                   >
                     {burnRate.trend === 'decreasing' ? '↓' : '↑'}{' '}
@@ -672,8 +672,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
                 title="Upload CSV"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-green-600" />
-                <span className="text-xs font-bold text-green-600">CSV</span>
+                <FileSpreadsheet className="w-3.5 h-3.5 text-ceramic-success" />
+                <span className="text-xs font-bold text-ceramic-success">CSV</span>
               </button>
             </div>
           </div>
@@ -693,11 +693,11 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                   className={`
                     ceramic-tray p-4 transition-all duration-200 relative overflow-hidden
                     ${isCompleted
-                      ? 'bg-gradient-to-br from-green-50 to-transparent hover:scale-105'
+                      ? 'bg-gradient-to-br from-ceramic-success/10 to-transparent hover:scale-105'
                       : isProcessing
-                      ? 'bg-gradient-to-br from-blue-50 to-transparent animate-pulse'
+                      ? 'bg-gradient-to-br from-ceramic-info/10 to-transparent animate-pulse'
                       : isFailed
-                      ? 'bg-gradient-to-br from-red-50 to-transparent hover:scale-105'
+                      ? 'bg-gradient-to-br from-ceramic-error/10 to-transparent hover:scale-105'
                       : 'hover:scale-105 hover:bg-ceramic-highlight'
                     }
                   `}
@@ -705,18 +705,18 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                   <div className="flex flex-col items-center gap-2">
                     {/* Month Icon/Status */}
                     {isCompleted && (
-                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-green-100 shadow-lg">
-                        <CheckCircle2 className="w-6 h-6 text-green-600" />
+                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-ceramic-success/10 shadow-ceramic-elevated">
+                        <CheckCircle2 className="w-6 h-6 text-ceramic-success" />
                       </div>
                     )}
                     {isProcessing && (
-                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-blue-100 shadow-lg">
-                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-ceramic-info/10 shadow-ceramic-elevated">
+                        <Loader2 className="w-6 h-6 text-ceramic-info animate-spin" />
                       </div>
                     )}
                     {isFailed && (
-                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-red-100 shadow-lg">
-                        <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="ceramic-concave w-12 h-12 flex items-center justify-center bg-ceramic-error/10 shadow-ceramic-elevated">
+                        <svg className="w-6 h-6 text-ceramic-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </div>
@@ -730,9 +730,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                     {/* Month Name */}
                     <div className="text-center w-full">
                       <p className={`text-sm font-black mb-1 ${
-                        isCompleted ? 'text-green-700' :
-                        isProcessing ? 'text-blue-700' :
-                        isFailed ? 'text-red-700' :
+                        isCompleted ? 'text-ceramic-success' :
+                        isProcessing ? 'text-ceramic-info' :
+                        isFailed ? 'text-ceramic-error' :
                         'text-ceramic-text-secondary'
                       }`}>
                         {monthData.monthName}
@@ -740,12 +740,12 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
                       {/* Status Message */}
                       {isProcessing && (
-                        <p className="text-[11px] font-bold text-blue-600 mb-2">
+                        <p className="text-[11px] font-bold text-ceramic-info mb-2">
                           Processando...
                         </p>
                       )}
                       {isFailed && (
-                        <p className="text-[11px] font-bold text-red-600 mb-2">
+                        <p className="text-[11px] font-bold text-ceramic-error mb-2">
                           Erro
                         </p>
                       )}
@@ -757,8 +757,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
 
                       {/* Transaction Count - Highlighted */}
                       {isCompleted && (
-                        <div className="ceramic-card px-2 py-1 mb-2 bg-white/80">
-                          <p className="text-[11px] font-black text-green-700">
+                        <div className="ceramic-card px-2 py-1 mb-2 bg-ceramic-base/80">
+                          <p className="text-[11px] font-black text-ceramic-success">
                             {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transação' : 'transações'}
                           </p>
                         </div>
@@ -773,9 +773,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                               {formatCurrency(monthData.openingBalance)}
                             </p>
                           </div>
-                          <div className="ceramic-concave px-2 py-1 rounded bg-green-50">
-                            <p className="text-[9px] text-green-600 uppercase tracking-wide">Final</p>
-                            <p className="text-[11px] font-black text-green-700">
+                          <div className="ceramic-concave px-2 py-1 rounded bg-ceramic-success/10">
+                            <p className="text-[9px] text-ceramic-success uppercase tracking-wide">Final</p>
+                            <p className="text-[11px] font-black text-ceramic-success">
                               {formatCurrency(monthData.closingBalance)}
                             </p>
                           </div>
@@ -796,7 +796,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                   Progresso anual
                 </p>
                 {monthlyData.filter(m => m.processingStatus === 'processing').length > 0 && (
-                  <p className="text-[10px] font-bold text-blue-600 flex items-center gap-1 mt-0.5">
+                  <p className="text-[10px] font-bold text-ceramic-info flex items-center gap-1 mt-0.5">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     {monthlyData.filter(m => m.processingStatus === 'processing').length} {monthlyData.filter(m => m.processingStatus === 'processing').length === 1 ? 'mês processando' : 'meses processando'}
                   </p>
@@ -808,7 +808,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             </div>
             <div className="ceramic-trough p-1 rounded-full">
               <div
-                className="h-2 rounded-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500"
+                className="h-2 rounded-full bg-gradient-to-r from-ceramic-success to-ceramic-success/80 transition-all duration-500"
                 style={{ width: `${(monthlyData.filter(m => m.processingStatus === 'completed').length / 12) * 100}%` }}
               />
             </div>
@@ -835,7 +835,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           <div className="ceramic-card p-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                <Loader2 className="w-5 h-5 text-ceramic-info animate-spin" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-ceramic-text-primary">
@@ -856,12 +856,12 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                     key={statement.id}
                     className="ceramic-tray p-4 flex items-center gap-3"
                   >
-                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin flex-shrink-0" />
+                    <Loader2 className="w-4 h-4 text-ceramic-info animate-spin flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-ceramic-text-primary truncate">
                         {statement.file_name || 'Processando...'}
                       </p>
-                      <p className="text-xs text-blue-600">
+                      <p className="text-xs text-ceramic-info">
                         A IA está analisando este extrato...
                       </p>
                     </div>
@@ -904,14 +904,14 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 <button
                   onClick={handleDeleteAll}
                   disabled={deletingAll}
-                  className="w-full ceramic-tray p-3 flex items-center justify-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  className="w-full ceramic-tray p-3 flex items-center justify-center gap-2 hover:bg-ceramic-error/10 transition-colors disabled:opacity-50"
                 >
                   {deletingAll ? (
-                    <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-ceramic-error animate-spin" />
                   ) : (
-                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <Trash2 className="w-4 h-4 text-ceramic-error" />
                   )}
-                  <span className="text-sm font-bold text-red-600">
+                  <span className="text-sm font-bold text-ceramic-error">
                     {deletingAll ? 'Deletando...' : 'Deletar Todos os Extratos'}
                   </span>
                 </button>
@@ -983,7 +983,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                                 <span className="text-[10px] text-ceramic-text-secondary">
                                   Final:
                                 </span>
-                                <span className="text-xs font-bold text-green-600">
+                                <span className="text-xs font-bold text-ceramic-success">
                                   {formatCurrency(statement.closing_balance || 0)}
                                 </span>
                               </div>
@@ -1004,13 +1004,13 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                           <button
                             onClick={() => handleDelete(statement.id)}
                             disabled={deletingId === statement.id || deletingAll}
-                            className="ceramic-inset w-9 h-9 flex items-center justify-center hover:scale-110 hover:bg-red-50 transition-all disabled:opacity-50 flex-shrink-0 group"
+                            className="ceramic-inset w-9 h-9 flex items-center justify-center hover:scale-110 hover:bg-ceramic-error/10 transition-all disabled:opacity-50 flex-shrink-0 group"
                             title="Deletar extrato"
                           >
                             {deletingId === statement.id ? (
-                              <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                              <Loader2 className="w-4 h-4 text-ceramic-error animate-spin" />
                             ) : (
-                              <Trash2 className="w-4 h-4 text-red-600 group-hover:scale-110 transition-transform" />
+                              <Trash2 className="w-4 h-4 text-ceramic-error group-hover:scale-110 transition-transform" />
                             )}
                           </button>
                         </div>
@@ -1059,8 +1059,8 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           onClick={onNavigateToAgent}
           className="w-full ceramic-card p-6 flex items-center gap-4 hover:scale-[1.01] transition-transform"
         >
-          <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-            <MessageSquare className="w-6 h-6 text-purple-600" />
+          <div className="w-12 h-12 rounded-full bg-ceramic-accent/10 flex items-center justify-center">
+            <MessageSquare className="w-6 h-6 text-ceramic-accent" />
           </div>
           <div className="text-left flex-1">
             <h3 className="text-lg font-semibold text-ceramic-text-primary">

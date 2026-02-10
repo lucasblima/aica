@@ -46,27 +46,27 @@ function getColorClasses(riskLevel: RiskLevel): {
   switch (riskLevel) {
     case 'healthy':
       return {
-        bg: 'bg-green-100',
-        text: 'text-green-700',
-        border: 'border-green-200'
+        bg: 'bg-ceramic-success/10',
+        text: 'text-ceramic-success',
+        border: 'border-ceramic-success/20'
       };
     case 'moderate':
       return {
-        bg: 'bg-yellow-100',
-        text: 'text-yellow-700',
-        border: 'border-yellow-200'
+        bg: 'bg-ceramic-warning/10',
+        text: 'text-ceramic-warning',
+        border: 'border-ceramic-warning/20'
       };
     case 'high':
       return {
-        bg: 'bg-orange-100',
-        text: 'text-orange-700',
-        border: 'border-orange-200'
+        bg: 'bg-ceramic-warning/15',
+        text: 'text-ceramic-warning',
+        border: 'border-ceramic-warning/25'
       };
     case 'critical':
       return {
-        bg: 'bg-red-100',
-        text: 'text-red-700',
-        border: 'border-red-200'
+        bg: 'bg-ceramic-error/10',
+        text: 'text-ceramic-error',
+        border: 'border-ceramic-error/20'
       };
   }
 }
@@ -94,25 +94,25 @@ function TrendIcon({ trend }: { trend: HealthScoreTrend }) {
   switch (trend) {
     case 'improving':
       return (
-        <svg className="w-3 h-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3 h-3 text-ceramic-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
         </svg>
       );
     case 'declining':
       return (
-        <svg className="w-3 h-3 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3 h-3 text-ceramic-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>
       );
     case 'stable':
       return (
-        <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-3 h-3 text-ceramic-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
         </svg>
       );
     case 'new':
       return (
-        <span className="text-xs text-blue-600">novo</span>
+        <span className="text-xs text-ceramic-info">novo</span>
       );
   }
 }

@@ -60,14 +60,14 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-600" />
+              <TrendingUp className="w-4 h-4 text-ceramic-success" />
               <span className="text-sm font-medium text-ceramic-text-primary">Receitas</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-green-600">{formatCurrency(income)}</span>
+              <span className="text-sm font-bold text-ceramic-success">{formatCurrency(income)}</span>
               {incomeChange !== null && (
                 <span
-                  className={`text-xs ${incomeChange >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                  className={`text-xs ${incomeChange >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}
                 >
                   {incomeChange >= 0 ? '+' : ''}
                   {incomeChange.toFixed(1)}%
@@ -77,7 +77,7 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
           </div>
           <div className="ceramic-trough p-1 rounded-full">
             <div
-              className="h-4 rounded-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500"
+              className="h-4 rounded-full bg-gradient-to-r from-ceramic-success/80 to-ceramic-success transition-all duration-500"
               style={{ width: `${(income / maxValue) * 100}%` }}
             />
           </div>
@@ -87,14 +87,14 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-red-600" />
+              <TrendingDown className="w-4 h-4 text-ceramic-error" />
               <span className="text-sm font-medium text-ceramic-text-primary">Despesas</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-red-600">{formatCurrency(expenses)}</span>
+              <span className="text-sm font-bold text-ceramic-error">{formatCurrency(expenses)}</span>
               {expenseChange !== null && (
                 <span
-                  className={`text-xs ${expenseChange <= 0 ? 'text-green-500' : 'text-red-500'}`}
+                  className={`text-xs ${expenseChange <= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}
                 >
                   {expenseChange >= 0 ? '+' : ''}
                   {expenseChange.toFixed(1)}%
@@ -104,7 +104,7 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
           </div>
           <div className="ceramic-trough p-1 rounded-full">
             <div
-              className="h-4 rounded-full bg-gradient-to-r from-red-400 to-red-600 transition-all duration-500"
+              className="h-4 rounded-full bg-gradient-to-r from-ceramic-error/80 to-ceramic-error transition-all duration-500"
               style={{ width: `${(expenses / maxValue) * 100}%` }}
             />
           </div>
@@ -115,19 +115,19 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
       <div
         className={`
           p-4 rounded-2xl text-center
-          ${balance >= 0 ? 'bg-green-50' : 'bg-red-50'}
+          ${balance >= 0 ? 'bg-ceramic-success/10' : 'bg-ceramic-error/10'}
         `}
       >
-        <p className="text-xs text-gray-600 mb-1">Saldo do Periodo</p>
+        <p className="text-xs text-ceramic-text-secondary mb-1">Saldo do Periodo</p>
         <p
-          className={`text-2xl font-bold ${balance >= 0 ? 'text-green-700' : 'text-red-700'}`}
+          className={`text-2xl font-bold ${balance >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}
         >
           {formatCurrency(balance)}
         </p>
         {balance >= 0 ? (
-          <p className="text-xs text-green-600 mt-1">Voce economizou este mes!</p>
+          <p className="text-xs text-ceramic-success mt-1">Voce economizou este mes!</p>
         ) : (
-          <p className="text-xs text-red-600 mt-1">Atencao: gastos excederam receitas</p>
+          <p className="text-xs text-ceramic-error mt-1">Atencao: gastos excederam receitas</p>
         )}
       </div>
     </div>

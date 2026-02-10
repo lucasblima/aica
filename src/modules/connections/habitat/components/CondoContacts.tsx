@@ -63,8 +63,8 @@ export const CondoContacts: React.FC<CondoContactsProps> = ({ property }) => {
   };
 
   return (
-    <div className="bg-white border-2 border-stone-200 rounded-lg p-6">
-      <h3 className="text-lg font-bold text-stone-800 mb-4">Contatos</h3>
+    <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-6">
+      <h3 className="text-lg font-bold text-ceramic-text-primary mb-4">Contatos</h3>
 
       <div className="space-y-3">
         {contacts.map((contact, index) => (
@@ -75,14 +75,14 @@ export const CondoContacts: React.FC<CondoContactsProps> = ({ property }) => {
             <div className="flex items-start gap-3">
               <span className="text-3xl">{contact.icon}</span>
               <div className="flex-1">
-                <div className="font-semibold text-stone-800">{contact.name}</div>
-                <div className="text-sm text-stone-600 mb-2">{contact.role}</div>
+                <div className="font-semibold text-ceramic-text-primary">{contact.name}</div>
+                <div className="text-sm text-ceramic-text-secondary mb-2">{contact.role}</div>
 
                 <div className="flex flex-wrap gap-2">
                   {contact.phone && (
                     <button
                       onClick={() => handleCall(contact.phone!)}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-ceramic-success text-white text-sm font-medium rounded-lg hover:bg-ceramic-success/90 transition-colors"
                     >
                       <span>📞</span>
                       <span>{contact.phone}</span>
@@ -91,7 +91,7 @@ export const CondoContacts: React.FC<CondoContactsProps> = ({ property }) => {
                   {contact.email && (
                     <button
                       onClick={() => handleEmail(contact.email!)}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-ceramic-info text-white text-sm font-medium rounded-lg hover:bg-ceramic-info/90 transition-colors"
                     >
                       <span>✉️</span>
                       <span>{contact.email}</span>

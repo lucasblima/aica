@@ -175,7 +175,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
                   className="ceramic-card px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
                   title="Desfazer"
                 >
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-4 h-4 text-ceramic-success" />
                 </button>
               ) : (
                 <button
@@ -183,7 +183,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
                   className="ceramic-concave px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
                   title="Não vou"
                 >
-                  <X className="w-4 h-4 text-red-600" />
+                  <X className="w-4 h-4 text-ceramic-error" />
                 </button>
               )}
             </div>
@@ -203,8 +203,8 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         {/* Skipped indicator */}
         {event.skipped && (
           <div className="flex items-center gap-1.5 mt-2 pl-[calc(theme(spacing.4)+4ch)]">
-            <AlertCircle className="w-3 h-3 text-red-600/60 flex-shrink-0" />
-            <span className="text-xs text-red-600 font-medium">Não foi</span>
+            <AlertCircle className="w-3 h-3 text-ceramic-error/60 flex-shrink-0" />
+            <span className="text-xs text-ceramic-error font-medium">Não foi</span>
           </div>
         )}
       </motion.div>

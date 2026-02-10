@@ -20,9 +20,9 @@ export function ProgressionBar({
 
   // Adherence color logic
   const getAdherenceColor = (rate: number): string => {
-    if (rate >= 80) return 'text-green-600';
-    if (rate >= 60) return 'text-amber-600';
-    return 'text-red-600';
+    if (rate >= 80) return 'text-ceramic-success';
+    if (rate >= 60) return 'text-ceramic-warning';
+    return 'text-ceramic-error';
   };
 
   const adherenceColorClass = getAdherenceColor(adherenceRate);
@@ -61,7 +61,7 @@ export function ProgressionBar({
         <div className="relative h-3 bg-ceramic-text-secondary/10 rounded-full overflow-hidden">
           {/* Background gradient */}
           <div
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-ceramic-info to-ceramic-accent rounded-full transition-all duration-500"
             style={{ width: `${progressPercentage}%` }}
           />
 
@@ -89,8 +89,8 @@ export function ProgressionBar({
       {/* Workout Completion (if provided) */}
       {completedWorkouts !== undefined && totalWorkouts !== undefined && (
         <div className="flex items-center gap-3 pt-3 border-t border-ceramic-text-secondary/10">
-          <div className="ceramic-inset p-2 bg-green-50">
-            <CheckCircle2 className="w-5 h-5 text-green-600" />
+          <div className="ceramic-inset p-2 bg-ceramic-success/10">
+            <CheckCircle2 className="w-5 h-5 text-ceramic-success" />
           </div>
           <div className="flex-1">
             <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider">

@@ -62,11 +62,11 @@ export function StakeholderGrid({
   const typeColors: Record<string, { bg: string; text: string }> = {
     founder: { bg: 'bg-amber-50', text: 'text-amber-700' },
     'co-founder': { bg: 'bg-amber-50', text: 'text-amber-600' },
-    investor: { bg: 'bg-green-50', text: 'text-green-700' },
-    advisor: { bg: 'bg-blue-50', text: 'text-blue-700' },
-    employee: { bg: 'bg-neutral-50', text: 'text-neutral-700' },
-    contractor: { bg: 'bg-neutral-50', text: 'text-neutral-600' },
-    board: { bg: 'bg-purple-50', text: 'text-purple-700' },
+    investor: { bg: 'bg-ceramic-success/10', text: 'text-ceramic-success' },
+    advisor: { bg: 'bg-ceramic-info/10', text: 'text-ceramic-info' },
+    employee: { bg: 'bg-ceramic-cool', text: 'text-ceramic-text-primary' },
+    contractor: { bg: 'bg-ceramic-cool', text: 'text-ceramic-text-secondary' },
+    board: { bg: 'bg-ceramic-accent/10', text: 'text-ceramic-accent' },
   };
 
   return (
@@ -77,10 +77,10 @@ export function StakeholderGrid({
           {groupByType && (
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">{typeIcons[type] || '👤'}</span>
-              <h3 className="text-sm font-semibold text-neutral-900">
+              <h3 className="text-sm font-semibold text-ceramic-text-primary">
                 {typeLabels[type] || type}
               </h3>
-              <span className="text-xs text-neutral-500">({stakeholdersInGroup.length})</span>
+              <span className="text-xs text-ceramic-text-secondary">({stakeholdersInGroup.length})</span>
             </div>
           )}
 
@@ -88,8 +88,8 @@ export function StakeholderGrid({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {stakeholdersInGroup.map((stakeholder) => {
               const colors = typeColors[stakeholder.stakeholder_type] || {
-                bg: 'bg-neutral-50',
-                text: 'text-neutral-700',
+                bg: 'bg-ceramic-cool',
+                text: 'text-ceramic-text-primary',
               };
 
               return (
@@ -97,7 +97,7 @@ export function StakeholderGrid({
                   key={stakeholder.id}
                   onClick={() => onStakeholderClick?.(stakeholder)}
                   className={`
-                    border border-neutral-200 rounded-lg p-4
+                    border border-ceramic-border rounded-lg p-4
                     hover:shadow-md transition-shadow
                     ${onStakeholderClick ? 'cursor-pointer' : ''}
                   `}
@@ -105,11 +105,11 @@ export function StakeholderGrid({
                   {/* Header */}
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-neutral-900 truncate">
+                      <div className="text-sm font-semibold text-ceramic-text-primary truncate">
                         {stakeholder.role_title || stakeholder.stakeholder_type}
                       </div>
                       {stakeholder.member_id && (
-                        <div className="text-xs text-neutral-500 mt-0.5">
+                        <div className="text-xs text-ceramic-text-secondary mt-0.5">
                           Member ID: {stakeholder.member_id.substring(0, 8)}...
                         </div>
                       )}
@@ -127,7 +127,7 @@ export function StakeholderGrid({
                   {/* Equity */}
                   {stakeholder.equity_pct !== undefined && stakeholder.equity_pct !== null && (
                     <div className="mb-2">
-                      <div className="text-xs text-neutral-500">Equity</div>
+                      <div className="text-xs text-ceramic-text-secondary">Equity</div>
                       <div className="text-lg font-bold text-amber-600">
                         {formatPercentage(stakeholder.equity_pct)}
                       </div>
@@ -137,12 +137,12 @@ export function StakeholderGrid({
                   {/* Investment */}
                   {stakeholder.investment_amount && (
                     <div className="mb-2">
-                      <div className="text-xs text-neutral-500">Investimento</div>
-                      <div className="text-sm font-semibold text-green-600">
+                      <div className="text-xs text-ceramic-text-secondary">Investimento</div>
+                      <div className="text-sm font-semibold text-ceramic-success">
                         R$ {stakeholder.investment_amount.toLocaleString('pt-BR')}
                       </div>
                       {stakeholder.investment_round && (
-                        <div className="text-xs text-neutral-500">
+                        <div className="text-xs text-ceramic-text-secondary">
                           {stakeholder.investment_round}
                         </div>
                       )}
@@ -151,7 +151,7 @@ export function StakeholderGrid({
 
                   {/* Vesting */}
                   {stakeholder.vesting_period_months && (
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-xs text-ceramic-text-secondary">
                       Vesting: {stakeholder.vesting_period_months} meses
                       {stakeholder.vesting_cliff_months && (
                         <> (cliff: {stakeholder.vesting_cliff_months}m)</>
@@ -161,7 +161,7 @@ export function StakeholderGrid({
 
                   {/* Employment Dates */}
                   {stakeholder.start_date && (
-                    <div className="text-xs text-neutral-500 mt-1">
+                    <div className="text-xs text-ceramic-text-secondary mt-1">
                       Desde{' '}
                       {new Date(stakeholder.start_date).toLocaleDateString('pt-BR', {
                         month: 'short',
@@ -186,7 +186,7 @@ export function StakeholderGrid({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center text-xs text-blue-600 hover:text-blue-700 mt-2"
+                      className="inline-flex items-center text-xs text-ceramic-info hover:text-ceramic-info/80 mt-2"
                     >
                       <svg
                         className="w-3 h-3 mr-1"
@@ -209,7 +209,7 @@ export function StakeholderGrid({
       {safeStakeholders.length === 0 && (
         <div className="text-center py-8">
           <div className="text-4xl mb-2"></div>
-          <p className="text-sm text-neutral-600">Nenhum stakeholder cadastrado</p>
+          <p className="text-sm text-ceramic-text-secondary">Nenhum stakeholder cadastrado</p>
         </div>
       )}
     </div>

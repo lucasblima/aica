@@ -45,7 +45,7 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
 
   if (currentLoading || previousLoading) {
     return (
-      <div className="bg-white rounded-xl border-2 border-amber-200 p-6 animate-pulse">
+      <div className="bg-ceramic-base rounded-xl border-2 border-amber-200 p-6 animate-pulse">
         <div className="h-6 bg-amber-100 rounded w-1/2 mb-4" />
         <div className="space-y-3">
           <div className="h-20 bg-amber-50 rounded" />
@@ -59,7 +59,7 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
     return (
       <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 text-center">
         <div className="text-4xl mb-2">📊</div>
-        <p className="text-stone-600">Nenhum dado financeiro disponível</p>
+        <p className="text-ceramic-text-secondary">Nenhum dado financeiro disponível</p>
       </div>
     );
   }
@@ -110,39 +110,39 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Revenue */}
-        <div className="bg-white rounded-lg border-2 border-green-200 p-4">
+        <div className="bg-ceramic-base rounded-lg border-2 border-ceramic-success/30 p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">💰</span>
-            <span className="text-sm text-green-700 font-medium">Receita</span>
+            <span className="text-sm text-ceramic-success font-medium">Receita</span>
           </div>
-          <div className="text-2xl font-bold text-green-800 mb-1">
+          <div className="text-2xl font-bold text-ceramic-success mb-1">
             {formatCurrency(currentData.totalIncome)}
           </div>
           {previousData && (
             <div className="flex items-center gap-1 text-xs">
-              <span className={revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
+              <span className={revenueGrowth >= 0 ? 'text-ceramic-success' : 'text-ceramic-error'}>
                 {revenueGrowth >= 0 ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}%
               </span>
-              <span className="text-stone-500">vs {prevMonthName}</span>
+              <span className="text-ceramic-text-secondary">vs {prevMonthName}</span>
             </div>
           )}
         </div>
 
         {/* Expenses */}
-        <div className="bg-white rounded-lg border-2 border-red-200 p-4">
+        <div className="bg-ceramic-base rounded-lg border-2 border-ceramic-error/30 p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">💸</span>
-            <span className="text-sm text-red-700 font-medium">Despesas</span>
+            <span className="text-sm text-ceramic-error font-medium">Despesas</span>
           </div>
-          <div className="text-2xl font-bold text-red-800 mb-1">
+          <div className="text-2xl font-bold text-ceramic-error mb-1">
             {formatCurrency(currentData.totalExpenses)}
           </div>
           {previousData && (
             <div className="flex items-center gap-1 text-xs">
-              <span className={expenseGrowth >= 0 ? 'text-red-600' : 'text-green-600'}>
+              <span className={expenseGrowth >= 0 ? 'text-ceramic-error' : 'text-ceramic-success'}>
                 {expenseGrowth >= 0 ? '↑' : '↓'} {Math.abs(expenseGrowth).toFixed(1)}%
               </span>
-              <span className="text-stone-500">vs {prevMonthName}</span>
+              <span className="text-ceramic-text-secondary">vs {prevMonthName}</span>
             </div>
           )}
         </div>
@@ -152,17 +152,17 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Net Profit */}
         <div
-          className={`bg-white rounded-lg border-2 p-4 ${
+          className={`bg-ceramic-base rounded-lg border-2 p-4 ${
             currentData.netBalance >= 0
-              ? 'border-blue-200'
-              : 'border-orange-200'
+              ? 'border-ceramic-info/30'
+              : 'border-ceramic-warning/30'
           }`}
         >
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">📈</span>
             <span
               className={`text-sm font-medium ${
-                currentData.netBalance >= 0 ? 'text-blue-700' : 'text-orange-700'
+                currentData.netBalance >= 0 ? 'text-ceramic-info' : 'text-ceramic-warning'
               }`}
             >
               Lucro Líquido
@@ -170,7 +170,7 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
           </div>
           <div
             className={`text-2xl font-bold ${
-              currentData.netBalance >= 0 ? 'text-blue-800' : 'text-orange-800'
+              currentData.netBalance >= 0 ? 'text-ceramic-info' : 'text-ceramic-warning'
             }`}
           >
             {formatCurrency(Math.abs(currentData.netBalance))}
@@ -178,15 +178,15 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
         </div>
 
         {/* Profit Margin */}
-        <div className="bg-white rounded-lg border-2 border-purple-200 p-4">
+        <div className="bg-ceramic-base rounded-lg border-2 border-ceramic-accent/30 p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">📊</span>
-            <span className="text-sm text-purple-700 font-medium">Margem</span>
+            <span className="text-sm text-ceramic-accent font-medium">Margem</span>
           </div>
-          <div className="text-2xl font-bold text-purple-800">
+          <div className="text-2xl font-bold text-ceramic-accent">
             {profitMargin.toFixed(1)}%
           </div>
-          <div className="text-xs text-stone-500 mt-1">
+          <div className="text-xs text-ceramic-text-secondary mt-1">
             {profitMargin >= 20 ? 'Excelente' : profitMargin >= 10 ? 'Bom' : 'Atenção'}
           </div>
         </div>
@@ -201,8 +201,8 @@ export const FinanceOverviewCard: React.FC<FinanceOverviewCardProps> = ({
           <div className="space-y-2">
             {currentData.byCategory.slice(0, 3).map((cat, idx) => (
               <div key={idx} className="flex items-center justify-between text-sm">
-                <span className="text-stone-700 capitalize">{cat.category}</span>
-                <span className="font-medium text-stone-800">
+                <span className="text-ceramic-text-primary capitalize">{cat.category}</span>
+                <span className="font-medium text-ceramic-text-primary">
                   {formatCurrency(cat.amount)}
                 </span>
               </div>

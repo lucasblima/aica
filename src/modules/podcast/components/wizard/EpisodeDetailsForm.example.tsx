@@ -153,7 +153,7 @@ export const ThemeGenerationTest = () => {
             className={`px-3 py-1 rounded ${
               currentGuest === index
                 ? 'bg-amber-500 text-white'
-                : 'bg-gray-200'
+                : 'bg-ceramic-cool'
             }`}
           >
             {name}

@@ -12,11 +12,11 @@ interface StatCardProps {
 }
 
 const colorMap = {
-  blue: { icon: 'text-blue-500', trend: 'text-blue-600' },
-  green: { icon: 'text-green-500', trend: 'text-green-600' },
+  blue: { icon: 'text-ceramic-info', trend: 'text-ceramic-info' },
+  green: { icon: 'text-ceramic-success', trend: 'text-ceramic-success' },
   amber: { icon: 'text-amber-500', trend: 'text-amber-600' },
-  red: { icon: 'text-red-500', trend: 'text-red-600' },
-  purple: { icon: 'text-purple-500', trend: 'text-purple-600' },
+  red: { icon: 'text-ceramic-error', trend: 'text-ceramic-error' },
+  purple: { icon: 'text-ceramic-accent', trend: 'text-ceramic-accent' },
 }
 
 const sizeMap = {
@@ -56,7 +56,7 @@ export function StatCard({
           {typeof value === 'number' ? value.toLocaleString() : value}
         </span>
         {trend && (
-          <span className={`text-xs font-medium ${trend.direction === 'up' ? 'text-green-600' : 'text-red-500'}`}>
+          <span className={`text-xs font-medium ${trend.direction === 'up' ? 'text-ceramic-success' : 'text-ceramic-error'}`}>
             {trend.direction === 'up' ? '+' : '-'}{Math.abs(trend.value)}%
           </span>
         )}

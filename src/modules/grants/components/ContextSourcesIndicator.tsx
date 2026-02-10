@@ -72,7 +72,7 @@ export function ContextSourcesIndicator({
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex items-center gap-2">
-        <CheckCircle2 className="w-4 h-4 text-green-500" />
+        <CheckCircle2 className="w-4 h-4 text-ceramic-success" />
         <p className="text-xs font-medium text-ceramic-text-secondary">
           Fontes de Contexto para IA:
         </p>
@@ -82,9 +82,9 @@ export function ContextSourcesIndicator({
         {activeSources.map((source) => {
           const Icon = source.icon;
           const colorClasses = {
-            purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
-            blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-            green: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'
+            purple: 'bg-ceramic-accent/10 text-ceramic-accent border-ceramic-accent/20',
+            blue: 'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/20',
+            green: 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/20'
           };
 
           return (

@@ -60,9 +60,9 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
 
   // Button variant classes
   const variantClasses = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700',
-    secondary: 'bg-stone-200 text-stone-800 hover:bg-stone-300',
-    ghost: 'bg-transparent text-blue-600 hover:bg-blue-50',
+    primary: 'bg-amber-600 text-white hover:bg-amber-700',
+    secondary: 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-border',
+    ghost: 'bg-transparent text-ceramic-info hover:bg-ceramic-info-bg',
   };
 
   return (
@@ -78,13 +78,13 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
+          <div className="bg-ceramic-base rounded-xl max-w-md w-full shadow-2xl">
             {/* Header */}
-            <div className="p-6 border-b border-stone-200">
-              <h3 className="text-xl font-bold text-stone-800">
+            <div className="p-6 border-b border-ceramic-border">
+              <h3 className="text-xl font-bold text-ceramic-text-primary">
                 Sincronizar com Finanças Pessoais
               </h3>
-              <p className="text-sm text-stone-600 mt-1">
+              <p className="text-sm text-ceramic-text-secondary mt-1">
                 Adicione esta transação ao seu controle financeiro pessoal
               </p>
             </div>
@@ -92,23 +92,23 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
             {/* Content */}
             <div className="p-6 space-y-4">
               {/* Transaction Info */}
-              <div className="bg-stone-50 rounded-lg p-4 border-2 border-stone-200">
-                <div className="text-sm text-stone-600 mb-1">Transação</div>
-                <div className="font-semibold text-stone-800">{transactionDescription}</div>
-                <div className="text-lg font-bold text-blue-600 mt-2">
+              <div className="bg-ceramic-base rounded-lg p-4 border-2 border-ceramic-border">
+                <div className="text-sm text-ceramic-text-secondary mb-1">Transação</div>
+                <div className="font-semibold text-ceramic-text-primary">{transactionDescription}</div>
+                <div className="text-lg font-bold text-ceramic-info mt-2">
                   {formatCurrency(amount)}
                 </div>
               </div>
 
               {/* Category Selection */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
                   Categoria (opcional)
                 </label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-stone-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 border-2 border-ceramic-border rounded-lg focus:border-ceramic-info focus:outline-none"
                 >
                   <option value="">Detectar automaticamente</option>
                   <option value="housing">Moradia</option>
@@ -129,18 +129,18 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
                   id="autoSync"
                   checked={autoSync}
                   onChange={(e) => setAutoSync(e.target.checked)}
-                  className="mt-1 w-4 h-4 text-blue-600 border-stone-300 rounded focus:ring-blue-500"
+                  className="mt-1 w-4 h-4 text-ceramic-info border-ceramic-border rounded focus:ring-ceramic-accent/30"
                 />
-                <label htmlFor="autoSync" className="text-sm text-stone-700">
+                <label htmlFor="autoSync" className="text-sm text-ceramic-text-primary">
                   Sincronizar automaticamente transações futuras deste tipo
                 </label>
               </div>
 
               {/* Info Note */}
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
+              <div className="bg-ceramic-info/10 border-2 border-ceramic-info/20 rounded-lg p-3">
                 <div className="flex items-start gap-2">
                   <span className="text-lg">ℹ️</span>
-                  <div className="text-xs text-blue-800">
+                  <div className="text-xs text-ceramic-info">
                     Apenas sua parte da despesa será adicionada às suas finanças pessoais.
                     A transação original permanecerá no espaço compartilhado.
                   </div>
@@ -149,18 +149,18 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-stone-200 flex gap-3">
+            <div className="p-6 border-t border-ceramic-border flex gap-3">
               <button
                 onClick={() => setShowModal(false)}
                 disabled={syncToPersonal.isPending}
-                className="flex-1 px-4 py-2 bg-stone-200 text-stone-800 font-medium rounded-lg hover:bg-stone-300 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-ceramic-cool text-ceramic-text-primary font-medium rounded-lg hover:bg-ceramic-border transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSync}
                 disabled={syncToPersonal.isPending}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-ceramic-info text-white font-medium rounded-lg hover:bg-ceramic-info/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {syncToPersonal.isPending ? 'Sincronizando...' : 'Sincronizar'}
               </button>
@@ -168,8 +168,8 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
 
             {/* Success Message */}
             {syncToPersonal.isSuccess && (
-              <div className="mx-6 mb-6 bg-green-50 border-2 border-green-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-green-800">
+              <div className="mx-6 mb-6 bg-ceramic-success/10 border-2 border-ceramic-success/20 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-ceramic-success">
                   <span className="text-lg">✓</span>
                   <span className="text-sm font-medium">
                     Transação sincronizada com sucesso!
@@ -180,8 +180,8 @@ export const SyncToFinanceButton: React.FC<SyncToFinanceButtonProps> = ({
 
             {/* Error Message */}
             {syncToPersonal.isError && (
-              <div className="mx-6 mb-6 bg-red-50 border-2 border-red-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-red-800">
+              <div className="mx-6 mb-6 bg-ceramic-error/10 border-2 border-ceramic-error/20 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-ceramic-error">
                   <span className="text-lg">⚠️</span>
                   <span className="text-sm">
                     Erro ao sincronizar. Tente novamente.

@@ -55,7 +55,7 @@ export function WelcomeStep({
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 mb-6 shadow-lg shadow-green-200">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-ceramic-success to-ceramic-success/80 mb-6 shadow-lg shadow-ceramic-success/20">
           <Sparkles className="w-10 h-10 text-white" />
         </div>
 
@@ -75,7 +75,7 @@ export function WelcomeStep({
         transition={{ delay: 0.2, duration: 0.4 }}
         className="mb-8 w-full max-w-sm"
       >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 p-4">
           <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-amber-200 rounded-full opacity-50" />
           <div className="relative flex items-center gap-4">
             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
@@ -108,8 +108,8 @@ export function WelcomeStep({
             transition={{ delay: 0.4 + index * 0.1 }}
             className="flex items-start gap-4 p-4 rounded-xl bg-ceramic-50 text-left"
           >
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <feature.icon className="w-5 h-5 text-green-600" />
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-ceramic-success/10 flex items-center justify-center">
+              <feature.icon className="w-5 h-5 text-ceramic-success" />
             </div>
             <div>
               <h3 className="font-medium text-ceramic-800">{feature.title}</h3>
@@ -128,7 +128,7 @@ export function WelcomeStep({
       >
         <button
           onClick={onContinue}
-          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300"
+          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-ceramic-success hover:bg-ceramic-success/80 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-ceramic-success/20 hover:shadow-xl hover:shadow-ceramic-success/30"
         >
           <MessageCircle className="w-5 h-5" />
           Conectar WhatsApp

@@ -34,9 +34,9 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
   const roles = Array.from(new Set(members.map((m) => m.role))).sort();
 
   const roleColors: Record<string, string> = {
-    owner: 'bg-purple-100 text-purple-700 border-purple-300',
-    admin: 'bg-blue-100 text-blue-700 border-blue-300',
-    moderator: 'bg-green-100 text-green-700 border-green-300',
+    owner: 'bg-ceramic-accent/15 text-ceramic-accent border-ceramic-accent/30',
+    admin: 'bg-ceramic-info/15 text-ceramic-info border-ceramic-info/30',
+    moderator: 'bg-ceramic-success/15 text-ceramic-success border-ceramic-success/30',
     member: 'bg-ceramic-100 text-ceramic-700 border-ceramic-300',
   };
 
@@ -108,10 +108,10 @@ export const MemberDirectory: React.FC<MemberDirectoryProps> = ({
             return (
               <div
                 key={member.id}
-                className={`bg-white rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
+                className={`bg-ceramic-base rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
                   isCurrentUser
                     ? 'border-[#9B4D3A]/40 bg-[#9B4D3A]/5'
-                    : 'border-ceramic-200 hover:border-[#9B4D3A]/20'
+                    : 'border-ceramic-border hover:border-[#9B4D3A]/20'
                 }`}
               >
                 {/* Avatar & Name */}

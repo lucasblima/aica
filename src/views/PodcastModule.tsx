@@ -107,9 +107,9 @@ export const PodcastModule: React.FC<PodcastModuleProps> = ({ userEmail, onLogou
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'scheduled': return 'bg-amber-400';
-            case 'recorded': return 'bg-blue-400';
-            case 'published': return 'bg-green-400';
-            default: return 'bg-gray-400';
+            case 'recorded': return 'bg-ceramic-info';
+            case 'published': return 'bg-ceramic-success';
+            default: return 'bg-ceramic-text-tertiary';
         }
     };
 
@@ -278,7 +278,7 @@ export const PodcastModule: React.FC<PodcastModuleProps> = ({ userEmail, onLogou
                                     ) : (
                                         <div className="space-y-3">
                                             {selectedEpisode.questions.map((q, idx) => (
-                                                <div key={idx} className="flex items-start gap-3 p-4 bg-white/50 rounded-xl hover:bg-white transition-colors group">
+                                                <div key={idx} className="flex items-start gap-3 p-4 bg-ceramic-base/50 rounded-xl hover:bg-ceramic-base transition-colors group">
                                                     <div className="mt-1 w-5 h-5 rounded-full border-2 border-[#5C554B]/20 flex-shrink-0 cursor-pointer hover:border-[#5C554B] hover:bg-[#5C554B]/10 transition-all"></div>
                                                     <p className="text-[#5C554B] leading-relaxed">{q}</p>
                                                 </div>
@@ -317,7 +317,7 @@ export const PodcastModule: React.FC<PodcastModuleProps> = ({ userEmail, onLogou
                                                 <Headphones className="w-4 h-4" />
                                                 <span className="text-xs font-bold uppercase tracking-wider">Monitor</span>
                                             </div>
-                                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                            <div className="w-2 h-2 rounded-full bg-ceramic-error animate-pulse"></div>
                                         </div>
                                         <div className="h-12 bg-[#F0EFE9]/10 rounded-lg flex items-center justify-center mb-2">
                                             <div className="flex gap-1 items-end h-6">

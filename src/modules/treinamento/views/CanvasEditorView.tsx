@@ -92,7 +92,7 @@ export default function CanvasEditorView() {
             {/* Save Button */}
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg font-bold transition-colors"
             >
               <Save className="w-4 h-4" />
               Salvar
@@ -119,7 +119,7 @@ export default function CanvasEditorView() {
             className={`
               flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all
               ${viewMode === 'grid'
-                ? 'bg-blue-500 text-white'
+                ? 'bg-ceramic-info text-white'
                 : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
               }
             `}
@@ -132,7 +132,7 @@ export default function CanvasEditorView() {
             className={`
               flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all
               ${viewMode === 'list'
-                ? 'bg-blue-500 text-white'
+                ? 'bg-ceramic-info text-white'
                 : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
               }
             `}
@@ -263,7 +263,7 @@ export default function CanvasEditorView() {
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors"
+            className="flex-1 py-3 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg text-sm font-bold transition-colors"
           >
             Salvar Alterações
           </button>

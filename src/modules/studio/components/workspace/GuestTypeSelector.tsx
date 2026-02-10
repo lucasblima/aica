@@ -82,7 +82,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
             ${
               selectedType === 'public_figure'
                 ? 'border-ceramic-primary bg-ceramic-accent shadow-lg'
-                : 'border-ceramic-border bg-white hover:border-ceramic-primary/50 hover:shadow-md'
+                : 'border-ceramic-border bg-ceramic-base hover:border-ceramic-primary/50 hover:shadow-md'
             }
           `}
           whileHover={{ scale: 1.02 }}
@@ -150,11 +150,11 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
           aria-label="Contato Direto - Pessoas sem presença pública ampla com cadastro manual de nome, telefone e email"
           className={`
             relative p-6 rounded-xl border-2 transition-all
-            focus:outline-none focus:ring-4 focus:ring-green-500/30
+            focus:outline-none focus:ring-4 focus:ring-ceramic-success/30
             ${
               selectedType === 'common_person'
-                ? 'border-green-500 bg-green-50 shadow-lg'
-                : 'border-ceramic-border bg-white hover:border-green-500/50 hover:shadow-md'
+                ? 'border-ceramic-success bg-ceramic-success-bg shadow-lg'
+                : 'border-ceramic-border bg-ceramic-base hover:border-ceramic-success/50 hover:shadow-md'
             }
           `}
           whileHover={{ scale: 1.02 }}
@@ -165,7 +165,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg"
+              className="absolute -top-2 -right-2 w-8 h-8 bg-ceramic-success rounded-full flex items-center justify-center shadow-lg"
               aria-hidden="true"
             >
               <Sparkles className="w-4 h-4 text-white" />
@@ -178,7 +178,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
                 w-16 h-16 rounded-full flex items-center justify-center transition-colors
                 ${
                   selectedType === 'common_person'
-                    ? 'bg-green-500'
+                    ? 'bg-ceramic-success'
                     : 'bg-ceramic-surface-hover'
                 }
               `}

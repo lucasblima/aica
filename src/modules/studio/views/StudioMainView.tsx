@@ -30,10 +30,10 @@ const StudioWorkspace = React.lazy(() => import('./StudioWorkspace'));
  */
 function LoadingScreen() {
   return (
-    <div data-testid="loading-screen" className="flex items-center justify-center h-screen bg-gray-50">
+    <div data-testid="loading-screen" className="flex items-center justify-center h-screen bg-ceramic-base">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4" />
-        <p className="text-gray-600">Carregando Studio...</p>
+        <p className="text-ceramic-text-secondary">Carregando Studio...</p>
       </div>
     </div>
   );
@@ -44,15 +44,15 @@ function LoadingScreen() {
  */
 function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div data-testid="error-screen" className="flex items-center justify-center h-screen bg-gray-50">
+    <div data-testid="error-screen" className="flex items-center justify-center h-screen bg-ceramic-base">
       <div className="text-center max-w-md">
-        <div className="text-red-500 mb-4">
+        <div className="text-ceramic-error mb-4">
           <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Erro</h2>
-        <p className="text-gray-600 mb-4">{error}</p>
+        <h2 className="text-2xl font-bold text-ceramic-text-primary mb-2">Erro</h2>
+        <p className="text-ceramic-text-secondary mb-4">{error}</p>
         <button
           data-testid="retry-button"
           onClick={onRetry}

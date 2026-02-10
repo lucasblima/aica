@@ -50,9 +50,9 @@ export function ComparisonSlide({
   const renderCellValue = (value: string | number | boolean) => {
     if (typeof value === 'boolean') {
       return value ? (
-        <Check className="w-8 h-8 text-green-500 mx-auto" />
+        <Check className="w-8 h-8 text-ceramic-success mx-auto" />
       ) : (
-        <X className="w-8 h-8 text-red-500 mx-auto" />
+        <X className="w-8 h-8 text-ceramic-error mx-auto" />
       );
     }
     return value;

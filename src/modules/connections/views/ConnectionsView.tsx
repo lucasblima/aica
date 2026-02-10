@@ -142,8 +142,8 @@ export function ConnectionsView({
     return (
       <div className="h-screen w-full bg-ceramic-base flex items-center justify-center">
         <div className="ceramic-card p-8 max-w-md text-center">
-          <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-red-50">
-            <Sparkles className="w-8 h-8 text-red-500" />
+          <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-ceramic-error/10">
+            <Sparkles className="w-8 h-8 text-ceramic-error" />
           </div>
           <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
             Erro ao carregar espaços
@@ -190,7 +190,7 @@ export function ConnectionsView({
           >
             {/* Icon with ceramic inset */}
             <motion.div
-              className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-8 bg-blue-50"
+              className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-8 bg-ceramic-info/10"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20 }}
@@ -275,8 +275,8 @@ export function ConnectionsView({
               aria-label="Cadastrar nova organização"
               title="Cadastrar nova organização para participar de editais"
             >
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-bold text-blue-600 hidden sm:inline">+ Organização</span>
+              <Building2 className="w-4 h-4 text-ceramic-info" />
+              <span className="text-sm font-bold text-ceramic-info hidden sm:inline">+ Organização</span>
             </button>
             <button
               onClick={onCreateSpace}
@@ -397,7 +397,7 @@ export function ConnectionsView({
                 exit={{ opacity: 0, y: -10 }}
                 className="ceramic-tray p-8 text-center"
               >
-                <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-blue-50">
+                <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-ceramic-info/10">
                   <Sparkles className="w-8 h-8 text-ceramic-accent" />
                 </div>
                 <h3 className="text-base font-bold text-ceramic-text-primary mb-2">

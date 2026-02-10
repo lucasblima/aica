@@ -39,26 +39,26 @@ export function HabitatFinanceExample({ spaceId }: { spaceId: string }) {
 
       {/* Quick Stats */}
       {summary && (
-        <div className="bg-stone-50 rounded-lg p-4">
+        <div className="bg-ceramic-cool rounded-lg p-4">
           <h3 className="font-semibold mb-2">Resumo Rápido</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-ceramic-success">
                 R$ {summary.totalIncome.toFixed(2)}
               </div>
-              <div className="text-sm text-stone-600">Receitas</div>
+              <div className="text-sm text-ceramic-text-secondary">Receitas</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold text-ceramic-error">
                 R$ {summary.totalExpenses.toFixed(2)}
               </div>
-              <div className="text-sm text-stone-600">Despesas</div>
+              <div className="text-sm text-ceramic-text-secondary">Despesas</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-ceramic-info">
                 R$ {summary.netBalance.toFixed(2)}
               </div>
-              <div className="text-sm text-stone-600">Saldo</div>
+              <div className="text-sm text-ceramic-text-secondary">Saldo</div>
             </div>
           </div>
         </div>
@@ -66,14 +66,14 @@ export function HabitatFinanceExample({ spaceId }: { spaceId: string }) {
 
       {/* User Balance Alert */}
       {balance && balance.totalOwed > 0 && (
-        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+        <div className="bg-ceramic-warning/10 border-2 border-ceramic-warning rounded-lg p-4">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚠️</span>
             <div>
-              <div className="font-semibold text-amber-900">
+              <div className="font-semibold text-ceramic-warning">
                 Você tem débitos pendentes
               </div>
-              <div className="text-sm text-amber-700">
+              <div className="text-sm text-ceramic-warning">
                 Total devido: R$ {balance.totalOwed.toFixed(2)}
               </div>
             </div>
@@ -124,7 +124,7 @@ export function RentPaymentExample({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg border-2 border-stone-200 p-6">
+      <div className="bg-ceramic-base rounded-lg border-2 border-ceramic-border p-6">
         <h2 className="text-xl font-bold mb-4">Aluguel - Janeiro 2024</h2>
 
         {/* Split Tracker */}
@@ -137,7 +137,7 @@ export function RentPaymentExample({
         <div className="mt-6 flex gap-3">
           <button
             onClick={handleSyncToFinance}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90"
           >
             Sincronizar com Finanças
           </button>
@@ -160,18 +160,18 @@ export function TriboFundExample({
 }) {
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg border-2 border-stone-200 p-6">
+      <div className="bg-ceramic-base rounded-lg border-2 border-ceramic-border p-6">
         <h2 className="text-xl font-bold mb-4">Vaquinha - Churrasco da Tribo</h2>
 
         {/* Fund Info */}
         <div className="mb-6">
           <div className="flex justify-between mb-2">
-            <span className="text-stone-600">Meta:</span>
+            <span className="text-ceramic-text-secondary">Meta:</span>
             <span className="font-bold">R$ 500,00</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-stone-600">Arrecadado:</span>
-            <span className="font-bold text-green-600">R$ 320,00</span>
+            <span className="text-ceramic-text-secondary">Arrecadado:</span>
+            <span className="font-bold text-ceramic-success">R$ 320,00</span>
           </div>
         </div>
 
@@ -184,7 +184,7 @@ export function TriboFundExample({
           size="md"
         />
 
-        <p className="text-sm text-stone-600 mt-4">
+        <p className="text-sm text-ceramic-text-secondary mt-4">
           Sincronize sua contribuição com suas finanças pessoais para manter tudo
           organizado em um só lugar.
         </p>
@@ -220,36 +220,36 @@ export function VenturesFinanceExample({ spaceId }: { spaceId: string }) {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4">
-          <div className="text-sm text-stone-600 mb-1">Receita</div>
-          <div className="text-2xl font-bold text-green-600">
+        <div className="bg-ceramic-base rounded-lg p-4">
+          <div className="text-sm text-ceramic-text-secondary mb-1">Receita</div>
+          <div className="text-2xl font-bold text-ceramic-success">
             R$ {summary.totalIncome.toFixed(2)}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-4">
-          <div className="text-sm text-stone-600 mb-1">Despesas</div>
-          <div className="text-2xl font-bold text-red-600">
+        <div className="bg-ceramic-base rounded-lg p-4">
+          <div className="text-sm text-ceramic-text-secondary mb-1">Despesas</div>
+          <div className="text-2xl font-bold text-ceramic-error">
             R$ {summary.totalExpenses.toFixed(2)}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-4">
-          <div className="text-sm text-stone-600 mb-1">Lucro</div>
+        <div className="bg-ceramic-base rounded-lg p-4">
+          <div className="text-sm text-ceramic-text-secondary mb-1">Lucro</div>
           <div
             className={`text-2xl font-bold ${
-              summary.netBalance >= 0 ? 'text-blue-600' : 'text-orange-600'
+              summary.netBalance >= 0 ? 'text-ceramic-info' : 'text-ceramic-warning'
             }`}
           >
             R$ {summary.netBalance.toFixed(2)}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-4">
-          <div className="text-sm text-stone-600 mb-1">Margem</div>
+        <div className="bg-ceramic-base rounded-lg p-4">
+          <div className="text-sm text-ceramic-text-secondary mb-1">Margem</div>
           <div
             className={`text-2xl font-bold ${
-              isHealthy ? 'text-green-600' : 'text-amber-600'
+              isHealthy ? 'text-ceramic-success' : 'text-ceramic-warning'
             }`}
           >
             {profitMargin.toFixed(1)}%
@@ -260,7 +260,7 @@ export function VenturesFinanceExample({ spaceId }: { spaceId: string }) {
       {/* Health Indicator */}
       <div
         className={`p-4 rounded-lg ${
-          isHealthy ? 'bg-green-100' : 'bg-amber-100'
+          isHealthy ? 'bg-ceramic-success/10' : 'bg-ceramic-warning/10'
         }`}
       >
         <div className="flex items-center gap-2">
@@ -268,14 +268,14 @@ export function VenturesFinanceExample({ spaceId }: { spaceId: string }) {
           <div>
             <div
               className={`font-semibold ${
-                isHealthy ? 'text-green-800' : 'text-amber-800'
+                isHealthy ? 'text-ceramic-success' : 'text-ceramic-warning'
               }`}
             >
               {isHealthy ? 'Margem Saudável' : 'Atenção à Margem'}
             </div>
             <div
               className={`text-sm ${
-                isHealthy ? 'text-green-700' : 'text-amber-700'
+                isHealthy ? 'text-ceramic-success' : 'text-ceramic-warning'
               }`}
             >
               {isHealthy
@@ -289,13 +289,13 @@ export function VenturesFinanceExample({ spaceId }: { spaceId: string }) {
       {/* Top Expenses */}
       {summary.byCategory.length > 0 && (
         <div className="mt-6">
-          <h4 className="text-sm font-semibold text-stone-700 mb-3">
+          <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3">
             Maiores Despesas
           </h4>
           {summary.byCategory.slice(0, 3).map((cat, idx) => (
             <div key={idx} className="flex justify-between text-sm mb-2">
-              <span className="text-stone-700 capitalize">{cat.category}</span>
-              <span className="font-medium text-stone-800">
+              <span className="text-ceramic-text-primary capitalize">{cat.category}</span>
+              <span className="font-medium text-ceramic-text-primary">
                 R$ {cat.amount.toFixed(2)}
               </span>
             </div>
@@ -338,7 +338,7 @@ export function ProgrammaticSyncExample() {
           handleBulkSync(['tx-1', 'tx-2', 'tx-3'])
         }
         disabled={syncMutation.isPending}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        className="px-4 py-2 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90 disabled:opacity-50"
       >
         {syncMutation.isPending
           ? 'Sincronizando...'
@@ -346,7 +346,7 @@ export function ProgrammaticSyncExample() {
       </button>
 
       {syncMutation.isSuccess && (
-        <div className="mt-4 p-3 bg-green-50 text-green-800 rounded-lg">
+        <div className="mt-4 p-3 bg-ceramic-success/10 text-ceramic-success rounded-lg">
           ✓ Todas as transações foram sincronizadas!
         </div>
       )}
@@ -371,7 +371,7 @@ export function CustomDateRangeSummary({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Resumo Personalizado</h3>
-        <div className="text-sm text-stone-600">
+        <div className="text-sm text-ceramic-text-secondary">
           {startDate} até {endDate}
         </div>
       </div>
@@ -403,11 +403,11 @@ export function FinanceIntegrationTest({ spaceId }: { spaceId: string }) {
   if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div className="p-6 space-y-6 bg-stone-50">
+    <div className="p-6 space-y-6 bg-ceramic-cool">
       <h2 className="text-2xl font-bold">Finance Integration Test</h2>
 
       {/* Summary */}
-      <div className="bg-white rounded-lg p-6">
+      <div className="bg-ceramic-base rounded-lg p-6">
         <h3 className="font-bold mb-4">Summary</h3>
         <pre className="text-xs overflow-auto">
           {JSON.stringify(summary, null, 2)}
@@ -415,7 +415,7 @@ export function FinanceIntegrationTest({ spaceId }: { spaceId: string }) {
       </div>
 
       {/* Balance */}
-      <div className="bg-white rounded-lg p-6">
+      <div className="bg-ceramic-base rounded-lg p-6">
         <h3 className="font-bold mb-4">Balance</h3>
         <pre className="text-xs overflow-auto">
           {JSON.stringify(balance, null, 2)}
@@ -423,12 +423,12 @@ export function FinanceIntegrationTest({ spaceId }: { spaceId: string }) {
       </div>
 
       {/* Actions */}
-      <div className="bg-white rounded-lg p-6">
+      <div className="bg-ceramic-base rounded-lg p-6">
         <h3 className="font-bold mb-4">Actions</h3>
         <div className="flex gap-3">
           <button
             onClick={() => refetchSummary()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-ceramic-info text-white rounded hover:bg-ceramic-info/90"
           >
             Refetch Summary
           </button>

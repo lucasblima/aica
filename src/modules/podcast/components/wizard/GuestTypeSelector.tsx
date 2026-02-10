@@ -102,7 +102,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
           className={`
             ceramic-card p-6 text-left cursor-pointer transition-all duration-200
             ${hoveredType === 'direct-contact'
-              ? 'scale-[1.02] ring-2 ring-blue-500 shadow-xl'
+              ? 'scale-[1.02] ring-2 ring-ceramic-info shadow-xl'
               : 'hover:shadow-lg'
             }
           `}
@@ -119,7 +119,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
 
           {/* Method Label */}
           <div className="mb-3">
-            <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+            <span className="inline-block px-3 py-1 rounded-full bg-ceramic-info/10 text-ceramic-info text-sm font-medium">
               Cadastro manual
             </span>
           </div>
@@ -132,15 +132,15 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
           {/* Features List */}
           <ul className="mt-4 space-y-2 text-sm text-ceramic-text-secondary">
             <li className="flex items-start">
-              <span className="mr-2 text-blue-500">✓</span>
+              <span className="mr-2 text-ceramic-info">✓</span>
               <span>Cadastro rápido e manual</span>
             </li>
             <li className="flex items-start">
-              <span className="mr-2 text-blue-500">✓</span>
+              <span className="mr-2 text-ceramic-info">✓</span>
               <span>Nome, telefone e email</span>
             </li>
             <li className="flex items-start">
-              <span className="mr-2 text-blue-500">✓</span>
+              <span className="mr-2 text-ceramic-info">✓</span>
               <span>Informações personalizadas</span>
             </li>
           </ul>
@@ -152,7 +152,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
         <div className="flex items-start space-x-3">
           <div className="text-2xl flex-shrink-0">💡</div>
           <div className="text-sm text-ceramic-text-secondary leading-relaxed">
-            <strong className="text-ceramic-text-primary">Dica:</strong> Se o convidado tem Wikipedia, página pública ou aparece em notícias, escolha <strong className="text-amber-600">"Figura Pública"</strong> para busca automática de informações. Para contatos pessoais ou pessoas sem presença pública, use <strong className="text-blue-600">"Contato Direto"</strong>.
+            <strong className="text-ceramic-text-primary">Dica:</strong> Se o convidado tem Wikipedia, página pública ou aparece em notícias, escolha <strong className="text-amber-600">"Figura Pública"</strong> para busca automática de informações. Para contatos pessoais ou pessoas sem presença pública, use <strong className="text-ceramic-info">"Contato Direto"</strong>.
           </div>
         </div>
       </div>

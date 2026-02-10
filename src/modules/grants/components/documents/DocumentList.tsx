@@ -35,10 +35,10 @@ const STATUS_CONFIG: Record<
   string,
   { icon: React.FC<{ className?: string }>; color: string; bgColor: string }
 > = {
-  pending: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
-  processing: { icon: Loader2, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  completed: { icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-green-100' },
-  failed: { icon: AlertCircle, color: 'text-red-600', bgColor: 'bg-red-100' },
+  pending: { icon: Clock, color: 'text-ceramic-warning', bgColor: 'bg-ceramic-warning/10' },
+  processing: { icon: Loader2, color: 'text-ceramic-info', bgColor: 'bg-ceramic-info-bg' },
+  completed: { icon: CheckCircle, color: 'text-ceramic-success', bgColor: 'bg-ceramic-success-bg' },
+  failed: { icon: AlertCircle, color: 'text-ceramic-error', bgColor: 'bg-ceramic-error-bg' },
 };
 
 const DETECTED_TYPE_LABELS: Record<string, string> = {
@@ -95,11 +95,11 @@ export function DocumentList({
     return (
       <div className={`space-y-3 ${className}`}>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-lg border animate-pulse">
-            <div className="w-10 h-10 bg-gray-200 rounded-lg" />
+          <div key={i} className="flex items-center gap-4 p-4 bg-ceramic-base rounded-lg border animate-pulse">
+            <div className="w-10 h-10 bg-ceramic-cool rounded-lg" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-              <div className="h-3 bg-gray-200 rounded w-1/2" />
+              <div className="h-4 bg-ceramic-cool rounded w-3/4" />
+              <div className="h-3 bg-ceramic-cool rounded w-1/2" />
             </div>
           </div>
         ))}
@@ -110,8 +110,8 @@ export function DocumentList({
   if (documents.length === 0) {
     return (
       <div className={`text-center py-12 ${className}`}>
-        <FolderOpen className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-        <p className="text-gray-500">{emptyMessage}</p>
+        <FolderOpen className="w-12 h-12 mx-auto mb-4 text-ceramic-text-secondary" />
+        <p className="text-ceramic-text-secondary">{emptyMessage}</p>
       </div>
     );
   }
@@ -130,8 +130,8 @@ export function DocumentList({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             className={`
-              flex items-center gap-4 p-4 bg-white rounded-lg border
-              hover:border-gray-300 hover:shadow-sm transition-all
+              flex items-center gap-4 p-4 bg-ceramic-base rounded-lg border
+              hover:border-ceramic-border hover:shadow-sm transition-all
               ${onDocumentClick ? 'cursor-pointer' : ''}
             `}
             onClick={() => onDocumentClick?.(doc)}
@@ -143,7 +143,7 @@ export function DocumentList({
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 truncate">{doc.original_name}</p>
+              <p className="font-medium text-ceramic-text-primary truncate">{doc.original_name}</p>
               <div className="flex items-center gap-2 mt-1">
                 <StatusIcon
                   className={`w-3 h-3 ${statusConfig.color} ${
@@ -152,29 +152,29 @@ export function DocumentList({
                 />
                 {doc.detected_type && (
                   <>
-                    <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">
+                    <span className="text-xs px-1.5 py-0.5 bg-ceramic-info-bg text-ceramic-info rounded">
                       {DETECTED_TYPE_LABELS[doc.detected_type] || doc.detected_type}
                     </span>
-                    <span className="text-xs text-gray-400">•</span>
+                    <span className="text-xs text-ceramic-text-secondary">•</span>
                   </>
                 )}
-                <span className="text-xs text-gray-500">{formatFileSize(doc.size_bytes)}</span>
+                <span className="text-xs text-ceramic-text-secondary">{formatFileSize(doc.size_bytes)}</span>
               </div>
             </div>
 
             {/* Confidence */}
             {doc.confidence && doc.processing_status === 'completed' && (
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-ceramic-text-primary">
                   {Math.round(doc.confidence * 100)}%
                 </p>
-                <p className="text-xs text-gray-500">confiança</p>
+                <p className="text-xs text-ceramic-text-secondary">confiança</p>
               </div>
             )}
 
             {/* Date */}
             <div className="text-right">
-              <p className="text-xs text-gray-500">{formatDate(doc.created_at)}</p>
+              <p className="text-xs text-ceramic-text-secondary">{formatDate(doc.created_at)}</p>
             </div>
           </motion.div>
         );

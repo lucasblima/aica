@@ -69,7 +69,7 @@ export default function WorkspaceHeader({
   }, [lastSaved]);
 
   return (
-    <header className="bg-white border-b border-ceramic-border px-6 py-4">
+    <header className="bg-ceramic-base border-b border-ceramic-border px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left: Back button + Breadcrumb */}
         <div className="flex items-center space-x-4">
@@ -112,7 +112,7 @@ export default function WorkspaceHeader({
               aria-live="polite"
               aria-label={`Salvo ${timeSinceLastSave}`}
             >
-              <Check className="w-4 h-4 text-green-500" aria-hidden="true" />
+              <Check className="w-4 h-4 text-ceramic-success" aria-hidden="true" />
               <span>Salvo {timeSinceLastSave}</span>
             </div>
           )}

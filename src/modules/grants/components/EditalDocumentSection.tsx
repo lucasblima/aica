@@ -162,13 +162,13 @@ export function EditalDocumentSection({
         className="w-full p-4 flex items-center justify-between hover:bg-black/5 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-purple-500" />
+          <FileText className="w-5 h-5 text-ceramic-accent" />
           <div className="text-left">
             <h3 className="text-sm font-bold text-ceramic-text-primary">
               PDF do Edital
             </h3>
             {editalTextContent && editalPdfPath && (
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-ceramic-success">
                 ✓ Processado ({Math.round(editalTextContent.length / 1000)}k chars)
               </p>
             )}
@@ -278,7 +278,7 @@ export function EditalDocumentSection({
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 <div className="ceramic-concave rounded-lg p-2 shrink-0">
-                  <FileText className="w-4 h-4 text-purple-500" />
+                  <FileText className="w-4 h-4 text-ceramic-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ceramic-text-primary truncate">
@@ -289,7 +289,7 @@ export function EditalDocumentSection({
                       PDF do Edital
                     </span>
                     {editalTextContent && (
-                      <span className="text-xs text-green-600 dark:text-green-400">
+                      <span className="text-xs text-ceramic-success dark:text-ceramic-success">
                         • Conteúdo extraído ({editalTextContent.length.toLocaleString()} caracteres)
                       </span>
                     )}
@@ -333,9 +333,9 @@ export function EditalDocumentSection({
                   title="Remover PDF"
                 >
                   {isDeleting ? (
-                    <Loader2 className="w-4 h-4 text-red-500 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-ceramic-error animate-spin" />
                   ) : (
-                    <X className="w-4 h-4 text-red-500" />
+                    <X className="w-4 h-4 text-ceramic-error" />
                   )}
                 </button>
               </div>

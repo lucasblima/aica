@@ -19,13 +19,13 @@ const QUADRANT_INFO: Record<Quadrant, QuadrantInfo> = {
         icon: Zap,
         message: 'Nenhuma tarefa urgente e importante',
         hint: 'Arraste tarefas para cá ou use "AICA Auto" para priorizar automaticamente',
-        color: 'text-red-500'
+        color: 'text-ceramic-error'
     },
     'important': {
         icon: Target,
         message: 'Nenhuma tarefa importante',
         hint: 'Planeje tarefas importantes antes que se tornem urgentes',
-        color: 'text-blue-500'
+        color: 'text-ceramic-info'
     },
     'urgent': {
         icon: Clock,
@@ -37,7 +37,7 @@ const QUADRANT_INFO: Record<Quadrant, QuadrantInfo> = {
         icon: Archive,
         message: 'Nenhuma tarefa de baixa prioridade',
         hint: 'Tarefas que não são urgentes nem importantes podem ser eliminadas',
-        color: 'text-gray-500'
+        color: 'text-ceramic-text-secondary'
     }
 };
 

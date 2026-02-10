@@ -187,23 +187,23 @@ export function MentorshipScheduler({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-2xl font-bold text-gray-900">Agendar Sessão de Mentoria</h3>
-        <p className="text-sm text-gray-600 mt-2">
+      <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-6">
+        <h3 className="text-2xl font-bold text-ceramic-text-primary">Agendar Sessão de Mentoria</h3>
+        <p className="text-sm text-ceramic-text-secondary mt-2">
           Programe uma sessão com seu mentor e sincronize automaticamente com o Google Calendar
         </p>
       </div>
 
       {/* Messages */}
       {successMessage && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-800 font-medium">{successMessage}</p>
+        <div className="p-4 bg-ceramic-success-bg border border-ceramic-success/20 rounded-lg">
+          <p className="text-sm text-ceramic-success font-medium">{successMessage}</p>
         </div>
       )}
 
       {errorMessage && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800 font-medium">{errorMessage}</p>
+        <div className="p-4 bg-ceramic-error-bg border border-ceramic-error/20 rounded-lg">
+          <p className="text-sm text-ceramic-error font-medium">{errorMessage}</p>
         </div>
       )}
 
@@ -216,10 +216,10 @@ export function MentorshipScheduler({
       )}
 
       {/* Form */}
-      <form onSubmit={handleSchedule} className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+      <form onSubmit={handleSchedule} className="bg-ceramic-base rounded-lg border border-ceramic-border p-6 space-y-6">
         {/* Session Title */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">
+          <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
             Título da Sessão
           </label>
           <input
@@ -227,14 +227,14 @@ export function MentorshipScheduler({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ex: Aula de React avançado"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             required
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">
+          <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
             Descrição
           </label>
           <textarea
@@ -242,14 +242,14 @@ export function MentorshipScheduler({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Detalhes sobre a sessão..."
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
         </div>
 
         {/* Mentor Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
+            <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
               Nome do Mentor
             </label>
             <input
@@ -257,12 +257,12 @@ export function MentorshipScheduler({
               value={mentorName}
               onChange={(e) => setMentorName(e.target.value)}
               placeholder="Ex: Dr. João Silva"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
+            <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
               Email do Mentor
             </label>
             <input
@@ -270,7 +270,7 @@ export function MentorshipScheduler({
               value={mentorEmail}
               onChange={(e) => setMentorEmail(e.target.value)}
               placeholder="mentor@email.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -278,40 +278,40 @@ export function MentorshipScheduler({
         {/* Date and Time */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
+            <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
               Data
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
+            <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
               Início
             </label>
             <input
               type="time"
               value={startTime}
               onChange={(e) => handleStartTimeChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
+            <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
               Fim
             </label>
             <input
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               required
             />
           </div>
@@ -319,13 +319,13 @@ export function MentorshipScheduler({
 
         {/* Recurrence */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">
+          <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
             Recorrência
           </label>
           <select
             value={recurrence}
             onChange={(e) => setRecurrence(e.target.value as any)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           >
             <option value="none">Sem repetição</option>
             <option value="weekly">Semanal</option>
@@ -333,7 +333,7 @@ export function MentorshipScheduler({
             <option value="monthly">Mensal</option>
           </select>
           {recurrence !== 'none' && (
-            <p className="text-xs text-gray-600 mt-2">
+            <p className="text-xs text-ceramic-text-secondary mt-2">
               A sessão será repetida automaticamente
             </p>
           )}
@@ -343,7 +343,7 @@ export function MentorshipScheduler({
         <button
           type="button"
           onClick={handleCheckConflicts}
-          className="w-full px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+          className="w-full px-4 py-2 text-sm font-medium text-ceramic-info bg-ceramic-info-bg border border-ceramic-info/20 rounded-lg hover:bg-ceramic-info-bg/80 transition-colors"
         >
           🔍 Verificar Conflitos
         </button>
@@ -352,16 +352,16 @@ export function MentorshipScheduler({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full px-4 py-3 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full px-4 py-3 text-sm font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting ? 'Agendando...' : '✓ Agendar Sessão'}
         </button>
       </form>
 
       {/* Info Box */}
-      <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-        <p className="text-sm text-blue-900 font-medium mb-2">Informações importantes:</p>
-        <ul className="text-xs text-blue-800 space-y-1">
+      <div className="bg-ceramic-info-bg rounded-lg border border-ceramic-info/20 p-4">
+        <p className="text-sm text-ceramic-info font-medium mb-2">Informações importantes:</p>
+        <ul className="text-xs text-ceramic-info/80 space-y-1">
           <li>• A sessão será sincronizada com seu Google Calendar automaticamente</li>
           <li>• Você receberá lembretes antes de cada sessão</li>
           <li>• A recorrência criará múltiplas sessões no calendário</li>

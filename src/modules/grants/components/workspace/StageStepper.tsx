@@ -94,7 +94,7 @@ export const StageStepper: React.FC<StageStepperProps> = ({
                   className={`
                     hidden sm:block flex-shrink-0 w-6 h-0.5 mx-1
                     ${completion === 'complete'
-                      ? 'bg-green-400'
+                      ? 'bg-ceramic-success'
                       : 'bg-[#948D82]/20'
                     }
                   `}
@@ -119,7 +119,7 @@ const CompletionBadge: React.FC<{ status: StageCompletionStatus }> = ({ status }
       className={`
         absolute -top-1 -right-1 w-3 h-3 rounded-full flex items-center justify-center
         ${status === 'complete'
-          ? 'bg-green-500'
+          ? 'bg-ceramic-success'
           : 'bg-amber-500'
         }
       `}

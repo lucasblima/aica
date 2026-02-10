@@ -64,7 +64,7 @@ export function FluxCard() {
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">
           <div className="ceramic-inset p-2">
-            <Users className="w-5 h-5 text-cyan-600" />
+            <Users className="w-5 h-5 text-ceramic-info" />
           </div>
           <div>
             <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Flux</span>
@@ -101,13 +101,13 @@ export function FluxCard() {
           >
             <div className="flex items-center gap-1">
               {alertsSummary.critical > 0 && (
-                <span className="w-2 h-2 rounded-full bg-red-500" title={`${alertsSummary.critical} criticos`} />
+                <span className="w-2 h-2 rounded-full bg-ceramic-error" title={`${alertsSummary.critical} criticos`} />
               )}
               {alertsSummary.high > 0 && (
-                <span className="w-2 h-2 rounded-full bg-orange-500" title={`${alertsSummary.high} altos`} />
+                <span className="w-2 h-2 rounded-full bg-ceramic-warning" title={`${alertsSummary.high} altos`} />
               )}
               {alertsSummary.medium > 0 && (
-                <span className="w-2 h-2 rounded-full bg-amber-500" title={`${alertsSummary.medium} medios`} />
+                <span className="w-2 h-2 rounded-full bg-ceramic-warning" title={`${alertsSummary.medium} medios`} />
               )}
             </div>
             <p className="text-xs text-ceramic-text-secondary flex-1">

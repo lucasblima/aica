@@ -14,10 +14,10 @@ interface ThemeClustersProps {
 
 const PILL_COLORS = [
   { bg: 'bg-amber-100', text: 'text-amber-800' },
-  { bg: 'bg-blue-100', text: 'text-blue-800' },
-  { bg: 'bg-green-100', text: 'text-green-800' },
-  { bg: 'bg-purple-100', text: 'text-purple-800' },
-  { bg: 'bg-rose-100', text: 'text-rose-800' },
+  { bg: 'bg-ceramic-info/10', text: 'text-ceramic-info' },
+  { bg: 'bg-ceramic-success/10', text: 'text-ceramic-success' },
+  { bg: 'bg-ceramic-accent/10', text: 'text-ceramic-accent' },
+  { bg: 'bg-ceramic-error/10', text: 'text-ceramic-error' },
   { bg: 'bg-teal-100', text: 'text-teal-800' },
 ]
 
@@ -29,7 +29,7 @@ export function ThemeClusters({ themes, isBackfilling }: ThemeClustersProps) {
         <div className="flex flex-col items-center py-3">
           {isBackfilling ? (
             <>
-              <div className="h-5 w-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-2" />
+              <div className="h-5 w-5 border-2 border-ceramic-accent border-t-transparent rounded-full animate-spin mb-2" />
               <p className="text-xs text-[#948D82] text-center">
                 Analisando seus momentos com IA para identificar temas...
               </p>

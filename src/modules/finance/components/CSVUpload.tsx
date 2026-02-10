@@ -92,18 +92,18 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+      <div className="bg-ceramic-base rounded-2xl shadow-ceramic-elevated max-w-lg w-full p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Upload de CSV</h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <h2 className="text-2xl font-bold text-ceramic-text-primary">Upload de CSV</h2>
+            <p className="text-sm text-ceramic-text-secondary mt-1">
               Importe extratos do Nubank, Inter ou Itaú
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
             disabled={uploading}
           >
             <X className="w-6 h-6" />
@@ -112,25 +112,25 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
 
         {/* Success State */}
         {success && uploadResult && (
-          <div className="mb-6 p-6 bg-green-50 rounded-xl border border-green-200">
+          <div className="mb-6 p-6 bg-ceramic-success/10 rounded-xl border border-ceramic-success/20">
             <div className="flex items-center gap-3 mb-3">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-              <h3 className="font-bold text-green-900">Upload concluído!</h3>
+              <CheckCircle className="w-6 h-6 text-ceramic-success" />
+              <h3 className="font-bold text-ceramic-success">Upload concluído!</h3>
             </div>
-            <p className="text-sm text-green-700">
+            <p className="text-sm text-ceramic-success">
               <strong>{uploadResult.transactionCount}</strong> transações importadas do{' '}
               <strong>{uploadResult.bank}</strong>
             </p>
-            <p className="text-xs text-green-600 mt-2">Redirecionando...</p>
+            <p className="text-xs text-ceramic-success mt-2">Redirecionando...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-200">
+          <div className="mb-6 p-4 bg-ceramic-error/10 rounded-xl border border-ceramic-error/20">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-700">{error}</p>
+              <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0" />
+              <p className="text-sm text-ceramic-error">{error}</p>
             </div>
           </div>
         )}
@@ -143,24 +143,24 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
               onDragOver={handleDragOver}
               className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
                 file
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400 bg-gray-50'
+                  ? 'border-ceramic-warning bg-ceramic-info/10'
+                  : 'border-ceramic-border hover:border-ceramic-border bg-ceramic-base'
               }`}
             >
               {file ? (
                 <div className="space-y-4">
-                  <div className="inline-block p-4 bg-blue-100 rounded-full">
-                    <FileText className="w-8 h-8 text-blue-600" />
+                  <div className="inline-block p-4 bg-ceramic-warning/10 rounded-full">
+                    <FileText className="w-8 h-8 text-ceramic-warning" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{file.name}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="font-medium text-ceramic-text-primary">{file.name}</p>
+                    <p className="text-sm text-ceramic-text-secondary mt-1">
                       {(file.size / 1024).toFixed(2)} KB
                     </p>
                   </div>
                   <button
                     onClick={() => setFile(null)}
-                    className="text-sm text-gray-600 hover:text-gray-900 underline"
+                    className="text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary underline"
                     disabled={uploading}
                   >
                     Remover arquivo
@@ -168,18 +168,18 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="inline-block p-4 bg-gray-100 rounded-full">
-                    <Upload className="w-8 h-8 text-gray-600" />
+                  <div className="inline-block p-4 bg-ceramic-cool rounded-full">
+                    <Upload className="w-8 h-8 text-ceramic-text-secondary" />
                   </div>
                   <div>
-                    <p className="text-gray-900 font-medium mb-1">
+                    <p className="text-ceramic-text-primary font-medium mb-1">
                       Arraste um arquivo CSV aqui
                     </p>
-                    <p className="text-sm text-gray-600">ou</p>
+                    <p className="text-sm text-ceramic-text-secondary">ou</p>
                   </div>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="px-6 py-2 bg-ceramic-warning text-white rounded-lg hover:bg-ceramic-warning/80 transition-colors font-medium"
                   >
                     Escolher arquivo
                   </button>
@@ -195,16 +195,16 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
             </div>
 
             {/* Format Info */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">
+            <div className="mt-6 p-4 bg-ceramic-cool rounded-xl border border-ceramic-border">
+              <h4 className="text-sm font-medium text-ceramic-text-primary mb-2">
                 📋 Formatos Suportados
               </h4>
-              <ul className="text-xs text-gray-600 space-y-1">
+              <ul className="text-xs text-ceramic-text-secondary space-y-1">
                 <li>• Nubank (date, title, amount)</li>
                 <li>• Banco Inter (Data;Descrição;Valor;Saldo)</li>
                 <li>• Itaú (data;lancamento;valor;saldo)</li>
               </ul>
-              <p className="text-xs text-gray-500 mt-3">
+              <p className="text-xs text-ceramic-text-secondary mt-3">
                 💡 O formato é detectado automaticamente
               </p>
             </div>
@@ -213,7 +213,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
             <div className="mt-6 flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 px-6 py-3 border border-ceramic-border text-ceramic-text-primary rounded-lg hover:bg-ceramic-base transition-colors font-medium"
                 disabled={uploading}
               >
                 Cancelar
@@ -221,7 +221,7 @@ export const CSVUpload: React.FC<CSVUploadProps> = ({ userId, onSuccess, onClose
               <button
                 onClick={handleUpload}
                 disabled={!file || uploading}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-ceramic-warning text-white rounded-lg hover:bg-ceramic-warning/80 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {uploading ? (
                   <>

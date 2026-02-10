@@ -255,11 +255,11 @@ export default function DiagnosticsPage() {
   const getLogColor = (type: LogEntry['type']) => {
     switch (type) {
       case 'success':
-        return 'text-green-700'
+        return 'text-ceramic-success'
       case 'error':
-        return 'text-red-700'
+        return 'text-ceramic-error'
       case 'warning':
-        return 'text-orange-700'
+        return 'text-ceramic-warning'
       default:
         return 'text-ceramic-text-primary'
     }
@@ -306,7 +306,7 @@ export default function DiagnosticsPage() {
           <button
             onClick={clearAllSupabaseCookies}
             disabled={isLoading}
-            className="px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all"
+            className="px-4 py-3 bg-ceramic-error hover:bg-ceramic-error/80 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all"
           >
             🧹 Limpar Cookies Auth
           </button>
@@ -354,11 +354,11 @@ export default function DiagnosticsPage() {
             </p>
             <p>
               <strong className="text-ceramic-text-primary">Projeto Atual:</strong>{' '}
-              <code className="text-green-600 text-xs">uzywajqzbdbrfammshdg</code>
+              <code className="text-ceramic-success text-xs">uzywajqzbdbrfammshdg</code>
             </p>
             <p>
               <strong className="text-ceramic-text-primary">Projeto Antigo (não usar):</strong>{' '}
-              <code className="text-red-600 text-xs">gppebtrshbvuzatmebhr</code>
+              <code className="text-ceramic-error text-xs">gppebtrshbvuzatmebhr</code>
             </p>
           </div>
         </div>

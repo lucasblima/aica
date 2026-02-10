@@ -155,8 +155,8 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('free')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'free'
-              ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-ceramic-success to-ceramic-success/80 text-white shadow-md'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
           <Search className="w-3.5 h-3.5" />
@@ -166,8 +166,8 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('category')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'category'
-              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80 text-white shadow-md'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
           <Tag className="w-3.5 h-3.5" />
@@ -177,8 +177,8 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('merchant')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'merchant'
-              ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-ceramic-accent to-ceramic-accent/80 text-white shadow-md'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
           <Store className="w-3.5 h-3.5" />
@@ -188,8 +188,8 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('anomalies')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'anomalies'
-              ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-ceramic-error to-ceramic-error/80 text-white shadow-md'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
           <AlertTriangle className="w-3.5 h-3.5" />
@@ -199,8 +199,8 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           onClick={() => setSearchMode('patterns')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${
             searchMode === 'patterns'
-              ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-ceramic-info to-ceramic-info/80 text-white shadow-md'
+              : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-highlight'
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" />
@@ -228,10 +228,10 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
                     onSearchCategory(value);
                   }
                 }}
-                className="p-2 rounded-lg border-2 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all text-center"
+                className="p-2 rounded-lg border-2 border-ceramic-border hover:border-ceramic-success/30 hover:bg-ceramic-success/10 transition-all text-center"
               >
                 <div className="text-2xl mb-1">{icon}</div>
-                <div className="text-xs font-medium text-gray-700">{label}</div>
+                <div className="text-xs font-medium text-ceramic-text-primary">{label}</div>
               </button>
             ))}
           </motion.div>
@@ -242,7 +242,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
       <form onSubmit={handleSearch}>
         <div className="relative">
           {/* Icon - Left */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-ceramic-text-secondary">
             {isSearching ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
@@ -269,14 +269,14 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
             disabled={isSearching || !hasStatements || (searchMode === 'anomalies')}
             className={`
               w-full pl-12 pr-24 py-4
-              bg-white
-              border-2 border-gray-200
+              bg-ceramic-base
+              border-2 border-ceramic-border
               rounded-2xl
               text-base
-              placeholder:text-gray-400
+              placeholder:text-ceramic-text-secondary
               transition-all duration-200
-              focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10
-              disabled:bg-gray-50 disabled:cursor-not-allowed
+              focus:outline-none focus:border-ceramic-success focus:ring-4 focus:ring-ceramic-success/10
+              disabled:bg-ceramic-cool disabled:cursor-not-allowed
               shadow-sm hover:shadow-md
             `}
           />
@@ -290,7 +290,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
                 exit={{ opacity: 0, scale: 0.8 }}
                 type="button"
                 onClick={handleClear}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
               </motion.button>
@@ -301,7 +301,7 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
               disabled={isSearching || (!query.trim() && searchMode !== 'anomalies') || !hasStatements}
               className={`
                 px-4 py-2
-                bg-gradient-to-br from-emerald-500 to-green-600
+                bg-gradient-to-br from-ceramic-success to-ceramic-success/80
                 text-white font-medium text-sm
                 rounded-xl
                 transition-all duration-200
@@ -327,16 +327,16 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl"
+            className="flex items-start gap-3 p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl"
           >
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm text-red-700 font-medium">Erro na busca</p>
-              <p className="text-sm text-red-600 mt-1">{error}</p>
+              <p className="text-sm text-ceramic-error font-medium">Erro na busca</p>
+              <p className="text-sm text-ceramic-error mt-1">{error}</p>
             </div>
             <button
               onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 transition-colors"
+              className="text-ceramic-error/60 hover:text-ceramic-error transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -347,12 +347,12 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl"
+            className="flex items-start gap-3 p-4 bg-ceramic-warning/10 border border-ceramic-warning/20 rounded-xl"
           >
-            <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-ceramic-warning flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm text-amber-700 font-medium">Nenhum extrato indexado</p>
-              <p className="text-sm text-amber-600 mt-1">
+              <p className="text-sm text-ceramic-warning font-medium">Nenhum extrato indexado</p>
+              <p className="text-sm text-ceramic-warning mt-1">
                 Faça upload de um extrato bancário para habilitar a busca semântica.
               </p>
             </div>
@@ -372,14 +372,14 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-500" />
-                <h3 className="text-sm font-semibold text-gray-900">
+                <Sparkles className="w-4 h-4 text-ceramic-success" />
+                <h3 className="text-sm font-semibold text-ceramic-text-primary">
                   {results.length} {results.length === 1 ? 'resultado encontrado' : 'resultados encontrados'}
                 </h3>
               </div>
               <button
                 onClick={handleClear}
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
               >
                 Limpar
               </button>
@@ -393,33 +393,33 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-4 bg-white border border-gray-200 rounded-xl hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                  className="p-4 bg-ceramic-base border border-ceramic-border rounded-xl hover:border-ceramic-success/30 hover:shadow-ceramic-elevated transition-all duration-200"
                 >
                   {/* Content */}
                   <div className="flex items-start gap-3">
-                    <DollarSign className="w-4 h-4 text-emerald-500 mt-1 flex-shrink-0" />
-                    <p className="text-sm text-gray-700 leading-relaxed flex-1">
+                    <DollarSign className="w-4 h-4 text-ceramic-success mt-1 flex-shrink-0" />
+                    <p className="text-sm text-ceramic-text-primary leading-relaxed flex-1">
                       {result.text}
                     </p>
                   </div>
 
                   {/* Metadata */}
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <div className="mt-3 pt-3 border-t border-ceramic-base flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <FileSearch className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-xs text-gray-500">
+                      <FileSearch className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                      <span className="text-xs text-ceramic-text-secondary">
                         {result.document_name || 'Extrato'}
                       </span>
                     </div>
                     {result.score !== undefined && (
                       <div className="flex items-center gap-1.5">
-                        <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="w-16 h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"
+                            className="h-full bg-gradient-to-r from-ceramic-success to-ceramic-success/80 rounded-full"
                             style={{ width: `${result.score * 100}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-400 font-medium">
+                        <span className="text-xs text-ceramic-text-secondary font-medium">
                           {Math.round(result.score * 100)}%
                         </span>
                       </div>
@@ -435,11 +435,11 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-8 bg-gray-50 border border-gray-200 rounded-xl text-center"
+            className="p-8 bg-ceramic-base border border-ceramic-border rounded-xl text-center"
           >
-            <FileSearch className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-600 font-medium">Nenhum resultado encontrado</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <FileSearch className="w-12 h-12 text-ceramic-border mx-auto mb-3" />
+            <p className="text-sm text-ceramic-text-secondary font-medium">Nenhum resultado encontrado</p>
+            <p className="text-xs text-ceramic-text-secondary mt-1">
               Tente reformular sua busca ou usar termos diferentes
             </p>
           </motion.div>
@@ -451,13 +451,13 @@ export const FinanceSearchPanel: React.FC<FinanceSearchPanelProps> = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="p-8 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl"
+          className="p-8 bg-gradient-to-br from-ceramic-success/10 to-ceramic-success/5 border border-ceramic-success/20 rounded-xl"
         >
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-ceramic-success animate-spin" />
             <div className="text-center">
-              <p className="text-sm text-emerald-700 font-medium">Buscando nos extratos...</p>
-              <p className="text-xs text-emerald-600 mt-1">
+              <p className="text-sm text-ceramic-success font-medium">Buscando nos extratos...</p>
+              <p className="text-xs text-ceramic-success mt-1">
                 Analisando transações com IA
               </p>
             </div>
@@ -488,15 +488,15 @@ export const FinanceQuickSearchExamples: React.FC<QuickSearchExamplesProps> = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-2">
-        <Sparkles className="w-4 h-4 text-gray-400" />
-        <h4 className="text-xs font-medium text-gray-600">Experimente perguntar:</h4>
+        <Sparkles className="w-4 h-4 text-ceramic-text-secondary" />
+        <h4 className="text-xs font-medium text-ceramic-text-secondary">Experimente perguntar:</h4>
       </div>
       <div className="flex flex-wrap gap-2">
         {examples.map((example, index) => (
           <motion.button
             key={index}
             onClick={() => onSelectExample(example)}
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200"
+            className="px-3 py-1.5 bg-ceramic-cool border border-ceramic-border rounded-lg text-xs text-ceramic-text-secondary hover:border-ceramic-success/30 hover:text-ceramic-success hover:bg-ceramic-success/10 transition-all duration-200"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

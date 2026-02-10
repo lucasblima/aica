@@ -234,7 +234,7 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
 
           {/* Action Required */}
           {event.intent_action_required && (
-            <span className="px-2 py-1 text-xs text-white bg-blue-500 rounded-full">
+            <span className="px-2 py-1 text-xs text-white bg-ceramic-info rounded-full">
               📋 Ação necessária
             </span>
           )}

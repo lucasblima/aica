@@ -124,10 +124,10 @@ export function EventTimelineMini({
   if (isLoading) {
     return (
       <div className={`space-y-2 ${className}`}>
-        <p className="text-xs text-gray-500">Carregando eventos...</p>
+        <p className="text-xs text-ceramic-text-secondary">Carregando eventos...</p>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 bg-gray-200 rounded animate-pulse"></div>
+            <div key={i} className="h-12 bg-ceramic-cool rounded animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -137,9 +137,9 @@ export function EventTimelineMini({
   // Error state
   if (error) {
     return (
-      <div className={`bg-red-50 border border-red-200 rounded p-3 text-sm ${className}`}>
-        <p className="text-red-700 font-medium">Erro ao carregar eventos</p>
-        <p className="text-red-600 text-xs mt-1">{error.message}</p>
+      <div className={`bg-ceramic-error-bg border border-ceramic-error/20 rounded p-3 text-sm ${className}`}>
+        <p className="text-ceramic-error font-medium">Erro ao carregar eventos</p>
+        <p className="text-ceramic-error/80 text-xs mt-1">{error.message}</p>
       </div>
     );
   }
@@ -147,16 +147,16 @@ export function EventTimelineMini({
   // Empty state
   if (events.length === 0) {
     return (
-      <div className={`bg-blue-50 border border-blue-200 rounded p-3 text-sm ${className}`}>
-        <p className="text-blue-700 font-medium">Nenhum evento agendado</p>
-        <p className="text-blue-600 text-xs mt-1">Crie um novo evento para começar</p>
+      <div className={`bg-ceramic-info-bg border border-ceramic-info/20 rounded p-3 text-sm ${className}`}>
+        <p className="text-ceramic-info font-medium">Nenhum evento agendado</p>
+        <p className="text-ceramic-info/80 text-xs mt-1">Crie um novo evento para começar</p>
       </div>
     );
   }
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">
+      <h3 className="text-xs font-bold text-ceramic-text-primary uppercase tracking-wide mb-3">
         Próximos Eventos
       </h3>
 
@@ -171,7 +171,7 @@ export function EventTimelineMini({
               onClick={() => onEventClick?.(event.id)}
               className={`
                 p-3 rounded-lg border-l-4 transition-all cursor-pointer
-                ${happening ? 'bg-green-50 border-green-400' : 'bg-white border-gray-300'}
+                ${happening ? 'bg-ceramic-success-bg border-ceramic-success' : 'bg-ceramic-base border-ceramic-border'}
                 ${onEventClick ? 'hover:shadow-md hover:scale-105' : ''}
               `}
               style={{ transform: onEventClick ? undefined : 'scale(1)' }}
@@ -179,10 +179,10 @@ export function EventTimelineMini({
               {/* Event Header */}
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-800 truncate">
+                  <p className="text-sm font-semibold text-ceramic-text-primary truncate">
                     {event.title}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-ceramic-text-secondary mt-1">
                     {today ? 'Hoje' : formatDate(event.starts_at)} • {formatTime(event.starts_at)}
                     {event.ends_at && ` - ${formatTime(event.ends_at)}`}
                   </p>
@@ -192,7 +192,7 @@ export function EventTimelineMini({
                 <div className="flex items-center gap-1 ml-2">
                   {happening && (
                     <span
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 animate-pulse"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-ceramic-success/10 text-ceramic-success animate-pulse"
                       title="Acontecendo agora"
                     >
                       🔴 AO VIVO
@@ -221,26 +221,26 @@ export function EventTimelineMini({
 
               {/* Event Details */}
               {event.location && (
-                <p className="text-xs text-gray-600 flex items-center gap-1">
+                <p className="text-xs text-ceramic-text-secondary flex items-center gap-1">
                   <span>📍</span>
                   {event.location}
                 </p>
               )}
 
               {event.description && (
-                <p className="text-xs text-gray-600 mt-2 line-clamp-2">
+                <p className="text-xs text-ceramic-text-secondary mt-2 line-clamp-2">
                   {event.description}
                 </p>
               )}
 
               {event.is_all_day && (
-                <p className="text-xs text-purple-600 font-medium mt-2">
+                <p className="text-xs text-ceramic-accent font-medium mt-2">
                   📅 Evento o dia todo
                 </p>
               )}
 
               {event.recurrence_rule && (
-                <p className="text-xs text-blue-600 mt-2">
+                <p className="text-xs text-ceramic-info mt-2">
                   🔄 Evento recorrente
                 </p>
               )}
@@ -251,7 +251,7 @@ export function EventTimelineMini({
 
       {events.length >= maxEvents && (
         <button
-          className="w-full text-center text-xs text-blue-600 hover:text-blue-800 font-medium py-2 border-t border-gray-200 mt-4"
+          className="w-full text-center text-xs text-ceramic-info hover:text-ceramic-info/80 font-medium py-2 border-t border-ceramic-border mt-4"
         >
           Ver mais eventos
         </button>

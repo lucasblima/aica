@@ -193,7 +193,7 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
                         >
                             <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <FileSearch className="w-4 h-4 text-ceramic-text-secondary group-hover:text-blue-600" />
+                                <FileSearch className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-info" />
                             </div>
                             <span className="font-bold text-sm transition-colors">
                                 File Search Analytics
@@ -206,9 +206,9 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group"
                         >
                             <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <LogOut className="w-4 h-4 text-ceramic-text-secondary group-hover:text-red-600" />
+                                <LogOut className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-error" />
                             </div>
-                            <span className="font-bold text-sm group-hover:text-red-600 transition-colors">
+                            <span className="font-bold text-sm group-hover:text-ceramic-error transition-colors">
                                 Sair
                             </span>
                         </button>

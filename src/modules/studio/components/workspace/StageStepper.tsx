@@ -57,7 +57,7 @@ export default function StageStepper({
 }: StageStepperProps) {
   return (
     <nav
-      className="bg-white border-b border-ceramic-border px-6 py-3"
+      className="bg-ceramic-base border-b border-ceramic-border px-6 py-3"
       aria-label="Navegação de estágios do episódio"
       role="navigation"
     >
@@ -97,7 +97,7 @@ export default function StageStepper({
                 {/* Icon with completion badge */}
                 <div className="relative">
                   <Icon
-                    className={`w-5 h-5 ${isActive ? 'text-orange-600' : 'text-gray-400'}`}
+                    className={`w-5 h-5 ${isActive ? 'text-orange-600' : 'text-ceramic-text-secondary'}`}
                     aria-hidden="true"
                   />
                   {completion !== 'none' && (
@@ -125,7 +125,7 @@ export default function StageStepper({
               {!isLast && (
                 <div
                   className={`hidden md:block w-8 h-0.5 ${
-                    completion === 'complete' ? 'bg-green-500' : 'bg-ceramic-border'
+                    completion === 'complete' ? 'bg-ceramic-success' : 'bg-ceramic-border'
                   }`}
                   aria-hidden="true"
                 />
@@ -145,7 +145,7 @@ export default function StageStepper({
 function CompletionBadge({ completion }: { completion: StageCompletionStatus }) {
   if (completion === 'complete') {
     return (
-      <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5" aria-hidden="true">
+      <div className="absolute -top-1 -right-1 bg-ceramic-success rounded-full p-0.5" aria-hidden="true">
         <Check className="w-3 h-3 text-white" />
       </div>
     );

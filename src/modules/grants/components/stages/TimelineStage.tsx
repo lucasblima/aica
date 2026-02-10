@@ -275,14 +275,14 @@ export const TimelineStage: React.FC = () => {
                   value={newPhase.name}
                   onChange={(e) => setNewPhase({ ...newPhase, name: e.target.value })}
                   placeholder="Nome da fase (ex: Submissao)"
-                  className="bg-white border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
+                  className="bg-ceramic-base border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
                   autoFocus
                 />
                 <input
                   type="date"
                   value={newPhase.date}
                   onChange={(e) => setNewPhase({ ...newPhase, date: e.target.value })}
-                  className="bg-white border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
+                  className="bg-ceramic-base border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
                 />
               </div>
               <input
@@ -290,7 +290,7 @@ export const TimelineStage: React.FC = () => {
                 value={newPhase.description}
                 onChange={(e) => setNewPhase({ ...newPhase, description: e.target.value })}
                 placeholder="Descricao (opcional)"
-                className="w-full bg-white border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
+                className="w-full bg-ceramic-base border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
               />
               <div className="flex items-center justify-end gap-2">
                 <button
@@ -380,7 +380,7 @@ export const TimelineStage: React.FC = () => {
             <button
               onClick={handleBatchDelete}
               disabled={selectedPhaseIds.size === 0}
-              className="ceramic-concave px-4 py-2 text-xs font-bold text-red-600 disabled:opacity-50 hover:scale-95 transition-transform flex items-center gap-1"
+              className="ceramic-concave px-4 py-2 text-xs font-bold text-ceramic-error disabled:opacity-50 hover:scale-95 transition-transform flex items-center gap-1"
             >
               <Trash2 className="w-4 h-4" />
               Excluir Selecionados
@@ -468,8 +468,8 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
       case 'completed':
         return {
           icon: Check,
-          bgColor: 'bg-green-500',
-          textColor: 'text-green-700',
+          bgColor: 'bg-ceramic-success',
+          textColor: 'text-ceramic-success',
           label: 'Concluido',
         };
       case 'active':
@@ -552,7 +552,7 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
                 </span>
               )}
               {isInvalidDate && (
-                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-ceramic-error-bg text-ceramic-error text-[10px] font-bold rounded-full flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   DATA INVALIDA
                 </span>
@@ -566,19 +566,19 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
                   type="date"
                   value={editedDate}
                   onChange={(e) => setEditedDate(e.target.value)}
-                  className="bg-white border border-[#5C554B]/20 rounded-lg px-2 py-1 text-xs text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
+                  className="bg-ceramic-base border border-[#5C554B]/20 rounded-lg px-2 py-1 text-xs text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
                   autoFocus
                 />
                 <button
                   onClick={handleSaveDate}
-                  className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                  className="p-1 text-ceramic-success hover:bg-ceramic-success-bg rounded transition-colors"
                   title="Salvar"
                 >
                   <Check className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleCancelEdit}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  className="p-1 text-ceramic-error hover:bg-ceramic-error-bg rounded transition-colors"
                   title="Cancelar"
                 >
                   <X className="w-4 h-4" />
@@ -586,7 +586,7 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <p className={`text-xs font-medium ${isInvalidDate ? 'text-red-600' : config.textColor}`}>
+                <p className={`text-xs font-medium ${isInvalidDate ? 'text-ceramic-error' : config.textColor}`}>
                   {formattedDate}
                   {daysRemaining !== null && phase.status === 'pending' && !isInvalidDate && (
                     <span className="ml-2 text-[#948D82]">
@@ -614,7 +614,7 @@ const TimelinePhaseCard: React.FC<TimelinePhaseCardProps> = ({
           {!selectionMode && (
             <button
               onClick={onRemove}
-              className="p-2 text-[#948D82] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-[#948D82] hover:text-ceramic-error hover:bg-ceramic-error-bg rounded-lg transition-colors"
               title="Remover"
             >
               <Trash2 className="w-4 h-4" />

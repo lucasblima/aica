@@ -95,7 +95,7 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
       <div className="h-screen w-full bg-ceramic-base flex items-center justify-center">
         <div className="ceramic-card p-8">
           <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-blue-700 animate-spin" />
+            <Clock className="w-5 h-5 text-ceramic-info animate-spin" />
             <span className="text-sm text-ceramic-text-secondary">
               Carregando biblioteca...
             </span>
@@ -114,11 +114,11 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
             {/* Back Button */}
             <button
               onClick={() => navigate('/connections')}
-              className="ceramic-inset p-3 rounded-full hover:bg-blue-50 transition-colors"
+              className="ceramic-inset p-3 rounded-full hover:bg-ceramic-cool transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-ceramic-text-primary" />
             </button>
-            <div className="ceramic-inset w-12 h-12 flex items-center justify-center bg-blue-800">
+            <div className="ceramic-inset w-12 h-12 flex items-center justify-center bg-ceramic-info">
               <GraduationCap className="w-6 h-6 text-amber-500" />
             </div>
             <div>
@@ -134,7 +134,7 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
           {/* Create New Journey Button */}
           <motion.button
             onClick={() => setShowCreateModal(true)}
-            className="ceramic-card px-5 py-2.5 flex items-center gap-2 bg-blue-800"
+            className="ceramic-card px-5 py-2.5 flex items-center gap-2 bg-ceramic-info"
             variants={cardElevationVariants}
             initial="rest"
             whileHover="hover"
@@ -148,30 +148,30 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-2 border-b border-blue-200 pb-2 mb-4">
+        <div className="flex gap-2 border-b border-ceramic-border pb-2 mb-4">
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-ceramic-info/10 text-ceramic-info rounded-lg font-medium"
           >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </button>
           <button
             onClick={() => navigate(`/connections/academia/${spaceId}/notes`)}
-            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 text-ceramic-text-secondary rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 hover:bg-ceramic-cool text-ceramic-text-secondary rounded-lg font-medium transition-colors"
           >
             <FileText className="w-4 h-4" />
             Notas
           </button>
           <button
             onClick={() => navigate(`/connections/academia/${spaceId}/mentorships`)}
-            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 text-ceramic-text-secondary rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 hover:bg-ceramic-cool text-ceramic-text-secondary rounded-lg font-medium transition-colors"
           >
             <Users className="w-4 h-4" />
             Mentorias
           </button>
           <button
             onClick={() => navigate(`/connections/academia/${spaceId}/portfolio`)}
-            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 text-ceramic-text-secondary rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 hover:bg-ceramic-cool text-ceramic-text-secondary rounded-lg font-medium transition-colors"
           >
             <Award className="w-4 h-4" />
             Portfolio
@@ -180,8 +180,8 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="ceramic-inset-shallow p-3 text-center bg-blue-50">
-            <div className="text-xl font-black text-blue-700">
+          <div className="ceramic-inset-shallow p-3 text-center bg-ceramic-info/10">
+            <div className="text-xl font-black text-ceramic-info">
               {activeJourneys.length}
             </div>
             <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
@@ -198,8 +198,8 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
             </div>
           </div>
 
-          <div className="ceramic-inset-shallow p-3 text-center bg-blue-50">
-            <div className="text-xl font-black text-blue-700">
+          <div className="ceramic-inset-shallow p-3 text-center bg-ceramic-info/10">
+            <div className="text-xl font-black text-ceramic-info">
               {notes.length}
             </div>
             <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider mt-1">
@@ -214,7 +214,7 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
         {/* Current Learning Journeys */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <BookOpen className="w-4 h-4 text-blue-700" />
+            <BookOpen className="w-4 h-4 text-ceramic-info" />
             <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
               Jornadas de Aprendizado
             </h2>
@@ -229,15 +229,15 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-blue-50">
-                <BookOpen className="w-8 h-8 text-blue-700" />
+              <div className="ceramic-inset w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-ceramic-info/10">
+                <BookOpen className="w-8 h-8 text-ceramic-info" />
               </div>
               <p className="text-sm text-ceramic-text-secondary mb-4">
                 Nenhuma jornada ativa. Comece um novo curso ou livro.
               </p>
               <motion.button
                 onClick={() => setShowCreateModal(true)}
-                className="ceramic-card px-4 py-2 inline-flex items-center gap-2 bg-blue-800"
+                className="ceramic-card px-4 py-2 inline-flex items-center gap-2 bg-ceramic-info"
                 variants={cardElevationVariants}
                 initial="rest"
                 whileHover="hover"
@@ -298,7 +298,7 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
         {/* Notes Preview */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <FileText className="w-4 h-4 text-blue-700" />
+            <FileText className="w-4 h-4 text-ceramic-info" />
             <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
               Notas Recentes
             </h2>
@@ -342,7 +342,7 @@ export const AcademiaHome: React.FC<AcademiaHomeProps> = ({
                       <h3 className="text-sm font-bold text-ceramic-text-primary">
                         {note.title}
                       </h3>
-                      <span className="ceramic-inset-shallow px-2 py-1 text-[10px] text-blue-700 uppercase tracking-wider bg-blue-50">
+                      <span className="ceramic-inset-shallow px-2 py-1 text-[10px] text-ceramic-info uppercase tracking-wider bg-ceramic-info/10">
                         {note.note_type}
                       </span>
                     </div>
@@ -422,7 +422,7 @@ function JourneyCard({ journey, onNavigate, onEdit, onDelete }: JourneyCardProps
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
-            className="p-2 rounded-lg hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100"
+            className="p-2 rounded-lg hover:bg-ceramic-cool transition-colors opacity-0 group-hover:opacity-100"
           >
             <MoreVertical className="w-4 h-4 text-ceramic-text-secondary" />
           </button>
@@ -433,7 +433,7 @@ function JourneyCard({ journey, onNavigate, onEdit, onDelete }: JourneyCardProps
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-ceramic-text-secondary/10 py-1 min-w-[140px] z-20"
+                className="absolute right-0 top-10 bg-ceramic-base rounded-lg shadow-lg border border-ceramic-border py-1 min-w-[140px] z-20"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
@@ -441,7 +441,7 @@ function JourneyCard({ journey, onNavigate, onEdit, onDelete }: JourneyCardProps
                     onEdit(journey.id);
                     setShowMenu(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-ceramic-text-primary hover:bg-blue-50 flex items-center gap-2"
+                  className="w-full px-4 py-2 text-left text-sm text-ceramic-text-primary hover:bg-ceramic-cool flex items-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
                   Editar
@@ -451,7 +451,7 @@ function JourneyCard({ journey, onNavigate, onEdit, onDelete }: JourneyCardProps
                     onDelete(journey.id);
                     setShowMenu(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  className="w-full px-4 py-2 text-left text-sm text-ceramic-error hover:bg-ceramic-error/10 flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Excluir
@@ -470,17 +470,17 @@ function JourneyCard({ journey, onNavigate, onEdit, onDelete }: JourneyCardProps
               {journey.journey_type} {journey.provider && `- ${journey.provider}`}
             </p>
           </div>
-          <div className="ceramic-inset-shallow px-3 py-1 bg-blue-50">
-            <span className="text-xs font-bold text-blue-700">
+          <div className="ceramic-inset-shallow px-3 py-1 bg-ceramic-info/10">
+            <span className="text-xs font-bold text-ceramic-info">
               {journey.progress_pct}%
             </span>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
+        <div className="relative w-full h-2 bg-ceramic-cool rounded-full overflow-hidden mb-3">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-blue-700 to-blue-500"
+            className="h-full rounded-full bg-gradient-to-r from-ceramic-info to-ceramic-info/70"
             initial={{ width: 0 }}
             animate={{ width: `${journey.progress_pct}%` }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -569,9 +569,9 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
         className="bg-ceramic-base w-full max-w-lg rounded-2xl shadow-2xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-blue-200">
+        <div className="flex items-center justify-between p-6 border-b border-ceramic-border">
           <div className="flex items-center gap-3">
-            <div className="ceramic-concave w-10 h-10 flex items-center justify-center bg-blue-800">
+            <div className="ceramic-concave w-10 h-10 flex items-center justify-center bg-ceramic-info">
               <BookOpen className="w-5 h-5 text-amber-400" />
             </div>
             <h2 className="text-xl font-bold text-ceramic-text-primary">Nova Jornada</h2>
@@ -596,7 +596,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ex: React Mastery Course"
-              className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
               required
               autoFocus
             />
@@ -610,7 +610,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
             <select
               value={formData.journey_type}
               onChange={(e) => setFormData({ ...formData, journey_type: e.target.value as JourneyType })}
-              className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
             >
               {JOURNEY_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>{type.label}</option>
@@ -629,7 +629,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
                 value={formData.provider}
                 onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
                 placeholder="Ex: Udemy, Alura"
-                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
               />
             </div>
             <div className="space-y-2">
@@ -641,7 +641,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
                 value={formData.instructor}
                 onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
                 placeholder="Nome do instrutor"
-                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
               />
             </div>
           </div>
@@ -658,7 +658,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
                 onChange={(e) => setFormData({ ...formData, total_modules: e.target.value })}
                 placeholder="Ex: 12"
                 min="1"
-                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
               />
             </div>
             <div className="space-y-2">
@@ -671,7 +671,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
                 onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
                 placeholder="Ex: 40"
                 min="1"
-                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
               />
             </div>
           </div>
@@ -686,7 +686,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
               value={formData.url}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
               placeholder="https://..."
-              className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
             />
           </div>
 
@@ -702,7 +702,7 @@ function CreateJourneyModal({ isOpen, onClose, onSubmit, isLoading }: CreateJour
             <button
               type="submit"
               disabled={isLoading || !formData.title.trim()}
-              className="flex-1 ceramic-card py-3 rounded-xl bg-blue-800 text-white font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 ceramic-card py-3 rounded-xl bg-ceramic-info text-white font-bold hover:bg-ceramic-info/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -746,8 +746,8 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, isLoading, journeyTitl
         className="bg-ceramic-base w-full max-w-md rounded-2xl shadow-2xl p-6"
       >
         <div className="text-center">
-          <div className="ceramic-concave w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-red-50">
-            <Trash2 className="w-8 h-8 text-red-500" />
+          <div className="ceramic-concave w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-ceramic-error/10">
+            <Trash2 className="w-8 h-8 text-ceramic-error" />
           </div>
           <h3 className="text-xl font-bold text-ceramic-text-primary mb-2">
             Excluir Jornada?
@@ -766,7 +766,7 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, isLoading, journeyTitl
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1 ceramic-card py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 ceramic-card py-3 rounded-xl bg-ceramic-error text-white font-bold hover:bg-ceramic-error/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>

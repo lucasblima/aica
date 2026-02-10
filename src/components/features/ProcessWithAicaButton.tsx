@@ -95,12 +95,12 @@ export function ProcessWithAicaButton({
         disabled={isEstimating || isProcessing}
         className={`
           flex items-center ${sizeClasses[size]}
-          bg-gradient-to-r from-purple-500 to-indigo-500
+          bg-ceramic-accent
           text-white rounded-xl font-bold
-          hover:from-purple-600 hover:to-indigo-600
+          hover:bg-ceramic-accent-dark
           active:scale-95
           disabled:opacity-50 disabled:cursor-not-allowed
-          transition-all shadow-lg shadow-purple-500/20
+          transition-all shadow-lg shadow-ceramic-accent/20
           ${className}
         `}
       >

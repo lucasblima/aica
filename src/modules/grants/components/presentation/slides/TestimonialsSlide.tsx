@@ -57,11 +57,11 @@ export function TestimonialsSlide({
                   <img
                     src={testimonial.photoUrl}
                     alt={testimonial.name}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-ceramic-border"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-gray-400">
+                  <div className="w-32 h-32 rounded-full bg-ceramic-cool flex items-center justify-center">
+                    <span className="text-4xl font-bold text-ceramic-text-secondary">
                       {testimonial.name.charAt(0)}
                     </span>
                   </div>

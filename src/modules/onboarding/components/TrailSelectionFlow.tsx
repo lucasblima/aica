@@ -360,7 +360,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
                 <span
                   className={`text-sm font-semibold px-3 py-1 rounded-full ${
                     state.selectedTrails.length >= minTrailsRequired
-                      ? 'bg-green-100 text-green-700'
+                      ? 'bg-ceramic-success/10 text-ceramic-success'
                       : 'bg-amber-100 text-amber-700'
                   }`}
                 >
@@ -393,10 +393,10 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex gap-3 items-start p-4 bg-red-50 border border-red-200 rounded-lg"
+                className="flex gap-3 items-start p-4 bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg"
               >
-                <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-red-700">{state.error}</p>
+                <AlertCircle size={20} className="text-ceramic-error flex-shrink-0 mt-0.5" />
+                <p className="text-ceramic-error">{state.error}</p>
               </motion.div>
             )}
 
@@ -436,7 +436,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
             />
 
             {/* Current Trail Info */}
-            <div className="bg-white rounded-xl p-6 border border-[#E8E6E0] shadow-sm">
+            <div className="bg-ceramic-base rounded-xl p-6 border border-[#E8E6E0] shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <span
                   className="text-3xl"
@@ -465,10 +465,10 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex gap-3 items-start p-4 bg-red-50 border border-red-200 rounded-lg"
+                className="flex gap-3 items-start p-4 bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg"
               >
-                <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-red-700">{state.error}</p>
+                <AlertCircle size={20} className="text-ceramic-error flex-shrink-0 mt-0.5" />
+                <p className="text-ceramic-error">{state.error}</p>
               </motion.div>
             )}
 
@@ -487,7 +487,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
                 <button
                   onClick={skipTrail}
                   disabled={state.loading}
-                  className="px-6 py-2 text-[#6B9EFF] font-semibold hover:bg-blue-50 rounded-lg transition-all flex items-center gap-2"
+                  className="px-6 py-2 text-[#6B9EFF] font-semibold hover:bg-ceramic-info/10 rounded-lg transition-all flex items-center gap-2"
                 >
                   <SkipForward size={18} />
                   Pular Trilha
@@ -526,7 +526,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
             exit={{ opacity: 0, scale: 0.95 }}
             className="space-y-8"
           >
-            <div className="bg-white rounded-xl p-8 border border-[#E8E6E0] shadow-lg text-center">
+            <div className="bg-ceramic-base rounded-xl p-8 border border-[#E8E6E0] shadow-lg text-center">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -558,7 +558,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
                     return (
                       <div
                         key={trailId}
-                        className="flex justify-between items-center p-3 bg-white rounded border border-[#E8E6E0]"
+                        className="flex justify-between items-center p-3 bg-ceramic-base rounded border border-[#E8E6E0]"
                       >
                         <span className="font-semibold text-[#2B1B17]">{trail?.name}</span>
                         <span className="text-[#6B9EFF] font-bold">
@@ -574,10 +574,10 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-3 items-start p-4 bg-red-50 border border-red-200 rounded-lg mb-8"
+                  className="flex gap-3 items-start p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-lg mb-8"
                 >
-                  <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-700">{state.error}</p>
+                  <AlertCircle size={20} className="text-ceramic-error flex-shrink-0 mt-0.5" />
+                  <p className="text-ceramic-error">{state.error}</p>
                 </motion.div>
               )}
 
@@ -602,7 +602,7 @@ const TrailSelectionFlow: React.FC<TrailSelectionFlowProps> = ({
                   }));
                 }}
                 disabled={state.loading}
-                className="px-6 py-2 mt-4 text-[#6B9EFF] font-semibold border border-[#6B9EFF] rounded-lg hover:bg-blue-50 transition-all flex items-center gap-2 mx-auto"
+                className="px-6 py-2 mt-4 text-[#6B9EFF] font-semibold border border-[#6B9EFF] rounded-lg hover:bg-ceramic-info/10 transition-all flex items-center gap-2 mx-auto"
               >
                 <ChevronLeft size={18} />
                 Voltar para Trilhas

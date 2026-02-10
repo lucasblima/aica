@@ -100,10 +100,10 @@ export function SpaceMemberList({
   // Generate avatar background color based on member ID
   const getAvatarColor = (memberId: string): string => {
     const colors = [
-      'bg-blue-100 text-blue-600',
-      'bg-purple-100 text-purple-600',
-      'bg-green-100 text-green-600',
-      'bg-orange-100 text-orange-600',
+      'bg-ceramic-info/15 text-ceramic-info',
+      'bg-ceramic-accent/15 text-ceramic-accent',
+      'bg-ceramic-success/15 text-ceramic-success',
+      'bg-ceramic-warning/15 text-ceramic-warning',
       'bg-pink-100 text-pink-600',
       'bg-teal-100 text-teal-600',
     ];

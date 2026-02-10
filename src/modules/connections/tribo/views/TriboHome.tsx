@@ -35,9 +35,9 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-white to-ceramic-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-ceramic-base to-ceramic-50">
       {/* Header */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-border">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-4xl">🔥</span>
@@ -82,7 +82,7 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
+                <div className="bg-ceramic-base rounded-2xl border-2 border-dashed border-ceramic-border p-12 text-center">
                   <span className="text-6xl mb-4 block">📅</span>
                   <h3 className="text-lg font-semibold text-ceramic-900 mb-2">
                     Nenhum encontro agendado
@@ -119,7 +119,7 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
               </div>
 
               {recentDiscussions && recentDiscussions.length > 0 ? (
-                <div className="bg-white rounded-2xl border-2 border-ceramic-200 divide-y divide-ceramic-100">
+                <div className="bg-ceramic-base rounded-2xl border-2 border-ceramic-border divide-y divide-ceramic-100">
                   {recentDiscussions.map((discussion) => (
                     <button
                       key={discussion.id}
@@ -152,7 +152,7 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border-2 border-dashed border-ceramic-200 p-8 text-center">
+                <div className="bg-ceramic-base rounded-2xl border-2 border-dashed border-ceramic-border p-8 text-center">
                   <p className="text-ceramic-600">
                     Nenhuma discussão ainda. Inicie uma conversa!
                   </p>
@@ -184,7 +184,7 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-ceramic-200 p-6 text-center">
+                <div className="bg-ceramic-base rounded-xl border border-ceramic-border p-6 text-center">
                   <p className="text-sm text-ceramic-600">
                     Nenhuma vaquinha ativa
                   </p>
@@ -202,7 +202,7 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
                   onClick={() =>
                     navigate(`/connections/tribo/${spaceId}/discussions/new`)
                   }
-                  className="w-full p-3 bg-white border-2 border-ceramic-200 rounded-xl text-left hover:border-[#9B4D3A]/40 hover:shadow-md transition-all"
+                  className="w-full p-3 bg-ceramic-base border-2 border-ceramic-border rounded-xl text-left hover:border-[#9B4D3A]/40 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">💬</span>
@@ -216,7 +216,7 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
                   onClick={() =>
                     navigate(`/connections/tribo/${spaceId}/resources`)
                   }
-                  className="w-full p-3 bg-white border-2 border-ceramic-200 rounded-xl text-left hover:border-[#9B4D3A]/40 hover:shadow-md transition-all"
+                  className="w-full p-3 bg-ceramic-base border-2 border-ceramic-border rounded-xl text-left hover:border-[#9B4D3A]/40 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">🛠️</span>
@@ -230,7 +230,7 @@ export const TriboHome: React.FC<TriboHomeProps> = ({ spaceId, memberId }) => {
                   onClick={() =>
                     navigate(`/connections/tribo/${spaceId}/funds/new`)
                   }
-                  className="w-full p-3 bg-white border-2 border-ceramic-200 rounded-xl text-left hover:border-[#9B4D3A]/40 hover:shadow-md transition-all"
+                  className="w-full p-3 bg-ceramic-base border-2 border-ceramic-border rounded-xl text-left hover:border-[#9B4D3A]/40 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">💰</span>

@@ -83,33 +83,33 @@ const CATEGORY_CONFIG: Record<string, {
   label: string;
 }> = {
   'quebra-gelo': {
-    color: 'text-cyan-700',
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-200',
+    color: 'text-ceramic-info',
+    bgColor: 'bg-ceramic-info/10',
+    borderColor: 'border-ceramic-info/30',
     icon: Snowflake,
     emoji: '\\u2744\\ufe0f',
     label: 'Quebra-Gelo'
   },
   'geral': {
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
+    color: 'text-ceramic-info',
+    bgColor: 'bg-ceramic-info/10',
+    borderColor: 'border-ceramic-info/30',
     icon: Mic,
     emoji: '\\ud83c\\udfa4',
     label: 'Geral'
   },
   'abertura': {
-    color: 'text-green-700',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
+    color: 'text-ceramic-success',
+    bgColor: 'bg-ceramic-success/10',
+    borderColor: 'border-ceramic-success/30',
     icon: Lightbulb,
     emoji: '\\ud83d\\udca1',
     label: 'Abertura'
   },
   'aprofundamento': {
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
+    color: 'text-ceramic-accent',
+    bgColor: 'bg-ceramic-accent/10',
+    borderColor: 'border-ceramic-accent/30',
     icon: Target,
     emoji: '\\ud83c\\udfaf',
     label: 'Aprofundamento'
@@ -131,9 +131,9 @@ const CATEGORY_CONFIG: Record<string, {
     label: 'Patrocinador'
   },
   'polemicas': {
-    color: 'text-red-700',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
+    color: 'text-ceramic-error',
+    bgColor: 'bg-ceramic-error/10',
+    borderColor: 'border-ceramic-error/30',
     icon: AlertCircle,
     emoji: '\\u26a0\\ufe0f',
     label: 'Polemicas'
@@ -397,7 +397,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                   </div>
                   <div className="col-span-2">
                     <span className="text-ceramic-tertiary">Pesquisa:</span>
-                    <span className={`ml-2 font-medium ${hasResearchData ? 'text-green-600' : 'text-amber-600'}`}>
+                    <span className={`ml-2 font-medium ${hasResearchData ? 'text-ceramic-success' : 'text-amber-600'}`}>
                       {hasResearchData ? 'Dossier disponivel' : 'Sem dossier (sera gerado)'}
                     </span>
                   </div>
@@ -527,9 +527,9 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
 
               {/* Error Display */}
               {error && (
-                <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3" role="alert">
-                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <p className="text-sm text-red-700">{error}</p>
+                <div className="p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-error/30 flex items-start gap-3" role="alert">
+                  <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-sm text-ceramic-error">{error}</p>
                 </div>
               )}
 
@@ -555,11 +555,11 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
             /* Preview View */
             <div className="space-y-6">
               {/* Success Banner */}
-              <div className="p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-600" aria-hidden="true" />
+              <div className="p-4 rounded-xl bg-ceramic-success-bg border border-ceramic-success/30 flex items-center gap-3">
+                <Check className="w-5 h-5 text-ceramic-success" aria-hidden="true" />
                 <div>
-                  <p className="font-medium text-green-700">Pauta gerada com sucesso!</p>
-                  <p className="text-sm text-green-600">
+                  <p className="font-medium text-ceramic-success">Pauta gerada com sucesso!</p>
+                  <p className="text-sm text-ceramic-success">
                     {editedQuestions.length} perguntas em {questionsByCategory.size} categorias
                   </p>
                 </div>
@@ -636,7 +636,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                                         <div className="flex gap-2">
                                           <button
                                             onClick={handleSaveEdit}
-                                            className="px-3 py-1 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600"
+                                            className="px-3 py-1 text-xs bg-ceramic-success text-white rounded-lg hover:bg-ceramic-success-hover"
                                           >
                                             Salvar
                                           </button>
@@ -661,7 +661,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                                           </button>
                                           <button
                                             onClick={() => handleRemoveQuestion(q.id)}
-                                            className="p-1 rounded hover:bg-red-100 text-ceramic-tertiary hover:text-red-600"
+                                            className="p-1 rounded hover:bg-ceramic-error-bg text-ceramic-tertiary hover:text-ceramic-error"
                                             aria-label={`Remover pergunta: ${q.text.substring(0, 30)}`}
                                           >
                                             <X className="w-4 h-4" aria-hidden="true" />
@@ -686,17 +686,17 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                 <div>
                   <button
                     onClick={() => toggleSection('icebreakers')}
-                    className="w-full flex items-center justify-between p-3 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition-colors border border-cyan-200"
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-ceramic-info/10 hover:bg-ceramic-info/15 transition-colors border border-ceramic-info/30"
                     aria-expanded={expandedSections.has('icebreakers')}
                   >
-                    <span className="font-semibold text-cyan-700 flex items-center gap-2">
+                    <span className="font-semibold text-ceramic-info flex items-center gap-2">
                       <Snowflake className="w-4 h-4" aria-hidden="true" />
                       Quebra-Gelo ({generatedPauta.iceBreakers.length})
                     </span>
                     {expandedSections.has('icebreakers') ? (
-                      <ChevronUp className="w-4 h-4 text-cyan-500" aria-hidden="true" />
+                      <ChevronUp className="w-4 h-4 text-ceramic-info" aria-hidden="true" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-cyan-500" aria-hidden="true" />
+                      <ChevronDown className="w-4 h-4 text-ceramic-info" aria-hidden="true" />
                     )}
                   </button>
 
@@ -710,7 +710,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                       >
                         <div className="mt-3 space-y-2">
                           {generatedPauta.iceBreakers.map((ib, idx) => (
-                            <div key={idx} className="p-3 rounded-lg bg-cyan-50 border border-cyan-200 text-sm text-cyan-800">
+                            <div key={idx} className="p-3 rounded-lg bg-ceramic-info/10 border border-ceramic-info/30 text-sm text-ceramic-info">
                               {ib}
                             </div>
                           ))}
@@ -726,17 +726,17 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                 <div>
                   <button
                     onClick={() => toggleSection('research')}
-                    className="w-full flex items-center justify-between p-3 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors border border-purple-200"
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-ceramic-accent/10 hover:bg-ceramic-accent/20 transition-colors border border-ceramic-accent/30"
                     aria-expanded={expandedSections.has('research')}
                   >
-                    <span className="font-semibold text-purple-700 flex items-center gap-2">
+                    <span className="font-semibold text-ceramic-accent flex items-center gap-2">
                       <Sparkles className="w-4 h-4" aria-hidden="true" />
                       Resumo da Pesquisa
                     </span>
                     {expandedSections.has('research') ? (
-                      <ChevronUp className="w-4 h-4 text-purple-500" aria-hidden="true" />
+                      <ChevronUp className="w-4 h-4 text-ceramic-accent" aria-hidden="true" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-purple-500" aria-hidden="true" />
+                      <ChevronDown className="w-4 h-4 text-ceramic-accent" aria-hidden="true" />
                     )}
                   </button>
 
@@ -748,7 +748,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-3 p-4 rounded-lg bg-purple-50 border border-purple-200 text-sm text-purple-800">
+                        <div className="mt-3 p-4 rounded-lg bg-ceramic-accent/10 border border-ceramic-accent/30 text-sm text-ceramic-accent">
                           {generatedPauta.researchSummary}
                         </div>
                       </motion.div>
@@ -807,7 +807,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
               <button
                 onClick={handleSavePauta}
                 disabled={editedQuestions.length === 0}
-                className="px-6 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 rounded-lg bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white font-bold hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Save className="w-4 h-4" aria-hidden="true" />
                 Usar esta Pauta

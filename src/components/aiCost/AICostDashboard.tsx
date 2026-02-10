@@ -95,9 +95,9 @@ export const AICostDashboard: React.FC<AICostDashboardProps> = ({ userId, onBack
     return (
       <div className="h-screen bg-ceramic-base flex items-center justify-center">
         <div className="animate-pulse space-y-4 p-8">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-6" />
-          <div className="h-32 bg-gray-200 rounded-2xl mb-4" />
-          <div className="h-64 bg-gray-200 rounded-2xl" />
+          <div className="h-8 bg-ceramic-cool rounded w-48 mb-6" />
+          <div className="h-32 bg-ceramic-cool rounded-2xl mb-4" />
+          <div className="h-64 bg-ceramic-cool rounded-2xl" />
         </div>
       </div>
     );

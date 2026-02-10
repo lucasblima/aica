@@ -84,13 +84,13 @@ export function FloatingTaskPanel({
   const getPriorityColor = (priority: GrantTask['priority']) => {
     switch (priority) {
       case 'critical':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'text-ceramic-error bg-ceramic-error-bg border-ceramic-error/20';
       case 'high':
         return 'text-orange-600 bg-orange-50 border-orange-200';
       case 'medium':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
+        return 'text-ceramic-info bg-ceramic-info-bg border-ceramic-border';
       case 'low':
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-ceramic-text-secondary bg-ceramic-base border-ceramic-border';
     }
   };
 
@@ -136,12 +136,12 @@ export function FloatingTaskPanel({
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
       className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)]"
     >
-      <div className="ceramic-card border-2 border-green-500/20 shadow-2xl">
+      <div className="ceramic-card border-2 border-ceramic-success/20 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-ceramic-text-secondary/10">
           <div className="flex items-center gap-2">
             <div className="ceramic-concave p-2 rounded-lg">
-              <Lightbulb className="w-4 h-4 text-green-600" />
+              <Lightbulb className="w-4 h-4 text-ceramic-success" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-ceramic-text-primary">
@@ -236,9 +236,9 @@ export function FloatingTaskPanel({
                         title="Marcar como concluída"
                       >
                         {completingTask === task.id ? (
-                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-ceramic-success border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          <CheckCircle2 className="w-4 h-4 text-ceramic-success" />
                         )}
                       </button>
                     </div>

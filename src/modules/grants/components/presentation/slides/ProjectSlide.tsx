@@ -44,7 +44,7 @@ export function ProjectSlide({
           placeholder="Nome do Projeto"
         />
 
-        <div className="flex gap-8 mt-6 text-gray-600 dark:text-gray-400">
+        <div className="flex gap-8 mt-6 text-ceramic-text-secondary dark:text-ceramic-text-secondary">
           {(content.duration || editMode) && (
             <EditableText
               value={content.duration || ''}
@@ -96,8 +96,8 @@ export function ProjectSlide({
           {content.objectives.map((objective, index) => (
             <div key={index} className="card">
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-amber-600">
                     {index + 1}
                   </span>
                 </div>

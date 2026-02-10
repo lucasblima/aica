@@ -81,10 +81,10 @@ export function ReadyStep({
             <Sparkles
               className={`w-4 h-4 ${
                 i % 3 === 0
-                  ? 'text-yellow-400'
+                  ? 'text-ceramic-warning'
                   : i % 3 === 1
-                  ? 'text-green-400'
-                  : 'text-blue-400'
+                  ? 'text-ceramic-success'
+                  : 'text-ceramic-info'
               }`}
             />
           </motion.div>
@@ -98,7 +98,7 @@ export function ReadyStep({
             repeatType: 'reverse',
             duration: 0.5,
           }}
-          className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-yellow-300 to-orange-400 shadow-lg shadow-orange-200"
+          className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 shadow-lg shadow-amber-200"
         >
           <PartyPopper className="w-12 h-12 text-white" />
         </motion.div>
@@ -131,7 +131,7 @@ export function ReadyStep({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200"
+          className="p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl border border-amber-200"
         >
           <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
             <Coins className="w-5 h-5 text-amber-600" />
@@ -145,13 +145,13 @@ export function ReadyStep({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200"
+          className="p-4 bg-gradient-to-br from-ceramic-info/10 to-ceramic-accent/10 rounded-xl border border-ceramic-info/30"
         >
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
-            <Users className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center mx-auto mb-2">
+            <Users className="w-5 h-5 text-ceramic-info" />
           </div>
-          <p className="text-2xl font-bold text-blue-900">{contactsCount}</p>
-          <p className="text-xs text-blue-700">contatos</p>
+          <p className="text-2xl font-bold text-ceramic-text-primary">{contactsCount}</p>
+          <p className="text-xs text-ceramic-info">contatos</p>
         </motion.div>
 
         {/* Groups */}
@@ -159,13 +159,13 @@ export function ReadyStep({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200"
+          className="p-4 bg-gradient-to-br from-ceramic-accent/10 to-ceramic-accent/5 rounded-xl border border-ceramic-accent/30"
         >
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
-            <MessageSquare className="w-5 h-5 text-purple-600" />
+          <div className="w-10 h-10 rounded-full bg-ceramic-accent/10 flex items-center justify-center mx-auto mb-2">
+            <MessageSquare className="w-5 h-5 text-ceramic-accent" />
           </div>
-          <p className="text-2xl font-bold text-purple-900">{groupsCount}</p>
-          <p className="text-xs text-purple-700">grupos</p>
+          <p className="text-2xl font-bold text-ceramic-text-primary">{groupsCount}</p>
+          <p className="text-xs text-ceramic-accent">grupos</p>
         </motion.div>
       </motion.div>
 
@@ -190,7 +190,7 @@ export function ReadyStep({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1 }}
         onClick={onStart}
-        className="w-full max-w-sm flex items-center justify-center gap-2 px-6 py-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300"
+        className="w-full max-w-sm flex items-center justify-center gap-2 px-6 py-4 bg-ceramic-success hover:bg-ceramic-success/80 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-ceramic-success/20 hover:shadow-xl hover:shadow-ceramic-success/30"
       >
         Começar a usar
         <ArrowRight className="w-5 h-5" />
