@@ -1,15 +1,16 @@
 /**
  * PatternDashboard Component
  * Container that orchestrates pattern visualization sub-components (Issue #208)
+ * Includes automatic backfill progress banner for historic moments
  */
 
 import React, { useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { useJourneyPatterns } from '../../hooks/useJourneyPatterns'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useJourneyPatterns, BackfillProgress } from '../../hooks/useJourneyPatterns'
 import { EmotionTrendChart } from './EmotionTrendChart'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { ThemeClusters } from './ThemeClusters'
-import { ChartBarIcon } from '@heroicons/react/24/solid'
+import { ChartBarIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/24/solid'
 
 interface PatternDashboardProps {
   userId?: string
@@ -28,8 +29,73 @@ function PatternDashboardSkeleton() {
   )
 }
 
+function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onStop: () => void }) {
+  if (!progress.isRunning && progress.total === 0) return null
+
+  const percentage = progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0
+  const isDone = !progress.isRunning && progress.processed > 0
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        exit={{ opacity: 0, height: 0 }}
+        className={`ceramic-tile p-4 border-l-4 ${isDone ? 'border-l-green-500 bg-green-50/50' : 'border-l-purple-500 bg-purple-50/50'}`}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <SparklesIcon className={`h-4 w-4 ${isDone ? 'text-green-600' : 'text-purple-600'}`} />
+            <span className="text-sm font-medium text-[#5C554B]">
+              {isDone
+                ? `Analise concluida: ${progress.processed - progress.failed} momentos atualizados`
+                : `Analisando historico com IA... ${progress.processed} de ${progress.total}`
+              }
+            </span>
+          </div>
+          {progress.isRunning && (
+            <button
+              onClick={onStop}
+              className="p-1 hover:bg-[#E0DDD5] rounded transition-colors"
+              title="Parar analise"
+            >
+              <XMarkIcon className="h-4 w-4 text-[#948D82]" />
+            </button>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        {progress.total > 0 && (
+          <div className="w-full bg-[#E0DDD5] rounded-full h-1.5">
+            <motion.div
+              className={`h-1.5 rounded-full ${isDone ? 'bg-green-500' : 'bg-purple-500'}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${percentage}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        )}
+
+        {progress.failed > 0 && (
+          <p className="text-xs text-[#948D82] mt-1">
+            {progress.failed} momento(s) nao puderam ser analisados
+          </p>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 export function PatternDashboard({ userId }: PatternDashboardProps) {
-  const { emotionTrends, activityData, topThemes, isLoading, refresh } = useJourneyPatterns(userId)
+  const {
+    emotionTrends,
+    activityData,
+    topThemes,
+    isLoading,
+    backfillProgress,
+    stopBackfill,
+    refresh,
+  } = useJourneyPatterns(userId)
 
   // Fetch patterns when component mounts (lazy — only shown on insights tab)
   useEffect(() => {
@@ -41,14 +107,15 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
   }
 
   const hasData = emotionTrends.length > 0 || activityData.length > 0 || topThemes.length > 0
+  const showBackfillBanner = backfillProgress.isRunning || (backfillProgress.processed > 0 && backfillProgress.total > 0)
 
-  if (!hasData) {
+  if (!hasData && !showBackfillBanner) {
     return (
       <div className="ceramic-tile p-8 text-center">
         <ChartBarIcon className="h-10 w-10 text-[#C4A574] mx-auto mb-3" />
-        <h4 className="text-sm font-semibold text-[#5C554B] mb-1">Padrões em Construção</h4>
+        <h4 className="text-sm font-semibold text-[#5C554B] mb-1">Padroes em Construcao</h4>
         <p className="text-xs text-[#948D82] max-w-sm mx-auto">
-          Continue registrando momentos e respondendo perguntas. Seus padrões aparecerão aqui conforme dados se acumulam.
+          Continue registrando momentos e respondendo perguntas. Seus padroes aparecerao aqui conforme dados se acumulam.
         </p>
       </div>
     )
@@ -56,7 +123,12 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-base font-semibold text-[#5C554B]">Padrões da Jornada</h3>
+      <h3 className="text-base font-semibold text-[#5C554B]">Padroes da Jornada</h3>
+
+      {/* Backfill progress banner */}
+      {showBackfillBanner && (
+        <BackfillBanner progress={backfillProgress} onStop={stopBackfill} />
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
