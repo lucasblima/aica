@@ -56,14 +56,18 @@ export interface WeeklySummaryWithReflection extends WeeklySummary {
   cp_earned: number
 }
 
-// Helper: Get current ISO week number
+// Helper: Get current ISO week number (ISO-8601: weeks start Monday)
 export function getCurrentWeekNumber(): { week: number; year: number } {
   const now = new Date()
-  const start = new Date(now.getFullYear(), 0, 1)
-  const diff = now.getTime() - start.getTime()
-  const oneWeek = 1000 * 60 * 60 * 24 * 7
-  const week = Math.ceil(diff / oneWeek)
-  return { week, year: now.getFullYear() }
+  const target = new Date(now.valueOf())
+  // ISO week: adjust to nearest Thursday (ISO weeks are defined by Thursday)
+  const dayNr = (now.getDay() + 6) % 7 // Monday=0, Sunday=6
+  target.setDate(target.getDate() - dayNr + 3) // Nearest Thursday
+  const year = target.getFullYear()
+  const jan4 = new Date(year, 0, 4) // Jan 4 is always in week 1
+  const diff = target.getTime() - jan4.getTime()
+  const week = 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000))
+  return { week, year }
 }
 
 // Helper: Get week date range

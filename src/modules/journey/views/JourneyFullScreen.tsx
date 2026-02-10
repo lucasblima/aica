@@ -248,16 +248,20 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       }
 
       // Generate post-capture insight (async, don't wait)
-      const recentMoments = moments.slice(0, 7).map(m => ({
+      // Use result + existing moments to avoid race condition (moments state may not include the new one yet)
+      const newMomentEntry = { content: result.content || input.content || '', tags: result.tags || [], created_at: result.created_at }
+      const recentMoments = [newMomentEntry, ...moments.slice(0, 6).map(m => ({
         content: m.content || '',
         tags: m.tags || [],
         created_at: m.created_at
-      }))
+      }))]
 
       generatePostCaptureInsight(input.content || '', recentMoments)
         .then((insight) => {
-          setCurrentInsight(insight)
-          setShowInsight(true)
+          if (insight && insight.message) {
+            setCurrentInsight(insight)
+            setShowInsight(true)
+          }
         })
         .catch((error) => {
           log.warn('Failed to generate post-capture insight (non-critical):', error)
