@@ -195,7 +195,7 @@ async function handleQueryCorpus(
     // Obter documentos do corpus
     const { data: documents, error: docsError } = await supabaseClient
       .from('file_search_documents')
-      .select('gemini_file_name')
+      .select('gemini_file_name, mime_type')
       .eq('corpus_id', corpusId)
       .eq('user_id', userId)
       .eq('indexing_status', 'completed');
@@ -212,9 +212,7 @@ async function handleQueryCorpus(
       };
     }
 
-    const fileNames = documents.map((doc: any) => doc.gemini_file_name);
-
-    console.log(`[file-search-corpus] Querying ${fileNames.length} documents`);
+    console.log(`[file-search-corpus] Querying ${documents.length} documents`);
 
     // Fazer query usando generateContent com file references
     const requestBody = {
@@ -223,10 +221,10 @@ async function handleQueryCorpus(
           role: 'user',
           parts: [
             { text: query },
-            ...fileNames.map((fileName: string) => ({
+            ...documents.map((doc: any) => ({
               file_data: {
-                file_uri: `https://generativelanguage.googleapis.com/v1beta/${fileName}`,
-                mime_type: 'application/pdf', // Ajustar conforme necessário
+                file_uri: `https://generativelanguage.googleapis.com/v1beta/${doc.gemini_file_name}`,
+                mime_type: doc.mime_type || 'text/plain',
               },
             })),
           ],
