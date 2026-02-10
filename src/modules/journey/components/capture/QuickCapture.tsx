@@ -47,6 +47,7 @@ export function QuickCapture({
   const [content, setContent] = useState(initialContent);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [wasAudioRecorded, setWasAudioRecorded] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -105,9 +106,11 @@ export function QuickCapture({
       const text = await transcribeAudio(blob);
       if (text) {
         setContent(prev => prev ? `${prev}\n\n${text}` : text);
+        setWasAudioRecorded(true);
       }
     } catch (err) {
       log.error('Audio transcription failed:', err);
+      alert('Erro na transcrição do áudio. Tente novamente ou digite o texto.');
     } finally {
       setIsTranscribing(false);
     }
@@ -125,12 +128,13 @@ export function QuickCapture({
       setIsSubmitting(true);
 
       await onSubmit({
-        type: 'text',
+        type: wasAudioRecorded ? 'audio' : 'text',
         content: content.trim(),
       });
 
       // Reset form
       setContent('');
+      setWasAudioRecorded(false);
       setAiSuggestion(null);
     } catch (error) {
       log.error('Error submitting moment:', error);

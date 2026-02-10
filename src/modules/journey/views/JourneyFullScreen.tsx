@@ -178,7 +178,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
-  const { showAnimation, pointsEarned, leveledUp, triggerAnimation } = useCPAnimation()
+  const { showAnimation, pointsEarned, leveledUp, newLevel, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
 
   // File Search integration
@@ -220,12 +220,12 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
     try {
       const result = await createMoment(input)
 
-      // Trigger CP animation immediately
+      // Trigger CP animation with real level-up data from RPC
       triggerAnimation(
         5,
         result.leveled_up,
         result.leveled_up
-          ? { level: stats?.level || 1, name: stats?.level_name || 'Observador' }
+          ? { level: result.new_level || stats?.level || 1, name: result.level_name || stats?.level_name || 'Observador' }
           : undefined
       )
 
@@ -528,7 +528,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
             </div>
             {leveledUp && (
               <div className="text-lg font-medium text-amber-700">
-                Level Up!
+                Level Up! {newLevel ? newLevel.name : ''}
               </div>
             )}
           </div>

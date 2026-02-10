@@ -59,39 +59,40 @@ export async function createMoment(
         log.warn('Background moment analysis failed (non-critical):', error)
       })
 
-    // Award CP and update streak in BACKGROUND (non-blocking, fire-and-forget)
-    // Return moment immediately to show modal faster
+    // Award CP (awaited ~50ms to get real leveled_up data)
     const momentId = moment.id
 
-    // Fire-and-forget: Process gamification in background
-    Promise.allSettled([
-      supabase.rpc('award_consciousness_points', {
+    const { data: cpResult, error: cpError } = await supabase.rpc(
+      'award_consciousness_points',
+      {
         p_user_id: userId,
         p_points: 5,
         p_reason: 'moment_registered',
         p_reference_id: momentId,
         p_reference_type: 'moment',
-      }),
-      supabase.rpc('update_moment_streak', {
-        p_user_id: userId
-      })
-    ]).then(([cpResult, streakResult]) => {
-      if (cpResult.status === 'rejected') {
-        log.error('Error awarding CP:', cpResult.reason)
       }
-      if (streakResult.status === 'rejected') {
-        log.error('Error updating streak:', streakResult.reason)
+    )
+
+    if (cpError) {
+      log.error('Error awarding CP:', cpError)
+    }
+
+    // Update streak in background (fire-and-forget, no UX impact)
+    supabase.rpc('update_moment_streak', {
+      p_user_id: userId
+    }).then(({ error: streakError }) => {
+      if (streakError) {
+        log.error('Error updating streak:', streakError)
       }
-      log.debug('Background gamification completed for moment:', momentId)
-    }).catch((error) => {
-      log.warn('Background gamification failed (non-critical):', error)
     })
 
-    // Return immediately with estimated values (actual CP processed in background)
+    // Return with real values from RPC
     return {
       ...moment,
-      cp_earned: 5, // Fixed value, actual total calculated in background
-      leveled_up: false, // Conservative default, level up animation may appear later
+      cp_earned: 5,
+      leveled_up: cpResult?.leveled_up || false,
+      new_level: cpResult?.level,
+      level_name: cpResult?.level_name,
     }
   } catch (error) {
     log.error('Error creating moment:', error)

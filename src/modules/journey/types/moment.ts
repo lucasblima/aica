@@ -40,6 +40,8 @@ export interface CreateMomentInput {
 export interface MomentWithCP extends Moment {
   cp_earned: number
   leveled_up: boolean
+  new_level?: number
+  level_name?: string
 }
 
 export interface MomentFilter {
