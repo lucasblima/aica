@@ -10,6 +10,8 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'https://aica-staging-5562559893.southamerica-east1.run.app',
   'https://aica-5562559893.southamerica-east1.run.app',
+  'https://dev.aica.guru',
+  'https://aica.guru',
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {
