@@ -36,33 +36,33 @@ export function EmotionPicker({ value, onChange, size = 'md' }: EmotionPickerPro
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 p-4 rounded-lg border-2 ${
           selectedEmotion
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 bg-white hover:border-gray-400'
+            ? 'border-amber-500 bg-ceramic-warm'
+            : 'border-ceramic-text-secondary/20 bg-ceramic-base hover:border-ceramic-text-secondary/30'
         } transition-all`}
       >
         {selectedEmotion ? (
           <>
             <span className={sizeClasses[size]}>{selectedEmotion.emoji}</span>
-            <span className="text-lg font-medium text-gray-900">
+            <span className="text-lg font-medium text-ceramic-text-primary">
               {selectedEmotion.name}
             </span>
           </>
         ) : (
-          <span className="text-gray-500">Como você está se sentindo?</span>
+          <span className="text-ceramic-text-secondary">Como você está se sentindo?</span>
         )}
       </button>
 
       {/* Emotion picker dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden flex flex-col">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-ceramic-base border border-ceramic-text-secondary/10 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden flex flex-col">
           {/* Search */}
-          <div className="p-3 border-b border-gray-200">
+          <div className="p-3 border-b border-ceramic-text-secondary/10">
             <input
               type="text"
               placeholder="Buscar emoção..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 border border-ceramic-text-secondary/20 rounded-md focus:ring-2 focus:ring-ceramic-accent focus:outline-none"
               autoFocus
             />
           </div>
@@ -81,18 +81,18 @@ export function EmotionPicker({ value, onChange, size = 'md' }: EmotionPickerPro
                   }}
                   className={`flex flex-col items-center gap-1 p-3 rounded-lg transition-all ${
                     value === emotion.value
-                      ? 'bg-blue-100 border-2 border-blue-500'
-                      : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                      ? 'bg-ceramic-warm border-2 border-amber-500'
+                      : 'bg-ceramic-base hover:bg-ceramic-cool border-2 border-transparent'
                   }`}
                 >
                   <span className="text-3xl">{emotion.emoji}</span>
-                  <span className="text-xs text-gray-700">{emotion.name}</span>
+                  <span className="text-xs text-ceramic-text-primary">{emotion.name}</span>
                 </button>
               ))}
             </div>
 
             {filteredEmotions.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-ceramic-text-secondary">
                 Nenhuma emoção encontrada
               </div>
             )}

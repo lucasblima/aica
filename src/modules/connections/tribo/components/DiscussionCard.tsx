@@ -10,10 +10,10 @@ interface DiscussionCardProps {
 }
 
 const categoryColors: Record<string, string> = {
-  announcement: 'bg-blue-50 text-blue-700 border-blue-200',
-  question: 'bg-purple-50 text-purple-700 border-purple-200',
-  decision: 'bg-orange-50 text-orange-700 border-orange-200',
-  general: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  announcement: 'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/30',
+  question: 'bg-ceramic-accent/10 text-ceramic-accent border-ceramic-accent/30',
+  decision: 'bg-ceramic-warning/10 text-ceramic-warning border-ceramic-warning/30',
+  general: 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/20',
 };
 
 const categoryLabels: Record<string, string> = {
@@ -39,7 +39,7 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className="ceramic-card p-5 rounded-2xl cursor-pointer hover:scale-[1.01] transition-all duration-200 border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-lg"
+      className="ceramic-card p-5 rounded-2xl cursor-pointer hover:scale-[1.01] transition-all duration-200 border-2 border-ceramic-success/15 hover:border-ceramic-success/30 hover:shadow-lg"
     >
       {/* Header: Author & Category */}
       <div className="flex items-center justify-between mb-3">
@@ -48,10 +48,10 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
             <img
               src={discussion.author.avatarUrl}
               alt={discussion.author.displayName}
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-100"
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-ceramic-success/15"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center ring-2 ring-emerald-100">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ceramic-success to-ceramic-success/80 flex items-center justify-center ring-2 ring-ceramic-success/15">
               <span className="text-white text-xs font-bold">
                 {discussion.author?.displayName?.charAt(0).toUpperCase() || '?'}
               </span>
@@ -76,8 +76,8 @@ export const DiscussionCard: React.FC<DiscussionCardProps> = ({
       {/* Footer: Reply Count & Last Activity */}
       <div className="flex items-center justify-between text-xs text-ceramic-text-secondary">
         <div className="flex items-center gap-1.5">
-          <MessageCircle className="w-4 h-4 text-emerald-600" />
-          <span className="font-medium text-emerald-700">
+          <MessageCircle className="w-4 h-4 text-ceramic-success" />
+          <span className="font-medium text-ceramic-success">
             {discussion.replyCount} {discussion.replyCount === 1 ? 'resposta' : 'respostas'}
           </span>
         </div>

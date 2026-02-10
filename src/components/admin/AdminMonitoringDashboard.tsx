@@ -90,9 +90,9 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
     return (
       <div className="h-screen bg-ceramic-base flex items-center justify-center">
         <div className="animate-pulse space-y-4 p-8">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-6" />
-          <div className="h-32 bg-gray-200 rounded-2xl mb-4" />
-          <div className="h-64 bg-gray-200 rounded-2xl" />
+          <div className="h-8 bg-ceramic-cool rounded w-48 mb-6" />
+          <div className="h-32 bg-ceramic-cool rounded-2xl mb-4" />
+          <div className="h-64 bg-ceramic-cool rounded-2xl" />
         </div>
       </div>
     );
@@ -124,9 +124,9 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-green-700">Todos os sistemas operacionais</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-ceramic-success/10 rounded-lg">
+              <div className="w-2 h-2 bg-ceramic-success/100 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-ceramic-success">Todos os sistemas operacionais</span>
             </div>
           </div>
         </div>
@@ -150,7 +150,7 @@ export const AdminMonitoringDashboard: React.FC<AdminMonitoringDashboardProps> =
                   }
                 `}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-ceramic-accent' : 'text-gray-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-ceramic-accent' : 'text-ceramic-text-tertiary'}`} />
                 <span className="text-sm font-bold">{tab.label}</span>
               </button>
             );
@@ -206,8 +206,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ userId, summary, dailyCosts, 
           className="ceramic-card p-4"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <Database className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center">
+              <Database className="w-5 h-5 text-ceramic-info" />
             </div>
             <div>
               <p className="text-xs text-ceramic-text-secondary">Cache</p>
@@ -224,8 +224,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ userId, summary, dailyCosts, 
           className="ceramic-card p-4"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 rounded-full bg-ceramic-success/10 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-ceramic-success" />
             </div>
             <div>
               <p className="text-xs text-ceramic-text-secondary">Budget Mensal</p>
@@ -246,8 +246,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ userId, summary, dailyCosts, 
           className="ceramic-card p-4"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-              <FileSearch className="w-5 h-5 text-purple-600" />
+            <div className="w-10 h-10 rounded-full bg-ceramic-accent/10 flex items-center justify-center">
+              <FileSearch className="w-5 h-5 text-ceramic-accent" />
             </div>
             <div>
               <p className="text-xs text-ceramic-text-secondary">File Search</p>
@@ -264,8 +264,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ userId, summary, dailyCosts, 
           className="ceramic-card p-4"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 rounded-full bg-ceramic-warning/10 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-ceramic-warning" />
             </div>
             <div>
               <p className="text-xs text-ceramic-text-secondary">Performance</p>
@@ -311,7 +311,7 @@ const CacheTab: React.FC = () => {
         <a
           href="/docs/FILE_SEARCH_CACHE_STRATEGY.md"
           target="_blank"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-ceramic-info text-white rounded-lg hover:bg-ceramic-info/90 transition-colors"
         >
           <FileSearch className="w-4 h-4" />
           <span className="text-sm font-medium">Ver Documentação</span>
@@ -423,34 +423,34 @@ const HealthTab: React.FC<HealthTabProps> = ({ userId }) => {
                 transition={{ delay: index * 0.1 }}
                 className={`p-4 rounded-xl border-2 ${
                   isHealthy
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200'
+                    ? 'bg-ceramic-success/10 border-ceramic-success/20'
+                    : 'bg-ceramic-error/10 border-ceramic-error/20'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-10 h-10 rounded-full ${
-                        isHealthy ? 'bg-green-100' : 'bg-red-100'
+                        isHealthy ? 'bg-ceramic-success/10' : 'bg-ceramic-error/10'
                       } flex items-center justify-center`}
                     >
                       <Icon
                         className={`w-5 h-5 ${
-                          isHealthy ? 'text-green-600' : 'text-red-600'
+                          isHealthy ? 'text-ceramic-success' : 'text-ceramic-error'
                         }`}
                       />
                     </div>
                     <div>
                       <h4
                         className={`font-bold ${
-                          isHealthy ? 'text-green-900' : 'text-red-900'
+                          isHealthy ? 'text-ceramic-success' : 'text-ceramic-error'
                         }`}
                       >
                         {check.name}
                       </h4>
                       <p
                         className={`text-sm ${
-                          isHealthy ? 'text-green-600' : 'text-red-600'
+                          isHealthy ? 'text-ceramic-success' : 'text-ceramic-error'
                         }`}
                       >
                         {check.message}
@@ -459,9 +459,9 @@ const HealthTab: React.FC<HealthTabProps> = ({ userId }) => {
                   </div>
 
                   {isHealthy ? (
-                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <CheckCircle className="w-6 h-6 text-ceramic-success" />
                   ) : (
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                    <AlertTriangle className="w-6 h-6 text-ceramic-error" />
                   )}
                 </div>
               </motion.div>
@@ -477,15 +477,15 @@ const HealthTab: React.FC<HealthTabProps> = ({ userId }) => {
         </h3>
         <ul className="space-y-2">
           <li className="flex items-start gap-2 text-sm text-ceramic-text-secondary">
-            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0 mt-0.5" />
             <span>Cache está otimizado - hit rate acima de 70%</span>
           </li>
           <li className="flex items-start gap-2 text-sm text-ceramic-text-secondary">
-            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0 mt-0.5" />
             <span>Budget de IA configurado corretamente</span>
           </li>
           <li className="flex items-start gap-2 text-sm text-ceramic-text-secondary">
-            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0 mt-0.5" />
             <span>File Search operando com performance ideal</span>
           </li>
         </ul>

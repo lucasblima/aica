@@ -34,7 +34,7 @@ export const ContextChip: React.FC<ContextChipProps> = ({
       disabled={isLoading}
       className="
         group flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full
-        bg-white/80 border border-white/60
+        bg-ceramic-base/80 border border-white/60
         shadow-sm hover:shadow-md
         hover:scale-[1.02] active:scale-[0.98]
         disabled:opacity-50 disabled:hover:scale-100
@@ -45,8 +45,8 @@ export const ContextChip: React.FC<ContextChipProps> = ({
       <div className={`
         w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0
         ${type === 'edital'
-          ? 'bg-purple-100 text-purple-600'
-          : 'bg-blue-100 text-blue-600'}
+          ? 'bg-ceramic-accent/15 text-ceramic-accent'
+          : 'bg-ceramic-info-bg text-ceramic-info'}
       `}>
         {isLoading ? (
           <Loader2 size={10} className="animate-spin sm:w-3 sm:h-3" />
@@ -72,7 +72,7 @@ export const ContextChip: React.FC<ContextChipProps> = ({
 
       {/* Status Indicator */}
       {isAvailable && (
-        <CheckCircle2 size={10} className="text-green-500 flex-shrink-0 sm:w-3 sm:h-3" />
+        <CheckCircle2 size={10} className="text-ceramic-success flex-shrink-0 sm:w-3 sm:h-3" />
       )}
     </button>
   );

@@ -232,7 +232,7 @@ export default function Home({
                            title="Finanças"
                            icon={Wallet}
                            color="emerald"
-                           accentColor="bg-emerald-50 border-emerald-100 text-emerald-600"
+                           accentColor="bg-ceramic-success/10 border-ceramic-success/20 text-ceramic-success"
                         />
                      </motion.div>
                   )}
@@ -268,7 +268,7 @@ export default function Home({
                         title="Saúde"
                         icon={Heart}
                         color="orange"
-                        accentColor="bg-orange-50 border-orange-100 text-orange-600"
+                        accentColor="bg-ceramic-warning/10 border-ceramic-warning/20 text-ceramic-warning"
                      />
                   </motion.div>
 
@@ -285,7 +285,7 @@ export default function Home({
                         title="Educação"
                         icon={BookOpen}
                         color="blue"
-                        accentColor="bg-blue-50 border-blue-100 text-blue-600"
+                        accentColor="bg-ceramic-info/10 border-ceramic-info/20 text-ceramic-info"
                      />
                   </motion.div>
 
@@ -302,7 +302,7 @@ export default function Home({
                         title="Jurídico"
                         icon={Scale}
                         color="slate"
-                        accentColor="bg-slate-50 border-slate-100 text-slate-600"
+                        accentColor="bg-ceramic-text-secondary/10 border-ceramic-text-secondary/20 text-ceramic-text-secondary"
                      />
                   </motion.div>
 
@@ -319,7 +319,7 @@ export default function Home({
                         title="Profissional"
                         icon={Briefcase}
                         color="indigo"
-                        accentColor="bg-indigo-50 border-indigo-100 text-indigo-600"
+                        accentColor="bg-ceramic-accent/10 border-ceramic-accent/20 text-ceramic-accent"
                      />
                   </motion.div>
                </div>
@@ -348,11 +348,11 @@ export default function Home({
                      onClick={() => onNavigateToView('connections')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                   >
-                     <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
+                     <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-ceramic-info opacity-10 group-hover:scale-110 transition-transform duration-500" />
                      <div className="relative z-10 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                            <div className="ceramic-inset p-2">
-                              <Building2 className="w-5 h-5 text-blue-600" />
+                              <Building2 className="w-5 h-5 text-ceramic-info" />
                            </div>
                            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
                         </div>
@@ -391,11 +391,11 @@ export default function Home({
                         background: 'linear-gradient(135deg, #F0EFE9 0%, #F5E6F0 100%)'
                      }}
                   >
-                     <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-purple-200 opacity-10 group-hover:scale-110 transition-transform duration-500" />
+                     <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-ceramic-warning opacity-10 group-hover:scale-110 transition-transform duration-500" />
                      <div className="relative z-10 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                            <div className="ceramic-inset p-2">
-                              <Mic className="w-5 h-5 text-purple-600" />
+                              <Mic className="w-5 h-5 text-ceramic-warning" />
                            </div>
                            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Studio</span>
                         </div>
@@ -481,7 +481,7 @@ export default function Home({
                         onClick={onCreateAssociation}
                         className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group"
                      >
-                        <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <div className="w-8 h-8 rounded-full bg-ceramic-base/50 flex items-center justify-center group-hover:scale-110 transition-transform">
                            <Plus className="w-5 h-5" />
                         </div>
                         <span className="font-bold text-sm">Nova Associação</span>

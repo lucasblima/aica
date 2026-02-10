@@ -105,7 +105,7 @@ export function JourneyHeroCard({
             transition={{ type: 'spring', stiffness: 300, delay: 0.3 }}
             data-testid="journey-hero-streak"
           >
-            <Flame className="h-4 w-4 text-orange-500" />
+            <Flame className="h-4 w-4 text-ceramic-warning" />
             <span className="text-xs font-bold text-ceramic-text-primary">
               {stats!.current_streak} dias
             </span>
@@ -241,7 +241,7 @@ export function JourneyHeroCard({
         {/* Daily Question CTA */}
         {hasUnansweredQuestion && (
           <motion.div
-            className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 cursor-pointer group"
+            className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200/50 cursor-pointer group"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}

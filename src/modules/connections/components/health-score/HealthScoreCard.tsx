@@ -94,7 +94,7 @@ function ComponentBar({ label, value, maxValue, icon, color }: ComponentBarProps
           {value.toFixed(1)}/{maxValue}
         </span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-ceramic-base rounded-full overflow-hidden">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: color }}
@@ -111,22 +111,22 @@ function TrendIndicator({ trend, delta }: { trend: HealthScoreTrend; delta?: num
   const config = {
     improving: {
       icon: TrendingUp,
-      color: '#22C55E',
+      color: '#6B7B5C',     // ceramic-success
       label: 'Melhorando',
     },
     declining: {
       icon: TrendingDown,
-      color: '#EF4444',
+      color: '#9B4D3A',     // ceramic-error
       label: 'Declinando',
     },
     stable: {
       icon: Minus,
-      color: '#6B7280',
+      color: '#948D82',     // ceramic-text-secondary
       label: 'Estável',
     },
     new: {
       icon: Sparkles,
-      color: '#8B5CF6',
+      color: '#8B7355',     // ceramic-accent
       label: 'Novo',
     },
   };
@@ -174,11 +174,11 @@ export function HealthScoreCard({
 
   // Component colors
   const componentColors = {
-    frequency: '#3B82F6',   // blue-500
-    recency: '#10B981',     // emerald-500
-    sentiment: '#EC4899',   // pink-500
-    reciprocity: '#F59E0B', // amber-500
-    depth: '#8B5CF6',       // violet-500
+    frequency: '#7B8FA2',   // ceramic-info
+    recency: '#6B7B5C',     // ceramic-success
+    sentiment: '#C4883A',   // ceramic-warning
+    reciprocity: '#D97706', // amber-600 (ceramic accent)
+    depth: '#8B7355',       // ceramic-accent
   };
 
   return (

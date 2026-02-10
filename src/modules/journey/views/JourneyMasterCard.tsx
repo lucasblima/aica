@@ -173,9 +173,9 @@ export function JourneyMasterCard({
         </div>
 
         {/* Progress Bar */}
-        <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="relative w-full h-2 bg-ceramic-cool rounded-full overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+            className="h-full rounded-full bg-gradient-to-r from-ceramic-info to-ceramic-accent"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -207,12 +207,12 @@ export function JourneyMasterCard({
 
       {/* Stats Footer */}
       {(stats.current_streak > 0 || stats.total_moments > 0) && (
-        <div className="grid grid-cols-3 gap-2 mt-6 pt-4 border-t border-gray-200">
+        <div className="grid grid-cols-3 gap-2 mt-6 pt-4 border-t border-ceramic-border">
           {/* Streak */}
           {stats.current_streak > 0 && (
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <FireIcon className="h-4 w-4 text-orange-500" />
+                <FireIcon className="h-4 w-4 text-ceramic-warning" />
                 <span className="text-lg font-bold text-ceramic-text-primary">
                   {stats.current_streak}
                 </span>
@@ -253,7 +253,7 @@ export function JourneyMasterCard({
 
       {/* Empty state when no activity */}
       {stats.total_moments === 0 && (
-        <div className="mt-6 pt-4 border-t border-gray-200 text-center space-y-4">
+        <div className="mt-6 pt-4 border-t border-ceramic-border text-center space-y-4">
           {/* Icon in ceramic circle */}
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-ceramic-warm flex items-center justify-center ceramic-inset">

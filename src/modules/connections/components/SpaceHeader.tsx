@@ -43,15 +43,15 @@ export function SpaceHeader({
   const getThemeGradient = () => {
     switch (space.color_theme) {
       case 'earth':
-        return 'from-blue-500 to-cyan-500';
+        return 'from-ceramic-info to-ceramic-info/70';
       case 'amber':
-        return 'from-purple-500 to-pink-500';
+        return 'from-ceramic-accent to-ceramic-warning';
       case 'paper':
-        return 'from-amber-500 to-orange-500';
+        return 'from-ceramic-warning to-ceramic-warning/70';
       case 'warm':
-        return 'from-green-500 to-emerald-500';
+        return 'from-ceramic-success to-ceramic-success/70';
       default:
-        return 'from-ceramic-accent to-amber-500';
+        return 'from-ceramic-accent to-ceramic-warning';
     }
   };
 

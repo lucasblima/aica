@@ -21,11 +21,11 @@ const categoryIcons: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-800 border-green-300',
-  maintenance: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  sold: 'bg-blue-100 text-blue-800 border-blue-300',
-  disposed: 'bg-gray-100 text-gray-800 border-gray-300',
-  lost: 'bg-red-100 text-red-800 border-red-300',
+  active: 'bg-ceramic-success/15 text-ceramic-success border-ceramic-success/30',
+  maintenance: 'bg-ceramic-warning/15 text-ceramic-warning border-ceramic-warning/30',
+  sold: 'bg-ceramic-info/15 text-ceramic-info border-ceramic-info/30',
+  disposed: 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border',
+  lost: 'bg-ceramic-error/15 text-ceramic-error border-ceramic-error/30',
 };
 
 const statusLabels: Record<string, string> = {
@@ -49,7 +49,7 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item, onCl
 
   return (
     <div
-      className={`bg-white border-2 border-stone-200 rounded-lg p-4 hover:border-amber-300 hover:shadow-md transition-all ${
+      className={`bg-ceramic-base border-2 border-ceramic-border rounded-lg p-4 hover:border-amber-300 hover:shadow-md transition-all ${
         onClick ? 'cursor-pointer' : ''
       }`}
       onClick={onClick}
@@ -59,8 +59,8 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item, onCl
         <div className="flex items-center gap-2">
           <span className="text-3xl">{categoryIcons[item.category || 'outros']}</span>
           <div>
-            <h4 className="font-semibold text-stone-800 line-clamp-1">{item.name}</h4>
-            {item.brand && <p className="text-xs text-stone-500">{item.brand}</p>}
+            <h4 className="font-semibold text-ceramic-text-primary line-clamp-1">{item.name}</h4>
+            {item.brand && <p className="text-xs text-ceramic-text-secondary">{item.brand}</p>}
           </div>
         </div>
         <span
@@ -73,22 +73,22 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item, onCl
       </div>
 
       {/* Details */}
-      <div className="space-y-1 text-sm text-stone-600 mb-3">
+      <div className="space-y-1 text-sm text-ceramic-text-secondary mb-3">
         {item.model && (
           <div className="flex items-center gap-2">
-            <span className="text-stone-400">📋</span>
+            <span className="text-ceramic-text-tertiary">📋</span>
             <span className="line-clamp-1">{item.model}</span>
           </div>
         )}
         {item.room && (
           <div className="flex items-center gap-2">
-            <span className="text-stone-400">📍</span>
+            <span className="text-ceramic-text-tertiary">📍</span>
             <span className="line-clamp-1">{item.room}</span>
           </div>
         )}
         {item.purchase_date && (
           <div className="flex items-center gap-2">
-            <span className="text-stone-400">📅</span>
+            <span className="text-ceramic-text-tertiary">📅</span>
             <span>Comprado em {new Date(item.purchase_date).toLocaleDateString('pt-BR')}</span>
           </div>
         )}
@@ -99,31 +99,31 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item, onCl
         <div
           className={`mt-3 p-2 rounded-lg border-2 ${
             warrantyExpired
-              ? 'bg-gray-50 border-gray-200'
+              ? 'bg-ceramic-cool border-ceramic-border'
               : warrantyExpiringSoon
-              ? 'bg-orange-50 border-orange-200'
-              : 'bg-green-50 border-green-200'
+              ? 'bg-ceramic-warning/10 border-ceramic-warning/30'
+              : 'bg-ceramic-success/10 border-ceramic-success/30'
           }`}
         >
           <div className="flex items-center justify-between">
             <div className="text-xs font-medium">
               {warrantyExpired ? (
-                <span className="text-gray-600">Garantia expirada</span>
+                <span className="text-ceramic-text-secondary">Garantia expirada</span>
               ) : (
-                <span className="text-stone-700">Garantia</span>
+                <span className="text-ceramic-text-primary">Garantia</span>
               )}
             </div>
             <div className="text-xs font-semibold">
               {warrantyExpired ? (
-                <span className="text-gray-600">
+                <span className="text-ceramic-text-secondary">
                   {new Date(item.warranty_expiry).toLocaleDateString('pt-BR')}
                 </span>
               ) : warrantyExpiringSoon ? (
-                <span className="text-orange-700">
+                <span className="text-ceramic-warning">
                   {warrantyDaysRemaining} {warrantyDaysRemaining === 1 ? 'dia' : 'dias'}
                 </span>
               ) : (
-                <span className="text-green-700">
+                <span className="text-ceramic-success">
                   {new Date(item.warranty_expiry).toLocaleDateString('pt-BR')}
                 </span>
               )}
@@ -134,10 +134,10 @@ export const InventoryItemCard: React.FC<InventoryItemCardProps> = ({ item, onCl
 
       {/* Purchase Price */}
       {item.purchase_price && (
-        <div className="mt-3 pt-3 border-t border-stone-200">
+        <div className="mt-3 pt-3 border-t border-ceramic-border">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-stone-500">Valor de compra</span>
-            <span className="font-semibold text-stone-800">
+            <span className="text-ceramic-text-secondary">Valor de compra</span>
+            <span className="font-semibold text-ceramic-text-primary">
               R$ {item.purchase_price.toFixed(2)}
             </span>
           </div>

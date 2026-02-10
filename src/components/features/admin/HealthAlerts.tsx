@@ -20,24 +20,24 @@ interface HealthAlertsProps {
 const SEVERITY_CONFIG = {
   warning: {
     icon: AlertTriangle,
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-800',
-    iconColor: 'text-amber-500',
+    bg: 'bg-ceramic-warning/10',
+    border: 'border-ceramic-warning/30',
+    text: 'text-ceramic-warning',
+    iconColor: 'text-ceramic-warning',
   },
   error: {
     icon: AlertCircle,
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-800',
-    iconColor: 'text-red-500',
+    bg: 'bg-ceramic-error/10',
+    border: 'border-ceramic-error/20',
+    text: 'text-ceramic-error',
+    iconColor: 'text-ceramic-error',
   },
   critical: {
     icon: XCircle,
-    bg: 'bg-red-100',
-    border: 'border-red-300',
-    text: 'text-red-900',
-    iconColor: 'text-red-600',
+    bg: 'bg-ceramic-error/15',
+    border: 'border-ceramic-error/30',
+    text: 'text-ceramic-error',
+    iconColor: 'text-ceramic-error',
   },
 }
 
@@ -48,12 +48,12 @@ export function HealthAlerts({
 }: HealthAlertsProps) {
   if (alerts.length === 0) {
     return (
-      <div className={`bg-green-50 border border-green-200 rounded-xl p-4 ${className}`}>
+      <div className={`bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl p-4 ${className}`}>
         <div className="flex items-center gap-3">
-          <Info className="w-5 h-5 text-green-600" />
+          <Info className="w-5 h-5 text-ceramic-success" />
           <div>
-            <p className="font-medium text-green-800">Sistema saudável</p>
-            <p className="text-sm text-green-600">
+            <p className="font-medium text-ceramic-success">Sistema saudável</p>
+            <p className="text-sm text-ceramic-success/80">
               Todas as métricas estão dentro dos parâmetros normais
             </p>
           </div>
@@ -93,12 +93,12 @@ export function HealthAlerts({
                   <p className={`font-medium ${config.text}`}>{alert.message}</p>
 
                   {alert.instanceName && (
-                    <p className="text-sm text-ceramic-600 mt-1">
+                    <p className="text-sm text-ceramic-text-secondary mt-1">
                       Instância: {alert.instanceName}
                     </p>
                   )}
 
-                  <p className="text-xs text-ceramic-500 mt-2">
+                  <p className="text-xs text-ceramic-text-secondary mt-2">
                     {new Date(alert.timestamp).toLocaleString('pt-BR')}
                   </p>
                 </div>
@@ -109,7 +109,7 @@ export function HealthAlerts({
                     className="flex-shrink-0 p-1 rounded-md hover:bg-white/50 transition-colors"
                     aria-label="Dispensar alerta"
                   >
-                    <X className="w-4 h-4 text-ceramic-500" />
+                    <X className="w-4 h-4 text-ceramic-text-secondary" />
                   </button>
                 )}
               </div>

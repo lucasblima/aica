@@ -148,10 +148,10 @@ export function ContactSlide({
               <p className="text-xl opacity-70">Escaneie para mais informacoes</p>
             </div>
           ) : editMode ? (
-            <div className="w-96 h-96 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+            <div className="w-96 h-96 bg-ceramic-base rounded-lg flex items-center justify-center">
               <div className="text-center">
                 <QrCode className="w-24 h-24 mx-auto mb-4 opacity-30" />
-                <p className="text-gray-500">QR Code opcional</p>
+                <p className="text-ceramic-text-secondary">QR Code opcional</p>
               </div>
             </div>
           ) : null}

@@ -177,10 +177,10 @@ function TimerDisplay({
 
   return (
     <div className="flex items-center gap-2">
-      <Clock className={`w-4 h-4 ${isExpired ? 'text-red-500' : 'text-ceramic-text-secondary'}`} />
+      <Clock className={`w-4 h-4 ${isExpired ? 'text-ceramic-error' : 'text-ceramic-text-secondary'}`} />
       <div className="flex-1 h-2 bg-ceramic-inset rounded-full overflow-hidden">
         <motion.div
-          className={`h-full rounded-full ${isExpired ? 'bg-red-500' : 'bg-amber-500'}`}
+          className={`h-full rounded-full ${isExpired ? 'bg-ceramic-error' : 'bg-amber-500'}`}
           initial={{ width: '100%' }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5 }}
@@ -188,7 +188,7 @@ function TimerDisplay({
       </div>
       <span
         className={`text-sm font-mono font-bold ${
-          isExpired ? 'text-red-500' : seconds <= 10 ? 'text-amber-600' : 'text-ceramic-text-primary'
+          isExpired ? 'text-ceramic-error' : seconds <= 10 ? 'text-amber-600' : 'text-ceramic-text-primary'
         }`}
         aria-live="polite"
         aria-label={`Tempo restante: ${formatTime(seconds)}`}
@@ -286,19 +286,19 @@ export function PairingCodeDisplay({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="p-4 bg-red-50 border border-red-200 rounded-xl"
+            className="p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl"
             role="alert"
             aria-live="assertive"
           >
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-bold text-red-900">Erro ao gerar codigo</p>
-                <p className="text-xs text-red-700 mt-1">{error}</p>
+                <p className="text-sm font-bold text-ceramic-error">Erro ao gerar codigo</p>
+                <p className="text-xs text-ceramic-error/80 mt-1">{error}</p>
               </div>
               <button
                 onClick={clearError}
-                className="text-red-600 hover:text-red-800"
+                className="text-ceramic-error hover:text-ceramic-error/80"
                 aria-label="Fechar mensagem de erro"
               >
                 <span className="sr-only">Fechar</span>
@@ -343,7 +343,7 @@ export function PairingCodeDisplay({
                 aria-label={copied ? 'Codigo copiado' : 'Copiar codigo'}
               >
                 {copied ? (
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-ceramic-success" />
                 ) : (
                   <Copy className="w-5 h-5 text-ceramic-text-secondary" />
                 )}
@@ -354,7 +354,7 @@ export function PairingCodeDisplay({
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center text-xs text-green-600 mt-2"
+                className="text-center text-xs text-ceramic-success mt-2"
               >
                 Codigo copiado!
               </motion.p>

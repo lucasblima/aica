@@ -12,9 +12,9 @@ export function PrivacyPolicyPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-ceramic-base">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#E8E6E0]">
+      <header className="sticky top-0 z-40 bg-ceramic-base border-b border-[#E8E6E0]">
         <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
           <button
             onClick={() => navigate('/landing')}

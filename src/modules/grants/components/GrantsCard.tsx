@@ -42,10 +42,10 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
    * Get urgency color based on days remaining
    */
   const getUrgencyColor = (days: number): string => {
-    if (days < 0) return 'text-red-600';
-    if (days <= 3) return 'text-orange-600';
-    if (days <= 7) return 'text-yellow-600';
-    return 'text-green-600';
+    if (days < 0) return 'text-ceramic-error';
+    if (days <= 3) return 'text-ceramic-warning';
+    if (days <= 7) return 'text-ceramic-warning/70';
+    return 'text-ceramic-success';
   };
 
   /**
@@ -66,13 +66,13 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
       whileTap="pressed"
     >
       {/* Decorative Background Icon */}
-      <FileText className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-200 opacity-10" />
+      <FileText className="absolute -right-4 -bottom-4 w-32 h-32 text-ceramic-warm opacity-10" />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3 relative z-10">
         <div className="flex items-center gap-2">
           <div className="ceramic-concave w-7 h-7 flex items-center justify-center">
-            <FileText className="w-3.5 h-3.5 text-blue-600" />
+            <FileText className="w-3.5 h-3.5 text-ceramic-info" />
           </div>
           <div>
             <h2 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">Captação</h2>
@@ -89,7 +89,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
           className="ceramic-concave w-7 h-7 flex items-center justify-center hover:scale-95 transition-transform flex-shrink-0"
           title="Novo Projeto"
         >
-          <Plus className="w-3.5 h-3.5 text-blue-600" />
+          <Plus className="w-3.5 h-3.5 text-ceramic-info" />
         </button>
       </div>
 
@@ -191,7 +191,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
                     <div className="flex-1">
                       <div className="ceramic-trough p-0.5">
                         <div
-                          className="h-1 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-300"
+                          className="h-1 rounded-full bg-gradient-to-r from-ceramic-info to-ceramic-accent transition-all duration-300"
                           style={{ width: `${project.completion_percentage}%` }}
                         />
                       </div>

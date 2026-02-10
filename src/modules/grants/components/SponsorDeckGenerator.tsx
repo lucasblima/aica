@@ -89,8 +89,8 @@ function TemplateCard({ template, selected, onClick }: TemplateCardProps) {
         relative w-full p-4 rounded-xl border-2 text-left
         transition-all duration-200
         ${selected
-          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-2 ring-indigo-500/20'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-indigo-300'
+          ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-500/20'
+          : 'border-ceramic-border dark:border-ceramic-border bg-ceramic-base dark:bg-ceramic-base hover:border-ceramic-warning'
         }
       `}
     >
@@ -111,17 +111,17 @@ function TemplateCard({ template, selected, onClick }: TemplateCardProps) {
       </div>
 
       {/* Template info */}
-      <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+      <h3 className="font-semibold text-ceramic-text-primary dark:text-white text-lg">
         {template.name}
       </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      <p className="text-sm text-ceramic-text-secondary dark:text-ceramic-text-secondary mt-1">
         {template.description}
       </p>
 
       {/* Selected indicator */}
       {selected && (
         <div className="absolute top-3 right-3">
-          <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
             <Check className="w-4 h-4 text-white" />
           </div>
         </div>
@@ -141,7 +141,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
     <div className="space-y-6">
       {/* Language */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-secondary mb-2">
           <Languages className="w-4 h-4" />
           Idioma
         </label>
@@ -153,8 +153,8 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               flex-1 py-2.5 px-4 rounded-lg border-2 font-medium text-sm
               transition-colors
               ${options.language === 'pt-BR'
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
-                : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300'
+                ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300'
+                : 'border-ceramic-border dark:border-ceramic-border text-ceramic-text-primary dark:text-ceramic-text-secondary hover:border-ceramic-border'
               }
             `}
           >
@@ -167,8 +167,8 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               flex-1 py-2.5 px-4 rounded-lg border-2 font-medium text-sm
               transition-colors
               ${options.language === 'en-US'
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
-                : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300'
+                ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300'
+                : 'border-ceramic-border dark:border-ceramic-border text-ceramic-text-primary dark:text-ceramic-text-secondary hover:border-ceramic-border'
               }
             `}
           >
@@ -179,7 +179,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
 
       {/* Include financials */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-secondary mb-2">
           <DollarSign className="w-4 h-4" />
           Informacoes Financeiras
         </label>
@@ -191,8 +191,8 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               flex-1 py-2.5 px-4 rounded-lg border-2 font-medium text-sm
               transition-colors
               ${options.includeFinancials
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
-                : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300'
+                ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300'
+                : 'border-ceramic-border dark:border-ceramic-border text-ceramic-text-primary dark:text-ceramic-text-secondary hover:border-ceramic-border'
               }
             `}
           >
@@ -205,15 +205,15 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               flex-1 py-2.5 px-4 rounded-lg border-2 font-medium text-sm
               transition-colors
               ${!options.includeFinancials
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
-                : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300'
+                ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300'
+                : 'border-ceramic-border dark:border-ceramic-border text-ceramic-text-primary dark:text-ceramic-text-secondary hover:border-ceramic-border'
               }
             `}
           >
             Apenas informacoes gerais
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-1.5">
+        <p className="text-xs text-ceramic-text-secondary mt-1.5">
           {options.includeFinancials
             ? 'O deck incluira valores aprovados, cotas de patrocinio e precos.'
             : 'O deck focara no projeto e contrapartidas, sem mencionar valores.'
@@ -224,7 +224,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
       {/* Highlight tier */}
       {highlightTierOptions.length > 0 && (
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-secondary mb-2">
             <Star className="w-4 h-4" />
             Destacar Cota (opcional)
           </label>
@@ -234,9 +234,9 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               ...options,
               highlightTierId: e.target.value || undefined,
             })}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600
-                       bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                       focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-3 py-2.5 rounded-lg border border-ceramic-border dark:border-ceramic-border
+                       bg-ceramic-base dark:bg-ceramic-base text-ceramic-text-primary dark:text-white
+                       focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
           >
             <option value="">Nenhuma cota em destaque</option>
             {highlightTierOptions.map((tier) => (
@@ -245,7 +245,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-1.5">
+          <p className="text-xs text-ceramic-text-secondary mt-1.5">
             A cota selecionada sera visualmente destacada na apresentacao.
           </p>
         </div>
@@ -253,7 +253,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
 
       {/* Color scheme override */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-secondary mb-2">
           <Palette className="w-4 h-4" />
           Cor Personalizada (opcional)
         </label>
@@ -265,7 +265,7 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               ...options,
               colorScheme: e.target.value,
             })}
-            className="w-12 h-10 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer"
+            className="w-12 h-10 rounded-lg border border-ceramic-border dark:border-ceramic-border cursor-pointer"
           />
           <input
             type="text"
@@ -275,22 +275,22 @@ function OptionsSection({ options, onOptionsChange, highlightTierOptions }: Opti
               colorScheme: e.target.value || undefined,
             })}
             placeholder="#1a365d"
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600
-                       bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                       focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            className="flex-1 px-3 py-2 rounded-lg border border-ceramic-border dark:border-ceramic-border
+                       bg-ceramic-base dark:bg-ceramic-base text-ceramic-text-primary dark:text-white
+                       focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm"
           />
           {options.colorScheme && (
             <button
               type="button"
               onClick={() => onOptionsChange({ ...options, colorScheme: undefined })}
-              className="p-2 text-gray-400 hover:text-gray-600"
+              className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary"
               title="Usar cor padrao do template"
             >
               <X className="w-4 h-4" />
             </button>
           )}
         </div>
-        <p className="text-xs text-gray-500 mt-1.5">
+        <p className="text-xs text-ceramic-text-secondary mt-1.5">
           Sobrescreve a cor primaria do template selecionado.
         </p>
       </div>
@@ -316,7 +316,7 @@ function PreviewSection({ slides, includeFinancials }: PreviewSectionProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary dark:text-ceramic-text-secondary">
         <Layers className="w-4 h-4" />
         <span>{visibleSlides.length} slides na apresentacao</span>
       </div>
@@ -325,21 +325,21 @@ function PreviewSection({ slides, includeFinancials }: PreviewSectionProps) {
         {visibleSlides.map((slide, index) => (
           <div
             key={slide.type}
-            className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 aspect-[16/9] flex flex-col justify-between"
+            className="relative bg-ceramic-base dark:bg-ceramic-base rounded-lg border border-ceramic-border dark:border-ceramic-border p-3 aspect-[16/9] flex flex-col justify-between"
           >
             {/* Slide number */}
-            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-ceramic-base dark:bg-ceramic-cool flex items-center justify-center">
+              <span className="text-xs font-medium text-ceramic-text-secondary dark:text-ceramic-text-secondary">
                 {index + 1}
               </span>
             </div>
 
             {/* Slide info */}
             <div className="pt-4">
-              <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+              <p className="text-xs font-medium text-ceramic-text-primary dark:text-white truncate">
                 {slide.title}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+              <p className="text-xs text-ceramic-text-secondary dark:text-ceramic-text-secondary truncate mt-0.5">
                 {slide.description}
               </p>
             </div>
@@ -360,27 +360,27 @@ function GeneratingSection({ progress, progressStep }: GeneratingSectionProps) {
     <div className="flex flex-col items-center justify-center py-12">
       {/* Animated icon */}
       <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-          <Sparkles className="w-10 h-10 text-indigo-500 animate-pulse" />
+        <div className="w-20 h-20 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+          <Sparkles className="w-10 h-10 text-amber-500 animate-pulse" />
         </div>
-        <div className="absolute -inset-1 rounded-full border-2 border-indigo-500/30 animate-ping" />
+        <div className="absolute -inset-1 rounded-full border-2 border-amber-500/30 animate-ping" />
       </div>
 
       {/* Progress bar */}
       <div className="w-full max-w-xs mb-4">
-        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-ceramic-cool dark:bg-ceramic-cool rounded-full overflow-hidden">
           <div
-            className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+            className="h-full bg-amber-500 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
       {/* Progress text */}
-      <p className="text-gray-600 dark:text-gray-400 text-center">
+      <p className="text-ceramic-text-secondary dark:text-ceramic-text-secondary text-center">
         {progressStep || 'Iniciando geracao...'}
       </p>
-      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+      <p className="text-sm text-ceramic-text-secondary dark:text-ceramic-text-secondary mt-1">
         {progress}% concluido
       </p>
     </div>
@@ -397,20 +397,20 @@ function DoneSection({ filename, onDownload, onReset }: DoneSectionProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12">
       {/* Success icon */}
-      <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
-        <Check className="w-10 h-10 text-green-500" />
+      <div className="w-20 h-20 rounded-full bg-ceramic-success-bg dark:bg-ceramic-success/10 flex items-center justify-center mb-6">
+        <Check className="w-10 h-10 text-ceramic-success" />
       </div>
 
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-xl font-semibold text-ceramic-text-primary dark:text-white mb-2">
         Deck Gerado com Sucesso!
       </h3>
 
-      <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+      <p className="text-ceramic-text-secondary dark:text-ceramic-text-secondary text-center mb-6">
         Sua apresentacao esta pronta para download.
       </p>
 
       {filename && (
-        <p className="text-sm text-gray-500 dark:text-gray-500 mb-6 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded">
+        <p className="text-sm text-ceramic-text-secondary dark:text-ceramic-text-secondary mb-6 font-mono bg-ceramic-base dark:bg-ceramic-base px-3 py-1 rounded">
           {filename}
         </p>
       )}
@@ -420,8 +420,8 @@ function DoneSection({ filename, onDownload, onReset }: DoneSectionProps) {
         <button
           type="button"
           onClick={onDownload}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium
-                     hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/25"
+          className="flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg font-medium
+                     hover:bg-amber-700 transition-colors shadow-lg shadow-amber-500/25"
         >
           <Download className="w-5 h-5" />
           Baixar Apresentacao
@@ -429,8 +429,8 @@ function DoneSection({ filename, onDownload, onReset }: DoneSectionProps) {
         <button
           type="button"
           onClick={onReset}
-          className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300
-                     rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 bg-ceramic-base dark:bg-ceramic-cool text-ceramic-text-primary dark:text-ceramic-text-secondary
+                     rounded-lg font-medium hover:bg-ceramic-cool dark:hover:bg-ceramic-cool transition-colors"
         >
           <RefreshCw className="w-5 h-5" />
           Gerar Novo
@@ -546,20 +546,20 @@ export function SponsorDeckGenerator({
 
   return (
     <div
-      className={`bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden ${className}`}
+      className={`bg-ceramic-base dark:bg-ceramic-base rounded-2xl shadow-xl border border-ceramic-border dark:border-ceramic-border overflow-hidden ${className}`}
     >
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-ceramic-border dark:border-ceramic-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-            <Presentation className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <Presentation className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-white">
+            <h2 className="font-semibold text-ceramic-text-primary dark:text-white">
               Gerar Deck de Patrocinio
             </h2>
             {projectName && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{projectName}</p>
+              <p className="text-sm text-ceramic-text-secondary dark:text-ceramic-text-secondary">{projectName}</p>
             )}
           </div>
         </div>
@@ -567,7 +567,7 @@ export function SponsorDeckGenerator({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary dark:hover:text-ceramic-text-secondary rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-base"
           >
             <X className="w-5 h-5" />
           </button>
@@ -575,7 +575,7 @@ export function SponsorDeckGenerator({
       </div>
 
       {/* Step indicator */}
-      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
+      <div className="px-6 py-4 bg-ceramic-base dark:bg-ceramic-cool border-b border-ceramic-border dark:border-ceramic-border">
         <div className="flex items-center justify-between">
           {DECK_WIZARD_STEPS.slice(0, 4).map((step, index) => {
             const isActive = step.id === currentStep;
@@ -591,10 +591,10 @@ export function SponsorDeckGenerator({
                       w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
                       transition-colors
                       ${isActive
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-amber-600 text-white'
                         : isCompleted
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                          ? 'bg-ceramic-success text-white'
+                          : 'bg-ceramic-cool dark:bg-ceramic-cool text-ceramic-text-secondary dark:text-ceramic-text-secondary'
                       }
                     `}
                   >
@@ -609,7 +609,7 @@ export function SponsorDeckGenerator({
                   <span
                     className={`
                       text-xs mt-1 hidden sm:block
-                      ${isActive ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-gray-500 dark:text-gray-400'}
+                      ${isActive ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-ceramic-text-secondary dark:text-ceramic-text-secondary'}
                     `}
                   >
                     {step.title}
@@ -619,7 +619,7 @@ export function SponsorDeckGenerator({
                   <div
                     className={`
                       flex-1 h-0.5 mx-2
-                      ${isCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}
+                      ${isCompleted ? 'bg-ceramic-success' : 'bg-ceramic-cool dark:bg-ceramic-cool'}
                     `}
                   />
                 )}
@@ -633,11 +633,11 @@ export function SponsorDeckGenerator({
       <div className="p-6 min-h-[400px]">
         {/* Error alert */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div className="mb-6 p-4 bg-ceramic-error/10 dark:bg-ceramic-error/20 border border-ceramic-error/30 dark:border-ceramic-error rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-red-800 dark:text-red-300">Erro ao gerar deck</p>
-              <p className="text-sm text-red-600 dark:text-red-400 mt-1">{error}</p>
+              <p className="font-medium text-ceramic-error dark:text-ceramic-error">Erro ao gerar deck</p>
+              <p className="text-sm text-ceramic-error dark:text-ceramic-error mt-1">{error}</p>
             </div>
           </div>
         )}
@@ -645,7 +645,7 @@ export function SponsorDeckGenerator({
         {/* Step content */}
         {currentStep === 'template' && (
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-medium text-ceramic-text-primary dark:text-white mb-4">
               Escolha um Template
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -663,7 +663,7 @@ export function SponsorDeckGenerator({
 
         {currentStep === 'options' && (
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-medium text-ceramic-text-primary dark:text-white mb-4">
               Personalize seu Deck
             </h3>
             <OptionsSection
@@ -676,7 +676,7 @@ export function SponsorDeckGenerator({
 
         {currentStep === 'preview' && (
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-medium text-ceramic-text-primary dark:text-white mb-4">
               Estrutura da Apresentacao
             </h3>
             <PreviewSection
@@ -701,7 +701,7 @@ export function SponsorDeckGenerator({
 
       {/* Footer */}
       {currentStep !== 'generating' && currentStep !== 'done' && (
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-ceramic-border dark:border-ceramic-border flex items-center justify-between">
           <button
             type="button"
             onClick={goBack}
@@ -710,8 +710,8 @@ export function SponsorDeckGenerator({
               flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
               transition-colors
               ${canGoBack
-                ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                ? 'text-ceramic-text-primary dark:text-ceramic-text-secondary hover:bg-ceramic-base dark:hover:bg-ceramic-base'
+                : 'text-ceramic-text-secondary dark:text-ceramic-text-secondary cursor-not-allowed'
               }
             `}
           >
@@ -723,8 +723,8 @@ export function SponsorDeckGenerator({
             type="button"
             onClick={goNext}
             disabled={!canGoNext || isGenerating}
-            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm
-                       hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 bg-amber-600 text-white rounded-lg font-medium text-sm
+                       hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isGenerating ? (
               <>

@@ -80,9 +80,9 @@ export function CalendarSyncButton({
 
   // Variant classes
   const variantClasses = {
-    primary: 'bg-blue-500 hover:bg-blue-600 text-white',
-    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800',
-    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 border border-gray-300',
+    primary: 'bg-amber-500 hover:bg-amber-600 text-white',
+    secondary: 'bg-ceramic-cool hover:bg-ceramic-border text-ceramic-text-primary',
+    ghost: 'bg-transparent hover:bg-ceramic-base text-ceramic-text-primary border border-ceramic-border',
   };
 
   // Status-based styling
@@ -93,15 +93,15 @@ export function CalendarSyncButton({
   if (isPending) {
     statusIcon = '⏳';
     statusText = 'Sincronizando...';
-    statusColor = 'bg-yellow-500 text-white';
+    statusColor = 'bg-ceramic-warning text-white';
   } else if (isError) {
     statusIcon = '❌';
     statusText = 'Erro ao sincronizar';
-    statusColor = 'bg-red-500 hover:bg-red-600 text-white';
+    statusColor = 'bg-ceramic-error hover:bg-ceramic-error/90 text-white';
   } else if (isAlreadySynced && lastSyncTime) {
     statusIcon = '✅';
     statusText = 'Sincronizado';
-    statusColor = 'bg-green-500 hover:bg-green-600 text-white';
+    statusColor = 'bg-ceramic-success hover:bg-ceramic-success/90 text-white';
   }
 
   const tooltipText = lastSyncTime
@@ -132,14 +132,14 @@ export function CalendarSyncButton({
       </button>
 
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-50">
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-ceramic-text-primary text-white text-xs rounded whitespace-nowrap z-50">
           {tooltipText}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-800"></div>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-ceramic-text-primary"></div>
         </div>
       )}
 
       {isError && errorMessage && (
-        <div className="mt-1 text-xs text-red-600">{errorMessage}</div>
+        <div className="mt-1 text-xs text-ceramic-error">{errorMessage}</div>
       )}
     </div>
   );

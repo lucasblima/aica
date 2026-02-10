@@ -42,8 +42,8 @@ export function ContactCard({ contact, onClick }: ContactCardProps) {
           </p>
         </div>
 
-        <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-bold bg-blue-100">
-          <span className="text-sm font-black text-blue-600">
+        <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-bold bg-ceramic-info/10">
+          <span className="text-sm font-black text-ceramic-info">
             {contact.health_score || 0}
           </span>
         </div>

@@ -62,7 +62,7 @@ export function MediaSlide({
         {content.items.map((item, index) => (
           <div key={index} className="relative">
             {item.type === 'image' ? (
-              <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+              <div className="aspect-video bg-ceramic-cool rounded-lg overflow-hidden">
                 {item.url ? (
                   <img
                     src={item.url}
@@ -71,12 +71,12 @@ export function MediaSlide({
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-16 h-16 text-gray-400" />
+                    <ImageIcon className="w-16 h-16 text-ceramic-text-secondary" />
                   </div>
                 )}
               </div>
             ) : (
-              <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="aspect-video bg-ceramic-base rounded-lg overflow-hidden flex items-center justify-center">
                 {item.thumbnailUrl ? (
                   <img
                     src={item.thumbnailUrl}
@@ -84,7 +84,7 @@ export function MediaSlide({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Video className="w-16 h-16 text-gray-400" />
+                  <Video className="w-16 h-16 text-ceramic-text-secondary" />
                 )}
               </div>
             )}

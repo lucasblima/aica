@@ -83,8 +83,8 @@ function DefaultEmptyState({ filterType }: { filterType: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <span className="text-5xl mb-4">{content.icon}</span>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{content.title}</h3>
-      <p className="text-sm text-gray-500 max-w-xs">{content.description}</p>
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">{content.title}</h3>
+      <p className="text-sm text-ceramic-text-secondary max-w-xs">{content.description}</p>
     </div>
   );
 }
@@ -98,12 +98,12 @@ function LoadingSkeleton() {
           className="ceramic-card p-4 animate-pulse"
         >
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-full bg-gray-200" />
+            <div className="w-12 h-12 rounded-full bg-ceramic-cool" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-32 bg-gray-200 rounded" />
-              <div className="h-3 w-20 bg-gray-200 rounded" />
+              <div className="h-4 w-32 bg-ceramic-cool rounded" />
+              <div className="h-3 w-20 bg-ceramic-cool rounded" />
             </div>
-            <div className="w-10 h-6 bg-gray-200 rounded-full" />
+            <div className="w-10 h-6 bg-ceramic-cool rounded-full" />
           </div>
         </div>
       ))}
@@ -115,8 +115,8 @@ function ErrorState({ error }: { error: Error }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <span className="text-5xl mb-4">😕</span>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">Erro ao carregar contatos</h3>
-      <p className="text-sm text-gray-500 max-w-xs">{error.message}</p>
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">Erro ao carregar contatos</h3>
+      <p className="text-sm text-ceramic-text-secondary max-w-xs">{error.message}</p>
     </div>
   );
 }
@@ -180,10 +180,10 @@ export function WhatsAppContactList({
     return (
       <div className={className}>
         <div className="p-4 space-y-4">
-          <div className="h-10 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-10 bg-ceramic-cool rounded-lg animate-pulse" />
           <div className="flex gap-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-8 w-20 bg-gray-200 rounded-full animate-pulse" />
+              <div key={i} className="h-8 w-20 bg-ceramic-cool rounded-full animate-pulse" />
             ))}
           </div>
         </div>

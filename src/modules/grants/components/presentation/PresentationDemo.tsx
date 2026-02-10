@@ -96,14 +96,14 @@ export function PresentationDemo() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
+    <div className="h-screen flex flex-col bg-ceramic-base">
       {/* Top controls */}
-      <div className="px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+      <div className="px-6 py-4 bg-ceramic-base border-b border-ceramic-border flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-ceramic-text-primary">
             Demo - Presentation Generator
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-ceramic-text-secondary mt-1">
             Issue #117 - Fase 2 implementada
           </p>
         </div>
@@ -111,13 +111,13 @@ export function PresentationDemo() {
         <div className="flex items-center gap-4">
           {/* Template selector */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm font-medium text-ceramic-text-primary">
               Template:
             </label>
             <select
               value={template}
               onChange={(e) => setTemplate(e.target.value as TemplateType)}
-              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="px-3 py-2 rounded-lg border border-ceramic-border bg-ceramic-base text-ceramic-text-primary"
             >
               <option value="professional">Professional</option>
               <option value="creative">Creative</option>
@@ -130,8 +130,8 @@ export function PresentationDemo() {
             onClick={() => setEditMode(!editMode)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               editMode
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                ? 'bg-amber-600 text-white'
+                : 'bg-ceramic-cool text-ceramic-text-primary'
             }`}
           >
             {editMode ? 'Modo Edicao: ON' : 'Modo Edicao: OFF'}

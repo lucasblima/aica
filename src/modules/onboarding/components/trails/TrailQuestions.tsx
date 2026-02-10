@@ -80,22 +80,18 @@ const TrailQuestions: React.FC<TrailQuestionsProps> = ({
               onClick={() => onAnswerSelect(answer.id, currentQuestion.id, isMultiple)}
               className={`w-full p-4 rounded-xl border-2 transition-all text-left focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                 isSelected
-                  ? 'border-[#6B9EFF] bg-blue-50'
-                  : 'border-[#E8E6E0] bg-white hover:border-[#948D82]'
+                  ? 'border-[#6B9EFF] bg-ceramic-info/10'
+                  : 'border-[#E8E6E0] bg-ceramic-base hover:border-[#948D82]'
               }`}
-              style={{
-                backgroundColor: isSelected ? '#F0F4FF' : '#FFFFFF',
-              }}
               aria-pressed={isSelected}
-              role="option"
-            >
+              role="option">
               <div className="flex items-start gap-4">
                 {/* Checkbox/Radio */}
                 <div
                   className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5 border-2 transition-all ${
                     isSelected
                       ? 'bg-[#6B9EFF] border-[#6B9EFF]'
-                      : 'border-[#D0CCBF] bg-white'
+                      : 'border-[#D0CCBF] bg-ceramic-base'
                   }`}
                 >
                   {isSelected && (
@@ -147,7 +143,7 @@ const TrailQuestions: React.FC<TrailQuestionsProps> = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="bg-blue-50 border border-[#6B9EFF] rounded-lg p-4"
+          className="bg-ceramic-info/10 border border-[#6B9EFF] rounded-lg p-4"
         >
           <p className="text-sm text-[#5C554B] mb-2">
             <strong>Selecionado:</strong> {selectedAnswers.length} opção(ões)
@@ -158,7 +154,7 @@ const TrailQuestions: React.FC<TrailQuestionsProps> = ({
               return (
                 <span
                   key={answerId}
-                  className="inline-flex items-center gap-2 px-3 py-1 bg-white rounded-full text-sm font-medium text-[#6B9EFF] border border-[#6B9EFF]"
+                  className="inline-flex items-center gap-2 px-3 py-1 bg-ceramic-base rounded-full text-sm font-medium text-[#6B9EFF] border border-[#6B9EFF]"
                 >
                   {answer?.label}
                   <button

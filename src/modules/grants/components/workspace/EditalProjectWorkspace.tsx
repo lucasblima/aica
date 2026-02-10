@@ -65,7 +65,7 @@ const WorkspaceContent: React.FC<{
       />
 
       {/* Stage Navigation */}
-      <div className="flex-shrink-0 bg-white">
+      <div className="flex-shrink-0 bg-ceramic-base">
         <div className="max-w-6xl mx-auto">
           <StageStepper
             currentStage={state.currentStage}
@@ -100,7 +100,7 @@ const WorkspaceContent: React.FC<{
               <div className="flex items-center justify-between p-6 border-b border-[#5C554B]/10">
                 <div className="flex items-center gap-3">
                   <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-purple-500" />
+                    <FileText className="w-5 h-5 text-ceramic-accent" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-[#5C554B]">
@@ -181,7 +181,7 @@ export const EditalProjectWorkspace: React.FC<EditalProjectWorkspaceProps> = ({
     return (
       <div className="h-screen bg-[#F0EFE9] flex items-center justify-center">
         <div className="ceramic-card p-8 max-w-md text-center">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Erro ao carregar</h2>
+          <h2 className="text-xl font-bold text-ceramic-error mb-2">Erro ao carregar</h2>
           <p className="text-sm text-[#948D82] mb-6">{error}</p>
           <div className="flex justify-center gap-3">
             <button

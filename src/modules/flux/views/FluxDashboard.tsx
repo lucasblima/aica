@@ -54,7 +54,7 @@ const ModalityTab: React.FC<{
       onClick={onClick}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
         isSelected
-          ? 'ceramic-card bg-white shadow-md'
+          ? 'ceramic-card bg-ceramic-base shadow-md'
           : 'ceramic-inset hover:bg-white/50'
       }`}
     >
@@ -65,7 +65,7 @@ const ModalityTab: React.FC<{
         {label}
       </span>
       <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-        isSelected ? 'bg-cyan-100 text-cyan-700' : 'bg-gray-100 text-gray-600'
+        isSelected ? 'bg-ceramic-info/20 text-ceramic-info' : 'bg-ceramic-cool text-ceramic-text-secondary'
       }`}>
         {count}
       </span>
@@ -210,7 +210,7 @@ export default function FluxDashboard() {
           <div className="ceramic-card p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="ceramic-inset p-2">
-                <Users className="w-4 h-4 text-blue-600" />
+                <Users className="w-4 h-4 text-ceramic-info" />
               </div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
                 Atletas{selectedModality !== 'all' && ` (${MODALITY_CONFIG[selectedModality].label})`}
@@ -225,13 +225,13 @@ export default function FluxDashboard() {
           <div className="ceramic-card p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="ceramic-inset p-2">
-                <TrendingUp className="w-4 h-4 text-green-600" />
+                <TrendingUp className="w-4 h-4 text-ceramic-success" />
               </div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
                 Adesao Media
               </p>
             </div>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-ceramic-success">
               {Math.round(avgAdherence)}%
             </p>
           </div>
@@ -241,11 +241,11 @@ export default function FluxDashboard() {
         {criticalAlerts.length > 0 && (
           <div
             onClick={handleAlertsClick}
-            className="ceramic-card p-4 mb-6 bg-red-50 border border-red-200 cursor-pointer hover:scale-[1.02] transition-transform"
+            className="ceramic-card p-4 mb-6 bg-ceramic-error/10 border border-ceramic-error/20 cursor-pointer hover:scale-[1.02] transition-transform"
           >
             <div className="flex items-center gap-3 mb-3">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-sm font-bold text-red-700">
+              <AlertCircle className="w-5 h-5 text-ceramic-error" />
+              <p className="text-sm font-bold text-ceramic-error">
                 {criticalAlerts.length} alerta(s) critico(s) requer(em) atencao
               </p>
             </div>
@@ -256,9 +256,9 @@ export default function FluxDashboard() {
             </div>
             {/* Exames pendentes */}
             {documentAlerts.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-red-200 flex items-center gap-2">
+              <div className="mt-3 pt-3 border-t border-ceramic-error/20 flex items-center gap-2">
                 <span className="text-lg">🩺</span>
-                <p className="text-sm font-medium text-red-700">
+                <p className="text-sm font-medium text-ceramic-error">
                   {documentAlerts.length} exame(s) cardiologico(s) e atestado(s) pendente(s)
                 </p>
               </div>
@@ -310,7 +310,7 @@ export default function FluxDashboard() {
                   onClick={() => setSelectedLevel(category.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
                     selectedLevel === category.id
-                      ? 'ceramic-card bg-white shadow-md'
+                      ? 'ceramic-card bg-ceramic-base shadow-md'
                       : 'ceramic-inset hover:bg-white/50'
                   }`}
                 >
@@ -321,7 +321,7 @@ export default function FluxDashboard() {
                     {category.label}
                   </span>
                   <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                    selectedLevel === category.id ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    selectedLevel === category.id ? 'bg-ceramic-success/20 text-ceramic-success' : 'bg-ceramic-cool text-ceramic-text-secondary'
                   }`}>
                     {levelCounts[category.id]}
                   </span>
@@ -358,7 +358,7 @@ export default function FluxDashboard() {
               onClick={toggleAdherenceSort}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
                 adherenceSort !== 'none'
-                  ? 'ceramic-card bg-white shadow-md'
+                  ? 'ceramic-card bg-ceramic-base shadow-md'
                   : 'ceramic-inset hover:bg-white/50'
               }`}
               title={
@@ -370,8 +370,8 @@ export default function FluxDashboard() {
               }
             >
               {adherenceSort === 'none' && <ArrowUpDown className="w-4 h-4 text-ceramic-text-secondary" />}
-              {adherenceSort === 'desc' && <ArrowDown className="w-4 h-4 text-green-600" />}
-              {adherenceSort === 'asc' && <ArrowUp className="w-4 h-4 text-red-600" />}
+              {adherenceSort === 'desc' && <ArrowDown className="w-4 h-4 text-ceramic-success" />}
+              {adherenceSort === 'asc' && <ArrowUp className="w-4 h-4 text-ceramic-error" />}
               <span className={`text-xs font-bold uppercase tracking-wider ${
                 adherenceSort !== 'none' ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
               }`}>

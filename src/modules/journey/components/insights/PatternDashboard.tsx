@@ -41,11 +41,11 @@ function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onSt
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
-        className={`ceramic-tile p-4 border-l-4 ${isDone ? 'border-l-green-500 bg-green-50/50' : 'border-l-purple-500 bg-purple-50/50'}`}
+        className={`ceramic-tile p-4 border-l-4 ${isDone ? 'border-l-ceramic-success bg-ceramic-success/10' : 'border-l-ceramic-accent bg-ceramic-accent/10'}`}
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <SparklesIcon className={`h-4 w-4 ${isDone ? 'text-green-600' : 'text-purple-600'}`} />
+            <SparklesIcon className={`h-4 w-4 ${isDone ? 'text-ceramic-success' : 'text-ceramic-accent'}`} />
             <span className="text-sm font-medium text-[#5C554B]">
               {isDone
                 ? `Analise concluida: ${progress.processed - progress.failed} momentos atualizados`
@@ -68,7 +68,7 @@ function BackfillBanner({ progress, onStop }: { progress: BackfillProgress; onSt
         {progress.total > 0 && (
           <div className="w-full bg-[#E0DDD5] rounded-full h-1.5">
             <motion.div
-              className={`h-1.5 rounded-full ${isDone ? 'bg-green-500' : 'bg-purple-500'}`}
+              className={`h-1.5 rounded-full ${isDone ? 'bg-ceramic-success' : 'bg-ceramic-accent'}`}
               initial={{ width: 0 }}
               animate={{ width: `${percentage}%` }}
               transition={{ duration: 0.3 }}

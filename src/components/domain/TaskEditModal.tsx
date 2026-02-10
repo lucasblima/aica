@@ -181,12 +181,12 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                                             }}
                                             placeholder="Título da tarefa"
                                             className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                                errors.title ? 'border border-red-500' : ''
+                                                errors.title ? 'border border-ceramic-error' : ''
                                             }`}
                                             autoFocus
                                         />
                                         {errors.title && (
-                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                            <p className="text-sm text-ceramic-error flex items-center gap-1">
                                                 <AlertCircle className="w-3 h-3" />
                                                 {errors.title}
                                             </p>
@@ -210,11 +210,11 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                                             }}
                                             min={new Date().toISOString().split('T')[0]}
                                             className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                                errors.dueDate ? 'border border-red-500' : ''
+                                                errors.dueDate ? 'border border-ceramic-error' : ''
                                             }`}
                                         />
                                         {errors.dueDate && (
-                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                            <p className="text-sm text-ceramic-error flex items-center gap-1">
                                                 <AlertCircle className="w-3 h-3" />
                                                 {errors.dueDate}
                                             </p>
@@ -239,11 +239,11 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                                             placeholder="60"
                                             min="1"
                                             className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                                errors.estimatedDuration ? 'border border-red-500' : ''
+                                                errors.estimatedDuration ? 'border border-ceramic-error' : ''
                                             }`}
                                         />
                                         {errors.estimatedDuration && (
-                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                            <p className="text-sm text-ceramic-error flex items-center gap-1">
                                                 <AlertCircle className="w-3 h-3" />
                                                 {errors.estimatedDuration}
                                             </p>
@@ -266,11 +266,11 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                                                 }
                                             }}
                                             className={`w-full px-4 py-3 rounded-xl ceramic-inset text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all ${
-                                                errors.scheduledTime ? 'border border-red-500' : ''
+                                                errors.scheduledTime ? 'border border-ceramic-error' : ''
                                             }`}
                                         />
                                         {errors.scheduledTime && (
-                                            <p className="text-sm text-red-600 flex items-center gap-1">
+                                            <p className="text-sm text-ceramic-error flex items-center gap-1">
                                                 <AlertCircle className="w-3 h-3" />
                                                 {errors.scheduledTime}
                                             </p>

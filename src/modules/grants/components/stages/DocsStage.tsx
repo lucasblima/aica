@@ -235,7 +235,7 @@ export const DocsStage: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="flex-1 ceramic-trough p-1.5">
               <motion.div
-                className="h-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"
+                className="h-2 rounded-full bg-ceramic-success"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 0.3 }}
@@ -410,7 +410,7 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
       exit={{ opacity: 0, x: -20 }}
       transition={{ delay: index * 0.05 }}
       className={`ceramic-card p-4 transition-colors ${
-        isChecked ? 'bg-green-50 border-l-4 border-green-400' : ''
+        isChecked ? 'bg-ceramic-success-bg border-l-4 border-ceramic-success' : ''
       }`}
     >
       <div className="flex items-center gap-3">
@@ -419,7 +419,7 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
           onClick={onToggle}
           className={`w-6 h-6 rounded flex-shrink-0 flex items-center justify-center transition-colors ${
             isChecked
-              ? 'bg-green-500 text-white'
+              ? 'bg-ceramic-success text-white'
               : 'border-2 border-[#948D82] hover:border-[#5C554B]'
           }`}
         >
@@ -430,7 +430,7 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-bold truncate ${
-              isChecked ? 'text-green-700 line-through' : 'text-[#5C554B]'
+              isChecked ? 'text-ceramic-success line-through' : 'text-[#5C554B]'
             }`}
           >
             {document.name}
@@ -442,8 +442,8 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
           )}
           {isUploaded && document.uploadedFileName && (
             <div className="flex items-center gap-2 mt-1">
-              <FileText className="w-3 h-3 text-green-600" />
-              <p className="text-xs text-green-600 truncate">
+              <FileText className="w-3 h-3 text-ceramic-success" />
+              <p className="text-xs text-ceramic-success truncate">
                 {document.uploadedFileName}
               </p>
             </div>
@@ -482,7 +482,7 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
         ) : (
           <button
             onClick={onRemoveUpload}
-            className="p-2 text-[#948D82] hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+            className="p-2 text-[#948D82] hover:text-ceramic-warning hover:bg-ceramic-warning/10 rounded-lg transition-colors"
             title="Remover arquivo"
           >
             <X className="w-4 h-4" />
@@ -492,7 +492,7 @@ const DocumentChecklistItem: React.FC<DocumentChecklistItemProps> = ({
         {/* Remove Document Button */}
         <button
           onClick={onRemove}
-          className="p-2 text-[#948D82] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="p-2 text-[#948D82] hover:text-ceramic-error hover:bg-ceramic-error-bg rounded-lg transition-colors"
           title="Remover da lista"
         >
           <Trash2 className="w-4 h-4" />

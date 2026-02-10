@@ -175,7 +175,7 @@ export function AudioRecorder({
       <button
         type="button"
         onClick={handleRetry}
-        className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-ceramic-error hover:text-ceramic-error/80 transition-colors"
         title={errorMessage}
       >
         <MicrophoneIcon className="w-4 h-4" />
@@ -192,19 +192,19 @@ export function AudioRecorder({
           {barHeights.map((h, i) => (
             <div
               key={i}
-              className="w-1 bg-red-500 rounded-full transition-all duration-75"
+              className="w-1 bg-ceramic-error rounded-full transition-all duration-75"
               style={{ height: `${h}px` }}
             />
           ))}
         </div>
 
         {/* Timer */}
-        <span className="text-sm font-mono text-red-600 min-w-[3ch]">
+        <span className="text-sm font-mono text-ceramic-error min-w-[3ch]">
           {formatTime(seconds)}
         </span>
 
         {/* Recording indicator */}
-        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        <div className="w-2 h-2 bg-ceramic-error rounded-full animate-pulse" />
 
         {/* Stop button */}
         <button
@@ -213,7 +213,7 @@ export function AudioRecorder({
           className="ceramic-concave p-2 rounded-lg hover:scale-95 active:scale-90 transition-all"
           title="Parar gravacao"
         >
-          <StopIcon className="w-4 h-4 text-red-600" />
+          <StopIcon className="w-4 h-4 text-ceramic-error" />
         </button>
       </div>
     )

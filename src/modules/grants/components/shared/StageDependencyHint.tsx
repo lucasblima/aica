@@ -17,24 +17,24 @@ interface StageDependencyHintProps {
 const VARIANT_CONFIG = {
   info: {
     icon: Info,
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-700',
-    iconColor: 'text-blue-500',
+    bgColor: 'bg-ceramic-info-bg',
+    borderColor: 'border-ceramic-border',
+    textColor: 'text-ceramic-info',
+    iconColor: 'text-ceramic-info',
   },
   tip: {
     icon: Lightbulb,
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
-    textColor: 'text-amber-700',
+    textColor: 'text-amber-600',
     iconColor: 'text-amber-500',
   },
   warning: {
     icon: Info,
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
-    textColor: 'text-orange-700',
-    iconColor: 'text-orange-500',
+    bgColor: 'bg-ceramic-warning/10',
+    borderColor: 'border-ceramic-warning/20',
+    textColor: 'text-ceramic-warning',
+    iconColor: 'text-ceramic-warning',
   },
 };
 

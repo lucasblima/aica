@@ -39,24 +39,24 @@ export const NotesView: React.FC<NotesViewProps> = ({ spaceId }) => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-4xl font-light text-stone-900 tracking-tight mb-2">
+          <h1 className="text-4xl font-light text-ceramic-text-primary tracking-tight mb-2">
             Knowledge Base
           </h1>
-          <p className="text-stone-500 text-sm font-light tracking-wide">
+          <p className="text-ceramic-text-secondary text-sm font-light tracking-wide">
             {notes.length} notes in your collection
           </p>
         </div>
 
         <div className="flex gap-3">
-          <div className="flex border border-stone-200 rounded-sm overflow-hidden">
+          <div className="flex border border-ceramic-border rounded-sm overflow-hidden">
             <button
               onClick={() => setViewMode('search')}
               className={`
                 px-4 py-2 text-sm font-light transition-colors
                 ${
                   viewMode === 'search'
-                    ? 'bg-stone-900 text-white'
-                    : 'bg-white text-stone-600 hover:bg-stone-50'
+                    ? 'bg-ceramic-text-primary text-white'
+                    : 'bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool'
                 }
               `}
             >
@@ -68,8 +68,8 @@ export const NotesView: React.FC<NotesViewProps> = ({ spaceId }) => {
                 px-4 py-2 text-sm font-light transition-colors
                 ${
                   viewMode === 'graph'
-                    ? 'bg-stone-900 text-white'
-                    : 'bg-white text-stone-600 hover:bg-stone-50'
+                    ? 'bg-ceramic-text-primary text-white'
+                    : 'bg-ceramic-base text-ceramic-text-secondary hover:bg-ceramic-cool'
                 }
               `}
             >
@@ -79,7 +79,7 @@ export const NotesView: React.FC<NotesViewProps> = ({ spaceId }) => {
 
           <button
             onClick={() => setShowEditor(true)}
-            className="px-6 py-2 bg-emerald-600 text-white text-sm font-light tracking-wide rounded-sm hover:bg-emerald-700 transition-colors"
+            className="px-6 py-2 bg-ceramic-success text-white text-sm font-light tracking-wide rounded-sm hover:bg-ceramic-success/90 transition-colors"
           >
             New Note
           </button>

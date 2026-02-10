@@ -54,9 +54,9 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="bg-ceramic-base rounded-xl shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-6 text-white">
+      <div className="bg-gradient-to-r from-ceramic-info to-ceramic-accent p-6 text-white">
         <div className="flex items-center gap-3 mb-2">
           <SparklesIcon className="h-6 w-6" />
           <h3 className="text-xl font-bold">Resumo Semanal</h3>
@@ -74,7 +74,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
         <div>
           <div className="flex items-center gap-2 mb-2">
             <ArrowTrendingUpIcon className="h-5 w-5" style={{ color: trendColor }} />
-            <h4 className="font-semibold text-gray-900">Tendência Emocional</h4>
+            <h4 className="font-semibold text-ceramic-text-primary">Tendência Emocional</h4>
           </div>
 
           <div className="flex items-center gap-3">
@@ -84,7 +84,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
             >
               {summary.summary_data.emotionalTrend}
             </div>
-            <p className="text-sm text-gray-600">{trendDescription}</p>
+            <p className="text-sm text-ceramic-text-secondary">{trendDescription}</p>
           </div>
         </div>
 
@@ -92,15 +92,15 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
         {summary.summary_data.dominantEmotions.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <HeartIcon className="h-5 w-5 text-pink-500" />
-              <h4 className="font-semibold text-gray-900">Emoções Dominantes</h4>
+              <HeartIcon className="h-5 w-5 text-ceramic-error" />
+              <h4 className="font-semibold text-ceramic-text-primary">Emoções Dominantes</h4>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {summary.summary_data.dominantEmotions.map(emotion => (
                 <span
                   key={emotion}
-                  className="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-sm font-medium"
+                  className="px-3 py-1 bg-ceramic-error/10 text-ceramic-error rounded-full text-sm font-medium"
                 >
                   {emotion}
                 </span>
@@ -112,13 +112,13 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
         {/* Key moments */}
         {summary.summary_data.keyMoments.length > 0 && (
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3">Momentos-Chave</h4>
+            <h4 className="font-semibold text-ceramic-text-primary mb-3">Momentos-Chave</h4>
 
             <div className="space-y-2">
               {summary.summary_data.keyMoments.map(moment => (
                 <div
                   key={moment.id}
-                  className="p-3 bg-gray-50 rounded-lg border-l-4"
+                  className="p-3 bg-ceramic-base rounded-lg border-l-4"
                   style={{
                     borderLeftColor:
                       moment.sentiment === 'positive'
@@ -128,8 +128,8 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
                         : '#94a3b8',
                   }}
                 >
-                  <p className="text-sm text-gray-700">{moment.preview}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-ceramic-text-primary">{moment.preview}</p>
+                  <p className="text-xs text-ceramic-text-secondary mt-1">
                     {format(new Date(moment.created_at), "d 'de' MMMM", {
                       locale: ptBR,
                     })}
@@ -144,15 +144,15 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
         {summary.summary_data.insights.length > 0 && (
           <div data-tour="growth-insights">
             <div className="flex items-center gap-2 mb-3">
-              <LightBulbIcon className="h-5 w-5 text-yellow-500" />
-              <h4 className="font-semibold text-gray-900">Insights</h4>
+              <LightBulbIcon className="h-5 w-5 text-ceramic-warning" />
+              <h4 className="font-semibold text-ceramic-text-primary">Insights</h4>
             </div>
 
             <ul className="space-y-2">
               {summary.summary_data.insights.map((insight, index) => (
                 <li key={index} className="flex gap-3">
-                  <span className="text-yellow-500 font-bold">•</span>
-                  <p className="text-sm text-gray-700">{insight}</p>
+                  <span className="text-ceramic-warning font-bold">•</span>
+                  <p className="text-sm text-ceramic-text-primary">{insight}</p>
                 </li>
               ))}
             </ul>
@@ -161,22 +161,22 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
 
         {/* Suggested focus */}
         {summary.summary_data.suggestedFocus && (
-          <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-            <p className="text-sm font-medium text-blue-900 mb-1">
+          <div className="p-4 bg-ceramic-info/10 border-2 border-ceramic-info/30 rounded-lg">
+            <p className="text-sm font-medium text-ceramic-text-primary mb-1">
               Foco Sugerido para a Próxima Semana:
             </p>
-            <p className="text-blue-800">{summary.summary_data.suggestedFocus}</p>
+            <p className="text-ceramic-info">{summary.summary_data.suggestedFocus}</p>
           </div>
         )}
 
         {/* User reflection */}
-        <div className="pt-4 border-t border-gray-200">
-          <h4 className="font-semibold text-gray-900 mb-3">Sua Reflexão</h4>
+        <div className="pt-4 border-t border-ceramic-text-secondary/10">
+          <h4 className="font-semibold text-ceramic-text-primary mb-3">Sua Reflexão</h4>
 
           {!isAddingReflection && !summary.user_reflection ? (
             <button
               onClick={() => setIsAddingReflection(true)}
-              className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-all"
+              className="w-full px-4 py-3 border-2 border-dashed border-ceramic-text-secondary/20 rounded-lg text-ceramic-text-secondary hover:border-ceramic-info hover:text-ceramic-info transition-all"
             >
               + Adicionar reflexão pessoal (+20 CP)
             </button>
@@ -188,7 +188,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
                 placeholder="O que você aprendeu esta semana? Como se sente sobre isso?"
                 rows={4}
                 disabled={!!summary.user_reflection}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none disabled:bg-gray-50"
+                className="w-full px-4 py-3 border border-ceramic-text-secondary/20 rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:outline-none resize-none disabled:bg-ceramic-base"
               />
 
               {!summary.user_reflection && (
@@ -197,7 +197,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
                     type="button"
                     onClick={handleAddReflection}
                     disabled={isSubmitting || !reflectionText.trim()}
-                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+                    className="flex-1 px-4 py-2 bg-ceramic-info text-white rounded-lg font-medium hover:bg-ceramic-info/80 disabled:bg-ceramic-neutral disabled:cursor-not-allowed transition-all"
                   >
                     {isSubmitting ? 'Salvando...' : 'Salvar Reflexão'}
                   </button>
@@ -208,7 +208,7 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
                       setIsAddingReflection(false)
                       setReflectionText('')
                     }}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-all"
+                    className="px-4 py-2 bg-ceramic-highlight text-ceramic-text-primary rounded-lg font-medium hover:bg-ceramic-highlight transition-all"
                   >
                     Cancelar
                   </button>

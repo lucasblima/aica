@@ -115,7 +115,7 @@ export const NextEventHero: React.FC<NextEventHeroProps> = ({
           </span>
         </div>
       ) : timeUntil ? (
-        <div className="ceramic-tray p-4 rounded-2xl mb-4 text-center bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="ceramic-tray p-4 rounded-2xl mb-4 text-center bg-gradient-to-r from-ceramic-info/10 to-ceramic-accent/10">
           <div className="flex items-center justify-center gap-2 mb-1">
             <Clock className="w-5 h-5 text-ceramic-accent animate-pulse" />
             <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">

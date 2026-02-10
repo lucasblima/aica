@@ -36,7 +36,7 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-stone-400 text-sm font-light tracking-wide">
+        <div className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
           Loading library...
         </div>
       </div>
@@ -60,11 +60,11 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
   return (
     <div className="max-w-7xl mx-auto px-8 py-12 space-y-16">
       {/* Header */}
-      <header className="border-b border-stone-200 pb-8">
-        <h1 className="text-4xl font-light text-stone-900 tracking-tight mb-2">
+      <header className="border-b border-ceramic-border pb-8">
+        <h1 className="text-4xl font-light text-ceramic-text-primary tracking-tight mb-2">
           Library
         </h1>
-        <p className="text-stone-500 text-sm font-light tracking-wide">
+        <p className="text-ceramic-text-secondary text-sm font-light tracking-wide">
           Your personal repository of knowledge and growth
         </p>
       </header>
@@ -72,17 +72,17 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
       {/* Active Journeys */}
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-2xl font-light text-stone-800 tracking-tight">
+          <h2 className="text-2xl font-light text-ceramic-text-primary tracking-tight">
             Active Journeys
           </h2>
-          <span className="text-xs text-stone-400 font-light tracking-wider uppercase">
+          <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase">
             {activeJourneys.length} in progress
           </span>
         </div>
 
         {activeJourneys.length === 0 ? (
-          <div className="bg-stone-50 rounded-sm border border-stone-100 p-12 text-center">
-            <p className="text-stone-400 text-sm font-light tracking-wide">
+          <div className="bg-ceramic-cool rounded-sm border border-ceramic-border p-12 text-center">
+            <p className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
               No active learning journeys. Start a new course or book to begin.
             </p>
           </div>
@@ -98,17 +98,17 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
       {/* Recent Notes */}
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-2xl font-light text-stone-800 tracking-tight">
+          <h2 className="text-2xl font-light text-ceramic-text-primary tracking-tight">
             Recent Notes
           </h2>
-          <span className="text-xs text-stone-400 font-light tracking-wider uppercase">
+          <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase">
             {notes.length} total
           </span>
         </div>
 
         {recentNotes.length === 0 ? (
-          <div className="bg-stone-50 rounded-sm border border-stone-100 p-12 text-center">
-            <p className="text-stone-400 text-sm font-light tracking-wide">
+          <div className="bg-ceramic-cool rounded-sm border border-ceramic-border p-12 text-center">
+            <p className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
               Your knowledge base is empty. Create your first note.
             </p>
           </div>
@@ -117,17 +117,17 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
             {recentNotes.map((note) => (
               <div
                 key={note.id}
-                className="bg-white border border-stone-200 rounded-sm p-6 hover:shadow-sm transition-shadow cursor-pointer"
+                className="bg-ceramic-base border border-ceramic-border rounded-sm p-6 hover:shadow-sm transition-shadow cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-base font-normal text-stone-900">
+                  <h3 className="text-base font-normal text-ceramic-text-primary">
                     {note.title}
                   </h3>
-                  <span className="text-xs text-stone-400 font-light tracking-wider uppercase">
+                  <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase">
                     {note.note_type}
                   </span>
                 </div>
-                <p className="text-sm text-stone-600 font-light line-clamp-2 leading-relaxed">
+                <p className="text-sm text-ceramic-text-secondary font-light line-clamp-2 leading-relaxed">
                   {note.content.substring(0, 150)}...
                 </p>
                 {note.tags.length > 0 && (
@@ -135,7 +135,7 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
                     {note.tags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className="text-xs text-stone-500 bg-stone-50 px-2 py-1 rounded-sm font-light"
+                        className="text-xs text-ceramic-text-secondary bg-ceramic-cool px-2 py-1 rounded-sm font-light"
                       >
                         {tag}
                       </span>
@@ -151,7 +151,7 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
       {/* Upcoming Mentorship Sessions */}
       {upcomingMentorships.length > 0 && (
         <section className="space-y-6">
-          <h2 className="text-2xl font-light text-stone-800 tracking-tight">
+          <h2 className="text-2xl font-light text-ceramic-text-primary tracking-tight">
             Upcoming Sessions
           </h2>
 
@@ -167,10 +167,10 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
       {recentCredentials.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-2xl font-light text-stone-800 tracking-tight">
+            <h2 className="text-2xl font-light text-ceramic-text-primary tracking-tight">
               Credentials
             </h2>
-            <span className="text-xs text-stone-400 font-light tracking-wider uppercase">
+            <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase">
               {credentials.length} earned
             </span>
           </div>
@@ -184,35 +184,35 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ spaceId })
       )}
 
       {/* Stats Bar */}
-      <section className="border-t border-stone-200 pt-8">
+      <section className="border-t border-ceramic-border pt-8">
         <div className="grid grid-cols-4 gap-8">
           <div className="text-center space-y-1">
-            <div className="text-3xl font-light text-stone-900">
+            <div className="text-3xl font-light text-ceramic-text-primary">
               {journeys.length}
             </div>
-            <div className="text-xs text-stone-500 font-light tracking-wider uppercase">
+            <div className="text-xs text-ceramic-text-secondary font-light tracking-wider uppercase">
               Journeys
             </div>
           </div>
           <div className="text-center space-y-1">
-            <div className="text-3xl font-light text-stone-900">{notes.length}</div>
-            <div className="text-xs text-stone-500 font-light tracking-wider uppercase">
+            <div className="text-3xl font-light text-ceramic-text-primary">{notes.length}</div>
+            <div className="text-xs text-ceramic-text-secondary font-light tracking-wider uppercase">
               Notes
             </div>
           </div>
           <div className="text-center space-y-1">
-            <div className="text-3xl font-light text-stone-900">
+            <div className="text-3xl font-light text-ceramic-text-primary">
               {mentorships.length}
             </div>
-            <div className="text-xs text-stone-500 font-light tracking-wider uppercase">
+            <div className="text-xs text-ceramic-text-secondary font-light tracking-wider uppercase">
               Mentorships
             </div>
           </div>
           <div className="text-center space-y-1">
-            <div className="text-3xl font-light text-stone-900">
+            <div className="text-3xl font-light text-ceramic-text-primary">
               {credentials.length}
             </div>
-            <div className="text-xs text-stone-500 font-light tracking-wider uppercase">
+            <div className="text-xs text-ceramic-text-secondary font-light tracking-wider uppercase">
               Credentials
             </div>
           </div>

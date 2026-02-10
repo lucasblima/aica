@@ -102,15 +102,15 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
   const getStatusColor = (status: GrantProject['status']) => {
     const colors = {
-      draft: 'text-gray-500',
-      briefing: 'text-blue-500',
-      generating: 'text-purple-500',
-      review: 'text-orange-500',
-      submitted: 'text-green-500',
-      approved: 'text-green-700',
-      rejected: 'text-red-500'
+      draft: 'text-ceramic-text-secondary',
+      briefing: 'text-ceramic-info',
+      generating: 'text-ceramic-accent',
+      review: 'text-ceramic-warning',
+      submitted: 'text-ceramic-success',
+      approved: 'text-ceramic-success',
+      rejected: 'text-ceramic-error'
     };
-    return colors[status] || 'text-gray-500';
+    return colors[status] || 'text-ceramic-text-secondary';
   };
 
   const getStatusIcon = (status: GrantProject['status']) => {
@@ -305,7 +305,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
                 <div className="ceramic-card p-4">
                   <div className="flex items-center gap-3">
-                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-green-600">
+                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-success">
                       <DollarSign className="w-5 h-5" />
                     </div>
                     <div>
@@ -319,7 +319,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
                 <div className="ceramic-card p-4">
                   <div className="flex items-center gap-3">
-                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-red-600">
+                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-error">
                       <Calendar className="w-5 h-5" />
                     </div>
                     <div>
@@ -333,7 +333,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
                 <div className="ceramic-card p-4">
                   <div className="flex items-center gap-3">
-                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-blue-600">
+                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-info">
                       <Target className="w-5 h-5" />
                     </div>
                     <div>
@@ -347,7 +347,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
 
                 <div className="ceramic-card p-4">
                   <div className="flex items-center gap-3">
-                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-purple-600">
+                    <div className="ceramic-concave w-10 h-10 flex items-center justify-center text-ceramic-accent">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div>
@@ -420,14 +420,14 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                           />
                           <button
                             onClick={() => saveProjectName(project.id)}
-                            className="ceramic-concave w-8 h-8 flex items-center justify-center text-green-600 hover:scale-95 transition-transform"
+                            className="ceramic-concave w-8 h-8 flex items-center justify-center text-ceramic-success hover:scale-95 transition-transform"
                             title="Salvar"
                           >
                             <Save className="w-4 h-4" />
                           </button>
                           <button
                             onClick={cancelEditingProjectName}
-                            className="ceramic-concave w-8 h-8 flex items-center justify-center text-red-600 hover:scale-95 transition-transform"
+                            className="ceramic-concave w-8 h-8 flex items-center justify-center text-ceramic-error hover:scale-95 transition-transform"
                             title="Cancelar"
                           >
                             <X className="w-4 h-4" />
@@ -489,11 +489,11 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                         className="mb-4 ceramic-tray p-3 rounded-lg cursor-pointer hover:scale-[1.01] transition-transform"
                       >
                         <div className="flex items-center gap-2">
-                          <div className="text-blue-600">
+                          <div className="text-ceramic-info">
                             {nextAction.icon}
                           </div>
                           <p className="text-xs font-medium text-ceramic-text-secondary">
-                            <span className="font-bold text-blue-600">Próximo passo:</span>{' '}
+                            <span className="font-bold text-ceramic-info">Próximo passo:</span>{' '}
                             {nextAction.text}
                           </p>
                         </div>
@@ -511,7 +511,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                     </div>
                     <div className="ceramic-trough p-1">
                       <div
-                        className="h-1 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"
+                        className="h-1 rounded-full bg-gradient-to-r from-ceramic-info to-ceramic-accent"
                         style={{ width: `${project.completion_percentage}%` }}
                       />
                     </div>
@@ -570,7 +570,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                       <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">
                         {project.project_name}
                       </h3>
-                      <div className="flex items-center gap-2 text-gray-500">
+                      <div className="flex items-center gap-2 text-ceramic-text-secondary">
                         <Archive className="w-4 h-4" />
                         <span className="text-sm">Arquivado</span>
                       </div>
@@ -583,7 +583,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                           e.stopPropagation();
                           onUnarchiveProject(project.id);
                         }}
-                        className="ceramic-concave px-3 py-1.5 flex items-center gap-1.5 text-blue-600 hover:scale-95 transition-transform text-sm font-bold"
+                        className="ceramic-concave px-3 py-1.5 flex items-center gap-1.5 text-ceramic-info hover:scale-95 transition-transform text-sm font-bold"
                         title="Restaurar projeto"
                       >
                         <ArchiveRestore className="w-4 h-4" />
@@ -594,7 +594,7 @@ export const EditalDetailView: React.FC<EditalDetailViewProps> = ({
                           e.stopPropagation();
                           onDeleteProject(project.id);
                         }}
-                        className="ceramic-concave w-8 h-8 flex items-center justify-center text-red-600 hover:scale-95 transition-transform"
+                        className="ceramic-concave w-8 h-8 flex items-center justify-center text-ceramic-error hover:scale-95 transition-transform"
                         title="Deletar permanentemente"
                       >
                         <Trash2 className="w-4 h-4" />

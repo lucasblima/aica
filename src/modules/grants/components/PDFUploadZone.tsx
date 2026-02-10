@@ -98,18 +98,18 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
                 key="success"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="ceramic-concave w-20 h-20 flex items-center justify-center bg-green-50"
+                className="ceramic-concave w-20 h-20 flex items-center justify-center bg-ceramic-success-bg"
               >
-                <CheckCircle2 className="w-10 h-10 text-green-600" />
+                <CheckCircle2 className="w-10 h-10 text-ceramic-success" />
               </motion.div>
             ) : error ? (
               <motion.div
                 key="error"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="ceramic-concave w-20 h-20 flex items-center justify-center bg-red-50"
+                className="ceramic-concave w-20 h-20 flex items-center justify-center bg-ceramic-error-bg"
               >
-                <AlertCircle className="w-10 h-10 text-red-600" />
+                <AlertCircle className="w-10 h-10 text-ceramic-error" />
               </motion.div>
             ) : selectedFileName ? (
               <motion.div
@@ -145,7 +145,7 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
               </>
             ) : success ? (
               <>
-                <h3 className="text-lg font-bold text-green-600 mb-2">
+                <h3 className="text-lg font-bold text-ceramic-success mb-2">
                   ✓ Edital analisado com sucesso!
                 </h3>
                 <p className="text-sm text-ceramic-text-secondary">
@@ -154,10 +154,10 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
               </>
             ) : error ? (
               <>
-                <h3 className="text-lg font-bold text-red-600 mb-2">
+                <h3 className="text-lg font-bold text-ceramic-error mb-2">
                   Erro ao processar PDF
                 </h3>
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-ceramic-error">
                   {error}
                 </p>
               </>
@@ -219,7 +219,7 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
               const input = document.querySelector('input[type="file"]') as HTMLInputElement;
               if (input) input.value = '';
             }}
-            className="text-xs text-ceramic-text-secondary hover:text-red-500 transition-colors"
+            className="text-xs text-ceramic-text-secondary hover:text-ceramic-error transition-colors"
           >
             Remover
           </button>

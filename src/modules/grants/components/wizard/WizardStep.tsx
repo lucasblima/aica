@@ -57,7 +57,7 @@ export function WizardStep({
       {/* Step Header */}
       <div className="mb-6">
         <motion.h2
-          className="text-2xl font-bold text-gray-900"
+          className="text-2xl font-bold text-ceramic-text-primary"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -65,7 +65,7 @@ export function WizardStep({
           {step.title}
         </motion.h2>
         <motion.p
-          className="mt-1 text-gray-500"
+          className="mt-1 text-ceramic-text-secondary"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -107,7 +107,7 @@ export function WizardStep({
       </AnimatePresence>
 
       {/* Navigation Footer */}
-      <div className="mt-8 pt-6 border-t border-gray-100">
+      <div className="mt-8 pt-6 border-t border-ceramic-border">
         <div className="flex items-center justify-between">
           {/* Back Button */}
           <motion.button
@@ -116,8 +116,8 @@ export function WizardStep({
             className={`
               flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
               ${isFirstStep
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'text-ceramic-text-secondary cursor-not-allowed'
+                : 'text-ceramic-text-secondary hover:bg-ceramic-base'
               }
             `}
             whileHover={!isFirstStep ? { x: -4 } : undefined}
@@ -128,7 +128,7 @@ export function WizardStep({
           </motion.button>
 
           {/* Step Counter */}
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-ceramic-text-secondary">
             {stepIndex + 1} / {totalSteps}
           </span>
 
@@ -139,7 +139,7 @@ export function WizardStep({
               <motion.button
                 onClick={onSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-all"
+                className="flex items-center gap-2 px-4 py-2 text-ceramic-text-secondary hover:bg-ceramic-base rounded-lg font-medium transition-all"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -158,7 +158,7 @@ export function WizardStep({
               className={`
                 flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all
                 ${isLastStep
-                  ? 'bg-green-500 text-white hover:bg-green-600'
+                  ? 'bg-ceramic-success text-white hover:bg-ceramic-success/90'
                   : 'bg-amber-500 text-white hover:bg-amber-600'
                 }
               `}

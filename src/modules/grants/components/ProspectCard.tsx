@@ -72,21 +72,21 @@ export function ProspectCard({
   return (
     <div
       className={`
-        bg-white rounded-lg border p-3 cursor-pointer
+        bg-ceramic-base rounded-lg border p-3 cursor-pointer
         transition-all duration-200
         ${isDragging ? 'shadow-lg rotate-2 opacity-90' : 'shadow-sm hover:shadow-md'}
-        ${isStale ? 'border-amber-300' : 'border-gray-200'}
+        ${isStale ? 'border-amber-300' : 'border-ceramic-border'}
       `}
       onClick={onClick}
     >
       {/* Header com nome e valor */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 truncate">
+          <h4 className="font-medium text-ceramic-text-primary truncate">
             {sponsor.company_name || sponsor.contact_name || 'Sem nome'}
           </h4>
           {sponsor.company_name && sponsor.contact_name && (
-            <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+            <p className="text-xs text-ceramic-text-secondary truncate flex items-center gap-1">
               <User className="w-3 h-3" />
               {sponsor.contact_name}
             </p>
@@ -118,7 +118,7 @@ export function ProspectCard({
 
       {/* Ultima atividade */}
       {sponsor.last_activity_date && (
-        <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+        <div className="text-xs text-ceramic-text-secondary mb-2 flex items-center gap-1">
           <Clock className="w-3 h-3" />
           <span>
             {ACTIVITY_TYPE_LABELS[sponsor.last_activity_type!]} -{' '}
@@ -132,7 +132,7 @@ export function ProspectCard({
         <div
           className={`
             text-xs p-2 rounded mb-2
-            ${isOverdue ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}
+            ${isOverdue ? 'bg-ceramic-error-bg text-ceramic-error' : 'bg-ceramic-info-bg text-ceramic-info'}
           `}
         >
           <div className="flex items-start gap-1">
@@ -151,8 +151,8 @@ export function ProspectCard({
       )}
 
       {/* Footer com acoes rapidas */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-        <div className="flex items-center gap-1 text-gray-400">
+      <div className="flex items-center justify-between pt-2 border-t border-ceramic-border">
+        <div className="flex items-center gap-1 text-ceramic-text-secondary">
           <span className="text-xs">
             {sponsor.days_in_stage}d neste estagio
           </span>
@@ -161,33 +161,33 @@ export function ProspectCard({
         {/* Quick actions */}
         <div className="flex items-center gap-1">
           <button
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 hover:bg-ceramic-base rounded transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onQuickAction?.('call');
             }}
             title="Registrar ligacao"
           >
-            <Phone className="w-4 h-4 text-gray-500" />
+            <Phone className="w-4 h-4 text-ceramic-text-secondary" />
           </button>
           <button
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 hover:bg-ceramic-base rounded transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onQuickAction?.('email');
             }}
             title="Registrar e-mail"
           >
-            <Mail className="w-4 h-4 text-gray-500" />
+            <Mail className="w-4 h-4 text-ceramic-text-secondary" />
           </button>
           <button
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 hover:bg-ceramic-base rounded transition-colors"
             onClick={(e) => {
               e.stopPropagation();
             }}
             title="Mais opcoes"
           >
-            <MoreVertical className="w-4 h-4 text-gray-500" />
+            <MoreVertical className="w-4 h-4 text-ceramic-text-secondary" />
           </button>
         </div>
       </div>

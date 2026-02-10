@@ -30,9 +30,9 @@ export function AthleteCard({
 
   // Adherence color logic (colorimetric feedback)
   const getAdherenceColor = (rate: number): string => {
-    if (rate >= 80) return 'text-green-600 bg-green-50';
-    if (rate >= 60) return 'text-amber-600 bg-amber-50';
-    return 'text-red-600 bg-red-50';
+    if (rate >= 80) return 'text-ceramic-success bg-ceramic-success/10';
+    if (rate >= 60) return 'text-ceramic-warning bg-ceramic-warning/10';
+    return 'text-ceramic-error bg-ceramic-error/10';
   };
 
   const adherenceColorClass = getAdherenceColor(adherenceRate);
@@ -46,11 +46,11 @@ export function AthleteCard({
         ceramic-card relative overflow-hidden p-4
         hover:scale-[1.02] transition-all duration-300
         cursor-pointer group
-        ${hasCriticalAlerts ? 'ring-2 ring-red-500 ring-offset-2' : ''}
+        ${hasCriticalAlerts ? 'ring-2 ring-ceramic-error ring-offset-2' : ''}
       `}
     >
       {/* Background gradient for visual interest */}
-      <div className="absolute inset-0 bg-gradient-to-br from-ceramic-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-br from-ceramic-cool to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Content */}
       <div className="relative z-10 space-y-3">
@@ -83,10 +83,10 @@ export function AthleteCard({
           <div
             className={`
               px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider
-              ${statusConfig.color === 'green' ? 'bg-green-100 text-green-700' : ''}
-              ${statusConfig.color === 'yellow' ? 'bg-amber-100 text-amber-700' : ''}
-              ${statusConfig.color === 'blue' ? 'bg-blue-100 text-blue-700' : ''}
-              ${statusConfig.color === 'gray' ? 'bg-gray-100 text-gray-700' : ''}
+              ${statusConfig.color === 'green' ? 'bg-ceramic-success/20 text-ceramic-success' : ''}
+              ${statusConfig.color === 'yellow' ? 'bg-ceramic-warning/20 text-ceramic-warning' : ''}
+              ${statusConfig.color === 'blue' ? 'bg-ceramic-info/20 text-ceramic-info' : ''}
+              ${statusConfig.color === 'gray' ? 'bg-ceramic-cool text-ceramic-text-primary' : ''}
             `}
           >
             {statusConfig.label}
@@ -136,11 +136,11 @@ export function AthleteCard({
               <div
                 className={`
                   ceramic-inset p-1.5
-                  ${hasCriticalAlerts ? 'bg-red-50' : 'bg-amber-50'}
+                  ${hasCriticalAlerts ? 'bg-ceramic-error/10' : 'bg-ceramic-warning/10'}
                 `}
               >
                 <AlertCircle
-                  className={`w-3.5 h-3.5 ${hasCriticalAlerts ? 'text-red-600' : 'text-amber-600'}`}
+                  className={`w-3.5 h-3.5 ${hasCriticalAlerts ? 'text-ceramic-error' : 'text-ceramic-warning'}`}
                 />
               </div>
               <div>
@@ -148,7 +148,7 @@ export function AthleteCard({
                   Alertas
                 </p>
                 <p
-                  className={`text-sm font-bold ${hasCriticalAlerts ? 'text-red-600' : 'text-amber-600'}`}
+                  className={`text-sm font-bold ${hasCriticalAlerts ? 'text-ceramic-error' : 'text-ceramic-warning'}`}
                 >
                   {activeAlerts.length}
                 </p>
@@ -163,18 +163,18 @@ export function AthleteCard({
                 e.stopPropagation();
                 onWhatsAppClick();
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-ceramic-success/20 hover:bg-ceramic-success/30 rounded-lg transition-colors"
               title="Enviar mensagem via WhatsApp"
             >
-              <MessageCircle className="w-4 h-4 text-green-700" />
-              <span className="text-xs font-bold text-green-700">WhatsApp</span>
+              <MessageCircle className="w-4 h-4 text-ceramic-success" />
+              <span className="text-xs font-bold text-ceramic-success">WhatsApp</span>
             </button>
           )}
         </div>
 
         {/* Alert Preview (if critical) */}
         {hasCriticalAlerts && (
-          <div className="pt-2 border-t border-red-500/20">
+          <div className="pt-2 border-t border-ceramic-error/20">
             <AlertBadge alert={activeAlerts[0]} compact />
           </div>
         )}

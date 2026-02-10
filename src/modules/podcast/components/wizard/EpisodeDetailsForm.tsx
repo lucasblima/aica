@@ -170,7 +170,7 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
         {/* Theme Section */}
         <div>
           <label className="block text-sm font-medium text-ceramic-text-primary mb-3">
-            Tema da Conversa <span className="text-red-500">*</span>
+            Tema da Conversa <span className="text-ceramic-error">*</span>
           </label>
 
           {/* Toggle Buttons: Aica Auto vs Manual */}
@@ -200,7 +200,7 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
                 flex-1 px-4 py-3 rounded-xl font-medium transition-all
                 ${
                   themeMode === 'manual'
-                    ? 'bg-blue-500 text-white shadow-lg scale-[1.02]'
+                    ? 'bg-ceramic-accent text-white shadow-lg scale-[1.02]'
                     : 'bg-ceramic-surface text-ceramic-text-secondary hover:bg-ceramic-surface/80'
                 }
               `}
@@ -243,7 +243,7 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
             htmlFor="episode-season"
             className="block text-sm font-medium text-ceramic-text-primary mb-2"
           >
-            Temporada <span className="text-red-500">*</span>
+            Temporada <span className="text-ceramic-error">*</span>
           </label>
           <input
             id="episode-season"
@@ -263,7 +263,7 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
             htmlFor="episode-location"
             className="block text-sm font-medium text-ceramic-text-primary mb-2"
           >
-            Localização <span className="text-red-500">*</span>
+            Localização <span className="text-ceramic-error">*</span>
           </label>
           <select
             id="episode-location"
@@ -345,7 +345,7 @@ export const EpisodeDetailsForm: React.FC<EpisodeDetailsFormProps> = ({
             ${
               isFormValid() && !isLoading
                 ? 'ceramic-button-primary'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-ceramic-cool text-ceramic-text-tertiary cursor-not-allowed'
             }
           `}
         >

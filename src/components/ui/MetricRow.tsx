@@ -8,11 +8,11 @@ interface MetricRowProps {
 }
 
 const colorMap = {
-  blue: 'text-blue-500',
-  green: 'text-green-500',
+  blue: 'text-ceramic-info',
+  green: 'text-ceramic-success',
   amber: 'text-amber-500',
-  red: 'text-red-500',
-  gray: 'text-gray-400',
+  red: 'text-ceramic-error',
+  gray: 'text-ceramic-text-tertiary',
 }
 
 export function MetricRow({ icon: Icon, label, value, color = 'gray' }: MetricRowProps) {

@@ -148,7 +148,7 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
     <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-blue-50/50 border border-blue-100/50 shadow-inner">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-ceramic-info/10 border border-ceramic-info/20 shadow-inner">
           📋
         </div>
         <div>
@@ -170,8 +170,8 @@ function AtlasCard({ tasks }: { tasks: AtlasTask[] }) {
             <div className="flex items-center gap-2 mt-1">
               <span
                 className={`text-xs px-2 py-0.5 rounded-full ${task.priority === 'urgent_important'
-                  ? 'bg-red-100 text-red-700'
-                  : 'bg-indigo-100 text-indigo-700'
+                  ? 'bg-ceramic-error/10 text-ceramic-error'
+                  : 'bg-ceramic-accent/10 text-ceramic-accent'
                   }`}
               >
                 {priorityLabels[task.priority]}
@@ -205,7 +205,7 @@ function JourneyCard({ moments }: { moments: JourneyMoment[] }) {
     <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-purple-50/50 border border-purple-100/50 shadow-inner">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-ceramic-accent/10 border border-ceramic-accent/20 shadow-inner">
           ✨
         </div>
         <div>
@@ -228,7 +228,7 @@ function JourneyCard({ moments }: { moments: JourneyMoment[] }) {
               </p>
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs text-purple-600 font-medium">
+              <span className="text-xs text-ceramic-accent font-medium">
                 +{moment.consciousness_points} PC
               </span>
             </div>
@@ -244,7 +244,7 @@ function StudioCard({ episodes }: { episodes: StudioEpisode[] }) {
     <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-orange-50/50 border border-orange-100/50 shadow-inner">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-ceramic-accent/10 border border-ceramic-accent/20 shadow-inner">
           🎙️
         </div>
         <div>
@@ -269,7 +269,7 @@ function StudioCard({ episodes }: { episodes: StudioEpisode[] }) {
               </p>
             )}
             <div className="flex items-center gap-1 mt-2">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-ceramic-accent/10 text-ceramic-accent">
                 Ideia
               </span>
             </div>
@@ -297,7 +297,7 @@ function ConnectionsCard({ connections }: { connections: Connection[] }) {
     <div className="p-8 rounded-[24px] h-full bg-white/60 backdrop-blur-sm border border-white/40 shadow-[4px_4px_20px_rgba(163,158,145,0.12)]">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-emerald-50/50 border border-emerald-100/50 shadow-inner">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-ceramic-success/10 border border-ceramic-success/20 shadow-inner">
           🤝
         </div>
         <div>

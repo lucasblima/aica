@@ -55,7 +55,7 @@ export function PostCaptureInsight({
         className="ceramic-card max-w-lg w-full overflow-hidden"
       >
         {/* Success Header with Gradient */}
-        <div className="bg-gradient-to-r from-purple-500 to-blue-600 p-6 text-white">
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 text-white">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -95,7 +95,7 @@ export function PostCaptureInsight({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="ceramic-tray rounded-lg p-4 border-2 border-purple-500/20 bg-purple-500/5"
+            className="ceramic-tray rounded-lg p-4 border-2 border-amber-500/20 bg-amber-500/5"
           >
             <div className="flex items-start gap-3">
               <LightBulbIcon className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-0.5" />
@@ -120,7 +120,7 @@ export function PostCaptureInsight({
             >
               <span className="text-xs text-ceramic-text-tertiary">Tema identificado:</span>
               <div className="ceramic-concave px-3 py-1 rounded-full">
-                <span className="text-xs font-bold text-purple-600">
+                <span className="text-xs font-bold text-amber-600">
                   {insight.theme}
                 </span>
               </div>
@@ -143,7 +143,7 @@ export function PostCaptureInsight({
                 className="flex-1 ceramic-concave p-3 hover:scale-[0.98] transition-transform text-left"
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <MagnifyingGlassIcon className="w-4 h-4 text-blue-600" />
+                  <MagnifyingGlassIcon className="w-4 h-4 text-ceramic-info" />
                   <span className="text-xs font-bold text-ceramic-text-primary">
                     Ver momentos similares
                   </span>
@@ -164,7 +164,7 @@ export function PostCaptureInsight({
                 className="flex-1 ceramic-concave p-3 hover:scale-[0.98] transition-transform text-left"
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <ChartBarIcon className="w-4 h-4 text-purple-600" />
+                  <ChartBarIcon className="w-4 h-4 text-amber-600" />
                   <span className="text-xs font-bold text-ceramic-text-primary">
                     Ver padrões
                   </span>
@@ -181,10 +181,10 @@ export function PostCaptureInsight({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg"
+            className="flex items-center gap-2 p-3 bg-ceramic-warm rounded-lg"
           >
-            <SparklesIcon className="h-4 w-4 text-blue-500 flex-shrink-0" />
-            <p className="text-xs text-blue-900 dark:text-blue-300">
+            <SparklesIcon className="h-4 w-4 text-amber-500 flex-shrink-0" />
+            <p className="text-xs text-ceramic-text-primary">
               Continue registrando momentos para descobrir mais padrões e insights sobre sua
               jornada
             </p>
@@ -193,7 +193,7 @@ export function PostCaptureInsight({
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="w-full ceramic-convex px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
+            className="w-full ceramic-convex px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
           >
             Continuar
           </button>

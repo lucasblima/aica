@@ -25,9 +25,9 @@ export function MilestoneTimeline({
     { color: string; bgColor: string; borderColor: string; label: string }
   > = {
     pending: {
-      color: 'text-neutral-600',
-      bgColor: 'bg-neutral-50',
-      borderColor: 'border-neutral-300',
+      color: 'text-ceramic-text-secondary',
+      bgColor: 'bg-ceramic-cool',
+      borderColor: 'border-ceramic-border',
       label: 'Pendente',
     },
     in_progress: {
@@ -37,21 +37,21 @@ export function MilestoneTimeline({
       label: 'Em andamento',
     },
     achieved: {
-      color: 'text-green-700',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-400',
+      color: 'text-ceramic-success',
+      bgColor: 'bg-ceramic-success/10',
+      borderColor: 'border-ceramic-success',
       label: 'Alcançado',
     },
     missed: {
-      color: 'text-red-700',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-400',
+      color: 'text-ceramic-error',
+      bgColor: 'bg-ceramic-error/10',
+      borderColor: 'border-ceramic-error',
       label: 'Perdido',
     },
     cancelled: {
-      color: 'text-neutral-400',
-      bgColor: 'bg-neutral-100',
-      borderColor: 'border-neutral-300',
+      color: 'text-ceramic-text-tertiary',
+      bgColor: 'bg-ceramic-cool',
+      borderColor: 'border-ceramic-border',
       label: 'Cancelado',
     },
   };
@@ -67,20 +67,20 @@ export function MilestoneTimeline({
 
   if (safeMilestones.length === 0) {
     return (
-      <div className={`bg-neutral-50 rounded-lg border border-neutral-200 p-8 text-center ${className}`}>
-        <p className="text-neutral-500 text-sm">Nenhum milestone cadastrado</p>
+      <div className={`bg-ceramic-cool rounded-lg border border-ceramic-border p-8 text-center ${className}`}>
+        <p className="text-ceramic-text-secondary text-sm">Nenhum milestone cadastrado</p>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white rounded-lg border border-neutral-200 p-6 ${className}`}>
-      <h3 className="text-sm font-semibold text-neutral-700 mb-6">Milestones</h3>
+    <div className={`bg-ceramic-base rounded-lg border border-ceramic-border p-6 ${className}`}>
+      <h3 className="text-sm font-semibold text-ceramic-text-primary mb-6">Milestones</h3>
 
       {/* Timeline */}
       <div className="relative">
         {/* Timeline line */}
-        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-neutral-200" />
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-ceramic-border" />
 
         {/* Milestones */}
         <div className="space-y-6">
@@ -94,16 +94,16 @@ export function MilestoneTimeline({
               <div
                 key={milestone.id}
                 className={`relative pl-8 ${
-                  onMilestoneClick ? 'cursor-pointer hover:bg-neutral-50 -ml-2 -mr-2 p-2 rounded-lg' : ''
+                  onMilestoneClick ? 'cursor-pointer hover:bg-ceramic-cool -ml-2 -mr-2 p-2 rounded-lg' : ''
                 }`}
                 onClick={() => onMilestoneClick?.(milestone)}
               >
                 {/* Timeline dot */}
                 <div
                   className={`absolute left-0 top-1 w-3 h-3 rounded-full border-2 ${config.borderColor} ${
-                    milestone.status === 'achieved' ? 'bg-green-500' :
+                    milestone.status === 'achieved' ? 'bg-ceramic-success/100' :
                     milestone.status === 'in_progress' ? 'bg-amber-500' :
-                    'bg-white'
+                    'bg-ceramic-base'
                   }`}
                   style={{ left: '-5px' }}
                 />
@@ -114,20 +114,20 @@ export function MilestoneTimeline({
                     {/* Title and category */}
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{categoryIcon}</span>
-                      <h4 className="text-sm font-semibold text-neutral-900">
+                      <h4 className="text-sm font-semibold text-ceramic-text-primary">
                         {milestone.title}
                       </h4>
                     </div>
 
                     {/* Description */}
                     {milestone.description && (
-                      <p className="text-xs text-neutral-600 mb-2 line-clamp-2">
+                      <p className="text-xs text-ceramic-text-secondary mb-2 line-clamp-2">
                         {milestone.description}
                       </p>
                     )}
 
                     {/* Meta info */}
-                    <div className="flex items-center gap-3 text-xs text-neutral-500">
+                    <div className="flex items-center gap-3 text-xs text-ceramic-text-secondary">
                       {/* Target date */}
                       {milestone.target_date && (
                         <span>
@@ -161,19 +161,19 @@ export function MilestoneTimeline({
                     {/* Progress */}
                     {milestone.status !== 'cancelled' && (
                       <div className="flex items-center gap-2">
-                        <div className="w-16 bg-neutral-200 rounded-full h-1.5 overflow-hidden">
+                        <div className="w-16 bg-ceramic-border rounded-full h-1.5 overflow-hidden">
                           <div
                             className={`h-full transition-all duration-300 ${
                               milestone.status === 'achieved'
-                                ? 'bg-green-500'
+                                ? 'bg-ceramic-success/100'
                                 : milestone.status === 'in_progress'
                                 ? 'bg-amber-500'
-                                : 'bg-neutral-400'
+                                : 'bg-ceramic-text-tertiary'
                             }`}
                             style={{ width: `${milestone.progress_pct}%` }}
                           />
                         </div>
-                        <span className="text-xs font-medium text-neutral-600 w-8">
+                        <span className="text-xs font-medium text-ceramic-text-secondary w-8">
                           {milestone.progress_pct}%
                         </span>
                       </div>

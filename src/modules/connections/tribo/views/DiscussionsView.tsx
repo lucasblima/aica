@@ -48,10 +48,10 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
   };
 
   const categoryColors: Record<DiscussionCategory, string> = {
-    announcement: 'bg-blue-50 text-blue-700 border-blue-200',
-    question: 'bg-purple-50 text-purple-700 border-purple-200',
-    decision: 'bg-green-50 text-green-700 border-green-200',
-    general: 'bg-ceramic-50 text-ceramic-700 border-ceramic-200',
+    announcement: 'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/30',
+    question: 'bg-ceramic-accent/10 text-ceramic-accent border-ceramic-accent/30',
+    decision: 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/30',
+    general: 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border',
   };
 
   if (isLoading) {
@@ -66,9 +66,9 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-white to-ceramic-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-ceramic-base to-ceramic-50">
       {/* Header */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-100">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-100">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center gap-4">
             {/* Category Filter */}
@@ -108,8 +108,8 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
                 onClick={() => setCategoryFilter('announcement')}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   categoryFilter === 'announcement'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
+                    ? 'bg-ceramic-info text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-cool'
                 }`}
               >
                 {categoryIcons.announcement} Anúncios
@@ -118,8 +118,8 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
                 onClick={() => setCategoryFilter('question')}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   categoryFilter === 'question'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
+                    ? 'bg-ceramic-accent text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-cool'
                 }`}
               >
                 {categoryIcons.question} Perguntas
@@ -128,8 +128,8 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
                 onClick={() => setCategoryFilter('decision')}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   categoryFilter === 'decision'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
+                    ? 'bg-ceramic-success text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-cool'
                 }`}
               >
                 {categoryIcons.decision} Decisões
@@ -209,7 +209,7 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
+          <div className="bg-ceramic-base rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
             <span className="text-6xl mb-4 block">💬</span>
             <h2 className="text-2xl font-semibold text-ceramic-900 mb-2">
               Nenhuma discussão encontrada
@@ -235,7 +235,7 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
 
       {/* Stats Footer */}
       {discussions && discussions.length > 0 && (
-        <div className="bg-white border-t border-ceramic-100">
+        <div className="bg-ceramic-base border-t border-ceramic-100">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
@@ -245,13 +245,13 @@ export const DiscussionsView: React.FC<DiscussionsViewProps> = ({
                 <div className="text-sm text-ceramic-600">Total de discussões</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-ceramic-info">
                   {discussions.filter((d) => d.category === 'announcement').length}
                 </div>
                 <div className="text-sm text-ceramic-600">Anúncios</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-ceramic-success">
                   {discussions.filter((d) => d.isPoll).length}
                 </div>
                 <div className="text-sm text-ceramic-600">Enquetes</div>
@@ -285,7 +285,7 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
   return (
     <button
       onClick={onClick}
-      className="w-full bg-white rounded-xl border-2 border-ceramic-200 p-4 text-left hover:border-[#9B4D3A]/40 hover:shadow-lg transition-all"
+      className="w-full bg-ceramic-base rounded-xl border-2 border-ceramic-200 p-4 text-left hover:border-[#9B4D3A]/40 hover:shadow-lg transition-all"
     >
       <div className="flex items-start gap-3">
         {/* Author Avatar */}
@@ -314,7 +314,7 @@ const DiscussionCard: React.FC<DiscussionCardProps> = ({
               {discussion.category}
             </span>
             {discussion.isResolved && (
-              <span className="text-green-600 text-sm">✓ Resolvido</span>
+              <span className="text-ceramic-success text-sm">✓ Resolvido</span>
             )}
           </div>
 

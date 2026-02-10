@@ -36,14 +36,14 @@ export const FileSearchAnalyticsView: React.FC<FileSearchAnalyticsViewProps> = (
 
   // Modo fullpage: com header e navegação
   return (
-    <div className="min-h-screen bg-[#F0EFE9]">
+    <div className="min-h-screen bg-ceramic-base">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-[#E5E3DC] px-6 py-4 sticky top-0 z-10">
+      <header className="bg-white/80 backdrop-blur-md border-b border-ceramic-border px-6 py-4 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           {onBack && (
             <button
               onClick={onBack}
-              className="p-2 rounded-xl hover:bg-[#EBE9E4] transition-colors"
+              className="p-2 rounded-xl hover:bg-ceramic-cool transition-colors"
               aria-label="Voltar"
             >
               <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />

@@ -102,8 +102,8 @@ export function SlideCanvas({
   const renderSlide = useMemo(() => {
     if (!currentSlide) {
       return (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-          <p className="text-gray-500 dark:text-gray-400">Nenhum slide selecionado</p>
+        <div className="w-full h-full flex items-center justify-center bg-ceramic-base dark:bg-ceramic-base">
+          <p className="text-ceramic-text-secondary dark:text-ceramic-text-secondary">Nenhum slide selecionado</p>
         </div>
       );
     }
@@ -142,36 +142,36 @@ export function SlideCanvas({
         return <ContactSlide {...slideProps} />;
       default:
         return (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <p className="text-gray-500">Tipo de slide desconhecido: {currentSlide.slideType}</p>
+          <div className="w-full h-full flex items-center justify-center bg-ceramic-base">
+            <p className="text-ceramic-text-secondary">Tipo de slide desconhecido: {currentSlide.slideType}</p>
           </div>
         );
     }
   }, [currentSlide, template, editMode]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-100 dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-ceramic-base dark:bg-ceramic-base">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between px-4 py-3 bg-ceramic-base dark:bg-ceramic-base border-b border-ceramic-border dark:border-ceramic-border">
         {/* Navigation */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handlePrev}
             disabled={!canGoPrev}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Slide anterior"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[80px] text-center">
+          <span className="text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-secondary min-w-[80px] text-center">
             {currentSlideIndex + 1} / {slides.length}
           </span>
           <button
             type="button"
             onClick={handleNext}
             disabled={!canGoNext}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Proximo slide"
           >
             <ChevronRight className="w-5 h-5" />
@@ -184,7 +184,7 @@ export function SlideCanvas({
             type="button"
             onClick={handleZoomOut}
             disabled={!canZoomOut}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Diminuir zoom"
           >
             <ZoomOut className="w-5 h-5" />
@@ -192,10 +192,10 @@ export function SlideCanvas({
           <button
             type="button"
             onClick={handleZoomFit}
-            className="px-3 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="px-3 py-1 rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-cool transition-colors"
             title="Ajustar ao tamanho"
           >
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-secondary">
               {Math.round(zoom * 100)}%
             </span>
           </button>
@@ -203,7 +203,7 @@ export function SlideCanvas({
             type="button"
             onClick={handleZoomIn}
             disabled={!canZoomIn}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Aumentar zoom"
           >
             <ZoomIn className="w-5 h-5" />
@@ -211,7 +211,7 @@ export function SlideCanvas({
           <button
             type="button"
             onClick={handleZoomFit}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ml-2"
+            className="p-2 rounded-lg hover:bg-ceramic-base dark:hover:bg-ceramic-cool transition-colors ml-2"
             title="Tela cheia"
           >
             <Maximize2 className="w-5 h-5" />
@@ -223,7 +223,7 @@ export function SlideCanvas({
       <div className="flex-1 overflow-auto p-8">
         <div className="flex items-center justify-center min-h-full">
           <div
-            className={`${TEMPLATE_STYLES[template]} bg-white shadow-2xl`}
+            className={`${TEMPLATE_STYLES[template]} bg-ceramic-base shadow-2xl`}
             style={{
               width: SLIDE_DIMENSIONS.width,
               height: SLIDE_DIMENSIONS.height,
@@ -240,7 +240,7 @@ export function SlideCanvas({
       </div>
 
       {/* Slide thumbnails */}
-      <div className="px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <div className="px-4 py-3 bg-ceramic-base dark:bg-ceramic-base border-t border-ceramic-border dark:border-ceramic-border overflow-x-auto">
         <div className="flex gap-2">
           {slides.map((slide, index) => (
             <button
@@ -250,16 +250,16 @@ export function SlideCanvas({
               className={`
                 flex-shrink-0 w-32 h-18 rounded-lg border-2 transition-all overflow-hidden
                 ${index === currentSlideIndex
-                  ? 'border-indigo-500 ring-2 ring-indigo-500/30'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                  ? 'border-amber-500 ring-2 ring-amber-500/30'
+                  : 'border-ceramic-border dark:border-ceramic-border hover:border-amber-300'
                 }
               `}
             >
-              <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center relative">
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="w-full h-full bg-ceramic-base dark:bg-ceramic-cool flex items-center justify-center relative">
+                <span className="text-xs font-medium text-ceramic-text-secondary dark:text-ceramic-text-secondary">
                   {index + 1}
                 </span>
-                <span className="absolute bottom-1 left-1 right-1 text-xs text-gray-500 dark:text-gray-400 truncate text-center">
+                <span className="absolute bottom-1 left-1 right-1 text-xs text-ceramic-text-secondary dark:text-ceramic-text-secondary truncate text-center">
                   {slide.slideType}
                 </span>
               </div>

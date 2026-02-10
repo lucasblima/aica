@@ -741,7 +741,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                 <button
                   data-testid="open-organization-wizard"
                   onClick={() => setIsOrganizationWizardOpen(true)}
-                  className="ceramic-card px-4 py-3 rounded-full font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
+                  className="ceramic-card px-4 py-3 rounded-full font-bold text-ceramic-info hover:scale-105 transition-transform flex items-center gap-2"
                   title="Cadastrar nova organização para participar de editais"
                 >
                   <Building2 className="w-5 h-5" />
@@ -756,7 +756,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                 </button>
                 <button
                   onClick={() => setIsApprovedProjectModalOpen(true)}
-                  className="ceramic-card px-6 py-3 rounded-full font-bold text-green-600 hover:scale-105 transition-transform"
+                  className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-success hover:scale-105 transition-transform"
                 >
                   + Projeto Aprovado
                 </button>
@@ -798,7 +798,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                                 {opportunity.title}
                               </h3>
                               {isExpired && (
-                                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">
+                                <span className="px-2 py-0.5 bg-ceramic-error/10 text-ceramic-error text-xs rounded-full">
                                   Expirado
                                 </span>
                               )}
@@ -833,7 +833,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                         <div className="flex items-center gap-6 mt-4 text-sm flex-wrap">
                           <div className="flex items-center gap-2">
                             <span className="text-ceramic-text-secondary">Prazo:</span>
-                            <span className={`font-bold ${isExpired ? 'text-red-600' : daysRemaining <= 7 ? 'text-orange-600' : 'text-ceramic-text-primary'}`}>
+                            <span className={`font-bold ${isExpired ? 'text-ceramic-error' : daysRemaining <= 7 ? 'text-ceramic-warning' : 'text-ceramic-text-primary'}`}>
                               {deadline.toLocaleDateString('pt-BR')}
                               {!isExpired && ` (${daysRemaining}d)`}
                             </span>
@@ -841,7 +841,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                           {opportunity.max_funding && (
                             <div className="flex items-center gap-2">
                               <span className="text-ceramic-text-secondary">Até:</span>
-                              <span className="font-bold text-green-600">
+                              <span className="font-bold text-ceramic-success">
                                 {new Intl.NumberFormat('pt-BR', {
                                   style: 'currency',
                                   currency: 'BRL',
@@ -852,7 +852,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                           )}
                           <div className="flex items-center gap-2">
                             <span className="text-ceramic-text-secondary">Projetos:</span>
-                            <span className="font-bold text-blue-600">
+                            <span className="font-bold text-ceramic-info">
                               {opportunity.projectCount || 0}
                             </span>
                           </div>
@@ -895,7 +895,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                               <h3 className="text-lg font-bold text-ceramic-text-primary">
                                 {opportunity.title}
                               </h3>
-                              <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
+                              <span className="px-2 py-0.5 bg-ceramic-cool text-ceramic-text-secondary text-xs rounded-full">
                                 Arquivado
                               </span>
                             </div>
@@ -912,7 +912,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                                 e.stopPropagation();
                                 handleUnarchiveOpportunity(opportunity.id);
                               }}
-                              className="ceramic-concave px-4 py-2 text-sm font-bold text-blue-600 hover:scale-105 transition-transform flex items-center gap-2"
+                              className="ceramic-concave px-4 py-2 text-sm font-bold text-ceramic-info hover:scale-105 transition-transform flex items-center gap-2"
                               title="Restaurar"
                             >
                               <ArchiveRestore className="w-4 h-4" />
@@ -926,7 +926,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
                               className="ceramic-concave p-2 hover:scale-110 transition-transform"
                               title="Deletar Permanentemente"
                             >
-                              <Trash2 className="w-4 h-4 text-red-600" />
+                              <Trash2 className="w-4 h-4 text-ceramic-error" />
                             </button>
                           </div>
                         </div>

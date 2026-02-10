@@ -67,29 +67,29 @@ const ARCHETYPE_COLORS = {
   habitat: {
     accent: '#8B4513', // warm brown
     accentLight: '#D2691E', // terracotta
-    bg: 'bg-orange-50',
-    text: 'text-orange-900',
-    iconBg: 'bg-orange-100',
-    iconText: 'text-orange-600',
-    border: 'border-orange-200',
+    bg: 'bg-ceramic-warning/10',
+    text: 'text-ceramic-warning',
+    iconBg: 'bg-ceramic-warning/15',
+    iconText: 'text-ceramic-warning',
+    border: 'border-ceramic-warning/20',
   },
   ventures: {
     accent: '#1E3A8A', // deep blue
     accentLight: '#3B82F6', // bright blue
-    bg: 'bg-blue-50',
-    text: 'text-blue-900',
-    iconBg: 'bg-blue-100',
-    iconText: 'text-blue-600',
-    border: 'border-blue-200',
+    bg: 'bg-ceramic-info/10',
+    text: 'text-ceramic-info',
+    iconBg: 'bg-ceramic-info/15',
+    iconText: 'text-ceramic-info',
+    border: 'border-ceramic-info/20',
   },
   academia: {
     accent: '#4C1D95', // deep purple
     accentLight: '#8B5CF6', // bright purple
-    bg: 'bg-purple-50',
-    text: 'text-purple-900',
-    iconBg: 'bg-purple-100',
-    iconText: 'text-purple-600',
-    border: 'border-purple-200',
+    bg: 'bg-ceramic-accent/10',
+    text: 'text-ceramic-accent',
+    iconBg: 'bg-ceramic-accent/15',
+    iconText: 'text-ceramic-accent',
+    border: 'border-ceramic-accent/20',
   },
   tribo: {
     accent: '#D97706', // amber

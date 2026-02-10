@@ -114,8 +114,8 @@ export function MRRChart({
     return (
       <div className={`text-center py-12 ${className}`}>
         <div className="text-4xl mb-2">📈</div>
-        <p className="text-sm text-neutral-600">Sem dados de MRR ainda</p>
-        <p className="text-xs text-neutral-500 mt-1">
+        <p className="text-sm text-ceramic-text-secondary">Sem dados de MRR ainda</p>
+        <p className="text-xs text-ceramic-text-secondary mt-1">
           Adicione métricas mensais para visualizar a evolução da receita
         </p>
       </div>
@@ -127,7 +127,7 @@ export function MRRChart({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-neutral-900">
+          <h3 className="text-sm font-semibold text-ceramic-text-primary">
             Monthly Recurring Revenue (MRR)
           </h3>
           <div className="flex items-center gap-3 mt-1">
@@ -140,8 +140,8 @@ export function MRRChart({
                   inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                   ${
                     growthRate >= 0
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'
+                      ? 'bg-ceramic-success/10 text-ceramic-success'
+                      : 'bg-ceramic-error/10 text-ceramic-error'
                   }
                 `}
               >
@@ -155,12 +155,12 @@ export function MRRChart({
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 bg-amber-500 rounded-full" />
-            <span className="text-neutral-600">MRR</span>
+            <span className="text-ceramic-text-secondary">MRR</span>
           </div>
           {showARR && (
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 bg-blue-500 rounded-full" />
-              <span className="text-neutral-600">ARR</span>
+              <div className="w-3 h-3 bg-ceramic-info rounded-full" />
+              <span className="text-ceramic-text-secondary">ARR</span>
             </div>
           )}
         </div>
@@ -192,7 +192,7 @@ export function MRRChart({
                 x={paddingLeft - 10}
                 y={y + 4}
                 textAnchor="end"
-                className="text-xs fill-neutral-500"
+                className="text-xs fill-ceramic-text-secondary"
               >
                 {formatCurrency(maxMRR * ratio)}
               </text>
@@ -238,7 +238,7 @@ export function MRRChart({
                 x={x}
                 y={chartHeight - 10}
                 textAnchor="middle"
-                className="text-xs fill-neutral-500"
+                className="text-xs fill-ceramic-text-secondary"
               >
                 {formatDate(metric.period_start)}
               </text>
@@ -248,10 +248,10 @@ export function MRRChart({
       </svg>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-neutral-200">
+      <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-ceramic-border">
         <div>
-          <div className="text-xs text-neutral-500 mb-1">Média (12m)</div>
-          <div className="text-sm font-semibold text-neutral-900">
+          <div className="text-xs text-ceramic-text-secondary mb-1">Média (12m)</div>
+          <div className="text-sm font-semibold text-ceramic-text-primary">
             {formatCurrency(
               sortedMetrics.reduce((sum, m) => sum + (m.mrr || 0), 0) /
                 sortedMetrics.length
@@ -259,14 +259,14 @@ export function MRRChart({
           </div>
         </div>
         <div>
-          <div className="text-xs text-neutral-500 mb-1">Maior</div>
-          <div className="text-sm font-semibold text-green-700">
+          <div className="text-xs text-ceramic-text-secondary mb-1">Maior</div>
+          <div className="text-sm font-semibold text-ceramic-success">
             {formatCurrency(Math.max(...sortedMetrics.map((m) => m.mrr || 0)))}
           </div>
         </div>
         <div>
-          <div className="text-xs text-neutral-500 mb-1">Menor</div>
-          <div className="text-sm font-semibold text-neutral-700">
+          <div className="text-xs text-ceramic-text-secondary mb-1">Menor</div>
+          <div className="text-sm font-semibold text-ceramic-text-primary">
             {formatCurrency(Math.min(...sortedMetrics.map((m) => m.mrr || 0)))}
           </div>
         </div>

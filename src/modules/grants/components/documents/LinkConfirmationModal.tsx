@@ -76,20 +76,20 @@ const ENTITY_TYPE_CONFIG: Record<
   organization: {
     icon: Building2,
     label: 'Organiza\u00e7\u00e3o',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
+    color: 'text-ceramic-accent',
+    bgColor: 'bg-ceramic-accent/15',
   },
   project: {
     icon: FolderOpen,
     label: 'Projeto',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
+    color: 'text-ceramic-info',
+    bgColor: 'bg-ceramic-info-bg',
   },
   opportunity: {
     icon: Target,
     label: 'Oportunidade',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-ceramic-success',
+    bgColor: 'bg-ceramic-success-bg',
   },
 };
 
@@ -111,10 +111,10 @@ const LOW_CONFIDENCE_THRESHOLD = 0.5;
 // =============================================================================
 
 function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.8) return 'bg-green-500';
-  if (confidence >= 0.6) return 'bg-yellow-500';
-  if (confidence >= 0.4) return 'bg-orange-500';
-  return 'bg-red-500';
+  if (confidence >= 0.8) return 'bg-ceramic-success';
+  if (confidence >= 0.6) return 'bg-ceramic-warning';
+  if (confidence >= 0.4) return 'bg-ceramic-warning/70';
+  return 'bg-ceramic-error';
 }
 
 function getConfidenceLabel(confidence: number): string {
@@ -196,8 +196,8 @@ function SuggestionRow({ suggestion, actionState, onConfirm, onReject }: Suggest
       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
       className={`
         p-4 rounded-xl border transition-all
-        ${isCompleted ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200 hover:border-gray-300'}
-        ${hasError ? 'border-red-300 bg-red-50' : ''}
+        ${isCompleted ? 'bg-ceramic-base border-ceramic-border' : 'bg-ceramic-base border-ceramic-border hover:border-ceramic-border'}
+        ${hasError ? 'border-ceramic-error/30 bg-ceramic-error-bg' : ''}
       `}
     >
       <div className="flex items-start gap-4">
@@ -209,7 +209,7 @@ function SuggestionRow({ suggestion, actionState, onConfirm, onReject }: Suggest
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-gray-900 truncate">
+            <span className="font-medium text-ceramic-text-primary truncate">
               {suggestion.entity_name || 'Entidade sem nome'}
             </span>
             <span className={`text-xs px-2 py-0.5 rounded-full ${entityConfig.bgColor} ${entityConfig.color}`}>
@@ -217,7 +217,7 @@ function SuggestionRow({ suggestion, actionState, onConfirm, onReject }: Suggest
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-sm text-gray-500">
+          <div className="flex items-center gap-3 text-sm text-ceramic-text-secondary">
             {/* Match Reason */}
             <div className="flex items-center gap-1">
               <MatchIcon className="w-3.5 h-3.5" />
@@ -235,19 +235,19 @@ function SuggestionRow({ suggestion, actionState, onConfirm, onReject }: Suggest
 
           {/* Status Messages */}
           {actionState === 'confirmed' && (
-            <div className="mt-2 flex items-center gap-1 text-green-600 text-sm">
+            <div className="mt-2 flex items-center gap-1 text-ceramic-success text-sm">
               <CheckCircle className="w-4 h-4" />
               <span>V\u00ednculo confirmado</span>
             </div>
           )}
           {actionState === 'rejected' && (
-            <div className="mt-2 flex items-center gap-1 text-gray-500 text-sm">
+            <div className="mt-2 flex items-center gap-1 text-ceramic-text-secondary text-sm">
               <XCircle className="w-4 h-4" />
               <span>Sugest\u00e3o rejeitada</span>
             </div>
           )}
           {hasError && (
-            <div className="mt-2 flex items-center gap-1 text-red-600 text-sm">
+            <div className="mt-2 flex items-center gap-1 text-ceramic-error text-sm">
               <AlertCircle className="w-4 h-4" />
               <span>Erro ao processar</span>
             </div>
@@ -260,7 +260,7 @@ function SuggestionRow({ suggestion, actionState, onConfirm, onReject }: Suggest
             <button
               onClick={onReject}
               disabled={isProcessing}
-              className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-lg text-ceramic-text-secondary hover:text-ceramic-error hover:bg-ceramic-error-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               aria-label="Rejeitar sugest\u00e3o"
             >
               {actionState === 'rejecting' ? (
@@ -272,7 +272,7 @@ function SuggestionRow({ suggestion, actionState, onConfirm, onReject }: Suggest
             <button
               onClick={onConfirm}
               disabled={isProcessing}
-              className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-lg text-ceramic-text-secondary hover:text-ceramic-success hover:bg-ceramic-success-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               aria-label="Confirmar sugest\u00e3o"
             >
               {actionState === 'confirming' ? (
@@ -427,26 +427,26 @@ export function LinkConfirmationModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            className="relative w-full max-w-2xl max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="relative w-full max-w-2xl max-h-[85vh] bg-ceramic-base rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+            <div className="flex items-center justify-between p-6 border-b border-ceramic-border">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-purple-100">
-                  <Link2 className="w-6 h-6 text-purple-600" />
+                <div className="p-2 rounded-xl bg-ceramic-accent/15">
+                  <Link2 className="w-6 h-6 text-ceramic-accent" />
                 </div>
                 <div>
-                  <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+                  <h2 id="modal-title" className="text-lg font-semibold text-ceramic-text-primary">
                     Confirmar V\u00ednculos
                   </h2>
-                  <p className="text-sm text-gray-500 truncate max-w-md">
+                  <p className="text-sm text-ceramic-text-secondary truncate max-w-md">
                     {documentName}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg text-ceramic-text-secondary hover:text-ceramic-text-secondary hover:bg-ceramic-base transition-colors"
                 aria-label="Fechar modal"
               >
                 <X className="w-5 h-5" />
@@ -454,19 +454,19 @@ export function LinkConfirmationModal({
             </div>
 
             {/* Stats Bar */}
-            <div className="px-6 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-6 py-3 bg-ceramic-base border-b border-ceramic-border flex items-center justify-between">
               <div className="flex items-center gap-4 text-sm">
-                <span className="text-gray-600">
+                <span className="text-ceramic-text-secondary">
                   {suggestions.length} sugest\u00f5es
                 </span>
                 {confirmedCount > 0 && (
-                  <span className="text-green-600 flex items-center gap-1">
+                  <span className="text-ceramic-success flex items-center gap-1">
                     <CheckCircle className="w-4 h-4" />
                     {confirmedCount} confirmadas
                   </span>
                 )}
                 {rejectedCount > 0 && (
-                  <span className="text-gray-500 flex items-center gap-1">
+                  <span className="text-ceramic-text-secondary flex items-center gap-1">
                     <XCircle className="w-4 h-4" />
                     {rejectedCount} rejeitadas
                   </span>
@@ -479,7 +479,7 @@ export function LinkConfirmationModal({
                   <button
                     onClick={handleConfirmAllHighConfidence}
                     disabled={isBulkProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ceramic-success bg-ceramic-success-bg rounded-lg hover:bg-ceramic-success/20 disabled:opacity-50 transition-colors"
                   >
                     {isBulkProcessing ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -493,7 +493,7 @@ export function LinkConfirmationModal({
                   <button
                     onClick={handleRejectAllLowConfidence}
                     disabled={isBulkProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ceramic-error bg-ceramic-error-bg rounded-lg hover:bg-ceramic-error/20 disabled:opacity-50 transition-colors"
                   >
                     {isBulkProcessing ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -510,8 +510,8 @@ export function LinkConfirmationModal({
             <div className="flex-1 overflow-y-auto p-6">
               {suggestions.length === 0 ? (
                 <div className="text-center py-12">
-                  <Link2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Nenhuma sugest\u00e3o de v\u00ednculo encontrada</p>
+                  <Link2 className="w-12 h-12 text-ceramic-text-secondary mx-auto mb-4" />
+                  <p className="text-ceramic-text-secondary">Nenhuma sugest\u00e3o de v\u00ednculo encontrada</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -531,8 +531,8 @@ export function LinkConfirmationModal({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-100 bg-gray-50">
-              <p className="text-sm text-gray-500">
+            <div className="flex items-center justify-between p-6 border-t border-ceramic-border bg-ceramic-base">
+              <p className="text-sm text-ceramic-text-secondary">
                 {pendingCount > 0 ? (
                   `${pendingCount} sugest\u00f5es pendentes`
                 ) : (
@@ -542,14 +542,14 @@ export function LinkConfirmationModal({
               <div className="flex items-center gap-3">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-ceramic-text-primary bg-ceramic-base border border-ceramic-border rounded-lg hover:bg-ceramic-base transition-colors"
                 >
                   Fechar
                 </button>
                 {pendingCount === 0 && (
                   <button
                     onClick={handleComplete}
-                    className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-white bg-ceramic-accent rounded-lg hover:bg-ceramic-accent/90 transition-colors"
                   >
                     Concluir
                   </button>

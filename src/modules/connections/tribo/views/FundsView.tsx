@@ -45,9 +45,9 @@ export const FundsView: React.FC<FundsViewProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-white to-ceramic-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-ceramic-base to-ceramic-50">
       {/* Header */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-100">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-4xl">💰</span>
@@ -62,7 +62,7 @@ export const FundsView: React.FC<FundsViewProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-100">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-wrap gap-2">
             <button
@@ -79,8 +79,8 @@ export const FundsView: React.FC<FundsViewProps> = ({
               onClick={() => setStatusFilter('active')}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                 statusFilter === 'active'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
+                  ? 'bg-ceramic-success text-white'
+                  : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-cool'
               }`}
             >
               Ativas
@@ -89,8 +89,8 @@ export const FundsView: React.FC<FundsViewProps> = ({
               onClick={() => setStatusFilter('completed')}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                 statusFilter === 'completed'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
+                  ? 'bg-ceramic-info text-white'
+                  : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-cool'
               }`}
             >
               Concluídas
@@ -99,8 +99,8 @@ export const FundsView: React.FC<FundsViewProps> = ({
               onClick={() => setStatusFilter('cancelled')}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                 statusFilter === 'cancelled'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
+                  ? 'bg-ceramic-error text-white'
+                  : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-cool'
               }`}
             >
               Canceladas
@@ -133,7 +133,7 @@ export const FundsView: React.FC<FundsViewProps> = ({
             {/* Contribution Detail */}
             {selectedFund && (
               <div className="lg:sticky lg:top-4 lg:h-fit">
-                <div className="bg-white rounded-2xl border-2 border-ceramic-200 p-6">
+                <div className="bg-ceramic-base rounded-2xl border-2 border-ceramic-200 p-6">
                   {loadingContributions ? (
                     <div className="text-center py-12">
                       <div className="w-12 h-12 border-4 border-[#9B4D3A]/20 border-t-[#9B4D3A] rounded-full animate-spin mx-auto mb-4" />
@@ -154,7 +154,7 @@ export const FundsView: React.FC<FundsViewProps> = ({
 
             {!selectedFund && (
               <div className="lg:sticky lg:top-4 lg:h-fit">
-                <div className="bg-white rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
+                <div className="bg-ceramic-base rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
                   <span className="text-6xl mb-4 block">👈</span>
                   <p className="text-ceramic-600">
                     Selecione uma vaquinha para ver os detalhes e contribuições
@@ -164,7 +164,7 @@ export const FundsView: React.FC<FundsViewProps> = ({
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
+          <div className="bg-ceramic-base rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
             <span className="text-6xl mb-4 block">💰</span>
             <h2 className="text-2xl font-semibold text-ceramic-900 mb-2">
               Nenhuma vaquinha encontrada
@@ -191,7 +191,7 @@ export const FundsView: React.FC<FundsViewProps> = ({
 
       {/* Stats Footer */}
       {funds && funds.length > 0 && (
-        <div className="bg-white border-t border-ceramic-100">
+        <div className="bg-ceramic-base border-t border-ceramic-100">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
@@ -201,7 +201,7 @@ export const FundsView: React.FC<FundsViewProps> = ({
                 <div className="text-sm text-ceramic-600">Vaquinhas ativas</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-ceramic-success">
                   {funds
                     .filter((f) => f.status === 'active')
                     .reduce((sum, f) => sum + f.currentAmount, 0)
@@ -213,7 +213,7 @@ export const FundsView: React.FC<FundsViewProps> = ({
                 <div className="text-sm text-ceramic-600">Arrecadado (ativas)</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-ceramic-info">
                   {funds.filter((f) => f.status === 'completed').length}
                 </div>
                 <div className="text-sm text-ceramic-600">Concluídas</div>

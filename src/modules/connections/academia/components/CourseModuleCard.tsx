@@ -28,31 +28,31 @@ export const CourseModuleCard: React.FC<CourseModuleCardProps> = ({
     <div
       onClick={onClick}
       className={`
-        ceramic-card p-4 border border-stone-200 rounded-sm
+        ceramic-card p-4 border border-ceramic-border rounded-sm
         hover:shadow-md transition-all duration-200
         ${onClick ? 'cursor-pointer' : ''}
-        ${completed ? 'bg-emerald-50' : 'bg-white'}
+        ${completed ? 'bg-ceramic-success/10' : 'bg-ceramic-base'}
       `}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           {moduleNumber && (
-            <span className="text-xs text-stone-500 font-light tracking-wide">
+            <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
               Module {moduleNumber}
             </span>
           )}
-          <h4 className="text-base font-normal text-stone-900 mt-1">
+          <h4 className="text-base font-normal text-ceramic-text-primary mt-1">
             {moduleTitle}
           </h4>
           {duration && (
-            <span className="text-xs text-stone-400 font-light mt-2 block">
+            <span className="text-xs text-ceramic-text-tertiary font-light mt-2 block">
               {duration}
             </span>
           )}
         </div>
         {completed && (
           <svg
-            className="w-5 h-5 text-emerald-600"
+            className="w-5 h-5 text-ceramic-success"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

@@ -32,7 +32,7 @@ export function CeramicFilterTab({
       className={`
         flex items-center gap-2 ${s.container} rounded-full font-bold uppercase tracking-wider transition-all duration-200
         ${isActive
-          ? 'ceramic-card bg-white shadow-md text-amber-700'
+          ? 'ceramic-card bg-ceramic-base shadow-md text-amber-700'
           : 'ceramic-inset hover:bg-white/50 text-[#948D82]'
         }
         ${s.label}

@@ -5,7 +5,9 @@ import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
 import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, getUserProfile } from '../services/supabaseService';
 import { generateMissingDailyReports } from '../services/dailyReportService';
-import { NotificationContainer, LoadingScreen, BottomNav } from '../components';
+import { AnimatePresence, motion } from 'framer-motion';
+import { NotificationContainer, LoadingScreen, BottomNav, CeramicLoadingState } from '../components';
+import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
@@ -481,41 +483,57 @@ export function AppRouter() {
 
       return (
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
-            {currentView === 'vida' && renderVida()}
-            {currentView === 'agenda' && renderAgenda()}
-            {currentView === 'connections' && renderConnections()}
-            {currentView === 'studio' && renderStudio()}
-            {currentView === 'association_detail' && renderAssociationDetail()}
-            {currentView === 'finance' && renderFinance()}
-            {currentView === 'finance_agent' && renderFinanceAgent()}
-            {currentView === 'journey' && renderJourney()}
+            <AnimatePresence mode="wait">
+            {currentView === 'vida' && <motion.div key="vida" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderVida()}</motion.div>}
+            {currentView === 'agenda' && <motion.div key="agenda" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderAgenda()}</motion.div>}
+            {currentView === 'connections' && <motion.div key="connections" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderConnections()}</motion.div>}
+            {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderStudio()}</motion.div>}
+            {currentView === 'association_detail' && <motion.div key="association_detail" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderAssociationDetail()}</motion.div>}
+            {currentView === 'finance' && <motion.div key="finance" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderFinance()}</motion.div>}
+            {currentView === 'finance_agent' && <motion.div key="finance_agent" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderFinanceAgent()}</motion.div>}
+            {currentView === 'journey' && <motion.div key="journey" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderJourney()}</motion.div>}
             {currentView === 'grants' && (
-               <GrantsModuleView onBack={() => setCurrentView('vida')} />
+               <motion.div key="grants" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <GrantsModuleView onBack={() => setCurrentView('vida')} />
+               </motion.div>
             )}
             {currentView === 'ai-cost' && userId && (
-               <AICostDashboard userId={userId} onBack={() => setCurrentView('vida')} />
+               <motion.div key="ai-cost" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <AICostDashboard userId={userId} onBack={() => setCurrentView('vida')} />
+               </motion.div>
             )}
             {currentView === 'file-search-analytics' && userId && (
-               <FileSearchAnalyticsView
-                  userId={userId}
-                  onBack={() => setCurrentView('vida')}
-                  mode="fullpage"
-               />
+               <motion.div key="file-search" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <FileSearchAnalyticsView
+                     userId={userId}
+                     onBack={() => setCurrentView('vida')}
+                     mode="fullpage"
+                  />
+               </motion.div>
             )}
 
             {/* Life Area Module Views */}
             {currentView === 'health' && (
-               <LifeAreaView moduleId="health" onBack={() => setCurrentView('vida')} />
+               <motion.div key="health" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <LifeAreaView moduleId="health" onBack={() => setCurrentView('vida')} />
+               </motion.div>
             )}
             {currentView === 'education' && (
-               <LifeAreaView moduleId="education" onBack={() => setCurrentView('vida')} />
+               <motion.div key="education" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <LifeAreaView moduleId="education" onBack={() => setCurrentView('vida')} />
+               </motion.div>
             )}
             {currentView === 'legal' && (
-               <LifeAreaView moduleId="legal" onBack={() => setCurrentView('vida')} />
+               <motion.div key="legal" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <LifeAreaView moduleId="legal" onBack={() => setCurrentView('vida')} />
+               </motion.div>
             )}
             {currentView === 'professional' && (
-               <LifeAreaView moduleId="professional" onBack={() => setCurrentView('vida')} />
+               <motion.div key="professional" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <LifeAreaView moduleId="professional" onBack={() => setCurrentView('vida')} />
+               </motion.div>
             )}
+            </AnimatePresence>
 
             {/* ANCHOR PRINCIPLE: Global Navigation - Unified visibility logic via NavigationContext */}
             {shouldShowGlobalNav && (
@@ -567,7 +585,7 @@ export function AppRouter() {
    return (
       <TourProvider tours={allTours}>
          <XPNotificationProvider>
-            <Suspense fallback={<LoadingScreen message="Carregando..." />}>
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-ceramic-base"><CeramicLoadingState variant="page" /></div>}>
                <Routes>
                {/* Guest Approval Page - Public route for podcast guests */}
                <Route

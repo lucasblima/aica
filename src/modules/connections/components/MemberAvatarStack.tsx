@@ -99,7 +99,7 @@ export const MemberAvatarStack: React.FC<MemberAvatarStackProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-stone-600 font-medium select-none">
+              <span className="text-ceramic-text-secondary font-medium select-none">
                 {getInitials(member.name)}
               </span>
             )}
@@ -115,12 +115,12 @@ export const MemberAvatarStack: React.FC<MemberAvatarStackProps> = ({
               ceramic-inset
               border-2 border-[#F0EFE9]
               flex items-center justify-center
-              bg-stone-300
+              bg-ceramic-cool
             `}
             style={{ zIndex: 0 }}
             title={`${overflowCount} more member${overflowCount > 1 ? 's' : ''}`}
           >
-            <span className="text-stone-700 font-semibold text-xs select-none">
+            <span className="text-ceramic-text-primary font-semibold text-xs select-none">
               +{overflowCount}
             </span>
           </div>

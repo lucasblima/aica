@@ -97,7 +97,7 @@ export function OptimizedImage({
       {/* Blur placeholder */}
       {!loaded && placeholder === 'blur' && (
         <div
-          className="absolute inset-0 bg-gradient-to-br from-stone-200 to-stone-300 animate-pulse"
+          className="absolute inset-0 bg-gradient-to-br from-ceramic-cool to-ceramic-border animate-pulse"
           aria-hidden="true"
         />
       )}
@@ -120,8 +120,8 @@ export function OptimizedImage({
 
       {/* Error overlay */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-stone-100">
-          <div className="text-center text-stone-400">
+        <div className="absolute inset-0 flex items-center justify-center bg-ceramic-base">
+          <div className="text-center text-ceramic-text-tertiary">
             <svg
               className="w-12 h-12 mx-auto mb-2"
               fill="none"
@@ -182,23 +182,23 @@ export function OptimizedAvatar({
 
   const getColorFromName = (name: string): string => {
     const colors = [
-      'bg-red-500',
-      'bg-orange-500',
-      'bg-amber-500',
-      'bg-yellow-500',
-      'bg-lime-500',
-      'bg-green-500',
-      'bg-emerald-500',
-      'bg-teal-500',
-      'bg-cyan-500',
-      'bg-sky-500',
-      'bg-blue-500',
-      'bg-indigo-500',
-      'bg-violet-500',
-      'bg-purple-500',
-      'bg-fuchsia-500',
-      'bg-pink-500',
-      'bg-rose-500',
+      'bg-ceramic-error',
+      'bg-ceramic-warning',
+      'bg-ceramic-warning/80',
+      'bg-ceramic-warning/60',
+      'bg-ceramic-success/80',
+      'bg-ceramic-success',
+      'bg-ceramic-success/90',
+      'bg-ceramic-success/70',
+      'bg-ceramic-info/80',
+      'bg-ceramic-info/70',
+      'bg-ceramic-info',
+      'bg-ceramic-accent',
+      'bg-ceramic-accent/80',
+      'bg-ceramic-accent/70',
+      'bg-ceramic-accent/60',
+      'bg-ceramic-error/80',
+      'bg-ceramic-error/70',
     ];
 
     const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);

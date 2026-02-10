@@ -80,7 +80,7 @@ export function EditableText({
       onBlur={handleBlur}
       onPaste={handlePaste}
       onKeyDown={handleKeyDown}
-      className={`${className} outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-sm transition-all`}
+      className={`${className} outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 rounded-sm transition-all`}
       data-placeholder={placeholder}
     >
       {value}

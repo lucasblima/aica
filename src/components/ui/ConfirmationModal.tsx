@@ -28,11 +28,11 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     const isDanger = variant === 'danger';
     const Icon = isDanger ? AlertTriangle : AlertCircle;
 
-    const iconColor = isDanger ? 'text-red-600' : 'text-amber-600';
-    const bgColor = isDanger ? 'bg-red-50' : 'bg-amber-50';
-    const borderColor = isDanger ? 'border-red-200' : 'border-amber-200';
-    const buttonBg = isDanger ? 'bg-red-600' : 'bg-amber-600';
-    const buttonHover = isDanger ? 'hover:bg-red-700' : 'hover:bg-amber-700';
+    const iconColor = isDanger ? 'text-ceramic-error' : 'text-ceramic-warning';
+    const bgColor = isDanger ? 'bg-ceramic-error/10' : 'bg-ceramic-warning/10';
+    const borderColor = isDanger ? 'border-ceramic-error/20' : 'border-ceramic-warning/20';
+    const buttonBg = isDanger ? 'bg-ceramic-error' : 'bg-ceramic-warning';
+    const buttonHover = isDanger ? 'hover:bg-ceramic-error/90' : 'hover:bg-ceramic-warning/90';
 
     return (
         <AnimatePresence>

@@ -35,36 +35,36 @@ const MODULE_CONFIG: Record<LifeAreaModuleId, ModuleConfig> = {
     subtitle: 'Habitos, metricas e bem-estar',
     icon: Heart,
     color: 'orange',
-    accentBg: 'bg-orange-50',
-    accentBorder: 'border-orange-200',
-    accentText: 'text-orange-600'
+    accentBg: 'bg-ceramic-warning/10',
+    accentBorder: 'border-ceramic-warning/20',
+    accentText: 'text-ceramic-warning'
   },
   education: {
     title: 'Educacao',
     subtitle: 'Cursos, aprendizado continuo',
     icon: BookOpen,
     color: 'blue',
-    accentBg: 'bg-blue-50',
-    accentBorder: 'border-blue-200',
-    accentText: 'text-blue-600'
+    accentBg: 'bg-ceramic-info/10',
+    accentBorder: 'border-ceramic-info/20',
+    accentText: 'text-ceramic-info'
   },
   legal: {
     title: 'Juridico',
     subtitle: 'Documentos, contratos, processos',
     icon: Scale,
     color: 'slate',
-    accentBg: 'bg-slate-50',
-    accentBorder: 'border-slate-200',
-    accentText: 'text-slate-600'
+    accentBg: 'bg-ceramic-text-secondary/10',
+    accentBorder: 'border-ceramic-text-secondary/20',
+    accentText: 'text-ceramic-text-secondary'
   },
   professional: {
     title: 'Profissional',
     subtitle: 'Carreira, projetos, metas',
     icon: Briefcase,
     color: 'indigo',
-    accentBg: 'bg-indigo-50',
-    accentBorder: 'border-indigo-200',
-    accentText: 'text-indigo-600'
+    accentBg: 'bg-ceramic-accent/10',
+    accentBorder: 'border-ceramic-accent/20',
+    accentText: 'text-ceramic-accent'
   }
 };
 
@@ -262,7 +262,7 @@ export function LifeAreaView({ moduleId, onBack }: LifeAreaViewProps) {
               <h3 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
                 Concluidas
               </h3>
-              <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-50 text-green-600">
+              <span className="px-2 py-1 rounded-full text-xs font-bold bg-ceramic-success/10 text-ceramic-success">
                 {completedTasks.length}
               </span>
             </div>
@@ -274,7 +274,7 @@ export function LifeAreaView({ moduleId, onBack }: LifeAreaViewProps) {
                   className="ceramic-inset p-3 opacity-60"
                 >
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-ceramic-success flex-shrink-0" />
                     <p className="text-sm text-ceramic-text-secondary line-through line-clamp-1">
                       {task.title}
                     </p>

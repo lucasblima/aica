@@ -200,10 +200,10 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
           <div className="flex items-center gap-2 mt-6">
             {/* Step 1: Upload */}
             <div className={`flex items-center gap-2 ${
-              currentStep === 'upload' ? 'text-ceramic-accent' : 'text-green-600'
+              currentStep === 'upload' ? 'text-ceramic-accent' : 'text-ceramic-success'
             }`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                currentStep === 'upload' ? 'bg-ceramic-accent-dark text-white' : 'bg-green-600 text-white'
+                currentStep === 'upload' ? 'bg-ceramic-accent-dark text-white' : 'bg-ceramic-success text-white'
               }`}>
                 {currentStep !== 'upload' ? <Check className="w-5 h-5" /> : '1'}
               </div>
@@ -212,17 +212,17 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
 
             {/* Connector 1 */}
             <div className={`flex-1 h-0.5 ${
-              currentStep === 'review' || currentStep === 'form_fields' ? 'bg-green-600' : 'bg-ceramic-text-secondary/20'
+              currentStep === 'review' || currentStep === 'form_fields' ? 'bg-ceramic-success' : 'bg-ceramic-border'
             }`} />
 
             {/* Step 2: Review */}
             <div className={`flex items-center gap-2 ${
               currentStep === 'review' ? 'text-ceramic-accent' :
-              currentStep === 'form_fields' ? 'text-green-600' : 'text-ceramic-text-secondary'
+              currentStep === 'form_fields' ? 'text-ceramic-success' : 'text-ceramic-text-secondary'
             }`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 currentStep === 'review' ? 'bg-ceramic-accent-dark text-white' :
-                currentStep === 'form_fields' ? 'bg-green-600 text-white' : 'bg-ceramic-text-secondary/20'
+                currentStep === 'form_fields' ? 'bg-ceramic-success text-white' : 'bg-ceramic-border'
               }`}>
                 {currentStep === 'form_fields' ? <Check className="w-5 h-5" /> : '2'}
               </div>
@@ -231,7 +231,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
 
             {/* Connector 2 */}
             <div className={`flex-1 h-0.5 ${
-              currentStep === 'form_fields' ? 'bg-green-600' : 'bg-ceramic-text-secondary/20'
+              currentStep === 'form_fields' ? 'bg-ceramic-success' : 'bg-ceramic-border'
             }`} />
 
             {/* Step 3: Form Fields */}
@@ -239,7 +239,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
               currentStep === 'form_fields' ? 'text-ceramic-accent' : 'text-ceramic-text-secondary'
             }`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                currentStep === 'form_fields' ? 'bg-ceramic-accent-dark text-white' : 'bg-ceramic-text-secondary/20'
+                currentStep === 'form_fields' ? 'bg-ceramic-accent-dark text-white' : 'bg-ceramic-border'
               }`}>
                 3
               </div>
@@ -266,11 +266,11 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                 />
 
                 {error && (
-                  <div className="mt-4 ceramic-card p-4 rounded-xl bg-red-50 border border-red-200">
-                    <p className="text-sm text-red-600">{error}</p>
+                  <div className="mt-4 ceramic-card p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-border">
+                    <p className="text-sm text-ceramic-error">{error}</p>
                     <button
                       onClick={() => setError(null)}
-                      className="text-xs text-red-500 hover:text-red-700 mt-2"
+                      className="text-xs text-ceramic-error hover:text-ceramic-error/80 mt-2"
                     >
                       Tentar novamente
                     </button>
@@ -288,11 +288,11 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                 className="space-y-6"
               >
                 {/* Success message */}
-                <div className="ceramic-card p-4 rounded-xl bg-green-50 border border-green-200">
-                  <p className="text-sm text-green-600 font-bold">
+                <div className="ceramic-card p-4 rounded-xl bg-ceramic-success-bg border border-ceramic-border">
+                  <p className="text-sm text-ceramic-success font-bold">
                     ✓ Edital analisado com sucesso!
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-ceramic-success mt-1">
                     {processedEdital.analyzed_data.form_fields?.length || 0} campos identificados,
                     {' '}{processedEdital.analyzed_data.evaluation_criteria?.length || 0} critérios de avaliação extraídos.
                     {' '}Processado em {(processedEdital.processing_time_ms / 1000).toFixed(1)}s
@@ -384,22 +384,22 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                 className="space-y-6"
               >
                 {/* Instruction card */}
-                <div className="ceramic-card p-6 rounded-xl bg-blue-50 border border-blue-200">
+                <div className="ceramic-card p-6 rounded-xl bg-ceramic-info-bg border border-ceramic-border">
                   <div className="flex items-start gap-3">
-                    <Edit3 className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <Edit3 className="w-5 h-5 text-ceramic-info mt-0.5" />
                     <div>
-                      <h3 className="text-sm font-bold text-blue-900 mb-2">
+                      <h3 className="text-sm font-bold text-ceramic-info mb-2">
                         Como funciona?
                       </h3>
-                      <p className="text-xs text-blue-700 mb-2">
+                      <p className="text-xs text-ceramic-info mb-2">
                         Cole abaixo o texto com as perguntas do formulário do edital. A IA identificará automaticamente:
                       </p>
-                      <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                      <ul className="text-xs text-ceramic-info space-y-1 list-disc list-inside">
                         <li>Quantas perguntas existem</li>
                         <li>O nome/label de cada pergunta</li>
                         <li>O limite de caracteres de cada resposta</li>
                       </ul>
-                      <p className="text-xs text-blue-600 mt-3 font-medium">
+                      <p className="text-xs text-ceramic-info mt-3 font-medium">
                         Exemplo: "1. Apresentação da Empresa (máx 3000 caracteres)"
                       </p>
                     </div>
@@ -443,8 +443,8 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
 
                 {/* Error message */}
                 {error && (
-                  <div className="ceramic-card p-4 rounded-xl bg-red-50 border border-red-200">
-                    <p className="text-sm text-red-600">{error}</p>
+                  <div className="ceramic-card p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-border">
+                    <p className="text-sm text-ceramic-error">{error}</p>
                   </div>
                 )}
 
@@ -455,7 +455,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                       <h3 className="text-lg font-bold text-ceramic-text-primary">
                         Campos Extraídos ({parsedFields.length})
                       </h3>
-                      <div className="ceramic-concave px-3 py-1 text-xs font-bold text-green-600">
+                      <div className="ceramic-concave px-3 py-1 text-xs font-bold text-ceramic-success">
                         ✓ Pronto
                       </div>
                     </div>
@@ -477,7 +477,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                                 {field.max_chars} chars
                               </span>
                               {field.required && (
-                                <div className="text-xs text-red-600 mt-1">* obrigatório</div>
+                                <div className="text-xs text-ceramic-error mt-1">* obrigatório</div>
                               )}
                             </div>
                           </div>

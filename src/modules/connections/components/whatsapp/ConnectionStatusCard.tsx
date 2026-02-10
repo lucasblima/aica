@@ -92,7 +92,7 @@ function getStatusIcon(status: ConnectionStatus): React.ReactNode {
     case 'disconnected':
       return <XCircle className="w-5 h-5 text-ceramic-negative" />;
     default:
-      return <AlertCircle className="w-5 h-5 text-gray-500" />;
+      return <AlertCircle className="w-5 h-5 text-ceramic-text-tertiary" />;
   }
 }
 
@@ -245,12 +245,12 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+        <div className="p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-ceramic-error mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-bold text-red-900">Erro</p>
-              <p className="text-xs text-red-700 mt-1">{error.message}</p>
+              <p className="text-sm font-bold text-ceramic-error">Erro</p>
+              <p className="text-xs text-ceramic-error/80 mt-1">{error.message}</p>
             </div>
           </div>
         </div>
@@ -315,7 +315,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
                 </button>
               </div>
 
-              <div className="ceramic-inset p-6 rounded-xl flex items-center justify-center bg-white">
+              <div className="ceramic-inset p-6 rounded-xl flex items-center justify-center bg-ceramic-base">
                 {isLoading ? (
                   <Loader2 className="w-12 h-12 animate-spin text-ceramic-accent" />
                 ) : qrCode ? (

@@ -332,12 +332,12 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
           <div className="space-y-4">
             {/* Error message */}
             {searchError && (
-              <div className="ceramic-card p-4 bg-red-50 border border-red-200">
+              <div className="ceramic-card p-4 bg-ceramic-error/10 border border-ceramic-error/30">
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">⚠️</div>
                   <div className="flex-1">
-                    <h3 className="text-red-800 font-bold mb-1">Erro na Pesquisa</h3>
-                    <p className="text-red-700 text-sm">{searchError}</p>
+                    <h3 className="text-ceramic-text-primary font-bold mb-1">Erro na Pesquisa</h3>
+                    <p className="text-ceramic-error text-sm">{searchError}</p>
                   </div>
                 </div>
               </div>
@@ -383,12 +383,12 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
           <div className="space-y-4">
             {/* Error message */}
             {saveError && (
-              <div className="ceramic-card p-4 bg-red-50 border border-red-200">
+              <div className="ceramic-card p-4 bg-ceramic-error/10 border border-ceramic-error/30">
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">⚠️</div>
                   <div className="flex-1">
-                    <h3 className="text-red-800 font-bold mb-1">Erro ao Salvar</h3>
-                    <p className="text-red-700 text-sm">{saveError}</p>
+                    <h3 className="text-ceramic-text-primary font-bold mb-1">Erro ao Salvar</h3>
+                    <p className="text-ceramic-error text-sm">{saveError}</p>
                   </div>
                 </div>
               </div>
@@ -428,7 +428,7 @@ export const GuestIdentificationWizard: React.FC<GuestIdentificationWizardProps>
           <span>Progresso</span>
           <span>{Math.round(getProgressPercentage())}%</span>
         </div>
-        <div className="h-1 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-ceramic-cool to-ceramic-border rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 transition-all duration-300"
             style={{ width: `${getProgressPercentage()}%` }}

@@ -162,8 +162,8 @@ export default function GoogleCalendarConnect({
 
                 {/* Mensagem de Erro */}
                 {error && (
-                    <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                        <p className="text-xs text-red-700">{error}</p>
+                    <div className="mt-3 p-3 bg-ceramic-error/10 rounded-lg border border-ceramic-error/20">
+                        <p className="text-xs text-ceramic-error">{error}</p>
                     </div>
                 )}
             </div>
@@ -194,9 +194,9 @@ export default function GoogleCalendarConnect({
                 ) : (
                     // Status Sincronizado + Botões de Ação
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl border border-green-200">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                            <span className="text-sm font-semibold text-green-700">Sincronizado</span>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-ceramic-success/10 rounded-xl border border-ceramic-success/20">
+                            <CheckCircle className="w-5 h-5 text-ceramic-success" />
+                            <span className="text-sm font-semibold text-ceramic-success">Sincronizado</span>
                         </div>
 
                         {/* Botão Sincronizar Agora */}

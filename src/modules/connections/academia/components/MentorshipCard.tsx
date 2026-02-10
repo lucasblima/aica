@@ -55,13 +55,13 @@ const getRelationshipStyle = (type: string) => {
     return {
       icon: '🌟',
       label: 'Mentoring',
-      color: 'text-amber-700 bg-amber-50 border-amber-200',
+      color: 'text-ceramic-warning bg-ceramic-warning/10 border-ceramic-warning/20',
     };
   }
   return {
     icon: '🌱',
     label: 'Learning from',
-    color: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+    color: 'text-ceramic-success bg-ceramic-success/10 border-ceramic-success/20',
   };
 };
 
@@ -84,7 +84,7 @@ export const MentorshipCard: React.FC<MentorshipCardProps> = ({
     <div
       onClick={onClick}
       className={`
-        bg-white border border-stone-200 rounded-sm p-6
+        bg-ceramic-base border border-ceramic-border rounded-sm p-6
         hover:shadow-md transition-all duration-200
         ${onClick ? 'cursor-pointer' : ''}
       `}
@@ -105,7 +105,7 @@ export const MentorshipCard: React.FC<MentorshipCardProps> = ({
 
         {/* Status */}
         {status !== 'active' && (
-          <span className="text-xs text-stone-400 font-light tracking-wider uppercase">
+          <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase">
             {status}
           </span>
         )}
@@ -114,14 +114,14 @@ export const MentorshipCard: React.FC<MentorshipCardProps> = ({
       {/* Focus Areas */}
       {focus_areas && focus_areas.length > 0 && (
         <div className="mb-4">
-          <h4 className="text-xs text-stone-500 font-light tracking-wide mb-2">
+          <h4 className="text-xs text-ceramic-text-secondary font-light tracking-wide mb-2">
             Focus Areas
           </h4>
           <div className="flex flex-wrap gap-2">
             {focus_areas.map((area, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-stone-50 border border-stone-200 text-xs font-light text-stone-700 rounded-sm"
+                className="px-2 py-1 bg-ceramic-cool border border-ceramic-border text-xs font-light text-ceramic-text-primary rounded-sm"
               >
                 {area}
               </span>
@@ -132,23 +132,23 @@ export const MentorshipCard: React.FC<MentorshipCardProps> = ({
 
       {/* Next Session */}
       {next_session_at && status === 'active' && (
-        <div className="mt-4 pt-4 border-t border-stone-100">
+        <div className="mt-4 pt-4 border-t border-ceramic-border">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="text-xs text-stone-500 font-light tracking-wide mb-1">
+              <h4 className="text-xs text-ceramic-text-secondary font-light tracking-wide mb-1">
                 Next Session
               </h4>
-              <div className="text-sm font-normal text-stone-900">
+              <div className="text-sm font-normal text-ceramic-text-primary">
                 {formatDate(next_session_at)}
               </div>
-              <div className="text-xs text-stone-600 font-light mt-1">
+              <div className="text-xs text-ceramic-text-secondary font-light mt-1">
                 {formatTime(next_session_at)}
                 {duration_minutes && ` • ${duration_minutes} min`}
               </div>
             </div>
 
             {/* Calendar icon */}
-            <div className="text-stone-400">
+            <div className="text-ceramic-text-tertiary">
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -169,8 +169,8 @@ export const MentorshipCard: React.FC<MentorshipCardProps> = ({
 
       {/* Frequency */}
       {frequency && !next_session_at && (
-        <div className="mt-4 pt-4 border-t border-stone-100">
-          <span className="text-xs text-stone-500 font-light tracking-wide">
+        <div className="mt-4 pt-4 border-t border-ceramic-border">
+          <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
             Meeting {frequency}
           </span>
         </div>

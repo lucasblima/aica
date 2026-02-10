@@ -28,9 +28,9 @@ export function CapacityGauge({
 }: CapacityGaugeProps) {
   // Determine color based on thresholds
   const getColor = () => {
-    if (percentage >= criticalThreshold) return { stroke: '#EF4444', bg: 'bg-red-50', text: 'text-red-600' }
-    if (percentage >= warningThreshold) return { stroke: '#F59E0B', bg: 'bg-amber-50', text: 'text-amber-600' }
-    return { stroke: '#22C55E', bg: 'bg-green-50', text: 'text-green-600' }
+    if (percentage >= criticalThreshold) return { stroke: '#9B4D3A', bg: 'bg-ceramic-error/10', text: 'text-ceramic-error' }
+    if (percentage >= warningThreshold) return { stroke: '#C4883A', bg: 'bg-ceramic-warning/10', text: 'text-ceramic-warning' }
+    return { stroke: '#6B7B5C', bg: 'bg-ceramic-success/10', text: 'text-ceramic-success' }
   }
 
   const colors = getColor()
@@ -48,7 +48,7 @@ export function CapacityGauge({
             cy="80"
             r="70"
             fill="none"
-            stroke="#E5E7EB"
+            stroke="#E5E3DC"
             strokeWidth="12"
           />
           {/* Progress circle */}
@@ -77,7 +77,7 @@ export function CapacityGauge({
           >
             {percentage}%
           </motion.span>
-          <span className="text-sm text-ceramic-500 mt-1">Capacidade</span>
+          <span className="text-sm text-ceramic-text-secondary mt-1">Capacidade</span>
         </div>
       </div>
 
@@ -89,17 +89,17 @@ export function CapacityGauge({
       </div>
 
       {/* Threshold indicators */}
-      <div className="flex gap-4 mt-3 text-xs text-ceramic-500">
+      <div className="flex gap-4 mt-3 text-xs text-ceramic-text-secondary">
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="w-2 h-2 rounded-full bg-ceramic-success" />
           <span>&lt; {warningThreshold}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          <span className="w-2 h-2 rounded-full bg-ceramic-warning" />
           <span>{warningThreshold}-{criticalThreshold}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-red-500" />
+          <span className="w-2 h-2 rounded-full bg-ceramic-error" />
           <span>&gt; {criticalThreshold}%</span>
         </div>
       </div>

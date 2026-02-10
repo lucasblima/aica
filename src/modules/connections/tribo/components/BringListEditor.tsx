@@ -126,10 +126,10 @@ export const BringListEditor: React.FC<BringListEditorProps> = ({
               key={item.id}
               className={`p-3 rounded-lg border-2 transition-all ${
                 item.completed
-                  ? 'bg-green-50 border-green-200'
+                  ? 'bg-ceramic-success/10 border-ceramic-success/30'
                   : item.assignedTo
                   ? 'bg-[#9B4D3A]/5 border-[#9B4D3A]/20'
-                  : 'bg-white border-ceramic-200'
+                  : 'bg-ceramic-base border-ceramic-border'
               }`}
             >
               <div className="flex items-start gap-3">
@@ -142,7 +142,7 @@ export const BringListEditor: React.FC<BringListEditorProps> = ({
                   <div
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                       item.completed
-                        ? 'bg-green-500 border-green-500'
+                        ? 'bg-ceramic-success border-ceramic-success'
                         : 'border-ceramic-300 hover:border-[#9B4D3A]'
                     }`}
                   >
@@ -227,7 +227,7 @@ export const BringListEditor: React.FC<BringListEditorProps> = ({
                   <button
                     onClick={() => handleRemoveItem(item.id)}
                     disabled={updateBringListMutation.isPending}
-                    className="flex-shrink-0 text-ceramic-400 hover:text-red-500 transition-colors"
+                    className="flex-shrink-0 text-ceramic-text-tertiary hover:text-ceramic-error transition-colors"
                   >
                     ✕
                   </button>

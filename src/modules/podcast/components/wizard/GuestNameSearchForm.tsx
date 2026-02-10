@@ -111,7 +111,7 @@ export const GuestNameSearchForm: React.FC<GuestNameSearchFormProps> = ({
           htmlFor="guest-name"
           className="block text-sm font-medium text-ceramic-text-primary"
         >
-          Nome do convidado <span className="text-red-500">*</span>
+          Nome do convidado <span className="text-ceramic-error">*</span>
         </label>
         <input
           id="guest-name"
@@ -124,12 +124,12 @@ export const GuestNameSearchForm: React.FC<GuestNameSearchFormProps> = ({
           disabled={isSearching}
           className={`
             ceramic-input w-full
-            ${nameError ? 'border-red-500 focus:ring-red-500' : ''}
+            ${nameError ? 'border-ceramic-error focus:ring-ceramic-error' : ''}
             ${isSearching ? 'opacity-60 cursor-not-allowed' : ''}
           `}
         />
         {nameError && (
-          <p className="text-sm text-red-600">{nameError}</p>
+          <p className="text-sm text-ceramic-error">{nameError}</p>
         )}
       </div>
 

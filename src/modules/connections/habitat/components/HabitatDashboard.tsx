@@ -42,8 +42,8 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
     return (
       <div className="p-6 space-y-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-40 bg-stone-200 rounded-lg" />
-          <div className="h-60 bg-stone-200 rounded-lg" />
+          <div className="h-40 bg-ceramic-border rounded-lg" />
+          <div className="h-60 bg-ceramic-border rounded-lg" />
         </div>
       </div>
     );
@@ -75,17 +75,17 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => navigate('/connections/habitat')}
-            className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
+            className="p-2 hover:bg-ceramic-border rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-stone-600" />
+            <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
           </button>
-          <h1 className="text-2xl font-bold text-stone-800">Habitat</h1>
+          <h1 className="text-2xl font-bold text-ceramic-text-primary">Habitat</h1>
         </div>
 
         <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-8 text-center">
           <div className="text-6xl mb-4">🏠</div>
-          <h3 className="text-xl font-semibold text-stone-800 mb-2">Nenhuma propriedade cadastrada</h3>
-          <p className="text-stone-600 mb-6">
+          <h3 className="text-xl font-semibold text-ceramic-text-primary mb-2">Nenhuma propriedade cadastrada</h3>
+          <p className="text-ceramic-text-secondary mb-6">
             Comece adicionando informações sobre sua residência ou condomínio
           </p>
 
@@ -96,7 +96,7 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
               value={newPropertyName}
               onChange={(e) => setNewPropertyName(e.target.value)}
               placeholder="Nome da propriedade (ex: Meu Apartamento)"
-              className="w-full px-4 py-3 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none"
+              className="w-full px-4 py-3 border-2 border-ceramic-border rounded-lg focus:border-amber-500 focus:outline-none"
               onKeyDown={(e) => e.key === 'Enter' && handleCreateProperty()}
             />
             <button
@@ -114,18 +114,18 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
   }
 
   return (
-    <div className="p-6 space-y-6 bg-stone-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-ceramic-cool min-h-screen">
       {/* Header com navegação */}
       <div className="flex items-center gap-4 mb-2">
         <button
           onClick={() => navigate('/connections/habitat')}
-          className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
+          className="p-2 hover:bg-ceramic-border rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-stone-600" />
+          <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
         </button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-stone-800">Habitat</h1>
-          <p className="text-stone-600 mt-1">Gestão da sua propriedade</p>
+          <h1 className="text-3xl font-bold text-ceramic-text-primary">Habitat</h1>
+          <p className="text-ceramic-text-secondary mt-1">Gestão da sua propriedade</p>
         </div>
       </div>
 
@@ -163,14 +163,14 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Urgent Maintenance */}
         {!summaryLoading && maintenanceSummary && maintenanceSummary.urgent_count > 0 && (
-          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+          <div className="bg-ceramic-error/10 border-2 border-ceramic-error/30 rounded-lg p-4">
             <div className="flex items-center gap-3">
               <div className="text-3xl">⚠️</div>
               <div>
-                <div className="text-2xl font-bold text-red-800">
+                <div className="text-2xl font-bold text-ceramic-error">
                   {maintenanceSummary.urgent_count}
                 </div>
-                <div className="text-sm text-red-700">Manutenções urgentes</div>
+                <div className="text-sm text-ceramic-error">Manutenções urgentes</div>
               </div>
             </div>
           </div>
@@ -193,12 +193,12 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
 
         {/* Warranty Alerts */}
         {!alertsLoading && warrantyAlerts.length > 0 && (
-          <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+          <div className="bg-ceramic-warning/10 border-2 border-ceramic-warning/30 rounded-lg p-4">
             <div className="flex items-center gap-3">
               <div className="text-3xl">📋</div>
               <div>
-                <div className="text-2xl font-bold text-orange-800">{warrantyAlerts.length}</div>
-                <div className="text-sm text-orange-700">Garantias expirando</div>
+                <div className="text-2xl font-bold text-ceramic-warning">{warrantyAlerts.length}</div>
+                <div className="text-sm text-ceramic-warning">Garantias expirando</div>
               </div>
             </div>
           </div>
@@ -219,26 +219,26 @@ export const HabitatDashboard: React.FC<HabitatDashboardProps> = ({ spaceId }) =
 
       {/* Quick Stats */}
       {!summaryLoading && maintenanceSummary && (
-        <div className="bg-white border-2 border-stone-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-stone-800 mb-4">Resumo de Manutenção</h3>
+        <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Resumo de Manutenção</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <div className="text-2xl font-bold text-stone-700">
+              <div className="text-2xl font-bold text-ceramic-text-primary">
                 {maintenanceSummary.total_scheduled}
               </div>
-              <div className="text-sm text-stone-500">Agendadas</div>
+              <div className="text-sm text-ceramic-text-secondary">Agendadas</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-stone-700">
+              <div className="text-2xl font-bold text-ceramic-text-primary">
                 {maintenanceSummary.total_in_progress}
               </div>
-              <div className="text-sm text-stone-500">Em andamento</div>
+              <div className="text-sm text-ceramic-text-secondary">Em andamento</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-2xl font-bold text-ceramic-success">
                 R$ {maintenanceSummary.total_estimated_cost.toFixed(2)}
               </div>
-              <div className="text-sm text-stone-500">Custo estimado</div>
+              <div className="text-sm text-ceramic-text-secondary">Custo estimado</div>
             </div>
           </div>
         </div>

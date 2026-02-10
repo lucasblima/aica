@@ -112,7 +112,7 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
     return (
       <div className="flex items-center justify-center h-screen bg-ceramic-base">
         <div className="text-center max-w-md">
-          <div className="text-red-500 mb-4">
+          <div className="text-ceramic-error mb-4">
             <svg
               className="w-16 h-16 mx-auto"
               fill="none"
@@ -210,7 +210,7 @@ export default function PodcastWorkspace({
     return (
       <div className="flex items-center justify-center h-screen bg-ceramic-base">
         <div className="text-center max-w-md">
-          <div className="text-red-500 mb-4">
+          <div className="text-ceramic-error mb-4">
             <svg
               className="w-16 h-16 mx-auto"
               fill="none"

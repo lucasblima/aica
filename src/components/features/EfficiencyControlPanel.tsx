@@ -134,13 +134,13 @@ export const EfficiencyControlPanel: React.FC<EfficiencyControlPanelProps> = ({
         {/* Trend Indicator */}
         <div className="flex items-center justify-center gap-2 mt-3">
           {score.trend === 'improving' && (
-            <div className="flex items-center gap-1 text-xs text-green-600">
+            <div className="flex items-center gap-1 text-xs text-ceramic-success">
               <TrendingUp className="w-4 h-4" />
               <span className="font-bold">Melhorando</span>
             </div>
           )}
           {score.trend === 'declining' && (
-            <div className="flex items-center gap-1 text-xs text-red-600">
+            <div className="flex items-center gap-1 text-xs text-ceramic-error">
               <TrendingDown className="w-4 h-4" />
               <span className="font-bold">Caindo</span>
             </div>
@@ -177,7 +177,7 @@ export const EfficiencyControlPanel: React.FC<EfficiencyControlPanelProps> = ({
 
         {/* Focus */}
         <div className="text-center space-y-1">
-          <div className="text-lg font-bold text-blue-600">
+          <div className="text-lg font-bold text-ceramic-info">
             {score.focus}
           </div>
           <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-widest">
@@ -185,7 +185,7 @@ export const EfficiencyControlPanel: React.FC<EfficiencyControlPanelProps> = ({
           </div>
           <div className="ceramic-groove h-1 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all"
+              className="h-full bg-gradient-to-r from-ceramic-info to-ceramic-info/80 transition-all"
               style={{ width: `${score.focus}%` }}
             />
           </div>
@@ -193,7 +193,7 @@ export const EfficiencyControlPanel: React.FC<EfficiencyControlPanelProps> = ({
 
         {/* Consistency */}
         <div className="text-center space-y-1">
-          <div className="text-lg font-bold text-green-600">
+          <div className="text-lg font-bold text-ceramic-success">
             {score.consistency}
           </div>
           <div className="text-[10px] text-ceramic-text-secondary uppercase tracking-widest">
@@ -201,7 +201,7 @@ export const EfficiencyControlPanel: React.FC<EfficiencyControlPanelProps> = ({
           </div>
           <div className="ceramic-groove h-1 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all"
+              className="h-full bg-gradient-to-r from-ceramic-success to-ceramic-success/80 transition-all"
               style={{ width: `${score.consistency}%` }}
             />
           </div>
@@ -251,7 +251,7 @@ export const EfficiencyControlPanel: React.FC<EfficiencyControlPanelProps> = ({
               </div>
               <div className="ceramic-groove h-1.5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-purple-600 transition-all"
+                  className="h-full bg-gradient-to-r from-ceramic-accent to-ceramic-accent/80 transition-all"
                   style={{ width: `${levelProgress}%` }}
                 />
               </div>

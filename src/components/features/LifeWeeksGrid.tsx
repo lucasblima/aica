@@ -19,11 +19,11 @@ interface LifeEvent {
 }
 
 const MODULES = [
-    { id: 'finance', label: 'Finanças', icon: Wallet, color: 'border-emerald-500' },
-    { id: 'health', label: 'Saúde', icon: Heart, color: 'border-rose-500' },
-    { id: 'community', label: 'Associações', icon: Users, color: 'border-blue-500' },
-    { id: 'education', label: 'Educação', icon: Building2, color: 'border-amber-500' },
-    { id: 'legal', label: 'Jurídico', icon: Scale, color: 'border-slate-500' },
+    { id: 'finance', label: 'Finanças', icon: Wallet, color: 'border-ceramic-success' },
+    { id: 'health', label: 'Saúde', icon: Heart, color: 'border-ceramic-error' },
+    { id: 'community', label: 'Associações', icon: Users, color: 'border-ceramic-info' },
+    { id: 'education', label: 'Educação', icon: Building2, color: 'border-ceramic-warning' },
+    { id: 'legal', label: 'Jurídico', icon: Scale, color: 'border-ceramic-text-secondary' },
 ];
 
 export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
@@ -478,7 +478,7 @@ export const LifeWeeksGrid: React.FC<LifeWeeksGridProps> = ({ userId }) => {
                                 <span className="text-ceramic-text-secondary">Futuras</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-sm bg-emerald-500"></div>
+                                <div className="w-3 h-3 rounded-sm bg-ceramic-success"></div>
                                 <span className="text-ceramic-text-secondary">Com Marcos</span>
                             </div>
                         </div>

@@ -37,28 +37,28 @@ const QUADRANTS: QuadrantConfig[] = [
         title: 'Urgente & Importante',
         subtitle: 'Faça Agora',
         color: '#D97706',
-        bgClass: 'bg-gradient-to-br from-red-50 to-amber-50'
+        bgClass: 'bg-gradient-to-br from-ceramic-error/5 to-amber-50'
     },
     {
         id: 'important',
         title: 'Importante, Não Urgente',
         subtitle: 'Agende',
-        color: '#3B82F6',
-        bgClass: 'bg-gradient-to-br from-blue-50 to-indigo-50'
+        color: '#7B8FA2',
+        bgClass: 'bg-gradient-to-br from-ceramic-info/5 to-ceramic-info/10'
     },
     {
         id: 'urgent',
         title: 'Urgente, Não Importante',
         subtitle: 'Delegue',
         color: '#FBBF24',
-        bgClass: 'bg-gradient-to-br from-yellow-50 to-amber-50'
+        bgClass: 'bg-gradient-to-br from-amber-50 to-amber-50'
     },
     {
         id: 'low',
         title: 'Nem Urgente, Nem Importante',
         subtitle: 'Elimine',
-        color: '#9CA3AF',
-        bgClass: 'bg-gradient-to-br from-slate-50 to-gray-50'
+        color: '#A89F91',
+        bgClass: 'bg-gradient-to-br from-ceramic-cool to-ceramic-base'
     }
 ];
 
@@ -172,7 +172,7 @@ const TaskCard: React.FC<{ task: Task; isDragging?: boolean; onEdit: (task: Task
                     )}
                     <div className="flex items-center gap-2 mt-1">
                         {task.due_date && (
-                            <span className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-red-600' : 'text-ceramic-text-secondary'}`}>
+                            <span className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-ceramic-error' : 'text-ceramic-text-secondary'}`}>
                                 <Calendar className="w-3 h-3" />
                                 {new Date(task.due_date).toLocaleDateString('pt-BR')}
                             </span>
@@ -201,10 +201,10 @@ const TaskCard: React.FC<{ task: Task; isDragging?: boolean; onEdit: (task: Task
                             e.stopPropagation();
                             onDelete(task);
                         }}
-                        className="p-1 rounded-lg hover:bg-red-50 transition-all"
+                        className="p-1 rounded-lg hover:bg-ceramic-error/5 transition-all"
                         title="Remover tarefa"
                     >
-                        <Trash2 className="w-4 h-4 text-red-600" />
+                        <Trash2 className="w-4 h-4 text-ceramic-error" />
                     </button>
                 </div>
             </div>

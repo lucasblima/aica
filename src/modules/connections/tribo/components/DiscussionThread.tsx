@@ -38,9 +38,9 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
   };
 
   const categoryColors = {
-    announcement: 'bg-blue-50 text-blue-700 border-blue-200',
-    question: 'bg-purple-50 text-purple-700 border-purple-200',
-    decision: 'bg-green-50 text-green-700 border-green-200',
+    announcement: 'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/30',
+    question: 'bg-ceramic-accent/10 text-ceramic-accent border-ceramic-accent/30',
+    decision: 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/30',
     general: 'bg-ceramic-50 text-ceramic-700 border-ceramic-200',
   };
 
@@ -121,7 +121,7 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="bg-white rounded-lg border border-ceramic-200 p-3">
+            <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-3">
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-medium text-ceramic-900">
                   {reply.author?.displayName || 'Anônimo'}
@@ -229,7 +229,7 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-ceramic-200 overflow-hidden">
+    <div className="bg-ceramic-base rounded-2xl border-2 border-ceramic-border overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-ceramic-100">
         <div className="flex items-start justify-between mb-3">
@@ -246,7 +246,7 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
                 <span className="text-[#9B4D3A]">📌 Fixado</span>
               )}
               {discussion.isResolved && (
-                <span className="text-green-600">✓ Resolvido</span>
+                <span className="text-ceramic-success">✓ Resolvido</span>
               )}
             </div>
 
@@ -292,7 +292,7 @@ export const DiscussionThread: React.FC<DiscussionThreadProps> = ({
               {onResolve && !discussion.isResolved && (
                 <button
                   onClick={onResolve}
-                  className="px-3 py-1 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
+                  className="px-3 py-1 text-sm bg-ceramic-success/15 hover:bg-ceramic-success/20 text-ceramic-success rounded-lg transition-colors"
                 >
                   Marcar como resolvido
                 </button>

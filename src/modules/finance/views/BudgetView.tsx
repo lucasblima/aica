@@ -157,8 +157,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
     return (
       <div className="h-screen bg-ceramic-base flex items-center justify-center">
         <div className="animate-pulse space-y-4">
-          <div className="h-24 w-64 bg-gray-100 rounded" />
-          <div className="h-12 w-48 bg-gray-100 rounded mx-auto" />
+          <div className="h-24 w-64 bg-ceramic-base rounded" />
+          <div className="h-12 w-48 bg-ceramic-base rounded mx-auto" />
         </div>
       </div>
     );
@@ -188,22 +188,22 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           <div className="flex items-center justify-center gap-6 mb-8">
             <button
               onClick={goToPreviousMonth}
-              className="w-12 h-12 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+              className="w-12 h-12 rounded-full hover:bg-ceramic-base flex items-center justify-center transition-colors"
               aria-label="Mês anterior"
             >
-              <ChevronLeft className="w-6 h-6 text-gray-600" />
+              <ChevronLeft className="w-6 h-6 text-ceramic-text-secondary" />
             </button>
 
-            <p className="text-sm uppercase tracking-[0.3em] text-gray-400 font-medium min-w-[200px]">
+            <p className="text-sm uppercase tracking-[0.3em] text-ceramic-text-secondary font-medium min-w-[200px]">
               {monthName.toUpperCase()}
             </p>
 
             <button
               onClick={goToNextMonth}
-              className="w-12 h-12 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+              className="w-12 h-12 rounded-full hover:bg-ceramic-base flex items-center justify-center transition-colors"
               aria-label="Próximo mês"
             >
-              <ChevronRight className="w-6 h-6 text-gray-600" />
+              <ChevronRight className="w-6 h-6 text-ceramic-text-secondary" />
             </button>
           </div>
 
@@ -223,17 +223,17 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
               <div className="flex items-center justify-center gap-8 text-ceramic-text-secondary">
                 <div>
                   <p className="text-xs uppercase tracking-wider mb-1">Receitas</p>
-                  <p className="text-lg font-medium text-green-600">
+                  <p className="text-lg font-medium text-ceramic-success">
                     {new Intl.NumberFormat('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
                     }).format(monthIncome)}
                   </p>
                 </div>
-                <div className="text-gray-300">|</div>
+                <div className="text-ceramic-border">|</div>
                 <div>
                   <p className="text-xs uppercase tracking-wider mb-1">Despesas</p>
-                  <p className="text-lg font-medium text-red-600">
+                  <p className="text-lg font-medium text-ceramic-error">
                     {new Intl.NumberFormat('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
@@ -246,13 +246,13 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
           {/* Overall Progress */}
           <div className="max-w-md mx-auto">
-            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1 bg-ceramic-cool rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-1000 ease-out"
+                className="h-full bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80 transition-all duration-1000 ease-out"
                 style={{ width: `${Math.min((totalSpent / totalBudget) * 100, 100)}%` }}
               />
             </div>
-            <div className="flex justify-between mt-2 text-xs text-gray-400">
+            <div className="flex justify-between mt-2 text-xs text-ceramic-text-secondary">
               <span>R$ {totalSpent.toFixed(2)}</span>
               <span>{((totalSpent / totalBudget) * 100).toFixed(0)}%</span>
             </div>
@@ -260,8 +260,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
           {/* Scroll Indicator */}
           <div className="mt-16 animate-bounce">
-            <div className="w-6 h-10 border-2 border-gray-300 rounded-full mx-auto flex items-start justify-center p-2">
-              <div className="w-1 h-3 bg-gray-300 rounded-full" />
+            <div className="w-6 h-10 border-2 border-ceramic-border rounded-full mx-auto flex items-start justify-center p-2">
+              <div className="w-1 h-3 bg-ceramic-border rounded-full" />
             </div>
           </div>
         </div>
@@ -294,7 +294,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                         minimumFractionDigits: 0,
                       }).format(cat.spent)}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-ceramic-text-secondary mt-1">
                       de{' '}
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
@@ -307,14 +307,14 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
                 {/* Progress Bar */}
                 <div className="mb-4">
-                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-3 bg-ceramic-cool rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all duration-500 ease-out ${
                         isOverBudget
-                          ? 'bg-gradient-to-r from-red-500 to-red-400'
+                          ? 'bg-gradient-to-r from-ceramic-error to-ceramic-error/80'
                           : isWarning
-                          ? 'bg-gradient-to-r from-orange-500 to-orange-400'
-                          : 'bg-gradient-to-r from-blue-500 to-blue-400'
+                          ? 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80'
+                          : 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80'
                       }`}
                       style={{ width: `${Math.min(percentage, 100)}%` }}
                     />
@@ -323,13 +323,13 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
                 {/* Alerts */}
                 {isOverBudget && (
-                  <div className="flex items-start gap-3 p-4 bg-red-50 rounded-2xl border border-red-100">
+                  <div className="flex items-start gap-3 p-4 bg-ceramic-error/10 rounded-2xl border border-ceramic-error/20">
                     <span className="text-xl">⚠️</span>
                     <div>
-                      <p className="text-sm font-medium text-red-900">
+                      <p className="text-sm font-medium text-ceramic-error">
                         Você ultrapassou o orçamento desta categoria
                       </p>
-                      <p className="text-xs text-red-600 mt-1">
+                      <p className="text-xs text-ceramic-error mt-1">
                         {percentage.toFixed(0)}% do orçamento usado
                       </p>
                     </div>
@@ -337,9 +337,9 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 )}
 
                 {isWarning && !isOverBudget && (
-                  <div className="flex items-start gap-3 p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                  <div className="flex items-start gap-3 p-4 bg-ceramic-warning/10 rounded-2xl border border-ceramic-warning/20">
                     <span className="text-xl">💡</span>
-                    <p className="text-sm text-orange-900">
+                    <p className="text-sm text-ceramic-warning">
                       Você já gastou {percentage.toFixed(0)}% do orçamento desta categoria
                     </p>
                   </div>
@@ -350,7 +350,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                   <div className="mt-4">
                     <button
                       onClick={() => setExpandedCategory(expandedCategory === cat.category ? null : cat.category)}
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                      className="flex items-center gap-2 text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
                     >
                       {expandedCategory === cat.category ? (
                         <ChevronUp className="w-4 h-4" />
@@ -364,25 +364,25 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                     </button>
 
                     {expandedCategory === cat.category && (
-                      <div className="mt-4 space-y-2 pl-6 border-l-2 border-gray-100">
+                      <div className="mt-4 space-y-2 pl-6 border-l-2 border-ceramic-cool">
                         {transactions
                           .filter(t => t.type === 'expense' && t.category === cat.category)
                           .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
                           .map((tx) => (
                             <div
                               key={tx.id}
-                              className="flex items-start justify-between py-2 text-sm hover:bg-gray-50 rounded-lg px-3 transition-colors"
+                              className="flex items-start justify-between py-2 text-sm hover:bg-ceramic-highlight rounded-lg px-3 transition-colors"
                             >
                               <div className="flex-1">
-                                <p className="font-medium text-gray-900">{tx.description}</p>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="font-medium text-ceramic-text-primary">{tx.description}</p>
+                                <p className="text-xs text-ceramic-text-secondary mt-1">
                                   {new Date(tx.transaction_date).toLocaleDateString('pt-BR', {
                                     day: '2-digit',
                                     month: 'short',
                                   })}
                                 </p>
                               </div>
-                              <p className="text-sm font-bold text-red-600 ml-4">
+                              <p className="text-sm font-bold text-ceramic-error ml-4">
                                 -{new Intl.NumberFormat('pt-BR', {
                                   style: 'currency',
                                   currency: 'BRL',
@@ -392,9 +392,9 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                           ))}
 
                         {/* Total */}
-                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-200">
-                          <p className="text-sm font-medium text-gray-700">Total da categoria</p>
-                          <p className="text-sm font-bold text-gray-900">
+                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-ceramic-border">
+                          <p className="text-sm font-medium text-ceramic-text-primary">Total da categoria</p>
+                          <p className="text-sm font-bold text-ceramic-text-primary">
                             {new Intl.NumberFormat('pt-BR', {
                               style: 'currency',
                               currency: 'BRL',
@@ -420,7 +420,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             {/* Receitas */}
             <div className="ceramic-tray p-4">
               <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-2">Receitas</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-ceramic-success">
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
@@ -434,7 +434,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             {/* Despesas */}
             <div className="ceramic-tray p-4">
               <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-2">Despesas</p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-2xl font-bold text-ceramic-error">
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
@@ -448,7 +448,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             {/* Saldo Calculado */}
             <div className="ceramic-tray p-4">
               <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-2">Saldo Calculado</p>
-              <p className={`text-2xl font-bold ${monthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              <p className={`text-2xl font-bold ${monthBalance >= 0 ? 'text-ceramic-warning' : 'text-ceramic-error'}`}>
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
@@ -464,15 +464,15 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           <div className="ceramic-tray p-4">
             <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-3">Cálculo:</p>
             <div className="flex items-center gap-3 text-sm font-mono">
-              <span className="text-green-600 font-bold">
+              <span className="text-ceramic-success font-bold">
                 R$ {monthIncome.toFixed(2)}
               </span>
-              <span className="text-gray-400">-</span>
-              <span className="text-red-600 font-bold">
+              <span className="text-ceramic-text-secondary">-</span>
+              <span className="text-ceramic-error font-bold">
                 R$ {monthExpenses.toFixed(2)}
               </span>
-              <span className="text-gray-400">=</span>
-              <span className={`font-bold ${monthBalance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              <span className="text-ceramic-text-secondary">=</span>
+              <span className={`font-bold ${monthBalance >= 0 ? 'text-ceramic-warning' : 'text-ceramic-error'}`}>
                 R$ {monthBalance.toFixed(2)}
               </span>
             </div>
@@ -516,11 +516,11 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
               {/* Validation */}
               {Math.abs(monthExpenses - budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)) > 0.01 && (
-                <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                  <p className="text-xs text-red-700 font-medium">
+                <div className="mt-3 p-3 bg-ceramic-error/10 rounded-lg border border-ceramic-error/20">
+                  <p className="text-xs text-ceramic-error font-medium">
                     ⚠️ Discrepância: Total de despesas não bate com soma das categorias!
                   </p>
-                  <p className="text-xs text-red-600 mt-1">
+                  <p className="text-xs text-ceramic-error mt-1">
                     Diferença: R$ {Math.abs(monthExpenses - budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)).toFixed(2)}
                   </p>
                 </div>
@@ -554,7 +554,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                         })}
                       </p>
                     </div>
-                    <p className="text-sm font-bold text-green-600 ml-4">
+                    <p className="text-sm font-bold text-ceramic-success ml-4">
                       +{new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
@@ -564,9 +564,9 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 ))}
 
               {/* Total */}
-              <div className="flex items-center justify-between pt-4 mt-4 border-t border-green-200">
-                <p className="text-base font-medium text-gray-700">Total de Receitas</p>
-                <p className="text-lg font-bold text-green-700">
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-ceramic-success/20">
+                <p className="text-base font-medium text-ceramic-text-primary">Total de Receitas</p>
+                <p className="text-lg font-bold text-ceramic-success">
                   {new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL',
@@ -581,17 +581,17 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       {/* Insights Section */}
       <div className="max-w-4xl mx-auto px-6 pb-20">
         <div className="space-y-6">
-          <h2 className="text-2xl font-medium text-gray-900 mb-8">Insights Inteligentes</h2>
+          <h2 className="text-2xl font-medium text-ceramic-text-primary mb-8">Insights Inteligentes</h2>
 
           {/* Insight Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-transparent p-8 rounded-3xl border border-blue-100">
+          <div className="bg-gradient-to-br from-ceramic-info/10 to-transparent p-8 rounded-3xl border border-ceramic-info/20">
             <div className="flex gap-6">
               <div className="text-5xl">💡</div>
               <div>
-                <h4 className="text-lg font-bold text-gray-900 mb-3">Padrão Detectado</h4>
-                <p className="text-gray-600 leading-relaxed">
+                <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Padrão Detectado</h4>
+                <p className="text-ceramic-text-secondary leading-relaxed">
                   Com base no seu histórico, você tende a gastar{' '}
-                  <span className="font-medium text-gray-900">R$ 150 a mais</span> em alimentação
+                  <span className="font-medium text-ceramic-text-primary">R$ 150 a mais</span> em alimentação
                   nas duas últimas semanas do mês. Considere ajustar seu orçamento ou reduzir
                   gastos neste período.
                 </p>
@@ -600,14 +600,14 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           </div>
 
           {/* Trend Insight */}
-          <div className="bg-gradient-to-br from-green-50 to-transparent p-8 rounded-3xl border border-green-100">
+          <div className="bg-gradient-to-br from-ceramic-success/10 to-transparent p-8 rounded-3xl border border-ceramic-success/20">
             <div className="flex gap-6">
               <div className="text-5xl">📊</div>
               <div>
-                <h4 className="text-lg font-bold text-gray-900 mb-3">Tendência Positiva</h4>
-                <p className="text-gray-600 leading-relaxed">
+                <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Tendência Positiva</h4>
+                <p className="text-ceramic-text-secondary leading-relaxed">
                   Seus gastos com transporte diminuíram{' '}
-                  <span className="font-medium text-green-700">23%</span> comparado ao mês passado.
+                  <span className="font-medium text-ceramic-success">23%</span> comparado ao mês passado.
                   Continue assim!
                 </p>
               </div>

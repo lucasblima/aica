@@ -139,9 +139,9 @@ function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="ceramic-tile p-12 text-center border-2 border-red-200"
+      className="ceramic-tile p-12 text-center border-2 border-ceramic-error/30"
     >
-      <ExclamationCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+      <ExclamationCircleIcon className="h-16 w-16 text-ceramic-error mx-auto mb-4" />
       <h3 className="text-lg font-semibold text-[#5C554B] mb-2">
         Erro ao carregar timeline
       </h3>

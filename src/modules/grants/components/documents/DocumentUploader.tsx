@@ -305,8 +305,8 @@ export function DocumentUploader({
               transition-all duration-200
               ${
                 status === 'dragging'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                  ? 'border-amber-500 bg-ceramic-info-bg'
+                  : 'border-ceramic-border hover:border-ceramic-border hover:bg-ceramic-cool'
               }
             `}
             onDragOver={handleDragOver}
@@ -324,15 +324,15 @@ export function DocumentUploader({
 
             <Upload
               className={`w-12 h-12 mx-auto mb-4 ${
-                status === 'dragging' ? 'text-blue-500' : 'text-gray-400'
+                status === 'dragging' ? 'text-ceramic-info' : 'text-ceramic-text-secondary'
               }`}
             />
 
-            <p className="text-lg font-medium text-gray-700 mb-2">
+            <p className="text-lg font-medium text-ceramic-text-primary mb-2">
               {status === 'dragging' ? 'Solte o arquivo aqui' : 'Arraste um arquivo ou clique para selecionar'}
             </p>
 
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ceramic-text-secondary">
               {acceptedTypes.map((t) => FILE_TYPE_LABELS[t]).join(', ')} - Máx. {maxSizeMB}MB
             </p>
           </motion.div>
@@ -342,24 +342,24 @@ export function DocumentUploader({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="border rounded-xl p-6 bg-white"
+            className="border rounded-xl p-6 bg-ceramic-base"
           >
             <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileIcon className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-ceramic-info-bg rounded-lg">
+                <FileIcon className="w-6 h-6 text-ceramic-info" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 truncate">{file?.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium text-ceramic-text-primary truncate">{file?.name}</p>
+                <p className="text-sm text-ceramic-text-secondary">
                   {status === 'uploading' ? 'Enviando...' : 'Processando com IA...'}
                 </p>
               </div>
-              <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+              <Loader2 className="w-5 h-5 text-ceramic-info animate-spin" />
             </div>
 
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-ceramic-base rounded-full h-2">
               <motion.div
-                className="bg-blue-500 h-2 rounded-full"
+                className="bg-amber-500 h-2 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.3 }}
@@ -367,7 +367,7 @@ export function DocumentUploader({
             </div>
 
             {status === 'processing' && (
-              <p className="mt-3 text-sm text-gray-500 text-center">
+              <p className="mt-3 text-sm text-ceramic-text-secondary text-center">
                 Extraindo conteúdo e classificando documento...
               </p>
             )}
@@ -378,21 +378,21 @@ export function DocumentUploader({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="border rounded-xl p-6 bg-white"
+            className="border rounded-xl p-6 bg-ceramic-base"
           >
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="p-3 bg-ceramic-success-bg rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-ceramic-success" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{result.document.original_name}</p>
+                  <p className="font-medium text-ceramic-text-primary">{result.document.original_name}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                    <span className="text-sm px-2 py-0.5 bg-ceramic-info-bg text-ceramic-info rounded-full">
                       {DETECTED_TYPE_LABELS[result.document.detected_type || 'outro']}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-ceramic-text-secondary">
                       {Math.round((result.document.confidence || 0) * 100)}% confiança
                     </span>
                   </div>
@@ -400,7 +400,7 @@ export function DocumentUploader({
               </div>
               <button
                 onClick={handleReset}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-1 text-ceramic-text-secondary hover:text-ceramic-text-secondary transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -408,13 +408,13 @@ export function DocumentUploader({
 
             {/* Extracted Fields */}
             {Object.keys(result.document.extracted_fields).length > 0 && (
-              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm font-medium text-gray-700 mb-2">Campos Extraídos</p>
+              <div className="mb-4 p-4 bg-ceramic-cool rounded-lg">
+                <p className="text-sm font-medium text-ceramic-text-primary mb-2">Campos Extraídos</p>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(result.document.extracted_fields).map(([key, value]) => (
                     <div key={key} className="text-sm">
-                      <span className="text-gray-500">{key}: </span>
-                      <span className="text-gray-900">{String(value)}</span>
+                      <span className="text-ceramic-text-secondary">{key}: </span>
+                      <span className="text-ceramic-text-primary">{String(value)}</span>
                     </div>
                   ))}
                 </div>
@@ -424,7 +424,7 @@ export function DocumentUploader({
             {/* Link Suggestions */}
             {result.linkSuggestions.length > 0 && (
               <div className="border-t pt-4">
-                <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <p className="text-sm font-medium text-ceramic-text-primary mb-3 flex items-center gap-2">
                   <Link2 className="w-4 h-4" />
                   Sugestões de Vinculação
                 </p>
@@ -432,17 +432,17 @@ export function DocumentUploader({
                   {result.linkSuggestions.map((suggestion) => (
                     <div
                       key={suggestion.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-ceramic-cool rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         {suggestion.entity_type === 'organization' ? (
-                          <Building2 className="w-5 h-5 text-gray-400" />
+                          <Building2 className="w-5 h-5 text-ceramic-text-secondary" />
                         ) : (
-                          <FolderOpen className="w-5 h-5 text-gray-400" />
+                          <FolderOpen className="w-5 h-5 text-ceramic-text-secondary" />
                         )}
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{suggestion.entity_name}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm font-medium text-ceramic-text-primary">{suggestion.entity_name}</p>
+                          <p className="text-xs text-ceramic-text-secondary">
                             {suggestion.entity_type === 'organization' ? 'Organização' : 'Projeto'} •{' '}
                             {Math.round(suggestion.confidence * 100)}% match
                           </p>
@@ -451,13 +451,13 @@ export function DocumentUploader({
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleLinkConfirm(suggestion)}
-                          className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                          className="px-3 py-1 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
                         >
                           Vincular
                         </button>
                         <button
                           onClick={() => handleLinkReject(suggestion)}
-                          className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                          className="px-3 py-1 text-sm text-ceramic-text-secondary hover:bg-ceramic-cool rounded-lg transition-colors"
                         >
                           Ignorar
                         </button>
@@ -472,7 +472,7 @@ export function DocumentUploader({
             <div className="mt-4 flex justify-end">
               <button
                 onClick={handleReset}
-                className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-ceramic-info hover:bg-ceramic-info-bg rounded-lg transition-colors"
               >
                 Enviar outro documento
               </button>
@@ -484,20 +484,20 @@ export function DocumentUploader({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="border border-red-200 rounded-xl p-6 bg-red-50"
+            className="border border-ceramic-border rounded-xl p-6 bg-ceramic-error-bg"
           >
             <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <XCircle className="w-6 h-6 text-red-600" />
+              <div className="p-3 bg-ceramic-error-bg rounded-lg">
+                <XCircle className="w-6 h-6 text-ceramic-error" />
               </div>
               <div>
-                <p className="font-medium text-red-900">Erro ao processar</p>
-                <p className="text-sm text-red-600">{error}</p>
+                <p className="font-medium text-ceramic-error">Erro ao processar</p>
+                <p className="text-sm text-ceramic-error">{error}</p>
               </div>
             </div>
             <button
               onClick={handleReset}
-              className="w-full px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+              className="w-full px-4 py-2 text-sm bg-ceramic-error-bg text-ceramic-error rounded-lg hover:bg-ceramic-error/10 transition-colors"
             >
               Tentar novamente
             </button>

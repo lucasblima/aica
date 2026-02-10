@@ -91,20 +91,20 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
   // If already answered, show confirmation
   if (isAnswered && displayResponse) {
     return (
-      <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+      <div className="bg-ceramic-success/10 border-2 border-ceramic-success/30 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-3">
-          <CheckCircleIcon className="h-6 w-6 text-green-500" />
-          <h3 className="text-lg font-semibold text-green-900">Pergunta Respondida!</h3>
+          <CheckCircleIcon className="h-6 w-6 text-ceramic-success" />
+          <h3 className="text-lg font-semibold text-ceramic-text-primary">Pergunta Respondida!</h3>
         </div>
 
-        <p className="text-gray-700 mb-3">{question.question_text}</p>
+        <p className="text-ceramic-text-primary mb-3">{question.question_text}</p>
 
-        <div className="p-3 bg-white rounded-lg">
-          <p className="text-sm text-gray-600 mb-1">Sua resposta:</p>
-          <p className="text-gray-900">{displayResponse}</p>
+        <div className="p-3 bg-ceramic-base rounded-lg">
+          <p className="text-sm text-ceramic-text-secondary mb-1">Sua resposta:</p>
+          <p className="text-ceramic-text-primary">{displayResponse}</p>
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-sm text-green-700">
+        <div className="mt-3 flex items-center gap-2 text-sm text-ceramic-success">
           <SparklesIcon className="h-4 w-4" />
           <span>Você ganhou +10 CP por responder!</span>
         </div>
@@ -115,7 +115,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-gradient-to-br from-white to-blue-50 border-2 border-blue-200 rounded-xl p-6"
+      className="bg-gradient-to-br from-ceramic-base to-ceramic-info/10 border-2 border-ceramic-info/30 rounded-xl p-6"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
@@ -127,7 +127,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
         </div>
 
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-gray-600">Pergunta do Dia</h3>
+          <h3 className="text-sm font-medium text-ceramic-text-secondary">Pergunta do Dia</h3>
           <p
             className="text-xs font-semibold"
             style={{ color: categoryColor }}
@@ -136,13 +136,13 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
           </p>
         </div>
 
-        <div className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded-full">
+        <div className="px-3 py-1 bg-ceramic-warning/15 text-ceramic-warning text-xs font-bold rounded-full">
           +10 CP
         </div>
       </div>
 
       {/* Question */}
-      <p className="text-lg font-medium text-gray-900 mb-4">{question.question_text}</p>
+      <p className="text-lg font-medium text-ceramic-text-primary mb-4">{question.question_text}</p>
 
       {/* Answer input */}
       <div className="mb-4">
@@ -152,10 +152,10 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
           placeholder={isTranscribing ? 'Transcrevendo áudio...' : 'Digite ou grave sua resposta...'}
           rows={4}
           disabled={isTranscribing}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none disabled:bg-gray-50"
+          className="w-full px-4 py-3 border border-ceramic-text-secondary/20 rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:outline-none resize-none disabled:bg-ceramic-base"
         />
         <div className="mt-1 flex items-center justify-between">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-ceramic-text-secondary">
             {isTranscribing ? 'Transcrevendo...' : `${responseText.length} caracteres`}
           </p>
           <AudioRecorder
@@ -170,7 +170,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
         <button
           type="submit"
           disabled={isSubmitting || !responseText.trim()}
-          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+          className="flex-1 px-4 py-2 bg-ceramic-info text-white rounded-lg font-medium hover:bg-ceramic-info/80 disabled:bg-ceramic-neutral disabled:cursor-not-allowed transition-all"
         >
           {isSubmitting ? 'Salvando...' : 'Responder'}
         </button>
@@ -179,7 +179,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
           <button
             type="button"
             onClick={onSkip}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-all"
+            className="px-4 py-2 bg-ceramic-highlight text-ceramic-text-primary rounded-lg font-medium hover:bg-ceramic-highlight transition-all"
           >
             Pular
           </button>
@@ -187,8 +187,8 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
       </div>
 
       {/* Info */}
-      <div className="mt-4 flex items-center gap-2 text-xs text-gray-600">
-        <SparklesIcon className="h-4 w-4 text-blue-500" />
+      <div className="mt-4 flex items-center gap-2 text-xs text-ceramic-text-secondary">
+        <SparklesIcon className="h-4 w-4 text-ceramic-info" />
         <span>Responda quando se sentir confortável. Não é obrigatório!</span>
       </div>
     </form>

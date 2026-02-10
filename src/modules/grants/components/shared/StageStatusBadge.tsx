@@ -32,8 +32,8 @@ const STATUS_CONFIG: Record<StageCompletionStatus, {
   },
   complete: {
     icon: Check,
-    bgColor: 'bg-green-100',
-    textColor: 'text-green-600',
+    bgColor: 'bg-ceramic-success-bg',
+    textColor: 'text-ceramic-success',
     label: 'Completo',
   },
 };

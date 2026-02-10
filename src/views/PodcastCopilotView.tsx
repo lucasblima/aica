@@ -529,10 +529,10 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         // This prevents flash of Library view when state is being updated
         if (isTransitioningRef.current) {
             return (
-                <div className="flex items-center justify-center h-screen bg-gray-50">
+                <div className="flex items-center justify-center h-screen bg-ceramic-base">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-gray-600 text-sm">Carregando workspace...</p>
+                        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-ceramic-text-secondary text-sm">Carregando workspace...</p>
                     </div>
                 </div>
             );
@@ -542,10 +542,10 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
         if (!currentEpisodeId || !currentShowId) {
             log.debug(' Workspace waiting for data', { currentEpisodeId, currentShowId });
             return (
-                <div className="flex items-center justify-center h-screen bg-gray-50">
+                <div className="flex items-center justify-center h-screen bg-ceramic-base">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-gray-600 text-sm">Carregando workspace...</p>
+                        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-ceramic-text-secondary text-sm">Carregando workspace...</p>
                     </div>
                 </div>
             );
@@ -596,7 +596,7 @@ export const PodcastCopilotView: React.FC<PodcastCopilotViewProps> = ({ userEmai
                                 <div className="flex gap-3">
                                     <button
                                         onClick={handleBackToDashboard}
-                                        className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-all"
+                                        className="px-6 py-3 rounded-xl bg-ceramic-cool text-ceramic-text-primary font-bold hover:bg-ceramic-cool/80 transition-all"
                                     >
                                         Voltar
                                     </button>

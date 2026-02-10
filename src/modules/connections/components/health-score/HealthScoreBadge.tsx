@@ -83,13 +83,13 @@ function TrendIcon({ trend, className }: { trend: HealthScoreTrend; className?: 
 function getTrendColor(trend: HealthScoreTrend): string {
   switch (trend) {
     case 'improving':
-      return '#22C55E'; // green-500
+      return '#6B7B5C'; // ceramic-success
     case 'declining':
-      return '#EF4444'; // red-500
+      return '#9B4D3A'; // ceramic-error
     case 'stable':
-      return '#6B7280'; // gray-500
+      return '#8C8279'; // ceramic-text-secondary
     case 'new':
-      return '#8B5CF6'; // violet-500
+      return '#7C6E58'; // ceramic-accent
   }
 }
 
@@ -139,7 +139,7 @@ export function HealthScoreBadge({
   if (score === null) {
     return (
       <div
-        className={`inline-flex items-center justify-center rounded-full bg-gray-100 text-gray-400 ${getSizeClasses(size).container} ${className}`}
+        className={`inline-flex items-center justify-center rounded-full bg-ceramic-base text-ceramic-text-tertiary ${getSizeClasses(size).container} ${className}`}
       >
         <span className={getSizeClasses(size).score}>--</span>
       </div>

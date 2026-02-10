@@ -38,7 +38,7 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-4 border-l-4 transition-all hover:shadow-lg"
+      className="bg-ceramic-base rounded-lg shadow-md p-4 border-l-4 transition-all hover:shadow-lg"
       style={{ borderLeftColor: sentimentColor }}
     >
       {/* Header */}
@@ -51,20 +51,20 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
                 {moment.emotion}
               </span>
             )}
-            <div className="flex items-center gap-1 text-sm text-gray-500">
+            <div className="flex items-center gap-1 text-sm text-ceramic-text-secondary">
               <ClockIcon className="h-4 w-4" />
               <span className="capitalize">{relativeTime}</span>
             </div>
           </div>
 
           {/* Absolute time */}
-          <p className="text-xs text-gray-400 capitalize">{absoluteTime}</p>
+          <p className="text-xs text-ceramic-text-tertiary capitalize">{absoluteTime}</p>
         </div>
 
         {/* Expand button */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
+          className="text-ceramic-text-tertiary hover:text-ceramic-text-primary transition-colors"
         >
           {isExpanded ? (
             <ChevronUpIcon className="h-5 w-5" />
@@ -77,7 +77,7 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
       {/* Content preview */}
       <div className="mb-3">
         {moment.content && (
-          <p className="text-gray-700 leading-relaxed">
+          <p className="text-ceramic-text-primary leading-relaxed">
             {isExpanded
               ? moment.content
               : moment.content.length > 150
@@ -93,7 +93,7 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
           {moment.tags.map(tag => (
             <span
               key={tag}
-              className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+              className="px-2 py-1 bg-ceramic-cool text-ceramic-text-secondary text-xs rounded-full"
             >
               {tag}
             </span>
@@ -103,10 +103,10 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
 
       {/* Expanded content */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+        <div className="mt-4 pt-4 border-t border-ceramic-text-secondary/10 space-y-3">
           {/* Location */}
           {moment.location && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary">
               <MapPinIcon className="h-4 w-4" />
               <span>{moment.location}</span>
             </div>
@@ -114,15 +114,15 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
 
           {/* Sentiment analysis */}
           {moment.sentiment_data && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-700 mb-2">
+            <div className="p-3 bg-ceramic-base rounded-lg">
+              <p className="text-sm font-medium text-ceramic-text-primary mb-2">
                 Análise de Sentimento:
               </p>
 
               <div className="space-y-2">
                 {/* Sentiment */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Sentimento:</span>
+                  <span className="text-sm text-ceramic-text-secondary">Sentimento:</span>
                   <span
                     className="px-2 py-1 rounded text-xs font-medium text-white"
                     style={{ backgroundColor: sentimentColor }}
@@ -133,7 +133,7 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
 
                 {/* Score */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Score:</span>
+                  <span className="text-sm text-ceramic-text-secondary">Score:</span>
                   <span className="text-sm font-medium">
                     {moment.sentiment_data.sentimentScore.toFixed(2)}
                   </span>
@@ -141,11 +141,11 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
 
                 {/* Energy level */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Energia:</span>
+                  <span className="text-sm text-ceramic-text-secondary">Energia:</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="w-24 h-2 bg-ceramic-highlight rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-500 rounded-full transition-all"
+                        className="h-full bg-ceramic-info rounded-full transition-all"
                         style={{
                           width: `${moment.sentiment_data.energyLevel}%`,
                         }}
@@ -160,14 +160,14 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
                 {/* Emotions */}
                 {moment.sentiment_data.emotions.length > 0 && (
                   <div>
-                    <span className="text-sm text-gray-600 block mb-1">
+                    <span className="text-sm text-ceramic-text-secondary block mb-1">
                       Emoções:
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {moment.sentiment_data.emotions.map(emotion => (
                         <span
                           key={emotion}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                          className="px-2 py-1 bg-ceramic-info/10 text-ceramic-info text-xs rounded"
                         >
                           {emotion}
                         </span>
@@ -179,14 +179,14 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
                 {/* Triggers */}
                 {moment.sentiment_data.triggers.length > 0 && (
                   <div>
-                    <span className="text-sm text-gray-600 block mb-1">
+                    <span className="text-sm text-ceramic-text-secondary block mb-1">
                       Gatilhos:
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {moment.sentiment_data.triggers.map(trigger => (
                         <span
                           key={trigger}
-                          className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded"
+                          className="px-2 py-1 bg-ceramic-accent/10 text-ceramic-accent text-xs rounded"
                         >
                           {trigger}
                         </span>
@@ -207,7 +207,7 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
                     onDelete(moment.id)
                   }
                 }}
-                className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                className="text-sm text-ceramic-error hover:text-ceramic-error/80 transition-colors"
               >
                 Deletar momento
               </button>

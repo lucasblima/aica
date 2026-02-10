@@ -15,11 +15,11 @@ export const GroupFundCard: React.FC<GroupFundCardProps> = ({ fund, onClick }) =
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl p-4 border-2 transition-all cursor-pointer ${
+      className={`bg-ceramic-base rounded-2xl p-4 border-2 transition-all cursor-pointer ${
         isCompleted
-          ? 'border-green-200 bg-green-50/30'
+          ? 'border-ceramic-success/30 bg-ceramic-success/5'
           : isExpiringSoon
-          ? 'border-orange-200 hover:border-orange-300 hover:shadow-lg'
+          ? 'border-ceramic-warning/30 hover:border-ceramic-warning/40 hover:shadow-lg'
           : 'border-[#9B4D3A]/20 hover:border-[#9B4D3A]/40 hover:shadow-lg'
       }`}
     >
@@ -52,7 +52,7 @@ export const GroupFundCard: React.FC<GroupFundCardProps> = ({ fund, onClick }) =
           <div
             className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
               isCompleted
-                ? 'bg-gradient-to-r from-green-500 to-green-600'
+                ? 'bg-gradient-to-r from-ceramic-success to-ceramic-success/80'
                 : 'bg-gradient-to-r from-[#9B4D3A] to-[#B85D4A]'
             }`}
             style={{ width: `${Math.min(progress, 100)}%` }}
@@ -76,7 +76,7 @@ export const GroupFundCard: React.FC<GroupFundCardProps> = ({ fund, onClick }) =
         {fund.deadline && !isCompleted ? (
           <div
             className={`text-sm ${
-              isExpiringSoon ? 'text-orange-600 font-medium' : 'text-ceramic-600'
+              isExpiringSoon ? 'text-ceramic-warning font-medium' : 'text-ceramic-600'
             }`}
           >
             {fund.daysRemaining !== undefined && (
@@ -87,13 +87,13 @@ export const GroupFundCard: React.FC<GroupFundCardProps> = ({ fund, onClick }) =
                     {fund.daysRemaining === 1 ? 'dia' : 'dias'} restantes
                   </>
                 ) : (
-                  <span className="text-red-600 font-medium">Encerrado</span>
+                  <span className="text-ceramic-error font-medium">Encerrado</span>
                 )}
               </>
             )}
           </div>
         ) : isCompleted ? (
-          <div className="text-sm text-green-600 font-medium flex items-center gap-1">
+          <div className="text-sm text-ceramic-success font-medium flex items-center gap-1">
             <span>✓</span>
             <span>Concluído</span>
           </div>
@@ -123,8 +123,8 @@ export const GroupFundCard: React.FC<GroupFundCardProps> = ({ fund, onClick }) =
           <span
             className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
               fund.contributionType === 'mandatory'
-                ? 'bg-red-50 text-red-700'
-                : 'bg-blue-50 text-blue-700'
+                ? 'bg-ceramic-error/10 text-ceramic-error'
+                : 'bg-ceramic-info/10 text-ceramic-info'
             }`}
           >
             {fund.contributionType === 'mandatory'

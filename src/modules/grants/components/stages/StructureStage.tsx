@@ -270,12 +270,12 @@ export const StructureStage: React.FC = () => {
                             if (e.key === 'Enter') handleSaveEdit();
                             if (e.key === 'Escape') handleCancelEdit();
                           }}
-                          className="flex-1 bg-white border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
+                          className="flex-1 bg-ceramic-base border border-[#5C554B]/20 rounded-lg px-3 py-2 text-sm text-[#5C554B] focus:outline-none focus:ring-2 focus:ring-[#D97706]/50"
                           autoFocus
                         />
                         <button
                           onClick={handleSaveEdit}
-                          className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                          className="p-2 text-ceramic-success hover:bg-ceramic-success-bg rounded-lg transition-colors"
                         >
                           <Check className="w-4 h-4" />
                         </button>
@@ -291,7 +291,7 @@ export const StructureStage: React.FC = () => {
                         <p className="text-sm font-bold text-[#5C554B] truncate">
                           {field.label}
                           {field.required && (
-                            <span className="text-red-500 ml-1">*</span>
+                            <span className="text-ceramic-error ml-1">*</span>
                           )}
                         </p>
                         <p className="text-xs text-[#948D82]">
@@ -313,7 +313,7 @@ export const StructureStage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleDeleteField(field.id)}
-                        className="p-2 text-[#948D82] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-[#948D82] hover:text-ceramic-error hover:bg-ceramic-error-bg rounded-lg transition-colors"
                         title="Remover"
                       >
                         <Trash2 className="w-4 h-4" />

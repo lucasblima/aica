@@ -33,17 +33,17 @@ export const GuestProfileConfirmation: React.FC<GuestProfileConfirmationProps> =
     const score = profile.confidence_score || 0;
     if (score >= 70) {
       return {
-        color: 'bg-green-100 text-green-800 border-green-300',
+        color: 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/30',
         text: `Confiança: ${score}%`,
       };
     } else if (score >= 40) {
       return {
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+        color: 'bg-ceramic-warning/10 text-ceramic-warning border-ceramic-warning/30',
         text: `Confiança: ${score}%`,
       };
     } else {
       return {
-        color: 'bg-red-100 text-red-800 border-red-300',
+        color: 'bg-ceramic-error/10 text-ceramic-error border-ceramic-error/30',
         text: `Confiança: ${score}%`,
       };
     }
@@ -109,8 +109,8 @@ export const GuestProfileConfirmation: React.FC<GuestProfileConfirmationProps> =
             <span
               className={`px-4 py-2 rounded-lg text-sm font-bold border ${
                 profile.is_reliable
-                  ? 'bg-green-100 text-green-800 border-green-300'
-                  : 'bg-orange-100 text-orange-800 border-orange-300'
+                  ? 'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/30'
+                  : 'bg-ceramic-warning/10 text-ceramic-warning border-ceramic-warning/30'
               }`}
             >
               {profile.is_reliable ? '✓ Informação Confiável' : '⚠️ Verificar Informações'}
@@ -207,7 +207,7 @@ export const GuestProfileConfirmation: React.FC<GuestProfileConfirmationProps> =
                 {profile.controversies.map((controversy, index) => (
                   <li
                     key={index}
-                    className="text-sm text-orange-700 leading-relaxed"
+                    className="text-sm text-ceramic-warning leading-relaxed"
                   >
                     • {controversy}
                   </li>

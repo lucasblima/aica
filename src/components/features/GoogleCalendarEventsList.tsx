@@ -57,11 +57,11 @@ export default function GoogleCalendarEventsList({
 
             {/* Mensagem de Erro */}
             {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="mb-4 p-3 bg-ceramic-error/10 border border-ceramic-error/20 rounded-lg flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm font-semibold text-red-700">Erro na sincronização</p>
-                        <p className="text-xs text-red-600">{error}</p>
+                        <p className="text-sm font-semibold text-ceramic-error">Erro na sincronização</p>
+                        <p className="text-xs text-ceramic-error/80">{error}</p>
                     </div>
                 </div>
             )}
@@ -92,8 +92,8 @@ export default function GoogleCalendarEventsList({
                                 key={event.id}
                                 onClick={() => onEventClick?.(event.id)}
                                 className={`p-3 rounded-xl border-l-4 transition-all cursor-pointer ${isCurrentOrUpcoming
-                                    ? 'bg-blue-50 border-blue-400 hover:bg-blue-100'
-                                    : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
+                                    ? 'bg-ceramic-info/10 border-ceramic-info hover:bg-ceramic-info/15'
+                                    : 'bg-ceramic-cool border-ceramic-border hover:bg-ceramic-base'
                                     }`}
                             >
                                 <h4 className="font-semibold text-[#5C554B] text-sm truncate">
@@ -106,7 +106,7 @@ export default function GoogleCalendarEventsList({
                                     </time>
                                 </div>
                                 {event.attendees && event.attendees.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <div className="mt-2 pt-2 border-t border-ceramic-border">
                                         <p className="text-xs text-[#948D82]">
                                             {event.attendees.length} participante{event.attendees.length > 1 ? 's' : ''}
                                         </p>

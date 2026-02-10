@@ -251,7 +251,7 @@ export const FormFieldsEditorModal: React.FC<FormFieldsEditorModalProps> = ({
               className="w-full flex items-center justify-between px-6 py-3 hover:bg-ceramic-tray/30 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-purple-500" />
+                <Sparkles className="w-5 h-5 text-ceramic-accent" />
                 <div className="text-left">
                   <h3 className="font-bold text-ceramic-text-primary">
                     Importar Campos com IA
@@ -288,7 +288,7 @@ Título do projeto - (Máximo de 150 caracteres):
 Equipe envolvida - (Máximo de 1000 caracteres):
 Histórico da empresa - (Máximo de 2000 caracteres):
 ...`}
-                      className="w-full ceramic-tray px-4 py-3 rounded-xl bg-transparent text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none font-mono text-sm"
+                      className="w-full ceramic-tray px-4 py-3 rounded-xl bg-transparent text-ceramic-text-primary placeholder:text-ceramic-text-tertiary focus:outline-none focus:ring-2 focus:ring-ceramic-accent resize-none font-mono text-sm"
                     />
 
                     <div className="flex items-center justify-between">
@@ -300,11 +300,11 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                       <button
                         onClick={handleProcessAI}
                         disabled={isProcessing || pastedText.trim().length === 0}
-                        className="ceramic-concave px-6 py-2 rounded-xl font-bold text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-purple-50 text-purple-700 disabled:opacity-50 disabled:hover:scale-100"
+                        className="ceramic-concave px-6 py-2 rounded-xl font-bold text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-ceramic-accent/10 text-ceramic-accent disabled:opacity-50 disabled:hover:scale-100"
                       >
                         {isProcessing ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-purple-700 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-ceramic-accent border-t-transparent rounded-full animate-spin" />
                             Processando...
                           </>
                         ) : (
@@ -334,7 +334,7 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                 <motion.div
                   key={field.id}
                   layout
-                  className={`ceramic-card p-4 space-y-3 ${field.hasError ? 'border-2 border-red-500' : ''}`}
+                  className={`ceramic-card p-4 space-y-3 ${field.hasError ? 'border-2 border-ceramic-error' : ''}`}
                 >
                   {/* Field Header */}
                   <div className="flex items-center justify-between">
@@ -361,7 +361,7 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                     </div>
                     <button
                       onClick={() => removeField(index)}
-                      className="ceramic-concave p-2 rounded-xl hover:scale-95 transition-transform text-red-600"
+                      className="ceramic-concave p-2 rounded-xl hover:scale-95 transition-transform text-ceramic-error"
                       title="Remover campo"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -369,7 +369,7 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                   </div>
 
                   {field.hasError && field.errorMessage && (
-                    <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">
+                    <div className="flex items-center gap-2 text-ceramic-error text-sm bg-ceramic-error/10 px-3 py-2 rounded-lg">
                       <AlertCircle className="w-4 h-4" />
                       {field.errorMessage}
                     </div>
@@ -384,7 +384,7 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                       type="text"
                       value={field.label}
                       onChange={e => updateField(index, 'label', e.target.value)}
-                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-warning"
                       placeholder="Ex: Descreva o objetivo do projeto"
                     />
                   </div>
@@ -400,7 +400,7 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                       onChange={e => updateField(index, 'max_chars', parseInt(e.target.value) || 0)}
                       min="1"
                       max="50000"
-                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-warning"
                     />
                   </div>
 
@@ -413,7 +413,7 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                       value={field.ai_prompt_hint || ''}
                       onChange={e => updateField(index, 'ai_prompt_hint', e.target.value)}
                       rows={2}
-                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-warning resize-none"
                       placeholder="Dica para guiar a geração automática deste campo"
                     />
                   </div>
@@ -427,7 +427,7 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                       type="text"
                       value={field.placeholder || ''}
                       onChange={e => updateField(index, 'placeholder', e.target.value)}
-                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full ceramic-tray px-4 py-2 rounded-xl bg-transparent text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-warning"
                       placeholder="Texto de ajuda exibido ao usuário"
                     />
                   </div>
@@ -457,11 +457,11 @@ Histórico da empresa - (Máximo de 2000 caracteres):
                 <button
                   onClick={handleSave}
                   disabled={isSaving || !hasChanges}
-                  className="ceramic-concave px-6 py-2 rounded-xl font-bold text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-blue-50 text-blue-700 disabled:opacity-50 disabled:hover:scale-100"
+                  className="ceramic-concave px-6 py-2 rounded-xl font-bold text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-ceramic-info-bg text-ceramic-info disabled:opacity-50 disabled:hover:scale-100"
                 >
                   {isSaving ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-blue-700 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-ceramic-warning border-t-transparent rounded-full animate-spin" />
                       Salvando...
                     </>
                   ) : (

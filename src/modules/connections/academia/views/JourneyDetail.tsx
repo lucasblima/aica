@@ -73,7 +73,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
       <div className="h-screen w-full bg-ceramic-base flex items-center justify-center">
         <div className="ceramic-card p-8">
           <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-blue-700 animate-spin" />
+            <Clock className="w-5 h-5 text-ceramic-info animate-spin" />
             <span className="text-sm text-ceramic-text-secondary">
               Carregando jornada...
             </span>
@@ -101,7 +101,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
         {/* Journey Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-start gap-3 flex-1">
-            <div className="ceramic-inset w-12 h-12 flex items-center justify-center bg-blue-800">
+            <div className="ceramic-inset w-12 h-12 flex items-center justify-center bg-ceramic-info">
               <BookOpen className="w-6 h-6 text-amber-500" />
             </div>
             <div className="flex-1">
@@ -109,7 +109,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
                 {journey.title}
               </h1>
               <p className="text-sm text-ceramic-text-secondary flex items-center gap-2">
-                <span className="ceramic-inset-shallow px-2 py-1 text-[10px] text-blue-700 uppercase tracking-wider bg-blue-50">
+                <span className="ceramic-inset-shallow px-2 py-1 text-[10px] text-ceramic-info uppercase tracking-wider bg-ceramic-info/10">
                   {journey.journey_type}
                 </span>
                 <span>•</span>
@@ -133,15 +133,15 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
             <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
               Progresso da Jornada
             </span>
-            <span className="text-lg font-black text-blue-700">
+            <span className="text-lg font-black text-ceramic-info">
               {journey.progress_pct}%
             </span>
           </div>
 
           {/* Progress Bar */}
-          <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+          <div className="relative w-full h-2 bg-ceramic-cool rounded-full overflow-hidden mb-4">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-blue-700 to-blue-500"
+              className="h-full rounded-full bg-gradient-to-r from-ceramic-info to-ceramic-info/70"
               initial={{ width: 0 }}
               animate={{ width: `${journey.progress_pct}%` }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -150,10 +150,10 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="ceramic-inset-shallow p-3 text-center bg-blue-50">
+            <div className="ceramic-inset-shallow p-3 text-center bg-ceramic-info/10">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <GraduationCap className="w-4 h-4 text-blue-700" />
-                <span className="text-base font-black text-blue-700">
+                <GraduationCap className="w-4 h-4 text-ceramic-info" />
+                <span className="text-base font-black text-ceramic-info">
                   {journey.completed_modules}/{journey.total_modules}
                 </span>
               </div>
@@ -182,7 +182,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
         {/* Progress Section */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <GraduationCap className="w-4 h-4 text-blue-700" />
+            <GraduationCap className="w-4 h-4 text-ceramic-info" />
             <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
               Recursos
             </h2>
@@ -206,7 +206,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
         {/* Notes Section */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <FileText className="w-4 h-4 text-blue-700" />
+            <FileText className="w-4 h-4 text-ceramic-info" />
             <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
               Notas da Jornada
             </h2>
@@ -278,7 +278,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
                       <h3 className="text-base font-bold text-ceramic-text-primary flex-1">
                         {note.title}
                       </h3>
-                      <span className="ceramic-inset-shallow px-2 py-1 text-[10px] text-blue-700 uppercase tracking-wider bg-blue-50">
+                      <span className="ceramic-inset-shallow px-2 py-1 text-[10px] text-ceramic-info uppercase tracking-wider bg-ceramic-info/10">
                         {note.note_type}
                       </span>
                     </div>
@@ -321,7 +321,7 @@ export const JourneyDetail: React.FC<JourneyDetailProps> = ({
           >
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-black text-blue-700 mb-1">
+                <div className="text-2xl font-black text-ceramic-info mb-1">
                   {journey.logged_hours}h
                 </div>
                 <div className="text-xs text-ceramic-text-secondary">

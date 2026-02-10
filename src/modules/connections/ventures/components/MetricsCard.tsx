@@ -62,18 +62,18 @@ export function MetricsCard({
 
   const trendConfig = {
     up: {
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-ceramic-success',
+      bgColor: 'bg-ceramic-success/10',
       icon: '↑',
     },
     down: {
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
+      color: 'text-ceramic-error',
+      bgColor: 'bg-ceramic-error/10',
       icon: '↓',
     },
     neutral: {
-      color: 'text-neutral-600',
-      bgColor: 'bg-neutral-50',
+      color: 'text-ceramic-text-secondary',
+      bgColor: 'bg-ceramic-cool',
       icon: '→',
     },
   };
@@ -82,11 +82,11 @@ export function MetricsCard({
 
   return (
     <div
-      className={`bg-white rounded-lg border border-neutral-200 p-4 hover:shadow-md transition-shadow ${className}`}
+      className={`bg-ceramic-base rounded-lg border border-ceramic-border p-4 hover:shadow-md transition-shadow ${className}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
-        <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
+        <span className="text-xs font-medium text-ceramic-text-secondary uppercase tracking-wide">
           {label}
         </span>
         {icon && <span className="text-lg">{icon}</span>}
@@ -94,7 +94,7 @@ export function MetricsCard({
 
       {/* Value */}
       <div className="mb-2">
-        <span className="text-2xl font-bold text-neutral-900">{formattedValue}</span>
+        <span className="text-2xl font-bold text-ceramic-text-primary">{formattedValue}</span>
       </div>
 
       {/* Trend */}
@@ -106,13 +106,13 @@ export function MetricsCard({
             <span className="mr-1">{trendStyle.icon}</span>
             {Math.abs(changePercent).toFixed(1)}%
           </span>
-          <span className="text-xs text-neutral-500">vs. período anterior</span>
+          <span className="text-xs text-ceramic-text-secondary">vs. período anterior</span>
         </div>
       )}
 
       {/* Previous value (if no change percent but previous value exists) */}
       {changePercent === null && previousValue !== undefined && (
-        <div className="text-xs text-neutral-500">
+        <div className="text-xs text-ceramic-text-secondary">
           Anterior:{' '}
           {format === 'currency'
             ? formatCurrency(previousValue, currency)

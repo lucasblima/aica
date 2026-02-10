@@ -15,23 +15,23 @@ export function LevelBadge({ level, size = 'md' }: LevelBadgeProps) {
   const getLevelColor = () => {
     if (level.startsWith('iniciante')) {
       return {
-        bg: 'bg-blue-100',
-        text: 'text-blue-700',
-        icon: 'text-blue-600',
+        bg: 'bg-ceramic-info/20',
+        text: 'text-ceramic-info',
+        icon: 'text-ceramic-info',
       };
     }
     if (level.startsWith('intermediario')) {
       return {
-        bg: 'bg-amber-100',
-        text: 'text-amber-700',
-        icon: 'text-amber-600',
+        bg: 'bg-ceramic-warning/20',
+        text: 'text-ceramic-warning',
+        icon: 'text-ceramic-warning',
       };
     }
     // avancado
     return {
-      bg: 'bg-purple-100',
-      text: 'text-purple-700',
-      icon: 'text-purple-600',
+      bg: 'bg-ceramic-accent/20',
+      text: 'text-ceramic-accent',
+      icon: 'text-ceramic-accent',
     };
   };
 

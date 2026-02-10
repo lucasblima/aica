@@ -21,14 +21,14 @@ interface TagInputProps {
  */
 function getTagColor(tag: string): string {
   const colors = [
-    'bg-blue-100 text-blue-700 border-blue-300',
-    'bg-purple-100 text-purple-700 border-purple-300',
-    'bg-pink-100 text-pink-700 border-pink-300',
-    'bg-amber-100 text-amber-700 border-amber-300',
-    'bg-emerald-100 text-emerald-700 border-emerald-300',
-    'bg-cyan-100 text-cyan-700 border-cyan-300',
-    'bg-indigo-100 text-indigo-700 border-indigo-300',
-    'bg-rose-100 text-rose-700 border-rose-300',
+    'bg-ceramic-info/10 text-ceramic-info border-ceramic-info/30',
+    'bg-ceramic-accent/10 text-ceramic-accent border-ceramic-accent/30',
+    'bg-ceramic-error/10 text-ceramic-error border-ceramic-error/30',
+    'bg-ceramic-warning/10 text-ceramic-warning border-ceramic-warning/30',
+    'bg-ceramic-success/10 text-ceramic-success border-ceramic-success/30',
+    'bg-ceramic-info/15 text-ceramic-info border-ceramic-info/25',
+    'bg-ceramic-accent/15 text-ceramic-accent border-ceramic-accent/25',
+    'bg-ceramic-error/15 text-ceramic-error border-ceramic-error/25',
   ];
 
   // Use hash of tag name to pick color consistently

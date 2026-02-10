@@ -23,9 +23,9 @@ export const EfficiencyMedallion: React.FC<EfficiencyMedallionProps> = ({
 
     // Status LED colors
     const statusColors = {
-        critical: 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]',
-        stable: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]',
-        excellent: 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+        critical: 'bg-ceramic-error shadow-[0_0_8px_rgba(155,77,58,0.6)]',
+        stable: 'bg-ceramic-warning shadow-[0_0_8px_rgba(196,136,58,0.6)]',
+        excellent: 'bg-ceramic-success shadow-[0_0_8px_rgba(107,123,92,0.6)]'
     };
 
     // Status labels

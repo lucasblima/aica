@@ -144,7 +144,7 @@ export const LifeDecadesStrip: React.FC<LifeDecadesStripProps> = ({
                 <div className="text-center">
                   <div className="text-white font-bold text-sm">{decade.label}</div>
                   {decade.isCurrent && <div className="text-amber-200 text-xs mt-1">Current</div>}
-                  {decade.isPast && <div className="text-green-200 text-xs mt-1">Completed</div>}
+                  {decade.isPast && <div className="text-ceramic-success/60 text-xs mt-1">Completed</div>}
                 </div>
               </div>
             )}

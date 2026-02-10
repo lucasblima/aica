@@ -56,8 +56,8 @@ export function TeamSlide({
                 className="team-photo"
               />
             ) : (
-              <div className="team-photo bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <span className="text-4xl font-bold text-gray-400">
+              <div className="team-photo bg-ceramic-cool flex items-center justify-center">
+                <span className="text-4xl font-bold text-ceramic-text-secondary">
                   {member.name.charAt(0)}
                 </span>
               </div>

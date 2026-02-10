@@ -101,7 +101,7 @@ function getCategoryIcon(category: IntentCategory | null): React.ReactNode {
  * Get sentiment color class (Tailwind)
  */
 function getSentimentColorClass(sentiment: IntentSentiment): string {
-  return INTENT_SENTIMENT_COLORS[sentiment] || 'text-gray-600';
+  return INTENT_SENTIMENT_COLORS[sentiment] || 'text-ceramic-text-secondary';
 }
 
 /**
@@ -115,8 +115,8 @@ function getUrgencyDisplay(urgency: number): {
 } {
   if (urgency >= 4) {
     return {
-      color: 'text-red-700',
-      bgColor: 'bg-red-100',
+      color: 'text-ceramic-error',
+      bgColor: 'bg-ceramic-error/10',
       label: 'Urgente',
       weight: 'heavy',
     };
@@ -130,8 +130,8 @@ function getUrgencyDisplay(urgency: number): {
     };
   }
   return {
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-100',
+    color: 'text-ceramic-text-primary',
+    bgColor: 'bg-ceramic-base',
     label: 'Baixa',
     weight: 'light',
   };
@@ -315,7 +315,7 @@ export function IntentTimelineCard({
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="ceramic-inset-shallow px-2 py-1 rounded-full flex items-center gap-1 bg-blue-100 text-blue-700"
+            className="ceramic-inset-shallow px-2 py-1 rounded-full flex items-center gap-1 bg-ceramic-info-bg text-ceramic-info"
           >
             <ClipboardList className="w-3 h-3" />
             <span className="text-xs font-medium">Ação Necessária</span>

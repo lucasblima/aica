@@ -138,9 +138,9 @@ export function IncentiveLawSelector({
     <div className={`space-y-1 ${className}`}>
       {/* Label */}
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="block text-sm font-medium text-ceramic-text-primary dark:text-ceramic-text-primary">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-ceramic-error ml-1">*</span>}
         </label>
       )}
 
@@ -151,15 +151,15 @@ export function IncentiveLawSelector({
           onChange={handleChange}
           disabled={disabled || isLoading}
           className={`
-            w-full appearance-none rounded-lg border bg-white dark:bg-gray-800
+            w-full appearance-none rounded-lg border bg-ceramic-base dark:bg-ceramic-cool
             pl-3 pr-10 py-2.5 text-sm
             focus:outline-none focus:ring-2 focus:ring-offset-0
             transition-colors
             ${hasError
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500'
+              ? 'border-ceramic-error focus:border-ceramic-error focus:ring-ceramic-error'
+              : 'border-ceramic-border dark:border-ceramic-border focus:border-amber-500 focus:ring-amber-500'
             }
-            ${disabled ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed' : 'cursor-pointer'}
+            ${disabled ? 'bg-ceramic-base dark:bg-ceramic-cool cursor-not-allowed' : 'cursor-pointer'}
             ${isLoading ? 'animate-pulse' : ''}
           `}
         >
@@ -204,26 +204,26 @@ export function IncentiveLawSelector({
 
         {/* Chevron icon */}
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          <ChevronDown className="h-5 w-5 text-gray-400" />
+          <ChevronDown className="h-5 w-5 text-ceramic-text-secondary" />
         </div>
       </div>
 
       {/* Selected law preview */}
       {selectedLaw && !hasError && (
-        <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm">
+        <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-ceramic-base dark:bg-ceramic-cool rounded-lg text-sm">
           <JurisdictionIcon jurisdiction={selectedLaw.jurisdiction} />
-          <span className="text-gray-600 dark:text-gray-400">
+          <span className="text-ceramic-text-secondary dark:text-ceramic-text-secondary">
             {JURISDICTION_LABELS[selectedLaw.jurisdiction]}
             {selectedLaw.state && ` - ${formatLawLocation(selectedLaw)}`}
           </span>
-          <span className="mx-1 text-gray-300">|</span>
-          <span className="text-gray-600 dark:text-gray-400">
+          <span className="mx-1 text-ceramic-text-secondary">|</span>
+          <span className="text-ceramic-text-secondary dark:text-ceramic-text-secondary">
             {TAX_TYPE_LABELS[selectedLaw.tax_type]}
           </span>
           {selectedLaw.max_deduction_percentage && (
             <>
-              <span className="mx-1 text-gray-300">|</span>
-              <span className="font-medium text-indigo-600 dark:text-indigo-400">
+              <span className="mx-1 text-ceramic-text-secondary">|</span>
+              <span className="font-medium text-amber-600 dark:text-amber-400">
                 Ate {selectedLaw.max_deduction_percentage}%
               </span>
             </>
@@ -233,7 +233,7 @@ export function IncentiveLawSelector({
 
       {/* Error message */}
       {hasError && (
-        <div className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-1.5 text-sm text-ceramic-error dark:text-ceramic-error">
           <AlertCircle className="w-4 h-4" />
           <span>{errorMessage}</span>
         </div>

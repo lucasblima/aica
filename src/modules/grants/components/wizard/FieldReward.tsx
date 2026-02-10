@@ -143,7 +143,7 @@ export function LevelUpCelebration({
           onClick={onClose}
         >
           <motion.div
-            className="relative p-8 bg-white rounded-3xl shadow-2xl text-center max-w-sm mx-4"
+            className="relative p-8 bg-ceramic-base rounded-3xl shadow-2xl text-center max-w-sm mx-4"
             initial={{ scale: 0.5, rotate: -10 }}
             animate={{ scale: 1, rotate: 0 }}
             exit={{ scale: 0.5, opacity: 0 }}
@@ -193,7 +193,7 @@ export function LevelUpCelebration({
 
             {/* Title */}
             <motion.h2
-              className="text-2xl font-bold text-gray-900 mb-2"
+              className="text-2xl font-bold text-ceramic-text-primary mb-2"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}

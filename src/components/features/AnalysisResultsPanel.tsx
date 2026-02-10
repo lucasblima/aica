@@ -47,11 +47,11 @@ interface AnalysisResultsPanelProps {
  */
 function HealthScoreBadge({ score }: { score: number }) {
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'from-green-400 to-green-600'
-    if (score >= 60) return 'from-blue-400 to-blue-600'
+    if (score >= 80) return 'from-ceramic-success to-ceramic-success/80'
+    if (score >= 60) return 'from-ceramic-info to-ceramic-info/80'
     if (score >= 40) return 'from-amber-400 to-amber-600'
-    if (score >= 20) return 'from-orange-400 to-orange-600'
-    return 'from-red-400 to-red-600'
+    if (score >= 20) return 'from-ceramic-warning to-ceramic-warning/80'
+    return 'from-ceramic-error to-ceramic-error/80'
   }
 
   const getScoreLabel = (score: number) => {
@@ -113,10 +113,10 @@ export function AnalysisResultsPanel({
           className="bg-ceramic-base w-full max-w-lg max-h-[90vh] rounded-2xl shadow-2xl border border-ceramic-text-secondary/10 overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-ceramic-text-secondary/10 bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
+          <div className="flex items-center justify-between p-5 border-b border-ceramic-text-secondary/10 bg-gradient-to-r from-ceramic-accent/10 to-ceramic-warning/10">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-xl">
-                <Sparkles className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-ceramic-accent/10 rounded-xl">
+                <Sparkles className="w-5 h-5 text-ceramic-accent" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-ceramic-text-primary">
@@ -138,7 +138,7 @@ export function AnalysisResultsPanel({
           {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             {/* Health Score Header */}
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-ceramic-accent/5 to-ceramic-warning/5 rounded-xl">
               <div>
                 <h3 className="text-lg font-bold text-ceramic-text-primary">
                   Saúde do Relacionamento
@@ -155,30 +155,30 @@ export function AnalysisResultsPanel({
               <div className="ceramic-card p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <SentimentIcon className={`w-5 h-5 ${
-                    sentiment.overall === 'positive' ? 'text-green-500' :
-                    sentiment.overall === 'negative' ? 'text-red-500' :
-                    'text-gray-500'
+                    sentiment.overall === 'positive' ? 'text-ceramic-success' :
+                    sentiment.overall === 'negative' ? 'text-ceramic-error' :
+                    'text-ceramic-text-secondary'
                   }`} />
                   <h4 className="font-bold text-ceramic-text-primary">Sentimento</h4>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-green-50 rounded-lg p-2 text-center">
-                    <div className="text-lg font-bold text-green-600">
+                  <div className="bg-ceramic-success/10 rounded-lg p-2 text-center">
+                    <div className="text-lg font-bold text-ceramic-success">
                       {sentiment.breakdown.positive}%
                     </div>
-                    <div className="text-xs text-green-700">Positivo</div>
+                    <div className="text-xs text-ceramic-success">Positivo</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-2 text-center">
-                    <div className="text-lg font-bold text-gray-600">
+                  <div className="bg-ceramic-base rounded-lg p-2 text-center">
+                    <div className="text-lg font-bold text-ceramic-text-secondary">
                       {sentiment.breakdown.neutral}%
                     </div>
-                    <div className="text-xs text-gray-700">Neutro</div>
+                    <div className="text-xs text-ceramic-text-primary">Neutro</div>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-2 text-center">
-                    <div className="text-lg font-bold text-red-600">
+                  <div className="bg-ceramic-error/10 rounded-lg p-2 text-center">
+                    <div className="text-lg font-bold text-ceramic-error">
                       {sentiment.breakdown.negative}%
                     </div>
-                    <div className="text-xs text-red-700">Negativo</div>
+                    <div className="text-xs text-ceramic-error">Negativo</div>
                   </div>
                 </div>
               </div>
@@ -188,7 +188,7 @@ export function AnalysisResultsPanel({
             {topics.length > 0 && (
               <div className="ceramic-card p-4 space-y-3">
                 <div className="flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-purple-500" />
+                  <MessageCircle className="w-5 h-5 text-ceramic-accent" />
                   <h4 className="font-bold text-ceramic-text-primary">Tópicos Comuns</h4>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -197,10 +197,10 @@ export function AnalysisResultsPanel({
                       key={i}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium ${
                         topic.sentiment === 'pos'
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-ceramic-success/10 text-ceramic-success'
                           : topic.sentiment === 'neg'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-gray-100 text-gray-700'
+                          ? 'bg-ceramic-error/10 text-ceramic-error'
+                          : 'bg-ceramic-cool text-ceramic-text-primary'
                       }`}
                     >
                       {topic.name} ({topic.frequency})
@@ -214,7 +214,7 @@ export function AnalysisResultsPanel({
             {actionItems.length > 0 && (
               <div className="ceramic-card p-4 space-y-3">
                 <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-purple-500" />
+                  <Target className="w-5 h-5 text-ceramic-accent" />
                   <h4 className="font-bold text-ceramic-text-primary">Ações Sugeridas</h4>
                 </div>
                 <ul className="space-y-2">
@@ -222,10 +222,10 @@ export function AnalysisResultsPanel({
                     <li key={i} className="flex items-start gap-2">
                       <span className={`px-2 py-0.5 rounded text-xs font-bold mt-0.5 ${
                         item.priority === 'high'
-                          ? 'bg-red-100 text-red-700'
+                          ? 'bg-ceramic-error/10 text-ceramic-error'
                           : item.priority === 'medium'
                           ? 'bg-amber-100 text-amber-700'
-                          : 'bg-gray-100 text-gray-700'
+                          : 'bg-ceramic-cool text-ceramic-text-primary'
                       }`}>
                         {item.priority === 'high' ? 'Alta' : item.priority === 'medium' ? 'Média' : 'Baixa'}
                       </span>
@@ -246,7 +246,7 @@ export function AnalysisResultsPanel({
                 <ul className="space-y-2">
                   {insights.recommendations.map((rec, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-ceramic-text-secondary">
-                      <Heart className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                      <Heart className="w-4 h-4 text-ceramic-accent flex-shrink-0 mt-0.5" />
                       {rec}
                     </li>
                   ))}
@@ -269,7 +269,7 @@ export function AnalysisResultsPanel({
           <div className="p-5 border-t border-ceramic-text-secondary/10">
             <button
               onClick={onClose}
-              className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold hover:from-purple-600 hover:to-indigo-600 transition-all"
+              className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-ceramic-accent to-ceramic-warning text-white font-bold hover:from-ceramic-accent/90 hover:to-ceramic-warning/90 transition-all"
             >
               Fechar
             </button>

@@ -154,7 +154,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
               <Ticket className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -182,7 +182,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
               <div className="text-xs text-ceramic-text-tertiary">Enviados</div>
             </div>
             <div className="ceramic-concave p-3 text-center rounded-xl">
-              <div className="text-2xl font-bold text-green-500">
+              <div className="text-2xl font-bold text-ceramic-success">
                 {stats?.total_accepted ?? 0}
               </div>
               <div className="text-xs text-ceramic-text-tertiary">Aceitos</div>
@@ -226,8 +226,8 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                   >
                     {copied ? (
                       <>
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span className="text-sm font-medium text-green-500">Copiado!</span>
+                        <Check className="w-4 h-4 text-ceramic-success" />
+                        <span className="text-sm font-medium text-ceramic-success">Copiado!</span>
                       </>
                     ) : (
                       <>
@@ -270,16 +270,16 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
           )}
 
           {/* Bonus info */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+          <div className="mt-6 p-4 bg-gradient-to-r from-ceramic-warning/10 to-ceramic-accent/10 rounded-xl border border-ceramic-warning/20">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <Gift className="w-4 h-4 text-amber-600" />
+              <div className="w-8 h-8 rounded-full bg-ceramic-warning/15 flex items-center justify-center flex-shrink-0">
+                <Gift className="w-4 h-4 text-ceramic-warning" />
               </div>
               <div>
-                <div className="text-sm font-bold text-amber-800">
+                <div className="text-sm font-bold text-ceramic-text-primary">
                   Bônus por indicação
                 </div>
-                <div className="text-xs text-amber-700">
+                <div className="text-xs text-ceramic-text-secondary">
                   Quando alguém aceita seu convite, você ganha{' '}
                   <strong>+50 XP</strong> e <strong>+2 convites</strong> extras!
                 </div>
@@ -335,13 +335,13 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                         <button
                           onClick={() => handleRevoke(invite.id)}
                           disabled={revoking === invite.id}
-                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                          className="p-1.5 rounded-lg hover:bg-ceramic-error/5 transition-colors disabled:opacity-50"
                           title="Deletar e recuperar quota"
                         >
                           {revoking === invite.id ? (
-                            <Loader2 className="w-3.5 h-3.5 text-red-500 animate-spin" />
+                            <Loader2 className="w-3.5 h-3.5 text-ceramic-error animate-spin" />
                           ) : (
-                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            <Trash2 className="w-3.5 h-3.5 text-ceramic-error" />
                           )}
                         </button>
                       </div>
@@ -399,10 +399,10 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                         <div
                           className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                             referral.status === 'accepted'
-                              ? 'bg-green-100 text-green-600'
+                              ? 'bg-ceramic-success/10 text-ceramic-success'
                               : referral.status === 'pending'
-                              ? 'bg-amber-100 text-amber-600'
-                              : 'bg-gray-100 text-gray-500'
+                              ? 'bg-ceramic-warning/10 text-ceramic-warning'
+                              : 'bg-ceramic-cool text-ceramic-text-tertiary'
                           }`}
                         >
                           {referral.status === 'accepted' && `+${referral.xp_awarded} XP`}

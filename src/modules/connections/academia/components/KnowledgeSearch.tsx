@@ -84,7 +84,7 @@ const highlightQuery = (text: string, query: string): JSX.Element => {
     <>
       {parts.map((part, index) =>
         part.toLowerCase() === query.toLowerCase() ? (
-          <mark key={index} className="bg-yellow-200 text-stone-900">
+          <mark key={index} className="bg-ceramic-warning/30 text-ceramic-text-primary">
             {part}
           </mark>
         ) : (
@@ -124,7 +124,7 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
       <div className="relative">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
           <svg
-            className="w-5 h-5 text-stone-400"
+            className="w-5 h-5 text-ceramic-text-tertiary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -142,7 +142,7 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search notes by title, content, or tags..."
-          className="w-full pl-12 pr-4 py-3 border border-stone-200 rounded-sm text-base font-light focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          className="w-full pl-12 pr-4 py-3 border border-ceramic-border rounded-sm text-base font-light focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:border-transparent"
         />
       </div>
 
@@ -150,7 +150,7 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
       <div className="flex flex-wrap gap-3">
         {/* Note Type Filter */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-stone-500 font-light tracking-wide">
+          <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
             Type:
           </span>
           <div className="flex gap-2">
@@ -160,8 +160,8 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
                 px-3 py-1 text-xs font-light tracking-wide rounded-sm transition-colors
                 ${
                   !noteTypeFilter
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    ? 'bg-ceramic-success text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-cool'
                 }
               `}
             >
@@ -173,8 +173,8 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
                 px-3 py-1 text-xs font-light tracking-wide rounded-sm transition-colors
                 ${
                   noteTypeFilter === 'fleeting'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    ? 'bg-ceramic-success text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-cool'
                 }
               `}
             >
@@ -186,8 +186,8 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
                 px-3 py-1 text-xs font-light tracking-wide rounded-sm transition-colors
                 ${
                   noteTypeFilter === 'literature'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    ? 'bg-ceramic-success text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-cool'
                 }
               `}
             >
@@ -199,8 +199,8 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
                 px-3 py-1 text-xs font-light tracking-wide rounded-sm transition-colors
                 ${
                   noteTypeFilter === 'permanent'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    ? 'bg-ceramic-success text-white'
+                    : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-cool'
                 }
               `}
             >
@@ -212,13 +212,13 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
         {/* Tag Filter */}
         {allTags.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-500 font-light tracking-wide">
+            <span className="text-xs text-ceramic-text-secondary font-light tracking-wide">
               Tag:
             </span>
             <select
               value={tagFilter || ''}
               onChange={(e) => setTagFilter(e.target.value || undefined)}
-              className="px-3 py-1 text-xs font-light border border-stone-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="px-3 py-1 text-xs font-light border border-ceramic-border rounded-sm focus:outline-none focus:ring-2 focus:ring-ceramic-success"
             >
               <option value="">All tags</option>
               {allTags.map((tag) => (
@@ -237,7 +237,7 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
               setNoteTypeFilter(undefined);
               setTagFilter(undefined);
             }}
-            className="text-xs text-stone-500 hover:text-stone-700 font-light underline"
+            className="text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary font-light underline"
           >
             Clear filters
           </button>
@@ -245,14 +245,14 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
       </div>
 
       {/* Results count */}
-      <div className="flex items-baseline justify-between border-b border-stone-200 pb-3">
-        <span className="text-sm text-stone-600 font-light">
+      <div className="flex items-baseline justify-between border-b border-ceramic-border pb-3">
+        <span className="text-sm text-ceramic-text-secondary font-light">
           {results.length} {results.length === 1 ? 'result' : 'results'}
         </span>
         {query && (
           <button
             onClick={() => setQuery('')}
-            className="text-xs text-stone-500 hover:text-stone-700 font-light underline"
+            className="text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary font-light underline"
           >
             Clear search
           </button>
@@ -262,8 +262,8 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
       {/* Results */}
       <div className="space-y-3">
         {results.length === 0 ? (
-          <div className="bg-stone-50 rounded-sm border border-stone-100 p-12 text-center">
-            <p className="text-stone-400 text-sm font-light tracking-wide">
+          <div className="bg-ceramic-cool rounded-sm border border-ceramic-border p-12 text-center">
+            <p className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
               {query
                 ? 'No notes found matching your search.'
                 : 'No notes match the selected filters.'}
@@ -277,18 +277,18 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
               <div
                 key={note.id}
                 onClick={() => onNoteClick?.(note)}
-                className="bg-white border border-stone-200 rounded-sm p-6 hover:shadow-md transition-all duration-200 cursor-pointer"
+                className="bg-ceramic-base border border-ceramic-border rounded-sm p-6 hover:shadow-md transition-all duration-200 cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-base font-normal text-stone-900">
+                  <h3 className="text-base font-normal text-ceramic-text-primary">
                     {highlightQuery(note.title, query)}
                   </h3>
-                  <span className="text-xs text-stone-400 font-light tracking-wider uppercase flex-shrink-0 ml-3">
+                  <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase flex-shrink-0 ml-3">
                     {note.note_type}
                   </span>
                 </div>
 
-                <p className="text-sm text-stone-600 font-light leading-relaxed mb-3">
+                <p className="text-sm text-ceramic-text-secondary font-light leading-relaxed mb-3">
                   {highlightQuery(snippet, query)}
                 </p>
 
@@ -301,8 +301,8 @@ export const KnowledgeSearch: React.FC<KnowledgeSearchProps> = ({
                           text-xs font-light px-2 py-1 rounded-sm
                           ${
                             tag === tagFilter
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : 'bg-stone-50 text-stone-600 border border-stone-200'
+                              ? 'bg-ceramic-success/15 text-ceramic-success border border-ceramic-success/20'
+                              : 'bg-ceramic-cool text-ceramic-text-secondary border border-ceramic-border'
                           }
                         `}
                       >

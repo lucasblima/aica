@@ -70,7 +70,7 @@ export function ProcessingPipeline({ stage, messageCount }: ProcessingPipelinePr
 
           <div className="h-4 rounded-full overflow-hidden ceramic-groove bg-white/50">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500"
+              className="h-full rounded-full bg-gradient-to-r from-ceramic-info via-ceramic-accent to-ceramic-warning"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ type: "spring", stiffness: 50, damping: 20 }}
@@ -87,7 +87,7 @@ export function ProcessingPipeline({ stage, messageCount }: ProcessingPipelinePr
                 <div key={s} className="flex flex-col items-center gap-2">
                   <div
                     className={`w-3 h-3 rounded-full transition-all duration-500 ${isActive ? 'bg-ceramic-accent scale-150 shadow-[0_0_12px_rgba(var(--ceramic-accent-rgb),0.5)]' :
-                        isDone ? 'bg-orange-400' : 'bg-gray-200'
+                        isDone ? 'bg-ceramic-warning' : 'bg-ceramic-cool'
                       }`}
                   />
                 </div>

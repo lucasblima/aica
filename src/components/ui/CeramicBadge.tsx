@@ -10,21 +10,21 @@ interface CeramicBadgeProps {
 }
 
 const solidColors = {
-  gray: 'bg-gray-100 text-gray-700',
-  blue: 'bg-blue-100 text-blue-700',
-  green: 'bg-green-100 text-green-700',
+  gray: 'bg-ceramic-cool text-ceramic-text-primary',
+  blue: 'bg-ceramic-info/10 text-ceramic-info',
+  green: 'bg-ceramic-success/10 text-ceramic-success',
   amber: 'bg-amber-100 text-amber-700',
-  red: 'bg-red-100 text-red-700',
-  purple: 'bg-purple-100 text-purple-700',
+  red: 'bg-ceramic-error/10 text-ceramic-error',
+  purple: 'bg-ceramic-accent/10 text-ceramic-accent',
 }
 
 const outlineColors = {
-  gray: 'border border-gray-300 text-gray-700',
-  blue: 'border border-blue-300 text-blue-700',
-  green: 'border border-green-300 text-green-700',
+  gray: 'border border-ceramic-border text-ceramic-text-primary',
+  blue: 'border border-ceramic-info/30 text-ceramic-info',
+  green: 'border border-ceramic-success/30 text-ceramic-success',
   amber: 'border border-amber-300 text-amber-700',
-  red: 'border border-red-300 text-red-700',
-  purple: 'border border-purple-300 text-purple-700',
+  red: 'border border-ceramic-error/30 text-ceramic-error',
+  purple: 'border border-ceramic-accent/30 text-ceramic-accent',
 }
 
 const sizeMap = {

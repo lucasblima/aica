@@ -88,14 +88,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
   // Loading state for properties
   if (propertiesLoading || (loading && !items.length)) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-stone-50 to-amber-50 p-6">
+      <div className="min-h-screen bg-gradient-to-b from-ceramic-cool to-amber-50 p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-12 bg-stone-200 rounded-lg w-1/3" />
-          <div className="h-10 bg-stone-200 rounded-lg w-2/3" />
+          <div className="h-12 bg-ceramic-border rounded-lg w-1/3" />
+          <div className="h-10 bg-ceramic-border rounded-lg w-2/3" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            <div className="h-48 bg-stone-200 rounded-lg" />
-            <div className="h-48 bg-stone-200 rounded-lg" />
-            <div className="h-48 bg-stone-200 rounded-lg" />
+            <div className="h-48 bg-ceramic-border rounded-lg" />
+            <div className="h-48 bg-ceramic-border rounded-lg" />
+            <div className="h-48 bg-ceramic-border rounded-lg" />
           </div>
         </div>
       </div>
@@ -105,25 +105,25 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
   // No property found
   if (!primaryProperty) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-stone-50 to-amber-50 p-6">
+      <div className="min-h-screen bg-gradient-to-b from-ceramic-cool to-amber-50 p-6">
         {/* Navigation Header */}
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => navigate(`/connections/habitat/${spaceId}`)}
-            className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
+            className="p-2 hover:bg-ceramic-border rounded-lg transition-colors"
             aria-label="Voltar"
           >
-            <ArrowLeft className="w-5 h-5 text-stone-600" />
+            <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
           </button>
-          <h1 className="text-2xl font-bold text-stone-800">Inventario</h1>
+          <h1 className="text-2xl font-bold text-ceramic-text-primary">Inventario</h1>
         </div>
 
         <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-8 text-center">
           <div className="text-6xl mb-4">🏠</div>
-          <h3 className="text-xl font-semibold text-stone-800 mb-2">
+          <h3 className="text-xl font-semibold text-ceramic-text-primary mb-2">
             Nenhuma propriedade cadastrada
           </h3>
-          <p className="text-stone-600 mb-4">
+          <p className="text-ceramic-text-secondary mb-4">
             Cadastre uma propriedade primeiro para gerenciar o inventario.
           </p>
           <button
@@ -138,34 +138,34 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-amber-50 p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-ceramic-cool to-amber-50 p-6 space-y-6">
       {/* Navigation Header */}
       <div className="flex items-center gap-4 mb-2">
         <button
           onClick={() => navigate(`/connections/habitat/${spaceId}`)}
-          className="p-2 hover:bg-stone-200 rounded-lg transition-colors"
+          className="p-2 hover:bg-ceramic-border rounded-lg transition-colors"
           aria-label="Voltar"
         >
-          <ArrowLeft className="w-5 h-5 text-stone-600" />
+          <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
         </button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-stone-800">Inventario</h1>
-          <p className="text-stone-600 mt-1">Gerencie todos os itens da sua propriedade</p>
+          <h1 className="text-3xl font-bold text-ceramic-text-primary">Inventario</h1>
+          <p className="text-ceramic-text-secondary mt-1">Gerencie todos os itens da sua propriedade</p>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-stone-200 pb-2">
+      <div className="flex gap-2 border-b border-ceramic-border pb-2">
         <button
           onClick={() => navigate(`/connections/habitat/${spaceId}`)}
-          className="flex items-center gap-2 px-4 py-2 hover:bg-stone-100 text-stone-600 rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 hover:bg-ceramic-cool text-ceramic-text-secondary rounded-lg font-medium transition-colors"
         >
           <Home className="w-4 h-4" />
           Dashboard
         </button>
         <button
           onClick={() => navigate(`/connections/habitat/${spaceId}/maintenance`)}
-          className="flex items-center gap-2 px-4 py-2 hover:bg-stone-100 text-stone-600 rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 hover:bg-ceramic-cool text-ceramic-text-secondary rounded-lg font-medium transition-colors"
         >
           <Wrench className="w-4 h-4" />
           Manutencao
@@ -187,19 +187,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white border-2 border-stone-200 rounded-lg p-4">
+      <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-4">
         <div className="flex gap-3">
           <input
             type="text"
             placeholder="Buscar itens..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="flex-1 px-4 py-2 border-2 border-stone-300 rounded-lg focus:outline-none focus:border-amber-500"
+            className="flex-1 px-4 py-2 border-2 border-ceramic-border rounded-lg focus:outline-none focus:border-amber-500"
           />
           {(searchTerm || activeFilter) && (
             <button
               onClick={handleClearFilters}
-              className="px-4 py-2 bg-stone-200 text-stone-700 font-medium rounded-lg hover:bg-stone-300 transition-colors"
+              className="px-4 py-2 bg-ceramic-border text-ceramic-text-primary font-medium rounded-lg hover:bg-ceramic-border transition-colors"
             >
               Limpar
             </button>
@@ -208,8 +208,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
       </div>
 
       {/* Category Filters */}
-      <div className="bg-white border-2 border-stone-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-stone-700 mb-3">Filtrar por Categoria</h3>
+      <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-ceramic-text-primary mb-3">Filtrar por Categoria</h3>
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => (
             <button
@@ -218,7 +218,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 activeFilter === category
                   ? 'bg-amber-700 text-white'
-                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  : 'bg-ceramic-cool text-ceramic-text-primary hover:bg-ceramic-border'
               }`}
             >
               {categoryLabels[category]}
@@ -229,45 +229,45 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border-2 border-stone-200 rounded-lg p-4">
+        <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-4">
           <div className="text-3xl mb-2">📦</div>
-          <div className="text-2xl font-bold text-stone-800">{items.length}</div>
-          <div className="text-sm text-stone-600">Total de Itens</div>
+          <div className="text-2xl font-bold text-ceramic-text-primary">{items.length}</div>
+          <div className="text-sm text-ceramic-text-secondary">Total de Itens</div>
         </div>
 
-        <div className="bg-white border-2 border-stone-200 rounded-lg p-4">
+        <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-4">
           <div className="text-3xl mb-2">✅</div>
-          <div className="text-2xl font-bold text-green-800">
+          <div className="text-2xl font-bold text-ceramic-success">
             {items.filter((i) => i.status === 'active').length}
           </div>
-          <div className="text-sm text-stone-600">Ativos</div>
+          <div className="text-sm text-ceramic-text-secondary">Ativos</div>
         </div>
 
-        <div className="bg-white border-2 border-stone-200 rounded-lg p-4">
+        <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-4">
           <div className="text-3xl mb-2">🔧</div>
-          <div className="text-2xl font-bold text-orange-800">
+          <div className="text-2xl font-bold text-ceramic-warning">
             {items.filter((i) => i.status === 'maintenance').length}
           </div>
-          <div className="text-sm text-stone-600">Em Manutenção</div>
+          <div className="text-sm text-ceramic-text-secondary">Em Manutenção</div>
         </div>
 
-        <div className="bg-white border-2 border-stone-200 rounded-lg p-4">
+        <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-4">
           <div className="text-3xl mb-2">📋</div>
-          <div className="text-2xl font-bold text-blue-800">
+          <div className="text-2xl font-bold text-ceramic-info">
             {items.filter((i) => i.warranty_expiry).length}
           </div>
-          <div className="text-sm text-stone-600">Com Garantia</div>
+          <div className="text-sm text-ceramic-text-secondary">Com Garantia</div>
         </div>
       </div>
 
       {/* Items Grid */}
       {items.length === 0 ? (
-        <div className="bg-white border-2 border-stone-200 rounded-lg p-12 text-center">
+        <div className="bg-ceramic-base border-2 border-ceramic-border rounded-lg p-12 text-center">
           <div className="text-6xl mb-4">📦</div>
-          <h3 className="text-xl font-semibold text-stone-800 mb-2">
+          <h3 className="text-xl font-semibold text-ceramic-text-primary mb-2">
             Nenhum item encontrado
           </h3>
-          <p className="text-stone-600">
+          <p className="text-ceramic-text-secondary">
             {searchTerm || activeFilter
               ? 'Tente ajustar os filtros ou a busca'
               : 'Comece adicionando itens ao seu inventário'}
@@ -284,9 +284,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ spaceId }) => {
       {/* Loading Overlay */}
       {loading && items.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-xl">
+          <div className="bg-ceramic-base rounded-lg p-6 shadow-xl">
             <div className="animate-spin w-8 h-8 border-4 border-amber-700 border-t-transparent rounded-full mx-auto" />
-            <p className="mt-4 text-stone-700 font-medium">Carregando...</p>
+            <p className="mt-4 text-ceramic-text-primary font-medium">Carregando...</p>
           </div>
         </div>
       )}

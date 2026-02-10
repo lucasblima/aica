@@ -51,7 +51,7 @@ export const RitualRSVP: React.FC<RitualRSVPProps> = ({
   const totalResponses = rsvpStats.yes + rsvpStats.no + rsvpStats.maybe;
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+    <div className="bg-ceramic-base rounded-2xl shadow-xl max-w-md w-full">
       {/* Header */}
       <div className="p-6 border-b border-ceramic-100">
         <div className="flex items-start justify-between">
@@ -140,19 +140,19 @@ export const RitualRSVP: React.FC<RitualRSVPProps> = ({
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full" />
+                <div className="w-3 h-3 bg-ceramic-success rounded-full" />
                 <span className="text-sm text-ceramic-900">
                   {rsvpStats.yes} Vão
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+                <div className="w-3 h-3 bg-ceramic-warning rounded-full" />
                 <span className="text-sm text-ceramic-900">
                   {rsvpStats.maybe} Talvez
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full" />
+                <div className="w-3 h-3 bg-ceramic-error rounded-full" />
                 <span className="text-sm text-ceramic-900">
                   {rsvpStats.no} Não vão
                 </span>
@@ -184,8 +184,8 @@ export const RitualRSVP: React.FC<RitualRSVPProps> = ({
             disabled={rsvpMutation.isPending}
             className={`py-3 rounded-xl font-medium text-sm transition-all ${
               userRSVP === 'yes'
-                ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
-                : 'bg-green-50 text-green-700 hover:bg-green-100'
+                ? 'bg-ceramic-success text-white shadow-lg shadow-ceramic-success/30'
+                : 'bg-ceramic-success/10 text-ceramic-success hover:bg-ceramic-success/15'
             }`}
           >
             ✓ Vou
@@ -195,8 +195,8 @@ export const RitualRSVP: React.FC<RitualRSVPProps> = ({
             disabled={rsvpMutation.isPending}
             className={`py-3 rounded-xl font-medium text-sm transition-all ${
               userRSVP === 'maybe'
-                ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/30'
-                : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                ? 'bg-ceramic-warning text-white shadow-lg shadow-ceramic-warning/30'
+                : 'bg-ceramic-warning/10 text-ceramic-warning hover:bg-ceramic-warning/15'
             }`}
           >
             ? Talvez
@@ -206,8 +206,8 @@ export const RitualRSVP: React.FC<RitualRSVPProps> = ({
             disabled={rsvpMutation.isPending}
             className={`py-3 rounded-xl font-medium text-sm transition-all ${
               userRSVP === 'no'
-                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
-                : 'bg-red-50 text-red-700 hover:bg-red-100'
+                ? 'bg-ceramic-error text-white shadow-lg shadow-ceramic-error/30'
+                : 'bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/15'
             }`}
           >
             ✗ Não vou

@@ -135,34 +135,34 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
 
   if (isLoadingEpisode) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-ceramic-base to-ceramic-cool flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 font-medium">Carregando episódio...</p>
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-ceramic-text-secondary font-medium">Carregando episodio...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-ceramic-base to-ceramic-cool">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+      <div className="bg-ceramic-base border-b border-ceramic-border sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={onBack}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-ceramic-base rounded-lg transition-colors"
                 title="Voltar"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
+                <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">
-                  Pré-Produção
+                <h1 className="text-2xl font-bold text-ceramic-text-primary">
+                  Pre-Producao
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-ceramic-text-secondary">
                   {guestData.name} • {guestData.theme || 'Sem tema definido'}
                 </p>
               </div>
@@ -171,14 +171,14 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSendApproval}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-all flex items-center gap-2 shadow-sm"
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition-all flex items-center gap-2 shadow-sm"
               >
                 <Send className="w-4 h-4" />
                 Enviar Aprovação
               </button>
               <button
                 onClick={handleGoToProduction}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white rounded-xl font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2"
               >
                 <Mic className="w-4 h-4" />
                 Ir para Gravação
@@ -197,41 +197,41 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+              className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6"
             >
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-ceramic-info" />
                 Informações do Convidado
               </h2>
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Nome</p>
-                  <p className="text-sm font-medium text-gray-800">{guestData.name}</p>
+                  <p className="text-xs text-ceramic-text-secondary uppercase tracking-wide">Nome</p>
+                  <p className="text-sm font-medium text-ceramic-text-primary">{guestData.name}</p>
                 </div>
                 {guestData.fullName && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                    <p className="text-xs text-ceramic-text-secondary uppercase tracking-wide">
                       Nome Completo
                     </p>
-                    <p className="text-sm font-medium text-gray-800">{guestData.fullName}</p>
+                    <p className="text-sm font-medium text-ceramic-text-primary">{guestData.fullName}</p>
                   </div>
                 )}
                 {guestData.title && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Título</p>
-                    <p className="text-sm font-medium text-gray-800">{guestData.title}</p>
+                    <p className="text-xs text-ceramic-text-secondary uppercase tracking-wide">Título</p>
+                    <p className="text-sm font-medium text-ceramic-text-primary">{guestData.title}</p>
                   </div>
                 )}
                 {episode?.guest_email && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-                    <p className="text-sm font-medium text-gray-800">{episode.guest_email}</p>
+                    <p className="text-xs text-ceramic-text-secondary uppercase tracking-wide">Email</p>
+                    <p className="text-sm font-medium text-ceramic-text-primary">{episode.guest_email}</p>
                   </div>
                 )}
                 {episode?.guest_phone && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Telefone</p>
-                    <p className="text-sm font-medium text-gray-800">{episode.guest_phone}</p>
+                    <p className="text-xs text-ceramic-text-secondary uppercase tracking-wide">Telefone</p>
+                    <p className="text-sm font-medium text-ceramic-text-primary">{episode.guest_phone}</p>
                   </div>
                 )}
               </div>
@@ -242,32 +242,32 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+              className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6"
             >
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-green-600" />
+              <h2 className="text-lg font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-ceramic-success" />
                 Detalhes do Episódio
               </h2>
               <div className="space-y-3">
                 {guestData.theme && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Tema</p>
-                    <p className="text-sm font-medium text-gray-800">{guestData.theme}</p>
+                    <p className="text-xs text-ceramic-text-secondary uppercase tracking-wide">Tema</p>
+                    <p className="text-sm font-medium text-ceramic-text-primary">{guestData.theme}</p>
                   </div>
                 )}
                 {guestData.season && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Temporada</p>
-                    <p className="text-sm font-medium text-gray-800">
+                    <p className="text-xs text-ceramic-text-secondary uppercase tracking-wide">Temporada</p>
+                    <p className="text-sm font-medium text-ceramic-text-primary">
                       Temporada {guestData.season}
                     </p>
                   </div>
                 )}
                 {guestData.scheduledDate && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <Calendar className="w-4 h-4 text-ceramic-text-tertiary" />
                     <div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-ceramic-text-secondary">
                         {new Date(guestData.scheduledDate).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
@@ -275,14 +275,14 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                 )}
                 {guestData.scheduledTime && (
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <p className="text-xs text-gray-500">{guestData.scheduledTime}</p>
+                    <Clock className="w-4 h-4 text-ceramic-text-tertiary" />
+                    <p className="text-xs text-ceramic-text-secondary">{guestData.scheduledTime}</p>
                   </div>
                 )}
                 {guestData.location && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <p className="text-xs text-gray-500">{guestData.location}</p>
+                    <MapPin className="w-4 h-4 text-ceramic-text-tertiary" />
+                    <p className="text-xs text-ceramic-text-secondary">{guestData.location}</p>
                   </div>
                 )}
               </div>
@@ -297,16 +297,16 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+                className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6"
               >
-                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-purple-600" />
+                <h2 className="text-lg font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-ceramic-accent" />
                   Pesquisa do Convidado
                 </h2>
                 {guestResearch.biography && (
                   <div className="mb-4">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Biografia</h3>
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                    <h3 className="text-sm font-medium text-ceramic-text-primary mb-2">Biografia</h3>
+                    <p className="text-sm text-ceramic-text-secondary whitespace-pre-wrap">
                       {guestResearch.biography}
                     </p>
                   </div>
@@ -315,19 +315,19 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                   <div
                     className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${
                       guestResearch.approved_by_guest
-                        ? 'bg-green-50 border border-green-200'
-                        : 'bg-yellow-50 border border-yellow-200'
+                        ? 'bg-ceramic-success/10 border border-ceramic-success/30'
+                        : 'bg-ceramic-warning/10 border border-ceramic-warning/30'
                     }`}
                   >
                     <CheckCircle
                       className={`w-5 h-5 ${
-                        guestResearch.approved_by_guest ? 'text-green-600' : 'text-yellow-600'
+                        guestResearch.approved_by_guest ? 'text-ceramic-success' : 'text-ceramic-warning'
                       }`}
                     />
                     <div>
                       <p
                         className={`text-sm font-medium ${
-                          guestResearch.approved_by_guest ? 'text-green-900' : 'text-yellow-900'
+                          guestResearch.approved_by_guest ? 'text-ceramic-text-primary' : 'text-ceramic-text-primary'
                         }`}
                       >
                         {guestResearch.approved_by_guest
@@ -335,7 +335,7 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
                           : 'Aguardando aprovação do convidado'}
                       </p>
                       {guestResearch.approval_notes && (
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-ceramic-text-secondary mt-1">
                           {guestResearch.approval_notes}
                         </p>
                       )}
@@ -350,17 +350,17 @@ export const PreProductionHub: React.FC<PreProductionHubProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+              className="bg-ceramic-base rounded-2xl shadow-sm border border-ceramic-border p-6"
             >
-              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-orange-600" />
+              <h2 className="text-lg font-bold text-ceramic-text-primary mb-4 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-ceramic-warning" />
                 Pauta do Episódio
               </h2>
               <div className="text-center py-8">
-                <p className="text-gray-500">
+                <p className="text-ceramic-text-secondary">
                   Construtor de pauta será implementado em breve
                 </p>
-                <p className="text-sm text-gray-400 mt-2">
+                <p className="text-sm text-ceramic-text-tertiary mt-2">
                   Aqui você poderá criar e organizar tópicos para o episódio
                 </p>
               </div>

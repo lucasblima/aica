@@ -12,9 +12,9 @@ export function TermsOfServicePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-ceramic-base">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#E8E6E0]">
+      <header className="sticky top-0 z-40 bg-ceramic-base border-b border-[#E8E6E0]">
         <div className="max-w-[900px] mx-auto px-6 md:px-8 h-16 flex items-center">
           <button
             onClick={() => navigate('/landing')}
@@ -352,8 +352,8 @@ export function TermsOfServicePage() {
 
           {/* Acknowledgment */}
           <section className="mt-8 pt-8 border-t border-[#E8E6E0]">
-            <div className="bg-[#E3F2FD] border border-[#90CAF9] rounded-lg p-6">
-              <p className="text-sm text-[#1565C0] leading-relaxed">
+            <div className="bg-ceramic-info/10 border border-ceramic-info/30 rounded-lg p-6">
+              <p className="text-sm text-ceramic-info leading-relaxed">
                 <strong>Importante:</strong> Ao usar a Aica, você reconhece que leu, compreendeu e
                 concorda em cumprir estes Termos de Serviço e nossa Política de Privacidade. Se você
                 não concorda com estes termos, não use nossos serviços.

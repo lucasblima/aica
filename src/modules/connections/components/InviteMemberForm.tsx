@@ -161,7 +161,7 @@ export const InviteMemberForm: React.FC<InviteMemberFormProps> = ({
             focus:outline-none focus:ring-2 focus:ring-ceramic-accent
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-all
-            ${error ? 'ring-2 ring-red-500' : ''}
+            ${error ? 'ring-2 ring-ceramic-error' : ''}
           `}
           autoFocus
         />
@@ -169,8 +169,8 @@ export const InviteMemberForm: React.FC<InviteMemberFormProps> = ({
         {/* Error Message */}
         {error && (
           <div className="flex items-start gap-2 mt-2">
-            <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-red-500 font-medium">
+            <X className="w-4 h-4 text-ceramic-error mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-ceramic-error font-medium">
               {error}
             </p>
           </div>

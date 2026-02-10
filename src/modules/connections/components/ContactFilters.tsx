@@ -51,14 +51,14 @@ interface FilterChipProps {
 function FilterChip({ label, count, isActive, onClick, variant = 'default' }: FilterChipProps) {
   const variantClasses = {
     default: isActive
-      ? 'bg-blue-100 text-blue-700 border-blue-300'
-      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50',
+      ? 'bg-ceramic-info-bg text-ceramic-info border-ceramic-info/30'
+      : 'bg-ceramic-base text-ceramic-text-secondary border-ceramic-border hover:bg-ceramic-base',
     warning: isActive
-      ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      : 'bg-white text-gray-600 border-gray-200 hover:bg-yellow-50',
+      ? 'bg-ceramic-warning/10 text-ceramic-warning border-ceramic-warning/30'
+      : 'bg-ceramic-base text-ceramic-text-secondary border-ceramic-border hover:bg-ceramic-warning/5',
     danger: isActive
-      ? 'bg-red-100 text-red-700 border-red-300'
-      : 'bg-white text-gray-600 border-gray-200 hover:bg-red-50',
+      ? 'bg-ceramic-error-bg text-ceramic-error border-ceramic-error/30'
+      : 'bg-ceramic-base text-ceramic-text-secondary border-ceramic-border hover:bg-ceramic-error-bg',
   };
 
   return (
@@ -75,7 +75,7 @@ function FilterChip({ label, count, isActive, onClick, variant = 'default' }: Fi
         <span
           className={cn(
             'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs',
-            isActive ? 'bg-white/50' : 'bg-gray-100'
+            isActive ? 'bg-white/50' : 'bg-ceramic-base'
           )}
         >
           {count}
@@ -141,8 +141,8 @@ export function ContactFilters({
         <div className="relative">
           <button
             onClick={() => setShowSortMenu(!showSortMenu)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200
-                       bg-white text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ceramic-border
+                       bg-ceramic-base text-sm text-ceramic-text-secondary hover:bg-ceramic-base transition-colors"
             aria-expanded={showSortMenu}
             aria-haspopup="listbox"
           >
@@ -157,7 +157,7 @@ export function ContactFilters({
                 onClick={() => setShowSortMenu(false)}
               />
               <div
-                className="absolute left-0 top-full mt-1 z-20 bg-white rounded-lg border border-gray-200
+                className="absolute left-0 top-full mt-1 z-20 bg-ceramic-base rounded-lg border border-ceramic-border
                            shadow-lg py-1 min-w-[160px]"
                 role="listbox"
               >
@@ -169,8 +169,8 @@ export function ContactFilters({
                       setShowSortMenu(false);
                     }}
                     className={cn(
-                      'w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors',
-                      sortField === option.value && 'bg-blue-50 text-blue-700'
+                      'w-full text-left px-3 py-2 text-sm hover:bg-ceramic-base transition-colors',
+                      sortField === option.value && 'bg-ceramic-info-bg text-ceramic-info'
                     )}
                     role="option"
                     aria-selected={sortField === option.value}
@@ -186,8 +186,8 @@ export function ContactFilters({
         {/* Sort order toggle */}
         <button
           onClick={onSortOrderToggle}
-          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gray-200
-                     bg-white text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-ceramic-border
+                     bg-ceramic-base text-sm text-ceramic-text-secondary hover:bg-ceramic-base transition-colors"
           aria-label={sortOrder === 'asc' ? 'Ordem crescente' : 'Ordem decrescente'}
         >
           <ArrowUpDown className="w-4 h-4" />
@@ -195,7 +195,7 @@ export function ContactFilters({
         </button>
 
         {/* Results count */}
-        <span className="text-sm text-gray-500 ml-auto">
+        <span className="text-sm text-ceramic-text-secondary ml-auto">
           {stats.filtered} de {stats.total} contatos
         </span>
       </div>

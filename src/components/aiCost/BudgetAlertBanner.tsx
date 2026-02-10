@@ -14,25 +14,25 @@ export const BudgetAlertBanner: React.FC<BudgetAlertBannerProps> = ({ summary })
     if (is_over_budget || percentage_used >= 100) {
       return {
         icon: XCircle,
-        bgClass: 'bg-red-50 border-red-200',
-        iconClass: 'text-red-600',
-        textClass: 'text-red-800',
+        bgClass: 'bg-ceramic-error/10 border-ceramic-error',
+        iconClass: 'text-ceramic-error',
+        textClass: 'text-ceramic-text-primary',
         title: 'Orçamento Excedido!'
       };
     } else if (percentage_used >= 90) {
       return {
         icon: AlertTriangle,
-        bgClass: 'bg-orange-50 border-orange-200',
-        iconClass: 'text-orange-600',
-        textClass: 'text-orange-800',
+        bgClass: 'bg-ceramic-warning/10 border-ceramic-warning',
+        iconClass: 'text-ceramic-warning',
+        textClass: 'text-ceramic-text-primary',
         title: 'Alerta Crítico'
       };
     } else {
       return {
         icon: AlertCircle,
-        bgClass: 'bg-yellow-50 border-yellow-200',
-        iconClass: 'text-yellow-600',
-        textClass: 'text-yellow-800',
+        bgClass: 'bg-ceramic-warning/10 border-ceramic-warning',
+        iconClass: 'text-ceramic-warning',
+        textClass: 'text-ceramic-text-primary',
         title: 'Atenção'
       };
     }

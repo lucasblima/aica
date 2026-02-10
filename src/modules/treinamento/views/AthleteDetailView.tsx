@@ -257,11 +257,11 @@ export default function AthleteDetailView() {
                     </p>
                   </div>
                   {feedback.completed_workout ? (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-ceramic-success/20 text-ceramic-success">
                       Completo
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-ceramic-warning/20 text-ceramic-warning">
                       Parcial
                     </span>
                   )}
@@ -292,10 +292,10 @@ export default function AthleteDetailView() {
                       <span
                         className={`font-bold ${
                           feedback.sentiment_score > 0
-                            ? 'text-green-600'
+                            ? 'text-ceramic-success'
                             : feedback.sentiment_score < 0
-                            ? 'text-red-600'
-                            : 'text-gray-600'
+                            ? 'text-ceramic-error'
+                            : 'text-ceramic-text-secondary'
                         }`}
                       >
                         {feedback.sentiment_score > 0 ? '😊' : feedback.sentiment_score < 0 ? '😔' : '😐'}

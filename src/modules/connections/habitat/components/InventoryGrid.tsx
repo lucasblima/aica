@@ -78,10 +78,10 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
     return (
       <div className="space-y-4">
         <div className="animate-pulse">
-          <div className="h-12 bg-stone-200 rounded mb-4" />
+          <div className="h-12 bg-ceramic-border rounded mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-48 bg-stone-200 rounded-lg" />
+              <div key={i} className="h-48 bg-ceramic-border rounded-lg" />
             ))}
           </div>
         </div>
@@ -93,7 +93,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-bold text-stone-800">Inventário</h3>
+        <h3 className="text-2xl font-bold text-ceramic-text-primary">Inventário</h3>
         <button className="px-4 py-2 bg-amber-700 text-white font-medium rounded-lg hover:bg-amber-800 transition-colors">
           + Adicionar Item
         </button>
@@ -106,14 +106,14 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
           value={searchTerm}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Buscar itens..."
-          className="w-full px-4 py-3 pl-10 border-2 border-stone-300 rounded-lg focus:border-amber-500 focus:outline-none"
+          className="w-full px-4 py-3 pl-10 border-2 border-ceramic-border rounded-lg focus:border-amber-500 focus:outline-none"
         />
-        <span className="absolute left-3 top-3.5 text-stone-400">🔍</span>
+        <span className="absolute left-3 top-3.5 text-ceramic-text-tertiary">🔍</span>
       </div>
 
       {/* Category Filters */}
       <div>
-        <div className="text-sm font-medium text-stone-600 mb-2">Categoria</div>
+        <div className="text-sm font-medium text-ceramic-text-secondary mb-2">Categoria</div>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(categoryLabels) as InventoryCategory[]).map((category) => (
             <button
@@ -122,7 +122,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
               className={`px-3 py-1 rounded-full text-sm font-medium border-2 transition-colors ${
                 selectedCategory === category
                   ? 'bg-amber-700 text-white border-amber-700'
-                  : 'bg-stone-50 text-stone-700 border-stone-300 hover:bg-stone-100'
+                  : 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border hover:bg-ceramic-cool'
               }`}
             >
               {categoryLabels[category]}
@@ -133,7 +133,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
 
       {/* Status Filters */}
       <div>
-        <div className="text-sm font-medium text-stone-600 mb-2">Status</div>
+        <div className="text-sm font-medium text-ceramic-text-secondary mb-2">Status</div>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(statusLabels) as InventoryStatus[]).map((status) => (
             <button
@@ -142,7 +142,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
               className={`px-3 py-1 rounded-full text-sm font-medium border-2 transition-colors ${
                 selectedStatus === status
                   ? 'bg-amber-700 text-white border-amber-700'
-                  : 'bg-stone-50 text-stone-700 border-stone-300 hover:bg-stone-100'
+                  : 'bg-ceramic-cool text-ceramic-text-primary border-ceramic-border hover:bg-ceramic-cool'
               }`}
             >
               {statusLabels[status]}
@@ -155,8 +155,8 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
       {items.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📦</div>
-          <p className="text-stone-600 text-lg">Nenhum item encontrado</p>
-          <p className="text-stone-500 text-sm mt-2">
+          <p className="text-ceramic-text-secondary text-lg">Nenhum item encontrado</p>
+          <p className="text-ceramic-text-secondary text-sm mt-2">
             {searchTerm || selectedCategory || selectedStatus
               ? 'Tente ajustar os filtros'
               : 'Comece adicionando itens ao seu inventário'}
@@ -172,7 +172,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ propertyId }) => {
 
       {/* Results Count */}
       {items.length > 0 && (
-        <div className="text-center text-sm text-stone-500">
+        <div className="text-center text-sm text-ceramic-text-secondary">
           {items.length} {items.length === 1 ? 'item encontrado' : 'itens encontrados'}
         </div>
       )}

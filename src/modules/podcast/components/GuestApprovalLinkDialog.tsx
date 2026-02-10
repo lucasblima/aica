@@ -268,19 +268,19 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+          className="bg-ceramic-base rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-t-2xl relative">
+          <div className="bg-gradient-to-r from-ceramic-accent to-ceramic-accent/80 text-white p-6 rounded-t-2xl relative">
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-all"
+              className="absolute top-4 right-4 p-2 hover:bg-ceramic-base hover:bg-opacity-20 rounded-full transition-all"
             >
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-2xl font-bold mb-1">Enviar Link de Aprovação</h2>
-            <p className="text-blue-100 text-sm">
+            <p className="text-white/80 text-sm">
               Para <span className="font-semibold">{guestName}</span>
             </p>
           </div>
@@ -290,18 +290,18 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
             {/* Loading Token State */}
             {isLoadingToken && (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                <span className="ml-3 text-gray-600">Gerando link...</span>
+                <Loader2 className="w-8 h-8 text-ceramic-accent animate-spin" />
+                <span className="ml-3 text-ceramic-text-secondary">Gerando link...</span>
               </div>
             )}
 
             {/* Error Loading Token */}
             {!isLoadingToken && !approvalToken && submitState.error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-red-900">Erro ao gerar link</p>
-                  <p className="text-xs text-red-700 mt-1">{submitState.error}</p>
+                  <p className="text-sm font-medium text-ceramic-text-primary">Erro ao gerar link</p>
+                  <p className="text-xs text-ceramic-error mt-1">{submitState.error}</p>
                 </div>
               </div>
             )}
@@ -314,14 +314,14 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3"
+                    className="bg-ceramic-success/10 border border-ceramic-success/30 rounded-lg p-4 flex items-start gap-3"
                   >
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-green-900">
+                      <p className="text-sm font-medium text-ceramic-text-primary">
                         Link enviado com sucesso!
                       </p>
-                      <p className="text-xs text-green-700 mt-1">
+                      <p className="text-xs text-ceramic-success mt-1">
                         O convidado receberá o link para aprovação via {formState.method}.
                       </p>
                     </div>
@@ -333,19 +333,19 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3"
+                    className="bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg p-4 flex items-start gap-3"
                   >
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-red-900">Erro ao enviar</p>
-                      <p className="text-xs text-red-700 mt-1">{submitState.error}</p>
+                      <p className="text-sm font-medium text-ceramic-text-primary">Erro ao enviar</p>
+                      <p className="text-xs text-ceramic-error mt-1">{submitState.error}</p>
                     </div>
                   </motion.div>
                 )}
 
                 {/* Method Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-ceramic-text-primary mb-3">
                     Método de Envio
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -354,15 +354,15 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                       onClick={() => handleMethodSelect('email')}
                       className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
                         formState.method === 'email'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                          ? 'border-ceramic-accent bg-ceramic-accent/10'
+                          : 'border-ceramic-border hover:border-ceramic-accent/40 hover:bg-ceramic-cool'
                       }`}
                     >
                       <Mail
-                        className={`w-6 h-6 ${formState.method === 'email' ? 'text-blue-600' : 'text-gray-400'}`}
+                        className={`w-6 h-6 ${formState.method === 'email' ? 'text-ceramic-accent' : 'text-ceramic-text-tertiary'}`}
                       />
                       <span
-                        className={`text-sm font-medium ${formState.method === 'email' ? 'text-blue-900' : 'text-gray-700'}`}
+                        className={`text-sm font-medium ${formState.method === 'email' ? 'text-ceramic-text-primary' : 'text-ceramic-text-primary'}`}
                       >
                         Email
                       </span>
@@ -373,15 +373,15 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                       onClick={() => handleMethodSelect('whatsapp')}
                       className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
                         formState.method === 'whatsapp'
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
+                          ? 'border-ceramic-success bg-ceramic-success/10'
+                          : 'border-ceramic-border hover:border-ceramic-success/40 hover:bg-ceramic-cool'
                       }`}
                     >
                       <MessageCircle
-                        className={`w-6 h-6 ${formState.method === 'whatsapp' ? 'text-green-600' : 'text-gray-400'}`}
+                        className={`w-6 h-6 ${formState.method === 'whatsapp' ? 'text-ceramic-success' : 'text-ceramic-text-tertiary'}`}
                       />
                       <span
-                        className={`text-sm font-medium ${formState.method === 'whatsapp' ? 'text-green-900' : 'text-gray-700'}`}
+                        className={`text-sm font-medium ${formState.method === 'whatsapp' ? 'text-ceramic-text-primary' : 'text-ceramic-text-primary'}`}
                       >
                         WhatsApp
                       </span>
@@ -396,7 +396,7 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
                       Email do Convidado
                     </label>
                     <input
@@ -404,7 +404,7 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                       value={formState.email}
                       onChange={(e) => handleEmailChange(e.target.value)}
                       placeholder="exemplo@email.com"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-gray-800"
+                      className="w-full p-3 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent outline-none text-ceramic-text-primary"
                     />
                   </motion.div>
                 )}
@@ -416,7 +416,7 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
                       Telefone do Convidado
                     </label>
                     <input
@@ -424,17 +424,17 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                       value={formState.phone}
                       onChange={(e) => handlePhoneChange(e.target.value)}
                       placeholder="(11) 99999-9999"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none text-gray-800"
+                      className="w-full p-3 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-success focus:border-transparent outline-none text-ceramic-text-primary"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-ceramic-text-secondary mt-1">
                       Formato aceito: (11) 99999-9999 ou 11999999999
                     </p>
                   </motion.div>
                 )}
 
                 {/* URL Preview */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="bg-ceramic-cool rounded-lg p-4 border border-ceramic-border">
+                  <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
                     Link de Aprovação
                   </label>
                   <div className="flex items-center gap-2">
@@ -442,28 +442,28 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                       type="text"
                       value={approvalToken.url}
                       readOnly
-                      className="flex-1 p-2 bg-white border border-gray-300 rounded text-xs text-gray-600 font-mono"
+                      className="flex-1 p-2 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-text-secondary font-mono"
                     />
                     <button
                       onClick={handleCopyUrl}
-                      className="p-2 hover:bg-gray-200 rounded transition-all"
+                      className="p-2 hover:bg-ceramic-cool rounded transition-all"
                       title="Copiar link"
                     >
                       {copiedUrl ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <CheckCircle className="w-4 h-4 text-ceramic-success" />
                       ) : (
-                        <Copy className="w-4 h-4 text-gray-600" />
+                        <Copy className="w-4 h-4 text-ceramic-text-secondary" />
                       )}
                     </button>
                     <button
                       onClick={handleOpenUrl}
-                      className="p-2 hover:bg-gray-200 rounded transition-all"
+                      className="p-2 hover:bg-ceramic-cool rounded transition-all"
                       title="Abrir em nova aba"
                     >
-                      <ExternalLink className="w-4 h-4 text-gray-600" />
+                      <ExternalLink className="w-4 h-4 text-ceramic-text-secondary" />
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-ceramic-text-secondary mt-2">
                     Expira em: {new Date(approvalToken.expiresAt).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
@@ -473,14 +473,14 @@ export const GuestApprovalLinkDialog: React.FC<GuestApprovalLinkDialogProps> = (
                   <button
                     onClick={onClose}
                     disabled={submitState.isSubmitting}
-                    className="flex-1 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="flex-1 py-3 rounded-xl border-2 border-ceramic-border text-ceramic-text-primary font-medium hover:bg-ceramic-cool disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleSend}
                     disabled={!formState.method || submitState.isSubmitting || submitState.success}
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-ceramic-accent to-ceramic-accent/80 text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                   >
                     {submitState.isSubmitting ? (
                       <>

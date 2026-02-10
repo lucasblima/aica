@@ -25,7 +25,7 @@ export const MentorshipsView: React.FC<MentorshipsViewProps> = ({ spaceId }) => 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-stone-400 text-sm font-light tracking-wide">
+        <div className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
           Loading mentorships...
         </div>
       </div>
@@ -36,10 +36,10 @@ export const MentorshipsView: React.FC<MentorshipsViewProps> = ({ spaceId }) => 
     <div className="max-w-7xl mx-auto px-8 py-12 space-y-12">
       {/* Header */}
       <header>
-        <h1 className="text-4xl font-light text-stone-900 tracking-tight mb-2">
+        <h1 className="text-4xl font-light text-ceramic-text-primary tracking-tight mb-2">
           Mentorships
         </h1>
-        <p className="text-stone-500 text-sm font-light tracking-wide">
+        <p className="text-ceramic-text-secondary text-sm font-light tracking-wide">
           Your mentorship relationships
         </p>
       </header>
@@ -47,17 +47,17 @@ export const MentorshipsView: React.FC<MentorshipsViewProps> = ({ spaceId }) => 
       {/* Giving Mentorships */}
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-2xl font-light text-stone-800 tracking-tight">
+          <h2 className="text-2xl font-light text-ceramic-text-primary tracking-tight">
             Mentoring Others
           </h2>
-          <span className="text-xs text-stone-400 font-light tracking-wider uppercase">
+          <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase">
             {givingMentorships.length} active
           </span>
         </div>
 
         {givingMentorships.length === 0 ? (
-          <div className="bg-stone-50 rounded-sm border border-stone-100 p-12 text-center">
-            <p className="text-stone-400 text-sm font-light tracking-wide">
+          <div className="bg-ceramic-cool rounded-sm border border-ceramic-border p-12 text-center">
+            <p className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
               You're not currently mentoring anyone. Consider sharing your knowledge!
             </p>
           </div>
@@ -73,17 +73,17 @@ export const MentorshipsView: React.FC<MentorshipsViewProps> = ({ spaceId }) => 
       {/* Receiving Mentorships */}
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-2xl font-light text-stone-800 tracking-tight">
+          <h2 className="text-2xl font-light text-ceramic-text-primary tracking-tight">
             Learning From
           </h2>
-          <span className="text-xs text-stone-400 font-light tracking-wider uppercase">
+          <span className="text-xs text-ceramic-text-tertiary font-light tracking-wider uppercase">
             {receivingMentorships.length} active
           </span>
         </div>
 
         {receivingMentorships.length === 0 ? (
-          <div className="bg-stone-50 rounded-sm border border-stone-100 p-12 text-center">
-            <p className="text-stone-400 text-sm font-light tracking-wide">
+          <div className="bg-ceramic-cool rounded-sm border border-ceramic-border p-12 text-center">
+            <p className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
               You don't have any mentors. Find someone to guide your growth!
             </p>
           </div>

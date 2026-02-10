@@ -164,12 +164,12 @@ END:VCALENDAR`;
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-2">{ritualTitle}</h3>
+      <div className="bg-gradient-to-r from-ceramic-accent/10 to-ceramic-accent/5 rounded-lg border border-ceramic-accent/30 p-6">
+        <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">{ritualTitle}</h3>
 
         <div className="flex items-start justify-between">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-700">
+            <div className="flex items-center gap-2 text-sm text-ceramic-text-primary">
               <span>📅</span>
               <span>
                 {startDate.toLocaleDateString('pt-BR', {
@@ -180,7 +180,7 @@ END:VCALENDAR`;
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-700">
+            <div className="flex items-center gap-2 text-sm text-ceramic-text-primary">
               <span>🕐</span>
               <span>
                 {startDate.toLocaleTimeString('pt-BR', {
@@ -196,7 +196,7 @@ END:VCALENDAR`;
             </div>
 
             {isRecurring && (
-              <div className="flex items-center gap-2 text-sm text-purple-700">
+              <div className="flex items-center gap-2 text-sm text-ceramic-accent">
                 <span>🔄</span>
                 <span>Ritual recorrente</span>
               </div>
@@ -204,7 +204,7 @@ END:VCALENDAR`;
           </div>
 
           {hasGoogleEventId && (
-            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center gap-1">
+            <span className="px-3 py-1 bg-ceramic-success/15 text-ceramic-success rounded-full text-xs font-medium flex items-center gap-1">
               ✅ Sincronizado
             </span>
           )}
@@ -227,7 +227,7 @@ END:VCALENDAR`;
         {/* Download ICS Button */}
         <button
           onClick={handleDownloadIcs}
-          className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+          className="px-4 py-2 text-sm font-medium text-ceramic-info bg-ceramic-info-bg border border-ceramic-info/20 rounded-lg hover:bg-ceramic-info-bg/80 transition-colors flex items-center justify-center gap-2"
         >
           <span>📥</span>
           <span>Baixar .ics</span>
@@ -235,8 +235,8 @@ END:VCALENDAR`;
       </div>
 
       {/* Additional Calendar Options */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-3">
-        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+      <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-4 space-y-3">
+        <p className="text-xs font-semibold text-ceramic-text-primary uppercase tracking-wide">
           Adicionar a outros calendários
         </p>
 
@@ -245,7 +245,7 @@ END:VCALENDAR`;
           href={googleCalendarUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full block px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-center"
+          className="w-full block px-4 py-2 text-sm font-medium text-ceramic-text-primary bg-ceramic-base border border-ceramic-border rounded-lg hover:bg-ceramic-cool transition-colors text-center"
         >
           <span className="mr-2">🔗</span>
           Google Calendar (web)
@@ -254,25 +254,25 @@ END:VCALENDAR`;
         {/* Copy ICS Link */}
         <button
           onClick={handleCopyIcsLink}
-          className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full px-4 py-2 text-sm font-medium text-ceramic-text-primary bg-ceramic-base border border-ceramic-border rounded-lg hover:bg-ceramic-cool transition-colors flex items-center justify-center gap-2"
         >
           <span>{isCopied ? '✅' : '📋'}</span>
           <span>{isCopied ? 'Link copiado!' : 'Copiar link ICS'}</span>
         </button>
 
         {/* Outlook/iCloud Note */}
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-ceramic-text-secondary">
           Use o arquivo .ics para adicionar a Outlook, Apple Calendar ou outro aplicativo
         </p>
       </div>
 
       {/* Event Details */}
       {ritualDescription && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+        <div className="bg-ceramic-base rounded-lg border border-ceramic-border p-4">
+          <p className="text-xs font-semibold text-ceramic-text-primary uppercase tracking-wide mb-2">
             Descrição
           </p>
-          <p className="text-sm text-gray-700 line-clamp-3">{ritualDescription}</p>
+          <p className="text-sm text-ceramic-text-primary line-clamp-3">{ritualDescription}</p>
         </div>
       )}
 
@@ -287,7 +287,7 @@ END:VCALENDAR`;
               onSyncError?.(err);
             }
           }}
-          className="w-full px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+          className="w-full px-4 py-2 text-sm font-medium text-ceramic-error bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg hover:bg-ceramic-error/15 transition-colors"
           disabled={removeFromGoogle.isPending}
         >
           {removeFromGoogle.isPending ? 'Removendo...' : '🗑️ Remover do Google Calendar'}

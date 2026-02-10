@@ -82,9 +82,9 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-white to-ceramic-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#9B4D3A]/5 via-ceramic-base to-ceramic-50">
       {/* Header */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-border">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-4xl">🛠️</span>
@@ -99,7 +99,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b border-ceramic-100">
+      <div className="bg-ceramic-base border-b border-ceramic-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-wrap gap-4">
             {/* Category Filter */}
@@ -144,7 +144,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                   onClick={() => setAvailabilityFilter('available')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                     availabilityFilter === 'available'
-                      ? 'bg-green-600 text-white'
+                      ? 'bg-ceramic-success text-white'
                       : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
                   }`}
                 >
@@ -154,7 +154,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                   onClick={() => setAvailabilityFilter('in-use')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                     availabilityFilter === 'in-use'
-                      ? 'bg-red-600 text-white'
+                      ? 'bg-ceramic-error text-white'
                       : 'bg-ceramic-100 text-ceramic-700 hover:bg-ceramic-200'
                   }`}
                 >
@@ -189,7 +189,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border-2 border-dashed border-ceramic-200 p-12 text-center">
+          <div className="bg-ceramic-base rounded-2xl border-2 border-dashed border-ceramic-border p-12 text-center">
             <span className="text-6xl mb-4 block">📦</span>
             <h2 className="text-2xl font-semibold text-ceramic-900 mb-2">
               Nenhum recurso encontrado
@@ -210,7 +210,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
 
       {/* Stats Footer */}
       {resources && resources.length > 0 && (
-        <div className="bg-white border-t border-ceramic-100">
+        <div className="bg-ceramic-base border-t border-ceramic-border">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
@@ -220,13 +220,13 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
                 <div className="text-sm text-ceramic-600">Total de recursos</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-ceramic-success">
                   {resources.filter((r) => r.isAvailable).length}
                 </div>
                 <div className="text-sm text-ceramic-600">Disponíveis</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-2xl font-bold text-ceramic-error">
                   {resources.filter((r) => !r.isAvailable).length}
                 </div>
                 <div className="text-sm text-ceramic-600">Em uso</div>

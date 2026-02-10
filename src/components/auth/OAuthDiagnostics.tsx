@@ -26,14 +26,14 @@ export function OAuthDiagnostics() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="max-w-2xl mx-auto p-6 bg-ceramic-base rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-4">OAuth Diagnostics</h2>
 
       <div className="space-y-4">
         {/* Issue Description */}
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
-          <h3 className="font-semibold text-yellow-800 mb-2">Common OAuth Errors</h3>
-          <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+        <div className="p-4 bg-ceramic-warning/10 border border-ceramic-warning/20 rounded">
+          <h3 className="font-semibold text-ceramic-warning mb-2">Common OAuth Errors</h3>
+          <ul className="list-disc list-inside text-sm text-ceramic-warning/80 space-y-1">
             <li>401 Unauthorized during Google login</li>
             <li>PKCE code_verifier mismatch</li>
             <li>Stale authentication cookies</li>
@@ -45,24 +45,24 @@ export function OAuthDiagnostics() {
         <div className="space-y-3">
           <button
             onClick={handleDebug}
-            className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+            className="w-full px-4 py-2 bg-ceramic-info text-white rounded hover:bg-ceramic-info/90 transition"
           >
             Debug OAuth Cookies (Check Console)
           </button>
 
           <button
             onClick={handleCleanup}
-            className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            className="w-full px-4 py-2 bg-ceramic-error text-white rounded hover:bg-ceramic-error/90 transition"
             disabled={cleaned}
           >
-            {cleaned ? '✅ Cleaned! Refreshing...' : 'Clean OAuth Cookies & Refresh'}
+            {cleaned ? 'Cleaned! Refreshing...' : 'Clean OAuth Cookies & Refresh'}
           </button>
         </div>
 
         {/* Instructions */}
-        <div className="p-4 bg-gray-50 border border-gray-200 rounded">
-          <h3 className="font-semibold text-gray-800 mb-2">Manual Steps</h3>
-          <ol className="list-decimal list-inside text-sm text-gray-700 space-y-2">
+        <div className="p-4 bg-ceramic-cool border border-ceramic-border rounded">
+          <h3 className="font-semibold text-ceramic-text-primary mb-2">Manual Steps</h3>
+          <ol className="list-decimal list-inside text-sm text-ceramic-text-secondary space-y-2">
             <li>
               <strong>Clear browser cookies</strong>: Ctrl+Shift+Delete → Cookies and site data
             </li>
@@ -74,7 +74,7 @@ export function OAuthDiagnostics() {
             </li>
             <li>
               <strong>Check redirect URI</strong>: Ensure{' '}
-              <code className="bg-gray-200 px-1 rounded text-xs">
+              <code className="bg-ceramic-cool px-1 rounded text-xs">
                 {window.location.origin}
               </code>{' '}
               is in Supabase Dashboard → Authentication → URL Configuration
@@ -83,9 +83,9 @@ export function OAuthDiagnostics() {
         </div>
 
         {/* Current Environment */}
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded">
-          <h3 className="font-semibold text-blue-800 mb-2">Current Environment</h3>
-          <div className="text-sm text-blue-700 space-y-1 font-mono">
+        <div className="p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded">
+          <h3 className="font-semibold text-ceramic-info mb-2">Current Environment</h3>
+          <div className="text-sm text-ceramic-info/80 space-y-1 font-mono">
             <div>
               <strong>Origin:</strong> {window.location.origin}
             </div>

@@ -85,11 +85,11 @@ const extractEdges = (notes: AcademiaNote[]): Edge[] => {
  */
 const getNoteTypeColor = (type: string): string => {
   const colors: Record<string, string> = {
-    fleeting: '#d6d3d1', // stone-300
-    literature: '#84cc16', // lime-500
-    permanent: '#059669', // emerald-600
+    fleeting: '#C4B9A8', // ceramic-warm
+    literature: '#7B8FA2', // ceramic-info
+    permanent: '#6B7B5C', // ceramic-success
   };
-  return colors[type] || '#d6d3d1';
+  return colors[type] || '#C4B9A8';
 };
 
 export const NoteGraph: React.FC<NoteGraphProps> = ({
@@ -128,8 +128,8 @@ export const NoteGraph: React.FC<NoteGraphProps> = ({
 
   if (notes.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] bg-stone-50 rounded-sm border border-stone-200">
-        <p className="text-stone-400 text-sm font-light tracking-wide">
+      <div className="flex items-center justify-center min-h-[400px] bg-ceramic-cool rounded-sm border border-ceramic-border">
+        <p className="text-ceramic-text-tertiary text-sm font-light tracking-wide">
           No notes to visualize. Create linked notes to see the knowledge graph.
         </p>
       </div>
@@ -139,14 +139,14 @@ export const NoteGraph: React.FC<NoteGraphProps> = ({
   return (
     <div
       id="note-graph-container"
-      className="relative w-full bg-white border border-stone-200 rounded-sm overflow-hidden"
+      className="relative w-full bg-ceramic-base border border-ceramic-border rounded-sm overflow-hidden"
       style={{ height: '600px' }}
     >
       {/* Graph SVG */}
       <svg
         width={dimensions.width}
         height={dimensions.height}
-        className="bg-stone-50"
+        className="bg-ceramic-cool"
       >
         {/* Draw edges */}
         <g className="edges">
@@ -166,7 +166,7 @@ export const NoteGraph: React.FC<NoteGraphProps> = ({
                 y1={fromNode.y}
                 x2={toNode.x}
                 y2={toNode.y}
-                stroke={isHighlighted ? '#059669' : '#d6d3d1'}
+                stroke={isHighlighted ? '#6B7B5C' : '#C4B9A8'}
                 strokeWidth={isHighlighted ? 2 : 1}
                 opacity={isHighlighted ? 0.8 : 0.3}
               />
@@ -194,7 +194,7 @@ export const NoteGraph: React.FC<NoteGraphProps> = ({
                 <circle
                   r={isHighlighted || isHovered ? 12 : 8}
                   fill={noteColor}
-                  stroke={isHighlighted ? '#059669' : '#ffffff'}
+                  stroke={isHighlighted ? '#6B7B5C' : '#ffffff'}
                   strokeWidth={isHighlighted || isHovered ? 3 : 2}
                   className="transition-all duration-200"
                 />
@@ -210,14 +210,14 @@ export const NoteGraph: React.FC<NoteGraphProps> = ({
                       height={20}
                       rx={4}
                       fill="rgba(255, 255, 255, 0.95)"
-                      stroke="#d6d3d1"
+                      stroke="#C4B9A8"
                       strokeWidth={1}
                     />
                     {/* Label text */}
                     <text
                       y={-21}
                       textAnchor="middle"
-                      className="text-xs font-light fill-stone-900"
+                      className="text-xs font-light fill-ceramic-text-primary"
                       style={{ pointerEvents: 'none' }}
                     >
                       {node.note.title.length > 15
@@ -233,8 +233,8 @@ export const NoteGraph: React.FC<NoteGraphProps> = ({
       </svg>
 
       {/* Legend */}
-      <div className="absolute top-4 right-4 bg-white border border-stone-200 rounded-sm p-4 shadow-sm">
-        <h4 className="text-xs text-stone-500 font-light tracking-wide mb-3 uppercase">
+      <div className="absolute top-4 right-4 bg-ceramic-base border border-ceramic-border rounded-sm p-4 shadow-sm">
+        <h4 className="text-xs text-ceramic-text-secondary font-light tracking-wide mb-3 uppercase">
           Note Types
         </h4>
         <div className="space-y-2">
@@ -243,28 +243,28 @@ export const NoteGraph: React.FC<NoteGraphProps> = ({
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: getNoteTypeColor('fleeting') }}
             />
-            <span className="text-xs text-stone-700 font-light">Fleeting</span>
+            <span className="text-xs text-ceramic-text-primary font-light">Fleeting</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: getNoteTypeColor('literature') }}
             />
-            <span className="text-xs text-stone-700 font-light">Literature</span>
+            <span className="text-xs text-ceramic-text-primary font-light">Literature</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: getNoteTypeColor('permanent') }}
             />
-            <span className="text-xs text-stone-700 font-light">Permanent</span>
+            <span className="text-xs text-ceramic-text-primary font-light">Permanent</span>
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="absolute bottom-4 left-4 bg-white border border-stone-200 rounded-sm px-4 py-2 shadow-sm">
-        <div className="flex items-center gap-4 text-xs text-stone-600 font-light">
+      <div className="absolute bottom-4 left-4 bg-ceramic-base border border-ceramic-border rounded-sm px-4 py-2 shadow-sm">
+        <div className="flex items-center gap-4 text-xs text-ceramic-text-secondary font-light">
           <span>{notes.length} notes</span>
           <span>•</span>
           <span>{edges.length} connections</span>

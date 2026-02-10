@@ -515,7 +515,7 @@ export const EditalSetupModal: React.FC<EditalSetupModalProps> = ({
                           <button
                             type="button"
                             onClick={() => removeFormField(field.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-ceramic-error hover:bg-ceramic-error-bg rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -601,7 +601,7 @@ export const EditalSetupModal: React.FC<EditalSetupModalProps> = ({
                           <button
                             type="button"
                             onClick={() => removeEvaluationCriterion(criterion.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-ceramic-error hover:bg-ceramic-error-bg rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

@@ -15,6 +15,14 @@
   --color-ceramic-neutral: #8B8579;
   --color-ceramic-cool: #E8EBE9;
   --color-ceramic-warm: #F5E6D3;
+  --color-ceramic-info: #7B8FA2;
+  --color-ceramic-warning: #C4883A;
+  --color-ceramic-success: #6B7B5C;
+  --color-ceramic-error: #9B4D3A;
+  --color-ceramic-info-bg: #F0F2F5;
+  --color-ceramic-warning-bg: #F8F0E5;
+  --color-ceramic-success-bg: #F0F3ED;
+  --color-ceramic-error-bg: #F5EFED;
 }
 
 .animate-fade-in-up {
@@ -73,23 +81,23 @@ body {
 /* 1. Shadow Hygiene: Taupe/Cool Brown shadows */
 .ceramic-card {
   background-color: #F0EFE9;
-  border-radius: 24px;
+  border-radius: 20px;
   box-shadow:
-    6px 6px 12px rgba(163, 158, 145, 0.20),
-    -6px -6px 12px rgba(255, 255, 255, 0.90);
+    4px 4px 10px rgba(163, 158, 145, 0.15),
+    -4px -4px 10px rgba(255, 255, 255, 0.90);
 }
 
 /* Shadow-only utility (for buttons with custom backgrounds) */
 .ceramic-shadow {
   box-shadow:
-    6px 6px 12px rgba(163, 158, 145, 0.20),
-    -6px -6px 12px rgba(255, 255, 255, 0.90);
+    4px 4px 10px rgba(163, 158, 145, 0.15),
+    -4px -4px 10px rgba(255, 255, 255, 0.90);
 }
 
 .ceramic-shadow:hover {
   box-shadow:
-    8px 8px 16px rgba(163, 158, 145, 0.25),
-    -8px -8px 16px rgba(255, 255, 255, 0.95);
+    6px 6px 14px rgba(163, 158, 145, 0.20),
+    -6px -6px 14px rgba(255, 255, 255, 0.95);
 }
 
 /* Ceramic Card Light - Subtle gradient variant for landing pages */
@@ -106,17 +114,17 @@ body {
   background-color: #F0EFE9;
   border-radius: 9999px;
   box-shadow:
-    inset 4px 4px 8px rgba(163, 158, 145, 0.35),
-    inset -4px -4px 8px rgba(255, 255, 255, 1.0);
+    inset 3px 3px 6px rgba(163, 158, 145, 0.25),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.95);
 }
 
 /* Tray: Rectangular Inset for Grids */
 .ceramic-tray {
   background-color: #F0EFE9;
-  border-radius: 32px;
+  border-radius: 28px;
   box-shadow:
-    inset 4px 4px 8px rgba(163, 158, 145, 0.35),
-    inset -4px -4px 8px rgba(255, 255, 255, 1.0);
+    inset 3px 3px 6px rgba(163, 158, 145, 0.25),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.95);
 }
 
 /* 2. Trough: Deep channel for toggles */
@@ -125,8 +133,8 @@ body {
   /* Slightly darker than body */
   border-radius: 9999px;
   box-shadow:
-    inset 3px 3px 6px rgba(163, 158, 145, 0.40),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.80);
+    inset 2px 2px 5px rgba(163, 158, 145, 0.30),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.85);
 }
 
 /* 3. Groove: Sharp, milled effect for timers/bars */
@@ -142,8 +150,8 @@ body {
   background-color: #F0EFE9;
   border-radius: 9999px;
   box-shadow:
-    inset 6px 6px 12px rgba(163, 158, 145, 0.30),
-    inset -6px -6px 12px rgba(255, 255, 255, 1.0);
+    inset 4px 4px 10px rgba(163, 158, 145, 0.20),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.95);
 }
 
 .text-etched {
@@ -196,8 +204,8 @@ body {
 
 /* Ceramic Design System Variables */
 :root {
-  --ceramic-shadow-taupe: rgba(163, 158, 145, 0.35);
-  --ceramic-shadow-white: rgba(255, 255, 255, 1.0);
+  --ceramic-shadow-taupe: rgba(163, 158, 145, 0.25);
+  --ceramic-shadow-white: rgba(255, 255, 255, 0.95);
   --ceramic-accent-pulse: rgba(217, 119, 6, 0.4);
 }
 
@@ -217,8 +225,8 @@ body {
 /* Ceramic Elevated (selected/hover state) */
 .ceramic-elevated {
   box-shadow:
-    6px 6px 12px var(--ceramic-shadow-taupe),
-    -6px -6px 12px var(--ceramic-shadow-white);
+    5px 5px 10px var(--ceramic-shadow-taupe),
+    -5px -5px 10px var(--ceramic-shadow-white);
   transform: translateY(-2px);
 }
 
@@ -290,7 +298,7 @@ body {
 /* Identity Passport - Hero Card (Layer 2) */
 .ceramic-passport {
   background-color: #F0EFE9;
-  border-radius: 32px;
+  border-radius: 28px;
   box-shadow:
     6px 6px 16px rgba(163, 158, 145, 0.20),
     -6px -6px 16px rgba(255, 255, 255, 0.90);
@@ -350,7 +358,7 @@ body {
 /* Stats Tray - Inset container for vital stats (Layer 1) */
 .ceramic-stats-tray {
   background-color: #EAE8E2;
-  border-radius: 32px;
+  border-radius: 28px;
   box-shadow:
     inset 4px 4px 10px rgba(163, 158, 145, 0.4),
     inset -4px -4px 10px rgba(255, 255, 255, 0.9);
@@ -360,7 +368,7 @@ body {
 /* Device Card - Monitor/Dashboard style (Layer 2) */
 .ceramic-device {
   background-color: #F0EFE9;
-  border-radius: 32px;
+  border-radius: 28px;
   box-shadow:
     8px 8px 20px rgba(163, 158, 145, 0.25),
     -8px -8px 20px rgba(255, 255, 255, 0.95),

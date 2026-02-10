@@ -385,7 +385,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
   };
 
   const getStatusIcon = () => {
-    return <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />;
+    return <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />;
   };
 
   /**
@@ -409,7 +409,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         {fileWithMeta.progress.stage !== 'error' && fileWithMeta.progress.stage !== 'complete' && (
           <div className="ceramic-trough p-1 rounded-full">
             <div
-              className="h-1.5 rounded-full bg-blue-500 transition-all duration-500"
+              className="h-1.5 rounded-full bg-ceramic-warning transition-all duration-500"
               style={{ width: `${fileWithMeta.progress.progress}%` }}
             />
           </div>
@@ -430,14 +430,14 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           className={`
             ceramic-inset p-8 rounded-2xl cursor-pointer transition-all duration-200
             flex flex-col items-center justify-center gap-4 min-h-[200px]
-            ${isDragging ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'}
+            ${isDragging ? 'bg-ceramic-info/10 border-ceramic-warning/30' : 'hover:bg-ceramic-highlight'}
           `}
         >
           <div className={`
             ceramic-concave w-16 h-16 flex items-center justify-center
             ${isDragging ? 'scale-110' : ''}
           `}>
-            <Upload className={`w-8 h-8 ${isDragging ? 'text-blue-600' : 'text-ceramic-text-primary'}`} />
+            <Upload className={`w-8 h-8 ${isDragging ? 'text-ceramic-info' : 'text-ceramic-text-primary'}`} />
           </div>
           <div className="text-center">
             <p className="text-sm font-bold text-ceramic-text-primary">
@@ -505,7 +505,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
                   <>
                     {isAnalyzing && !fileWithMeta.analyzed ? (
                       <div className="flex items-center gap-2 py-3">
-                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                        <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
                         <p className="text-xs font-medium text-ceramic-text-secondary">
                           Analisando extrato com IA...
                         </p>
@@ -514,8 +514,8 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
                       <div className="space-y-2">
                         {fileWithMeta.analyzed && (
                           <div className="flex items-center gap-2 mb-2">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <p className="text-xs font-medium text-green-700">
+                            <CheckCircle className="w-4 h-4 text-ceramic-success" />
+                            <p className="text-xs font-medium text-ceramic-success">
                               Metadados extraídos automaticamente
                             </p>
                           </div>
@@ -575,7 +575,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
           {/* Status Indicator - Only shows during analysis or manual processing */}
           {(isAnalyzing || isProcessing) && (
             <div className="ceramic-tray px-6 py-3 flex items-center justify-center gap-3">
-              <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+              <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
               <span className="text-sm font-bold text-ceramic-text-primary">
                 {isAnalyzing
                   ? 'Analisando PDFs com IA...'

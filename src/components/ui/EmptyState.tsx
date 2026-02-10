@@ -46,7 +46,7 @@ export interface EmptyStateProps {
 const EMPTY_STATE_CONFIG = {
   new_user: {
     icon: Sparkles,
-    iconColor: '#667eea',
+    iconColor: '#7B8FA2', /* ceramic-info */
     title: 'Comece sua jornada',
     message: 'Registre seu primeiro momento e acompanhe sua evolução.',
     primaryCTA: 'Registrar momento',
@@ -55,7 +55,7 @@ const EMPTY_STATE_CONFIG = {
   },
   no_data_today: {
     icon: Plus,
-    iconColor: '#10b981',
+    iconColor: '#6B7B5C', /* ceramic-success */
     title: 'Sem registros hoje',
     message: 'Registre um momento e evolua.',
     primaryCTA: 'Registrar momento',
@@ -64,7 +64,7 @@ const EMPTY_STATE_CONFIG = {
   },
   insufficient_data: {
     icon: TrendingUp,
-    iconColor: '#f59e0b',
+    iconColor: '#C4883A', /* ceramic-warning */
     title: 'Poucos dados',
     message: 'Mínimo 2 dias para ver tendências.',
     primaryCTA: 'Registrar momento',
@@ -73,7 +73,7 @@ const EMPTY_STATE_CONFIG = {
   },
   no_data_period: {
     icon: Calendar,
-    iconColor: '#8b5cf6',
+    iconColor: '#7B8FA2', /* ceramic-info */
     title: 'Sem dados',
     message: 'Sem registros neste período.',
     primaryCTA: 'Mudar período',
@@ -115,7 +115,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const config = type === 'custom'
     ? {
         icon: Sparkles,
-        iconColor: '#667eea',
+        iconColor: '#7B8FA2', /* ceramic-info */
         title: customTitle || 'Estado Vazio',
         message: customMessage || 'Comece adicionando conteúdo',
         primaryCTA: primaryCTALabel || 'Começar',

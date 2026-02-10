@@ -74,7 +74,7 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
   return (
     <div className="h-screen w-full flex flex-col bg-ceramic-base overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-gray-100 bg-white/50 backdrop-blur-sm">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-ceramic-border bg-ceramic-base/50 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -84,8 +84,8 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
               <ArrowLeft className="w-5 h-5 text-ceramic-text-primary" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-full bg-ceramic-accent/10 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-ceramic-accent" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-ceramic-text-primary">Aica Finance</h1>
@@ -107,7 +107,7 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
             </button>
             <button
               onClick={startNewSession}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-ceramic-base rounded-full transition-colors"
               title="Nova conversa"
             >
               <RefreshCw className="w-5 h-5 text-ceramic-text-secondary" />
@@ -120,13 +120,13 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
           <div className="mt-3 flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
               <span className="text-ceramic-text-secondary">Receitas:</span>
-              <span className="font-medium text-green-600">
+              <span className="font-medium text-ceramic-success">
                 {formatCurrency(context.summary.totalIncome)}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-ceramic-text-secondary">Despesas:</span>
-              <span className="font-medium text-red-600">
+              <span className="font-medium text-ceramic-error">
                 {formatCurrency(context.summary.totalExpenses)}
               </span>
             </div>
@@ -147,8 +147,8 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
         {loading ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <Sparkles className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-full bg-ceramic-accent/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Sparkles className="w-6 h-6 text-ceramic-accent" />
               </div>
               <p className="text-sm text-ceramic-text-secondary">
                 Carregando seus dados financeiros...
@@ -158,10 +158,10 @@ export const FinanceAgentView: React.FC<FinanceAgentViewProps> = ({ userId, onBa
         ) : error ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
-              <p className="text-sm text-red-600 mb-4">{error}</p>
+              <p className="text-sm text-ceramic-error mb-4">{error}</p>
               <button
                 onClick={loadContext}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-ceramic-warning text-white text-sm font-medium rounded-lg hover:bg-ceramic-warning/80 transition-colors"
               >
                 Tentar novamente
               </button>

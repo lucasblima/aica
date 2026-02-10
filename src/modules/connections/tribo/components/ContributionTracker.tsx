@@ -101,8 +101,8 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
 
       {/* Pending Amount */}
       {showPending && pendingAmount > 0 && (
-        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-center gap-2 text-yellow-800">
+        <div className="p-3 bg-ceramic-warning/10 border border-ceramic-warning/30 rounded-lg">
+          <div className="flex items-center gap-2 text-ceramic-warning">
             <span>⏳</span>
             <span className="text-sm">
               R$ {pendingAmount.toFixed(2)} em confirmação
@@ -113,8 +113,8 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
 
       {/* Contribution Type Info */}
       {fund.contributionType === 'mandatory' && (
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <div className="flex items-center gap-2 text-blue-800">
+        <div className="p-3 bg-ceramic-info/10 rounded-lg">
+          <div className="flex items-center gap-2 text-ceramic-info">
             <span>ℹ️</span>
             <span className="text-sm">Contribuição obrigatória</span>
           </div>
@@ -150,8 +150,8 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
               key={memberId}
               className={`p-3 rounded-lg border-2 transition-all ${
                 hasFullyContributed
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-white border-ceramic-200'
+                  ? 'bg-ceramic-success/10 border-ceramic-success/30'
+                  : 'bg-ceramic-base border-ceramic-border'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -176,11 +176,11 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
                     {member.displayName}
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="text-green-600 font-medium">
+                    <span className="text-ceramic-success font-medium">
                       R$ {data.confirmed.toFixed(2)}
                     </span>
                     {data.pending > 0 && (
-                      <span className="text-yellow-600">
+                      <span className="text-ceramic-warning">
                         +R$ {data.pending.toFixed(2)} pendente
                       </span>
                     )}
@@ -190,7 +190,7 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
                 {/* Status */}
                 {hasFullyContributed && (
                   <div className="flex-shrink-0">
-                    <span className="text-green-600 text-xl">✓</span>
+                    <span className="text-ceramic-success text-xl">✓</span>
                   </div>
                 )}
               </div>
@@ -212,7 +212,7 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
                         </span>
                         <span
                           className={
-                            contrib.isConfirmed ? 'text-green-600 ml-2' : 'text-yellow-600 ml-2'
+                            contrib.isConfirmed ? 'text-ceramic-success ml-2' : 'text-ceramic-warning ml-2'
                           }
                         >
                           R$ {contrib.amount.toFixed(2)}
@@ -255,7 +255,7 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
               .map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg"
+                  className="flex items-center gap-2 px-3 py-2 bg-ceramic-error/10 border border-ceramic-error/30 rounded-lg"
                 >
                   {member.avatarUrl && (
                     <img
@@ -264,7 +264,7 @@ export const ContributionTracker: React.FC<ContributionTrackerProps> = ({
                       className="w-5 h-5 rounded-full"
                     />
                   )}
-                  <span className="text-sm text-red-800">
+                  <span className="text-sm text-ceramic-error">
                     {member.displayName}
                   </span>
                 </div>

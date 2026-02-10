@@ -149,13 +149,13 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+        return <CheckCircle2 className="w-4 h-4 text-ceramic-success" />;
       case 'failed':
-        return <XCircle className="w-4 h-4 text-red-500" />;
+        return <XCircle className="w-4 h-4 text-ceramic-error" />;
       case 'processing':
-        return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />;
       default:
-        return <Clock className="w-4 h-4 text-yellow-500" />;
+        return <Clock className="w-4 h-4 text-ceramic-warning" />;
     }
   };
 
@@ -189,7 +189,7 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
       >
         <div className="flex items-center gap-3">
           <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-blue-600" />
+            <FileText className="w-5 h-5 text-ceramic-info" />
           </div>
           <div>
             <h3 className="font-bold text-ceramic-text-primary">
@@ -197,12 +197,12 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
             </h3>
             <p className="text-xs text-ceramic-text-secondary">
               {stats.total} documento{stats.total !== 1 ? 's' : ''} •{' '}
-              <span className="text-green-600">{stats.completed} indexado{stats.completed !== 1 ? 's' : ''}</span>
+              <span className="text-ceramic-success">{stats.completed} indexado{stats.completed !== 1 ? 's' : ''}</span>
               {stats.failed > 0 && (
-                <span className="text-red-600"> • {stats.failed} falha{stats.failed !== 1 ? 's' : ''}</span>
+                <span className="text-ceramic-error"> • {stats.failed} falha{stats.failed !== 1 ? 's' : ''}</span>
               )}
               {stats.pending > 0 && (
-                <span className="text-yellow-600"> • {stats.pending} pendente{stats.pending !== 1 ? 's' : ''}</span>
+                <span className="text-ceramic-warning"> • {stats.pending} pendente{stats.pending !== 1 ? 's' : ''}</span>
               )}
             </p>
           </div>
@@ -254,7 +254,7 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
                   <button
                     onClick={handleDeleteSelected}
                     disabled={isDeleting}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium disabled:opacity-50"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-ceramic-error/10 text-ceramic-error rounded-lg hover:bg-ceramic-error/20 transition-colors text-sm font-medium disabled:opacity-50"
                   >
                     {isDeleting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -279,11 +279,11 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
                 </div>
               ) : error ? (
                 <div className="p-8 text-center">
-                  <AlertTriangle className="w-8 h-8 mx-auto text-red-500 mb-2" />
-                  <p className="text-sm text-red-600">{error}</p>
+                  <AlertTriangle className="w-8 h-8 mx-auto text-ceramic-error mb-2" />
+                  <p className="text-sm text-ceramic-error">{error}</p>
                   <button
                     onClick={loadDocuments}
-                    className="mt-2 text-sm text-blue-600 hover:underline"
+                    className="mt-2 text-sm text-ceramic-info hover:underline"
                   >
                     Tentar novamente
                   </button>
@@ -304,7 +304,7 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
                     <div
                       key={doc.id}
                       className={`p-4 hover:bg-ceramic-hover/50 transition-colors ${
-                        selectedIds.has(doc.id) ? 'bg-blue-50' : ''
+                        selectedIds.has(doc.id) ? 'bg-ceramic-info-bg' : ''
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -318,7 +318,7 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
 
                         {/* Icon */}
                         <div className="ceramic-concave w-10 h-10 flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-5 h-5 text-red-500" />
+                          <FileText className="w-5 h-5 text-ceramic-error" />
                         </div>
 
                         {/* Info */}
@@ -366,7 +366,7 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
                           className="ceramic-concave p-2 hover:scale-105 transition-transform flex-shrink-0 disabled:opacity-50"
                           title="Deletar documento"
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 text-ceramic-error" />
                         </button>
                       </div>
                     </div>

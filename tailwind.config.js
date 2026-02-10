@@ -29,6 +29,16 @@ export default {
                 'ceramic-warm': '#F5E6D3',      // Tom quente para seleção/ativo
                 'ceramic-warm-hover': '#EFD9C0', // Hover no estado quente
                 'ceramic-warm-active': '#E8CEB0', // Estado ativo intensificado
+
+                // Ceramic Semantic Colors (Renaissance)
+                'ceramic-info': '#7B8FA2',
+                'ceramic-warning': '#C4883A',
+                'ceramic-success': '#6B7B5C',
+                'ceramic-error': '#9B4D3A',
+                'ceramic-info-bg': '#F0F2F5',
+                'ceramic-warning-bg': '#F8F0E5',
+                'ceramic-success-bg': '#F0F3ED',
+                'ceramic-error-bg': '#F5EFED',
             },
             animation: {
                 'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
@@ -55,12 +65,12 @@ export default {
                 }
             },
             boxShadow: {
-                'ceramic-inset': 'inset 3px 3px 6px rgba(163, 158, 145, 0.35), inset -3px -3px 6px rgba(255, 255, 255, 1.0)',
-                'ceramic-elevated': '6px 6px 12px rgba(163, 158, 145, 0.35), -6px -6px 12px rgba(255, 255, 255, 1.0)',
+                'ceramic-inset': 'inset 3px 3px 6px rgba(163, 158, 145, 0.25), inset -3px -3px 6px rgba(255, 255, 255, 0.95)',
+                'ceramic-elevated': '5px 5px 10px rgba(163, 158, 145, 0.25), -5px -5px 10px rgba(255, 255, 255, 0.95)',
                 // Digital Desire - Landing Page V2 shadows
                 'levitation': '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 40px rgba(217, 119, 6, 0.1)',
-                'bento': '6px 6px 12px rgba(163, 158, 145, 0.15), -6px -6px 12px rgba(255, 255, 255, 0.8)',
-                'bento-hover': '8px 8px 16px rgba(163, 158, 145, 0.20), -8px -8px 16px rgba(255, 255, 255, 0.9)',
+                'bento': '4px 4px 10px rgba(163, 158, 145, 0.12), -4px -4px 10px rgba(255, 255, 255, 0.8)',
+                'bento-hover': '6px 6px 14px rgba(163, 158, 145, 0.18), -6px -6px 14px rgba(255, 255, 255, 0.9)',
             },
             letterSpacing: {
                 'tighter': '-0.05em',

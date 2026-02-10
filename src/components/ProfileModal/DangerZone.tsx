@@ -69,7 +69,7 @@ export function DangerZone({ userEmail, onDeleteAccount, isDeleting }: DangerZon
             exit={{ opacity: 0, height: 0 }}
             className="space-y-3"
           >
-            <p className="text-xs text-red-600 font-medium">
+            <p className="text-xs text-ceramic-error font-medium">
               Para confirmar, digite seu email abaixo:
             </p>
             <input
@@ -77,7 +77,7 @@ export function DangerZone({ userEmail, onDeleteAccount, isDeleting }: DangerZon
               value={confirmationInput}
               onChange={(e) => setConfirmationInput(e.target.value)}
               placeholder={userEmail}
-              className="w-full px-3 py-2 text-sm border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+              className="w-full px-3 py-2 text-sm border border-ceramic-error/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-ceramic-error/50 bg-ceramic-base"
               autoComplete="off"
               autoFocus
             />
@@ -95,8 +95,8 @@ export function DangerZone({ userEmail, onDeleteAccount, isDeleting }: DangerZon
                 disabled={!isConfirmed || isDeleting}
                 className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors ${
                   isConfirmed && !isDeleting
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-red-200 text-red-400 cursor-not-allowed'
+                    ? 'bg-ceramic-error text-white hover:bg-ceramic-error/90'
+                    : 'bg-ceramic-error/20 text-ceramic-error/50 cursor-not-allowed'
                 }`}
                 whileHover={isConfirmed && !isDeleting ? { scale: 1.02 } : {}}
                 whileTap={isConfirmed && !isDeleting ? { scale: 0.98 } : {}}

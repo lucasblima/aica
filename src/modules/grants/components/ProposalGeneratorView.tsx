@@ -348,15 +348,15 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
   const getStatusColor = (status?: GrantResponse['status']): string => {
     switch (status) {
       case 'generating':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-ceramic-info-bg text-ceramic-info';
       case 'generated':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-ceramic-accent/10 text-ceramic-accent';
       case 'editing':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-ceramic-warning/10 text-ceramic-warning';
       case 'approved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-ceramic-success-bg text-ceramic-success';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-ceramic-base text-ceramic-text-primary';
     }
   };
 
@@ -365,8 +365,8 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
    */
   const getCharCountColor = (count: number, maxChars: number): string => {
     const percentage = (count / maxChars) * 100;
-    if (percentage > 100) return 'text-red-600';
-    if (percentage > 90) return 'text-orange-600';
+    if (percentage > 100) return 'text-ceramic-error';
+    if (percentage > 90) return 'text-ceramic-warning';
     return 'text-ceramic-text-secondary';
   };
 
@@ -453,19 +453,19 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                   {/* Compact Context Indicators */}
                   <div className="flex items-center gap-2">
                     {editalPdfContent && editalPdfContent.length > 0 && (
-                      <span className="flex items-center gap-1 text-purple-600">
+                      <span className="flex items-center gap-1 text-ceramic-accent">
                         <FileText className="w-3 h-3" />
                         PDF
                       </span>
                     )}
                     {projectDocumentsContent && projectDocumentsContent.length > 0 && (
-                      <span className="flex items-center gap-1 text-blue-600">
+                      <span className="flex items-center gap-1 text-ceramic-info">
                         <FileText className="w-3 h-3" />
                         Docs
                       </span>
                     )}
                     {Object.keys(briefing).length > 0 && (
-                      <span className="flex items-center gap-1 text-green-600">
+                      <span className="flex items-center gap-1 text-ceramic-success">
                         <Lightbulb className="w-3 h-3" />
                         Briefing
                       </span>
@@ -540,11 +540,11 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                       <h3 className="text-lg font-bold text-ceramic-text-primary mb-1">
                         {field.label}
                         {field.required && (
-                          <span className="ml-2 text-sm font-normal text-red-600">*</span>
+                          <span className="ml-2 text-sm font-normal text-ceramic-error">*</span>
                         )}
                       </h3>
                       {field.placeholder && (
-                        <p className="text-sm text-ceramic-text-tertiary">
+                        <p className="text-sm text-ceramic-text-secondary">
                           {field.placeholder}
                         </p>
                       )}
@@ -552,9 +552,9 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                     {/* Chevron - show when has content */}
                     {hasContent && (
                       isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
+                        <ChevronUp className="w-5 h-5 text-ceramic-text-secondary flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-ceramic-text-tertiary flex-shrink-0" />
+                        <ChevronDown className="w-5 h-5 text-ceramic-text-secondary flex-shrink-0" />
                       )
                     )}
                   </button>
@@ -589,7 +589,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                     {hasContent && state?.status !== 'approved' && !isEditing && !isGenerating && (
                       <button
                         onClick={() => approveField(field.id)}
-                        className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-green-50 text-green-700"
+                        className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-ceramic-success-bg text-ceramic-success"
                         title="Aprovar"
                       >
                         <Check className="w-4 h-4" />
@@ -608,7 +608,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                     )}
 
                     {isGenerating && (
-                      <div className="flex items-center gap-2 text-blue-600">
+                      <div className="flex items-center gap-2 text-ceramic-info">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span className="text-sm font-medium">Gerando...</span>
                       </div>
@@ -630,7 +630,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                         />
                       ))}
                     </div>
-                    <div className="mt-3 flex items-center justify-center gap-2 text-sm text-blue-600">
+                    <div className="mt-3 flex items-center justify-center gap-2 text-sm text-ceramic-info">
                       <Sparkles className="w-4 h-4 animate-pulse" />
                       <span>IA está gerando conteúdo para "{field.label}"...</span>
                     </div>
@@ -716,7 +716,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                             {state?.status !== 'approved' && (
                               <button
                                 onClick={() => approveField(field.id)}
-                                className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-green-50 text-green-700"
+                                className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-ceramic-success-bg text-ceramic-success"
                                 title="Aprovar"
                               >
                                 <Check className="w-4 h-4" />
@@ -728,7 +728,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                           <>
                             <button
                               onClick={() => saveEdit(field.id)}
-                              className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-green-50 text-green-700"
+                              className="ceramic-concave px-4 py-2 rounded-xl font-medium text-sm hover:scale-95 transition-transform flex items-center gap-2 bg-ceramic-success-bg text-ceramic-success"
                             >
                               <Check className="w-4 h-4" />
                               Salvar
@@ -756,7 +756,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`sticky bottom-0 ${GRANTS_GRADIENTS.background.footer} border-t border-green-200 shadow-lg`}
+          className={`sticky bottom-0 ${GRANTS_GRADIENTS.background.footer} border-t border-ceramic-border shadow-lg`}
         >
           <div className="max-w-6xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between">
@@ -772,10 +772,10 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                   </button>
                 )}
                 <div>
-                  <h3 className="text-lg font-bold text-green-900 mb-1">
+                  <h3 className="text-lg font-bold text-ceramic-success mb-1">
                     Proposta Completa!
                   </h3>
-                  <p className="text-sm text-green-700">
+                  <p className="text-sm text-ceramic-success">
                     Todos os campos foram aprovados. Pronto para exportar ou submeter.
                   </p>
                 </div>
@@ -827,7 +827,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                   {/* Modal Header */}
                   <div className={`${GRANTS_GRADIENTS.background.header} p-6`}>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="ceramic-convex w-12 h-12 flex items-center justify-center bg-white/20">
+                      <div className="ceramic-convex w-12 h-12 flex items-center justify-center bg-ceramic-base/20">
                         <CheckCircle2 className="w-6 h-6 text-white" />
                       </div>
                       <div>
@@ -845,7 +845,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                   <div className="p-6 space-y-4">
                     <div className="ceramic-tray p-4 rounded-lg">
                       <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <AlertCircle className="w-5 h-5 text-ceramic-info flex-shrink-0 mt-0.5" />
                         <div className="text-sm text-ceramic-text-secondary">
                           <p className="font-medium mb-2">Você está prestes a submeter a proposta:</p>
                           <ul className="list-disc list-inside space-y-1 text-xs">
@@ -857,8 +857,8 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-xs text-blue-800">
+                    <div className="bg-ceramic-info-bg border border-ceramic-border rounded-lg p-4">
+                      <p className="text-xs text-ceramic-info">
                         <strong>Dica:</strong> Você pode clicar em "Continuar Revisando" para fazer ajustes finais antes de submeter.
                       </p>
                     </div>
@@ -890,7 +890,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
               {submissionPhase === 'submitting' && (
                 <div className="p-12 flex flex-col items-center justify-center">
                   <div className="relative">
-                    <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
+                    <Loader2 className="w-12 h-12 text-ceramic-success animate-spin" />
                     <svg className="absolute inset-0 w-20 h-20 -m-4" viewBox="0 0 100 100">
                       <circle
                         cx="50"
@@ -899,7 +899,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="4"
-                        className="text-green-200"
+                        className="text-ceramic-success/30"
                       />
                       <motion.circle
                         cx="50"
@@ -909,7 +909,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                         stroke="currentColor"
                         strokeWidth="4"
                         strokeLinecap="round"
-                        className="text-green-600"
+                        className="text-ceramic-success"
                         strokeDasharray="226"
                         initial={{ strokeDashoffset: 226 }}
                         animate={{ strokeDashoffset: 0 }}
@@ -996,7 +996,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                              <Download className="w-5 h-5 text-blue-600" />
+                              <Download className="w-5 h-5 text-ceramic-info" />
                             </div>
                             <div>
                               <p className="font-bold text-ceramic-text-primary text-sm">
@@ -1023,7 +1023,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                              <ExternalLink className="w-5 h-5 text-purple-600" />
+                              <ExternalLink className="w-5 h-5 text-ceramic-accent" />
                             </div>
                             <div>
                               <p className="font-bold text-ceramic-text-primary text-sm">
@@ -1052,7 +1052,7 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                                <FileText className="w-5 h-5 text-green-600" />
+                                <FileText className="w-5 h-5 text-ceramic-success" />
                               </div>
                               <div>
                                 <p className="font-bold text-ceramic-text-primary text-sm">
@@ -1077,14 +1077,14 @@ export const ProposalGeneratorView: React.FC<ProposalGeneratorViewProps> = ({
                 <div className="p-8">
                   <div className="flex flex-col items-center">
                     <motion.div
-                      className="ceramic-concave w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-4"
+                      className="ceramic-concave w-20 h-20 rounded-full bg-ceramic-error-bg flex items-center justify-center mb-4"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 200 }}
                     >
-                      <AlertCircle className="w-10 h-10 text-red-600" />
+                      <AlertCircle className="w-10 h-10 text-ceramic-error" />
                     </motion.div>
-                    <h3 className="text-xl font-bold text-red-900 mb-2">
+                    <h3 className="text-xl font-bold text-ceramic-error mb-2">
                       Erro ao Submeter
                     </h3>
                     <p className="text-sm text-ceramic-text-secondary text-center mb-6">
