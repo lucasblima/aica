@@ -309,7 +309,7 @@ export async function indexDocument(
       body: JSON.stringify({
         action: 'upload_document',
         payload: {
-          corpusId: request.corpusId,
+          corpusId: request.corpus_id,
           file: {
             name: request.file.name,
             type: request.file.type,
@@ -317,8 +317,8 @@ export async function indexDocument(
             size: request.file.size,
           },
           metadata: request.metadata,
-          moduleType: request.moduleType,
-          moduleId: request.moduleId,
+          moduleType: request.module_type,
+          moduleId: request.module_id,
         },
       }),
     });
@@ -333,19 +333,19 @@ export async function indexDocument(
     const { result } = await response.json();
 
     // ✅ CACHE: Invalidate module cache (new document changes search results)
-    fileSearchCache.invalidateModule(request.moduleType, request.moduleId);
-    log.debug('[fileSearchApiClient] Cache invalidated for module:', request.moduleType, request.moduleId);
+    fileSearchCache.invalidateModule(request.module_type, request.module_id);
+    log.debug('[fileSearchApiClient] Cache invalidated for module:', request.module_type, request.module_id);
 
     // Track AI usage for document indexing (fire-and-forget, non-blocking)
     const duration = (Date.now() - startTime) / 1000;
     trackAIUsage({
       operation_type: 'embedding',
       ai_model: 'text-embedding-004', // Gemini embeddings for semantic indexing
-      module_type: request.moduleType,
-      module_id: request.moduleId,
+      module_type: request.module_type,
+      module_id: request.module_id,
       duration_seconds: duration,
       request_metadata: {
-        corpus_id: request.corpusId,
+        corpus_id: request.corpus_id,
         file_name: request.file.name,
         file_size: request.file.size,
         mime_type: request.file.type,
@@ -360,13 +360,13 @@ export async function indexDocument(
       id: result.id,
       name: result.geminiFileName,
       displayName: request.metadata?.display_name || request.file.name,
-      corpusId: request.corpusId,
+      corpusId: request.corpus_id,
       mimeType: request.file.type,
       sizeBytes: request.file.size,
       status: result.status,
       createdAt: new Date().toISOString(),
-      moduleType: request.moduleType,
-      moduleId: request.moduleId,
+      moduleType: request.module_type,
+      moduleId: request.module_id,
       metadata: request.metadata,
     };
   } catch (error) {
