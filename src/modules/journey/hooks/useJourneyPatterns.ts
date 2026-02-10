@@ -175,7 +175,7 @@ export function useJourneyPatterns(userId?: string) {
       .from('moments')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', uid)
-      .or('tags.is.null,tags.eq.{}')
+      .is('tags', null)
       .not('content', 'is', null)
 
     if (countErr || !count || count === 0) {
@@ -193,7 +193,7 @@ export function useJourneyPatterns(userId?: string) {
       .from('moments')
       .select('id, content')
       .eq('user_id', uid)
-      .or('tags.is.null,tags.eq.{}')
+      .is('tags', null)
       .not('content', 'is', null)
       .order('created_at', { ascending: false })
       .limit(totalToProcess)
@@ -235,7 +235,7 @@ export function useJourneyPatterns(userId?: string) {
           energyLevel: number
         }
 
-        await supabase
+        const { error: updateErr } = await supabase
           .from('moments')
           .update({
             tags: result.tags,
@@ -251,6 +251,14 @@ export function useJourneyPatterns(userId?: string) {
           })
           .eq('id', moment.id)
           .eq('user_id', uid)
+
+        if (updateErr) {
+          log.warn(`Backfill DB update failed for moment ${moment.id}:`, updateErr)
+          failed++
+          processed++
+          setBackfillProgress(prev => ({ ...prev, processed, failed }))
+          continue
+        }
 
         processed++
         setBackfillProgress(prev => ({ ...prev, processed }))

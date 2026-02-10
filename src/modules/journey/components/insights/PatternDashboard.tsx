@@ -10,7 +10,7 @@ import { useJourneyPatterns, BackfillProgress } from '../../hooks/useJourneyPatt
 import { EmotionTrendChart } from './EmotionTrendChart'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { ThemeClusters } from './ThemeClusters'
-import { ChartBarIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { SparklesIcon, XMarkIcon } from '@heroicons/react/24/solid'
 
 interface PatternDashboardProps {
   userId?: string
@@ -106,20 +106,7 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
     return <PatternDashboardSkeleton />
   }
 
-  const hasData = emotionTrends.length > 0 || activityData.length > 0 || topThemes.length > 0
   const showBackfillBanner = backfillProgress.isRunning || (backfillProgress.processed > 0 && backfillProgress.total > 0)
-
-  if (!hasData && !showBackfillBanner) {
-    return (
-      <div className="ceramic-tile p-8 text-center">
-        <ChartBarIcon className="h-10 w-10 text-[#C4A574] mx-auto mb-3" />
-        <h4 className="text-sm font-semibold text-[#5C554B] mb-1">Padroes em Construcao</h4>
-        <p className="text-xs text-[#948D82] max-w-sm mx-auto">
-          Continue registrando momentos e respondendo perguntas. Seus padroes aparecerao aqui conforme dados se acumulam.
-        </p>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-4">
@@ -135,7 +122,7 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0 }}
       >
-        <EmotionTrendChart data={emotionTrends} />
+        <ActivityHeatmap data={activityData} />
       </motion.div>
 
       <motion.div
@@ -143,7 +130,7 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <ActivityHeatmap data={activityData} />
+        <EmotionTrendChart data={emotionTrends} />
       </motion.div>
 
       <motion.div
@@ -151,7 +138,7 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <ThemeClusters themes={topThemes} />
+        <ThemeClusters themes={topThemes} isBackfilling={backfillProgress.isRunning} />
       </motion.div>
     </div>
   )
