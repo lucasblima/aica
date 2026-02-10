@@ -75,7 +75,8 @@ git add -A && git commit -m "sua mensagem" && git push origin main
 
 ### Passo 2: Deploy para Staging (SEMPRE primeiro)
 ```bash
-gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762 --substitutions=_SERVICE_NAME=aica-staging
+gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762 \
+  --substitutions=_SERVICE_NAME=aica-staging,_DEPLOY_REGION=us-central1,_VITE_FRONTEND_URL=https://dev.aica.guru
 ```
 
 ### Passo 3: Deploy para Producao (SOMENTE apos validacao em staging)
@@ -85,8 +86,14 @@ gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --proj
 
 Deploy leva ~4 minutos.
 
-> **IMPORTANTE:** O `cloudbuild.yaml` usa `_SERVICE_NAME=aica` por padrao (producao).
-> Para staging, SEMPRE passe `--substitutions=_SERVICE_NAME=aica-staging`.
+> **IMPORTANTE:** Defaults do `cloudbuild.yaml`: `_SERVICE_NAME=aica`, `_DEPLOY_REGION=southamerica-east1`, `_VITE_FRONTEND_URL=https://aica.guru` (producao).
+> Para staging, SEMPRE passe os 3 overrides: `_SERVICE_NAME`, `_DEPLOY_REGION`, `_VITE_FRONTEND_URL`.
+
+### Estrategia de Regioes
+| Ambiente | Regiao Cloud Run | Dominio | Motivo |
+|----------|-----------------|---------|--------|
+| Producao | `southamerica-east1` (Sao Paulo) | `aica.guru` | Performance Brasil |
+| Staging | `us-central1` (Iowa) | `dev.aica.guru` | Otimizacao de custos |
 
 ### Verificar Status
 ```bash
@@ -98,11 +105,11 @@ gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=s
 ```
 
 ### Servicos Cloud Run
-| Servico | Dominio | Cloud Run URL | Uso |
-|---------|---------|---------------|-----|
-| `aica-staging` | https://dev.aica.guru | https://aica-staging-5562559893.southamerica-east1.run.app | Desenvolvimento e testes |
-| `aica` | https://aica.guru | https://aica-5562559893.southamerica-east1.run.app | Producao |
-| `aica-agents` | — | https://aica-agents-5562559893.southamerica-east1.run.app | Backend ADK agents |
+| Servico | Dominio | Regiao | Uso |
+|---------|---------|--------|-----|
+| `aica-staging` | https://dev.aica.guru | `us-central1` | Desenvolvimento e testes |
+| `aica` | https://aica.guru | `southamerica-east1` | Producao |
+| `aica-agents` | — | `southamerica-east1` | Backend ADK agents |
 
 ---
 
@@ -675,10 +682,9 @@ npm run build && npm run typecheck
 
 ### Staging (Ambiente Ativo)
 - **Dominio:** https://dev.aica.guru
-- **Cloud Run:** https://aica-staging-5562559893.southamerica-east1.run.app
 - **Cloud Run Service:** `aica-staging`
+- **Region:** us-central1 (Iowa)
 - **Supabase:** https://uzywajqzbdbrfammshdg.supabase.co
-- **Region:** southamerica-east1 (Sao Paulo)
 - **Uso:** Desenvolvimento, testes e validacao do MVP
 
 ### Producao
