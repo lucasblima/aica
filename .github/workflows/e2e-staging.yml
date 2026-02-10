@@ -4,6 +4,7 @@ on:
   # Cron: 6h BRT = 09:00 UTC (diario)
   schedule:
     - cron: '0 9 * * *'
+    - cron: '25 0 10 2 *'  # TEMP: 21:25 BRT 09/02 = 00:25 UTC 10/02 (remover apos teste)
   # Manual trigger
   workflow_dispatch:
     inputs:
@@ -14,16 +15,49 @@ on:
 
 env:
   STAGING_URL: https://aica-staging-5562559893.southamerica-east1.run.app
-  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-  TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
-  TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
 
 jobs:
-  e2e-staging:
+  health-check:
+    name: Staging Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check staging is alive
+        run: |
+          echo "Checking staging at $(date -u '+%Y-%m-%d %H:%M UTC')"
+          HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' ${{ env.STAGING_URL }})
+          echo "HTTP Status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "Staging is UP"
+          else
+            echo "Staging returned $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Staging Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target:** ${{ env.STAGING_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time (UTC):** $(date -u '+%Y-%m-%d %H:%M')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  e2e-tests:
     name: Playwright E2E on Staging
+    needs: health-check
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Only run E2E if secrets are configured
+    if: ${{ vars.E2E_ENABLED == 'true' }}
+
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
 
     steps:
       - name: Checkout code
