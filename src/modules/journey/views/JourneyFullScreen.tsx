@@ -280,10 +280,12 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       refreshStats()
 
-      // Do NOT auto-refresh question here.
-      // The DailyQuestionCard shows "answered" state locally.
-      // Auto-refreshing when no unanswered questions exist caused an infinite loop:
-      // refresh → no questions → re-serve same question → user answers again → loop
+      // Fetch next question after delay to show success feedback.
+      // Safe because getDailyQuestion now returns null (not a re-served answered question)
+      // when no unanswered questions exist, so no infinite loop.
+      setTimeout(() => {
+        refreshQuestion()
+      }, 2000)
     } catch (error) {
       log.error('Error answering question:', error)
       // Re-throw to let the card component handle UI state
