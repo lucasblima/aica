@@ -53,20 +53,10 @@ export async function createMoment(
 
     if (insertError) throw insertError
 
-    // Analyze sentiment in background (non-blocking)
-    analyzeMomentSentiment(finalContent || '')
-      .then(async (sentimentData) => {
-        // Update moment with sentiment data
-        await supabase
-          .from('moments')
-          .update({ sentiment_data: sentimentData })
-          .eq('id', moment.id)
-          .eq('user_id', userId)
-
-        log.debug('Sentiment analysis completed for moment:', moment.id)
-      })
+    // Analyze moment in background: tags + mood + sentiment in 1 call (non-blocking)
+    analyzeMomentFull(finalContent || '', moment.id, userId)
       .catch((error) => {
-        log.warn('Background sentiment analysis failed (non-critical):', error)
+        log.warn('Background moment analysis failed (non-critical):', error)
       })
 
     // Award CP and update streak in BACKGROUND (non-blocking, fire-and-forget)
@@ -260,47 +250,70 @@ export async function getMomentsCount(userId: string, filter?: MomentFilter): Pr
 // =====================================================
 
 /**
- * Analyze moment sentiment using Gemini
+ * Analyze moment fully: tags + mood + sentiment in 1 Gemini call
+ * Updates the moment in DB with results
  */
-async function analyzeMomentSentiment(content: string): Promise<SentimentAnalysis> {
+async function analyzeMomentFull(content: string, momentId: string, userId: string): Promise<void> {
   const startTime = Date.now()
 
   try {
     const response = await geminiClient.call({
-      action: 'analyze_moment_sentiment',
+      action: 'analyze_moment',
       payload: { content },
       model: 'fast',
     })
 
+    const result = response.result as {
+      tags: string[]
+      mood: { emoji: string; label: string }
+      sentiment: string
+      sentimentScore: number
+      emotions: string[]
+      triggers: string[]
+      energyLevel: number
+    }
+
+    // Build sentiment_data in the existing format
+    const sentimentData: SentimentAnalysis = {
+      timestamp: new Date(),
+      sentiment: result.sentiment as SentimentAnalysis['sentiment'],
+      sentimentScore: result.sentimentScore,
+      emotions: result.emotions,
+      triggers: result.triggers,
+      energyLevel: result.energyLevel,
+    }
+
+    // Update moment with tags + mood + sentiment in one DB call
+    await supabase
+      .from('moments')
+      .update({
+        tags: result.tags,
+        emotion: `${result.mood.emoji} ${result.mood.label}`,
+        sentiment_data: sentimentData,
+      })
+      .eq('id', momentId)
+      .eq('user_id', userId)
+
+    log.debug('Full moment analysis completed:', momentId)
+
     // Track AI usage (non-blocking, fire-and-forget)
+    const resp = response as any
     trackAIUsage({
       operation_type: 'text_generation',
-      ai_model: response.model || 'gemini-2.0-flash',
-      input_tokens: response.usageMetadata?.promptTokenCount || 0,
-      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      ai_model: resp.model || 'gemini-2.5-flash',
+      input_tokens: resp.usageMetadata?.promptTokenCount || 0,
+      output_tokens: resp.usageMetadata?.candidatesTokenCount || 0,
       module_type: 'journey',
       duration_seconds: (Date.now() - startTime) / 1000,
       request_metadata: {
-        function_name: 'analyzeMomentSentiment',
-        operation: 'sentiment_analysis',
+        function_name: 'analyzeMomentFull',
+        operation: 'analyze_moment',
         content_length: content.length,
       }
     }).catch(error => {
-      // Non-blocking: log error but don't throw
-      log.warn('[Journey AI Tracking] Non-blocking error:', error.message);
-    });
-
-    return response.result as SentimentAnalysis
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message)
+    })
   } catch (error) {
-    log.error('Error analyzing sentiment:', error)
-    // Return neutral sentiment as fallback
-    return {
-      timestamp: new Date(),
-      sentiment: 'neutral',
-      sentimentScore: 0,
-      emotions: [],
-      triggers: [],
-      energyLevel: 50,
-    }
+    log.error('Error in full moment analysis:', error)
   }
 }

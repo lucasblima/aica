@@ -16,7 +16,7 @@ import {
   AnswerQuestionInput,
   AnswerQuestionResult,
 } from '../types/dailyQuestion'
-import { checkAndTriggerGenerationIfNeeded } from './questionGenerationService'
+import { checkAndTriggerGenerationIfNeeded, triggerQuestionGeneration } from './questionGenerationService'
 
 const log = createNamespacedLogger('QuestionService')
 
@@ -45,14 +45,28 @@ export async function getDailyQuestion(userId: string): Promise<QuestionWithResp
 
     log.debug('Unanswered questions from RPC:', unansweredQuestions?.length || 0)
 
-    // If no unanswered questions, trigger generation in background and return null
-    // IMPORTANT: Do NOT re-serve answered questions with user_response stripped —
-    // that causes the card to show the answer form again, creating an infinite loop
+    // If no unanswered questions, generate new ones and retry
     if (!unansweredQuestions || unansweredQuestions.length === 0) {
-      log.info('No unanswered questions available, triggering generation in background')
-      checkAndTriggerGenerationIfNeeded(userId).catch(() => {
-        // Errors logged in service
-      })
+      log.info('No unanswered questions available, generating new ones...')
+
+      // Await generation (forceRegenerate bypasses 12h cooldown and daily limit)
+      const genResult = await triggerQuestionGeneration({ batchSize: 5, forceRegenerate: true })
+      log.info('Generation result:', { success: genResult.success, generated: genResult.questionsGenerated })
+
+      if (genResult.success && genResult.questionsGenerated > 0) {
+        // Retry RPC to get newly generated question
+        const { data: newQuestions } = await supabase.rpc(
+          'get_unanswered_question',
+          { p_user_id: userId, p_limit: 3 }
+        )
+
+        if (newQuestions && newQuestions.length > 0) {
+          const randomIndex = Math.floor(Math.random() * newQuestions.length)
+          const selected = newQuestions[randomIndex] as DailyQuestion
+          log.debug('Got newly generated question', { questionId: selected.id })
+          return { ...selected, user_response: undefined }
+        }
+      }
 
       return null
     }

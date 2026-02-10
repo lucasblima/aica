@@ -101,6 +101,26 @@ function WeeklySummarySkeleton() {
   )
 }
 
+function DailyQuestionRetryState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="bg-gradient-to-br from-white to-amber-50 border-2 border-amber-200 rounded-xl p-6 text-center">
+      <SparklesIcon className="h-8 w-8 text-amber-500 mx-auto mb-3" />
+      <h3 className="text-base font-semibold text-[#5C554B] mb-1">
+        Não foi possível gerar perguntas agora
+      </h3>
+      <p className="text-sm text-[#948D82] mb-4">
+        Tente novamente em alguns instantes.
+      </p>
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-all"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  )
+}
+
 function InsightsEmptyState() {
   return (
     <motion.div
@@ -368,7 +388,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
           </div>
 
           {/* Main content area (75%) */}
-          <div className="lg:col-span-9 space-y-6">
+          <div className="lg:col-span-9 space-y-6 pb-40">
             {/* Tabs - Ceramic Filter Tabs */}
             <div className="flex gap-2 mb-4">
               <CeramicFilterTab
@@ -419,7 +439,9 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                         onSkip={skipQuestion}
                       />
                     </motion.div>
-                  ) : null}
+                  ) : (
+                    <DailyQuestionRetryState onRetry={refreshQuestion} />
+                  )}
 
                   <UnifiedTimelineView userId={user?.id} layout="masonry" />
                 </motion.div>

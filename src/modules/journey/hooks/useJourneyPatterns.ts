@@ -3,12 +3,14 @@
  * Fetches aggregated data for the Pattern Dashboard (Issue #208)
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/services/supabaseClient'
+import { GeminiClient } from '@/lib/gemini'
 import { createNamespacedLogger } from '@/lib/logger'
 import { WeeklySummary } from '../types/weeklySummary'
 
 const log = createNamespacedLogger('useJourneyPatterns')
+const geminiClient = GeminiClient.getInstance()
 
 export interface EmotionTrendPoint {
   weekNumber: number
@@ -34,6 +36,8 @@ export interface JourneyPatternsData {
   topThemes: ThemeEntry[]
 }
 
+const BACKFILL_MAX_PER_SESSION = 5
+
 export function useJourneyPatterns(userId?: string) {
   const [data, setData] = useState<JourneyPatternsData>({
     emotionTrends: [],
@@ -42,6 +46,7 @@ export function useJourneyPatterns(userId?: string) {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
+  const backfillTriggeredRef = useRef(false)
 
   const fetchPatterns = useCallback(async () => {
     if (!userId) return
@@ -114,6 +119,14 @@ export function useJourneyPatterns(userId?: string) {
           .map(([tag, count]) => ({ tag, count }))
           .sort((a, b) => b.count - a.count)
           .slice(0, 12)
+
+        // Backfill: if no themes found but moments exist, analyze untagged moments
+        if (topThemes.length === 0 && momentsResult.value.data.length > 0 && !backfillTriggeredRef.current) {
+          backfillTriggeredRef.current = true
+          backfillUntaggedMoments(userId).catch(err => {
+            log.warn('Backfill tags failed (non-critical):', err)
+          })
+        }
       }
 
       setData({ emotionTrends, activityData, topThemes })
@@ -130,5 +143,70 @@ export function useJourneyPatterns(userId?: string) {
     isLoading,
     error,
     refresh: fetchPatterns,
+  }
+}
+
+/**
+ * Backfill tags for moments that have content but no tags.
+ * Processes up to BACKFILL_MAX_PER_SESSION moments per session to avoid Gemini overload.
+ */
+async function backfillUntaggedMoments(userId: string): Promise<void> {
+  // Fetch moments with content but no tags
+  const { data: untagged, error } = await supabase
+    .from('moments')
+    .select('id, content')
+    .eq('user_id', userId)
+    .or('tags.is.null,tags.eq.{}')
+    .not('content', 'is', null)
+    .gt('content', '')
+    .order('created_at', { ascending: false })
+    .limit(BACKFILL_MAX_PER_SESSION)
+
+  if (error || !untagged || untagged.length === 0) return
+
+  log.debug(`Backfilling tags for ${untagged.length} untagged moments`)
+
+  // Process sequentially to respect rate limits
+  for (const moment of untagged) {
+    if (!moment.content || moment.content.trim().length < 3) continue
+
+    try {
+      const response = await geminiClient.call({
+        action: 'analyze_moment',
+        payload: { content: moment.content },
+        model: 'fast',
+      })
+
+      const result = response.result as {
+        tags: string[]
+        mood: { emoji: string; label: string }
+        sentiment: string
+        sentimentScore: number
+        emotions: string[]
+        triggers: string[]
+        energyLevel: number
+      }
+
+      await supabase
+        .from('moments')
+        .update({
+          tags: result.tags,
+          emotion: `${result.mood.emoji} ${result.mood.label}`,
+          sentiment_data: {
+            timestamp: new Date().toISOString(),
+            sentiment: result.sentiment,
+            sentimentScore: result.sentimentScore,
+            emotions: result.emotions,
+            triggers: result.triggers,
+            energyLevel: result.energyLevel,
+          },
+        })
+        .eq('id', moment.id)
+        .eq('user_id', userId)
+
+      log.debug(`Backfilled tags for moment ${moment.id}`)
+    } catch (err) {
+      log.warn(`Backfill failed for moment ${moment.id}:`, err)
+    }
   }
 }

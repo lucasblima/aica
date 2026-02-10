@@ -632,6 +632,71 @@ async function handleGenerateTags(genAI: GoogleGenerativeAI, payload: any): Prom
 }
 
 // ============================================================================
+// ANALYZE MOMENT (Combined tags + mood + sentiment in 1 call)
+// ============================================================================
+
+interface AnalyzeMomentPayload {
+  content: string
+}
+
+interface AnalyzeMomentResult {
+  tags: string[]
+  mood: { emoji: string; label: string }
+  sentiment: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative'
+  sentimentScore: number
+  emotions: string[]
+  triggers: string[]
+  energyLevel: number
+}
+
+async function handleAnalyzeMoment(genAI: GoogleGenerativeAI, payload: AnalyzeMomentPayload): Promise<AnalyzeMomentResult> {
+  if (!payload.content || typeof payload.content !== 'string') throw new Error('Campo "content" e obrigatorio')
+  if (payload.content.trim().length < 3) throw new Error('Conteudo muito curto para analise')
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: { temperature: 0.3, topP: 0.8, topK: 40, maxOutputTokens: 512 },
+  })
+
+  const prompt = `Analise o seguinte momento de diario pessoal escrito em portugues:
+
+"${payload.content}"
+
+Retorne um JSON com:
+- tags: lista de 3 a 5 palavras-chave tematicas (em portugues, minusculas, sem acentos)
+- mood: objeto com "emoji" (1 emoji) e "label" (1-2 palavras descrevendo o humor, em portugues)
+- sentiment: 'very_positive', 'positive', 'neutral', 'negative', ou 'very_negative'
+- sentimentScore: numero de -1 (muito negativo) a 1 (muito positivo)
+- emotions: lista de emocoes detectadas (maximo 5, em portugues)
+- triggers: lista de gatilhos/contextos (maximo 3)
+- energyLevel: nivel de energia percebido de 0 a 100
+
+Retorne APENAS o JSON.`
+
+  const result = await model.generateContent(prompt)
+  const text = result.response.text()
+  const parsed: AnalyzeMomentResult = extractJSON(text)
+
+  // Validate and normalize
+  parsed.tags = Array.isArray(parsed.tags) ? parsed.tags.slice(0, 7).map(t => String(t).toLowerCase()) : []
+  if (!parsed.mood || typeof parsed.mood !== 'object') parsed.mood = { emoji: '😐', label: 'Neutro' }
+  parsed.mood.label = String(parsed.mood.label || 'Neutro').substring(0, 20)
+  parsed.mood.emoji = String(parsed.mood.emoji || '😐').substring(0, 4)
+
+  const validSentiments = ['very_positive', 'positive', 'neutral', 'negative', 'very_negative']
+  if (!validSentiments.includes(parsed.sentiment)) parsed.sentiment = 'neutral'
+  parsed.sentimentScore = Math.max(-1, Math.min(1, parsed.sentimentScore || 0))
+  parsed.emotions = Array.isArray(parsed.emotions) ? parsed.emotions.slice(0, 5) : []
+  parsed.triggers = Array.isArray(parsed.triggers) ? parsed.triggers.slice(0, 3) : []
+  parsed.energyLevel = Math.max(0, Math.min(100, parsed.energyLevel || 50))
+
+  return {
+    ...parsed,
+    __usageMetadata: result.response.usageMetadata,
+  } as any
+}
+
+// ============================================================================
 // DAILY REPORT HANDLER
 // ============================================================================
 
@@ -1380,6 +1445,9 @@ serve(async (req) => {
           break
         case 'generate_tags':
           result = await handleGenerateTags(genAI, payload)
+          break
+        case 'analyze_moment':
+          result = await handleAnalyzeMoment(genAI, payload as AnalyzeMomentPayload)
           break
         default:
           return new Response(JSON.stringify({ error: `Action desconhecida: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })

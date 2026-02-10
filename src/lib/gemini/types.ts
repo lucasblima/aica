@@ -57,6 +57,7 @@ export type GeminiAction =
   | 'generate_daily_question'
   | 'transcribe_audio'
   | 'generate_tags'
+  | 'analyze_moment'
 
   // Grants (Módulo Captação)
   | 'generate_field_content'
