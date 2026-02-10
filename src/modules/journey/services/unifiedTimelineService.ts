@@ -127,10 +127,13 @@ function enrichEventWithDisplayData(event: UnifiedEvent): UnifiedEvent {
 
     case 'moment': {
       const moment = event as MomentEvent
+      // emotion field stores "emoji label" (e.g. "😐 Neutro") — extract just the emoji for icon
+      const emotionEmoji = moment.emotion?.match(/^\p{Emoji}/u)?.[0] || '📝'
+      const emotionLabel = moment.emotion?.replace(/^\p{Emoji}\s*/u, '').trim() || ''
       displayData = {
-        icon: moment.emotion || '📝',
+        icon: emotionEmoji,
         title: moment.title || 'Momento',
-        label: 'Momento',
+        label: emotionLabel || 'Momento',
         color: '#C4A574',
         preview: moment.content.slice(0, 120) + (moment.content.length > 120 ? '...' : ''),
       }
