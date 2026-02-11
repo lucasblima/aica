@@ -762,6 +762,32 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ---
 
+## Session End Protocol
+
+At the end of every Claude Code session (when all tasks are complete), **ALWAYS** execute:
+
+1. **Commit** all changes with descriptive message + co-authorship
+2. **Push** to `origin/main`
+3. **Deploy to staging** (`dev.aica.guru`):
+   ```bash
+   gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762 \
+     --substitutions=_SERVICE_NAME=aica-dev,_DEPLOY_REGION=us-central1,_VITE_FRONTEND_URL=https://dev.aica.guru
+   ```
+4. **Push migrations** if any new `.sql` files were created:
+   ```bash
+   SUPABASE_ACCESS_TOKEN=sbp_... npx supabase db push
+   ```
+5. **Deploy Edge Functions** if any were created/modified:
+   ```bash
+   SUPABASE_ACCESS_TOKEN=sbp_... npx supabase functions deploy <name> --no-verify-jwt
+   ```
+6. **Create a GitHub issue** summarizing the session work with label `staging-ready`, so the user can validate on staging and approve production deploy
+
+> **Production deploy** only happens when the user validates the staging deployment and explicitly requests "deploy producao".
+> Each session's GitHub issue serves as the validation checkpoint.
+
+---
+
 ## Critical Reminders
 
 - **NEVER** create backup files (.backup, .bak) - Git is the backup
@@ -774,6 +800,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **ALWAYS** use `@supabase/ssr` for authentication
 - **ALWAYS** include co-authorship in commits
 - **ALWAYS** use GeminiClient singleton for AI calls
+- **ALWAYS** follow Session End Protocol at end of every session
 
 ---
 
