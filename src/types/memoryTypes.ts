@@ -173,6 +173,25 @@ export interface ContactNetwork {
   // ==========================================================================
   last_message_preview?: string; // Truncated preview of last message (max 100 chars)
   last_message_direction?: 'incoming' | 'outgoing'; // Direction of last message
+
+  // ==========================================================================
+  // Conversation Intelligence — Phase 1 (Dossier)
+  // ==========================================================================
+  dossier_summary?: string | null;
+  dossier_topics?: string[];
+  dossier_pending_items?: string[];
+  dossier_context?: Record<string, unknown> | null;
+  dossier_updated_at?: string | null;
+  dossier_version?: number;
+
+  // ==========================================================================
+  // Conversation Intelligence — Phase 4 (Group Intelligence)
+  // ==========================================================================
+  participant_count?: number;
+  active_participants?: number;
+  decisions_count?: number;
+  group_purpose?: string | null;
+  group_activity_score?: number;
 }
 
 export interface ContactNetworkCreateInput {

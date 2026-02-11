@@ -211,7 +211,12 @@ function extractJSON(text: string): unknown {
 /**
  * Call Gemini API for dossier generation
  */
-async function callGemini(prompt: string, apiKey: string): Promise<DossierResult> {
+interface GeminiCallResult {
+  dossier: DossierResult
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number }
+}
+
+async function callGemini(prompt: string, apiKey: string): Promise<GeminiCallResult> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
 
   const response = await fetch(url, {
@@ -241,18 +246,20 @@ async function callGemini(prompt: string, apiKey: string): Promise<DossierResult
 
   const parsed = extractJSON(text) as DossierResult
 
-  // Validate and sanitize
   return {
-    summary: (parsed.summary || '').substring(0, MAX_SUMMARY_LENGTH),
-    topics: (parsed.topics || []).slice(0, MAX_TOPICS).map(String),
-    pending_items: (parsed.pending_items || []).slice(0, MAX_PENDING_ITEMS).map(String),
-    context: {
-      relationship_nature: parsed.context?.relationship_nature || '',
-      communication_style: parsed.context?.communication_style || '',
-      key_dates: (parsed.context?.key_dates || []).map(String),
-      notable_patterns: (parsed.context?.notable_patterns || []).map(String),
-      preferred_topics: (parsed.context?.preferred_topics || []).map(String),
+    dossier: {
+      summary: (parsed.summary || '').substring(0, MAX_SUMMARY_LENGTH),
+      topics: (parsed.topics || []).slice(0, MAX_TOPICS).map(String),
+      pending_items: (parsed.pending_items || []).slice(0, MAX_PENDING_ITEMS).map(String),
+      context: {
+        relationship_nature: parsed.context?.relationship_nature || '',
+        communication_style: parsed.context?.communication_style || '',
+        key_dates: (parsed.context?.key_dates || []).map(String),
+        notable_patterns: (parsed.context?.notable_patterns || []).map(String),
+        preferred_topics: (parsed.context?.preferred_topics || []).map(String),
+      },
     },
+    usageMetadata: data.usageMetadata,
   }
 }
 
@@ -290,7 +297,23 @@ async function buildDossierForContact(
 
     // Generate dossier via Gemini
     const prompt = buildDossierPrompt(contact, intents as IntentSummaryRow[], isGroup)
-    const dossier = await callGemini(prompt, apiKey)
+    const startMs = Date.now()
+    const { dossier, usageMetadata } = await callGemini(prompt, apiKey)
+    const durationMs = Date.now() - startMs
+
+    // Fire-and-forget cost tracking
+    if (usageMetadata) {
+      supabase.rpc('log_ai_usage', {
+        p_user_id: userId,
+        p_operation_type: 'dossier_generation',
+        p_ai_model: GEMINI_MODEL,
+        p_input_tokens: usageMetadata.promptTokenCount || 0,
+        p_output_tokens: usageMetadata.candidatesTokenCount || 0,
+        p_module_type: 'whatsapp',
+        p_module_id: contact.contact_id,
+        p_duration_seconds: durationMs / 1000,
+      }).catch(err => console.warn('[CI] Cost tracking failed (non-blocking):', err))
+    }
 
     // Update contact_network with dossier
     const { data: updated, error: updateError } = await supabase.rpc(
