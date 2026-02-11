@@ -72,7 +72,7 @@
 ### URLs Atuais
 | Ambiente | URL | Status |
 |----------|-----|--------|
-| **Staging (ATIVO)** | https://aica-staging-5p22u2w6jq-rj.a.run.app | ✅ Login funcionando |
+| **Staging (ATIVO)** | https://aica-staging-5562559893.southamerica-east1.run.app | ✅ Login funcionando |
 | **Supabase Staging** | https://uzywajqzbdbrfammshdg.supabase.co | ✅ Database OK |
 | **Produção (FUTURO)** | https://aica.comtxae.com | ⏸️ Será criado no Beta |
 
