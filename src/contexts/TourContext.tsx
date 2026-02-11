@@ -131,12 +131,20 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children, tours = []
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user's tour progress from Supabase on mount
+  // Load user's tour progress from Supabase when authenticated
   useEffect(() => {
     const loadTourProgress = async () => {
       try {
         setIsLoading(true);
         setError(null);
+
+        // Only query if user is authenticated — avoids 401 on unauthenticated page load
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          log.debug('Skipping tour progress load - no authenticated session');
+          setIsLoading(false);
+          return;
+        }
 
         const { data, error: fetchError } = await supabase
           .from('user_tour_progress')
