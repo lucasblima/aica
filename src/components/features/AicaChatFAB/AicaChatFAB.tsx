@@ -145,16 +145,14 @@ export function AicaChatFAB({
                   {session ? 'Conversa ativa' : 'Assistente pessoal'}
                 </p>
               </div>
-              {sessions.length > 0 && (
-                <button
-                  className="aica-fab-header__action"
-                  onClick={() => setShowSessions(true)}
-                  aria-label="Ver conversas"
-                  title="Historico"
-                >
-                  <Clock size={16} />
-                </button>
-              )}
+              <button
+                className="aica-fab-header__action"
+                onClick={() => setShowSessions(true)}
+                aria-label="Ver conversas"
+                title="Historico"
+              >
+                <Clock size={16} />
+              </button>
               <button
                 className="aica-fab-header__action"
                 onClick={handleNewSession}
