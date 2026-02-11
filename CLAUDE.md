@@ -110,6 +110,7 @@ gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=s
 | `aica-dev` | https://dev.aica.guru | `us-central1` | Desenvolvimento e testes |
 | `aica` | https://aica.guru | `southamerica-east1` | Producao |
 | `aica-agents` | — | `southamerica-east1` | Backend ADK agents |
+| `aica-guru.web.app` | https://aica.guru | Firebase Hosting | Edge proxy for aica.guru → Cloud Run |
 
 ---
 

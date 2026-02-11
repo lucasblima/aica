@@ -69,10 +69,10 @@ Exemplo: 20260206000001_whatsapp_avatars_bucket.sql
 
 ```bash
 # Deploy individual (padrao do projeto - sempre com --no-verify-jwt)
-SUPABASE_ACCESS_TOKEN=sbp_... npx supabase functions deploy <nome> --no-verify-jwt
+SUPABASE_ACCESS_TOKEN=sbp_8121477da3256d7ea9b7ab915774f8ff631eee85 npx supabase functions deploy <nome> --no-verify-jwt
 
 # Deploy todas
-SUPABASE_ACCESS_TOKEN=sbp_... npx supabase functions deploy --no-verify-jwt
+SUPABASE_ACCESS_TOKEN=sbp_8121477da3256d7ea9b7ab915774f8ff631eee85 npx supabase functions deploy --no-verify-jwt
 
 # Servir local
 npx supabase functions serve
@@ -421,7 +421,7 @@ AS $$ BEGIN /* ... */ END; $$;
 - JWT validation: usar `--no-verify-jwt` se chamada service-to-service
 
 ### Deploy Falhou
-- Token expirado: `SUPABASE_ACCESS_TOKEN=sbp_... npx supabase functions deploy <nome> --no-verify-jwt`
+- Token expirado: `SUPABASE_ACCESS_TOKEN=sbp_8121477da3256d7ea9b7ab915774f8ff631eee85 npx supabase functions deploy <nome> --no-verify-jwt`
 - Erro Deno: verificar imports (`https://deno.land/std@0.168.0/`)
 - Tamanho: Edge Functions tem limite de 2MB
 
