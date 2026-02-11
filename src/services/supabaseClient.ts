@@ -95,9 +95,15 @@ supabase.auth.onAuthStateChange((event, session) => {
 
     if (event === 'SIGNED_OUT' && !session) {
         authLog('👋 Usuário deslogado');
-        // Limpa a URL de parâmetros OAuth antigos após sign out
-        if (window.location.hash.includes('access_token')) {
-            window.history.replaceState(null, '', window.location.pathname);
+        // Clean stale OAuth params from URL to prevent re-exchange on reload
+        const url = new URL(window.location.href);
+        const hasStaleCode = url.searchParams.has('code');
+        const hasStaleToken = window.location.hash.includes('access_token');
+        if (hasStaleCode || hasStaleToken) {
+            url.searchParams.delete('code');
+            url.searchParams.delete('error');
+            url.searchParams.delete('error_description');
+            window.history.replaceState({}, '', url.pathname + url.search);
         }
     }
 });

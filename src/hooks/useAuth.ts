@@ -127,6 +127,11 @@ export function useAuth() {
           setUser(existingSession?.user ?? null)
           setIsLoading(false)
 
+          // Clean stale OAuth code from URL if exchange failed (no session despite code present)
+          if (code && !existingSession) {
+            cleanAuthParamsFromUrl()
+          }
+
           if (DEBUG) {
             if (existingSession) {
               log.debug('✅ Existing session found:', existingSession.user.email)
