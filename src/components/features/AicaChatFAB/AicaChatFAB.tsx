@@ -1,14 +1,15 @@
 /**
  * AicaChatFAB - Floating Action Button for Aica Chat
  *
- * Minimal chat interface that calls gemini-chat Edge Function directly.
- * Self-contained — no external context or billing dependencies.
+ * Chat interface with persistent sessions (chat_sessions + chat_messages).
+ * Uses useChatSession hook for lifecycle, GeminiClient for AI calls.
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { supabase } from '@/services/supabaseClient'
+import { useChatSession } from '@/hooks/useChatSession'
+import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import './AicaChatFAB.css'
 
 interface AicaChatFABProps {
@@ -16,35 +17,43 @@ interface AicaChatFABProps {
   bottomOffset?: number
 }
 
-interface ChatMessage {
-  role: 'user' | 'assistant'
-  content: string
-}
-
-const SYSTEM_PROMPT = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
-Voce ajuda o usuario com produtividade, organizacao e bem-estar.
-Seja concisa, amigavel e objetiva. Responda em portugues.`
-
 export function AicaChatFAB({
   position = 'bottom-right',
   bottomOffset = 80,
 }: AicaChatFABProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const {
+    session,
+    sessions,
+    messages,
+    isLoading,
+    error,
+    sendMessage,
+    createNewSession,
+    switchSession,
+    archiveSession,
+    showSessions,
+    setShowSessions,
+  } = useChatSession()
 
   // Escape to close
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) setIsOpen(false)
+      if (e.key === 'Escape' && isOpen) {
+        if (showSessions) {
+          setShowSessions(false)
+        } else {
+          setIsOpen(false)
+        }
+      }
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen])
+  }, [isOpen, showSessions, setShowSessions])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -53,46 +62,17 @@ export function AicaChatFAB({
 
   // Focus input when drawer opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !showSessions) {
       setTimeout(() => inputRef.current?.focus(), 400)
     }
-  }, [isOpen])
+  }, [isOpen, showSessions])
 
   const handleSend = async () => {
     const trimmed = input.trim()
     if (!trimmed || isLoading) return
 
-    const userMessage: ChatMessage = { role: 'user', content: trimmed }
-    setMessages(prev => [...prev, userMessage])
     setInput('')
-    setError(null)
-    setIsLoading(true)
-
-    try {
-      // Build history for context (last 10 messages)
-      const history = [...messages, userMessage]
-        .slice(-10)
-        .map(m => ({ role: m.role, content: m.content }))
-
-      const { data, error: fnError } = await supabase.functions.invoke('gemini-chat', {
-        body: {
-          message: trimmed,
-          history,
-          systemPrompt: SYSTEM_PROMPT,
-        },
-      })
-
-      if (fnError) throw fnError
-
-      const responseText = data?.response || data?.result?.response || 'Desculpe, nao consegui gerar uma resposta.'
-
-      setMessages(prev => [...prev, { role: 'assistant', content: responseText }])
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
-      setError(message)
-    } finally {
-      setIsLoading(false)
-    }
+    await sendMessage(trimmed)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -100,6 +80,23 @@ export function AicaChatFAB({
       e.preventDefault()
       handleSend()
     }
+  }
+
+  const handleNewSession = () => {
+    createNewSession()
+    setTimeout(() => inputRef.current?.focus(), 100)
+  }
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return 'Hoje'
+    if (diffDays === 1) return 'Ontem'
+    if (diffDays < 7) return `${diffDays}d atras`
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
   }
 
   return (
@@ -124,11 +121,50 @@ export function AicaChatFAB({
       >
         {/* Header */}
         <div className="aica-fab-header">
-          <div className="aica-fab-header__orb" />
-          <div className="aica-fab-header__text">
-            <h3 className="aica-fab-header__title">Aica</h3>
-            <p className="aica-fab-header__subtitle">Assistente pessoal</p>
-          </div>
+          {showSessions ? (
+            <>
+              <button
+                className="aica-fab-header__back"
+                onClick={() => setShowSessions(false)}
+                aria-label="Voltar"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <div className="aica-fab-header__text">
+                <h3 className="aica-fab-header__title">Conversas</h3>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="aica-fab-header__orb" />
+              <div className="aica-fab-header__text">
+                <h3 className="aica-fab-header__title">
+                  {session?.title || 'Aica'}
+                </h3>
+                <p className="aica-fab-header__subtitle">
+                  {session ? 'Conversa ativa' : 'Assistente pessoal'}
+                </p>
+              </div>
+              {sessions.length > 0 && (
+                <button
+                  className="aica-fab-header__action"
+                  onClick={() => setShowSessions(true)}
+                  aria-label="Ver conversas"
+                  title="Historico"
+                >
+                  <Clock size={16} />
+                </button>
+              )}
+              <button
+                className="aica-fab-header__action"
+                onClick={handleNewSession}
+                aria-label="Nova conversa"
+                title="Nova conversa"
+              >
+                <Plus size={16} />
+              </button>
+            </>
+          )}
           <button
             className="aica-fab-drawer__close"
             onClick={() => setIsOpen(false)}
@@ -138,62 +174,112 @@ export function AicaChatFAB({
           </button>
         </div>
 
-        {/* Messages */}
-        <div className="aica-fab-messages">
-          {messages.length === 0 && !isLoading && (
-            <div className="aica-fab-empty">
-              <p>Ola! Como posso ajudar?</p>
-            </div>
-          )}
-
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={cn(
-                'aica-fab-message',
-                msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+        {/* Session List Panel */}
+        {showSessions ? (
+          <div className="aica-fab-sessions">
+            {sessions.length === 0 ? (
+              <div className="aica-fab-empty">
+                <p>Nenhuma conversa ainda</p>
+              </div>
+            ) : (
+              sessions.map(s => (
+                <div
+                  key={s.id}
+                  className={cn(
+                    'aica-fab-session-item',
+                    session?.id === s.id && 'aica-fab-session-item--active'
+                  )}
+                >
+                  <button
+                    className="aica-fab-session-item__content"
+                    onClick={() => switchSession(s.id)}
+                  >
+                    <span className="aica-fab-session-item__title">
+                      {s.title || 'Sem titulo'}
+                    </span>
+                    <span className="aica-fab-session-item__date">
+                      {formatDate(s.updated_at)}
+                    </span>
+                  </button>
+                  <button
+                    className="aica-fab-session-item__archive"
+                    onClick={() => archiveSession(s.id)}
+                    aria-label="Arquivar"
+                    title="Arquivar"
+                  >
+                    <Archive size={14} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Messages */}
+            <div className="aica-fab-messages">
+              {messages.length === 0 && !isLoading && (
+                <div className="aica-fab-empty">
+                  <p>Ola! Como posso ajudar?</p>
+                </div>
               )}
-            >
-              <p>{msg.content}</p>
+
+              {messages.map(msg => (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    'aica-fab-message',
+                    msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+                  )}
+                >
+                  {msg.role === 'assistant' ? (
+                    <div
+                      className="aica-fab-message__content"
+                      dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
+                    />
+                  ) : (
+                    <p>{msg.content}</p>
+                  )}
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className="aica-fab-message aica-fab-message--assistant">
+                  <Loader2 size={16} className="aica-fab-loading-icon" />
+                </div>
+              )}
+
+              {error && (
+                <div className="aica-fab-error">
+                  <p>{error}</p>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
-          ))}
 
-          {isLoading && (
-            <div className="aica-fab-message aica-fab-message--assistant">
-              <Loader2 size={16} className="aica-fab-loading-icon" />
+            {/* Input */}
+            <div className="aica-fab-input-bar">
+              <input
+                ref={inputRef}
+                type="text"
+                className="aica-fab-input"
+                placeholder="Pergunte algo..."
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isLoading}
+              />
+              <button
+                className="aica-fab-send"
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                aria-label="Enviar"
+              >
+                <Send size={16} />
+              </button>
             </div>
-          )}
-
-          {error && (
-            <div className="aica-fab-error">
-              <p>{error}</p>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input */}
-        <div className="aica-fab-input-bar">
-          <input
-            ref={inputRef}
-            type="text"
-            className="aica-fab-input"
-            placeholder="Pergunte algo..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-          />
-          <button
-            className="aica-fab-send"
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            aria-label="Enviar"
-          >
-            <Send size={16} />
-          </button>
-        </div>
+          </>
+        )}
       </div>
 
       {/* FAB Button */}

@@ -199,6 +199,52 @@
   line-height: 1.2;
 }
 
+.aica-fab-header__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aica-fab-header__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.04);
+  border: none;
+  border-radius: 50%;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aica-fab-header__action:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.aica-fab-header__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.aica-fab-header__back:hover {
+  color: rgba(0, 0, 0, 0.8);
+}
+
 /* ============================================================================
    CLOSE BUTTON
    ============================================================================ */
@@ -419,6 +465,135 @@
 }
 
 /* ============================================================================
+   SESSION LIST
+   ============================================================================ */
+
+.aica-fab-sessions {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.aica-fab-session-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+}
+
+.aica-fab-session-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.aica-fab-session-item--active {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.aica-fab-session-item__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.aica-fab-session-item__title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aica-fab-session-item__date {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.aica-fab-session-item__archive {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+  margin-right: 4px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.aica-fab-session-item:hover .aica-fab-session-item__archive {
+  opacity: 1;
+}
+
+.aica-fab-session-item__archive:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================================
+   MARKDOWN CONTENT
+   ============================================================================ */
+
+.aica-fab-message__content {
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+  color: #1a1a1a;
+}
+
+.aica-fab-message__content strong {
+  font-weight: 600;
+}
+
+.aica-fab-message__content em {
+  font-style: italic;
+}
+
+.aica-fab-message__content ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.aica-fab-message__content li {
+  margin: 2px 0;
+}
+
+.aica-code-block {
+  display: block;
+  margin: 6px 0;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.aica-inline-code {
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+}
+
+/* ============================================================================
    DARK MODE
    ============================================================================ */
 
@@ -490,5 +665,60 @@
 
   .aica-fab-messages::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
+  }
+
+  .aica-fab-header__action {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .aica-fab-header__action:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .aica-fab-header__back {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .aica-fab-header__back:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .aica-fab-session-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .aica-fab-session-item--active {
+    background: rgba(245, 158, 11, 0.12);
+  }
+
+  .aica-fab-session-item__title {
+    color: #f5f5f7;
+  }
+
+  .aica-fab-session-item__date {
+    color: rgba(255, 255, 255, 0.35);
+  }
+
+  .aica-fab-session-item__archive {
+    color: rgba(255, 255, 255, 0.2);
+  }
+
+  .aica-fab-session-item__archive:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .aica-fab-message__content {
+    color: #f5f5f7;
+  }
+
+  .aica-code-block {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .aica-inline-code {
+    background: rgba(255, 255, 255, 0.08);
   }
 }

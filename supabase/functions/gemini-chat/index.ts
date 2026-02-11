@@ -1416,6 +1416,7 @@ serve(async (req) => {
         case 'generate_pauta_outline':
           result = await handleGeneratePautaOutline(genAI, payload as PautaOutlinePayload)
           break
+        case 'chat_aica':
         case 'finance_chat':
           const chatResult = await handleLegacyChat(genAI, { message: payload?.message, context: payload?.context, history: payload?.history, systemPrompt: payload?.systemPrompt })
           result = chatResult
