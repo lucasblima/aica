@@ -1,5 +1,4 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { createCookieHandlers } from '../lib/supabase/cookieStorageAdapter';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -8,71 +7,53 @@ if (!supabaseUrl || !supabaseKey) {
     console.warn('[SupabaseClient] Supabase URL or Key is missing in environment variables.');
 }
 
-const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG_AUTH === 'true';
+const DEBUG = import.meta.env.DEV;
 
 function authLog(message: string, data?: unknown) {
     if (DEBUG) {
-        console.debug(`[SupabaseClient] [Supabase Auth] ${message}`, data);
+        console.debug(`[SupabaseClient] [Supabase Auth] ${message}`, data ?? '');
     }
-}
-
-// Detecta se estamos no callback OAuth (tem code na URL)
-const urlParams = new URLSearchParams(window.location.search);
-const hasAuthCode = urlParams.has('code');
-
-if (hasAuthCode) {
-    authLog('🔐 OAuth callback detectado - code presente na URL');
 }
 
 /**
  * Single Supabase client instance for the entire application
  *
- * MIGRATION: @supabase/supabase-js → @supabase/ssr
- *
- * Changes:
- * - createClient → createBrowserClient
- * - localStorage → Cookie storage (via adapter with chunking support)
- * - PKCE flow with explicit code exchange in useAuth hook
- *
- * Benefits:
- * - Cookies persistem entre diferentes containers em Cloud Run
- * - code_verifier armazenado em cookie (acessível em callback)
+ * Uses @supabase/ssr createBrowserClient which natively handles browser cookies
+ * via the `cookie` npm package (parse/serialize). No custom cookie adapter needed.
  *
  * PKCE Flow:
- * 1. signInWithOAuth() gera code_verifier e salva em cookie
- * 2. Usuário é redirecionado para Google
- * 3. Google redireciona de volta com ?code=xxx
- * 4. detectSessionInUrl=true lê o code da URL
- * 5. code_verifier é lido do cookie para completar exchange
+ * 1. signInWithOAuth() generates code_verifier and stores in cookie
+ * 2. User is redirected to Google
+ * 3. Google redirects back with ?code=xxx
+ * 4. detectSessionInUrl=true reads the code from URL
+ * 5. code_verifier is read from cookie to complete exchange
  */
 export const supabase = createBrowserClient(
     supabaseUrl || '',
     supabaseKey || '',
     {
-        // Custom cookie handlers REQUIRED for Cloud Run (stateless containers)
-        // Without these, Supabase uses localStorage which doesn't persist across containers
-        // FIX: Removed JSON.parse from decodeCookieValue to return strings (not objects)
-        cookies: createCookieHandlers(),
+        // No custom cookies handler — @supabase/ssr@0.8.0 uses document.cookie API
+        // natively via the `cookie` package. This avoids encoding conflicts between
+        // our custom adapter's encodeURIComponent and Supabase SSR's base64url encoding.
 
         cookieOptions: {
             path: '/',
-            sameSite: 'lax',
+            sameSite: 'lax' as const,
             secure: typeof window !== 'undefined' && window.location.protocol === 'https:',
             maxAge: 60 * 60 * 24 * 7, // 7 days
         },
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true, // FIX: Let Supabase handle OAuth callback automatically
+            detectSessionInUrl: true,
             flowType: 'pkce',
-            // Debug: log storage operations
             debug: DEBUG,
         },
     }
 );
 
 /**
- * Configura listener para lidar com eventos de autenticação
+ * Auth event listener for logging and URL cleanup
  */
 supabase.auth.onAuthStateChange((event, session) => {
     authLog(`Auth event: ${event}`, {
@@ -82,20 +63,18 @@ supabase.auth.onAuthStateChange((event, session) => {
     });
 
     if (event === 'SIGNED_IN') {
-        authLog('✅ Login bem-sucedido!');
-        // Limpa parâmetros OAuth da URL após login
+        authLog('Login successful');
         if (window.location.search.includes('code=')) {
             window.history.replaceState(null, '', window.location.pathname);
         }
     }
 
     if (event === 'TOKEN_REFRESHED') {
-        authLog('✅ Token renovado com sucesso');
+        authLog('Token refreshed');
     }
 
     if (event === 'SIGNED_OUT' && !session) {
-        authLog('👋 Usuário deslogado');
-        // Clean stale OAuth params from URL to prevent re-exchange on reload
+        authLog('User signed out');
         const url = new URL(window.location.href);
         const hasStaleCode = url.searchParams.has('code');
         const hasStaleToken = window.location.hash.includes('access_token');
@@ -107,12 +86,3 @@ supabase.auth.onAuthStateChange((event, session) => {
         }
     }
 });
-
-// REMOVED: This was causing race condition with useAuth hook
-// The premature getSession() call was consuming and deleting the code_verifier cookie
-// BEFORE useAuth.exchangeCodeForSession() could use it, causing 401 errors.
-//
-// Root cause: getSession() during module load deletes code_verifier
-// Solution: Let useAuth hook handle OAuth callback exclusively
-//
-// See Issue #28 for full investigation
