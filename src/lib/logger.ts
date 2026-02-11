@@ -100,6 +100,24 @@ function formatMessage(
 }
 
 /**
+ * Check if any argument represents an AbortError (request cancelled during navigation/unmount).
+ * These are noise, not real errors — downgrade to debug.
+ */
+function isAbortError(...args: unknown[]): boolean {
+  return args.some(arg => {
+    if (arg instanceof Error) {
+      return arg.name === 'AbortError' || arg.message?.includes('AbortError') || arg.message?.includes('signal is aborted');
+    }
+    if (arg && typeof arg === 'object') {
+      const obj = arg as Record<string, unknown>;
+      const msg = (obj.message as string) || (obj.details as string) || '';
+      return msg.includes('AbortError') || msg.includes('signal is aborted');
+    }
+    return false;
+  });
+}
+
+/**
  * Core logging function
  */
 function log(
@@ -108,6 +126,11 @@ function log(
   message: string,
   ...args: unknown[]
 ): void {
+  // Downgrade AbortErrors from error to debug — they're just cancelled requests, not real failures
+  if (level === 'error' && isAbortError(...args)) {
+    level = 'debug';
+  }
+
   if (!shouldLog(level)) return;
 
   const { formatted, style } = formatMessage(level, namespace, message);
