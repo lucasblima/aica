@@ -93,7 +93,35 @@ export function useExtractedEntities(limit = 20): UseExtractedEntitiesReturn {
     }
   }, [limit])
 
-  const resolveEntity = useCallback(async (entityId: string, action: 'accept' | 'reject') => {
+  const acceptEntity = useCallback(async (entityId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Accept + route to module atomically via route_accepted_entity RPC
+      const { data, error: rpcError } = await supabase.rpc('route_accepted_entity', {
+        p_user_id: user.id,
+        p_entity_id: entityId,
+      })
+
+      if (rpcError) throw rpcError
+
+      const result = data as { success: boolean; error?: string; created_item_id?: string; routed_to_module?: string }
+      if (!result?.success) {
+        throw new Error(result?.error || 'Falha ao rotear entidade')
+      }
+
+      log.info(`Entity ${entityId} routed to ${result.routed_to_module}`, result.created_item_id ? `item: ${result.created_item_id}` : '(no item created)')
+
+      // Remove from local state
+      setEntities(prev => prev.filter(e => e.entity_id !== entityId))
+    } catch (err) {
+      log.error('Failed to accept entity:', err)
+      setError(err instanceof Error ? err.message : 'Erro ao aceitar entidade')
+    }
+  }, [])
+
+  const rejectEntity = useCallback(async (entityId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
@@ -101,7 +129,7 @@ export function useExtractedEntities(limit = 20): UseExtractedEntitiesReturn {
       const { error: rpcError } = await supabase.rpc('resolve_entity', {
         p_user_id: user.id,
         p_entity_id: entityId,
-        p_action: action,
+        p_action: 'reject',
       })
 
       if (rpcError) throw rpcError
@@ -109,18 +137,10 @@ export function useExtractedEntities(limit = 20): UseExtractedEntitiesReturn {
       // Remove from local state
       setEntities(prev => prev.filter(e => e.entity_id !== entityId))
     } catch (err) {
-      log.error(`Failed to ${action} entity:`, err)
-      setError(err instanceof Error ? err.message : `Erro ao ${action === 'accept' ? 'aceitar' : 'rejeitar'} entidade`)
+      log.error('Failed to reject entity:', err)
+      setError(err instanceof Error ? err.message : 'Erro ao rejeitar entidade')
     }
   }, [])
-
-  const acceptEntity = useCallback(async (entityId: string) => {
-    await resolveEntity(entityId, 'accept')
-  }, [resolveEntity])
-
-  const rejectEntity = useCallback(async (entityId: string) => {
-    await resolveEntity(entityId, 'reject')
-  }, [resolveEntity])
 
   const extractEntities = useCallback(async (threadIds?: string[]) => {
     setIsExtracting(true)
