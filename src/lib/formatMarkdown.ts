@@ -12,25 +12,49 @@ const ALLOWED_ATTR = ['class']
 export function formatMarkdownToHTML(content: string): string {
   if (typeof content !== 'string') return ''
 
-  let html = content
-    // Code blocks (```...```) — must come before inline code
-    .replace(/```([\s\S]*?)```/g, '<pre class="aica-code-block"><code>$1</code></pre>')
-    // Inline code
-    .replace(/`([^`]+)`/g, '<code class="aica-inline-code">$1</code>')
-    // Bold
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    // Italic (single * not preceded/followed by space to avoid list conflicts)
-    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-    // Bullet lists (- item)
-    .replace(/(?:^|\n)- (.+)/g, '\n<li>$1</li>')
-    // Line breaks (but not inside pre blocks)
-    .replace(/\n/g, '<br />')
+  // Process code blocks first (protect from other transformations)
+  const codeBlocks: string[] = []
+  let html = content.replace(/```([\s\S]*?)```/g, (_match, code) => {
+    const idx = codeBlocks.length
+    codeBlocks.push(`<pre class="aica-code-block"><code>${escapeHtml(code)}</code></pre>`)
+    return `%%CODEBLOCK_${idx}%%`
+  })
 
-  // Wrap consecutive <li> tags in <ul>
-  html = html.replace(/((?:<br \/>)?<li>[\s\S]*?<\/li>)+/g, (match) => {
-    const cleaned = match.replace(/^<br \/>/g, '')
-    return `<ul>${cleaned}</ul>`
+  // Inline code (protect from bold/italic)
+  const inlineCodes: string[] = []
+  html = html.replace(/`([^`]+)`/g, (_match, code) => {
+    const idx = inlineCodes.length
+    inlineCodes.push(`<code class="aica-inline-code">${escapeHtml(code)}</code>`)
+    return `%%INLINE_${idx}%%`
+  })
+
+  // Bold (**text**)
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  // Italic (*text*) — only single asterisks not part of bold
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
+
+  // Bullet lists (- item)
+  html = html.replace(/(^|\n)- (.+)/g, '$1<li>$2</li>')
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/(<li>.*?<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
+
+  // Line breaks
+  html = html.replace(/\n/g, '<br />')
+
+  // Restore code blocks
+  codeBlocks.forEach((block, i) => {
+    html = html.replace(`%%CODEBLOCK_${i}%%`, block)
+  })
+  inlineCodes.forEach((code, i) => {
+    html = html.replace(`%%INLINE_${i}%%`, code)
   })
 
   return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR })
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
 }
