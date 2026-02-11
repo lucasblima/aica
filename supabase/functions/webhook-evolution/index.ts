@@ -750,6 +750,11 @@ async function storeMessage(
     // Raw text is NEVER stored in the database
     // Intent extraction happens asynchronously
 
+    // Extract participant info for group messages (Conversation Intelligence Phase 2)
+    const isGroup = isGroupJid(remoteJid)
+    const participantJid = messageData.key.participant
+    const participantPhone = participantJid ? jidToPhone(participantJid) : null
+
     const insertData: Record<string, unknown> = {
       user_id: userId,
       contact_id: contactId,
@@ -762,6 +767,9 @@ async function storeMessage(
       media_url: mediaUrl,
       document_processed: false,
       processing_status: 'pending', // Will be updated by extract-intent
+      // Group participant tracking (Conversation Intelligence Phase 2)
+      participant_phone: isGroup ? participantPhone : null,
+      participant_name: isGroup ? (messageData.pushName || null) : null,
     }
 
     // For media-only messages, add default intent immediately
@@ -839,6 +847,25 @@ async function storeMessage(
       }).catch((err) => {
         log('WARN', 'Failed to queue document processing (non-critical)', {
           messageId: data.id,
+          error: err.message
+        })
+      })
+    }
+
+    // ===========================================================================
+    // UPSERT GROUP PARTICIPANT (Conversation Intelligence Phase 4)
+    // ===========================================================================
+    if (isGroup && participantPhone) {
+      supabase.rpc('upsert_group_participant', {
+        p_user_id: userId,
+        p_group_contact_id: contactId,
+        p_participant_phone: participantPhone,
+        p_participant_name: messageData.pushName || null,
+        p_participant_jid: participantJid || null,
+      }).then(() => {
+        log('DEBUG', 'Group participant upserted', { contactId, participantPhone })
+      }).catch((err: Error) => {
+        log('WARN', 'Failed to upsert group participant (non-critical)', {
           error: err.message
         })
       })
