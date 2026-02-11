@@ -18,7 +18,7 @@ const log = createNamespacedLogger('useIntentTimeline')
 
 export interface IntentEntry {
   id: string
-  direction: 'incoming' | 'outgoing'
+  message_direction: 'incoming' | 'outgoing'
   intent_summary: string
   intent_category: string | null
   intent_sentiment: string | null
@@ -41,7 +41,7 @@ const PAGE_SIZE = 20
 
 const INTENT_COLUMNS = [
   'id',
-  'direction',
+  'message_direction',
   'intent_summary',
   'intent_category',
   'intent_sentiment',

@@ -155,7 +155,7 @@ export const IntentTimeline: React.FC<IntentTimelineProps> = ({
               >
                 {/* Direction arrow */}
                 <div className="flex-shrink-0 mt-0.5">
-                  {intent.direction === 'incoming' ? (
+                  {intent.message_direction === 'incoming' ? (
                     <ArrowDownLeft className="w-3.5 h-3.5 text-ceramic-info" />
                   ) : (
                     <ArrowUpRight className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
