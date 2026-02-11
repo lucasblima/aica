@@ -50,7 +50,7 @@ O fluxo de deploy segue uma pipeline rigorosa. **NUNCA** pular etapas:
    ↓
 2. Build + Typecheck local (npm run build && npm run typecheck)
    ↓
-3. Deploy para STAGING (aica-staging)
+3. Deploy para STAGING (aica-dev)
    ↓
 4. Testes E2E em staging (manuais ou Playwright)
    ↓
@@ -60,7 +60,7 @@ O fluxo de deploy segue uma pipeline rigorosa. **NUNCA** pular etapas:
 ```
 
 > **REGRA ABSOLUTA:** Deploy para producao (`aica`) so pode acontecer DEPOIS de:
-> 1. O codigo ter sido deployado e testado em staging (`aica-staging`)
+> 1. O codigo ter sido deployado e testado em staging (`aica-dev`)
 > 2. O usuario ter validado o comportamento em staging
 > 3. O usuario pedir EXPLICITAMENTE o deploy para producao
 >
@@ -76,7 +76,7 @@ git add -A && git commit -m "sua mensagem" && git push origin main
 ### Passo 2: Deploy para Staging (SEMPRE primeiro)
 ```bash
 gcloud builds submit --config=cloudbuild.yaml --region=southamerica-east1 --project=gen-lang-client-0948335762 \
-  --substitutions=_SERVICE_NAME=aica-staging,_DEPLOY_REGION=us-central1,_VITE_FRONTEND_URL=https://dev.aica.guru
+  --substitutions=_SERVICE_NAME=aica-dev,_DEPLOY_REGION=us-central1,_VITE_FRONTEND_URL=https://dev.aica.guru
 ```
 
 ### Passo 3: Deploy para Producao (SOMENTE apos validacao em staging)
@@ -107,7 +107,7 @@ gcloud builds log $(gcloud builds list --limit=1 --format="value(id)" --region=s
 ### Servicos Cloud Run
 | Servico | Dominio | Regiao | Uso |
 |---------|---------|--------|-----|
-| `aica-staging` | https://dev.aica.guru | `us-central1` | Desenvolvimento e testes |
+| `aica-dev` | https://dev.aica.guru | `us-central1` | Desenvolvimento e testes |
 | `aica` | https://aica.guru | `southamerica-east1` | Producao |
 | `aica-agents` | — | `southamerica-east1` | Backend ADK agents |
 
@@ -682,7 +682,7 @@ npm run build && npm run typecheck
 
 ### Staging (Ambiente Ativo)
 - **Dominio:** https://dev.aica.guru
-- **Cloud Run Service:** `aica-staging`
+- **Cloud Run Service:** `aica-dev`
 - **Region:** us-central1 (Iowa)
 - **Supabase:** https://uzywajqzbdbrfammshdg.supabase.co
 - **Uso:** Desenvolvimento, testes e validacao do MVP
