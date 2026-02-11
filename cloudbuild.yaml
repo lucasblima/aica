@@ -148,11 +148,23 @@ steps:
       - '--allow-unauthenticated'
 
   # =========================================================================
-  # Step 4: Deploy Firebase Hosting (DISABLED - Firebase not initialized)
-  # TODO: Enable after running: firebase projects:addfirebase gen-lang-client-0948335762
-  # Firebase Hosting would act as edge proxy for aica.guru → Cloud Run SP
-  # Currently aica.guru uses Cloud Run domain mapping directly
+  # Step 4: Deploy Firebase Hosting (production only)
+  # Firebase Hosting acts as edge proxy for aica.guru → Cloud Run SP
+  # Skipped for dev deploys (dev.aica.guru uses Cloud Run domain mapping)
   # =========================================================================
+  - name: 'node:18'
+    id: 'deploy-firebase-hosting'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        if [ "${_SERVICE_NAME}" = "aica" ]; then
+          echo "=== Deploying Firebase Hosting (production edge proxy) ==="
+          npm install -g firebase-tools
+          firebase deploy --only hosting:production --project $PROJECT_ID --non-interactive
+        else
+          echo "=== Skipping Firebase Hosting for non-production: ${_SERVICE_NAME} ==="
+        fi
 
 # =============================================================================
 # OUTPUT IMAGES

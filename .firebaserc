@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "gen-lang-client-0948335762"
+  },
+  "targets": {
+    "gen-lang-client-0948335762": {
+      "hosting": {
+        "production": [
+          "aica-guru"
+        ]
+      }
+    }
   }
 }
