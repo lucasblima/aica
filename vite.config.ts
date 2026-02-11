@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",
-          "upgrade-insecure-requests"
+          // upgrade-insecure-requests omitted — breaks HTTP localhost in dev
         ].join('; '),
         // Prevent clickjacking attacks
         'X-Frame-Options': 'DENY',
