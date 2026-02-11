@@ -254,7 +254,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const body = await req.json()
-    const { userId, contactId } = body
+    const { userId, contactId, messageLimit } = body
+    const effectiveLimit = messageLimit || MAX_MESSAGES_PER_BATCH
 
     if (!userId) {
       return new Response(
@@ -267,7 +268,7 @@ serve(async (req) => {
     const { data: messages, error: msgError } = await supabase.rpc('get_unthreaded_messages', {
       p_user_id: userId,
       p_contact_id: contactId || null,
-      p_limit: MAX_MESSAGES_PER_BATCH,
+      p_limit: effectiveLimit,
     })
 
     if (msgError) throw new Error(`Failed to fetch messages: ${msgError.message}`)

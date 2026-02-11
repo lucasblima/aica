@@ -77,6 +77,7 @@ export const IntelligentContactCard: React.FC<IntelligentContactCardProps> = ({
   const isGroup = contact.relationship_type === 'group'
   const hasMessages = (contact.whatsapp_message_count || 0) > 0
   const hasDossier = !!contact.dossier_summary
+  const isAiEnabled = contact.ai_processing_enabled && !hasDossier
   const lastActivity = contact.last_interaction_at || contact.whatsapp_last_message_at
 
   return (
@@ -185,6 +186,13 @@ export const IntelligentContactCard: React.FC<IntelligentContactCardProps> = ({
           <span className="inline-flex items-center gap-0.5 text-[10px] text-ceramic-text-tertiary">
             <MessageCircle className="w-3 h-3" />
             {contact.whatsapp_message_count}
+          </span>
+        )}
+
+        {/* AI enabled but pending processing */}
+        {isAiEnabled && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-500">
+            <Sparkles className="w-3 h-3" />
           </span>
         )}
 

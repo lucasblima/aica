@@ -16,6 +16,49 @@ function authLog(message: string, data?: unknown) {
 }
 
 /**
+ * One-time cleanup of legacy auth cookies from the old custom cookieStorageAdapter.
+ *
+ * The old adapter used encodeURIComponent encoding, while @supabase/ssr@0.8.0
+ * uses base64url encoding with a "base64-" prefix. Stale cookies from the old
+ * format cause PKCE code_verifier mismatches → 401 on token exchange.
+ *
+ * This runs once per browser (tracked via localStorage flag) and clears ALL
+ * sb-* auth cookies so Supabase can start fresh with the correct encoding.
+ */
+function cleanupLegacyCookies(): void {
+    const CLEANUP_KEY = 'aica_cookie_adapter_v2_migrated';
+    try {
+        if (localStorage.getItem(CLEANUP_KEY)) return;
+
+        // Skip cleanup on OAuth callback — we need the code_verifier cookie intact
+        if (window.location.search.includes('code=')) {
+            authLog('Skipping legacy cookie cleanup on OAuth callback');
+            return;
+        }
+
+        const allCookies = document.cookie.split(';').map(c => c.trim());
+        const sbCookies = allCookies.filter(c => c.startsWith('sb-'));
+
+        if (sbCookies.length > 0) {
+            authLog(`Cleaning ${sbCookies.length} legacy sb-* cookies`);
+            for (const cookie of sbCookies) {
+                const name = cookie.split('=')[0];
+                // Delete by setting maxAge=0 for both / and current path
+                document.cookie = `${name}=; path=/; max-age=0`;
+                document.cookie = `${name}=; max-age=0`;
+            }
+        }
+
+        localStorage.setItem(CLEANUP_KEY, Date.now().toString());
+    } catch {
+        // localStorage or cookie access may fail in some contexts — non-blocking
+    }
+}
+
+// Run cleanup BEFORE creating the Supabase client
+cleanupLegacyCookies();
+
+/**
  * Single Supabase client instance for the entire application
  *
  * Uses @supabase/ssr createBrowserClient which natively handles browser cookies

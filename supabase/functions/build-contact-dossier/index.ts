@@ -64,11 +64,13 @@ interface DossierResult {
 interface BatchRequest {
   userId: string
   limit?: number
+  messageLimit?: number
 }
 
 interface SingleRequest {
   userId: string
   contactId: string
+  messageLimit?: number
 }
 
 // =============================================================================
@@ -270,7 +272,8 @@ async function buildDossierForContact(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   contact: ContactForDossier,
-  apiKey: string
+  apiKey: string,
+  intentLimit: number = MAX_INTENTS_PER_CONTACT
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Fetch intent summaries (privacy-first: no raw text)
@@ -280,7 +283,7 @@ async function buildDossierForContact(
         p_user_id: userId,
         p_contact_id: contact.contact_id,
         p_since: contact.last_dossier_at,
-        p_limit: MAX_INTENTS_PER_CONTACT,
+        p_limit: intentLimit,
       }
     )
 
@@ -369,7 +372,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const body = await req.json()
-    const { userId, contactId, limit = 20 } = body as BatchRequest & SingleRequest
+    const { userId, contactId, limit = 20, messageLimit } = body as BatchRequest & SingleRequest
+    const effectiveMessageLimit = messageLimit || MAX_INTENTS_PER_CONTACT
 
     if (!userId) {
       return new Response(
@@ -404,7 +408,7 @@ serve(async (req) => {
         current_dossier_version: contactData[0].dossier_version || 0,
       }
 
-      const result = await buildDossierForContact(supabase, userId, contact, apiKey)
+      const result = await buildDossierForContact(supabase, userId, contact, apiKey, effectiveMessageLimit)
 
       // Fetch updated dossier
       const { data: updatedDossier } = await supabase.rpc(
