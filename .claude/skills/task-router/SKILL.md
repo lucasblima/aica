@@ -248,7 +248,7 @@ Acao:   1. Confirmar com usuario
            gcloud builds submit --config=cloudbuild.yaml \
              --region=southamerica-east1 \
              --project=gen-lang-client-0948335762 \
-             --substitutions=_SERVICE_NAME=aica-staging,_DEPLOY_REGION=us-central1,_VITE_FRONTEND_URL=https://dev.aica.guru
+             --substitutions=_SERVICE_NAME=aica-dev,_DEPLOY_REGION=us-central1,_VITE_FRONTEND_URL=https://dev.aica.guru
 ```
 
 ---
