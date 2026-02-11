@@ -9,7 +9,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { Send, Sparkles, TrendingDown, PieChart, AlertTriangle, Loader2 } from 'lucide-react';
 
 const log = createNamespacedLogger('AgentChat');
-import DOMPurify from 'dompurify';
+import { formatMarkdownToHTML } from '@/lib/formatMarkdown';
 import { financeAgentService } from '../../services/financeAgentService';
 import type { AgentContext } from '../../types';
 
@@ -218,27 +218,6 @@ Como posso ajudar hoje?`,
     }
   };
 
-  const formatContent = (content: string) => {
-    // Safety check for non-string content
-    if (typeof content !== 'string') {
-      log.warn('AgentChat: received non-string content:', content);
-      return '';
-    }
-
-    // Simple markdown rendering
-    const html = content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code class="bg-ceramic-base px-1 rounded">$1</code>')
-      .replace(/\n/g, '<br />');
-
-    // Sanitize HTML to prevent XSS attacks
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ['strong', 'em', 'code', 'br'],
-      ALLOWED_ATTR: ['class'],
-    });
-  };
-
   return (
     <div className="flex flex-col h-full">
       {/* Messages Container */}
@@ -266,7 +245,7 @@ Como posso ajudar hoje?`,
               <div
                 className={`text-sm leading-relaxed ${message.role === 'user' ? 'text-white' : 'text-ceramic-text-primary'
                   }`}
-                dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
+                dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(message.content) }}
               />
               <p
                 className={`text-xs mt-2 ${message.role === 'user' ? 'text-amber-200' : 'text-ceramic-text-secondary'
