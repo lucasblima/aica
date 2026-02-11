@@ -15,3 +15,6 @@ export { EntityInbox } from './EntityInbox';
 export { GroupAnalyticsCard } from './GroupAnalyticsCard';
 export { IntelligentContactCard } from './IntelligentContactCard';
 export { ContactDetailSheet } from './ContactDetailSheet';
+export { ProcessingCTA } from './ProcessingCTA';
+export { ProcessingProgress } from './ProcessingProgress';
+export { IntentTimeline } from './IntentTimeline';

@@ -185,6 +185,13 @@ export interface ContactNetwork {
   dossier_version?: number;
 
   // ==========================================================================
+  // AI Processing Opt-in (On-Demand Intelligence)
+  // ==========================================================================
+  ai_processing_enabled?: boolean;
+  ai_processing_activated_at?: string | null;
+  ai_processing_depth?: 'quick' | 'standard' | 'full';
+
+  // ==========================================================================
   // Conversation Intelligence — Phase 4 (Group Intelligence)
   // ==========================================================================
   participant_count?: number;

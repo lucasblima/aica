@@ -2,10 +2,10 @@
  * ContactDetailSheet
  * People Page Redesign — Apple Contacts-style bottom sheet
  *
- * Slides up from bottom with 3 snap points:
- * - Peek (30vh): Header + dossier summary
- * - Half (60vh): + group analytics + first thread
- * - Full (90vh): + full conversation timeline + actions
+ * Tri-state intelligence display:
+ * - Pristine: webhook stats + CTA "Processar conversas?" (zero AI tokens)
+ * - Processing: stepper progress (dossier → threads → entities)
+ * - Completed: dossier + threads + group analytics (data already processed)
  *
  * Reuses existing CI components: ContactDossierCard, ConversationTimeline,
  * GroupAnalyticsCard for maximum code reuse.
@@ -16,10 +16,7 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import {
   X,
   MessageCircle,
-  Phone,
   Users,
-  Brain,
-  ExternalLink,
   RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,8 +24,10 @@ import type { ContactNetwork } from '@/types/memoryTypes'
 import { ContactDossierCard } from './ContactDossierCard'
 import { ConversationTimeline } from './ConversationTimeline'
 import { GroupAnalyticsCard } from './GroupAnalyticsCard'
-import { useContactDossier } from '../../hooks/useContactDossier'
-import { useConversationThreads } from '../../hooks/useConversationThreads'
+import { ProcessingCTA } from './ProcessingCTA'
+import { IntentTimeline } from './IntentTimeline'
+import { useContactIntelligence } from '../../hooks/useContactIntelligence'
+import { useIntentTimeline } from '../../hooks/useIntentTimeline'
 
 export interface ContactDetailSheetProps {
   contact: ContactNetwork | null
@@ -68,23 +67,26 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
   const sheetRef = useRef<HTMLDivElement>(null)
   const isGroup = contact?.relationship_type === 'group'
 
-  // Hooks — these fetch data when contact changes
+  // Tri-state intelligence hook — replaces auto-fetching useContactDossier + useConversationThreads
   const {
+    state,
+    progress,
     dossier,
-    isLoading: isDossierLoading,
-    isRefreshing: isDossierRefreshing,
-    hasDossier,
-    refreshDossier,
-  } = useContactDossier(isOpen && contact ? contact.id : null)
-
-  const {
     threads,
-    isLoading: isThreadsLoading,
-    isBuilding: isThreadsBuilding,
-    hasMore: hasMoreThreads,
-    loadMore: loadMoreThreads,
-    buildThreads,
-  } = useConversationThreads(isOpen && contact ? contact.id : null)
+    error,
+    activate,
+    refreshAll,
+  } = useContactIntelligence(contact, isOpen)
+
+  // Intent timeline — only fetch when completed (privacy-first: only intent fields)
+  const contactPhone = contact?.whatsapp_phone || contact?.phone_number || null
+  const {
+    intents,
+    totalCount: intentCount,
+    isLoading: isIntentsLoading,
+    hasMore: hasMoreIntents,
+    loadMore: loadMoreIntents,
+  } = useIntentTimeline(contactPhone, state === 'completed')
 
   // Close on Escape
   useEffect(() => {
@@ -105,13 +107,16 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
   }, [contact])
 
   const handleDragEnd = useCallback((_: unknown, info: PanInfo) => {
-    // If user drags down more than 100px, close
     if (info.offset.y > 100 && info.velocity.y > 0) {
       onClose()
     }
   }, [onClose])
 
   if (!contact) return null
+
+  const messageCount = contact.whatsapp_message_count || 0
+  const hasDossier = !!dossier?.dossier_summary
+  const isRefreshing = state === 'processing' && !!dossier
 
   return (
     <AnimatePresence>
@@ -211,44 +216,99 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
                     Abrir WhatsApp
                   </button>
                 )}
-                <button
-                  onClick={refreshDossier}
-                  disabled={isDossierRefreshing}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-cool/80 transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw className={cn('w-4 h-4', isDossierRefreshing && 'animate-spin')} />
-                  {isDossierRefreshing ? 'Atualizando...' : 'Atualizar dossiê'}
-                </button>
+                {state === 'completed' && (
+                  <button
+                    onClick={refreshAll}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-cool/80 transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
+                    {isRefreshing ? 'Atualizando...' : 'Atualizar dossiê'}
+                  </button>
+                )}
               </div>
 
-              {/* Dossier section */}
-              <ContactDossierCard
-                dossier={dossier}
-                isLoading={isDossierLoading}
-                isRefreshing={isDossierRefreshing}
-                hasDossier={hasDossier}
-                onRefresh={refreshDossier}
-                className="mb-4"
-              />
+              {/* ===== TRI-STATE CONTENT ===== */}
 
-              {/* Group analytics (only for groups) */}
-              {isGroup && (
-                <GroupAnalyticsCard
-                  groupContactId={contact.id}
+              {/* Pristine / Processing: Show CTA card */}
+              {(state === 'pristine' || state === 'processing') && (
+                <ProcessingCTA
+                  messageCount={messageCount}
+                  state={state}
+                  progress={progress}
+                  error={error}
+                  onActivate={activate}
                   className="mb-4"
                 />
               )}
 
-              {/* Conversation timeline */}
-              <ConversationTimeline
-                threads={threads}
-                isLoading={isThreadsLoading}
-                isBuilding={isThreadsBuilding}
-                hasMore={hasMoreThreads}
-                onLoadMore={loadMoreThreads}
-                onBuildThreads={buildThreads}
-                className="mb-4"
-              />
+              {/* Webhook stats (always visible in pristine/processing) */}
+              {state !== 'completed' && messageCount > 0 && (
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="rounded-xl bg-ceramic-cool/40 p-3 text-center">
+                    <p className="text-lg font-bold text-ceramic-text-primary">
+                      {messageCount.toLocaleString('pt-BR')}
+                    </p>
+                    <p className="text-[10px] text-ceramic-text-tertiary">Mensagens</p>
+                  </div>
+                  <div className="rounded-xl bg-ceramic-cool/40 p-3 text-center">
+                    <p className="text-lg font-bold text-ceramic-text-primary">
+                      {contact.interaction_count || 0}
+                    </p>
+                    <p className="text-[10px] text-ceramic-text-tertiary">Interações</p>
+                  </div>
+                  <div className="rounded-xl bg-ceramic-cool/40 p-3 text-center">
+                    <p className="text-lg font-bold text-ceramic-text-primary">
+                      {contact.health_score ?? '—'}
+                    </p>
+                    <p className="text-[10px] text-ceramic-text-tertiary">Saúde</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Completed: Show full intelligence */}
+              {state === 'completed' && (
+                <>
+                  {/* Dossier section */}
+                  <ContactDossierCard
+                    dossier={dossier}
+                    isLoading={false}
+                    isRefreshing={isRefreshing}
+                    hasDossier={hasDossier}
+                    onRefresh={refreshAll}
+                    className="mb-4"
+                  />
+
+                  {/* Group analytics (only for groups) */}
+                  {isGroup && (
+                    <GroupAnalyticsCard
+                      groupContactId={contact.id}
+                      className="mb-4"
+                    />
+                  )}
+
+                  {/* Conversation timeline */}
+                  <ConversationTimeline
+                    threads={threads}
+                    isLoading={false}
+                    isBuilding={false}
+                    hasMore={false}
+                    onLoadMore={async () => {}}
+                    onBuildThreads={async () => {}}
+                    className="mb-4"
+                  />
+
+                  {/* Intent timeline (AI conversation view) */}
+                  <IntentTimeline
+                    intents={intents}
+                    totalCount={intentCount}
+                    isLoading={isIntentsLoading}
+                    hasMore={hasMoreIntents}
+                    onLoadMore={loadMoreIntents}
+                    className="mb-4"
+                  />
+                </>
+              )}
             </div>
           </motion.div>
         </>
