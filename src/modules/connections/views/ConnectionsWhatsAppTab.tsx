@@ -40,7 +40,14 @@ import {
   ConnectionStatusCard,
   ConsentManager,
   EmotionalThermometer,
+  ContactDossierCard,
+  ConversationTimeline,
+  EntityInbox,
+  GroupAnalyticsCard,
 } from '../components/whatsapp';
+import { useContactDossier } from '../hooks/useContactDossier';
+import { useConversationThreads } from '../hooks/useConversationThreads';
+import { useExtractedEntities } from '../hooks/useExtractedEntities';
 import whatsappAnalyticsService, {
   ContactSentimentScore,
   AnomalyAlert,
@@ -335,6 +342,14 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   const [sortBy, setSortBy] = useState<ContactSortField>('last_activity');
   const [sortOrder, setSortOrder] = useState<ContactSortOrder>('desc');
 
+  // Selected contact for dossier (Conversation Intelligence Phase 1)
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const { dossier, isLoading: isDossierLoading, isRefreshing: isDossierRefreshing, hasDossier, refreshDossier } = useContactDossier(selectedContactId);
+  const { threads, isLoading: isThreadsLoading, isBuilding: isThreadsBuilding, hasMore: hasMoreThreads, loadMore: loadMoreThreads, buildThreads } = useConversationThreads(selectedContactId);
+
+  // Entity extraction (Conversation Intelligence Phase 3)
+  const { entities, stats: entityStats, isLoading: isEntitiesLoading, isExtracting, acceptEntity, rejectEntity, extractEntities } = useExtractedEntities();
+
   // Tab configuration
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
@@ -453,6 +468,17 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     <div className="space-y-6">
       {/* Connection Status */}
       <ConnectionStatusCard showQRCode={true} autoRefresh={true} />
+
+      {/* Entity Inbox (Conversation Intelligence Phase 3) */}
+      <EntityInbox
+        entities={entities}
+        stats={entityStats}
+        isLoading={isEntitiesLoading}
+        isExtracting={isExtracting}
+        onAccept={acceptEntity}
+        onReject={rejectEntity}
+        onExtract={() => extractEntities()}
+      />
 
       {/* Recent Anomalies */}
       {anomalies.length > 0 && (
@@ -677,8 +703,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
                   <WhatsAppContactCard
                     contact={contact}
                     onClick={() => {
-                      // Could navigate to contact details or select for analysis
-                      log.debug('Selected contact:', contact);
+                      setSelectedContactId(prev => prev === contact.id ? null : contact.id);
                     }}
                   />
                 </motion.div>
@@ -686,6 +711,36 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             </motion.div>
           )}
         </div>
+
+        {/* Contact Dossier + Conversation Timeline (Conversation Intelligence) */}
+        {selectedContactId && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-4"
+          >
+            <ContactDossierCard
+              dossier={dossier}
+              isLoading={isDossierLoading}
+              isRefreshing={isDossierRefreshing}
+              hasDossier={hasDossier}
+              onRefresh={refreshDossier}
+            />
+            {/* Group Analytics (Phase 4) — shown only for group contacts */}
+            {syncedContacts.find(c => c.id === selectedContactId)?.whatsapp_id?.includes('@g.us') && (
+              <GroupAnalyticsCard groupContactId={selectedContactId} />
+            )}
+            <ConversationTimeline
+              threads={threads}
+              isLoading={isThreadsLoading}
+              isBuilding={isThreadsBuilding}
+              hasMore={hasMoreThreads}
+              onLoadMore={loadMoreThreads}
+              onBuildThreads={buildThreads}
+            />
+          </motion.div>
+        )}
       </div>
     );
   };

@@ -39,6 +39,18 @@ export { useConnectionMembers } from './useConnectionMembers';
 // Search hooks
 export { useDebouncedSearch } from './useDebouncedSearch';
 
+// Contact Dossier hooks (Conversation Intelligence Phase 1)
+export { useContactDossier, useContactDossierBatch } from './useContactDossier';
+export type { ContactDossier, DossierContext, UseContactDossierReturn } from './useContactDossier';
+
+// Conversation Threading hooks (Conversation Intelligence Phase 2)
+export { useConversationThreads, useRecentThreads } from './useConversationThreads';
+export type { ConversationThread, UseConversationThreadsReturn } from './useConversationThreads';
+
+// Entity Extraction hooks (Conversation Intelligence Phase 3)
+export { useExtractedEntities } from './useExtractedEntities';
+export type { ExtractedEntity, EntityStats, UseExtractedEntitiesReturn } from './useExtractedEntities';
+
 // Contact Filter hooks (Issue #92)
 export { useContactFilters } from './useContactFilters';
 export type {
