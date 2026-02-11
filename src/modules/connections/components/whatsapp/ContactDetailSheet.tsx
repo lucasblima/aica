@@ -79,14 +79,13 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
   } = useContactIntelligence(contact, isOpen)
 
   // Intent timeline — only fetch when completed (privacy-first: only intent fields)
-  const contactPhone = contact?.whatsapp_phone || contact?.phone_number || null
   const {
     intents,
     totalCount: intentCount,
     isLoading: isIntentsLoading,
     hasMore: hasMoreIntents,
     loadMore: loadMoreIntents,
-  } = useIntentTimeline(contactPhone, state === 'completed')
+  } = useIntentTimeline(contact?.id || null, state === 'completed')
 
   // Close on Escape
   useEffect(() => {
