@@ -4,6 +4,8 @@
  *
  * Privacy-first: queries ONLY intent fields from whatsapp_messages,
  * never content_text or raw message data.
+ *
+ * Uses contact_id (UUID) for filtering — the reliable FK on whatsapp_messages.
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -56,7 +58,7 @@ const INTENT_COLUMNS = [
 // =============================================================================
 
 export function useIntentTimeline(
-  contactPhone: string | null,
+  contactId: string | null,
   enabled = true
 ): UseIntentTimelineReturn {
   const [intents, setIntents] = useState<IntentEntry[]>([])
@@ -67,7 +69,7 @@ export function useIntentTimeline(
   const [totalCount, setTotalCount] = useState(0)
 
   const fetchIntents = useCallback(async (reset = false) => {
-    if (!contactPhone || !enabled) {
+    if (!contactId || !enabled) {
       setIntents([])
       return
     }
@@ -81,8 +83,9 @@ export function useIntentTimeline(
       const { data, error: queryError, count } = await supabase
         .from('whatsapp_messages')
         .select(INTENT_COLUMNS, { count: 'exact' })
-        .eq('contact_phone', contactPhone)
+        .eq('contact_id', contactId)
         .not('intent_summary', 'is', null)
+        .neq('intent_summary', '')
         .order('message_timestamp', { ascending: false })
         .range(currentOffset, currentOffset + PAGE_SIZE - 1)
 
@@ -106,7 +109,7 @@ export function useIntentTimeline(
     } finally {
       setIsLoading(false)
     }
-  }, [contactPhone, enabled, offset])
+  }, [contactId, enabled, offset])
 
   const loadMore = useCallback(async () => {
     if (!hasMore || isLoading) return
@@ -120,7 +123,7 @@ export function useIntentTimeline(
     setTotalCount(0)
     fetchIntents(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contactPhone, enabled])
+  }, [contactId, enabled])
 
   return {
     intents,
