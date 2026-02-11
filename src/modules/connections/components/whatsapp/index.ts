@@ -13,3 +13,5 @@ export { ConversationThreadCard } from './ConversationThreadCard';
 export { ConversationTimeline } from './ConversationTimeline';
 export { EntityInbox } from './EntityInbox';
 export { GroupAnalyticsCard } from './GroupAnalyticsCard';
+export { IntelligentContactCard } from './IntelligentContactCard';
+export { ContactDetailSheet } from './ContactDetailSheet';

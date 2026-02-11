@@ -51,7 +51,6 @@ const ConnectionsPage = lazy(() => import('../pages/ConnectionsPage').then(m => 
 const ArchetypeListPage = lazy(() => import('../pages/ArchetypeListPage').then(m => ({ default: m.ArchetypeListPage })));
 const SpaceDetailPage = lazy(() => import('../pages/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
 const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
-const WhatsAppAnalyticsPage = lazy(() => import('../pages/WhatsAppAnalyticsPage').then(m => ({ default: m.default })));
 const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
 
 // Flux Module - Swim training management
@@ -634,7 +633,7 @@ export function AppRouter() {
                <Route path="/connections/:archetype" element={<AuthGuard><ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout></AuthGuard>} />
                <Route path="/connections/:archetype/:spaceId" element={<AuthGuard><SpaceDetailPage /></AuthGuard>} />
                <Route path="/connections/:archetype/:spaceId/:section" element={<AuthGuard><SpaceSectionPage /></AuthGuard>} />
-               <Route path="/connections/analytics/whatsapp" element={<AuthGuard><WhatsAppAnalyticsPage /></AuthGuard>} />
+               <Route path="/connections/analytics/whatsapp" element={<Navigate to="/contacts" replace />} />
 
                {/* Studio Module Routes - Protected */}
                <Route

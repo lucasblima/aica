@@ -1,431 +1,432 @@
 /**
- * ContactsView Page
- * Dedicated page for viewing and managing contacts with WhatsApp sync.
+ * ContactsView Page — "Pessoas"
+ * Unified People hub with progressive WhatsApp intelligence.
  *
- * UX: Always shows the contacts list (even if empty). When WhatsApp is
- * not connected, shows an inline "Connect WhatsApp" card instead of
- * blocking the entire page with the pairing flow.
+ * Design: Start minimal, intelligence surfaces as the system learns.
+ * Like annotations appearing on notebook margins.
+ *
+ * Features:
+ * - Search + filter (Todos | Pessoas | Grupos | Com pendencias)
+ * - WhatsApp status pill (connected/disconnected)
+ * - Entity inbox banner (pending suggestions from conversations)
+ * - Intelligent contact cards with progressive L0-L4 levels
+ * - Contact detail bottom sheet (dossier, timeline, group analytics)
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, MessageCircle, Settings2, X } from 'lucide-react';
-import { HeaderGlobal, ContactDetailModal, CreditBalanceWidget } from '../components';
-import { useAuth } from '../hooks/useAuth';
-import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService';
-import { supabase } from '../services/supabaseClient';
-import { createNamespacedLogger } from '@/lib/logger';
-import type { ContactNetwork } from '../types/memoryTypes';
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, RefreshCw, MessageCircle, X, Inbox, Check, Sparkles } from 'lucide-react'
+import { HeaderGlobal } from '../components'
+import { useAuth } from '../hooks/useAuth'
+import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService'
+import { supabase } from '../services/supabaseClient'
+import { createNamespacedLogger } from '@/lib/logger'
+import type { ContactNetwork } from '../types/memoryTypes'
 
-// Issue #92: Rich WhatsApp contact list components
-import { WhatsAppContactList } from '@/modules/connections/components';
+import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep'
+import { useWhatsAppConnection } from '../modules/connections/hooks/useWhatsAppConnection'
+import { IntelligentContactCard } from '@/modules/connections/components/whatsapp/IntelligentContactCard'
+import { ContactDetailSheet } from '@/modules/connections/components/whatsapp/ContactDetailSheet'
+import { EntityInbox } from '@/modules/connections/components/whatsapp/EntityInbox'
+import { useExtractedEntities } from '@/modules/connections/hooks/useExtractedEntities'
 
-const log = createNamespacedLogger('ContactsView');
+const log = createNamespacedLogger('ContactsView')
 
-// WhatsApp Onboarding Components
-import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep';
-import { useWhatsAppConnection } from '../modules/connections/hooks/useWhatsAppConnection';
+// Filter types
+type FilterType = 'all' | 'people' | 'groups' | 'pending'
+
+const FILTER_OPTIONS: { key: FilterType; label: string }[] = [
+  { key: 'all', label: 'Todos' },
+  { key: 'people', label: 'Pessoas' },
+  { key: 'groups', label: 'Grupos' },
+  { key: 'pending', label: 'Com pendências' },
+]
 
 export function ContactsView() {
-  const { user } = useAuth();
-  const [contacts, setContacts] = useState<ContactNetwork[]>([]);
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<ContactNetwork | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [syncStatus, setSyncStatus] = useState<{ lastSyncAt: string | null; contactCount: number } | null>(null);
+  const { user } = useAuth()
+  const [contacts, setContacts] = useState<ContactNetwork[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [syncStatus, setSyncStatus] = useState<{ lastSyncAt: string | null; contactCount: number } | null>(null)
+
+  // Search and filter
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+
+  // Contact detail sheet
+  const [selectedContact, setSelectedContact] = useState<ContactNetwork | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+
+  // Entity inbox
+  const [isEntityInboxExpanded, setIsEntityInboxExpanded] = useState(false)
 
   // Auto-sync state
-  const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
-  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+  const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false)
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false)
 
-  // Pairing flow expanded state — persisted to sessionStorage to survive tab-switch remounts
+  // Pairing flow expanded state — persisted to sessionStorage
   const [isPairingExpanded, setIsPairingExpanded] = useState(() => {
     try { return sessionStorage.getItem('aica:pairingExpanded') === 'true' } catch { return false }
-  });
+  })
 
-  // Sync isPairingExpanded to sessionStorage
   useEffect(() => {
     try { sessionStorage.setItem('aica:pairingExpanded', String(isPairingExpanded)) } catch { /* ignore */ }
-  }, [isPairingExpanded]);
+  }, [isPairingExpanded])
 
-  // Issue #91: Reconnect/reconfigure webhook state
-  const [isReconnecting, setIsReconnecting] = useState(false);
+  // WhatsApp connection
+  const { configureWebhook, session: whatsappSession, isConnected, isLoading: isCheckingSession } = useWhatsAppConnection()
+  const needsPairing = !whatsappSession || whatsappSession.status !== 'connected'
 
-  // Use WhatsApp connection hook - single source of truth for session state
-  const { configureWebhook, session: whatsappSession, isConnected, isLoading: isCheckingSession } = useWhatsAppConnection();
+  // Entity inbox hook
+  const {
+    entities: pendingEntities,
+    stats: entityStats,
+    isLoading: isEntitiesLoading,
+    isExtracting,
+    acceptEntity,
+    rejectEntity,
+    extractEntities,
+  } = useExtractedEntities()
 
-  const needsPairing = !whatsappSession || whatsappSession.status !== 'connected';
+  // Build set of contact IDs with pending entities
+  const contactsWithPendingEntities = useMemo(() => {
+    const ids = new Set<string>()
+    for (const e of pendingEntities) {
+      if (e.contact_name) {
+        // Match by name since entity has contact_name not contact_id in the hook
+        const match = contacts.find(c => c.name === e.contact_name)
+        if (match) ids.add(match.id)
+      }
+    }
+    return ids
+  }, [pendingEntities, contacts])
+
+  // Filtered and searched contacts
+  const filteredContacts = useMemo(() => {
+    let result = contacts
+
+    // Search filter (debounce handled by input)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.phone_number || '').includes(q) ||
+        (c.whatsapp_phone || '').includes(q)
+      )
+    }
+
+    // Type filter
+    switch (activeFilter) {
+      case 'people':
+        result = result.filter(c => c.relationship_type !== 'group')
+        break
+      case 'groups':
+        result = result.filter(c => c.relationship_type === 'group')
+        break
+      case 'pending':
+        result = result.filter(c => contactsWithPendingEntities.has(c.id))
+        break
+    }
+
+    return result
+  }, [contacts, searchQuery, activeFilter, contactsWithPendingEntities])
 
   // Load contacts from database
   useEffect(() => {
     if (user?.id && whatsappSession?.status === 'connected') {
-      loadContacts();
-      loadSyncStatus();
+      loadContacts()
+      loadSyncStatus()
     }
-  }, [user?.id, whatsappSession?.status]);
+  }, [user?.id, whatsappSession?.status])
 
-  // AUTO-SYNC: Only trigger when connected AND never synced before (lastSyncAt === null)
+  // AUTO-SYNC: connected + never synced before
   useEffect(() => {
     const shouldAutoSync =
       whatsappSession?.status === 'connected' &&
-      !isLoading &&
-      !isCheckingSession &&
-      syncStatus !== null &&
-      syncStatus.lastSyncAt === null &&
-      !hasAttemptedAutoSync &&
-      !isSyncing &&
-      !isAutoSyncing;
+      !isLoading && !isCheckingSession &&
+      syncStatus !== null && syncStatus.lastSyncAt === null &&
+      !hasAttemptedAutoSync && !isSyncing && !isAutoSyncing
 
     if (shouldAutoSync) {
-      log.debug('Auto-sync triggered: connected but never synced');
-      setHasAttemptedAutoSync(true);
-      setIsAutoSyncing(true);
+      log.debug('Auto-sync triggered: connected but never synced')
+      setHasAttemptedAutoSync(true)
+      setIsAutoSyncing(true)
 
       syncWhatsAppContacts()
         .then((result) => {
-          log.debug('Auto-sync result:', result);
-          if (result.success) {
-            loadContacts();
-            loadSyncStatus();
-          } else {
-            setError(`Erro ao sincronizar: ${result.errors.join(', ')}`);
-          }
+          if (result.success) { loadContacts(); loadSyncStatus() }
+          else setError(`Erro ao sincronizar: ${result.errors.join(', ')}`)
         })
-        .catch((err) => {
-          log.error('Auto-sync error:', err);
-          setError(`Erro ao sincronizar: ${err.message}`);
-        })
-        .finally(() => {
-          setIsAutoSyncing(false);
-        });
+        .catch((err) => setError(`Erro ao sincronizar: ${err.message}`))
+        .finally(() => setIsAutoSyncing(false))
     }
-  }, [
-    whatsappSession?.status,
-    isLoading,
-    isCheckingSession,
-    syncStatus,
-    hasAttemptedAutoSync,
-    isSyncing,
-    isAutoSyncing,
-  ]);
+  }, [whatsappSession?.status, isLoading, isCheckingSession, syncStatus, hasAttemptedAutoSync, isSyncing, isAutoSyncing])
 
   const loadContacts = async () => {
-    setIsLoading(true);
-    setError(null);
-
+    setIsLoading(true)
+    setError(null)
     try {
       const { data, error: fetchError } = await supabase
         .from('contact_network')
         .select('*')
         .eq('user_id', user?.id)
-        .order('name', { ascending: true });
+        .order('last_interaction_at', { ascending: false, nullsFirst: false })
 
-      if (fetchError) throw fetchError;
-
-      setContacts(data || []);
+      if (fetchError) throw fetchError
+      setContacts(data || [])
     } catch (err) {
-      const error = err as Error;
-      log.error('Error loading contacts:', error);
-      setError(error.message);
+      log.error('Error loading contacts:', err)
+      setError((err as Error).message)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const loadSyncStatus = async () => {
     try {
-      const status = await getSyncStatus();
-      setSyncStatus({
-        lastSyncAt: status.lastSyncAt,
-        contactCount: status.contactCount,
-      });
+      const status = await getSyncStatus()
+      setSyncStatus({ lastSyncAt: status.lastSyncAt, contactCount: status.contactCount })
     } catch (err) {
-      log.error('Error loading sync status:', err);
+      log.error('Error loading sync status:', err)
     }
-  };
+  }
 
   const handleWhatsAppSync = async () => {
-    setIsSyncing(true);
-    setError(null);
-
+    setIsSyncing(true)
+    setError(null)
     try {
-      const result = await syncWhatsAppContacts();
-
+      const result = await syncWhatsAppContacts()
       if (result.success) {
-        log.debug('WhatsApp sync completed:', result);
-        await loadContacts();
-        await loadSyncStatus();
-        alert(`Sincronização concluída!\n\n${result.contactsSynced} contatos sincronizados`);
+        await loadContacts()
+        await loadSyncStatus()
       } else {
-        throw new Error(result.errors.join(', '));
+        throw new Error(result.errors.join(', '))
       }
     } catch (err) {
-      const error = err as Error;
-      log.error('WhatsApp sync error:', error);
-      setError(`Erro ao sincronizar: ${error.message}`);
-      alert(`Erro ao sincronizar:\n\n${error.message}`);
+      setError(`Erro ao sincronizar: ${(err as Error).message}`)
     } finally {
-      setIsSyncing(false);
+      setIsSyncing(false)
     }
-  };
+  }
 
   const handleContactClick = useCallback((contact: ContactNetwork) => {
-    setSelectedContact(contact);
-    setIsDetailModalOpen(true);
-  }, []);
-
-  const handleChatClick = useCallback((contact: ContactNetwork) => {
-    const phone = contact.whatsapp_phone || contact.phone_number;
-    if (phone) {
-      const cleanPhone = phone.replace(/\D/g, '');
-      window.open(`https://wa.me/${cleanPhone}`, '_blank');
-    }
-  }, []);
-
-  const handleFavoriteToggle = useCallback((contact: ContactNetwork) => {
-    setFavoriteIds(prev =>
-      prev.includes(contact.id)
-        ? prev.filter(id => id !== contact.id)
-        : [...prev, contact.id]
-    );
-  }, []);
-
-  const handleContactSave = async (updatedContact: Partial<ContactNetwork>) => {
-    log.debug('Contact save:', updatedContact);
-    setIsDetailModalOpen(false);
-  };
-
-  const handleContactUpdated = (contactId: string, healthScore: number) => {
-    log.debug('Contact updated with health score:', contactId, healthScore);
-    setContacts(prev => prev.map(c =>
-      c.id === contactId
-        ? { ...c, health_score: healthScore, last_analyzed_at: new Date().toISOString() }
-        : c
-    ));
-    if (selectedContact?.id === contactId) {
-      setSelectedContact(prev => prev ? { ...prev, health_score: healthScore, last_analyzed_at: new Date().toISOString() } : prev);
-    }
-  };
+    setSelectedContact(contact)
+    setIsDetailOpen(true)
+  }, [])
 
   const handlePairingSuccess = async () => {
-    setIsPairingExpanded(false);
+    setIsPairingExpanded(false)
     try { sessionStorage.removeItem('aica:pairingExpanded'); sessionStorage.removeItem('aica:pairingCode') } catch { /* ignore */ }
-    if (isConnected) {
-      loadContacts();
-      loadSyncStatus();
-    }
-  };
-
-  const handleReconnect = async () => {
-    setIsReconnecting(true);
-    setError(null);
-
-    try {
-      log.debug('Reconnecting WhatsApp - reconfiguring webhook...');
-
-      const result = await configureWebhook();
-
-      if (result?.success) {
-        log.debug('Webhook reconfigured successfully:', result);
-        alert(`Conexão reconfigurada!\n\nWebhook: ${result.webhookConfigured ? 'OK' : 'Fallback'}\nStatus: ${result.connectionState || 'unknown'}`);
-      } else {
-        throw new Error('Falha ao reconfigurar conexão');
-      }
-    } catch (err) {
-      const error = err as Error;
-      log.error('Reconnect error:', error);
-      setError(`Erro ao reconectar: ${error.message}`);
-      alert(`Erro ao reconectar:\n\n${error.message}`);
-    } finally {
-      setIsReconnecting(false);
-    }
-  };
+    if (isConnected) { loadContacts(); loadSyncStatus() }
+  }
 
   return (
     <div className="min-h-screen bg-ceramic-base">
       <HeaderGlobal
-        title="Contatos"
-        subtitle="Minha Rede de Conexões"
+        title="Pessoas"
+        subtitle={!isCheckingSession && !needsPairing
+          ? `${contacts.length} contatos`
+          : undefined
+        }
         userEmail={user?.email}
       />
 
-      <main className="p-6 space-y-5 max-w-7xl mx-auto">
-        {/* ── WhatsApp Connection Banner ── */}
-        {(isPairingExpanded || (needsPairing && !isCheckingSession)) && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            className="overflow-hidden rounded-2xl"
-            style={{
-              background: 'rgba(255, 255, 255, 0.7)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.4)',
-              boxShadow: '0 4px 24px rgba(163, 158, 145, 0.08)',
-            }}
-          >
-            <AnimatePresence mode="wait">
-              {!isPairingExpanded ? (
-                /* ── Collapsed: elegant CTA ── */
-                <motion.button
-                  key="collapsed"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setIsPairingExpanded(true)}
-                  className="w-full p-6 flex items-center gap-5 hover:bg-white/40 transition-all duration-300 text-left group"
-                >
-                  {/* Breathing amber orb */}
-                  <motion.div
-                    className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center"
-                    animate={{
-                      scale: [1, 1.04, 1],
-                    }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <div
-                      className="absolute inset-0 rounded-full opacity-20"
-                      style={{
-                        background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)',
-                      }}
-                    />
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{
-                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                        boxShadow: '0 4px 12px rgba(217, 119, 6, 0.25)',
-                      }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                      </svg>
-                    </div>
-                  </motion.div>
-
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-ceramic-text-primary">
-                      Conectar WhatsApp
-                    </h3>
-                    <p className="text-sm text-ceramic-text-secondary mt-0.5">
-                      Sincronize seus contatos e comece a gerenciar sua rede
-                    </p>
-                  </div>
-
-                  <motion.span
-                    className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium text-white"
-                    style={{
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                    }}
-                    whileHover={{ scale: 1.03 }}
-                  >
-                    Conectar
-                  </motion.span>
-                </motion.button>
-              ) : (
-                /* ── Expanded: pairing flow ── */
-                <motion.div
-                  key="expanded"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {/* Header with close */}
-                  <div className="flex items-center justify-between px-6 pt-5 pb-0">
-                    <div /> {/* spacer */}
-                    <button
-                      onClick={() => setIsPairingExpanded(false)}
-                      className="p-2 rounded-full hover:bg-ceramic-cool/60 transition-colors"
-                    >
-                      <X className="w-4 h-4 text-ceramic-text-secondary" />
-                    </button>
-                  </div>
-                  <div className="px-6 pb-8">
-                    <WhatsAppPairingStep
-                      onSuccess={handlePairingSuccess}
-                      onBack={() => setIsPairingExpanded(false)}
-                      session={whatsappSession}
-                      isConnected={isConnected}
-                      sessionStatus={whatsappSession?.status ?? null}
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-
-        {/* ── Connected: actions row ── */}
-        {!needsPairing && (
-          <div className="flex items-start justify-between gap-4">
-            <CreditBalanceWidget className="max-w-md" />
-
-            <div className="flex items-center gap-2">
+      <main className="px-4 pt-3 pb-6 space-y-3 max-w-3xl mx-auto">
+        {/* ── WhatsApp Status Pill + Sync ── */}
+        {!isCheckingSession && (
+          <div className="flex items-center gap-2">
+            {/* Status pill */}
+            {needsPairing ? (
               <button
-                onClick={handleReconnect}
-                disabled={isReconnecting}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isReconnecting
-                    ? 'bg-ceramic-cool text-ceramic-text-secondary cursor-not-allowed'
-                    : 'bg-white/70 backdrop-blur-sm text-ceramic-text-primary hover:bg-white'
-                }`}
-                style={{
-                  border: '1px solid rgba(163, 158, 145, 0.12)',
-                  boxShadow: '0 2px 8px rgba(163, 158, 145, 0.06)',
-                }}
-                title="Reconectar WhatsApp"
+                onClick={() => setIsPairingExpanded(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
               >
-                <Settings2 className={`w-3.5 h-3.5 ${isReconnecting ? 'animate-spin' : ''}`} />
-                <span>{isReconnecting ? 'Reconectando...' : 'Reconectar'}</span>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                </span>
+                Conectar WhatsApp
               </button>
+            ) : (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-ceramic-success/10 text-ceramic-success">
+                <span className="w-2 h-2 rounded-full bg-ceramic-success" />
+                Conectado
+              </span>
+            )}
 
+            {/* Sync button (when connected) */}
+            {!needsPairing && (
               <button
                 onClick={handleWhatsAppSync}
                 disabled={isSyncing}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isSyncing
-                    ? 'bg-ceramic-cool text-ceramic-text-secondary cursor-not-allowed'
-                    : 'bg-white/70 backdrop-blur-sm text-ceramic-text-primary hover:bg-white'
-                }`}
-                style={{
-                  border: '1px solid rgba(163, 158, 145, 0.12)',
-                  boxShadow: '0 2px 8px rgba(163, 158, 145, 0.06)',
-                }}
-                title={syncStatus?.lastSyncAt ? `Ultima sincronizacao: ${new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR')}` : 'Sincronizar contatos WhatsApp'}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-ceramic-text-secondary hover:bg-ceramic-cool/60 transition-colors disabled:opacity-50"
               >
-                {isSyncing ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <MessageCircle className="w-3.5 h-3.5" />
-                )}
-                <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
               </button>
-            </div>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Contact count */}
+            {syncStatus && syncStatus.contactCount > 0 && (
+              <span className="text-[10px] text-ceramic-text-tertiary">
+                {syncStatus.contactCount} contatos
+              </span>
+            )}
           </div>
         )}
 
-        {/* Sync Status */}
-        {syncStatus && syncStatus.contactCount > 0 && (
-          <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
-            <MessageCircle className="w-3 h-3" />
-            <span>
-              {syncStatus.contactCount} contatos
-              {syncStatus.lastSyncAt && (
-                <> &bull; {new Date(syncStatus.lastSyncAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</>
-              )}
-            </span>
+        {/* ── Pairing flow (expanded) ── */}
+        <AnimatePresence>
+          {isPairingExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden rounded-2xl"
+              style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.4)',
+                boxShadow: '0 4px 24px rgba(163, 158, 145, 0.08)',
+              }}
+            >
+              <div className="flex items-center justify-end px-6 pt-4">
+                <button
+                  onClick={() => setIsPairingExpanded(false)}
+                  className="p-2 rounded-full hover:bg-ceramic-cool/60 transition-colors"
+                >
+                  <X className="w-4 h-4 text-ceramic-text-secondary" />
+                </button>
+              </div>
+              <div className="px-6 pb-8">
+                <WhatsAppPairingStep
+                  onSuccess={handlePairingSuccess}
+                  onBack={() => setIsPairingExpanded(false)}
+                  session={whatsappSession}
+                  isConnected={isConnected}
+                  sessionStatus={whatsappSession?.status ?? null}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Entity Inbox Banner ── */}
+        {pendingEntities.length > 0 && !isEntitiesLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {!isEntityInboxExpanded ? (
+              <button
+                onClick={() => setIsEntityInboxExpanded(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors hover:bg-amber-50/80"
+                style={{
+                  background: 'rgba(245, 158, 11, 0.06)',
+                  border: '1px solid rgba(245, 158, 11, 0.12)',
+                }}
+              >
+                <div className="p-1.5 bg-amber-100 rounded-lg">
+                  <Inbox className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-ceramic-text-primary">
+                    {pendingEntities.length} sugestão{pendingEntities.length !== 1 ? 'ões' : ''} do WhatsApp
+                  </p>
+                  <p className="text-xs text-ceramic-text-secondary truncate">
+                    Tarefas, eventos e valores detectados nas conversas
+                  </p>
+                </div>
+                <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              </button>
+            ) : (
+              <div className="rounded-xl overflow-hidden"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.6)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(245, 158, 11, 0.12)',
+                }}
+              >
+                <div className="flex items-center justify-between px-4 pt-3">
+                  <span className="text-xs font-medium text-ceramic-text-secondary">Sugestoes do WhatsApp</span>
+                  <button
+                    onClick={() => setIsEntityInboxExpanded(false)}
+                    className="p-1 rounded-full hover:bg-ceramic-cool/60 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
+                  </button>
+                </div>
+                <EntityInbox
+                  entities={pendingEntities}
+                  stats={entityStats}
+                  isLoading={isEntitiesLoading}
+                  isExtracting={isExtracting}
+                  onAccept={acceptEntity}
+                  onReject={rejectEntity}
+                  onExtract={extractEntities}
+                  className="border-none shadow-none"
+                />
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── Search Bar ── */}
+        {!isCheckingSession && contacts.length > 0 && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-tertiary pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Buscar contatos..."
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm bg-ceramic-cool/40 text-ceramic-text-primary placeholder-ceramic-text-tertiary outline-none focus:bg-ceramic-cool/60 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-ceramic-border/40 transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
+              </button>
+            )}
           </div>
         )}
 
-        {/* Auto-sync indicator */}
+        {/* ── Filter Chips ── */}
+        {!isCheckingSession && contacts.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {FILTER_OPTIONS.map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setActiveFilter(opt.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  activeFilter === opt.key
+                    ? 'bg-ceramic-text-primary text-ceramic-base'
+                    : 'bg-ceramic-cool/40 text-ceramic-text-secondary hover:bg-ceramic-cool/60'
+                }`}
+              >
+                {opt.label}
+                {opt.key === 'pending' && pendingEntities.length > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold">
+                    {pendingEntities.length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Auto-sync indicator ── */}
         {isAutoSyncing && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-3 px-5 py-4 rounded-2xl"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl"
             style={{
               background: 'rgba(255, 255, 255, 0.6)',
               backdropFilter: 'blur(8px)',
@@ -433,29 +434,24 @@ export function ContactsView() {
             }}
           >
             <motion.div
-              className="w-5 h-5 rounded-full"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              }}
-              animate={{
-                scale: [1, 1.15, 1],
-                opacity: [0.7, 1, 0.7],
-              }}
+              className="w-4 h-4 rounded-full"
+              style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+              animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             />
             <div>
               <p className="text-sm font-medium text-ceramic-text-primary">Sincronizando contatos...</p>
-              <p className="text-xs text-ceramic-text-secondary">Primeira sincronização em andamento</p>
+              <p className="text-xs text-ceramic-text-secondary">Primeira sincronizacao em andamento</p>
             </div>
           </motion.div>
         )}
 
-        {/* Error */}
+        {/* ── Error ── */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-5 py-3.5 rounded-2xl"
+            className="px-4 py-3 rounded-xl"
             style={{
               background: 'rgba(155, 77, 58, 0.06)',
               border: '1px solid rgba(155, 77, 58, 0.1)',
@@ -465,14 +461,12 @@ export function ContactsView() {
           </motion.div>
         )}
 
-        {/* Loading state for initial session check */}
+        {/* ── Loading ── */}
         {isCheckingSession && (
           <div className="flex flex-col items-center justify-center py-16">
             <motion.div
               className="w-8 h-8 rounded-full"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              }}
+              style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
               animate={{
                 scale: [1, 1.08, 1],
                 boxShadow: [
@@ -483,14 +477,14 @@ export function ContactsView() {
               }}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             />
-            <p className="mt-6 text-sm text-ceramic-text-secondary">Verificando conexão...</p>
+            <p className="mt-6 text-sm text-ceramic-text-secondary">Verificando conexao...</p>
           </div>
         )}
 
         {/* ── Contact List ── */}
         {!isCheckingSession && (
           <div
-            className="rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden divide-y divide-ceramic-border/40"
             style={{
               background: 'rgba(255, 255, 255, 0.5)',
               backdropFilter: 'blur(8px)',
@@ -498,8 +492,8 @@ export function ContactsView() {
               boxShadow: '0 4px 24px rgba(163, 158, 145, 0.06)',
             }}
           >
-            {needsPairing && contacts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            {filteredContacts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                 <div
                   className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
                   style={{ backgroundColor: 'rgba(148, 141, 130, 0.06)' }}
@@ -507,41 +501,46 @@ export function ContactsView() {
                   <MessageCircle className="w-6 h-6 text-ceramic-text-secondary/40" />
                 </div>
                 <h3 className="text-base font-semibold text-ceramic-text-primary mb-1.5">
-                  Nenhum contato ainda
+                  {searchQuery
+                    ? 'Nenhum resultado'
+                    : needsPairing
+                      ? 'Nenhum contato ainda'
+                      : 'Nenhum contato nesta categoria'
+                  }
                 </h3>
                 <p className="text-sm text-ceramic-text-secondary max-w-xs">
-                  Conecte seu WhatsApp para sincronizar contatos e gerenciar sua rede.
+                  {searchQuery
+                    ? `Nenhum contato encontrado para "${searchQuery}"`
+                    : needsPairing
+                      ? 'Conecte seu WhatsApp para sincronizar contatos.'
+                      : activeFilter === 'pending'
+                        ? 'Nenhum contato com pendencias no momento.'
+                        : 'Tente ajustar os filtros.'
+                  }
                 </p>
               </div>
             ) : (
-              <WhatsAppContactList
-                contacts={contacts}
-                favoriteIds={favoriteIds}
-                isLoading={isLoading}
-                error={error ? new Error(error) : null}
-                onContactClick={handleContactClick}
-                onChatClick={handleChatClick}
-                onFavoriteToggle={handleFavoriteToggle}
-                height="calc(100vh - 350px)"
-              />
+              filteredContacts.map(contact => (
+                <IntelligentContactCard
+                  key={contact.id}
+                  contact={contact}
+                  hasPendingEntities={contactsWithPendingEntities.has(contact.id)}
+                  onClick={handleContactClick}
+                />
+              ))
             )}
           </div>
         )}
       </main>
 
-      <AnimatePresence>
-        {isDetailModalOpen && selectedContact && (
-          <ContactDetailModal
-            contact={selectedContact}
-            isOpen={isDetailModalOpen}
-            onClose={() => setIsDetailModalOpen(false)}
-            onSave={handleContactSave}
-            onContactUpdated={handleContactUpdated}
-          />
-        )}
-      </AnimatePresence>
+      {/* ── Contact Detail Bottom Sheet ── */}
+      <ContactDetailSheet
+        contact={selectedContact}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
     </div>
-  );
+  )
 }
 
-export default ContactsView;
+export default ContactsView

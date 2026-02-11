@@ -121,7 +121,12 @@ REGRAS:
 - entity_summary em portugues, max 200 chars`
 }
 
-async function callGemini(prompt: string, apiKey: string): Promise<ExtractedEntity[]> {
+interface GeminiCallResult {
+  entities: ExtractedEntity[]
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number }
+}
+
+async function callGemini(prompt: string, apiKey: string): Promise<GeminiCallResult> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
 
   const response = await fetch(url, {
@@ -147,16 +152,19 @@ async function callGemini(prompt: string, apiKey: string): Promise<ExtractedEnti
   if (!text) throw new Error('Empty Gemini response')
 
   const parsed = extractJSON(text)
-  const entities = Array.isArray(parsed) ? parsed : []
+  const rawEntities = Array.isArray(parsed) ? parsed : []
 
-  return entities.map((e: Record<string, unknown>) => ({
-    entity_type: String(e.entity_type || 'task'),
-    entity_summary: String(e.entity_summary || '').substring(0, 200),
-    entity_details: (e.entity_details || {}) as Record<string, unknown>,
-    routed_to_module: e.routed_to_module as ExtractedEntity['routed_to_module'] || null,
-    confidence: Number(e.confidence) || 0.5,
-    source_context: String(e.source_context || '').substring(0, 100),
-  }))
+  return {
+    entities: rawEntities.map((e: Record<string, unknown>) => ({
+      entity_type: String(e.entity_type || 'task'),
+      entity_summary: String(e.entity_summary || '').substring(0, 200),
+      entity_details: (e.entity_details || {}) as Record<string, unknown>,
+      routed_to_module: e.routed_to_module as ExtractedEntity['routed_to_module'] || null,
+      confidence: Number(e.confidence) || 0.5,
+      source_context: String(e.source_context || '').substring(0, 100),
+    })),
+    usageMetadata: data.usageMetadata,
+  }
 }
 
 // =============================================================================
@@ -249,7 +257,23 @@ serve(async (req) => {
 
     // Extract entities via Gemini
     const prompt = buildExtractionPrompt(threadData)
-    const entities = await callGemini(prompt, apiKey)
+    const startMs = Date.now()
+    const { entities, usageMetadata } = await callGemini(prompt, apiKey)
+    const durationMs = Date.now() - startMs
+
+    // Fire-and-forget cost tracking
+    if (usageMetadata) {
+      supabase.rpc('log_ai_usage', {
+        p_user_id: userId,
+        p_operation_type: 'entity_extraction',
+        p_ai_model: GEMINI_MODEL,
+        p_input_tokens: usageMetadata.promptTokenCount || 0,
+        p_output_tokens: usageMetadata.candidatesTokenCount || 0,
+        p_module_type: 'whatsapp',
+        p_module_id: null,
+        p_duration_seconds: durationMs / 1000,
+      }).catch(err => console.warn('[CI] Cost tracking failed (non-blocking):', err))
+    }
 
     if (entities.length === 0) {
       return new Response(

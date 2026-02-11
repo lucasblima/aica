@@ -184,7 +184,12 @@ REGRAS:
 /**
  * Call Gemini for thread summary
  */
-async function callGemini(prompt: string, apiKey: string): Promise<ThreadSummary> {
+interface GeminiCallResult {
+  thread: ThreadSummary
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number }
+}
+
+async function callGemini(prompt: string, apiKey: string): Promise<GeminiCallResult> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
 
   const response = await fetch(url, {
@@ -212,12 +217,15 @@ async function callGemini(prompt: string, apiKey: string): Promise<ThreadSummary
   const parsed = extractJSON(text) as ThreadSummary
 
   return {
-    summary: (parsed.summary || '').substring(0, 300),
-    topic: (parsed.topic || 'Conversa geral').substring(0, 50),
-    decisions: (parsed.decisions || []).map(String).slice(0, 10),
-    action_items: (parsed.action_items || []).map(String).slice(0, 10),
-    thread_type: parsed.thread_type || 'general',
-    sentiment_arc: parsed.sentiment_arc || 'neutral',
+    thread: {
+      summary: (parsed.summary || '').substring(0, 300),
+      topic: (parsed.topic || 'Conversa geral').substring(0, 50),
+      decisions: (parsed.decisions || []).map(String).slice(0, 10),
+      action_items: (parsed.action_items || []).map(String).slice(0, 10),
+      thread_type: parsed.thread_type || 'general',
+      sentiment_arc: parsed.sentiment_arc || 'neutral',
+    },
+    usageMetadata: data.usageMetadata,
   }
 }
 
@@ -288,7 +296,9 @@ serve(async (req) => {
 
           // Get thread summary from Gemini
           const prompt = buildThreadPrompt(session, isGroup)
-          const threadSummary = await callGemini(prompt, apiKey)
+          const startMs = Date.now()
+          const { thread: threadSummary, usageMetadata } = await callGemini(prompt, apiKey)
+          const durationMs = Date.now() - startMs
 
           // Collect unique participants
           const participants = [...new Set(
@@ -330,6 +340,20 @@ serve(async (req) => {
             p_thread_id: thread.id,
             p_message_ids: messageIds,
           })
+
+          // Fire-and-forget cost tracking
+          if (usageMetadata) {
+            supabase.rpc('log_ai_usage', {
+              p_user_id: userId,
+              p_operation_type: 'thread_building',
+              p_ai_model: GEMINI_MODEL,
+              p_input_tokens: usageMetadata.promptTokenCount || 0,
+              p_output_tokens: usageMetadata.candidatesTokenCount || 0,
+              p_module_type: 'whatsapp',
+              p_module_id: thread.id,
+              p_duration_seconds: durationMs / 1000,
+            }).catch(err => console.warn('[CI] Cost tracking failed (non-blocking):', err))
+          }
 
           threadsCreated++
           console.log(`[build-conversation-threads] Created thread: ${threadSummary.topic} (${session.length} messages)`)
