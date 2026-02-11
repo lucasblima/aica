@@ -80,3 +80,9 @@ gha-creds-*.json
 # TODO: Remove this comment and re-enable exclusion after migrating PodcastWorkspace
 # _deprecated/
 .mcp.json
+
+# Firebase
+.firebase/
+
+# Supabase temp
+supabase/.temp/
