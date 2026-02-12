@@ -115,6 +115,38 @@ function generateAthletes(count: number): Athlete[] {
     const createdDaysAgo = Math.floor(random() * 365) + 30;
     const updatedDaysAgo = Math.floor(random() * 7);
 
+    // Generate performance thresholds based on modality (~40% of athletes)
+    const hasThresholdData = random() > 0.6;
+    let ftp: number | undefined;
+    let pace_threshold: string | undefined;
+    let swim_css: string | undefined;
+    let last_performance_test: string | undefined;
+
+    if (hasThresholdData) {
+      const testDaysAgo = Math.floor(random() * 60) + 7; // Last test 7-67 days ago
+      last_performance_test = generateDate(testDaysAgo);
+
+      if (modality === 'cycling') {
+        // FTP: 150-350W (varies by level)
+        const baseFtp = level.includes('avancado') ? 300 : level.includes('intermediario') ? 250 : 200;
+        ftp = Math.floor(baseFtp + (random() - 0.5) * 100);
+      } else if (modality === 'running') {
+        // Pace: 4:00-6:30/km (faster for advanced)
+        const basePaceSeconds = level.includes('avancado') ? 240 : level.includes('intermediario') ? 300 : 360;
+        const paceSeconds = Math.floor(basePaceSeconds + (random() - 0.5) * 60);
+        const minutes = Math.floor(paceSeconds / 60);
+        const seconds = paceSeconds % 60;
+        pace_threshold = `${minutes}:${seconds.toString().padStart(2, '0')}/km`;
+      } else if (modality === 'swimming') {
+        // CSS: 1:20-2:10/100m (faster for advanced)
+        const baseCssSeconds = level.includes('avancado') ? 85 : level.includes('intermediario') ? 105 : 120;
+        const cssSeconds = Math.floor(baseCssSeconds + (random() - 0.5) * 20);
+        const minutes = Math.floor(cssSeconds / 60);
+        const seconds = cssSeconds % 60;
+        swim_css = `${minutes}:${seconds.toString().padStart(2, '0')}/100m`;
+      }
+    }
+
     athletes.push({
       id: `athlete-${i}`,
       user_id: 'coach-1',
@@ -131,6 +163,10 @@ function generateAthletes(count: number): Athlete[] {
         sleep_quality: pickRandom(['poor', 'fair', 'good', 'excellent']),
         stress_level: pickRandom(['low', 'medium', 'high']),
       },
+      ftp,
+      pace_threshold,
+      swim_css,
+      last_performance_test,
       created_at: generateDate(createdDaysAgo),
       updated_at: generateDate(updatedDaysAgo),
     });
@@ -149,7 +185,7 @@ export const MOCK_ATHLETES_WITH_METRICS: AthleteWithMetrics[] = MOCK_ATHLETES.ma
   const isActive = athlete.status === 'active';
   const baseAdherence = isActive ? 75 : 40;
   const levelBonus = athlete.level.includes('avancado') ? 15 : athlete.level.includes('intermediario') ? 10 : 0;
-  const adherence_rate = Math.min(95, baseAdherence + levelBonus + random() * 10);
+  const consistency_rate = Math.min(95, baseAdherence + levelBonus + random() * 10);
 
   // ~5% of athletes have alerts
   const hasAlert = random() < 0.05;
@@ -158,7 +194,7 @@ export const MOCK_ATHLETES_WITH_METRICS: AthleteWithMetrics[] = MOCK_ATHLETES.ma
   return {
     ...athlete,
     current_week: isActive ? Math.floor(random() * 12) + 1 : undefined,
-    adherence_rate: Math.round(adherence_rate),
+    consistency_rate: Math.round(consistency_rate),
     active_alerts_count,
     last_feedback_at: isActive ? generateDate(Math.floor(random() * 3)) : undefined,
   };

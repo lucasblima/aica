@@ -117,7 +117,7 @@ export function MomentCapture({ onSubmit, onCancel }: MomentCaptureProps) {
         <SparklesIcon className="h-5 w-5 text-amber-500 flex-shrink-0" />
         <p className="text-sm text-ceramic-text-primary">
           Seu momento será analisado com IA para identificar sentimentos e padrões.
-          Você ganhará <strong>+5 CP</strong> por registrar este momento.
+          Ganhe <strong>até 20 CP</strong> com base na qualidade da sua reflexão.
         </p>
       </div>
     </form>

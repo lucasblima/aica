@@ -15,6 +15,7 @@ import {
 } from '../types/moment'
 import { SentimentAnalysis } from '../types/sentiment'
 import { transcribeAudio } from './momentPersistenceService'
+import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluationService'
 
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('MomentService')
@@ -54,10 +55,13 @@ export async function createMoment(
     if (insertError) throw insertError
 
     // Analyze moment in background: tags + mood + sentiment in 1 call (non-blocking)
-    analyzeMomentFull(finalContent || '', moment.id, userId)
+    analyzeMomentFull(finalContent || '', moment.id, userId, input.emotion)
       .catch((error) => {
         log.warn('Background moment analysis failed (non-critical):', error)
       })
+
+    // Evaluate quality and calculate CP
+    const qualityResult = await evaluateAndCalculateCP(finalContent || '', 'moment')
 
     // Award CP (awaited ~50ms to get real leveled_up data)
     const momentId = moment.id
@@ -66,7 +70,7 @@ export async function createMoment(
       'award_consciousness_points',
       {
         p_user_id: userId,
-        p_points: 5,
+        p_points: qualityResult.cp_earned,
         p_reason: 'moment_registered',
         p_reference_id: momentId,
         p_reference_type: 'moment',
@@ -86,13 +90,25 @@ export async function createMoment(
       }
     })
 
+    // Fire-and-forget: save quality_score to moment + update avg
+    supabase
+      .from('moments')
+      .update({ quality_score: qualityResult.quality_score })
+      .eq('id', momentId)
+      .eq('user_id', userId)
+      .then(({ error }) => { if (error) log.warn('Failed to save moment quality_score:', error) })
+    updateAvgQualityScore(userId, qualityResult.quality_score)
+
     // Return with real values from RPC
     return {
       ...moment,
-      cp_earned: 5,
+      cp_earned: qualityResult.cp_earned,
       leveled_up: cpResult?.leveled_up || false,
       new_level: cpResult?.level,
       level_name: cpResult?.level_name,
+      quality_score: qualityResult.quality_score,
+      quality_feedback: qualityResult.assessment.feedback_message,
+      quality_tier: qualityResult.assessment.feedback_tier,
     }
   } catch (error) {
     log.error('Error creating moment:', error)
@@ -254,13 +270,13 @@ export async function getMomentsCount(userId: string, filter?: MomentFilter): Pr
  * Analyze moment fully: tags + mood + sentiment in 1 Gemini call
  * Updates the moment in DB with results
  */
-async function analyzeMomentFull(content: string, momentId: string, userId: string): Promise<void> {
+async function analyzeMomentFull(content: string, momentId: string, userId: string, userEmotion?: string): Promise<void> {
   const startTime = Date.now()
 
   try {
     const response = await geminiClient.call({
       action: 'analyze_moment',
-      payload: { content },
+      payload: { content, user_emotion: userEmotion },
       model: 'fast',
     })
 
@@ -284,14 +300,19 @@ async function analyzeMomentFull(content: string, momentId: string, userId: stri
       energyLevel: result.energyLevel,
     }
 
-    // Update moment with tags + mood + sentiment in one DB call
+    // Update moment with tags + sentiment in one DB call
+    // Only overwrite emotion if the user didn't explicitly choose one
+    const updateData: Record<string, unknown> = {
+      tags: result.tags,
+      sentiment_data: sentimentData,
+    }
+    if (!userEmotion) {
+      updateData.emotion = `${result.mood.emoji} ${result.mood.label}`
+    }
+
     await supabase
       .from('moments')
-      .update({
-        tags: result.tags,
-        emotion: `${result.mood.emoji} ${result.mood.label}`,
-        sentiment_data: sentimentData,
-      })
+      .update(updateData)
       .eq('id', momentId)
       .eq('user_id', userId)
 

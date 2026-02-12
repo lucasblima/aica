@@ -14,7 +14,7 @@ import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { PatternDashboard } from '../components/insights/PatternDashboard'
-import { ConsciousnessScore } from '../components/gamification/ConsciousnessScore'
+
 import { JourneySearchPanel } from '../components/JourneySearchPanel'
 import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
 import { useMoments } from '../hooks/useMoments'
@@ -30,8 +30,10 @@ import {
   ChartBarIcon,
   MagnifyingGlassIcon,
   ArrowLeftIcon,
+  FireIcon,
 } from '@heroicons/react/24/solid'
 import { CreateMomentInput } from '../types/moment'
+import { LEVEL_COLORS, getProgressToNextLevel } from '../types/consciousnessPoints'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../../../hooks/useAuth'
 import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
@@ -39,26 +41,6 @@ import { SettingsMenu, HelpButton } from '@/components'
 import { CeramicFilterTab } from '@/components/ui'
 
 // ── Skeleton Components ──────────────────────────────────────────
-
-function ConsciousnessScoreSkeleton() {
-  return (
-    <div className="ceramic-card p-6 animate-pulse">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-12 w-12 bg-[#E0DDD5] rounded-full" />
-        <div className="flex-1">
-          <div className="h-4 w-24 bg-[#E0DDD5] rounded mb-2" />
-          <div className="h-3 w-16 bg-[#E0DDD5] rounded" />
-        </div>
-      </div>
-      <div className="h-3 w-full bg-[#E0DDD5] rounded mb-4" />
-      <div className="grid grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-10 bg-[#E0DDD5] rounded" />
-        ))}
-      </div>
-    </div>
-  )
-}
 
 function DailyQuestionSkeleton() {
   return (
@@ -178,7 +160,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
-  const { showAnimation, pointsEarned, leveledUp, newLevel, triggerAnimation } = useCPAnimation()
+  const { showAnimation, pointsEarned, leveledUp, newLevel, qualityFeedback, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
 
   // File Search integration
@@ -222,11 +204,12 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       // Trigger CP animation with real level-up data from RPC
       triggerAnimation(
-        5,
+        result.cp_earned,
         result.leveled_up,
         result.leveled_up
           ? { level: result.new_level || stats?.level || 1, name: result.level_name || stats?.level_name || 'Observador' }
-          : undefined
+          : undefined,
+        result.quality_feedback
       )
 
       // Fire confetti on level up
@@ -287,11 +270,12 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
       // Trigger CP animation
       triggerAnimation(
-        10,
+        result.cp_earned,
         result.leveled_up,
         result.leveled_up
           ? { level: stats?.level || 1, name: stats?.level_name || 'Observador' }
-          : undefined
+          : undefined,
+        result.quality_feedback
       )
 
       if (result.leveled_up) {
@@ -323,7 +307,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       const result = await addReflection(reflection)
 
       // Trigger CP animation
-      triggerAnimation(20, false)
+      triggerAnimation(result.cp_earned, false, undefined, result.quality_feedback)
 
       refreshStats()
     } catch (error) {
@@ -336,7 +320,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
       {/* Header - Digital Ceramic System */}
       <div className="ceramic-card rounded-none p-6 border-b border-[#A39E91]/10" data-tour="journey-header">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Back Navigation Button */}
               <button
@@ -351,175 +335,209 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               <h1 className="text-2xl font-semibold tracking-tight text-etched">Minha Jornada</h1>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Help Button - Optional tour */}
-              <HelpButton tourKey="journey-first-visit" />
+            {/* CP Stats with progress */}
+            {stats ? (() => {
+              const progress = getProgressToNextLevel(stats.total_points)
+              return (
+                <div className="flex items-center gap-4" data-tour="consciousness-points">
+                  {/* Level badge */}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0"
+                    style={{ backgroundColor: LEVEL_COLORS[stats.level] }}
+                    title={stats.level_name}
+                  >
+                    {stats.level}
+                  </div>
 
-              {/* Settings Menu - Discrete gear icon */}
+                  {/* Points + progress bar */}
+                  <div className="flex flex-col min-w-[120px]">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-lg font-bold text-ceramic-text-primary leading-none">
+                        {stats.total_points.toLocaleString()}
+                      </span>
+                      <span className="text-xs font-medium text-ceramic-text-secondary">CP</span>
+                      <span className="text-[10px] text-ceramic-text-secondary/60 ml-1">
+                        {stats.level_name}
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="mt-1 h-1.5 w-full bg-ceramic-cool/30 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: LEVEL_COLORS[stats.level] }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress.progress_percentage}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                      />
+                    </div>
+                    {progress.next_level && (
+                      <span className="text-[10px] text-ceramic-text-secondary/50 mt-0.5 leading-none">
+                        {progress.points_to_next} para nível {progress.next_level}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Streak */}
+                  {stats.current_streak > 0 && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-ceramic-warning/10 rounded-full shrink-0">
+                      <FireIcon className="h-3.5 w-3.5 text-ceramic-warning" />
+                      <span className="text-xs font-bold text-ceramic-warning">{stats.current_streak}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })() : (
+              <div className="flex items-center gap-3 animate-pulse">
+                <div className="w-8 h-8 bg-[#E0DDD5] rounded-full" />
+                <div className="flex flex-col gap-1.5">
+                  <div className="h-4 w-20 bg-[#E0DDD5] rounded" />
+                  <div className="h-1.5 w-28 bg-[#E0DDD5] rounded-full" />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <HelpButton tourKey="journey-first-visit" />
               <SettingsMenu userEmail={user?.email} />
             </div>
           </div>
-
-          {/* CP Score moved to sidebar - removed duplicate from header */}
         </div>
       </div>
 
-      {/* Main content - 3 zones */}
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Sidebar: CP Score + QuickCapture (25%) */}
-          <div className="lg:col-span-3">
-            <div className="sticky top-6 space-y-4">
-              {/* CP Score compact */}
-              {stats ? (
-                <motion.div
-                  data-tour="consciousness-points"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <ConsciousnessScore stats={stats} size="sm" showDetails={true} />
-                </motion.div>
-              ) : (
-                <ConsciousnessScoreSkeleton />
-              )}
-
-              {/* QuickCapture always visible */}
-              <QuickCapture
-                onSubmit={handleCreateMoment}
-                compact
-              />
-            </div>
-          </div>
-
-          {/* Main content area (75%) */}
-          <div className="lg:col-span-9 space-y-6 pb-40">
-            {/* Tabs - Ceramic Filter Tabs */}
-            <div className="flex gap-2 mb-4">
-              <CeramicFilterTab
-                icon={<ClockIcon className="h-4 w-4" />}
-                label="Atividades"
-                isActive={activeTab === 'timeline'}
-                onClick={() => setActiveTab('timeline')}
-              />
-              <CeramicFilterTab
-                icon={<ChartBarIcon className="h-4 w-4" />}
-                label="Insights"
-                isActive={activeTab === 'insights'}
-                onClick={() => setActiveTab('insights')}
-              />
-              <CeramicFilterTab
-                icon={<MagnifyingGlassIcon className="h-4 w-4" />}
-                label="Busca"
-                isActive={activeTab === 'search'}
-                onClick={() => setActiveTab('search')}
-              />
-            </div>
-
-            {/* Tab Content with crossfade animation */}
-            <AnimatePresence mode="wait">
-              {/* Timeline Tab */}
-              {activeTab === 'timeline' && (
-                <motion.div
-                  key="timeline"
-                  variants={tabContentVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{ duration: 0.2 }}
-                  className="space-y-4"
-                >
-                  {/* Daily Question - prominent in main content */}
-                  {isLoadingQuestion ? (
-                    <DailyQuestionSkeleton />
-                  ) : question ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 }}
-                    >
-                      <DailyQuestionCard
-                        question={question}
-                        onAnswer={handleAnswerQuestion}
-                        onSkip={skipQuestion}
-                      />
-                    </motion.div>
-                  ) : (
-                    <DailyQuestionRetryState onRetry={refreshQuestion} />
-                  )}
-
-                  <UnifiedTimelineView userId={user?.id} layout="masonry" />
-                </motion.div>
-              )}
-
-              {/* Insights Tab */}
-              {activeTab === 'insights' && (
-                <motion.div
-                  key="insights"
-                  variants={tabContentVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{ duration: 0.2 }}
-                  className="space-y-6"
-                >
-                  {isLoadingSummary ? (
-                    <WeeklySummarySkeleton />
-                  ) : summary ? (
-                    <WeeklySummaryCard
-                      summary={summary}
-                      onAddReflection={handleAddReflection}
-                    />
-                  ) : (
-                    <InsightsEmptyState />
-                  )}
-
-                  {/* Pattern Dashboard */}
-                  <PatternDashboard userId={user?.id} />
-                </motion.div>
-              )}
-
-              {/* Search Tab */}
-              {activeTab === 'search' && (
-                <motion.div
-                  key="search"
-                  variants={tabContentVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{ duration: 0.2 }}
-                  className="ceramic-card p-6"
-                >
-                  <JourneySearchPanel
-                    onSearch={async (query) => {
-                      const results = await searchInMoments(query, 10);
-                      return results;
-                    }}
-                    onSearchEmotion={async (emotion) => {
-                      const results = await findByEmotion(emotion, 10);
-                      return results;
-                    }}
-                    onSearchTag={async (tag) => {
-                      const results = await findByTag(tag, 10);
-                      return results;
-                    }}
-                    onSearchGrowth={async () => {
-                      const results = await findGrowthMoments(10);
-                      return results;
-                    }}
-                    onSearchInsights={async (question) => {
-                      const results = await findInsights(question, 10);
-                      return results;
-                    }}
-                    results={searchResults}
-                    isSearching={isSearching}
-                    hasMoments={hasIndexedMoments}
-                    onClear={clearSearchResults}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+      {/* Main content - single column */}
+      <div className="max-w-4xl mx-auto p-6 space-y-4 pb-40">
+        {/* Tabs */}
+        <div className="flex gap-2">
+          <CeramicFilterTab
+            icon={<ClockIcon className="h-4 w-4" />}
+            label="Atividades"
+            isActive={activeTab === 'timeline'}
+            onClick={() => setActiveTab('timeline')}
+          />
+          <CeramicFilterTab
+            icon={<ChartBarIcon className="h-4 w-4" />}
+            label="Insights"
+            isActive={activeTab === 'insights'}
+            onClick={() => setActiveTab('insights')}
+          />
+          <CeramicFilterTab
+            icon={<MagnifyingGlassIcon className="h-4 w-4" />}
+            label="Busca"
+            isActive={activeTab === 'search'}
+            onClick={() => setActiveTab('search')}
+          />
         </div>
+
+        {/* QuickCapture */}
+        <QuickCapture onSubmit={handleCreateMoment} compact />
+
+        {/* Tab Content with crossfade animation */}
+        <AnimatePresence mode="wait">
+          {/* Timeline Tab */}
+          {activeTab === 'timeline' && (
+            <motion.div
+              key="timeline"
+              variants={tabContentVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              {/* Daily Question */}
+              <div>
+                {isLoadingQuestion ? (
+                  <DailyQuestionSkeleton />
+                ) : question ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                  >
+                    <DailyQuestionCard
+                      question={question}
+                      onAnswer={handleAnswerQuestion}
+                      onSkip={skipQuestion}
+                    />
+                  </motion.div>
+                ) : (
+                  <DailyQuestionRetryState onRetry={refreshQuestion} />
+                )}
+              </div>
+
+              {/* Timeline masonry */}
+              <div>
+                <UnifiedTimelineView userId={user?.id} layout="masonry" />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Insights Tab */}
+          {activeTab === 'insights' && (
+            <motion.div
+              key="insights"
+              variants={tabContentVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              {isLoadingSummary ? (
+                <WeeklySummarySkeleton />
+              ) : summary ? (
+                <WeeklySummaryCard
+                  summary={summary}
+                  onAddReflection={handleAddReflection}
+                />
+              ) : (
+                <InsightsEmptyState />
+              )}
+
+              <PatternDashboard userId={user?.id} />
+            </motion.div>
+          )}
+
+          {/* Search Tab */}
+          {activeTab === 'search' && (
+            <motion.div
+              key="search"
+              variants={tabContentVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.2 }}
+              className="ceramic-card p-6"
+            >
+              <JourneySearchPanel
+                onSearch={async (query) => {
+                  const results = await searchInMoments(query, 10);
+                  return results;
+                }}
+                onSearchEmotion={async (emotion) => {
+                  const results = await findByEmotion(emotion, 10);
+                  return results;
+                }}
+                onSearchTag={async (tag) => {
+                  const results = await findByTag(tag, 10);
+                  return results;
+                }}
+                onSearchGrowth={async () => {
+                  const results = await findGrowthMoments(10);
+                  return results;
+                }}
+                onSearchInsights={async (question) => {
+                  const results = await findInsights(question, 10);
+                  return results;
+                }}
+                results={searchResults}
+                isSearching={isSearching}
+                hasMoments={hasIndexedMoments}
+                onClear={clearSearchResults}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* CP Animation */}
@@ -535,6 +553,11 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 Level Up! {newLevel ? newLevel.name : ''}
               </div>
             )}
+            {qualityFeedback && (
+              <div className="text-sm text-[#948D82] mt-2 max-w-xs mx-auto">
+                {qualityFeedback}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -544,7 +567,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
         {showInsight && currentInsight && (
           <PostCaptureInsight
             insight={currentInsight}
-            pointsEarned={5}
+            pointsEarned={pointsEarned || 11}
             onViewSimilar={
               currentInsight.theme
                 ? () => {

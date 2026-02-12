@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
-import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks, getUserProfile } from '../services/supabaseService';
+import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getModuleTasks } from '../services/supabaseService';
 import { generateMissingDailyReports } from '../services/dailyReportService';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NotificationContainer, LoadingScreen, BottomNav, CeramicLoadingState } from '../components';
@@ -58,6 +58,13 @@ const FluxDashboard = lazy(() => import('../modules/flux').then(m => ({ default:
 const FluxAthleteDetailView = lazy(() => import('../modules/flux').then(m => ({ default: m.AthleteDetailView })));
 const FluxCanvasEditorView = lazy(() => import('../modules/flux').then(m => ({ default: m.CanvasEditorView })));
 const FluxAlertsView = lazy(() => import('../modules/flux').then(m => ({ default: m.AlertsView })));
+
+// Flow Module - Intelligent training prescription system (5 screens)
+const TemplateLibraryView = lazy(() => import('../modules/flux/views/TemplateLibraryView').then(m => ({ default: m.default })));
+const MicrocycleEditorView = lazy(() => import('../modules/flux/views/MicrocycleEditorView').then(m => ({ default: m.default })));
+const LevelingEngineView = lazy(() => import('../modules/flux/views/LevelingEngineView').then(m => ({ default: m.default })));
+const IntensityCalculatorView = lazy(() => import('../modules/flux/views/IntensityCalculatorView').then(m => ({ default: m.default })));
+const CRMCommandCenterView = lazy(() => import('../modules/flux/views/CRMCommandCenterView').then(m => ({ default: m.default })));
 
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
@@ -159,8 +166,8 @@ export function AppRouter() {
    const [showCreateModal, setShowCreateModal] = useState(false);
    const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
 
-   // Onboarding State
-   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+   // Onboarding State - DISABLED: Onboarding now optional, users go directly to app
+   // const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
 
    // Sync view state with URL location
    useEffect(() => {
@@ -227,44 +234,44 @@ export function AppRouter() {
       processGoogleOAuth();
    }, [isAuthenticated]);
 
-   // Check onboarding status and redirect if needed
-   useEffect(() => {
-      if (!isAuthenticated || !user?.id) {
-         setNeedsOnboarding(null);
-         return;
-      }
+   // ONBOARDING DISABLED: Users now go directly to app without onboarding flow
+   // Onboarding is optional and can be accessed manually if needed
+   // See migration: 20260107000002_mark_all_users_completed_onboarding.sql
 
-      const checkOnboardingStatus = async () => {
-         try {
-            const profile = await getUserProfile(user.id);
-            const needsOnboard = !profile?.onboarding_completed_at;
-            setNeedsOnboarding(needsOnboard);
+   // Check onboarding status and redirect if needed - COMMENTED OUT
+   // useEffect(() => {
+   //    if (!isAuthenticated || !user?.id) {
+   //       setNeedsOnboarding(null);
+   //       return;
+   //    }
 
-            // Redirect to onboarding if needed and not already there
-            if (needsOnboard && location.pathname !== '/onboarding' && location.pathname !== '/landing') {
-               log.debug(' User needs onboarding, redirecting...');
-               navigate('/onboarding', { replace: true });
-            }
-         } catch (error) {
-            log.error(' Error checking onboarding status:', error);
-            setNeedsOnboarding(false); // Assume completed on error
-         }
-      };
+   //    const checkOnboardingStatus = async () => {
+   //       try {
+   //          const profile = await getUserProfile(user.id);
+   //          const needsOnboard = !profile?.onboarding_completed_at;
+   //          setNeedsOnboarding(needsOnboard);
 
-      checkOnboardingStatus();
-   }, [isAuthenticated, user?.id, location.pathname, navigate]);
+   //          // Redirect to onboarding if needed and not already there
+   //          if (needsOnboard && location.pathname !== '/onboarding' && location.pathname !== '/landing') {
+   //             log.debug(' User needs onboarding, redirecting...');
+   //             navigate('/onboarding', { replace: true });
+   //          }
+   //       } catch (error) {
+   //          log.error(' Error checking onboarding status:', error);
+   //          setNeedsOnboarding(false); // Assume completed on error
+   //       }
+   //    };
 
-   // Navigate from landing to home or onboarding when auth completes
+   //    checkOnboardingStatus();
+   // }, [isAuthenticated, user?.id, location.pathname, navigate]);
+
+   // Navigate from landing to home when auth completes - ONBOARDING DISABLED
    useEffect(() => {
       if (isAuthenticated && location.pathname === '/landing') {
-         log.debug(' Auth completed, checking onboarding status...');
-         if (needsOnboarding === false) {
-            navigate('/', { replace: true });
-         } else if (needsOnboarding === true) {
-            navigate('/onboarding', { replace: true });
-         }
+         log.debug(' Auth completed, redirecting to home...');
+         navigate('/', { replace: true });
       }
-   }, [isAuthenticated, location.pathname, navigate, needsOnboarding]);
+   }, [isAuthenticated, location.pathname, navigate]);
 
    useEffect(() => {
       if (!isAuthenticated) return;
@@ -653,8 +660,15 @@ export function AppRouter() {
                {/* Flux Module Routes - Protected */}
                <Route path="/flux" element={<AuthGuard><FluxProvider><FluxDashboard /></FluxProvider></AuthGuard>} />
                <Route path="/flux/athlete/:athleteId" element={<AuthGuard><FluxProvider><FluxAthleteDetailView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/canvas/:blockId" element={<AuthGuard><FluxProvider><FluxCanvasEditorView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/canvas/:athleteId/:blockId?" element={<AuthGuard><FluxProvider><FluxCanvasEditorView /></FluxProvider></AuthGuard>} />
                <Route path="/flux/alerts" element={<AuthGuard><FluxProvider><FluxAlertsView /></FluxProvider></AuthGuard>} />
+
+               {/* Flow Module Routes (Intelligent Prescription) - Protected */}
+               <Route path="/flux/templates" element={<AuthGuard><FluxProvider><TemplateLibraryView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/microcycle/:microcycleId" element={<AuthGuard><FluxProvider><MicrocycleEditorView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/leveling" element={<AuthGuard><FluxProvider><LevelingEngineView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/intensity/:athleteId" element={<AuthGuard><FluxProvider><IntensityCalculatorView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/crm" element={<AuthGuard><FluxProvider><CRMCommandCenterView /></FluxProvider></AuthGuard>} />
 
                {/* Contacts Module Routes - Protected */}
                <Route

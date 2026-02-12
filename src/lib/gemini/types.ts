@@ -58,6 +58,7 @@ export type GeminiAction =
   | 'transcribe_audio'
   | 'generate_tags'
   | 'analyze_moment'
+  | 'evaluate_quality'
 
   // Grants (Módulo Captação)
   | 'generate_field_content'

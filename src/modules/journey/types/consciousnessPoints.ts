@@ -59,7 +59,26 @@ export interface StreakResult {
   streak_bonus_awarded: boolean
 }
 
-// CP rewards
+// Quality Assessment from Gemini evaluation
+export interface QualityAssessment {
+  quality_score: number       // 0-1
+  relevance: number           // 0-1
+  depth: number               // 0-1
+  authenticity: number        // 0-1
+  clarity: number             // 0-1
+  feedback_message: string    // Empathetic phrase in PT
+  feedback_tier: 'low' | 'medium' | 'high' | 'exceptional'
+}
+
+// Quality-based CP formula: CP = base + floor(quality_score * multiplier)
+export const CP_FORMULA = {
+  base: 2,
+  multiplier: 18,
+  min: 2,
+  max: 20,
+}
+
+/** @deprecated Use CP_FORMULA + calculateCP() from qualityEvaluationService */
 export const CP_REWARDS: Record<CPReason, number> = {
   moment_registered: 5,
   question_answered: 10,

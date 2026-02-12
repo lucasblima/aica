@@ -67,6 +67,9 @@ export interface AnswerQuestionResult {
   response: QuestionResponse
   cp_earned: number
   leveled_up: boolean
+  quality_score?: number
+  quality_feedback?: string
+  quality_tier?: 'low' | 'medium' | 'high' | 'exceptional'
 }
 
 // Question category colors

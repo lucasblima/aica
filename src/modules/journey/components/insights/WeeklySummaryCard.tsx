@@ -3,9 +3,11 @@
  * Displays AI-generated weekly summary with insights
  */
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
 import { WeeklySummary } from '../../types/weeklySummary'
+import { AudioRecorder } from '../capture/AudioRecorder'
+import { transcribeAudio } from '../../services/momentPersistenceService'
 
 const log = createNamespacedLogger('WeeklySummaryCard')
 import {
@@ -30,6 +32,21 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
   const [reflectionText, setReflectionText] = useState(summary.user_reflection || '')
   const [isAddingReflection, setIsAddingReflection] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+
+  const handleRecordingComplete = useCallback(async (blob: Blob) => {
+    try {
+      setIsTranscribing(true)
+      const text = await transcribeAudio(blob)
+      if (text) {
+        setReflectionText(prev => prev ? `${prev}\n${text}` : text)
+      }
+    } catch (err) {
+      log.error('Transcription failed:', err)
+    } finally {
+      setIsTranscribing(false)
+    }
+  }, [])
 
   const trendColor = EMOTIONAL_TREND_COLORS[summary.summary_data.emotionalTrend]
   const trendDescription =
@@ -178,25 +195,36 @@ export function WeeklySummaryCard({ summary, onAddReflection }: WeeklySummaryCar
               onClick={() => setIsAddingReflection(true)}
               className="w-full px-4 py-3 border-2 border-dashed border-ceramic-text-secondary/20 rounded-lg text-ceramic-text-secondary hover:border-ceramic-info hover:text-ceramic-info transition-all"
             >
-              + Adicionar reflexão pessoal (+20 CP)
+              + Adicionar reflexão pessoal (até 20 CP)
             </button>
           ) : (
             <div>
               <textarea
                 value={reflectionText}
                 onChange={e => setReflectionText(e.target.value)}
-                placeholder="O que você aprendeu esta semana? Como se sente sobre isso?"
+                placeholder={isTranscribing ? 'Transcrevendo áudio...' : 'O que você aprendeu esta semana? Como se sente sobre isso?'}
                 rows={4}
-                disabled={!!summary.user_reflection}
+                disabled={!!summary.user_reflection || isTranscribing}
                 className="w-full px-4 py-3 border border-ceramic-text-secondary/20 rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:outline-none resize-none disabled:bg-ceramic-base"
               />
+              <div className="mt-1 flex items-center justify-between">
+                <p className="text-xs text-ceramic-text-secondary">
+                  {isTranscribing ? 'Transcrevendo...' : `${reflectionText.length} caracteres`}
+                </p>
+                {!summary.user_reflection && (
+                  <AudioRecorder
+                    onRecordingComplete={handleRecordingComplete}
+                    disabled={isSubmitting || isTranscribing}
+                  />
+                )}
+              </div>
 
               {!summary.user_reflection && (
                 <div className="flex gap-3 mt-3">
                   <button
                     type="button"
                     onClick={handleAddReflection}
-                    disabled={isSubmitting || !reflectionText.trim()}
+                    disabled={isSubmitting || isTranscribing || !reflectionText.trim()}
                     className="flex-1 px-4 py-2 bg-ceramic-info text-white rounded-lg font-medium hover:bg-ceramic-info/80 disabled:bg-ceramic-neutral disabled:cursor-not-allowed transition-all"
                   >
                     {isSubmitting ? 'Salvando...' : 'Salvar Reflexão'}

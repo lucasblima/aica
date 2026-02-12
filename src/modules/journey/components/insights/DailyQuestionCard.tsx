@@ -106,7 +106,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
 
         <div className="mt-3 flex items-center gap-2 text-sm text-ceramic-success">
           <SparklesIcon className="h-4 w-4" />
-          <span>Você ganhou +10 CP por responder!</span>
+          <span>CP ganhos com base na qualidade da sua resposta!</span>
         </div>
       </div>
     )
@@ -137,7 +137,7 @@ export function DailyQuestionCard({ question, onAnswer, onSkip }: DailyQuestionC
         </div>
 
         <div className="px-3 py-1 bg-ceramic-warning/15 text-ceramic-warning text-xs font-bold rounded-full">
-          +10 CP
+          2-20 CP
         </div>
       </div>
 

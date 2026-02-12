@@ -67,7 +67,7 @@ export async function createSharedExpense(
       .from('connection_spaces')
       .select('archetype')
       .eq('id', spaceId)
-      .eq('user_id', userId)
+      .eq('owner_id', userId)
       .single();
 
     if (spaceError) throw spaceError;
@@ -286,7 +286,7 @@ export async function syncVentureFinance(ventureId: string): Promise<VentureFina
       .from('connection_spaces')
       .select('archetype, settings')
       .eq('id', ventureId)
-      .eq('user_id', userId)
+      .eq('owner_id', userId)
       .single();
 
     if (spaceError) throw spaceError;

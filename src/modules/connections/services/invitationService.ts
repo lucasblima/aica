@@ -167,7 +167,7 @@ export async function createInvitation(
     // Check if user is authorized to invite to this space
     const { data: spaceData, error: spaceError } = await supabase
       .from('connection_spaces')
-      .select('id, user_id, name, archetype')
+      .select('id, owner_id, name, archetype')
       .eq('id', spaceId)
       .single();
 
@@ -187,7 +187,7 @@ export async function createInvitation(
       .eq('is_active', true)
       .single();
 
-    const isOwner = spaceData.user_id === invitedBy;
+    const isOwner = spaceData.owner_id === invitedBy;
     const isAdmin = memberData?.role === 'admin' || memberData?.role === 'owner';
 
     if (!isOwner && !isAdmin) {
@@ -629,7 +629,7 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
     // Fetch the original invitation with space details
     const { data: originalInvitation, error: fetchError } = await supabase
       .from('connection_invitations')
-      .select('*, connection_spaces!inner(user_id, name, archetype)')
+      .select('*, connection_spaces!inner(owner_id, name, archetype)')
       .eq('id', invitationId)
       .single();
 
@@ -642,7 +642,7 @@ export async function resendInvitation(invitationId: string): Promise<InviteResu
 
     // Verify user owns the space or is admin
     const space = originalInvitation.connection_spaces as any;
-    const isOwner = space.user_id === user.id;
+    const isOwner = space.owner_id === user.id;
 
     const { data: memberData } = await supabase
       .from('connection_members')

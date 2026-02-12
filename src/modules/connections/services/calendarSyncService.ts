@@ -488,7 +488,7 @@ export const calendarSyncService = {
       const { data: spaces } = await supabase
         .from('connection_spaces')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .eq('is_active', true);
 
       if (!spaces || spaces.length === 0) {

@@ -1,7 +1,7 @@
 /**
  * AthleteCard - Athlete profile card with status indicators
  *
- * Displays athlete name, level, adherence rate, and alert count.
+ * Displays athlete name, level, consistency rate, and alert count.
  * Uses Ceramic Design System with colorimetric status feedback.
  * Includes WhatsApp quick action for athlete follow-up.
  */
@@ -21,21 +21,21 @@ export function AthleteCard({
   athlete,
   recentFeedbacks = [],
   activeAlerts = [],
-  adherenceRate = 0,
+  consistencyRate = 0,
   onClick,
   onWhatsAppClick,
 }: ExtendedAthleteCardProps) {
   // Status configuration
   const statusConfig = STATUS_CONFIG[athlete.status];
 
-  // Adherence color logic (colorimetric feedback)
-  const getAdherenceColor = (rate: number): string => {
+  // Consistency color logic (colorimetric feedback)
+  const getConsistencyColor = (rate: number): string => {
     if (rate >= 80) return 'text-ceramic-success bg-ceramic-success/10';
     if (rate >= 60) return 'text-ceramic-warning bg-ceramic-warning/10';
     return 'text-ceramic-error bg-ceramic-error/10';
   };
 
-  const adherenceColorClass = getAdherenceColor(adherenceRate);
+  const consistencyColorClass = getConsistencyColor(consistencyRate);
   const hasActiveAlerts = activeAlerts.length > 0;
   const hasCriticalAlerts = activeAlerts.some((alert) => alert.severity === 'critical');
 
@@ -95,17 +95,17 @@ export function AthleteCard({
 
         {/* Metrics Row */}
         <div className="flex items-center justify-between gap-3 pt-2 border-t border-ceramic-text-secondary/10">
-          {/* Adherence Rate */}
+          {/* Consistency Rate */}
           <div className="flex items-center gap-2">
-            <div className={`ceramic-inset p-1.5 ${adherenceColorClass}`}>
+            <div className={`ceramic-inset p-1.5 ${consistencyColorClass}`}>
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
             <div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
                 Adesao
               </p>
-              <p className={`text-sm font-bold ${adherenceColorClass}`}>
-                {adherenceRate}%
+              <p className={`text-sm font-bold ${consistencyColorClass}`}>
+                {consistencyRate}%
               </p>
             </div>
           </div>

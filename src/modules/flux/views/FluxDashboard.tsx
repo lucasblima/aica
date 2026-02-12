@@ -80,7 +80,7 @@ export default function FluxDashboard() {
   // Filter and sort states
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
   const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
-  const [adherenceSort, setAdherenceSort] = useState<SortOrder>('none');
+  const [consistencySort, setAdherenceSort] = useState<SortOrder>('none');
 
   // WhatsApp modal state
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
@@ -129,17 +129,17 @@ export default function FluxDashboard() {
       }
     }
 
-    // Sort by adherence rate
-    if (adherenceSort !== 'none') {
+    // Sort by consistency rate
+    if (consistencySort !== 'none') {
       result.sort((a, b) => {
-        const aRate = a.adherence_rate || 0;
-        const bRate = b.adherence_rate || 0;
-        return adherenceSort === 'asc' ? aRate - bRate : bRate - aRate;
+        const aRate = a.consistency_rate || 0;
+        const bRate = b.consistency_rate || 0;
+        return consistencySort === 'asc' ? aRate - bRate : bRate - aRate;
       });
     }
 
     return result;
-  }, [allAthletes, selectedModality, selectedLevel, adherenceSort]);
+  }, [allAthletes, selectedModality, selectedLevel, consistencySort]);
 
   // Toggle sort order
   const toggleAdherenceSort = () => {
@@ -152,9 +152,9 @@ export default function FluxDashboard() {
 
   // Aggregate stats (based on filtered athletes)
   const activeAthletes = filteredAthletes.filter((a) => a.status === 'active').length;
-  const avgAdherence =
+  const avgConsistency =
     filteredAthletes.length > 0
-      ? filteredAthletes.reduce((sum, a) => sum + (a.adherence_rate || 0), 0) / filteredAthletes.length
+      ? filteredAthletes.reduce((sum, a) => sum + (a.consistency_rate || 0), 0) / filteredAthletes.length
       : 0;
 
   // Handle athlete click
@@ -228,11 +228,11 @@ export default function FluxDashboard() {
                 <TrendingUp className="w-4 h-4 text-ceramic-success" />
               </div>
               <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                Adesao Media
+                Consistência Média
               </p>
             </div>
             <p className="text-2xl font-bold text-ceramic-success">
-              {Math.round(avgAdherence)}%
+              {Math.round(avgConsistency)}%
             </p>
           </div>
         </div>
@@ -357,25 +357,25 @@ export default function FluxDashboard() {
             <button
               onClick={toggleAdherenceSort}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                adherenceSort !== 'none'
+                consistencySort !== 'none'
                   ? 'ceramic-card bg-ceramic-base shadow-md'
                   : 'ceramic-inset hover:bg-white/50'
               }`}
               title={
-                adherenceSort === 'none'
+                consistencySort === 'none'
                   ? 'Ordenar por adesao'
-                  : adherenceSort === 'desc'
+                  : consistencySort === 'desc'
                   ? 'Maior adesao primeiro'
                   : 'Menor adesao primeiro'
               }
             >
-              {adherenceSort === 'none' && <ArrowUpDown className="w-4 h-4 text-ceramic-text-secondary" />}
-              {adherenceSort === 'desc' && <ArrowDown className="w-4 h-4 text-ceramic-success" />}
-              {adherenceSort === 'asc' && <ArrowUp className="w-4 h-4 text-ceramic-error" />}
+              {consistencySort === 'none' && <ArrowUpDown className="w-4 h-4 text-ceramic-text-secondary" />}
+              {consistencySort === 'desc' && <ArrowDown className="w-4 h-4 text-ceramic-success" />}
+              {consistencySort === 'asc' && <ArrowUp className="w-4 h-4 text-ceramic-error" />}
               <span className={`text-xs font-bold uppercase tracking-wider ${
-                adherenceSort !== 'none' ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
+                consistencySort !== 'none' ? 'text-ceramic-text-primary' : 'text-ceramic-text-secondary'
               }`}>
-                Adesao
+                Consistência
               </span>
             </button>
 
@@ -398,7 +398,7 @@ export default function FluxDashboard() {
                 athlete={athlete}
                 recentFeedbacks={athleteFeedbacks}
                 activeAlerts={athleteAlerts}
-                adherenceRate={athlete.adherence_rate || 0}
+                consistencyRate={athlete.consistency_rate || 0}
                 onClick={() => handleAthleteClick(athlete.id)}
                 onWhatsAppClick={() => handleWhatsAppClick(athlete, athleteAlerts)}
               />

@@ -1,0 +1,271 @@
+/**
+ * PublishWhatsAppButton - Send workout plan via WhatsApp
+ *
+ * Phase 1: Mock implementation (console.log)
+ * Phase 2: Will integrate with @/modules/connections/services/whatsappService
+ *
+ * Features:
+ * - Preview formatted message
+ * - Send now or schedule for Sunday 6PM
+ * - Integration-ready structure
+ */
+
+import React, { useState, useMemo } from 'react';
+import { Send, Calendar, X, Check } from 'lucide-react';
+import type { WorkoutBlockData } from './WorkoutBlock';
+
+interface PublishWhatsAppButtonProps {
+  athleteId: string;
+  athleteName: string;
+  athletePhone: string;
+  weekNumber: number;
+  weekWorkouts: WorkoutBlockData[];
+  onPublishSuccess?: () => void;
+  disabled?: boolean;
+}
+
+export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
+  athleteId,
+  athleteName,
+  athletePhone,
+  weekNumber,
+  weekWorkouts,
+  onPublishSuccess,
+  disabled = false,
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sendNow, setSendNow] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+
+  // Generate formatted message preview
+  const messagePreview = useMemo(() => {
+    const dayNames = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
+    // Group workouts by day
+    const workoutsByDay: Record<number, WorkoutBlockData[]> = {};
+    for (const workout of weekWorkouts) {
+      // Mock: assume workout has a dayOfWeek field (would need to add this)
+      const day = Math.floor(Math.random() * 7) + 1; // Mock random day
+      if (!workoutsByDay[day]) workoutsByDay[day] = [];
+      workoutsByDay[day].push(workout);
+    }
+
+    let message = `🏋️ *Treino Semana ${weekNumber}*\n\n`;
+    message += `Olá ${athleteName.split(' ')[0]}! 👋\n\n`;
+    message += `Aqui está sua programação de treinos para a semana:\n\n`;
+
+    for (let day = 1; day <= 7; day++) {
+      const dayWorkouts = workoutsByDay[day] || [];
+      if (dayWorkouts.length > 0) {
+        message += `📅 *${dayNames[day - 1]}*\n`;
+        for (const workout of dayWorkouts) {
+          message += `• ${workout.name} (${workout.duration}min)\n`;
+          if (workout.sets && workout.reps) {
+            message += `  ${workout.sets}x ${workout.reps}`;
+            if (workout.rest && workout.rest !== '0') message += ` • ${workout.rest} rest`;
+            message += `\n`;
+          }
+        }
+        message += `\n`;
+      }
+    }
+
+    const totalVolume = weekWorkouts.reduce((sum, w) => sum + w.duration, 0);
+    message += `⏱ *Volume Total:* ${totalVolume} minutos\n\n`;
+    message += `💪 Bons treinos! Qualquer dúvida, estou à disposição.\n\n`;
+    message += `_Enviado via AICA Life OS_`;
+
+    return message;
+  }, [athleteName, weekNumber, weekWorkouts]);
+
+  const handlePublish = async () => {
+    setIsSending(true);
+
+    // Mock delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    console.log('📱 Publishing workout via WhatsApp (MOCK)');
+    console.log('Athlete ID:', athleteId);
+    console.log('Phone:', athletePhone);
+    console.log('Send Now:', sendNow);
+    console.log('Message:', messagePreview);
+
+    // TODO: Integrate with Connections module
+    // import { whatsappService } from '@/modules/connections/services/whatsappService';
+    // await whatsappService.sendWorkoutPlan({
+    //   athleteId,
+    //   phone: athletePhone,
+    //   message: messagePreview,
+    //   scheduleFor: sendNow ? undefined : getNextSunday6PM(),
+    // });
+
+    setIsSending(false);
+    setIsModalOpen(false);
+    onPublishSuccess?.();
+
+    // Show success notification (mock)
+    alert(`✅ Treino enviado para ${athleteName}!`);
+  };
+
+  return (
+    <>
+      {/* Main Button */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        disabled={disabled || weekWorkouts.length === 0}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-md transition-all ${
+          disabled || weekWorkouts.length === 0
+            ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+            : 'bg-green-500 hover:bg-green-600 text-white hover:scale-105'
+        }`}
+      >
+        <Send className="w-4 h-4" />
+        Publicar WhatsApp
+      </button>
+
+      {/* Confirmation Modal */}
+      {isModalOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => !isSending && setIsModalOpen(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden">
+            {/* Header */}
+            <div className="p-6 border-b border-stone-200 bg-green-50">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-500 p-3 rounded-xl">
+                    <Send className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-stone-900">Enviar por WhatsApp</h2>
+                    <p className="text-sm text-stone-600 mt-0.5">
+                      Para {athleteName} • {athletePhone}
+                    </p>
+                  </div>
+                </div>
+                {!isSending && (
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="ceramic-inset p-2 hover:bg-stone-100 transition-colors"
+                  >
+                    <X className="w-5 h-5 text-stone-600" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-5">
+              {/* Message Preview */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-2 uppercase tracking-wider">
+                  Prévia da Mensagem
+                </label>
+                <div className="ceramic-inset p-4 rounded-xl max-h-64 overflow-y-auto">
+                  <pre className="text-xs text-stone-700 whitespace-pre-wrap font-sans">
+                    {messagePreview}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Send Options */}
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider">
+                  Opções de Envio
+                </label>
+
+                {/* Send Now */}
+                <label className="flex items-center gap-3 ceramic-card p-4 cursor-pointer hover:scale-[1.02] transition-transform">
+                  <input
+                    type="radio"
+                    checked={sendNow}
+                    onChange={() => setSendNow(true)}
+                    className="w-4 h-4 text-green-500 focus:ring-green-500"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-bold text-stone-900">Enviar Agora</span>
+                    </div>
+                    <p className="text-xs text-stone-500 mt-0.5">Mensagem será enviada imediatamente</p>
+                  </div>
+                </label>
+
+                {/* Schedule for Sunday */}
+                <label className="flex items-center gap-3 ceramic-card p-4 cursor-pointer hover:scale-[1.02] transition-transform">
+                  <input
+                    type="radio"
+                    checked={!sendNow}
+                    onChange={() => setSendNow(false)}
+                    className="w-4 h-4 text-green-500 focus:ring-green-500"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-amber-600" />
+                      <span className="text-sm font-bold text-stone-900">Agendar para Domingo 18h</span>
+                    </div>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      Envio automático no fim de semana
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-stone-200 bg-stone-50">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isSending}
+                  className="flex-1 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handlePublish}
+                  disabled={isSending}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      {sendNow ? 'Enviar Agora' : 'Agendar Envio'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+};
+
+// ============================================
+// Helper Functions (for future integration)
+// ============================================
+
+/**
+ * Get next Sunday 6PM timestamp
+ * (for scheduled sending)
+ */
+function getNextSunday6PM(): Date {
+  const now = new Date();
+  const daysUntilSunday = 7 - now.getDay();
+  const nextSunday = new Date(now);
+  nextSunday.setDate(now.getDate() + daysUntilSunday);
+  nextSunday.setHours(18, 0, 0, 0);
+  return nextSunday;
+}

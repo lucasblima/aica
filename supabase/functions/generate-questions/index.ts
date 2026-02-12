@@ -88,6 +88,7 @@ interface UserContextBank {
   avoided_topics: string[]
   last_generation_at: string | null
   generation_count: number
+  avg_quality_score?: number // 0-1, from quality-based CP system
 }
 
 interface RecentResponse {
@@ -370,6 +371,28 @@ function buildGenerationPrompt(
       ).join('\n')
     : '- No recent responses'
 
+  // Adaptive difficulty based on avg_quality_score
+  const avgQuality = context.avg_quality_score ?? 0.5
+  let difficultyInstruction: string
+  if (avgQuality < 0.4) {
+    difficultyInstruction = `DIFFICULTY: SIMPLE (user avg quality: ${avgQuality.toFixed(2)})
+- Use everyday language, answerable in 1-2 short sentences
+- Focus on concrete, daily experiences (not abstract concepts)
+- relevance_score range: 0.5-0.7
+- Example: "O que te fez sorrir hoje?" or "Como voce dormiu ontem?"`
+  } else if (avgQuality <= 0.7) {
+    difficultyInstruction = `DIFFICULTY: MIX (user avg quality: ${avgQuality.toFixed(2)})
+- 60% simple daily questions + 40% reflective questions
+- Simple: concrete experiences, 1-2 sentences (relevance_score: 0.5-0.7)
+- Reflective: patterns, feelings, choices (relevance_score: 0.7-0.85)`
+  } else {
+    difficultyInstruction = `DIFFICULTY: DEEP (user avg quality: ${avgQuality.toFixed(2)})
+- Focus on self-analysis, patterns, values, and decisions
+- Encourage deeper introspection and personal growth
+- relevance_score range: 0.75-1.0
+- Example: "Que padrao voce percebeu nas suas reacoes esta semana?"`
+  }
+
   return `
 You are a compassionate wellness coach for Aica Life OS, a personal growth application.
 
@@ -384,6 +407,8 @@ USER CONTEXT:
 - Total responses so far: ${context.total_responses}
 - Engagement score: ${(context.engagement_score * 100).toFixed(0)}%
 
+${difficultyInstruction}
+
 RECENT QUESTIONS ASKED (AVOID SIMILAR ONES):
 ${recentQuestionsStr}
 
@@ -397,10 +422,7 @@ REQUIREMENTS:
 4. Personalize based on user's themes and emotions when available
 5. Keep questions between 8-20 words
 6. Use empathetic, non-judgmental language
-7. Include a mix of:
-   - Simple daily reflections (relevance_score: 0.5-0.7)
-   - Medium depth questions (relevance_score: 0.7-0.85)
-   - Deep introspective questions (relevance_score: 0.85-1.0)
+7. Follow the DIFFICULTY level above for question complexity
 
 CATEGORY DEFINITIONS:
 - reflection: Self-awareness and introspection questions

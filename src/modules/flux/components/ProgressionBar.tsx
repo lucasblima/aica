@@ -2,7 +2,7 @@
  * ProgressionBar - 12-week cycle progression indicator
  *
  * Visual progress bar showing current week in 12-week training cycle.
- * Includes adherence rate and workout completion metrics.
+ * Includes consistency rate and workout completion metrics.
  */
 
 import React from 'react';
@@ -12,20 +12,20 @@ import { Calendar, CheckCircle2, TrendingUp } from 'lucide-react';
 export function ProgressionBar({
   currentWeek,
   totalWeeks = 12,
-  adherenceRate,
+  consistencyRate,
   completedWorkouts,
   totalWorkouts,
 }: ProgressionBarProps) {
   const progressPercentage = (currentWeek / totalWeeks) * 100;
 
-  // Adherence color logic
-  const getAdherenceColor = (rate: number): string => {
+  // Consistência color logic
+  const getConsistênciaColor = (rate: number): string => {
     if (rate >= 80) return 'text-ceramic-success';
     if (rate >= 60) return 'text-ceramic-warning';
     return 'text-ceramic-error';
   };
 
-  const adherenceColorClass = getAdherenceColor(adherenceRate);
+  const consistencyColorClass = getConsistênciaColor(consistencyRate);
 
   return (
     <div className="ceramic-card p-4 space-y-4">
@@ -45,13 +45,13 @@ export function ProgressionBar({
           </div>
         </div>
 
-        {/* Adherence Rate */}
+        {/* Consistência Rate */}
         <div className="text-right">
           <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider">
             Adesao
           </p>
-          <p className={`text-2xl font-bold ${adherenceColorClass}`}>
-            {adherenceRate}%
+          <p className={`text-2xl font-bold ${consistencyColorClass}`}>
+            {consistencyRate}%
           </p>
         </div>
       </div>

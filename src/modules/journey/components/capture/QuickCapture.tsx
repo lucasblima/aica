@@ -261,7 +261,7 @@ export function QuickCapture({
             ) : (
               <>
                 <SparklesIcon className="w-4 h-4" />
-                Salvar (+5 CP)
+                Salvar (2-20 CP)
               </>
             )}
           </button>
