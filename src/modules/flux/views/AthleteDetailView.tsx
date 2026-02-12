@@ -26,6 +26,8 @@ import {
   FileText,
   Activity,
   Edit,
+  Zap,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function AthleteDetailView() {
@@ -218,6 +220,45 @@ export default function AthleteDetailView() {
           </div>
         </div>
       )}
+
+      {/* Flow Tools Section */}
+      <div className="px-6 mb-6">
+        <h2 className="text-lg font-bold text-ceramic-text-primary mb-3 flex items-center gap-2">
+          <Zap className="w-5 h-5 text-ceramic-accent" />
+          Ferramentas de Prescrição
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate('/flux/microcycle/new')}
+            className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-ceramic-info/10 flex items-center justify-center group-hover:bg-ceramic-info/20 transition-colors flex-shrink-0">
+                <Calendar className="w-5 h-5 text-ceramic-info" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-ceramic-text-primary">Prescrever Microciclo</p>
+                <p className="text-xs text-ceramic-text-secondary">Plano de 3 semanas</p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate(`/flux/intensity/${athleteId}`)}
+            className="ceramic-card p-4 hover:scale-[1.02] transition-all group text-left"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-ceramic-warning/10 flex items-center justify-center group-hover:bg-ceramic-warning/20 transition-colors flex-shrink-0">
+                <TrendingUp className="w-5 h-5 text-ceramic-warning" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-ceramic-text-primary">Zonas de Intensidade</p>
+                <p className="text-xs text-ceramic-text-secondary">FTP, Pace, CSS</p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
 
       {/* Alerts Section */}
       {alerts.length > 0 && (

@@ -40,7 +40,7 @@ const INTENSITY_OPTIONS: { value: WorkoutIntensity; label: string; color: string
   { value: 'high', label: 'Alta', color: 'bg-ceramic-error/20 text-ceramic-error' },
 ];
 
-const MODALITY_OPTIONS: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength'];
+const MODALITY_OPTIONS: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength', 'walking'];
 
 export default function BasicInfoSection({
   formData,
@@ -82,7 +82,7 @@ export default function BasicInfoSection({
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-              Nome do Template <span className="text-ceramic-error">*</span>
+              Nome do Exercício <span className="text-ceramic-error">*</span>
             </label>
             <input
               type="text"
@@ -148,7 +148,7 @@ export default function BasicInfoSection({
             <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
               Modalidade <span className="text-ceramic-error">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {MODALITY_OPTIONS.map((modality) => {
                 const config = MODALITY_CONFIG[modality];
                 return (

@@ -10,12 +10,12 @@ import { ArrowLeft, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-re
 import { useNavigate } from 'react-router-dom';
 import { LevelingEngineService } from '../services/levelingEngineService';
 import { AthleteProfileService } from '../services/athleteProfileService';
-import type { LevelingRecommendation, AthleteProfile } from '../types/flow';
+import type { LevelingRecommendation, FlowAthleteProfile } from '../types/flow';
 
 export default function LevelingEngineView() {
   const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState<LevelingRecommendation[]>([]);
-  const [profiles, setProfiles] = useState<AthleteProfile[]>([]);
+  const [profiles, setProfiles] = useState<FlowAthleteProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -33,7 +33,7 @@ export default function LevelingEngineView() {
     setLoading(false);
   };
 
-  const analyzeAthletes = async (athleteProfiles: AthleteProfile[]) => {
+  const analyzeAthletes = async (athleteProfiles: FlowAthleteProfile[]) => {
     setAnalyzing(true);
     const recs = await LevelingEngineService.batchAnalyzeAthletes(athleteProfiles);
     setRecommendations(recs);

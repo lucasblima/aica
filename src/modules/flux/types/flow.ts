@@ -268,7 +268,7 @@ export interface UpdateWorkoutSlotInput extends Partial<CreateWorkoutSlotInput> 
 // TABLE 4: ATHLETE_PROFILES
 // ============================================================================
 
-export interface AthleteProfile {
+export interface FlowAthleteProfile {
   id: string;
   user_id: string;
   athlete_id: string; // Unique identifier (athlete-1, etc)
@@ -311,7 +311,7 @@ export interface AthleteProfile {
   updated_at: string;
 }
 
-export interface CreateAthleteProfileInput {
+export interface CreateFlowAthleteProfileInput {
   athlete_id: string;
   name: string;
   email?: string;
@@ -322,10 +322,10 @@ export interface CreateAthleteProfileInput {
   pace_threshold?: string;
   swim_css?: string;
   status?: AthleteStatus;
-  anamnesis?: AthleteProfile['anamnesis'];
+  anamnesis?: FlowAthleteProfile['anamnesis'];
 }
 
-export interface UpdateAthleteProfileInput extends Partial<CreateAthleteProfileInput> {
+export interface UpdateFlowAthleteProfileInput extends Partial<CreateFlowAthleteProfileInput> {
   id: string;
   weekly_volume_average?: number;
   consistency_rate?: number;
@@ -495,7 +495,7 @@ export interface UpdateWorkoutAutomationInput extends Partial<CreateWorkoutAutom
 
 export interface MicrocycleWithSlots extends Microcycle {
   slots: WorkoutSlot[];
-  athlete?: AthleteProfile;
+  athlete?: FlowAthleteProfile;
   completion_percentage: number; // 0-100
   total_tss: number;
 }

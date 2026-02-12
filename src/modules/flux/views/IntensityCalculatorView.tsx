@@ -9,7 +9,7 @@ import { ArrowLeft, Calculator } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IntensityCalculatorService } from '../services/intensityCalculatorService';
 import { AthleteProfileService } from '../services/athleteProfileService';
-import type { AthleteProfile, IntensityCalculation } from '../types/flow';
+import type { FlowAthleteProfile, IntensityCalculation } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
 
 const Z_SCORE_LABELS: Record<number, string> = {
@@ -24,7 +24,7 @@ export default function IntensityCalculatorView() {
   const navigate = useNavigate();
   const { athleteId } = useParams<{ athleteId: string }>();
 
-  const [profile, setProfile] = useState<AthleteProfile | null>(null);
+  const [profile, setProfile] = useState<FlowAthleteProfile | null>(null);
   const [selectedZone, setSelectedZone] = useState<number>(23);
   const [calculation, setCalculation] = useState<IntensityCalculation | null>(null);
   const [allZones, setAllZones] = useState<any>(null);

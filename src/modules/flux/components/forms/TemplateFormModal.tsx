@@ -120,12 +120,12 @@ export default function TemplateFormModal({
           <div className="flex items-center justify-between p-6 border-b border-ceramic-text-secondary/10">
             <div>
               <h2 className="text-2xl font-black text-ceramic-text-primary">
-                {mode === 'create' ? 'Criar Template' : 'Editar Template'}
+                {mode === 'create' ? 'Criar Exercício' : 'Editar Exercício'}
               </h2>
               <p className="text-sm text-ceramic-text-secondary mt-1">
                 {mode === 'create'
-                  ? 'Configure os detalhes do novo template de treino'
-                  : 'Atualize as informações do template'}
+                  ? 'Configure os detalhes do novo exercício'
+                  : 'Atualize as informações do exercício'}
               </p>
             </div>
             <button
@@ -160,7 +160,7 @@ export default function TemplateFormModal({
                   <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-600">
-                      Template salvo com sucesso!
+                      Exercício salvo com sucesso!
                     </p>
                   </div>
                 </motion.div>
@@ -248,7 +248,7 @@ export default function TemplateFormModal({
                     <span>Salvando...</span>
                   </>
                 ) : (
-                  <span>{mode === 'create' ? 'Criar Template' : 'Salvar Alterações'}</span>
+                  <span>{mode === 'create' ? 'Criar Exercício' : 'Salvar Alterações'}</span>
                 )}
               </button>
             </div>
