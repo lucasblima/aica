@@ -81,6 +81,9 @@ const WhatsAppMonitoringDashboard = lazy(() => import('../pages/admin/WhatsAppMo
 
 const ProfilePage = lazy(() => import('../views/ProfilePage').then(m => ({ default: m.ProfilePage })));
 
+// PWA Share Target - Receives shared files from WhatsApp
+const ShareTargetPage = lazy(() => import('../pages/ShareTargetPage').then(m => ({ default: m.ShareTargetPage })));
+
 // Life Area Views - Generic view for health, education, legal, professional modules
 const LifeAreaView = lazy(() => import('../views/LifeAreaView').then(m => ({ default: m.LifeAreaView })));
 
@@ -663,6 +666,12 @@ export function AppRouter() {
                         </ConnectionsLayout>
                      </AuthGuard>
                   }
+               />
+
+               {/* PWA Share Target - Receives shared files from WhatsApp (Issue #211) */}
+               <Route
+                  path="/share-target"
+                  element={<AuthGuard><ShareTargetPage /></AuthGuard>}
                />
 
                {/* Diagnostics Page - PUBLIC (needs to be accessible to fix auth issues) */}

@@ -1906,13 +1906,18 @@ async function handleConnectionUpdate(
     }
 
     // AUTOMATIC SYNC: Trigger sync when newly connected
+    // Skip for chatbot-only sessions (contacts come from file import, not Evolution API)
+    const instanceMode = (session as any).instance_mode || 'chatbot'
     if (state === 'open' && wasDisconnected) {
-      log('INFO', 'Connection established, triggering automatic sync', { instanceName, userId: session.user_id })
-
-      // Fire and forget - don't block webhook response
-      triggerAutomaticSync(supabase, instanceName, session.user_id).catch(err => {
-        log('ERROR', 'Automatic sync failed', (err as Error).message)
-      })
+      if (instanceMode === 'full_monitor') {
+        log('INFO', 'Connection established, triggering automatic sync (full_monitor mode)', { instanceName, userId: session.user_id })
+        // Fire and forget - don't block webhook response
+        triggerAutomaticSync(supabase, instanceName, session.user_id).catch(err => {
+          log('ERROR', 'Automatic sync failed', (err as Error).message)
+        })
+      } else {
+        log('INFO', 'Connection established in chatbot mode, skipping contact sync', { instanceName, instanceMode })
+      }
     }
   }
 
