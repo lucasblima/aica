@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
+import { useWorkoutTemplates } from '../hooks';
 import { TemplateFormModal } from '../components/forms';
 import type {
   WorkoutTemplate,
@@ -63,20 +64,16 @@ export default function TemplateLibraryView() {
     ? 'edit'
     : 'list';
 
-  // State
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  // Real-time templates subscription
+  const { templates, isLoading, error, refresh } = useWorkoutTemplates();
+
+  // Local state
   const [filteredTemplates, setFilteredTemplates] = useState<WorkoutTemplate[]>([]);
   const [filters, setFilters] = useState<TemplateFilters>({});
-  const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [draggedTemplate, setDraggedTemplate] = useState<WorkoutTemplate | null>(null);
   const [isModalOpen, setModalOpen] = useState(mode !== 'list');
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
-
-  // Load templates
-  useEffect(() => {
-    loadTemplates();
-  }, []);
 
   // Apply filters
   useEffect(() => {
@@ -95,19 +92,6 @@ export default function TemplateLibraryView() {
       setModalOpen(true);
     }
   }, [mode, templateId]);
-
-  const loadTemplates = async () => {
-    setLoading(true);
-    const { data, error } = await WorkoutTemplateService.getTemplates();
-
-    if (error) {
-      console.error('Error loading templates:', error);
-    } else if (data) {
-      setTemplates(data);
-    }
-
-    setLoading(false);
-  };
 
   const loadTemplateForEdit = async (id: string) => {
     const { data, error } = await WorkoutTemplateService.getTemplateById(id);
@@ -128,8 +112,8 @@ export default function TemplateLibraryView() {
   };
 
   const handleModalSave = (template: WorkoutTemplate) => {
-    // Refresh templates list
-    loadTemplates();
+    // Real-time hook will auto-update, but refresh for immediate feedback
+    refresh();
     // Close modal and navigate back
     handleModalClose();
   };
@@ -178,34 +162,20 @@ export default function TemplateLibraryView() {
   };
 
   const handleToggleFavorite = async (template: WorkoutTemplate) => {
-    const { data, error } = await WorkoutTemplateService.toggleFavorite(
-      template.id,
-      !template.is_favorite
-    );
-
-    if (!error && data) {
-      setTemplates((prev) =>
-        prev.map((t) => (t.id === template.id ? { ...t, is_favorite: data.is_favorite } : t))
-      );
-    }
+    await WorkoutTemplateService.toggleFavorite(template.id, !template.is_favorite);
+    // Real-time hook will update automatically
   };
 
   const handleDuplicate = async (template: WorkoutTemplate) => {
-    const { data, error } = await WorkoutTemplateService.duplicateTemplate(template.id);
-
-    if (!error && data) {
-      setTemplates((prev) => [data, ...prev]);
-    }
+    await WorkoutTemplateService.duplicateTemplate(template.id);
+    // Real-time hook will update automatically
   };
 
   const handleDelete = async (template: WorkoutTemplate) => {
     if (!confirm(`Deletar template "${template.name}"?`)) return;
 
-    const { error } = await WorkoutTemplateService.deleteTemplate(template.id);
-
-    if (!error) {
-      setTemplates((prev) => prev.filter((t) => t.id !== template.id));
-    }
+    await WorkoutTemplateService.deleteTemplate(template.id);
+    // Real-time hook will update automatically
   };
 
   const handleDragStart = (template: WorkoutTemplate) => {
@@ -390,7 +360,7 @@ export default function TemplateLibraryView() {
 
       {/* Templates Grid */}
       <div className="px-6 py-6">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-ceramic-text-secondary">Carregando templates...</div>
           </div>

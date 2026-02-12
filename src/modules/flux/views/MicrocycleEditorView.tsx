@@ -5,8 +5,24 @@
  * foco semanal (volume/intensity/recovery/test), cálculo de carga, e publish para WhatsApp.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { supabase } from '@/services/supabaseClient';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+  closestCenter,
+  useDraggable,
+  useDroppable,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import {
   ArrowLeft,
   Save,
@@ -16,16 +32,25 @@ import {
   AlertCircle,
   Plus,
   GripVertical,
+  MessageCircle,
 } from 'lucide-react';
 import { MicrocycleService } from '../services/microcycleService';
 import { AthleteProfileService } from '../services/athleteProfileService';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
+import { AutomationService } from '../services/automationService';
+import { ScheduleWhatsAppModal } from '../components/ScheduleWhatsAppModal';
+import { ScheduledWorkoutStatus } from '../components/ScheduledWorkoutStatus';
+import { SlotCard } from '../components/SlotCard';
+import { MicrocycleProgressBar } from '../components/MicrocycleProgressBar';
+import { DraggableTemplate } from '../components/DraggableTemplate';
+import { DroppableCell } from '../components/DroppableCell';
 import type {
   Microcycle,
   WorkoutSlot,
   WorkoutTemplate,
   FlowAthleteProfile,
   MicrocycleWeekFocus,
+  ScheduledWorkout,
 } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
 
@@ -54,16 +79,109 @@ export default function MicrocycleEditorView() {
   const [athlete, setAthlete] = useState<FlowAthleteProfile | null>(null);
   const [slots, setSlots] = useState<WorkoutSlot[]>([]);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [draggedTemplate, setDraggedTemplate] = useState<WorkoutTemplate | null>(null);
-  const [dragOverSlot, setDragOverSlot] = useState<{ week: number; day: number } | null>(null);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+
+  // @dnd-kit sensors configuration
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required to start drag
+      },
+    })
+  );
+
+  // WhatsApp scheduling state
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState<1 | 2 | 3>(1);
+
+  // Real-time subscription
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // Completion tracking
+  const completionPercentage = Math.round(
+    slots.length > 0 ? (slots.filter((s) => s.completed).length / slots.length) * 100 : 0
+  );
+
+  const weekStats = [1, 2, 3].map((weekNum) => {
+    const weekSlots = slots.filter((s) => s.week_number === weekNum);
+    return {
+      week: weekNum,
+      total: weekSlots.length,
+      completed: weekSlots.filter((s) => s.completed).length,
+    };
+  });
 
   // Load data
   useEffect(() => {
     if (microcycleId) {
       loadMicrocycle();
     }
+  }, [microcycleId]);
+
+  // Real-time subscription for slot updates
+  useEffect(() => {
+    if (!microcycleId) return;
+
+    let cancelled = false;
+
+    const setupSubscription = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+
+        const channel = supabase
+          .channel(`workout_slots_${microcycleId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'workout_slots',
+              filter: `microcycle_id=eq.${microcycleId}`,
+            },
+            (payload) => {
+              const newSlot = payload.new as WorkoutSlot | undefined;
+              console.log('[MicrocycleEditor] Slot update:', payload.eventType, newSlot?.id);
+
+              if ((payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') && newSlot) {
+
+                setSlots((prev) => {
+                  const filtered = prev.filter((s) => s.id !== newSlot.id);
+                  return [...filtered, newSlot].sort((a, b) => {
+                    if (a.week_number !== b.week_number) return a.week_number - b.week_number;
+                    return a.day_of_week - b.day_of_week;
+                  });
+                });
+              } else if (payload.eventType === 'DELETE') {
+                setSlots((prev) => prev.filter((s) => s.id !== payload.old.id));
+              }
+            }
+          )
+          .subscribe();
+
+        channelRef.current = channel;
+
+        if (cancelled) {
+          supabase.removeChannel(channel);
+          channelRef.current = null;
+        }
+      } catch (err) {
+        console.error('[MicrocycleEditor] Subscription error:', err);
+      }
+    };
+
+    setupSubscription();
+
+    return () => {
+      cancelled = true;
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [microcycleId]);
 
   const loadMicrocycle = async () => {
@@ -98,6 +216,12 @@ export default function MicrocycleEditorView() {
           setTemplates(templatesData);
         }
       }
+    }
+
+    // Load scheduled workouts
+    const { data: scheduledData } = await AutomationService.getScheduledWorkoutsByMicrocycle(microcycleId);
+    if (scheduledData) {
+      setScheduledWorkouts(scheduledData);
     }
 
     setLoading(false);
@@ -136,46 +260,49 @@ export default function MicrocycleEditorView() {
     }
   };
 
-  const handleDragStart = (template: WorkoutTemplate) => {
-    setDraggedTemplate(template);
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveTemplateId(event.active.id as string);
   };
 
-  const handleDragEnd = () => {
-    setDraggedTemplate(null);
-    setDragOverSlot(null);
-  };
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveTemplateId(null);
 
-  const handleDragOver = (e: React.DragEvent, week: number, day: number) => {
-    e.preventDefault();
-    setDragOverSlot({ week, day });
-  };
+    if (!over || !microcycle) return;
 
-  const handleDrop = async (week: number, day: number) => {
-    if (!draggedTemplate || !microcycle) return;
+    // Parse droppable ID: "week-1-day-3" format
+    const overId = over.id as string;
+    if (!overId.startsWith('week-')) return;
+
+    const [, weekStr, , dayStr] = overId.split('-');
+    const week = parseInt(weekStr);
+    const day = parseInt(dayStr);
+
+    // Find the template being dragged
+    const template = templates.find((t) => t.id === active.id);
+    if (!template) return;
 
     // Create new workout slot
     const { data, error } = await MicrocycleService.createSlot({
       microcycle_id: microcycle.id,
-      template_id: draggedTemplate.id,
+      template_id: template.id,
       week_number: week,
       day_of_week: day,
-      name: draggedTemplate.name,
-      duration: draggedTemplate.duration,
-      intensity: draggedTemplate.intensity,
-      modality: draggedTemplate.modality,
-      exercise_structure: draggedTemplate.exercise_structure,
-      ftp_percentage: draggedTemplate.ftp_percentage,
-      pace_zone: draggedTemplate.pace_zone,
-      css_percentage: draggedTemplate.css_percentage,
-      rpe: draggedTemplate.rpe,
+      name: template.name,
+      duration: template.duration,
+      intensity: template.intensity,
+      modality: template.modality,
+      exercise_structure: template.exercise_structure,
+      ftp_percentage: template.ftp_percentage,
+      pace_zone: template.pace_zone,
+      css_percentage: template.css_percentage,
+      rpe: template.rpe,
     });
 
     if (!error && data) {
+      // Optimistic update (real-time subscription will sync)
       setSlots((prev) => [...prev, data]);
     }
-
-    setDraggedTemplate(null);
-    setDragOverSlot(null);
   };
 
   const handleRemoveSlot = async (slotId: string) => {
@@ -188,6 +315,25 @@ export default function MicrocycleEditorView() {
 
   const getSlotsForCell = (week: number, day: number) => {
     return slots.filter((s) => s.week_number === week && s.day_of_week === day);
+  };
+
+  const handleScheduleWeek = (week: 1 | 2 | 3) => {
+    setSelectedWeek(week);
+    setScheduleModalOpen(true);
+  };
+
+  const handleScheduleSuccess = () => {
+    // Reload scheduled workouts
+    if (microcycleId) {
+      AutomationService.getScheduledWorkoutsByMicrocycle(microcycleId).then(({ data }) => {
+        if (data) setScheduledWorkouts(data);
+      });
+    }
+  };
+
+  const handleCancelScheduled = async (id: string) => {
+    await AutomationService.cancelScheduled(id);
+    setScheduledWorkouts((prev) => prev.filter((sw) => sw.id !== id));
   };
 
   const calculateWeekLoad = (week: number): number => {
@@ -215,45 +361,37 @@ export default function MicrocycleEditorView() {
     );
   }
 
-  return (
-    <div className="flex h-screen bg-ceramic-base overflow-hidden">
-      {/* Template Library Sidebar */}
-      <div className="w-80 border-r border-ceramic-text-secondary/10 bg-white/30 flex flex-col">
-        <div className="p-4 border-b border-ceramic-text-secondary/10">
-          <h3 className="text-sm font-bold text-ceramic-text-primary mb-2">
-            Templates Disponíveis
-          </h3>
-          <p className="text-xs text-ceramic-text-secondary">
-            Arraste para a grade semanal
-          </p>
-        </div>
+  const activeTemplate = templates.find((t) => t.id === activeTemplateId);
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {templates.map((template) => (
-            <div
-              key={template.id}
-              draggable
-              onDragStart={() => handleDragStart(template)}
-              onDragEnd={handleDragEnd}
-              className={`p-3 ceramic-card cursor-move hover:scale-[1.02] transition-transform ${
-                draggedTemplate?.id === template.id ? 'opacity-50' : ''
-              }`}
-            >
-              <div className="flex items-start gap-2">
-                <GripVertical className="w-4 h-4 text-ceramic-text-secondary mt-1" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-ceramic-text-primary line-clamp-1">
-                    {template.name}
-                  </p>
-                  <p className="text-xs text-ceramic-text-secondary">
-                    {template.duration}min • {template.intensity}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex h-screen bg-ceramic-base overflow-hidden">
+        {/* Template Library Sidebar */}
+        <div className="w-80 border-r border-ceramic-text-secondary/10 bg-white/30 flex flex-col">
+          <div className="p-4 border-b border-ceramic-text-secondary/10">
+            <h3 className="text-sm font-bold text-ceramic-text-primary mb-2">
+              Templates Disponíveis
+            </h3>
+            <p className="text-xs text-ceramic-text-secondary">
+              Arraste para a grade semanal
+            </p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {templates.map((template) => (
+              <DraggableTemplate
+                key={template.id}
+                template={template}
+                isDragging={activeTemplateId === template.id}
+              />
+            ))}
+          </div>
         </div>
-      </div>
 
       {/* Main Editor Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -300,6 +438,14 @@ export default function MicrocycleEditorView() {
               </p>
             </div>
           </div>
+
+          {/* Progress Bar */}
+          <div className="mt-4">
+            <MicrocycleProgressBar
+              completionPercentage={completionPercentage}
+              weekStats={weekStats}
+            />
+          </div>
         </div>
 
         {/* 3-Week Grid */}
@@ -326,6 +472,13 @@ export default function MicrocycleEditorView() {
                       >
                         {WEEK_FOCUS_LABELS[focus]}
                       </span>
+                      <button
+                        onClick={() => handleScheduleWeek(week as 1 | 2 | 3)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 ceramic-inset hover:bg-white/50 rounded-lg transition-colors text-xs font-medium"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        Agendar WhatsApp
+                      </button>
                     </div>
 
                     <div className="flex items-center gap-4 text-sm">
@@ -339,57 +492,39 @@ export default function MicrocycleEditorView() {
                     </div>
                   </div>
 
+                  {/* Scheduled Workouts Status */}
+                  <div className="mb-4">
+                    <ScheduledWorkoutStatus
+                      scheduledWorkouts={scheduledWorkouts}
+                      weekNumber={week as 1 | 2 | 3}
+                      onCancel={handleCancelScheduled}
+                    />
+                  </div>
+
                   {/* Day Grid */}
                   <div className="grid grid-cols-7 gap-2">
                     {[1, 2, 3, 4, 5, 6, 7].map((day) => {
                       const cellSlots = getSlotsForCell(week, day);
-                      const isDropTarget =
-                        dragOverSlot?.week === week && dragOverSlot?.day === day;
 
                       return (
-                        <div
+                        <DroppableCell
                           key={day}
-                          onDragOver={(e) => handleDragOver(e, week, day)}
-                          onDrop={() => handleDrop(week, day)}
-                          className={`min-h-24 p-2 ceramic-inset rounded-lg transition-all ${
-                            isDropTarget
-                              ? 'ring-2 ring-ceramic-accent bg-ceramic-accent/10'
-                              : ''
-                          }`}
-                        >
-                          <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider mb-2">
-                            {DAY_LABELS[day - 1]}
-                          </p>
-
-                          <div className="space-y-1">
-                            {cellSlots.map((slot) => (
-                              <div
-                                key={slot.id}
-                                className="p-2 bg-white/50 rounded border border-ceramic-text-secondary/10 group relative"
-                              >
-                                <p className="text-[10px] font-bold text-ceramic-text-primary line-clamp-2">
-                                  {slot.name}
-                                </p>
-                                <p className="text-[9px] text-ceramic-text-secondary">
-                                  {slot.duration}min
-                                </p>
-
-                                <button
-                                  onClick={() => handleRemoveSlot(slot.id)}
-                                  className="absolute -top-1 -right-1 w-4 h-4 bg-ceramic-error text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-
-                          {cellSlots.length === 0 && draggedTemplate && (
-                            <div className="flex items-center justify-center h-full">
-                              <Plus className="w-4 h-4 text-ceramic-text-secondary opacity-50" />
-                            </div>
-                          )}
-                        </div>
+                          week={week}
+                          day={day}
+                          dayLabel={DAY_LABELS[day - 1]}
+                          slots={cellSlots}
+                          onRemoveSlot={handleRemoveSlot}
+                          onToggleComplete={(slotId, isCompleted) => {
+                            // Optimistic UI update (real-time subscription will sync)
+                            setSlots((prev) =>
+                              prev.map((s) =>
+                                s.id === slotId
+                                  ? { ...s, completed: isCompleted, completed_at: isCompleted ? new Date().toISOString() : null }
+                                  : s
+                              )
+                            );
+                          }}
+                        />
                       );
                     })}
                   </div>
@@ -399,6 +534,39 @@ export default function MicrocycleEditorView() {
           </div>
         </div>
       </div>
-    </div>
+
+        {/* Schedule WhatsApp Modal */}
+        {microcycle && athlete && (
+          <ScheduleWhatsAppModal
+            isOpen={scheduleModalOpen}
+            onClose={() => setScheduleModalOpen(false)}
+            microcycle={microcycle}
+            athleteId={athlete.athlete_id}
+            athleteName={athlete.name}
+            weekNumber={selectedWeek}
+            onSuccess={handleScheduleSuccess}
+          />
+        )}
+      </div>
+
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {activeTemplate ? (
+          <div className="p-3 ceramic-card shadow-2xl rotate-3 scale-110">
+            <div className="flex items-start gap-2">
+              <GripVertical className="w-4 h-4 text-ceramic-text-secondary mt-1" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-ceramic-text-primary line-clamp-1">
+                  {activeTemplate.name}
+                </p>
+                <p className="text-xs text-ceramic-text-secondary">
+                  {activeTemplate.duration}min • {activeTemplate.intensity}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

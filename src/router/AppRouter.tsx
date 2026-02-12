@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowRight, Users, Briefcase, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { handleOAuthCallback } from '../services/googleAuthService';
@@ -46,11 +46,9 @@ const FinanceAgentView = lazy(() => import('../modules/finance/views/FinanceAgen
 const GrantsModuleView = lazy(() => import('../modules/grants/views/GrantsModuleView').then(m => ({ default: m.GrantsModuleView })));
 const PresentationDemo = lazy(() => import('../modules/grants/components/presentation/PresentationDemo').then(m => ({ default: m.PresentationDemo })));
 
-// Connections Module - Multiple nested views
+// Connections Module - Simplified 2-level navigation
 const ConnectionsPage = lazy(() => import('../pages/ConnectionsPage').then(m => ({ default: m.ConnectionsPage })));
-const ArchetypeListPage = lazy(() => import('../pages/ArchetypeListPage').then(m => ({ default: m.ArchetypeListPage })));
-const SpaceDetailPage = lazy(() => import('../pages/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
-const SpaceSectionPage = lazy(() => import('../pages/SpaceSectionPage').then(m => ({ default: m.SpaceSectionPage })));
+const SpaceDetailView = lazy(() => import('../modules/connections/views/SpaceDetailView').then(m => ({ default: m.SpaceDetailView })));
 const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
 
 // Flux Module - Swim training management
@@ -93,6 +91,12 @@ const ShareTargetPage = lazy(() => import('../pages/ShareTargetPage').then(m => 
 
 // Life Area Views - Generic view for health, education, legal, professional modules
 const LifeAreaView = lazy(() => import('../views/LifeAreaView').then(m => ({ default: m.LifeAreaView })));
+
+// Legacy redirect for old /connections/:archetype/:spaceId URLs
+function LegacySpaceRedirect() {
+   const params = useParams<{ spaceId?: string }>();
+   return <Navigate to={`/connections/${params.spaceId}`} replace />;
+}
 
 // Reusable Module Card Component (for association detail view)
 const ModuleCard = ({ moduleId, title, icon: Icon, color, accentColor }: any) => {
@@ -484,7 +488,7 @@ export function AppRouter() {
       // 2. In a focused ViewState mode
       // 3. On detail/section routes (these are handled by React Router and don't use BottomNav)
       const isInFocusedViewState = focusedModes.includes(currentView);
-      const isOnDetailRoute = location.pathname.match(/^\/connections\/[^/]+\/[^/]+/);
+      const isOnDetailRoute = location.pathname.match(/^\/connections\/[^/]+$/) && location.pathname !== '/connections';
 
       const shouldShowGlobalNav = !isFocusedMode &&
          !isInFocusedViewState &&
@@ -638,11 +642,12 @@ export function AppRouter() {
                   element={<AuthGuard><OnboardingFlow /></AuthGuard>}
                />
 
-               {/* Connections Module Routes - Protected (unconditional for stable React tree) */}
+               {/* Connections Module Routes - Simplified 2-level navigation */}
                <Route path="/connections" element={<AuthGuard><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></AuthGuard>} />
-               <Route path="/connections/:archetype" element={<AuthGuard><ConnectionsLayout><ArchetypeListPage /></ConnectionsLayout></AuthGuard>} />
-               <Route path="/connections/:archetype/:spaceId" element={<AuthGuard><SpaceDetailPage /></AuthGuard>} />
-               <Route path="/connections/:archetype/:spaceId/:section" element={<AuthGuard><SpaceSectionPage /></AuthGuard>} />
+               <Route path="/connections/:spaceId" element={<AuthGuard><SpaceDetailView /></AuthGuard>} />
+               {/* Legacy redirects: old /connections/:archetype/:spaceId → new /connections/:spaceId */}
+               <Route path="/connections/:archetype/:spaceId" element={<LegacySpaceRedirect />} />
+               <Route path="/connections/:archetype/:spaceId/:section" element={<LegacySpaceRedirect />} />
                <Route path="/connections/analytics/whatsapp" element={<Navigate to="/contacts" replace />} />
 
                {/* Studio Module Routes - Protected */}
