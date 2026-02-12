@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -44,7 +45,57 @@ export default defineConfig(({ mode }) => {
         'Permissions-Policy': 'camera=(), microphone=(self), geolocation=(self)',
       }
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg'],
+        manifest: {
+          name: 'AICA Life OS',
+          short_name: 'AICA',
+          description: 'Sistema Operacional de Vida Integral',
+          theme_color: '#D4AF37',
+          background_color: '#F5F0EB',
+          display: 'standalone',
+          start_url: '/',
+          icons: [
+            {
+              src: '/favicon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
+              purpose: 'any maskable',
+            },
+          ],
+          share_target: {
+            action: '/share-target',
+            method: 'POST',
+            enctype: 'multipart/form-data',
+            params: {
+              files: [
+                {
+                  name: 'shared_files',
+                  accept: ['text/plain', '.txt', 'application/zip', '.zip'],
+                },
+              ],
+            },
+          },
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+          importScripts: ['/sw-share-target.js'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'supabase-api',
+                expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+              },
+            },
+          ],
+        },
+      }),
+    ],
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),

@@ -197,10 +197,12 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-bold text-ceramic-text-primary">
-              Conexão WhatsApp
+              Aica Bot (WhatsApp)
             </h3>
             <p className="text-sm text-ceramic-text-secondary">
-              {session?.instance_name || 'Aguardando conexão...'}
+              {session?.instance_name
+                ? 'Converse com a Aica pelo WhatsApp'
+                : 'Conecte-se ao bot da Aica'}
             </p>
           </div>
         </div>
@@ -336,7 +338,7 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
 
               {qrCode && (
                 <p className="text-xs text-ceramic-text-secondary text-center">
-                  Abra o WhatsApp no seu celular e escaneie o QR Code acima
+                  Escaneie para conectar ao bot da Aica. Para importar conversas privadas, use a aba "Importar".
                 </p>
               )}
             </>

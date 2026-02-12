@@ -44,6 +44,7 @@ import {
   ConversationTimeline,
   EntityInbox,
   GroupAnalyticsCard,
+  WhatsAppExportUpload,
 } from '../components/whatsapp';
 import { useContactDossier } from '../hooks/useContactDossier';
 import { useConversationThreads } from '../hooks/useConversationThreads';
@@ -62,7 +63,7 @@ const log = createNamespacedLogger('ConnectionsWhatsAppTab');
 // TYPES
 // ============================================================================
 
-type TabId = 'overview' | 'contacts' | 'consent' | 'analytics';
+type TabId = 'overview' | 'import' | 'contacts' | 'consent' | 'analytics';
 
 interface ConnectionsWhatsAppTabProps {
   userId?: string;
@@ -353,6 +354,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   // Tab configuration
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
+    { id: 'import', label: 'Importar' },
     { id: 'contacts', label: 'Contatos' },
     { id: 'consent', label: 'Consentimento' },
     { id: 'analytics', label: 'Analytics' },
@@ -538,6 +540,11 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
         </div>
       )}
     </div>
+  );
+
+  // Render Import Tab
+  const renderImportTab = () => (
+    <WhatsAppExportUpload />
   );
 
   // Render Contacts Tab (Issue #92)
@@ -916,6 +923,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             ) : (
               <>
                 {activeTab === 'overview' && renderOverviewTab()}
+                {activeTab === 'import' && renderImportTab()}
                 {activeTab === 'contacts' && renderContactsTab()}
                 {activeTab === 'consent' && renderConsentTab()}
                 {activeTab === 'analytics' && renderAnalyticsTab()}

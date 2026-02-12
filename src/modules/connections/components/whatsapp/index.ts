@@ -18,3 +18,4 @@ export { ContactDetailSheet } from './ContactDetailSheet';
 export { ProcessingCTA } from './ProcessingCTA';
 export { ProcessingProgress } from './ProcessingProgress';
 export { IntentTimeline } from './IntentTimeline';
+export { WhatsAppExportUpload } from './WhatsAppExportUpload';
