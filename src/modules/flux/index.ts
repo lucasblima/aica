@@ -49,12 +49,38 @@ export {
   getMockAlertsSummary,
 } from './mockData';
 
+// Flow Module Mock Data
+export {
+  MOCK_WORKOUT_TEMPLATES,
+  MOCK_MICROCYCLES,
+  MOCK_WORKOUT_SLOTS,
+  MOCK_FLOW_ATHLETE_PROFILES,
+  MOCK_WORKOUT_AUTOMATIONS,
+  getMockTemplatesByModality,
+  getMockMicrocycleById,
+  getMockSlotsByMicrocycle,
+} from './mockData_flow';
+
 // ============================================
 // COMPONENTS
 // ============================================
 
 export { FluxCard } from './components/FluxCard';
 export { WhatsAppMessageModal } from './components/WhatsAppMessageModal';
+
+// Form Components
+export {
+  TemplateFormModal,
+  BasicInfoSection,
+  IntensitySection,
+  ExerciseStructureSection,
+  OrganizationSection,
+  SetsRepsEditor,
+  IntervalsEditor,
+  DistanceTimeEditor,
+  useTemplateForm,
+} from './components/forms';
+export type { TemplateFormState } from './components/forms';
 
 // ============================================
 // SERVICES (Flow Module)
