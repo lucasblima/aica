@@ -593,6 +593,68 @@ async function handleClusterMomentsByTheme(genAI: GoogleGenerativeAI, payload: a
 }
 
 // ============================================================================
+// VOICE-TO-TASK EXTRACTION HANDLER (Atlas - Voice Input)
+// ============================================================================
+
+async function handleExtractTaskFromVoice(genAI: GoogleGenerativeAI, payload: { transcription: string }) {
+  const { transcription } = payload
+
+  if (!transcription) {
+    throw new Error('transcription e obrigatorio')
+  }
+
+  const today = new Date().toISOString().split('T')[0]
+  const dayOfWeek = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][new Date().getDay()]
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: 'application/json',
+      maxOutputTokens: 500,
+    },
+  })
+
+  const prompt = `Voce e um assistente que extrai dados estruturados de tarefas a partir de texto falado em portugues brasileiro.
+
+Data de hoje: ${today} (${dayOfWeek})
+
+A partir da transcricao abaixo, extraia os seguintes campos:
+- title: titulo curto e claro da tarefa (max 100 chars)
+- description: descricao adicional se houver detalhes relevantes (opcional)
+- priority: "urgent" | "high" | "medium" | "low" (baseado no tom e urgencia)
+- is_urgent: true se a tarefa precisa ser feita logo (prazo proximo ou linguagem urgente)
+- is_important: true se a tarefa tem impacto significativo
+- due_date: data no formato YYYY-MM-DD (resolva datas relativas como "amanha", "segunda", "semana que vem" a partir da data de hoje)
+- estimated_duration: duracao estimada em minutos (1-480)
+
+Transcricao: "${transcription}"
+
+Retorne APENAS o JSON com os campos acima. Campos opcionais podem ser omitidos.`
+
+  const result = await model.generateContent(prompt)
+  const text = result.response.text()
+
+  try {
+    const parsed = extractJSON(text)
+    return {
+      ...parsed,
+      __usageMetadata: result.response.usageMetadata,
+    }
+  } catch {
+    // Fallback: use transcription as title
+    console.warn('[gemini-chat] extract_task_from_voice: JSON parse failed, using fallback')
+    return {
+      title: transcription.slice(0, 100),
+      priority: 'medium',
+      is_urgent: false,
+      is_important: false,
+      __usageMetadata: result.response.usageMetadata,
+    }
+  }
+}
+
+// ============================================================================
 // AUDIO TRANSCRIPTION HANDLER (Universal Input Funnel - Phase 0)
 // ============================================================================
 
@@ -1609,6 +1671,9 @@ serve(async (req) => {
           break
         case 'transcribe_audio':
           result = await handleTranscribeAudio(genAI, payload)
+          break
+        case 'extract_task_from_voice':
+          result = await handleExtractTaskFromVoice(genAI, payload as { transcription: string })
           break
         case 'generate_tags':
           result = await handleGenerateTags(genAI, payload)

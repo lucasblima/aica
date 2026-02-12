@@ -55,6 +55,7 @@ export const USE_CASE_TO_MODEL: Record<string, GeminiModel> = {
   // Atlas (novos)
   'categorize_task': 'fast',
   'suggest_priority': 'fast',
+  'extract_task_from_voice': 'fast',
 
   // Analytics
   'weekly_summary': 'smart',

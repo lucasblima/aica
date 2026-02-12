@@ -43,6 +43,7 @@ export type GeminiAction =
   // Atlas
   | 'categorize_task'
   | 'suggest_priority'
+  | 'extract_task_from_voice'
 
   // Analytics
   | 'weekly_summary'
