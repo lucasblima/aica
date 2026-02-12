@@ -55,7 +55,7 @@ export type ExerciseCategory = 'warmup' | 'main' | 'technique' | 'cooldown' | 'd
 /**
  * Training modalities supported by Flux
  */
-export type TrainingModality = 'swimming' | 'running' | 'cycling' | 'strength';
+export type TrainingModality = 'swimming' | 'running' | 'cycling' | 'strength' | 'walking';
 
 // ============================================
 // DATABASE MODELS
@@ -426,9 +426,10 @@ export const MODALITY_CONFIG: Record<TrainingModality, { label: string; icon: st
   running: { label: 'Corrida', icon: '🏃', color: 'green' },
   cycling: { label: 'Ciclismo', icon: '🚴', color: 'amber' },
   strength: { label: 'Forca', icon: '🏋️', color: 'purple' },
+  walking: { label: 'Caminhada', icon: '🚶', color: 'blue' },
 };
 
 /**
  * All available training modalities
  */
-export const TRAINING_MODALITIES: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength'];
+export const TRAINING_MODALITIES: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength', 'walking'];

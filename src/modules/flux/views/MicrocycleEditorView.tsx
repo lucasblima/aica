@@ -24,7 +24,7 @@ import type {
   Microcycle,
   WorkoutSlot,
   WorkoutTemplate,
-  AthleteProfile,
+  FlowAthleteProfile,
   MicrocycleWeekFocus,
 } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
@@ -51,7 +51,7 @@ export default function MicrocycleEditorView() {
 
   // State
   const [microcycle, setMicrocycle] = useState<Microcycle | null>(null);
-  const [athlete, setAthlete] = useState<AthleteProfile | null>(null);
+  const [athlete, setAthlete] = useState<FlowAthleteProfile | null>(null);
   const [slots, setSlots] = useState<WorkoutSlot[]>([]);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);

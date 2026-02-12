@@ -665,6 +665,8 @@ export function AppRouter() {
 
                {/* Flow Module Routes (Intelligent Prescription) - Protected */}
                <Route path="/flux/templates" element={<AuthGuard><FluxProvider><TemplateLibraryView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/templates/new" element={<AuthGuard><FluxProvider><TemplateLibraryView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/templates/:templateId/edit" element={<AuthGuard><FluxProvider><TemplateLibraryView /></FluxProvider></AuthGuard>} />
                <Route path="/flux/microcycle/:microcycleId" element={<AuthGuard><FluxProvider><MicrocycleEditorView /></FluxProvider></AuthGuard>} />
                <Route path="/flux/leveling" element={<AuthGuard><FluxProvider><LevelingEngineView /></FluxProvider></AuthGuard>} />
                <Route path="/flux/intensity/:athleteId" element={<AuthGuard><FluxProvider><IntensityCalculatorView /></FluxProvider></AuthGuard>} />

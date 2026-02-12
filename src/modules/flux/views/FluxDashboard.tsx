@@ -23,7 +23,7 @@ import { AthleteCard } from '../components/AthleteCard';
 import { AlertBadge } from '../components/AlertBadge';
 import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
 import type { AthleteWithMetrics } from '../types';
-import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Zap } from 'lucide-react';
 
 // Sort options
 type SortOrder = 'none' | 'asc' | 'desc';
@@ -204,6 +204,45 @@ export default function FluxDashboard() {
           </div>
         </div>
 
+        {/* Quick Access Buttons */}
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          <button
+            onClick={() => navigate('/flux/templates')}
+            className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
+                <span className="text-xl">📚</span>
+              </div>
+              <p className="text-xs font-bold text-ceramic-text-primary text-center">Biblioteca</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate('/flux/intensity')}
+            className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
+                <span className="text-xl">⚡</span>
+              </div>
+              <p className="text-xs font-bold text-ceramic-text-primary text-center">Intensidade</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate('/flux/leveling')}
+            className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
+                <span className="text-xl">📊</span>
+              </div>
+              <p className="text-xs font-bold text-ceramic-text-primary text-center">Nivelamento</p>
+            </div>
+          </button>
+        </div>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {/* Active Athletes */}
@@ -328,6 +367,81 @@ export default function FluxDashboard() {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Flow Tools Section */}
+        <div className="mt-6 pt-6 border-t border-ceramic-text-secondary/10">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="w-5 h-5 text-ceramic-accent" />
+            <h3 className="text-sm font-bold text-ceramic-text-primary uppercase tracking-wider">
+              Ferramentas Inteligentes
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <button
+              onClick={() => navigate('/flux/templates')}
+              className="ceramic-card p-4 hover:scale-[1.02] transition-all group"
+            >
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-ceramic-info/10 flex items-center justify-center group-hover:bg-ceramic-info/20 transition-colors">
+                  <span className="text-2xl">📚</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-ceramic-text-primary">Templates</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Biblioteca</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate('/flux/leveling')}
+              className="ceramic-card p-4 hover:scale-[1.02] transition-all group"
+            >
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-ceramic-success/10 flex items-center justify-center group-hover:bg-ceramic-success/20 transition-colors">
+                  <span className="text-2xl">📈</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-ceramic-text-primary">Nivelamento</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Motor IA</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                // Navigate to intensity calculator - requires athlete, redirect to CRM to select
+                navigate('/flux/crm');
+              }}
+              className="ceramic-card p-4 hover:scale-[1.02] transition-all group"
+              title="Selecione um atleta no CRM para calcular intensidade"
+            >
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-ceramic-warning/10 flex items-center justify-center group-hover:bg-ceramic-warning/20 transition-colors">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-ceramic-text-primary">Intensidade</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Calculadora</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate('/flux/crm')}
+              className="ceramic-card p-4 hover:scale-[1.02] transition-all group"
+            >
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-ceramic-accent/10 flex items-center justify-center group-hover:bg-ceramic-accent/20 transition-colors">
+                  <span className="text-2xl">🎮</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-ceramic-text-primary">CRM</p>
+                  <p className="text-[10px] text-ceramic-text-secondary">Command Center</p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </div>

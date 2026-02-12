@@ -6,9 +6,9 @@
 
 import { supabase } from '@/services/supabaseClient';
 import type {
-  AthleteProfile,
-  CreateAthleteProfileInput,
-  UpdateAthleteProfileInput,
+  FlowAthleteProfile,
+  CreateFlowAthleteProfileInput,
+  UpdateFlowAthleteProfileInput,
 } from '../types/flow';
 
 export class AthleteProfileService {
@@ -16,7 +16,7 @@ export class AthleteProfileService {
    * Get all athlete profiles for current user
    */
   static async getAllProfiles(): Promise<{
-    data: AthleteProfile[] | null;
+    data: FlowAthleteProfile[] | null;
     error: any;
   }> {
     try {
@@ -37,7 +37,7 @@ export class AthleteProfileService {
    */
   static async getProfileByAthleteId(
     athleteId: string
-  ): Promise<{ data: AthleteProfile | null; error: any }> {
+  ): Promise<{ data: FlowAthleteProfile | null; error: any }> {
     try {
       const { data, error } = await supabase
         .from('athlete_profiles')
@@ -56,8 +56,8 @@ export class AthleteProfileService {
    * Create new athlete profile
    */
   static async createProfile(
-    input: CreateAthleteProfileInput
-  ): Promise<{ data: AthleteProfile | null; error: any }> {
+    input: CreateFlowAthleteProfileInput
+  ): Promise<{ data: FlowAthleteProfile | null; error: any }> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
@@ -85,8 +85,8 @@ export class AthleteProfileService {
    * Update athlete profile
    */
   static async updateProfile(
-    input: UpdateAthleteProfileInput
-  ): Promise<{ data: AthleteProfile | null; error: any }> {
+    input: UpdateFlowAthleteProfileInput
+  ): Promise<{ data: FlowAthleteProfile | null; error: any }> {
     try {
       const { id, ...updates } = input;
 
@@ -132,7 +132,7 @@ export class AthleteProfileService {
       swim_css?: string;
       last_test_date?: string;
     }
-  ): Promise<{ data: AthleteProfile | null; error: any }> {
+  ): Promise<{ data: FlowAthleteProfile | null; error: any }> {
     try {
       const { data, error } = await supabase
         .from('athlete_profiles')
@@ -161,7 +161,7 @@ export class AthleteProfileService {
       weekly_volume_average?: number;
       consistency_rate?: number;
     }
-  ): Promise<{ data: AthleteProfile | null; error: any }> {
+  ): Promise<{ data: FlowAthleteProfile | null; error: any }> {
     try {
       const { data, error } = await supabase
         .from('athlete_profiles')
@@ -187,7 +187,7 @@ export class AthleteProfileService {
     modality?: string;
     level?: string;
     status?: string;
-  }): Promise<{ data: AthleteProfile[] | null; error: any }> {
+  }): Promise<{ data: FlowAthleteProfile[] | null; error: any }> {
     try {
       let query = supabase.from('athlete_profiles').select('*');
 
@@ -216,8 +216,8 @@ export class AthleteProfileService {
    * Bulk import athlete profiles
    */
   static async bulkImportProfiles(
-    profiles: CreateAthleteProfileInput[]
-  ): Promise<{ data: AthleteProfile[] | null; error: any }> {
+    profiles: CreateFlowAthleteProfileInput[]
+  ): Promise<{ data: FlowAthleteProfile[] | null; error: any }> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {

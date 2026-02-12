@@ -238,10 +238,10 @@ export default function TemplateLibraryView() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-black text-ceramic-text-primary mb-2">
-              Biblioteca de Templates
+              Biblioteca de Exercícios
             </h1>
             <p className="text-sm text-ceramic-text-secondary">
-              {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''}{' '}
+              {filteredTemplates.length} exercício{filteredTemplates.length !== 1 ? 's' : ''}{' '}
               {activeFiltersCount > 0 && `(${activeFiltersCount} filtro${activeFiltersCount > 1 ? 's' : ''})`}
             </p>
           </div>
@@ -251,7 +251,7 @@ export default function TemplateLibraryView() {
             className="flex items-center gap-2 px-6 py-3 bg-ceramic-accent hover:bg-ceramic-accent/90 text-white rounded-lg shadow-md hover:scale-105 transition-all"
           >
             <Plus className="w-5 h-5" />
-            <span className="font-bold">Novo Template</span>
+            <span className="font-bold">Novo Exercício</span>
           </button>
         </div>
 
@@ -397,19 +397,19 @@ export default function TemplateLibraryView() {
         ) : filteredTemplates.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 ceramic-inset">
             <p className="text-lg font-bold text-ceramic-text-primary mb-2">
-              Nenhum template encontrado
+              Nenhum exercício encontrado
             </p>
             <p className="text-sm text-ceramic-text-secondary mb-4">
               {activeFiltersCount > 0
-                ? 'Tente ajustar os filtros ou criar um novo template'
-                : 'Comece criando seu primeiro template de treino'}
+                ? 'Tente ajustar os filtros ou criar um novo exercício'
+                : 'Comece criando seu primeiro exercício'}
             </p>
             <button
               onClick={() => navigate('/flux/templates/new')}
               className="flex items-center gap-2 px-4 py-2 bg-ceramic-accent text-white rounded-lg hover:bg-ceramic-accent/90 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span className="font-medium">Criar Template</span>
+              <span className="font-medium">Criar Exercício</span>
             </button>
           </div>
         ) : (

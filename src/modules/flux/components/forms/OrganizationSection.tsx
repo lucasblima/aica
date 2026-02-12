@@ -187,7 +187,7 @@ export default function OrganizationSection({
             {/* Public */}
             <label className="flex items-center justify-between p-3 ceramic-inset rounded-lg cursor-pointer hover:bg-white/50 transition-colors">
               <div>
-                <p className="text-sm font-medium text-ceramic-text-primary">Template Público</p>
+                <p className="text-sm font-medium text-ceramic-text-primary">Exercício Público</p>
                 <p className="text-xs text-ceramic-text-secondary mt-0.5">
                   Compartilhar com outros coaches
                 </p>

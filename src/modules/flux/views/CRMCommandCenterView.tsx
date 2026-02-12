@@ -10,12 +10,12 @@ import { ArrowLeft, Users, Send, Zap, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AthleteProfileService } from '../services/athleteProfileService';
 import { AutomationService } from '../services/automationService';
-import type { AthleteProfile, WorkoutAutomation, CRMFilters } from '../types/flow';
+import type { FlowAthleteProfile, WorkoutAutomation, CRMFilters } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
 
 export default function CRMCommandCenterView() {
   const navigate = useNavigate();
-  const [athletes, setAthletes] = useState<AthleteProfile[]>([]);
+  const [athletes, setAthletes] = useState<FlowAthleteProfile[]>([]);
   const [automations, setAutomations] = useState<WorkoutAutomation[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<CRMFilters>({});
