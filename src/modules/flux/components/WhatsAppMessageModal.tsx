@@ -1,7 +1,7 @@
 /**
  * WhatsAppMessageModal - AI-generated message composer for athlete follow-up
  *
- * Generates contextual messages based on athlete's adherence rate and status.
+ * Generates contextual messages based on athlete's consistency rate and status.
  * Opens WhatsApp with pre-filled message for coach convenience.
  */
 
@@ -20,7 +20,7 @@ interface WhatsAppMessageModalProps {
 // Message templates based on context
 const generateMessage = (athlete: AthleteWithMetrics, alerts: Alert[] = []): string => {
   const firstName = athlete.name.split(' ')[0];
-  const adherence = athlete.adherence_rate || 0;
+  const consistency = athlete.consistency_rate || 0;
   const hasHealthAlert = alerts.some((a) => a.alert_type === 'health');
   const hasMotivationAlert = alerts.some((a) => a.alert_type === 'motivation');
   const hasAbsenceAlert = alerts.some((a) => a.alert_type === 'absence');
@@ -58,32 +58,32 @@ Se tiver alguma dificuldade com horarios ou com o treino em si, me avisa que a g
 Como posso te ajudar? 💬`;
   }
 
-  // Low adherence (< 60%)
-  if (adherence < 60) {
+  // Low consistency (< 60%)
+  if (consistency < 60) {
     return `Oi ${firstName}! 👋
 
-Notei que sua adesao aos treinos esta em ${adherence}% esse mes. Quero entender melhor o que esta acontecendo.
+Notei que sua adesao aos treinos esta em ${consistency}% esse mes. Quero entender melhor o que esta acontecendo.
 
 Esta tendo alguma dificuldade? O treino esta muito puxado? Os horarios nao estao funcionando?
 
 Me conta pra gente ajustar o que for preciso. Estou aqui pra te ajudar a alcancar seus objetivos! 💪`;
   }
 
-  // Medium adherence (60-80%)
-  if (adherence < 80) {
+  // Medium consistency (60-80%)
+  if (consistency < 80) {
     return `E ai ${firstName}, tudo bem? 🏋️
 
-Sua adesao esta em ${adherence}% - ja e um bom numero! Mas sei que voce pode mais.
+Sua adesao esta em ${consistency}% - ja e um bom numero! Mas sei que voce pode mais.
 
 O que esta faltando pra gente chegar nos 100%? Algum ajuste no treino ou na rotina que eu possa fazer?
 
 Bora juntos nessa! 🚀`;
   }
 
-  // Good adherence (>= 80%)
+  // Good consistency (>= 80%)
   return `Oi ${firstName}! 🌟
 
-Parabens pela dedicacao! Sua adesao de ${adherence}% mostra que voce esta comprometido(a) com seus objetivos.
+Parabens pela dedicacao! Sua adesao de ${consistency}% mostra que voce esta comprometido(a) com seus objetivos.
 
 Como voce esta se sentindo com os treinos? Tem algo que gostaria de ajustar ou algum feedback?
 
@@ -93,27 +93,27 @@ Continue assim! 💪🔥`;
 // Alternative messages for refresh
 const getAlternativeMessage = (athlete: AthleteWithMetrics, variant: number): string => {
   const firstName = athlete.name.split(' ')[0];
-  const adherence = athlete.adherence_rate || 0;
+  const consistency = athlete.consistency_rate || 0;
 
   const variants = [
     // Variant 1 - More casual
     `Fala ${firstName}! 👊
 
-Passando pra saber como voce ta. Vi que a adesao ta em ${adherence}% - bora conversar sobre isso?
+Passando pra saber como voce ta. Vi que a adesao ta em ${consistency}% - bora conversar sobre isso?
 
 O que ta rolando? Posso te ajudar em algo?`,
 
     // Variant 2 - More professional
     `Ola ${firstName},
 
-Gostaria de fazer um acompanhamento sobre seus treinos. Sua taxa de adesao atual e de ${adherence}%.
+Gostaria de fazer um acompanhamento sobre seus treinos. Sua taxa de adesao atual e de ${consistency}%.
 
 Podemos conversar sobre como otimizar sua rotina de treinos? Estou a disposicao.`,
 
     // Variant 3 - Motivational
     `${firstName}! 💪
 
-Cada treino conta, cada esforco importa. Vi que sua adesao ta em ${adherence}%.
+Cada treino conta, cada esforco importa. Vi que sua adesao ta em ${consistency}%.
 
 Vamos juntos superar qualquer obstaculo? Me conta o que precisa!`,
   ];
@@ -167,8 +167,8 @@ export function WhatsAppMessageModal({
 
   if (!isOpen) return null;
 
-  const adherence = athlete.adherence_rate || 0;
-  const adherenceColor = adherence >= 80 ? 'text-ceramic-success' : adherence >= 60 ? 'text-ceramic-warning' : 'text-ceramic-error';
+  const consistency = athlete.consistency_rate || 0;
+  const consistencyColor = consistency >= 80 ? 'text-ceramic-success' : consistency >= 60 ? 'text-ceramic-warning' : 'text-ceramic-error';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -209,7 +209,7 @@ export function WhatsAppMessageModal({
             </div>
             <div className="text-right">
               <p className="text-xs text-ceramic-text-secondary uppercase tracking-wider">Adesao</p>
-              <p className={`text-2xl font-bold ${adherenceColor}`}>{adherence}%</p>
+              <p className={`text-2xl font-bold ${consistencyColor}`}>{consistency}%</p>
             </div>
           </div>
 

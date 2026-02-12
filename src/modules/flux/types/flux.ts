@@ -76,6 +76,14 @@ export interface Athlete {
   trial_expires_at?: string; // ISO 8601
   onboarding_data?: Record<string, unknown>; // AI onboarding responses
   anamnesis?: AnamnesisData;
+
+  // Performance thresholds (for load calculation)
+  ftp?: number; // Functional Threshold Power (watts) - cycling
+  pace_threshold?: string; // Pace limiar (ex: "4:30/km") - running
+  swim_css?: string; // Critical Swim Speed (ex: "1:30/100m") - swimming
+  current_block_id?: string; // Reference to active workout block
+  last_performance_test?: string; // Date of last FTP/CSS/Pace test (ISO 8601)
+
   created_at: string;
   updated_at: string;
 }
@@ -355,7 +363,7 @@ export interface FluxLoadResult<T> {
 export interface AthleteWithMetrics extends Athlete {
   current_block?: WorkoutBlock;
   current_week?: number;
-  adherence_rate?: number;
+  consistency_rate?: number; // % de treinos completados (0-100)
   active_alerts_count?: number;
   last_feedback_at?: string;
 }

@@ -644,6 +644,7 @@ async function handleGenerateTags(genAI: GoogleGenerativeAI, payload: any): Prom
 
 interface AnalyzeMomentPayload {
   content: string
+  user_emotion?: string
 }
 
 interface AnalyzeMomentResult {
@@ -686,15 +687,26 @@ Retorne um JSON com:
 
   const result = await model.generateContent(prompt)
   const text = result.response.text()
+  console.log('[analyze_moment] Raw Gemini response:', text.substring(0, 500))
+
+  // Build fallback mood from user_emotion if available
+  let fallbackMood = { emoji: '😐', label: 'Neutro' }
+  if (payload.user_emotion) {
+    // Extract emoji (first char/grapheme) and label from "😊 Feliz" format
+    const emojiMatch = payload.user_emotion.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)/u)
+    const fallbackEmoji = emojiMatch ? emojiMatch[0] : '😐'
+    const fallbackLabel = payload.user_emotion.replace(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u, '').trim() || 'Neutro'
+    fallbackMood = { emoji: fallbackEmoji, label: fallbackLabel }
+  }
 
   let parsed: AnalyzeMomentResult
   try {
     parsed = extractJSON(text)
   } catch (e) {
-    console.warn('[analyze_moment] JSON parse failed, using defaults:', (e as Error).message)
+    console.warn('[analyze_moment] JSON parse failed, using user_emotion as fallback:', (e as Error).message)
     parsed = {
       tags: [],
-      mood: { emoji: '😐', label: 'Neutro' },
+      mood: fallbackMood,
       sentiment: 'neutral',
       sentimentScore: 0,
       emotions: [],
@@ -720,6 +732,134 @@ Retorne um JSON com:
     ...parsed,
     __usageMetadata: result.response.usageMetadata,
   } as any
+}
+
+// ============================================================================
+// QUALITY EVALUATION HANDLER
+// ============================================================================
+
+interface EvaluateQualityPayload {
+  input_type: 'moment' | 'question_answer' | 'reflection'
+  content: string
+  question_text?: string
+  summary_context?: string
+}
+
+interface EvaluateQualityResult {
+  quality_score: number
+  relevance: number
+  depth: number
+  authenticity: number
+  clarity: number
+  feedback_message: string
+  feedback_tier: 'low' | 'medium' | 'high' | 'exceptional'
+}
+
+async function handleEvaluateQuality(genAI: GoogleGenerativeAI, payload: EvaluateQualityPayload): Promise<EvaluateQualityResult> {
+  if (!payload.content || typeof payload.content !== 'string') {
+    // Empty/missing content → minimum score
+    return {
+      quality_score: 0.0,
+      relevance: 0.0,
+      depth: 0.0,
+      authenticity: 0.0,
+      clarity: 0.0,
+      feedback_message: 'Tente escrever algo para ganhar mais pontos!',
+      feedback_tier: 'low',
+    }
+  }
+
+  const trimmed = payload.content.trim()
+  if (trimmed.length < 2) {
+    return {
+      quality_score: 0.1,
+      relevance: 0.1,
+      depth: 0.0,
+      authenticity: 0.1,
+      clarity: 0.1,
+      feedback_message: 'Obrigado por compartilhar! Tente escrever um pouco mais.',
+      feedback_tier: 'low',
+    }
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: 0.2,
+      topP: 0.8,
+      topK: 40,
+      maxOutputTokens: 256,
+      responseMimeType: 'application/json',
+    },
+  })
+
+  let contextLine = ''
+  if (payload.input_type === 'question_answer' && payload.question_text) {
+    contextLine = `Pergunta: "${payload.question_text}"\n`
+  } else if (payload.input_type === 'reflection' && payload.summary_context) {
+    contextLine = `Contexto do resumo semanal: "${payload.summary_context}"\n`
+  }
+
+  const prompt = `Voce e um avaliador empatico de reflexoes pessoais.
+O publico-alvo tem escolaridade variada.
+Respostas curtas mas genuinas devem ser VALORIZADAS.
+Uma resposta simples e honesta vale MAIS que uma longa e vaga.
+
+Tipo: ${payload.input_type}
+${contextLine}Texto: "${trimmed}"
+
+Avalie 0.0-1.0:
+- relevance (30%): Aborda o proposto? (momentos: qualquer registro e relevante)
+- depth (30%): Vai alem do superficial? (frases curtas podem ser profundas)
+- authenticity (20%): Genuino e pessoal? (favor honestidade sobre elaboracao)
+- clarity (20%): Compreensivel? (linguagem simples e OK)
+
+CALIBRACAO:
+- 1-3 palavras sinceras: quality_score minimo 0.3
+- 1 frase genuina: minimo 0.5
+- 2+ frases com reflexao: minimo 0.65
+- NAO penalize erros de ortografia ou linguagem informal
+- Respostas vagas/genericas: quality_score maximo 0.4
+
+Tiers: low (<0.35), medium (0.35-0.6), high (0.6-0.85), exceptional (>=0.85)
+
+Retorne JSON: { "quality_score": number, "relevance": number, "depth": number, "authenticity": number, "clarity": number, "feedback_message": "1 frase empatica em portugues", "feedback_tier": "low|medium|high|exceptional" }`
+
+  try {
+    const result = await model.generateContent(prompt)
+    const text = result.response.text()
+    const parsed = extractJSON<EvaluateQualityResult>(text)
+
+    // Validate and clamp values
+    parsed.quality_score = Math.max(0, Math.min(1, Number(parsed.quality_score) || 0.5))
+    parsed.relevance = Math.max(0, Math.min(1, Number(parsed.relevance) || 0.5))
+    parsed.depth = Math.max(0, Math.min(1, Number(parsed.depth) || 0.5))
+    parsed.authenticity = Math.max(0, Math.min(1, Number(parsed.authenticity) || 0.5))
+    parsed.clarity = Math.max(0, Math.min(1, Number(parsed.clarity) || 0.5))
+    parsed.feedback_message = String(parsed.feedback_message || 'Obrigado por compartilhar!').substring(0, 200)
+
+    const validTiers = ['low', 'medium', 'high', 'exceptional'] as const
+    if (!validTiers.includes(parsed.feedback_tier as any)) {
+      parsed.feedback_tier = parsed.quality_score < 0.35 ? 'low'
+        : parsed.quality_score < 0.6 ? 'medium'
+        : parsed.quality_score < 0.85 ? 'high'
+        : 'exceptional'
+    }
+
+    return parsed
+  } catch (error) {
+    console.error('[evaluate_quality] Gemini call failed, using fallback:', (error as Error).message)
+    // Fallback: quality=0.5 → 11 CP (median, safe experience)
+    return {
+      quality_score: 0.5,
+      relevance: 0.5,
+      depth: 0.5,
+      authenticity: 0.5,
+      clarity: 0.5,
+      feedback_message: 'Obrigado por compartilhar sua reflexao!',
+      feedback_tier: 'medium',
+    }
+  }
 }
 
 // ============================================================================
@@ -1475,6 +1615,9 @@ serve(async (req) => {
           break
         case 'analyze_moment':
           result = await handleAnalyzeMoment(genAI, payload as AnalyzeMomentPayload)
+          break
+        case 'evaluate_quality':
+          result = await handleEvaluateQuality(genAI, payload as EvaluateQualityPayload)
           break
         default:
           return new Response(JSON.stringify({ error: `Action desconhecida: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })

@@ -47,9 +47,14 @@ export default function AthleteDetailView() {
 
   // Handle edit canvas
   const handleEditCanvas = () => {
-    if (activeBlock && athleteId) {
-      actions.editCanvas(activeBlock.id, athleteId);
-      navigate(`/flux/canvas/${activeBlock.id}`);
+    if (athleteId) {
+      if (activeBlock) {
+        actions.editCanvas(activeBlock.id, athleteId);
+        navigate(`/flux/canvas/${athleteId}/${activeBlock.id}`);
+      } else {
+        // No active block - create new canvas
+        navigate(`/flux/canvas/${athleteId}`);
+      }
     }
   };
 
@@ -147,30 +152,36 @@ export default function AthleteDetailView() {
         </div>
       </div>
 
+      {/* Canvas Access - Always visible */}
+      <div className="px-6 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-ceramic-text-primary">
+            {activeBlock ? 'Progresso Atual' : 'Prescrição de Treinos'}
+          </h2>
+          <button
+            onClick={handleEditCanvas}
+            className="flex items-center gap-2 px-4 py-2 bg-ceramic-info hover:bg-ceramic-info/90 text-white rounded-lg shadow-md hover:scale-105 transition-all"
+          >
+            <Edit className="w-4 h-4" />
+            <span className="text-sm font-bold">
+              {activeBlock ? 'Editar Canvas' : 'Criar Canvas'}
+            </span>
+          </button>
+        </div>
+
       {/* Progression Bar */}
       {activeBlock && (
-        <div className="px-6 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-ceramic-text-primary">Progresso Atual</h2>
-            <button
-              onClick={handleEditCanvas}
-              className="flex items-center gap-2 px-4 py-2 ceramic-card hover:scale-105 transition-transform"
-            >
-              <Edit className="w-4 h-4 text-ceramic-text-primary" />
-              <span className="text-sm font-bold text-ceramic-text-primary">
-                Editar Treino
-              </span>
-            </button>
-          </div>
+        <div className="mb-4">
           <ProgressionBar
             currentWeek={athlete.current_week || 1}
             totalWeeks={12}
-            adherenceRate={athlete.adherence_rate || 0}
+            consistencyRate={athlete.consistency_rate || 0}
             completedWorkouts={8}
             totalWorkouts={12}
           />
         </div>
       )}
+      </div>
 
       {/* Active Block Info */}
       {activeBlock && (

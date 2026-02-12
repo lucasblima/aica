@@ -54,6 +54,9 @@ export interface CreateWeeklySummaryInput {
 export interface WeeklySummaryWithReflection extends WeeklySummary {
   reflection_added: boolean
   cp_earned: number
+  quality_score?: number
+  quality_feedback?: string
+  quality_tier?: 'low' | 'medium' | 'high' | 'exceptional'
 }
 
 // Helper: Get current ISO week number (ISO-8601: weeks start Monday)

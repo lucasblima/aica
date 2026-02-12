@@ -17,6 +17,7 @@ import {
   AnswerQuestionResult,
 } from '../types/dailyQuestion'
 import { checkAndTriggerGenerationIfNeeded, triggerQuestionGeneration } from './questionGenerationService'
+import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluationService'
 
 const log = createNamespacedLogger('QuestionService')
 
@@ -176,12 +177,30 @@ export async function answerQuestion(
       questionId: response.question_id,
     })
 
+    // Fetch question text for quality evaluation context
+    let questionText: string | undefined
+    const { data: questionData } = await supabase
+      .from('daily_questions')
+      .select('question_text')
+      .eq('id', input.question_id)
+      .single()
+    if (questionData) {
+      questionText = questionData.question_text
+    }
+
+    // Evaluate quality and calculate CP
+    const qualityResult = await evaluateAndCalculateCP(
+      input.response_text,
+      'question_answer',
+      { question_text: questionText }
+    )
+
     // Award CP
     const { data: cpResult, error: cpError } = await supabase.rpc(
       'award_consciousness_points',
       {
         p_user_id: userId,
-        p_points: 10,
+        p_points: qualityResult.cp_earned,
         p_reason: 'question_answered',
         p_reference_id: response.id,
         p_reference_type: 'question',
@@ -201,10 +220,25 @@ export async function answerQuestion(
       log.warn('Error incrementing questions counter:', statsError)
     }
 
+    // Fire-and-forget: save quality data to question_responses + update avg
+    supabase
+      .from('question_responses')
+      .update({
+        quality_score: qualityResult.quality_score,
+        quality_assessment: qualityResult.assessment,
+      })
+      .eq('id', response.id)
+      .eq('user_id', userId)
+      .then(({ error }) => { if (error) log.warn('Failed to save question quality_score:', error) })
+    updateAvgQualityScore(userId, qualityResult.quality_score)
+
     return {
       response,
-      cp_earned: cpResult?.new_total || 10,
+      cp_earned: qualityResult.cp_earned,
       leveled_up: cpResult?.leveled_up || false,
+      quality_score: qualityResult.quality_score,
+      quality_feedback: qualityResult.assessment.feedback_message,
+      quality_tier: qualityResult.assessment.feedback_tier,
     }
   } catch (error) {
     log.error('Error answering question:', error)

@@ -192,18 +192,21 @@ export function useCPAnimation() {
   const [pointsEarned, setPointsEarned] = useState(0)
   const [leveledUp, setLeveledUp] = useState(false)
   const [newLevel, setNewLevel] = useState<{ level: number; name: string } | null>(null)
+  const [qualityFeedback, setQualityFeedback] = useState<string | null>(null)
 
   const triggerAnimation = useCallback(
-    (points: number, didLevelUp: boolean = false, level?: { level: number; name: string }) => {
+    (points: number, didLevelUp: boolean = false, level?: { level: number; name: string }, feedback?: string) => {
       setPointsEarned(points)
       setLeveledUp(didLevelUp)
       setNewLevel(level || null)
+      setQualityFeedback(feedback || null)
       setShowAnimation(true)
 
-      // Auto-hide after 3 seconds
+      // Auto-hide after 3.5 seconds (slightly longer to read feedback)
       setTimeout(() => {
         setShowAnimation(false)
-      }, 3000)
+        setQualityFeedback(null)
+      }, 3500)
     },
     []
   )
@@ -213,6 +216,7 @@ export function useCPAnimation() {
     pointsEarned,
     leveledUp,
     newLevel,
+    qualityFeedback,
     triggerAnimation,
   }
 }

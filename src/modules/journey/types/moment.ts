@@ -42,6 +42,9 @@ export interface MomentWithCP extends Moment {
   leveled_up: boolean
   new_level?: number
   level_name?: string
+  quality_score?: number
+  quality_feedback?: string
+  quality_tier?: 'low' | 'medium' | 'high' | 'exceptional'
 }
 
 export interface MomentFilter {

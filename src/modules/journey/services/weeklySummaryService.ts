@@ -16,6 +16,7 @@ import {
 } from '../types/weeklySummary'
 import { Moment } from '../types/moment'
 import { getMoments } from './momentService'
+import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluationService'
 
 const geminiClient = GeminiClient.getInstance()
 const log = createNamespacedLogger('WeeklySummary')
@@ -180,12 +181,23 @@ export async function addReflectionToSummary(
 
     if (updateError) throw updateError
 
+    // Build summary context for quality evaluation
+    const summaryData = summary.summary_data as any
+    const summaryContext = summaryData?.insights?.slice(0, 2)?.join('; ') || ''
+
+    // Evaluate quality and calculate CP
+    const qualityResult = await evaluateAndCalculateCP(
+      reflection,
+      'reflection',
+      { summary_context: summaryContext }
+    )
+
     // Award CP for reflection
     const { data: cpResult, error: cpError } = await supabase.rpc(
       'award_consciousness_points',
       {
         p_user_id: userId,
-        p_points: 20,
+        p_points: qualityResult.cp_earned,
         p_reason: 'weekly_reflection',
         p_reference_id: summaryId,
         p_reference_type: 'summary',
@@ -205,10 +217,22 @@ export async function addReflectionToSummary(
       log.warn('Error incrementing summaries counter:', statsError)
     }
 
+    // Fire-and-forget: save quality score + update avg
+    supabase
+      .from('weekly_summaries')
+      .update({ reflection_quality_score: qualityResult.quality_score })
+      .eq('id', summaryId)
+      .eq('user_id', userId)
+      .then(({ error }) => { if (error) log.warn('Failed to save reflection quality_score:', error) })
+    updateAvgQualityScore(userId, qualityResult.quality_score)
+
     return {
       ...summary,
       reflection_added: true,
-      cp_earned: cpResult?.new_total || 20,
+      cp_earned: qualityResult.cp_earned,
+      quality_score: qualityResult.quality_score,
+      quality_feedback: qualityResult.assessment.feedback_message,
+      quality_tier: qualityResult.assessment.feedback_tier,
     }
   } catch (error) {
     log.error('Error adding reflection:', error)

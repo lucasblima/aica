@@ -1,30 +1,77 @@
 /**
- * CanvasEditorView - Workout canvas editor (mockup)
+ * CanvasEditorView - Complete Canvas Prescription Interface
  *
- * Visual mockup of 12-week training block editor.
- * Phase 1: Static layout, no drag-and-drop.
- * Phase 2: Will integrate @dnd-kit for interactive canvas.
+ * **PHASE 1 - MOCKUP IMPLEMENTATION COMPLETE**
+ *
+ * Features:
+ * - 3-column layout: Library (sidebar) + WeeklyGrid (center) + Editor (drawer)
+ * - Workout templates drag-and-drop (visual mockup)
+ * - Load calculator popover
+ * - WhatsApp publish integration-ready
+ * - All components from PRD integrated
+ *
+ * Usage: /flux/canvas/:athleteId/:blockId
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Calculator, TrendingUp } from 'lucide-react';
 import { useFlux } from '../context/FluxContext';
-import { MOCK_WORKOUT_BLOCKS, getMockAthleteById } from '../mockData';
-import { ArrowLeft, Save, Grid, List, Plus, GripVertical } from 'lucide-react';
+import { getMockAthleteById, MOCK_WORKOUT_BLOCKS } from '../mockData';
+import { getTemplatesByModality, type WorkoutTemplate } from '../mockData/workoutTemplates';
+
+// Canvas components
+import { WorkoutTemplateLibrary } from '../components/canvas/WorkoutTemplateLibrary';
+import { WeeklyGrid, type WeekWorkout } from '../components/canvas/WeeklyGrid';
+import { WorkoutBlockEditor } from '../components/canvas/WorkoutBlockEditor';
+import { LoadCalculatorPopover } from '../components/canvas/LoadCalculatorPopover';
+import { PublishWhatsAppButton } from '../components/canvas/PublishWhatsAppButton';
+import type { WorkoutBlockData } from '../components/canvas/WorkoutBlock';
 
 export default function CanvasEditorView() {
   const navigate = useNavigate();
-  const { blockId } = useParams<{ blockId: string }>();
+  const { athleteId, blockId } = useParams<{ athleteId: string; blockId?: string }>();
   const { actions } = useFlux();
 
-  // View toggle
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  // State
+  const [currentWeek, setCurrentWeek] = useState(1);
+  const [weekWorkouts, setWeekWorkouts] = useState<WeekWorkout[]>([]);
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutBlockData | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-  // Fetch block data (mock)
-  const block = MOCK_WORKOUT_BLOCKS.find((b) => b.id === blockId);
-  const athlete = block ? getMockAthleteById(block.athlete_id) : null;
+  // Data
+  const athlete = athleteId ? getMockAthleteById(athleteId) : null;
+  const block = blockId ? MOCK_WORKOUT_BLOCKS.find((b) => b.id === blockId) : null;
 
-  // Handle back
+  // Mock workouts for current week (would come from database)
+  const mockWeekWorkouts = useMemo<WeekWorkout[]>(() => {
+    if (!athlete) return [];
+
+    // Generate 3-5 random workouts for the week
+    const templates = getTemplatesByModality(athlete.modality);
+    const numWorkouts = 3 + Math.floor(Math.random() * 3); // 3-5 workouts
+    const workouts: WeekWorkout[] = [];
+
+    for (let i = 0; i < numWorkouts; i++) {
+      const template = templates[Math.floor(Math.random() * templates.length)];
+      const dayOfWeek = Math.floor(Math.random() * 7) + 1; // 1-7
+
+      workouts.push({
+        id: `workout-${currentWeek}-${i}`,
+        day_of_week: dayOfWeek,
+        name: template.name,
+        duration: template.duration,
+        intensity: template.intensity,
+        modality: template.modality,
+        type: template.modality.substring(0, 3).toUpperCase(),
+      });
+    }
+
+    return workouts;
+  }, [athlete, currentWeek]);
+
+  // Handlers
   const handleBack = () => {
     if (athlete) {
       actions.viewAthleteDetail(athlete.id);
@@ -35,18 +82,61 @@ export default function CanvasEditorView() {
     }
   };
 
-  // Handle save (mock)
-  const handleSave = () => {
-    console.log('Salvar treino (em desenvolvimento)');
+  const handleTemplateSelect = (template: WorkoutTemplate) => {
+    console.log('Template selected:', template.name);
+    // Mock: Add to current week (in real app, would show day selector)
+    const newWorkout: WeekWorkout = {
+      id: `workout-new-${Date.now()}`,
+      day_of_week: Math.floor(Math.random() * 7) + 1, // Random day (mock)
+      name: template.name,
+      duration: template.duration,
+      intensity: template.intensity,
+      modality: template.modality,
+      type: template.modality.substring(0, 3).toUpperCase(),
+    };
+    setWeekWorkouts((prev) => [...prev, newWorkout]);
+  };
+
+  const handleWorkoutClick = (workoutId: string) => {
+    const workout = [...weekWorkouts, ...mockWeekWorkouts].find((w) => w.id === workoutId);
+    if (!workout) return;
+
+    // Convert to WorkoutBlockData
+    const workoutData: WorkoutBlockData = {
+      id: workout.id,
+      name: workout.name,
+      duration: workout.duration,
+      intensity: workout.intensity,
+      modality: workout.modality,
+      type: workout.type,
+    };
+
+    setSelectedWorkout(workoutData);
+    setIsEditorOpen(true);
+  };
+
+  const handleDropWorkout = (dayOfWeek: number, templateId: string) => {
+    console.log(`Dropped template ${templateId} on day ${dayOfWeek}`);
+    // Mock: Would create workout from template and add to specific day
+  };
+
+  const handleSaveWorkout = (updated: WorkoutBlockData) => {
+    console.log('Saving workout:', updated);
+    // Mock: Would update workout in database
+    setWeekWorkouts((prev) =>
+      prev.map((w) => (w.id === updated.id ? { ...w, ...updated } : w))
+    );
+  };
+
+  const handlePublishSuccess = () => {
+    console.log('Workout plan published successfully!');
   };
 
   // Not found
-  if (!block || !athlete) {
+  if (!athlete) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
-        <p className="text-lg font-bold text-ceramic-text-primary mb-4">
-          Bloco de treino nao encontrado
-        </p>
+        <p className="text-lg font-bold text-ceramic-text-primary mb-4">Atleta não encontrado</p>
         <button
           onClick={() => navigate('/flux')}
           className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
@@ -57,13 +147,10 @@ export default function CanvasEditorView() {
     );
   }
 
-  // Mock weeks data
-  const weeks = Array.from({ length: 12 }, (_, i) => i + 1);
-
   return (
-    <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
-      {/* Header */}
-      <div className="pt-8 px-6 pb-6">
+    <div className="flex flex-col w-full h-screen bg-ceramic-base overflow-hidden">
+      {/* Top Header */}
+      <div className="p-6 border-b border-stone-200 bg-white flex-shrink-0">
         <button
           onClick={handleBack}
           className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
@@ -74,201 +161,125 @@ export default function CanvasEditorView() {
           <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
         </button>
 
-        {/* Block Info */}
-        <div className="ceramic-card p-4 mb-4">
-          <div className="flex items-start gap-4">
-            <div className="flex-1">
-              <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-1">
-                Editando Bloco
+        <div className="flex items-center justify-between">
+          {/* Athlete Info */}
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 ceramic-card flex items-center justify-center text-2xl">
+              {athlete.name.split(' ').map((n) => n[0]).join('').substring(0, 2)}
+            </div>
+            <div>
+              <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-0.5">
+                Canvas de Prescrição
               </p>
-              <h1 className="text-2xl font-black text-ceramic-text-primary mb-2">
-                {block.title}
-              </h1>
-              <p className="text-sm text-ceramic-text-secondary">
-                Atleta: <span className="font-bold">{athlete.name}</span>
+              <h1 className="text-2xl font-black text-ceramic-text-primary">{athlete.name}</h1>
+              <p className="text-sm text-ceramic-text-secondary mt-0.5">
+                Semana {currentWeek} de 12 • {athlete.modality}
               </p>
             </div>
+          </div>
 
-            {/* Save Button */}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            {/* Week Navigator */}
+            <div className="flex items-center gap-2 ceramic-card px-4 py-2">
+              <button
+                onClick={() => setCurrentWeek((w) => Math.max(1, w - 1))}
+                disabled={currentWeek === 1}
+                className="ceramic-inset p-1.5 disabled:opacity-30 hover:bg-stone-100 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-sm font-bold text-ceramic-text-primary px-2">
+                S{currentWeek}
+              </span>
+              <button
+                onClick={() => setCurrentWeek((w) => Math.min(12, w + 1))}
+                disabled={currentWeek === 12}
+                className="ceramic-inset p-1.5 disabled:opacity-30 hover:bg-stone-100 transition-colors"
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Calculate Load */}
             <button
-              onClick={handleSave}
-              className="flex items-center gap-2 px-4 py-2 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg font-bold transition-colors"
+              onClick={() => setIsCalculatorOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 ceramic-card hover:scale-105 transition-transform"
             >
-              <Save className="w-4 h-4" />
-              Salvar
+              <Calculator className="w-4 h-4 text-ceramic-info" />
+              <span className="text-sm font-bold text-ceramic-text-primary">Calcular Cargas</span>
             </button>
-          </div>
 
-          {/* Dates */}
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-ceramic-text-secondary/10 text-xs text-ceramic-text-secondary">
-            <div>
-              <span className="font-medium">Inicio:</span>{' '}
-              {new Date(block.start_date).toLocaleDateString('pt-BR')}
-            </div>
-            <div>
-              <span className="font-medium">Fim:</span>{' '}
-              {new Date(block.end_date).toLocaleDateString('pt-BR')}
-            </div>
+            {/* Publish WhatsApp */}
+            <PublishWhatsAppButton
+              athleteId={athlete.id}
+              athleteName={athlete.name}
+              athletePhone={athlete.phone}
+              weekNumber={currentWeek}
+              weekWorkouts={[...weekWorkouts, ...mockWeekWorkouts].map((w) => ({
+                id: w.id,
+                name: w.name,
+                duration: w.duration,
+                intensity: w.intensity,
+                modality: w.modality,
+                type: w.type,
+              }))}
+              onPublishSuccess={handlePublishSuccess}
+            />
           </div>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all
-              ${viewMode === 'grid'
-                ? 'bg-ceramic-info text-white'
-                : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
-              }
-            `}
-          >
-            <Grid className="w-4 h-4" />
-            Grade
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all
-              ${viewMode === 'list'
-                ? 'bg-ceramic-info text-white'
-                : 'ceramic-card text-ceramic-text-secondary hover:scale-105'
-              }
-            `}
-          >
-            <List className="w-4 h-4" />
-            Lista
-          </button>
         </div>
       </div>
 
-      {/* Canvas Grid View */}
-      {viewMode === 'grid' && (
-        <div className="px-6 space-y-4">
-          <div className="ceramic-inset p-8 rounded-xl">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto ceramic-card flex items-center justify-center">
-                <Grid className="w-8 h-8 text-ceramic-text-secondary" />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-ceramic-text-primary mb-2">
-                  Canvas em Desenvolvimento
-                </p>
-                <p className="text-sm text-ceramic-text-secondary font-light max-w-md mx-auto">
-                  A visualizacao em grade com drag-and-drop sera implementada na Fase 2
-                  usando @dnd-kit. Por enquanto, use a visualizacao em lista abaixo.
-                </p>
-              </div>
-              <button
-                onClick={() => setViewMode('list')}
-                className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
-              >
-                Ver Lista de Semanas
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Main Content: 3-Column Layout */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar: Template Library */}
+        <WorkoutTemplateLibrary
+          modality={athlete.modality}
+          onTemplateSelect={handleTemplateSelect}
+        />
 
-      {/* List View */}
-      {viewMode === 'list' && (
-        <div className="px-6 space-y-4">
-          {weeks.map((weekNumber) => (
-            <div key={weekNumber} className="ceramic-card p-4 space-y-3">
-              {/* Week Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="ceramic-inset p-2">
-                    <span className="text-sm font-bold text-ceramic-text-primary">
-                      S{weekNumber}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                      Semana {weekNumber}
-                    </p>
-                    <p className="text-sm font-bold text-ceramic-text-primary">
-                      {weekNumber <= 4
-                        ? 'Base Aerobica'
-                        : weekNumber <= 8
-                        ? 'Intensidade Moderada'
-                        : 'Alta Performance'}
-                    </p>
-                  </div>
-                </div>
+        {/* Center: Weekly Grid */}
+        <WeeklyGrid
+          weekNumber={currentWeek}
+          workouts={[...weekWorkouts, ...mockWeekWorkouts]}
+          onWorkoutClick={handleWorkoutClick}
+          onDropWorkout={handleDropWorkout}
+        />
 
-                <button
-                  onClick={() => console.log(`Editar Semana ${weekNumber}`)}
-                  className="ceramic-card p-2 hover:scale-105 transition-transform"
-                >
-                  <Plus className="w-4 h-4 text-ceramic-text-primary" />
-                </button>
-              </div>
-
-              {/* Placeholder Workouts */}
-              <div className="space-y-2 pt-2 border-t border-ceramic-text-secondary/10">
-                {[1, 2, 3].map((dayIndex) => (
-                  <div
-                    key={dayIndex}
-                    className="flex items-center gap-3 p-3 ceramic-inset rounded-lg group cursor-pointer hover:scale-[1.02] transition-transform"
-                  >
-                    <GripVertical className="w-4 h-4 text-ceramic-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="flex-1">
-                      <p className="text-xs text-ceramic-text-secondary">
-                        Dia {dayIndex}
-                      </p>
-                      <p className="text-sm font-bold text-ceramic-text-primary">
-                        Treino Placeholder {dayIndex}
-                      </p>
-                    </div>
-                    <div className="text-xs text-ceramic-text-secondary">
-                      ~60 min
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Add Workout Button */}
-              <button
-                onClick={() => console.log(`Adicionar treino na Semana ${weekNumber}`)}
-                className="w-full py-2 ceramic-card text-xs font-bold text-ceramic-text-secondary hover:text-ceramic-text-primary hover:scale-105 transition-all flex items-center justify-center gap-2"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Adicionar Treino
-              </button>
-            </div>
-          ))}
-
-          {/* Empty State for Week */}
-          <div className="ceramic-inset p-8 rounded-xl text-center space-y-3">
-            <div className="w-12 h-12 mx-auto ceramic-card flex items-center justify-center">
-              <Plus className="w-6 h-6 text-ceramic-text-secondary" />
-            </div>
-            <p className="text-sm text-ceramic-text-secondary font-light">
-              Clique em qualquer semana para adicionar treinos
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Footer Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-ceramic-base border-t border-ceramic-text-secondary/10 p-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleBack}
-            className="flex-1 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 py-3 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg text-sm font-bold transition-colors"
-          >
-            Salvar Alteracoes
-          </button>
-        </div>
+        {/* Right Drawer: Workout Editor (conditional) */}
+        <WorkoutBlockEditor
+          workout={selectedWorkout}
+          isOpen={isEditorOpen}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setSelectedWorkout(null);
+          }}
+          onSave={handleSaveWorkout}
+        />
       </div>
+
+      {/* Load Calculator Modal */}
+      <LoadCalculatorPopover
+        isOpen={isCalculatorOpen}
+        onClose={() => setIsCalculatorOpen(false)}
+        weekWorkouts={[...weekWorkouts, ...mockWeekWorkouts].map((w) => ({
+          id: w.id,
+          name: w.name,
+          duration: w.duration,
+          intensity: w.intensity,
+          modality: w.modality,
+          type: w.type,
+        }))}
+        athleteProfile={{
+          level: athlete.level,
+          ftp: athlete.ftp,
+          pace_threshold: athlete.pace_threshold,
+        }}
+        onApplySuggestions={(adjustments) => {
+          console.log('Applying load adjustments:', adjustments);
+          setIsCalculatorOpen(false);
+        }}
+      />
     </div>
   );
 }
