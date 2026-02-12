@@ -176,6 +176,25 @@ export const spaceService = {
         throw new Error(`Failed to create space: ${error.message}`);
       }
 
+      // Fallback: ensure owner is added as member (trigger handles this in DB,
+      // but we add a frontend safety net in case the trigger hasn't been deployed)
+      try {
+        await supabase
+          .from('connection_members')
+          .upsert({
+            space_id: spaceData.id,
+            user_id: user.id,
+            role: 'owner',
+            permissions: {},
+            context_data: {},
+            is_active: true,
+            joined_at: new Date().toISOString(),
+          }, { onConflict: 'space_id,user_id' });
+      } catch (memberErr) {
+        // Non-fatal: trigger may have already added the owner
+        log.warn('Owner member upsert failed (trigger may have handled it):', { memberErr });
+      }
+
       return spaceData as ConnectionSpace;
     } catch (error) {
       log.error('Error in createSpace:', { error });

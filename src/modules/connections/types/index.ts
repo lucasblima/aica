@@ -234,6 +234,58 @@ export const ARCHETYPE_METADATA: Record<ArchetypeType, ArchetypeMetadata> = {
 };
 
 // =============================================================================
+// ARCHETYPE CONFIG (simple defaults for space creation)
+// =============================================================================
+
+export const ARCHETYPE_CONFIG: Record<ArchetypeType, {
+  icon: string;
+  label: string;
+  subtitle: string;
+  color_theme: string;
+  description: string;
+}> = {
+  habitat: {
+    icon: '🏠',
+    label: 'Habitat',
+    subtitle: 'Condomínio e residência',
+    color_theme: 'earth',
+    description: 'Gestão do seu espaço físico e moradia compartilhada',
+  },
+  ventures: {
+    icon: '💼',
+    label: 'Ventures',
+    subtitle: 'Projetos e empresas',
+    color_theme: 'amber',
+    description: 'Cockpit para seus empreendimentos e negócios',
+  },
+  academia: {
+    icon: '🎓',
+    label: 'Academia',
+    subtitle: 'Cursos, mentorias e aprendizado',
+    color_theme: 'paper',
+    description: 'Sua biblioteca pessoal de conhecimento',
+  },
+  tribo: {
+    icon: '👥',
+    label: 'Tribo',
+    subtitle: 'Clubes e comunidades',
+    color_theme: 'warm',
+    description: 'Coordenação de grupos com propósito',
+  },
+};
+
+// =============================================================================
+// LEGACY TYPE ALIASES (backward compat — prefer ArchetypeType)
+// =============================================================================
+
+export type Archetype = ArchetypeType;
+
+// Legacy payload aliases (prefer CreateConnectionSpaceInput)
+export type CreateSpacePayload = CreateConnectionSpaceInput;
+export type UpdateSpacePayload = UpdateConnectionSpaceInput;
+export type AddMemberPayload = Omit<CreateConnectionMemberInput, 'space_id'>;
+
+// =============================================================================
 // WHATSAPP INTENT TYPES (Issue #91)
 // =============================================================================
 

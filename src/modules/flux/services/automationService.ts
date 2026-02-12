@@ -296,6 +296,26 @@ export class AutomationService {
   }
 
   /**
+   * Get scheduled workouts for a specific microcycle
+   */
+  static async getScheduledWorkoutsByMicrocycle(
+    microcycleId: string
+  ): Promise<{ data: ScheduledWorkout[] | null; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from('scheduled_workouts')
+        .select('*')
+        .eq('microcycle_id', microcycleId)
+        .order('scheduled_for', { ascending: true });
+
+      return { data, error };
+    } catch (error) {
+      console.error('[AutomationService] Error fetching scheduled workouts by microcycle:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
    * Get pending scheduled workouts
    */
   static async getPendingScheduled(): Promise<{
@@ -442,6 +462,135 @@ export class AutomationService {
     } catch (error) {
       console.error('[AutomationService] Error cancelling scheduled workout:', error);
       return { error };
+    }
+  }
+
+  /**
+   * Schedule weekly workout plan via WhatsApp
+   * Integrates with notification-sender Edge Function
+   */
+  static async scheduleWeeklyPlan(params: {
+    microcycleId: string;
+    athleteId: string;
+    weekNumber: 1 | 2 | 3;
+    scheduledFor: Date;
+    messageTemplateId?: string;
+  }): Promise<{ data: ScheduledWorkout | null; error: any }> {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        return { data: null, error: new Error('User not authenticated') };
+      }
+
+      // 1. Fetch athlete info
+      const { data: athlete, error: athleteError } = await supabase
+        .from('athlete_profiles')
+        .select('*')
+        .eq('athlete_id', params.athleteId)
+        .single();
+
+      if (athleteError || !athlete) {
+        return { data: null, error: athleteError || new Error('Athlete not found') };
+      }
+
+      // 2. Fetch microcycle info
+      const { data: microcycle, error: microcycleError } = await supabase
+        .from('microcycles')
+        .select('*')
+        .eq('id', params.microcycleId)
+        .single();
+
+      if (microcycleError || !microcycle) {
+        return { data: null, error: microcycleError || new Error('Microcycle not found') };
+      }
+
+      // 3. Fetch coach message template (or use default)
+      let messageTemplate = 'Olá {{athlete_name}}, aqui está seu plano da semana {{week_number}}! 💪';
+      if (params.messageTemplateId) {
+        const { data: template } = await supabase
+          .from('coach_messages')
+          .select('message_template')
+          .eq('id', params.messageTemplateId)
+          .single();
+
+        if (template) messageTemplate = template.message_template;
+      } else {
+        // Try to find default weekly plan template
+        const { data: defaultTemplate } = await supabase
+          .from('coach_messages')
+          .select('message_template')
+          .eq('user_id', userData.user.id)
+          .eq('trigger_type', 'microcycle_start')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (defaultTemplate) messageTemplate = defaultTemplate.message_template;
+      }
+
+      // 4. Process template variables
+      const focusKey = `week_${params.weekNumber}_focus` as keyof typeof microcycle;
+      const processedMessage = this.processMessageTemplate(messageTemplate, {
+        athlete_name: athlete.name,
+        week_number: params.weekNumber,
+        microcycle_title: microcycle.name,
+        focus: (microcycle[focusKey] as string) || '',
+      });
+
+      // 5. Create scheduled_workouts entry
+      const { data: scheduledWorkout, error: workoutError } = await supabase
+        .from('scheduled_workouts')
+        .insert({
+          user_id: userData.user.id,
+          microcycle_id: params.microcycleId,
+          athlete_id: params.athleteId,
+          scheduled_for: params.scheduledFor.toISOString(),
+          send_method: 'whatsapp',
+          message_text: processedMessage,
+          message_data: {
+            week_number: params.weekNumber,
+            focus_area: (microcycle[focusKey] as string) || '',
+          },
+          status: 'pending',
+          whatsapp_recipient_phone: athlete.phone,
+        })
+        .select()
+        .single();
+
+      if (workoutError) {
+        return { data: null, error: workoutError };
+      }
+
+      // 6. Create notification in scheduled_notifications table (for notification-sender)
+      const { error: notificationError } = await supabase
+        .from('scheduled_notifications')
+        .insert({
+          user_id: userData.user.id,
+          target_phone: athlete.phone,
+          target_name: athlete.name,
+          notification_type: 'weekly_plan',
+          message_template: messageTemplate,
+          message_variables: {
+            athlete_name: athlete.name,
+            week_number: params.weekNumber.toString(),
+            microcycle_title: microcycle.name,
+            focus: (microcycle[focusKey] as string) || '',
+          },
+          scheduled_for: params.scheduledFor.toISOString(),
+          timezone: 'America/Sao_Paulo',
+          status: 'scheduled',
+          priority: 5,
+        });
+
+      if (notificationError) {
+        console.error('[AutomationService] Error creating notification:', notificationError);
+        // Don't fail the whole operation, just log the error
+      }
+
+      return { data: scheduledWorkout, error: null };
+    } catch (error) {
+      console.error('[AutomationService] Error scheduling weekly plan:', error);
+      return { data: null, error };
     }
   }
 

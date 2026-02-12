@@ -1,53 +1,27 @@
-/**
- * ConnectionsPage
- *
- * Main entry point for the Connections module.
- * Lists all connection archetypes, recent spaces, and provides access to creation wizard.
- */
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ConnectionsView } from '../modules/connections/views/ConnectionsView';
-import { CreateSpaceWizard } from '../modules/connections/components/CreateSpaceWizard';
-import { useConnectionNavigation } from '../modules/connections/hooks/useConnectionNavigation';
+import { CreateSpaceModal } from '../modules/connections/components/CreateSpaceModal';
 import { useAuth } from '../hooks/useAuth';
-import { createNamespacedLogger } from '@/lib/logger';
-import type { ConnectionSpace, Archetype } from '../modules/connections/types';
+import type { ConnectionSpace, ArchetypeType } from '../modules/connections/types';
 
-const log = createNamespacedLogger('ConnectionsPage');
-
-/**
- * Main Connections page
- *
- * Features:
- * - Grid of 4 archetype cards (Habitat, Ventures, Academia, Tribo)
- * - Recent/favorite spaces
- * - Quick stats
- * - Create space wizard modal
- */
 export function ConnectionsPage() {
   const { user } = useAuth();
-  const { navigateToSpace } = useConnectionNavigation();
-  const [showCreateWizard, setShowCreateWizard] = useState(false);
-  const [selectedArchetype, setSelectedArchetype] = useState<Archetype | undefined>(undefined);
+  const navigate = useNavigate();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedArchetype, setSelectedArchetype] = useState<ArchetypeType | undefined>(undefined);
 
-  const handleNavigateToSpace = (spaceId: string, archetype: string) => {
-    navigateToSpace(spaceId, archetype as any);
+  const handleNavigateToSpace = (spaceId: string) => {
+    navigate(`/connections/${spaceId}`);
   };
 
-  const handleCreateSpace = (archetype?: Archetype) => {
+  const handleCreateSpace = (archetype?: ArchetypeType) => {
     setSelectedArchetype(archetype);
-    setShowCreateWizard(true);
-  };
-
-  const handleCloseWizard = () => {
-    setShowCreateWizard(false);
-    setSelectedArchetype(undefined);
+    setShowCreateModal(true);
   };
 
   const handleSpaceCreated = (space: ConnectionSpace) => {
-    log.debug(' Space created:', space);
-    // Navigate to the newly created space
-    navigateToSpace(space.id, space.archetype);
+    navigate(`/connections/${space.id}`);
   };
 
   if (!user?.id) {
@@ -73,10 +47,12 @@ export function ConnectionsPage() {
         onCreateSpace={handleCreateSpace}
       />
 
-      {/* Create Space Wizard Modal */}
-      <CreateSpaceWizard
-        isOpen={showCreateWizard}
-        onClose={handleCloseWizard}
+      <CreateSpaceModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setSelectedArchetype(undefined);
+        }}
         onComplete={handleSpaceCreated}
         initialArchetype={selectedArchetype}
       />
