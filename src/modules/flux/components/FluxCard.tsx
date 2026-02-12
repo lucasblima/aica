@@ -50,7 +50,7 @@ export function FluxCard() {
   return (
     <div
       onClick={handleClick}
-      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+      className="ceramic-card relative overflow-hidden p-5 min-h-[180px] flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
       style={{
         background: 'linear-gradient(135deg, #F0EFE9 0%, #E6F2F5 100%)',
       }}

@@ -205,62 +205,14 @@ export default function Home({
                </motion.div>
 
 
-               {/* GAP 6: Life Modules Grid - Unified 220px Cards */}
+               {/* GAP 6: Life Modules Grid - Essencial (Vida Pessoal + Profissional + Financeiro) */}
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Finanças */}
-                  {userId ? (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={2}
-                        className="cursor-pointer hover:scale-[1.01] transition-transform"
-                        onClick={() => onNavigateToView('finance')}
-                     >
-                        <FinanceCard userId={userId} />
-                     </motion.div>
-                  ) : (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={2}
-                        onClick={() => onNavigateToView('finance')}
-                     >
-                        <ModuleCard
-                           moduleId="finance"
-                           title="Finanças"
-                           icon={Wallet}
-                           color="emerald"
-                           accentColor="bg-ceramic-success/10 border-ceramic-success/20 text-ceramic-success"
-                        />
-                     </motion.div>
-                  )}
-
-                  {/* Grants */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={3}
-                     className="cursor-pointer hover:scale-[1.01] transition-transform"
-                     onClick={() => onNavigateToView('grants')}
-                  >
-                     <GrantsCard
-                        activeProjects={grantsActiveProjects}
-                        upcomingDeadlines={grantsUpcomingDeadlines}
-                        recentProjects={grantsRecentProjects}
-                        onOpenModule={() => onNavigateToView('grants')}
-                        onCreateProject={() => onNavigateToView('grants')}
-                     />
-                  </motion.div>
-
                   {/* Saúde */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={4}
+                     custom={2}
                      onClick={() => onNavigateToView('health')}
                   >
                      <ModuleCard
@@ -277,7 +229,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={5}
+                     custom={3}
                      onClick={() => onNavigateToView('education')}
                   >
                      <ModuleCard
@@ -289,12 +241,29 @@ export default function Home({
                      />
                   </motion.div>
 
+                  {/* Profissional */}
+                  <motion.div
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={4}
+                     onClick={() => onNavigateToView('professional')}
+                  >
+                     <ModuleCard
+                        moduleId="professional"
+                        title="Profissional"
+                        icon={Briefcase}
+                        color="indigo"
+                        accentColor="bg-ceramic-accent/10 border-ceramic-accent/20 text-ceramic-accent"
+                     />
+                  </motion.div>
+
                   {/* Jurídico */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={6}
+                     custom={5}
                      onClick={() => onNavigateToView('legal')}
                   >
                      <ModuleCard
@@ -306,25 +275,56 @@ export default function Home({
                      />
                   </motion.div>
 
-                  {/* Profissional */}
+                  {/* Finanças */}
+                  {userId ? (
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={6}
+                        className="cursor-pointer hover:scale-[1.01] transition-transform"
+                        onClick={() => onNavigateToView('finance')}
+                     >
+                        <FinanceCard userId={userId} />
+                     </motion.div>
+                  ) : (
+                     <motion.div
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={6}
+                        onClick={() => onNavigateToView('finance')}
+                     >
+                        <ModuleCard
+                           moduleId="finance"
+                           title="Finanças"
+                           icon={Wallet}
+                           color="emerald"
+                           accentColor="bg-ceramic-success/10 border-ceramic-success/20 text-ceramic-success"
+                        />
+                     </motion.div>
+                  )}
+
+                  {/* Captação (Grants) */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
                      custom={7}
-                     onClick={() => onNavigateToView('professional')}
+                     className="cursor-pointer hover:scale-[1.01] transition-transform"
+                     onClick={() => onNavigateToView('grants')}
                   >
-                     <ModuleCard
-                        moduleId="professional"
-                        title="Profissional"
-                        icon={Briefcase}
-                        color="indigo"
-                        accentColor="bg-ceramic-accent/10 border-ceramic-accent/20 text-ceramic-accent"
+                     <GrantsCard
+                        activeProjects={grantsActiveProjects}
+                        upcomingDeadlines={grantsUpcomingDeadlines}
+                        recentProjects={grantsRecentProjects}
+                        onOpenModule={() => onNavigateToView('grants')}
+                        onCreateProject={() => onNavigateToView('grants')}
                      />
                   </motion.div>
                </div>
 
-               {/* Recent Contacts Widget */}
+               {/* Recent Contacts Widget - Full Width (Conexões são muito importantes) */}
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
@@ -337,48 +337,48 @@ export default function Home({
                   />
                </motion.div>
 
-               {/* Network & Podcast Cards */}
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Associações */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={9}
-                     onClick={() => onNavigateToView('connections')}
-                     className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
-                  >
-                     <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-ceramic-info opacity-10 group-hover:scale-110 transition-transform duration-500" />
-                     <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex items-center gap-2 mb-3">
-                           <div className="ceramic-inset p-2">
-                              <Building2 className="w-5 h-5 text-ceramic-info" />
-                           </div>
-                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
+               {/* Rede/Associações - Full Width (Conexões são muito importantes) */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={9}
+                  onClick={() => onNavigateToView('connections')}
+                  className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+               >
+                  <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-ceramic-info opacity-10 group-hover:scale-110 transition-transform duration-500" />
+                  <div className="relative z-10 flex flex-col h-full">
+                     <div className="flex items-center gap-2 mb-3">
+                        <div className="ceramic-inset p-2">
+                           <Building2 className="w-5 h-5 text-ceramic-info" />
                         </div>
-                        {associations.filter(a => a.type !== 'personal').length === 0 ? (
-                           <div className="flex-1 flex flex-col justify-center space-y-3">
-                              <div>
-                                 <p className="text-sm font-bold text-ceramic-text-primary mb-1">
-                                    Mapeie seus relacionamentos
-                                 </p>
-                                 <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                                    Organize suas conexões em 4 arquétipos: Habitat, Ventures, Academia e Tribo
-                                 </p>
-                              </div>
-                           </div>
-                        ) : (
-                           <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
-                              {associations.filter(a => a.type !== 'personal').length} Conexões
-                           </p>
-                        )}
-                        <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
-                           <span>{associations.filter(a => a.type !== 'personal').length === 0 ? 'Começar' : 'Ver'}</span>
-                           <ChevronRight className="w-3 h-3" />
-                        </div>
+                        <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
                      </div>
-                  </motion.div>
+                     {associations.filter(a => a.type !== 'personal').length === 0 ? (
+                        <div className="flex-1 flex flex-col justify-center space-y-3">
+                           <div>
+                              <p className="text-sm font-bold text-ceramic-text-primary mb-1">
+                                 Mapeie seus relacionamentos
+                              </p>
+                              <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                                 Organize suas conexões em 4 arquétipos: Habitat, Ventures, Academia e Tribo
+                              </p>
+                           </div>
+                        </div>
+                     ) : (
+                        <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
+                           {associations.filter(a => a.type !== 'personal').length} Conexões
+                        </p>
+                     )}
+                     <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
+                        <span>{associations.filter(a => a.type !== 'personal').length === 0 ? 'Começar' : 'Ver'}</span>
+                        <ChevronRight className="w-3 h-3" />
+                     </div>
+                  </div>
+               </motion.div>
 
+               {/* Premium Modules Grid (Studio + Flux) */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Podcast Copilot */}
                   <motion.div
                      variants={cardVariants}
