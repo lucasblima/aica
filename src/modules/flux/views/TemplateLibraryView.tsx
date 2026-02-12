@@ -17,6 +17,7 @@ import {
   Trash2,
   GripVertical,
   X,
+  ArrowLeft,
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
@@ -219,8 +220,21 @@ export default function TemplateLibraryView() {
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
+      {/* Back Button */}
+      <div className="p-6 pb-0">
+        <button
+          onClick={() => navigate('/flux')}
+          className="flex items-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-colors w-fit"
+        >
+          <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
+            <ArrowLeft className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
+        </button>
+      </div>
+
       {/* Header */}
-      <div className="pt-8 px-6 pb-6 border-b border-ceramic-text-secondary/10">
+      <div className="pt-4 px-6 pb-6 border-b border-ceramic-text-secondary/10">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-black text-ceramic-text-primary mb-2">
