@@ -204,8 +204,8 @@ export default function FluxDashboard() {
           </div>
         </div>
 
-        {/* Quick Access Buttons */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        {/* Quick Access Buttons - Flow Module Tools */}
+        <div className="grid grid-cols-2 gap-2 mb-4">
           <button
             onClick={() => navigate('/flux/templates')}
             className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
@@ -215,6 +215,18 @@ export default function FluxDashboard() {
                 <span className="text-xl">📚</span>
               </div>
               <p className="text-xs font-bold text-ceramic-text-primary text-center">Biblioteca</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate('/flux/crm')}
+            className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
+                <span className="text-xl">📋</span>
+              </div>
+              <p className="text-xs font-bold text-ceramic-text-primary text-center">Canvas</p>
             </div>
           </button>
 
