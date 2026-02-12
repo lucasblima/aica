@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Search,
   Plus,
@@ -18,7 +18,9 @@ import {
   GripVertical,
   X,
 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
+import { TemplateFormModal } from '../components/forms';
 import type {
   WorkoutTemplate,
   TemplateFilters,
@@ -50,6 +52,15 @@ const INTENSITY_COLORS: Record<WorkoutIntensity, string> = {
 
 export default function TemplateLibraryView() {
   const navigate = useNavigate();
+  const { templateId } = useParams();
+  const location = useLocation();
+
+  // Determine mode based on URL
+  const mode: 'create' | 'edit' | 'list' = location.pathname.includes('/new')
+    ? 'create'
+    : location.pathname.includes('/edit')
+    ? 'edit'
+    : 'list';
 
   // State
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -58,6 +69,8 @@ export default function TemplateLibraryView() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [draggedTemplate, setDraggedTemplate] = useState<WorkoutTemplate | null>(null);
+  const [isModalOpen, setModalOpen] = useState(mode !== 'list');
+  const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
 
   // Load templates
   useEffect(() => {
@@ -68,6 +81,19 @@ export default function TemplateLibraryView() {
   useEffect(() => {
     applyFilters();
   }, [templates, filters]);
+
+  // Load template for editing
+  useEffect(() => {
+    if (mode === 'edit' && templateId) {
+      loadTemplateForEdit(templateId);
+    } else if (mode === 'list') {
+      setEditingTemplate(null);
+      setModalOpen(false);
+    } else if (mode === 'create') {
+      setEditingTemplate(null);
+      setModalOpen(true);
+    }
+  }, [mode, templateId]);
 
   const loadTemplates = async () => {
     setLoading(true);
@@ -80,6 +106,31 @@ export default function TemplateLibraryView() {
     }
 
     setLoading(false);
+  };
+
+  const loadTemplateForEdit = async (id: string) => {
+    const { data, error } = await WorkoutTemplateService.getTemplateById(id);
+
+    if (error) {
+      console.error('Error loading template:', error);
+      navigate('/flux/templates');
+    } else if (data) {
+      setEditingTemplate(data);
+      setModalOpen(true);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setEditingTemplate(null);
+    navigate('/flux/templates');
+  };
+
+  const handleModalSave = (template: WorkoutTemplate) => {
+    // Refresh templates list
+    loadTemplates();
+    // Close modal and navigate back
+    handleModalClose();
   };
 
   const applyFilters = () => {
@@ -364,6 +415,18 @@ export default function TemplateLibraryView() {
           </div>
         )}
       </div>
+
+      {/* Template Form Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <TemplateFormModal
+            mode={mode === 'edit' ? 'edit' : 'create'}
+            initialData={editingTemplate || undefined}
+            onClose={handleModalClose}
+            onSave={handleModalSave}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
