@@ -79,8 +79,13 @@ export const ZONE_CONFIGS: Record<IntensityZone, ZoneConfig> = {
  */
 interface SeriesBase {
   id: string; // UUID for React keys
-  rest_value: number;
-  rest_unit: TimeUnit;
+  repetitions: number; // How many times to repeat this series (e.g., 4x)
+  rest_minutes: number; // Interval rest minutes
+  rest_seconds: number; // Interval rest seconds
+  /** @deprecated Use rest_minutes + rest_seconds instead */
+  rest_value?: number;
+  /** @deprecated Use rest_minutes + rest_seconds instead */
+  rest_unit?: TimeUnit;
 }
 
 /**
@@ -215,55 +220,59 @@ export function createEmptySeries(modality: TrainingModality): WorkoutSeries {
       return {
         id,
         type: modality,
+        repetitions: 1,
         work_value: 0,
         work_unit: 'minutes',
         zone: 'Z2',
-        rest_value: 0,
-        rest_unit: 'seconds',
+        rest_minutes: 0,
+        rest_seconds: 0,
       };
 
     case 'swimming':
       return {
         id,
         type: 'swimming',
+        repetitions: 1,
         distance_meters: 0,
         zone: 'Z2',
-        rest_value: 0,
-        rest_unit: 'seconds',
+        rest_minutes: 0,
+        rest_seconds: 0,
       };
 
     case 'cycling':
       return {
         id,
         type: 'cycling',
+        repetitions: 1,
         work_value: 0,
         work_unit: 'time',
         unit_detail: 'minutes',
         zone: 'Z2',
-        rest_value: 0,
-        rest_unit: 'seconds',
+        rest_minutes: 0,
+        rest_seconds: 0,
       };
 
     case 'strength':
       return {
         id,
         type: 'strength',
+        repetitions: 1,
         reps: 0,
         load_kg: 0,
-        rest_value: 0,
-        rest_unit: 'seconds',
+        rest_minutes: 0,
+        rest_seconds: 0,
       };
 
     default:
-      // Fallback to running for unknown modalities
       return {
         id,
         type: 'running',
+        repetitions: 1,
         work_value: 0,
         work_unit: 'minutes',
         zone: 'Z2',
-        rest_value: 0,
-        rest_unit: 'seconds',
+        rest_minutes: 0,
+        rest_seconds: 0,
       };
   }
 }
@@ -318,11 +327,9 @@ export function calculateTotalDuration(series: WorkoutSeries[]): number {
     }
 
     // Rest duration
-    if (s.rest_unit === 'minutes') {
-      total += s.rest_value;
-    } else {
-      total += s.rest_value / 60;
-    }
+    const restMin = s.rest_minutes ?? 0;
+    const restSec = s.rest_seconds ?? (s.rest_unit === 'minutes' ? (s.rest_value ?? 0) * 60 : (s.rest_value ?? 0));
+    total += (restMin + restSec / 60) * (s.repetitions ?? 1);
   }
 
   return Math.round(total);

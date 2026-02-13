@@ -14,14 +14,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { WorkoutTemplateService } from '../../services/workoutTemplateService';
 import type { WorkoutTemplate, TrainingModality } from '../../types/flow';
 import type {
-  WorkoutCategorySimplified,
   ExerciseStructureV2,
   CreateWorkoutTemplateV2Input,
 } from '../../types/series';
 
 export interface TemplateFormState {
   modality: TrainingModality | '';
-  category: WorkoutCategorySimplified | '';
 
   // Exercise structure with warmup/series/cooldown
   exercise_structure?: ExerciseStructureV2;
@@ -40,14 +38,12 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     if (initialData) {
       return {
         modality: initialData.modality,
-        category: initialData.category as WorkoutCategorySimplified,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
       };
     }
 
     return {
       modality: '',
-      category: '',
       exercise_structure: {
         warmup: '',
         series: [],
@@ -72,12 +68,6 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
       case 'modality':
         if (!value) {
           return 'Modalidade é obrigatória';
-        }
-        return null;
-
-      case 'category':
-        if (!value) {
-          return 'Estrutura da série é obrigatória';
         }
         return null;
 
@@ -108,9 +98,9 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
             return 'Carga não pode ser negativa';
           }
 
-          // Validate rest
-          if (series.rest_value < 0) {
-            return 'Descanso não pode ser negativo';
+          // Validate rest/interval
+          if ((series.rest_minutes ?? 0) < 0 || (series.rest_seconds ?? 0) < 0) {
+            return 'Intervalo não pode ser negativo';
           }
         }
 
@@ -136,7 +126,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     const newErrors: FormErrors = {};
 
     // Required fields
-    (['modality', 'category', 'exercise_structure'] as const).forEach((field) => {
+    (['modality', 'exercise_structure'] as const).forEach((field) => {
       const error = validateField(field, formData[field]);
       if (error) {
         newErrors[field] = error;
@@ -193,7 +183,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         name: `Treino de ${formData.modality}`, // Auto-generated name
         description: undefined,
         modality: formData.modality as TrainingModality,
-        category: formData.category as WorkoutCategorySimplified,
+        category: 'main', // Default category
         exercise_structure: formData.exercise_structure,
       };
 
@@ -254,7 +244,6 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   const resetForm = useCallback(() => {
     setFormData({
       modality: '',
-      category: '',
       exercise_structure: {
         warmup: '',
         series: [],
