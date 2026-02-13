@@ -26,17 +26,10 @@ import TemplateFormDrawer from '../components/forms/TemplateFormDrawer';
 import type {
   WorkoutTemplate,
   TemplateFilters,
-  WorkoutCategory,
   WorkoutIntensity,
   TrainingModality,
 } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
-
-const CATEGORY_LABELS: Record<string, string> = {
-  warmup: 'Aquecimento',
-  main: 'Principal',
-  cooldown: 'Desaquecimento',
-};
 
 const ZONE_LABELS: Record<string, string> = {
   z1: 'Z1 - Recuperação',
@@ -302,27 +295,6 @@ export default function TemplateLibraryView() {
               </div>
             </div>
 
-            {/* Category Filter */}
-            <div>
-              <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-2">
-                Categoria
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(CATEGORY_LABELS).map(([category, label]) => (
-                  <button
-                    key={category}
-                    onClick={() => handleFilterChange('category', category as WorkoutCategory)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      filters.category === category
-                        ? 'bg-ceramic-accent text-white'
-                        : 'ceramic-inset hover:bg-white/50'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Zone Filter */}
             <div>

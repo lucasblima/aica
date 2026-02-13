@@ -1,14 +1,11 @@
 /**
- * SeriesEditor Component
+ * SeriesEditor Component (V3)
  *
- * Unified editor for all workout series types with modality-specific forms.
- * Dynamically displays appropriate form fields based on selected modality.
+ * Unified editor for all workout series with modality-specific forms.
  *
- * Features:
- * - Add/remove series dynamically
- * - Modality-specific forms (Running, Swimming, Cycling, Strength)
- * - Zone selection for cardio modalities
- * - Visual series cards with index numbers
+ * Field order: Repetições → Tipo de Trabalho → Duração/Distância → Zona → Intervalo
+ * Duration and Interval use simple min + seg inputs (no unit toggle).
+ * "Descanso" renamed to "Intervalo".
  */
 
 import React from 'react';
@@ -21,9 +18,6 @@ import type {
   CyclingSeries,
   StrengthSeries,
   IntensityZone,
-  TimeUnit,
-  DistanceUnit,
-  CyclingUnit,
 } from '../../types/series';
 import { ZONE_CONFIGS, createEmptySeries } from '../../types/series';
 
@@ -123,276 +117,137 @@ function SeriesCard({ series, index, modality, onUpdate, onRemove, canRemove }: 
 
       {/* Modality-specific form */}
       <div className="space-y-3">
+        {/* Repetições (ALL modalities) */}
+        <RepetitionsInput
+          value={series.repetitions ?? 1}
+          onChange={(v) => onUpdate({ repetitions: v })}
+        />
+
         {(modality === 'running' || modality === 'walking') && (
-          <RunningSeriesForm series={series as RunningSeries} onUpdate={onUpdate} />
+          <RunningFields series={series as RunningSeries} onUpdate={onUpdate} />
         )}
-        {modality === 'swimming' && <SwimmingSeriesForm series={series as SwimmingSeries} onUpdate={onUpdate} />}
-        {modality === 'cycling' && <CyclingSeries series={series as CyclingSeries} onUpdate={onUpdate} />}
-        {modality === 'strength' && <StrengthSeriesForm series={series as StrengthSeries} onUpdate={onUpdate} />}
+        {modality === 'swimming' && (
+          <SwimmingFields series={series as SwimmingSeries} onUpdate={onUpdate} />
+        )}
+        {modality === 'cycling' && (
+          <CyclingFields series={series as CyclingSeries} onUpdate={onUpdate} />
+        )}
+        {modality === 'strength' && (
+          <StrengthFields series={series as StrengthSeries} onUpdate={onUpdate} />
+        )}
+
+        {/* Intervalo (ALL modalities) */}
+        <IntervalInput
+          minutes={series.rest_minutes ?? 0}
+          seconds={series.rest_seconds ?? 0}
+          onMinutesChange={(v) => onUpdate({ rest_minutes: v })}
+          onSecondsChange={(v) => onUpdate({ rest_seconds: v })}
+        />
       </div>
     </div>
   );
 }
 
 // ============================================================================
-// RUNNING/WALKING FORM
+// SHARED: REPETITIONS INPUT
 // ============================================================================
 
-interface RunningSeriesFormProps {
-  series: RunningSeries;
-  onUpdate: (updates: Partial<RunningSeries>) => void;
+function RepetitionsInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Repetições</label>
+      <input
+        type="number"
+        min="1"
+        step="1"
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value) || 1)}
+        className="w-24 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center font-bold"
+      />
+    </div>
+  );
 }
 
-function RunningSeriesForm({ series, onUpdate }: RunningSeriesFormProps) {
+// ============================================================================
+// SHARED: DURATION INPUT (min + seg)
+// ============================================================================
+
+function DurationInput({
+  label,
+  minutes,
+  seconds,
+  onMinutesChange,
+  onSecondsChange,
+}: {
+  label: string;
+  minutes: number;
+  seconds: number;
+  onMinutesChange: (v: number) => void;
+  onSecondsChange: (v: number) => void;
+}) {
   return (
-    <>
-      {/* Work Value + Unit Selection */}
-      <div>
-        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Trabalho</label>
-        <div className="flex items-center gap-2">
+    <div>
+      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">{label}</label>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <input
             type="number"
             min="0"
             step="1"
-            value={series.work_value}
-            onChange={(e) => onUpdate({ work_value: parseFloat(e.target.value) || 0 })}
-            className="flex-1 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+            value={minutes}
+            onChange={(e) => onMinutesChange(parseInt(e.target.value) || 0)}
+            className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
           />
-
-          {/* Unit radio buttons */}
-          <div className="flex gap-1">
-            {(['minutes', 'seconds', 'meters'] as const).map((unit) => (
-              <button
-                key={unit}
-                type="button"
-                onClick={() => onUpdate({ work_unit: unit })}
-                className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
-                  series.work_unit === unit
-                    ? 'bg-ceramic-accent text-white'
-                    : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
-                }`}
-              >
-                {unit === 'minutes' ? 'min' : unit === 'seconds' ? 'seg' : 'm'}
-              </button>
-            ))}
-          </div>
+          <span className="text-xs text-ceramic-text-secondary font-medium">min</span>
         </div>
-      </div>
-
-      {/* Zone Selector */}
-      <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
-
-      {/* Rest */}
-      <RestInput
-        value={series.rest_value}
-        unit={series.rest_unit}
-        onValueChange={(value) => onUpdate({ rest_value: value })}
-        onUnitChange={(unit) => onUpdate({ rest_unit: unit })}
-      />
-    </>
-  );
-}
-
-// ============================================================================
-// SWIMMING FORM
-// ============================================================================
-
-interface SwimmingSeriesFormProps {
-  series: SwimmingSeries;
-  onUpdate: (updates: Partial<SwimmingSeries>) => void;
-}
-
-function SwimmingSeriesForm({ series, onUpdate }: SwimmingSeriesFormProps) {
-  return (
-    <>
-      {/* Distance */}
-      <div>
-        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Distância (metros)</label>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <input
             type="number"
             min="0"
-            step="25"
-            value={series.distance_meters}
-            onChange={(e) => onUpdate({ distance_meters: parseFloat(e.target.value) || 0 })}
-            className="flex-1 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-          />
-          <span className="text-xs text-ceramic-text-secondary">m</span>
-        </div>
-      </div>
-
-      {/* Zone Selector */}
-      <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
-
-      {/* Rest */}
-      <RestInput
-        value={series.rest_value}
-        unit={series.rest_unit}
-        onValueChange={(value) => onUpdate({ rest_value: value })}
-        onUnitChange={(unit) => onUpdate({ rest_unit: unit })}
-      />
-    </>
-  );
-}
-
-// ============================================================================
-// CYCLING FORM
-// ============================================================================
-
-interface CyclingSeriesProps {
-  series: CyclingSeries;
-  onUpdate: (updates: Partial<CyclingSeries>) => void;
-}
-
-function CyclingSeries({ series, onUpdate }: CyclingSeriesProps) {
-  return (
-    <>
-      {/* Work Type (Time or Distance) */}
-      <div>
-        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Tipo de Trabalho</label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onUpdate({ work_unit: 'time', unit_detail: 'minutes' })}
-            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-              series.work_unit === 'time'
-                ? 'bg-ceramic-accent text-white'
-                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
-            }`}
-          >
-            <Clock className="w-4 h-4 mx-auto mb-1" />
-            Tempo
-          </button>
-          <button
-            type="button"
-            onClick={() => onUpdate({ work_unit: 'distance', unit_detail: 'meters' })}
-            className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-              series.work_unit === 'distance'
-                ? 'bg-ceramic-accent text-white'
-                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
-            }`}
-          >
-            <Zap className="w-4 h-4 mx-auto mb-1" />
-            Distância
-          </button>
-        </div>
-      </div>
-
-      {/* Work Value (conditional unit) */}
-      <div>
-        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">
-          {series.work_unit === 'time' ? 'Duração' : 'Distância'}
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min="0"
+            max="59"
             step="1"
-            value={series.work_value}
-            onChange={(e) => onUpdate({ work_value: parseFloat(e.target.value) || 0 })}
-            className="flex-1 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+            value={seconds}
+            onChange={(e) => onSecondsChange(Math.min(59, parseInt(e.target.value) || 0))}
+            className="w-16 px-2 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
           />
-
-          {/* Conditional unit toggle */}
-          {series.work_unit === 'time' ? (
-            <div className="flex gap-1">
-              {(['minutes', 'seconds'] as TimeUnit[]).map((unit) => (
-                <button
-                  key={unit}
-                  type="button"
-                  onClick={() => onUpdate({ unit_detail: unit })}
-                  className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
-                    series.unit_detail === unit
-                      ? 'bg-ceramic-accent text-white'
-                      : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
-                  }`}
-                >
-                  {unit === 'minutes' ? 'min' : 'seg'}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <span className="text-xs text-ceramic-text-secondary">m</span>
-          )}
+          <span className="text-xs text-ceramic-text-secondary font-medium">seg</span>
         </div>
       </div>
-
-      {/* Zone Selector */}
-      <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
-
-      {/* Rest */}
-      <RestInput
-        value={series.rest_value}
-        unit={series.rest_unit}
-        onValueChange={(value) => onUpdate({ rest_value: value })}
-        onUnitChange={(unit) => onUpdate({ rest_unit: unit })}
-      />
-    </>
+    </div>
   );
 }
 
 // ============================================================================
-// STRENGTH FORM
+// SHARED: INTERVAL INPUT (renamed from "Descanso")
 // ============================================================================
 
-interface StrengthSeriesFormProps {
-  series: StrengthSeries;
-  onUpdate: (updates: Partial<StrengthSeries>) => void;
-}
-
-function StrengthSeriesForm({ series, onUpdate }: StrengthSeriesFormProps) {
+function IntervalInput({
+  minutes,
+  seconds,
+  onMinutesChange,
+  onSecondsChange,
+}: {
+  minutes: number;
+  seconds: number;
+  onMinutesChange: (v: number) => void;
+  onSecondsChange: (v: number) => void;
+}) {
   return (
-    <>
-      {/* Reps */}
-      <div>
-        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Repetições</label>
-        <input
-          type="number"
-          min="0"
-          step="1"
-          value={series.reps}
-          onChange={(e) => onUpdate({ reps: parseInt(e.target.value) || 0 })}
-          className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-        />
-      </div>
-
-      {/* Load (kg) */}
-      <div>
-        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Carga (kg)</label>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min="0"
-            step="0.5"
-            value={series.load_kg}
-            onChange={(e) => onUpdate({ load_kg: parseFloat(e.target.value) || 0 })}
-            className="flex-1 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-          />
-          <span className="text-xs text-ceramic-text-secondary">kg</span>
-        </div>
-      </div>
-
-      {/* Rest */}
-      <RestInput
-        value={series.rest_value}
-        unit={series.rest_unit}
-        onValueChange={(value) => onUpdate({ rest_value: value })}
-        onUnitChange={(unit) => onUpdate({ rest_unit: unit })}
-      />
-    </>
+    <DurationInput
+      label="Intervalo"
+      minutes={minutes}
+      seconds={seconds}
+      onMinutesChange={onMinutesChange}
+      onSecondsChange={onSecondsChange}
+    />
   );
 }
 
 // ============================================================================
-// ZONE SELECTOR (Shared component for cardio)
+// ZONE SELECTOR (Shared for cardio)
 // ============================================================================
 
-interface ZoneSelectorProps {
-  zone: IntensityZone;
-  onChange: (zone: IntensityZone) => void;
-}
-
-function ZoneSelector({ zone, onChange }: ZoneSelectorProps) {
+function ZoneSelector({ zone, onChange }: { zone: IntensityZone; onChange: (z: IntensityZone) => void }) {
   return (
     <div>
       <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Zona de Intensidade</label>
@@ -420,48 +275,174 @@ function ZoneSelector({ zone, onChange }: ZoneSelectorProps) {
 }
 
 // ============================================================================
-// REST INPUT (Shared component)
+// RUNNING/WALKING FIELDS (Duration → Zone)
 // ============================================================================
 
-interface RestInputProps {
-  value: number;
-  unit: TimeUnit;
-  onValueChange: (value: number) => void;
-  onUnitChange: (unit: TimeUnit) => void;
+function RunningFields({ series, onUpdate }: { series: RunningSeries; onUpdate: (u: Partial<RunningSeries>) => void }) {
+  // Convert legacy work_value to min/seg
+  const durationMin = series.work_unit === 'minutes' ? Math.floor(series.work_value) : Math.floor(series.work_value / 60);
+  const durationSec = series.work_unit === 'minutes' ? 0 : Math.round(series.work_value % 60);
+
+  return (
+    <>
+      <DurationInput
+        label="Duração"
+        minutes={durationMin}
+        seconds={durationSec}
+        onMinutesChange={(min) => onUpdate({ work_value: min, work_unit: 'minutes' })}
+        onSecondsChange={(sec) => {
+          // Store total seconds
+          onUpdate({ work_value: durationMin * 60 + sec, work_unit: 'seconds' });
+        }}
+      />
+      <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
+    </>
+  );
 }
 
-function RestInput({ value, unit, onValueChange, onUnitChange }: RestInputProps) {
+// ============================================================================
+// SWIMMING FIELDS (Distance → Zone)
+// ============================================================================
+
+function SwimmingFields({ series, onUpdate }: { series: SwimmingSeries; onUpdate: (u: Partial<SwimmingSeries>) => void }) {
   return (
-    <div>
-      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Descanso</label>
-      <div className="flex items-center gap-2">
+    <>
+      <div>
+        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Distância (metros)</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            step="25"
+            value={series.distance_meters || ''}
+            onChange={(e) => onUpdate({ distance_meters: parseInt(e.target.value) || 0 })}
+            placeholder="0"
+            className="w-28 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+          />
+          <span className="text-xs text-ceramic-text-secondary font-medium">m</span>
+        </div>
+      </div>
+      <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
+    </>
+  );
+}
+
+// ============================================================================
+// CYCLING FIELDS (Work Type → Duration/Distance → Zone)
+// ============================================================================
+
+function CyclingFields({ series, onUpdate }: { series: CyclingSeries; onUpdate: (u: Partial<CyclingSeries>) => void }) {
+  const isTime = series.work_unit === 'time';
+
+  // Duration in min/seg for time mode
+  const durationMin = isTime && series.unit_detail === 'minutes'
+    ? Math.floor(series.work_value)
+    : isTime ? Math.floor(series.work_value / 60) : 0;
+  const durationSec = isTime && series.unit_detail === 'minutes'
+    ? 0
+    : isTime ? Math.round(series.work_value % 60) : 0;
+
+  return (
+    <>
+      {/* Work Type Toggle */}
+      <div>
+        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Tipo de Trabalho</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onUpdate({ work_unit: 'time', unit_detail: 'minutes' })}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              isTime
+                ? 'bg-ceramic-accent text-white'
+                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Tempo
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdate({ work_unit: 'distance', unit_detail: 'meters' })}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              !isTime
+                ? 'bg-ceramic-accent text-white'
+                : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            Distância
+          </button>
+        </div>
+      </div>
+
+      {/* Duration (time mode) or Distance (distance mode) */}
+      {isTime ? (
+        <DurationInput
+          label="Duração"
+          minutes={durationMin}
+          seconds={durationSec}
+          onMinutesChange={(min) => onUpdate({ work_value: min, unit_detail: 'minutes' })}
+          onSecondsChange={(sec) => {
+            onUpdate({ work_value: durationMin * 60 + sec, unit_detail: 'seconds' });
+          }}
+        />
+      ) : (
+        <div>
+          <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Distância</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              step="100"
+              value={series.work_value || ''}
+              onChange={(e) => onUpdate({ work_value: parseInt(e.target.value) || 0 })}
+              placeholder="0"
+              className="w-28 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+            />
+            <span className="text-xs text-ceramic-text-secondary font-medium">m</span>
+          </div>
+        </div>
+      )}
+
+      <ZoneSelector zone={series.zone} onChange={(zone) => onUpdate({ zone })} />
+    </>
+  );
+}
+
+// ============================================================================
+// STRENGTH FIELDS (Reps → Load)
+// ============================================================================
+
+function StrengthFields({ series, onUpdate }: { series: StrengthSeries; onUpdate: (u: Partial<StrengthSeries>) => void }) {
+  return (
+    <>
+      <div>
+        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Reps do Exercício</label>
         <input
           type="number"
           min="0"
           step="1"
-          value={value}
-          onChange={(e) => onValueChange(parseFloat(e.target.value) || 0)}
-          className="flex-1 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+          value={series.reps || ''}
+          onChange={(e) => onUpdate({ reps: parseInt(e.target.value) || 0 })}
+          placeholder="0"
+          className="w-24 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
         />
-
-        {/* Unit radio buttons */}
-        <div className="flex gap-1">
-          {(['minutes', 'seconds'] as TimeUnit[]).map((u) => (
-            <button
-              key={u}
-              type="button"
-              onClick={() => onUnitChange(u)}
-              className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
-                unit === u
-                  ? 'bg-ceramic-accent text-white'
-                  : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
-              }`}
-            >
-              {u === 'minutes' ? 'min' : 'seg'}
-            </button>
-          ))}
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">Carga (kg)</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            value={series.load_kg || ''}
+            onChange={(e) => onUpdate({ load_kg: parseFloat(e.target.value) || 0 })}
+            placeholder="0"
+            className="w-24 px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-center"
+          />
+          <span className="text-xs text-ceramic-text-secondary font-medium">kg</span>
         </div>
       </div>
-    </div>
+    </>
   );
 }

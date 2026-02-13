@@ -1,24 +1,23 @@
 /**
- * TemplateFormDrawer Component
+ * TemplateFormDrawer Component (V3 - Flat)
  *
- * Drawer lateral (desktop) / bottom (mobile) para criação/edição de exercícios.
- * Inspirado no design da Apple - transições suaves, contexto preservado.
+ * Drawer lateral for exercise creation/editing.
+ * Flat layout — no accordions, modality always visible.
  *
- * Features:
- * - Desktop: Slide-in da direita (40% width)
- * - Mobile: Slide-in de baixo (full-height)
- * - Backdrop translúcido (preserva contexto)
- * - Swipe to dismiss (mobile)
- * - 2 seções: Basic Info + Exercise Structure
+ * Flow: Modality → Aquecimento → Séries → Desaquecimento → Timeline
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
 import { X, AlertCircle, CheckCircle } from 'lucide-react';
 import { useTemplateForm } from './useTemplateForm';
-import BasicInfoSection from './BasicInfoSection';
-import ExerciseStructureSection from './ExerciseStructureSection';
-import type { WorkoutTemplate } from '../../types/flow';
+import SeriesEditor from './SeriesEditor';
+import TimelineVisual from './TimelineVisual';
+import type { WorkoutTemplate, TrainingModality } from '../../types/flow';
+import type { WorkoutSeries } from '../../types/series';
+import { MODALITY_CONFIG } from '../../types/flux';
+
+const MODALITY_OPTIONS: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength', 'walking'];
 
 interface TemplateFormDrawerProps {
   mode: 'create' | 'edit';
@@ -51,24 +50,17 @@ export default function TemplateFormDrawer({
     },
   });
 
-  // Accordion state
-  const [openSections, setOpenSections] = useState({
-    basic: true,
-    structure: false,
-  });
-
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [warmupCharCount, setWarmupCharCount] = useState(0);
+  const [cooldownCharCount, setCooldownCharCount] = useState(0);
 
-  // Swipe to dismiss (mobile)
   const y = useMotionValue(0);
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
+  useEffect(() => {
+    setWarmupCharCount(formData.exercise_structure?.warmup?.length || 0);
+    setCooldownCharCount(formData.exercise_structure?.cooldown?.length || 0);
+  }, [formData.exercise_structure?.warmup, formData.exercise_structure?.cooldown]);
 
   const handleCloseClick = () => {
     if (isDirty) {
@@ -89,7 +81,6 @@ export default function TemplateFormDrawer({
 
     if (result.success) {
       setSubmitSuccess(true);
-      // Auto-close after 1 second
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -101,14 +92,44 @@ export default function TemplateFormDrawer({
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // Close drawer if dragged down >150px on mobile
     if (info.offset.y > 150) {
       handleCloseClick();
     }
   };
 
+  const handleWarmupChange = (value: string) => {
+    if (value.length <= 280) {
+      handleChange('exercise_structure', {
+        ...formData.exercise_structure,
+        warmup: value,
+        series: formData.exercise_structure?.series || [],
+        cooldown: formData.exercise_structure?.cooldown || '',
+      });
+    }
+  };
+
+  const handleCooldownChange = (value: string) => {
+    if (value.length <= 280) {
+      handleChange('exercise_structure', {
+        ...formData.exercise_structure,
+        warmup: formData.exercise_structure?.warmup || '',
+        series: formData.exercise_structure?.series || [],
+        cooldown: value,
+      });
+    }
+  };
+
+  const handleSeriesChange = (series: WorkoutSeries[]) => {
+    handleChange('exercise_structure', {
+      ...formData.exercise_structure,
+      warmup: formData.exercise_structure?.warmup || '',
+      series,
+      cooldown: formData.exercise_structure?.cooldown || '',
+    });
+  };
+
   const errorCount = Object.keys(errors).length;
-  const isFormValid = errorCount === 0 && formData.modality && formData.category;
+  const isFormValid = errorCount === 0 && !!formData.modality;
 
   return (
     <AnimatePresence>
@@ -151,7 +172,7 @@ export default function TemplateFormDrawer({
                 </h2>
                 <p className="text-sm text-ceramic-text-secondary mt-1">
                   {mode === 'create'
-                    ? 'Configure os detalhes do exercício'
+                    ? 'Selecione a modalidade e monte as séries'
                     : 'Atualize as informações'}
                 </p>
               </div>
@@ -166,14 +187,12 @@ export default function TemplateFormDrawer({
 
             {/* Form Content (scrollable) */}
             <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-6">
                 {/* Error Summary */}
                 {submitError && (
                   <div className="flex items-start gap-3 p-4 bg-ceramic-error/10 border border-ceramic-error/20 rounded-lg">
                     <AlertCircle className="w-5 h-5 text-ceramic-error mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-ceramic-error">{submitError}</p>
-                    </div>
+                    <p className="text-sm font-medium text-ceramic-error">{submitError}</p>
                   </div>
                 )}
 
@@ -185,35 +204,95 @@ export default function TemplateFormDrawer({
                     className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-lg"
                   >
                     <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-green-600">
-                        Exercício salvo com sucesso!
-                      </p>
-                    </div>
+                    <p className="text-sm font-medium text-green-600">
+                      Exercício salvo com sucesso!
+                    </p>
                   </motion.div>
                 )}
 
-                {/* Section 1: Basic Info */}
-                <BasicInfoSection
-                  formData={formData}
-                  errors={errors}
-                  touched={touched}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  isOpen={openSections.basic}
-                  onToggle={() => toggleSection('basic')}
-                />
+                {/* Modality Selection (always visible, no accordion) */}
+                <div>
+                  <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
+                    Modalidade
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {MODALITY_OPTIONS.map((modality) => {
+                      const config = MODALITY_CONFIG[modality];
+                      return (
+                        <button
+                          key={modality}
+                          type="button"
+                          onClick={() => handleChange('modality', modality)}
+                          className={`flex flex-col items-center gap-1 px-3 py-3 rounded-lg text-sm font-medium transition-all ${
+                            formData.modality === modality
+                              ? 'bg-ceramic-accent text-white shadow-md scale-105'
+                              : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
+                          }`}
+                        >
+                          <span className="text-lg">{config?.icon}</span>
+                          <span className="text-xs">{config?.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {touched.has('modality') && errors.modality && (
+                    <p className="mt-1 text-xs text-ceramic-error">{errors.modality}</p>
+                  )}
+                </div>
 
-                {/* Section 2: Exercise Structure */}
-                <ExerciseStructureSection
-                  formData={formData}
-                  errors={errors}
-                  touched={touched}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  isOpen={openSections.structure}
-                  onToggle={() => toggleSection('structure')}
-                />
+                {/* Aquecimento */}
+                <div>
+                  <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                    Aquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+                  </label>
+                  <textarea
+                    value={formData.exercise_structure?.warmup || ''}
+                    onChange={(e) => handleWarmupChange(e.target.value)}
+                    placeholder="Descreva o aquecimento..."
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
+                  />
+                  <span className="text-xs text-ceramic-text-secondary">
+                    {warmupCharCount}/280
+                  </span>
+                </div>
+
+                {/* Séries */}
+                <div>
+                  <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
+                    Séries
+                  </label>
+                  <SeriesEditor
+                    modality={formData.modality}
+                    series={formData.exercise_structure?.series || []}
+                    onChange={handleSeriesChange}
+                  />
+                  {touched.has('exercise_structure') && errors.exercise_structure && (
+                    <p className="mt-2 text-xs text-ceramic-error">{errors.exercise_structure}</p>
+                  )}
+                </div>
+
+                {/* Desaquecimento */}
+                <div>
+                  <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                    Desaquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+                  </label>
+                  <textarea
+                    value={formData.exercise_structure?.cooldown || ''}
+                    onChange={(e) => handleCooldownChange(e.target.value)}
+                    placeholder="Descreva o desaquecimento..."
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
+                  />
+                  <span className="text-xs text-ceramic-text-secondary">
+                    {cooldownCharCount}/280
+                  </span>
+                </div>
+
+                {/* Timeline Visual (after cooldown) */}
+                {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
+                  <TimelineVisual series={formData.exercise_structure.series} />
+                )}
               </div>
             </form>
 
