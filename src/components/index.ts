@@ -90,6 +90,7 @@ export { EmptyQuadrantState } from './domain/EmptyQuadrantState';
 export { PriorityMatrix } from './domain/PriorityMatrix';
 export { TaskCreationQuickAdd } from './domain/TaskCreationQuickAdd';
 export { TaskEditModal } from './domain/TaskEditModal';
+export { TaskEditDrawer } from './domain/TaskEditDrawer';
 
 // ============ Legacy Organization (keeping for gradual migration) ============
 // These will be moved to appropriate subdirectories in future sprints
@@ -99,5 +100,6 @@ export { default as EfficiencyFlowCard } from './EfficiencyFlowCard';
 export { default as IdentityPassport } from './IdentityPassport';
 export { default as ModuleTray } from './ModuleTray';
 export { default as ProfileModal } from './ProfileModal';
+export { ProfileDrawer } from './ProfileModal';
 export { default as RecentContactsWidget } from './RecentContactsWidget';
 export { default as VitalStatsTray } from './VitalStatsTray';

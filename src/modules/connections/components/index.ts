@@ -1,6 +1,7 @@
 // Core components
 export { SpaceCard } from './SpaceCard';
 export { CreateSpaceModal } from './CreateSpaceModal';
+export { CreateSpaceDrawer } from './CreateSpaceDrawer';
 export { AddMemberSheet } from './AddMemberSheet';
 
 // WhatsApp Contact Components

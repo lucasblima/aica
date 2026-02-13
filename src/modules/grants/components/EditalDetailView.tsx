@@ -26,9 +26,9 @@ import {
   ArrowRight
 } from 'lucide-react';
 import type { GrantOpportunity, GrantProject, FormField } from '../types';
-import { FormFieldsEditorModal } from './FormFieldsEditorModal';
+import { FormFieldsEditorDrawer } from './FormFieldsEditorDrawer';
 import { InteractiveSummaryCard } from './InteractiveSummaryCard';
-import { PdfPreviewModal } from './PdfPreviewModal';
+import { PdfPreviewDrawer } from './PdfPreviewDrawer';
 import { uploadEditalPDF, deleteEditalPDF, updateProjectName } from '../services/grantService';
 
 import { createNamespacedLogger } from '@/lib/logger';

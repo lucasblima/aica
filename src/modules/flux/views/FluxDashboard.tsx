@@ -16,7 +16,7 @@ import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
 import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
-import AthleteFormModal from '../components/forms/AthleteFormModal';
+import { AthleteFormDrawer } from '../components/forms';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import type { Athlete } from '../types';
 import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
@@ -714,8 +714,8 @@ export default function FluxDashboard() {
         />
       )}
 
-      {/* Athlete Form Modal */}
-      <AthleteFormModal
+      {/* Athlete Form Drawer */}
+      <AthleteFormDrawer
         mode={editingAthlete ? 'edit' : 'create'}
         initialData={editingAthlete || undefined}
         isOpen={athleteModalOpen}
