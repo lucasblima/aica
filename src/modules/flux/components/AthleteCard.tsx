@@ -21,7 +21,7 @@ export function AthleteCard({
   athlete,
   recentFeedbacks = [],
   activeAlerts = [],
-  consistencyRate = 0,
+  adherenceRate = 0,
   onClick,
   onWhatsAppClick,
 }: ExtendedAthleteCardProps) {
@@ -35,7 +35,7 @@ export function AthleteCard({
     return 'text-ceramic-error bg-ceramic-error/10';
   };
 
-  const consistencyColorClass = getConsistencyColor(consistencyRate);
+  const consistencyColorClass = getConsistencyColor(adherenceRate);
   const hasActiveAlerts = activeAlerts.length > 0;
   const hasCriticalAlerts = activeAlerts.some((alert) => alert.severity === 'critical');
 
@@ -105,7 +105,7 @@ export function AthleteCard({
                 Adesao
               </p>
               <p className={`text-sm font-bold ${consistencyColorClass}`}>
-                {consistencyRate}%
+                {adherenceRate}%
               </p>
             </div>
           </div>
