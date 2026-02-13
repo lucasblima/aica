@@ -709,9 +709,11 @@ interface AnalyzeMomentPayload {
   user_emotion?: string
 }
 
+const VALID_EMOTION_VALUES = ['happy', 'sad', 'anxious', 'angry', 'thoughtful', 'calm', 'grateful', 'tired', 'inspired', 'neutral', 'excited', 'disappointed', 'frustrated', 'loving', 'scared', 'determined', 'sleepy', 'overwhelmed', 'confident', 'confused'] as const
+
 interface AnalyzeMomentResult {
   tags: string[]
-  mood: { emoji: string; label: string }
+  mood: { emoji: string; label: string; value: string }
   sentiment: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative'
   sentimentScore: number
   emotions: string[]
@@ -726,39 +728,51 @@ async function handleAnalyzeMoment(genAI: GoogleGenerativeAI, payload: AnalyzeMo
   const model = genAI.getGenerativeModel({
     model: MODELS.fast,
     generationConfig: {
-      temperature: 0.3,
-      topP: 0.8,
+      temperature: 0.5,
+      topP: 0.9,
       topK: 40,
       maxOutputTokens: 512,
       responseMimeType: 'application/json',
     },
   })
 
-  const prompt = `Analise o seguinte momento de diario pessoal escrito em portugues:
+  const prompt = `Voce e um analista emocional especializado em diarios pessoais. Analise com sensibilidade o seguinte momento:
 
 "${payload.content}"
 
-Retorne um JSON com:
-- tags: lista de 3 a 5 palavras-chave tematicas (em portugues, minusculas, sem acentos)
-- mood: objeto com "emoji" (1 emoji) e "label" (1-2 palavras descrevendo o humor, em portugues)
-- sentiment: 'very_positive', 'positive', 'neutral', 'negative', ou 'very_negative'
-- sentimentScore: numero de -1 (muito negativo) a 1 (muito positivo)
-- emotions: lista de emocoes detectadas (maximo 5, em portugues)
-- triggers: lista de gatilhos/contextos (maximo 3)
-- energyLevel: nivel de energia percebido de 0 a 100`
+IMPORTANTE: Identifique a emocao REAL por tras das palavras. Nao use "neutral" a menos que o texto seja genuinamente neutro (ex: lista de compras, dado factual sem emocao). A maioria dos registros de diario contem emocao — identifique-a.
+
+Retorne JSON com:
+- tags: lista de 3-5 palavras-chave tematicas (portugues, minusculas, sem acentos)
+- mood: objeto com:
+  - "emoji": 1 emoji que melhor representa o humor
+  - "label": nome da emocao em portugues (ex: "Feliz", "Ansioso", "Grato", "Determinado")
+  - "value": um destes valores EXATOS: happy, sad, anxious, angry, thoughtful, calm, grateful, tired, inspired, neutral, excited, disappointed, frustrated, loving, scared, determined, sleepy, overwhelmed, confident, confused
+- sentiment: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative'
+- sentimentScore: -1.0 a 1.0
+- emotions: lista de emocoes detectadas (max 5, portugues)
+- triggers: gatilhos/contextos (max 3)
+- energyLevel: 0-100
+
+Dica: reflexoes profundas geralmente sao "thoughtful", desabafos sao "frustrated"/"overwhelmed", conquistas sao "excited"/"confident", gratidao e "grateful".`
 
   const result = await model.generateContent(prompt)
   const text = result.response.text()
   console.log('[analyze_moment] Raw Gemini response:', text.substring(0, 500))
 
   // Build fallback mood from user_emotion if available
-  let fallbackMood = { emoji: '😐', label: 'Neutro' }
+  let fallbackMood: AnalyzeMomentResult['mood'] = { emoji: '😐', label: 'Neutro', value: 'neutral' }
   if (payload.user_emotion) {
-    // Extract emoji (first char/grapheme) and label from "😊 Feliz" format
-    const emojiMatch = payload.user_emotion.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)/u)
-    const fallbackEmoji = emojiMatch ? emojiMatch[0] : '😐'
-    const fallbackLabel = payload.user_emotion.replace(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u, '').trim() || 'Neutro'
-    fallbackMood = { emoji: fallbackEmoji, label: fallbackLabel }
+    // user_emotion can be a value string ('happy') or legacy "emoji label" format
+    const isValueString = VALID_EMOTION_VALUES.includes(payload.user_emotion as any)
+    if (isValueString) {
+      fallbackMood = { emoji: '😐', label: payload.user_emotion, value: payload.user_emotion }
+    } else {
+      const emojiMatch = payload.user_emotion.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)/u)
+      const fallbackEmoji = emojiMatch ? emojiMatch[0] : '😐'
+      const fallbackLabel = payload.user_emotion.replace(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u, '').trim() || 'Neutro'
+      fallbackMood = { emoji: fallbackEmoji, label: fallbackLabel, value: 'neutral' }
+    }
   }
 
   let parsed: AnalyzeMomentResult
@@ -779,9 +793,13 @@ Retorne um JSON com:
 
   // Validate and normalize
   parsed.tags = Array.isArray(parsed.tags) ? parsed.tags.slice(0, 7).map(t => String(t).toLowerCase()) : []
-  if (!parsed.mood || typeof parsed.mood !== 'object') parsed.mood = { emoji: '😐', label: 'Neutro' }
+  if (!parsed.mood || typeof parsed.mood !== 'object') parsed.mood = { emoji: '😐', label: 'Neutro', value: 'neutral' }
   parsed.mood.label = String(parsed.mood.label || 'Neutro').substring(0, 20)
   parsed.mood.emoji = String(parsed.mood.emoji || '😐').substring(0, 4)
+  // Normalize mood.value to a valid emotion value
+  if (!parsed.mood.value || !VALID_EMOTION_VALUES.includes(parsed.mood.value as any)) {
+    parsed.mood.value = 'neutral'
+  }
 
   const validSentiments = ['very_positive', 'positive', 'neutral', 'negative', 'very_negative']
   if (!validSentiments.includes(parsed.sentiment)) parsed.sentiment = 'neutral'

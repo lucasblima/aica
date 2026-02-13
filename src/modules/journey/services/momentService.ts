@@ -14,6 +14,7 @@ import {
   MomentFilter,
 } from '../types/moment'
 import { SentimentAnalysis } from '../types/sentiment'
+import { mapAIMoodToValue } from '../types/emotionHelper'
 import { transcribeAudio } from './momentPersistenceService'
 import { evaluateAndCalculateCP, updateAvgQualityScore } from './qualityEvaluationService'
 
@@ -282,7 +283,7 @@ async function analyzeMomentFull(content: string, momentId: string, userId: stri
 
     const result = response.result as {
       tags: string[]
-      mood: { emoji: string; label: string }
+      mood: { emoji: string; label: string; value?: string }
       sentiment: string
       sentimentScore: number
       emotions: string[]
@@ -307,7 +308,8 @@ async function analyzeMomentFull(content: string, momentId: string, userId: stri
       sentiment_data: sentimentData,
     }
     if (!userEmotion) {
-      updateData.emotion = `${result.mood.emoji} ${result.mood.label}`
+      // Prefer mood.value (new format from updated prompt), fallback to mapping
+      updateData.emotion = result.mood.value || mapAIMoodToValue(result.mood)
     }
 
     await supabase

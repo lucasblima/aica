@@ -9,6 +9,7 @@ import { supabase } from '@/services/supabaseClient'
 import { GeminiClient } from '@/lib/gemini'
 import { createNamespacedLogger } from '@/lib/logger'
 import { WeeklySummary } from '../types/weeklySummary'
+import { mapAIMoodToValue } from '../types/emotionHelper'
 
 const log = createNamespacedLogger('useJourneyPatterns')
 const geminiClient = GeminiClient.getInstance()
@@ -239,7 +240,7 @@ export function useJourneyPatterns(userId?: string) {
           .from('moments')
           .update({
             tags: result.tags,
-            emotion: `${result.mood.emoji} ${result.mood.label}`,
+            emotion: result.mood.value || mapAIMoodToValue(result.mood),
             sentiment_data: {
               timestamp: new Date().toISOString(),
               sentiment: result.sentiment,

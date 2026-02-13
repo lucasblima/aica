@@ -6,6 +6,7 @@
 import React, { useState } from 'react'
 import { Moment } from '../../types/moment'
 import { getSentimentColor } from '../../types/sentiment'
+import { getEmotionDisplay } from '../../types/emotionHelper'
 import {
   ClockIcon,
   MapPinIcon,
@@ -26,6 +27,7 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
   const sentimentColor = moment.sentiment_data
     ? getSentimentColor(moment.sentiment_data.sentiment)
     : '#94a3b8'
+  const emotionDisplay = getEmotionDisplay(moment.emotion)
 
   const createdAt = new Date(moment.created_at)
   const relativeTime = formatDistanceToNow(createdAt, {
@@ -47,8 +49,8 @@ export function MomentCard({ moment, onDelete }: MomentCardProps) {
           {/* Emotion + Time */}
           <div className="flex items-center gap-2 mb-1">
             {moment.emotion && (
-              <span className="text-2xl">
-                {moment.emotion}
+              <span className="text-2xl" title={emotionDisplay.label}>
+                {emotionDisplay.emoji}
               </span>
             )}
             <div className="flex items-center gap-1 text-sm text-ceramic-text-secondary">
