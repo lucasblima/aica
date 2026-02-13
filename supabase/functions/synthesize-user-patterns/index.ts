@@ -94,29 +94,19 @@ serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    const body = await req.json().catch(() => ({}))
+    const userId = body.userId
+
+    if (!userId) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'userId is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Get user from JWT
-    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-    const { data: { user }, error: authError } = await userClient.auth.getUser()
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
 
     const startTime = Date.now()
 
@@ -125,7 +115,7 @@ serve(async (req: Request) => {
     // =====================================================================
 
     const { data: context, error: contextError } = await supabaseClient
-      .rpc('get_weekly_synthesis_context', { p_user_id: user.id })
+      .rpc('get_weekly_synthesis_context', { p_user_id: userId })
 
     if (contextError) {
       console.error('[SYNTHESIZE-PATTERNS] Context error:', contextError)
@@ -187,7 +177,7 @@ serve(async (req: Request) => {
     // 3a. Update existing patterns (confidence delta + evidence)
     for (const update of (synthesis.updates || [])) {
       const { error } = await supabaseClient.rpc('apply_pattern_update', {
-        p_user_id: user.id,
+        p_user_id: userId,
         p_pattern_key: update.pattern_key,
         p_confidence_delta: Math.max(-0.3, Math.min(0.2, update.confidence_delta)),
         p_new_evidence: update.new_evidence,
@@ -213,7 +203,7 @@ serve(async (req: Request) => {
       const { error } = await supabaseClient
         .from('user_patterns')
         .upsert({
-          user_id: user.id,
+          user_id: userId,
           pattern_type: newPattern.pattern_type,
           pattern_key: newPattern.pattern_key,
           description: newPattern.description,
@@ -231,7 +221,7 @@ serve(async (req: Request) => {
       const { error } = await supabaseClient
         .from('user_patterns')
         .update({ is_active: false, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('pattern_key', patternKey)
 
       if (!error) deactivatedCount++
