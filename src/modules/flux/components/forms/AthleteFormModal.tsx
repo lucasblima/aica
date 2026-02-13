@@ -1,26 +1,28 @@
 /**
- * AthleteFormModal Component
+ * AthleteFormModal Component (Refactored v2.0)
  *
  * Modal for creating/editing athletes with:
- * - 4 Accordion sections (BasicInfo, Account, Health, Performance)
+ * - 5 Accordion sections (BasicInfo, Modalities, Account, Health Config, Performance)
+ * - Integrated modality + level selection
+ * - Health documentation configuration (coach perspective)
  * - Form validation and submission
  * - Dirty state warning on close
  * - Ceramic design system styling
- * - Phone number formatting with IMask
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertCircle, CheckCircle, ChevronDown, User, Settings, Heart, Zap } from 'lucide-react';
-import type { Athlete, AthleteLevel, AthleteStatus, TrainingModality, AnamnesisData } from '../../types/flux';
+import { X, AlertCircle, CheckCircle, ChevronDown, User, Target, Settings, Heart, Zap, Info } from 'lucide-react';
+import type { Athlete, AthleteStatus, TrainingModality, SimpleAthleteLevel, ModalityLevel } from '../../types/flux';
 import { AthleteProfileService } from '../../services/athleteProfileService';
+import { SIMPLE_LEVEL_LABELS } from '../../types/flux';
 
 interface AthleteFormModalProps {
   mode: 'create' | 'edit';
   initialData?: Athlete;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (athlete: Partial<Athlete>) => Promise<void>;
+  onSave: (athlete: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }) => Promise<void>;
 }
 
 // Form data type
@@ -28,28 +30,18 @@ interface FormData {
   name: string;
   email: string;
   phone: string;
-  modalities: TrainingModality[]; // Multiple modalities
-  level: AthleteLevel | '';
+  modalityLevels: ModalityLevel[]; // Multiple modalities with levels
   status: AthleteStatus;
   trial_expires_at: string;
-  // Health data
-  sleep_quality: 'poor' | 'fair' | 'good' | 'excellent' | '';
-  stress_level: 'low' | 'medium' | 'high' | '';
-  chronic_pain: string;
-  injuries: string;
-  medications: string;
+  // Health configuration (coach perspective)
+  requires_cardio_exam: boolean;
+  requires_clearance_cert: boolean;
+  allow_parq_onboarding: boolean;
   // Performance thresholds
   ftp: string;
   pace_threshold: string;
   swim_css: string;
 }
-
-// Simplified level options (3 levels)
-const LEVEL_OPTIONS: { value: AthleteLevel; label: string }[] = [
-  { value: 'iniciante_1', label: 'Iniciante' },
-  { value: 'intermediario_1', label: 'Intermediário' },
-  { value: 'avancado', label: 'Avançado' },
-];
 
 // Modality options
 const MODALITY_OPTIONS: { value: TrainingModality; label: string; icon: string }[] = [
@@ -58,6 +50,13 @@ const MODALITY_OPTIONS: { value: TrainingModality; label: string; icon: string }
   { value: 'cycling', label: 'Ciclismo', icon: '🚴' },
   { value: 'strength', label: 'Musculação', icon: '🏋️' },
   { value: 'walking', label: 'Caminhada', icon: '🚶' },
+];
+
+// Level options (simplified to 3)
+const LEVEL_OPTIONS: { value: SimpleAthleteLevel; label: string }[] = [
+  { value: 'iniciante', label: 'Iniciante' },
+  { value: 'intermediario', label: 'Intermediário' },
+  { value: 'avancado', label: 'Avançado' },
 ];
 
 // Status options
@@ -82,15 +81,12 @@ export default function AthleteFormModal({
         name: initialData.name || '',
         email: initialData.email || '',
         phone: initialData.phone || '',
-        modalities: initialData.modality ? [initialData.modality] : [], // Convert single to array
-        level: initialData.level || '',
+        modalityLevels: initialData.modality ? [{ modality: initialData.modality, level: 'iniciante' }] : [],
         status: initialData.status || 'active',
         trial_expires_at: initialData.trial_expires_at || '',
-        sleep_quality: initialData.anamnesis?.sleep_quality || '',
-        stress_level: initialData.anamnesis?.stress_level || '',
-        chronic_pain: initialData.anamnesis?.chronic_pain?.join(', ') || '',
-        injuries: initialData.anamnesis?.injuries?.join(', ') || '',
-        medications: initialData.anamnesis?.nutrition_notes || '',
+        requires_cardio_exam: initialData.requires_cardio_exam || false,
+        requires_clearance_cert: initialData.requires_clearance_cert || false,
+        allow_parq_onboarding: initialData.allow_parq_onboarding || false,
         ftp: initialData.ftp?.toString() || '',
         pace_threshold: initialData.pace_threshold || '',
         swim_css: initialData.swim_css || '',
@@ -100,15 +96,12 @@ export default function AthleteFormModal({
       name: '',
       email: '',
       phone: '',
-      modalities: [],
-      level: '',
+      modalityLevels: [],
       status: 'active',
       trial_expires_at: '',
-      sleep_quality: '',
-      stress_level: '',
-      chronic_pain: '',
-      injuries: '',
-      medications: '',
+      requires_cardio_exam: false,
+      requires_clearance_cert: false,
+      allow_parq_onboarding: false,
       ftp: '',
       pace_threshold: '',
       swim_css: '',
@@ -116,16 +109,17 @@ export default function AthleteFormModal({
   };
 
   const [formData, setFormData] = useState<FormData>(getInitialFormData());
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData | 'modalityLevels', string>>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
-  // Accordion state
+  // Accordion state (5 sections)
   const [openSections, setOpenSections] = useState({
     basic: true,
+    modalities: false,
     account: false,
     health: false,
     performance: false,
@@ -154,23 +148,18 @@ export default function AthleteFormModal({
           }
 
           if (profiles && profiles.length > 0) {
-            // Collect all modalities: primary modality + profile modalities
-            const allModalities = new Set<TrainingModality>();
+            // Map profiles to modalityLevels
+            const modalityLevels: ModalityLevel[] = profiles.map((profile) => ({
+              modality: profile.modality,
+              // Map from AthleteLevel to SimpleAthleteLevel
+              level: profile.level.startsWith('iniciante') ? 'iniciante'
+                : profile.level.startsWith('intermediario') ? 'intermediario'
+                : 'avancado'
+            }));
 
-            // Add primary modality
-            if (initialData.modality) {
-              allModalities.add(initialData.modality);
-            }
-
-            // Add profile modalities
-            profiles.forEach((profile) => {
-              allModalities.add(profile.modality);
-            });
-
-            // Update formData with all modalities
             setFormData((prev) => ({
               ...prev,
-              modalities: Array.from(allModalities),
+              modalityLevels,
             }));
           }
         } catch (error) {
@@ -185,7 +174,7 @@ export default function AthleteFormModal({
   }, [mode, initialData?.id, isOpen]);
 
   // Handle input change
-  const handleChange = (field: keyof FormData, value: string) => {
+  const handleChange = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setIsDirty(true);
     // Clear error for this field
@@ -196,9 +185,47 @@ export default function AthleteFormModal({
     });
   };
 
+  // Handle modality selection
+  const handleModalityToggle = (modality: TrainingModality) => {
+    const existingIndex = formData.modalityLevels.findIndex(ml => ml.modality === modality);
+
+    if (existingIndex >= 0) {
+      // Remove modality
+      setFormData(prev => ({
+        ...prev,
+        modalityLevels: prev.modalityLevels.filter((_, i) => i !== existingIndex)
+      }));
+    } else {
+      // Add modality with default level 'iniciante'
+      setFormData(prev => ({
+        ...prev,
+        modalityLevels: [...prev.modalityLevels, { modality, level: 'iniciante' }]
+      }));
+    }
+
+    setIsDirty(true);
+    // Clear modality error
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors.modalityLevels;
+      return newErrors;
+    });
+  };
+
+  // Handle level change for specific modality
+  const handleLevelChange = (modality: TrainingModality, level: SimpleAthleteLevel) => {
+    setFormData(prev => ({
+      ...prev,
+      modalityLevels: prev.modalityLevels.map(ml =>
+        ml.modality === modality ? { ...ml, level } : ml
+      )
+    }));
+    setIsDirty(true);
+  };
+
   // Validate form
   const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    const newErrors: Partial<Record<keyof FormData | 'modalityLevels', string>> = {};
 
     // Required fields
     if (!formData.name || formData.name.trim().length < 2) {
@@ -209,12 +236,8 @@ export default function AthleteFormModal({
       newErrors.phone = 'Telefone inválido (formato: +5511987654321)';
     }
 
-    if (!formData.modalities || formData.modalities.length === 0) {
-      newErrors.modalities = 'Selecione pelo menos uma modalidade';
-    }
-
-    if (!formData.level) {
-      newErrors.level = 'Selecione um nível';
+    if (!formData.modalityLevels || formData.modalityLevels.length === 0) {
+      newErrors.modalityLevels = 'Selecione pelo menos uma modalidade';
     }
 
     // Email validation (optional but must be valid if provided)
@@ -249,28 +272,24 @@ export default function AthleteFormModal({
     setIsSubmitting(true);
 
     try {
-      // Build anamnesis data
-      const anamnesis: AnamnesisData = {};
-      if (formData.sleep_quality) anamnesis.sleep_quality = formData.sleep_quality;
-      if (formData.stress_level) anamnesis.stress_level = formData.stress_level;
-      if (formData.chronic_pain) anamnesis.chronic_pain = formData.chronic_pain.split(',').map(s => s.trim()).filter(Boolean);
-      if (formData.injuries) anamnesis.injuries = formData.injuries.split(',').map(s => s.trim()).filter(Boolean);
-      if (formData.medications) anamnesis.nutrition_notes = formData.medications;
-
       // Build athlete data
-      const athleteData: Partial<Athlete> = {
+      const athleteData: Partial<Athlete> & { modalityLevels?: ModalityLevel[] } = {
         name: formData.name.trim(),
         email: formData.email.trim() || undefined,
         phone: formData.phone.trim(),
-        modality: formData.modalities[0], // Use first selected modality (backend expects single value)
-        // TODO: When backend supports multiple modalities, save as: modalities: formData.modalities
-        level: formData.level as AthleteLevel,
+        modality: formData.modalityLevels[0].modality, // Primary modality
+        level: formData.modalityLevels[0].level === 'iniciante' ? 'iniciante_1'
+          : formData.modalityLevels[0].level === 'intermediario' ? 'intermediario_1'
+          : 'avancado', // Map to full AthleteLevel
         status: formData.status,
         trial_expires_at: formData.status === 'trial' ? formData.trial_expires_at : undefined,
-        anamnesis: Object.keys(anamnesis).length > 0 ? anamnesis : undefined,
+        requires_cardio_exam: formData.requires_cardio_exam,
+        requires_clearance_cert: formData.requires_clearance_cert,
+        allow_parq_onboarding: formData.allow_parq_onboarding,
         ftp: formData.ftp ? Number(formData.ftp) : undefined,
         pace_threshold: formData.pace_threshold.trim() || undefined,
         swim_css: formData.swim_css.trim() || undefined,
+        modalityLevels: formData.modalityLevels, // Pass for profile sync
       };
 
       await onSave(athleteData);
@@ -325,7 +344,7 @@ export default function AthleteFormModal({
   };
 
   const errorCount = Object.keys(errors).length;
-  const isFormValid = errorCount === 0 && formData.name && formData.phone && formData.modalities.length > 0 && formData.level;
+  const isFormValid = errorCount === 0 && formData.name && formData.phone && formData.modalityLevels.length > 0;
 
   if (!isOpen) return null;
 
@@ -470,84 +489,110 @@ export default function AthleteFormModal({
                         <p className="text-xs text-ceramic-error mt-1">{errors.phone}</p>
                       )}
                     </div>
-
-                    {/* Modalities (multiple selection) */}
-                    <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Modalidades * <span className="text-[10px] normal-case font-normal">(selecione uma ou mais)</span>
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {MODALITY_OPTIONS.map((option) => {
-                          const isSelected = formData.modalities.includes(option.value);
-                          return (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={() => {
-                                const newModalities = isSelected
-                                  ? formData.modalities.filter(m => m !== option.value)
-                                  : [...formData.modalities, option.value];
-                                setFormData((prev) => ({ ...prev, modalities: newModalities }));
-                                setIsDirty(true);
-                                // Clear modality error
-                                setErrors((prev) => {
-                                  const newErrors = { ...prev };
-                                  delete newErrors.modalities;
-                                  return newErrors;
-                                });
-                              }}
-                              className={`relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-2 ${
-                                isSelected
-                                  ? 'bg-ceramic-success/10 border-ceramic-success shadow-md'
-                                  : 'ceramic-inset border-transparent hover:border-ceramic-border'
-                              }`}
-                            >
-                              <span className="text-2xl">{option.icon}</span>
-                              <span className={`text-sm font-bold flex-1 text-left ${
-                                isSelected
-                                  ? 'text-ceramic-success'
-                                  : 'text-ceramic-text-secondary'
-                              }`}>
-                                {option.label}
-                              </span>
-                              {isSelected && (
-                                <CheckCircle className="w-6 h-6 text-ceramic-success flex-shrink-0" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {errors.modalities && (
-                        <p className="text-xs text-ceramic-error mt-1">{errors.modalities}</p>
-                      )}
-                    </div>
-
-                    {/* Level */}
-                    <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Nível *
-                      </label>
-                      <select
-                        value={formData.level}
-                        onChange={(e) => handleChange('level', e.target.value)}
-                        className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                      >
-                        <option value="">Selecione o nível</option>
-                        {LEVEL_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.level && (
-                        <p className="text-xs text-ceramic-error mt-1">{errors.level}</p>
-                      )}
-                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Section 2: Account Settings */}
+              {/* Section 2: Modalities (NEW) */}
+              <div className="ceramic-card overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('modalities')}
+                  className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="ceramic-inset p-2">
+                      <Target className="w-4 h-4 text-ceramic-text-primary" />
+                    </div>
+                    <span className="text-sm font-bold text-ceramic-text-primary">
+                      2. Modalidades *
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`w-5 h-5 text-ceramic-text-secondary transition-transform ${
+                      openSections.modalities ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {openSections.modalities && (
+                  <div className="p-4 pt-0 space-y-4">
+                    <p className="text-xs text-ceramic-text-secondary italic">
+                      Selecione uma ou mais modalidades e defina o nível para cada uma
+                    </p>
+
+                    {MODALITY_OPTIONS.map((modality) => {
+                      const modalityLevel = formData.modalityLevels.find(ml => ml.modality === modality.value);
+                      const isSelected = !!modalityLevel;
+
+                      return (
+                        <div key={modality.value} className="space-y-2">
+                          {/* Modality Toggle Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleModalityToggle(modality.value)}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-2 ${
+                              isSelected
+                                ? 'bg-ceramic-success/10 border-ceramic-success shadow-md'
+                                : 'ceramic-inset border-transparent hover:border-ceramic-border'
+                            }`}
+                          >
+                            <span className="text-2xl">{modality.icon}</span>
+                            <span className={`text-sm font-bold flex-1 text-left ${
+                              isSelected
+                                ? 'text-ceramic-success'
+                                : 'text-ceramic-text-secondary'
+                            }`}>
+                              {modality.label}
+                            </span>
+                            {isSelected && (
+                              <CheckCircle className="w-6 h-6 text-ceramic-success flex-shrink-0" />
+                            )}
+                          </button>
+
+                          {/* Level Selection (only if modality is selected) */}
+                          {isSelected && (
+                            <AnimatePresence>
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="pl-12 pr-4 space-y-1"
+                              >
+                                <label className="block text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1">
+                                  Nível
+                                </label>
+                                <div className="flex gap-2">
+                                  {LEVEL_OPTIONS.map((level) => (
+                                    <button
+                                      key={level.value}
+                                      type="button"
+                                      onClick={() => handleLevelChange(modality.value, level.value)}
+                                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                                        modalityLevel?.level === level.value
+                                          ? 'bg-ceramic-accent text-white shadow-md'
+                                          : 'ceramic-inset text-ceramic-text-secondary hover:bg-white/50'
+                                      }`}
+                                    >
+                                      {level.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            </AnimatePresence>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {errors.modalityLevels && (
+                      <p className="text-xs text-ceramic-error mt-1">{errors.modalityLevels}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Section 3: Account Settings (renumbered) */}
               <div className="ceramic-card overflow-hidden">
                 <button
                   type="button"
@@ -559,7 +604,7 @@ export default function AthleteFormModal({
                       <Settings className="w-4 h-4 text-ceramic-text-primary" />
                     </div>
                     <span className="text-sm font-bold text-ceramic-text-primary">
-                      2. Configurações de Conta
+                      3. Configurações de Conta
                     </span>
                   </div>
                   <ChevronDown
@@ -627,7 +672,7 @@ export default function AthleteFormModal({
                 )}
               </div>
 
-              {/* Section 3: Health Data */}
+              {/* Section 4: Health Configuration (REFACTORED) */}
               <div className="ceramic-card overflow-hidden">
                 <button
                   type="button"
@@ -639,7 +684,7 @@ export default function AthleteFormModal({
                       <Heart className="w-4 h-4 text-ceramic-text-primary" />
                     </div>
                     <span className="text-sm font-bold text-ceramic-text-primary">
-                      3. Dados de Saúde (Opcional)
+                      4. Dados de Saúde
                     </span>
                   </div>
                   <ChevronDown
@@ -651,105 +696,107 @@ export default function AthleteFormModal({
 
                 {openSections.health && (
                   <div className="p-4 pt-0 space-y-4">
-                    {/* Anamnesis Info Notice */}
+                    {/* Info Notice */}
                     <div className="flex items-start gap-3 p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded-lg">
-                      <AlertCircle className="w-5 h-5 text-ceramic-info mt-0.5 flex-shrink-0" />
+                      <Info className="w-5 h-5 text-ceramic-info mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-bold text-ceramic-info mb-2">
-                          💡 Anamnese Inteligente
+                          📋 Configuração de Onboarding de Saúde
                         </p>
-                        <p className="text-sm text-ceramic-text-primary mb-2 leading-relaxed">
-                          Estes dados serão enriquecidos automaticamente quando o atleta responder a anamnese completa.
-                        </p>
-                        <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                          O atleta poderá responder via <span className="font-semibold text-ceramic-text-primary">voz</span> (transcrição automática) ou{' '}
-                          <span className="font-semibold text-ceramic-text-primary">texto</span>, tanto na interface web quanto por WhatsApp/Telegram.
-                          A Aica preenche os campos e esclarece dúvidas até completar.
+                        <p className="text-sm text-ceramic-text-primary leading-relaxed">
+                          Defina as regras de documentação e onboarding para este atleta. Dados detalhados de anamnese serão coletados via IA no módulo Flux.
                         </p>
                       </div>
                     </div>
 
-                    {/* Sleep Quality */}
+                    {/* A. Documentation Requirements */}
                     <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Qualidade do Sono
+                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
+                        Documentação Exigida
                       </label>
-                      <select
-                        value={formData.sleep_quality}
-                        onChange={(e) => handleChange('sleep_quality', e.target.value)}
-                        className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                      >
-                        <option value="">Não informado</option>
-                        <option value="poor">Ruim</option>
-                        <option value="fair">Regular</option>
-                        <option value="good">Bom</option>
-                        <option value="excellent">Excelente</option>
-                      </select>
+
+                      {/* Cardiological Exam */}
+                      <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg mb-2">
+                        <div>
+                          <p className="text-sm font-medium text-ceramic-text-primary">Exame Cardiológico</p>
+                          <p className="text-xs text-ceramic-text-secondary">Laudo médico cardiológico</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleChange('requires_cardio_exam', !formData.requires_cardio_exam)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            formData.requires_cardio_exam ? 'bg-ceramic-success' : 'bg-ceramic-text-secondary/30'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              formData.requires_cardio_exam ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Clearance Certificate */}
+                      <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-ceramic-text-primary">Atestado de Liberação</p>
+                          <p className="text-xs text-ceramic-text-secondary">Liberação médica para atividade física</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleChange('requires_clearance_cert', !formData.requires_clearance_cert)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            formData.requires_clearance_cert ? 'bg-ceramic-success' : 'bg-ceramic-text-secondary/30'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              formData.requires_clearance_cert ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Stress Level */}
+                    {/* B. Onboarding Permissions */}
                     <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Nível de Estresse
+                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
+                        Permissões de Onboarding
                       </label>
-                      <select
-                        value={formData.stress_level}
-                        onChange={(e) => handleChange('stress_level', e.target.value)}
-                        className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                      >
-                        <option value="">Não informado</option>
-                        <option value="low">Baixo</option>
-                        <option value="medium">Médio</option>
-                        <option value="high">Alto</option>
-                      </select>
-                    </div>
 
-                    {/* Chronic Pain */}
-                    <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Áreas de Dor Crônica
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.chronic_pain}
-                        onChange={(e) => handleChange('chronic_pain', e.target.value)}
-                        className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                        placeholder="Ex: joelho esquerdo, lombar (separar por vírgula)"
-                      />
-                    </div>
-
-                    {/* Injuries */}
-                    <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Histórico de Lesões
-                      </label>
-                      <textarea
-                        value={formData.injuries}
-                        onChange={(e) => handleChange('injuries', e.target.value)}
-                        rows={3}
-                        className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none"
-                        placeholder="Descreva lesões anteriores ou atuais (separar por vírgula)"
-                      />
-                    </div>
-
-                    {/* Medications/Nutrition */}
-                    <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Medicamentos / Notas de Nutrição
-                      </label>
-                      <textarea
-                        value={formData.medications}
-                        onChange={(e) => handleChange('medications', e.target.value)}
-                        rows={3}
-                        className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none"
-                        placeholder="Medicamentos em uso ou notas sobre nutrição"
-                      />
+                      {/* PAR-Q Questionnaire */}
+                      <div className="flex items-center justify-between p-3 ceramic-inset rounded-lg">
+                        <div className="flex-1 mr-4">
+                          <p className="text-sm font-medium text-ceramic-text-primary">Liberar Questionário PAR-Q</p>
+                          <p className="text-xs text-ceramic-text-secondary">
+                            Atleta poderá responder PAR-Q + Termo de Responsabilidade no Flux
+                          </p>
+                          {formData.allow_parq_onboarding && (
+                            <p className="text-xs text-ceramic-warning mt-1 font-medium">
+                              ⚠️ Prescrição técnica será liberada apenas após assinatura
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleChange('allow_parq_onboarding', !formData.allow_parq_onboarding)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            formData.allow_parq_onboarding ? 'bg-ceramic-success' : 'bg-ceramic-text-secondary/30'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              formData.allow_parq_onboarding ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Section 4: Performance Thresholds */}
+              {/* Section 5: Performance Thresholds (renumbered) */}
               <div className="ceramic-card overflow-hidden">
                 <button
                   type="button"
@@ -761,7 +808,7 @@ export default function AthleteFormModal({
                       <Zap className="w-4 h-4 text-ceramic-text-primary" />
                     </div>
                     <span className="text-sm font-bold text-ceramic-text-primary">
-                      4. Thresholds de Performance (Opcional)
+                      5. Limiar de Desempenho (Opcional)
                     </span>
                   </div>
                   <ChevronDown
@@ -774,11 +821,11 @@ export default function AthleteFormModal({
                 {openSections.performance && (
                   <div className="p-4 pt-0 space-y-4">
                     <p className="text-xs text-ceramic-text-secondary italic">
-                      Configure os valores de threshold de acordo com as modalidades selecionadas
+                      Configure os valores de limiar de acordo com as modalidades selecionadas
                     </p>
 
                     {/* FTP (for cycling) */}
-                    {formData.modalities.includes('cycling') && (
+                    {formData.modalityLevels.some(ml => ml.modality === 'cycling') && (
                       <div>
                         <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
                           🚴 FTP (Functional Threshold Power)
@@ -801,7 +848,7 @@ export default function AthleteFormModal({
                     )}
 
                     {/* Pace Threshold (for running) */}
-                    {formData.modalities.includes('running') && (
+                    {formData.modalityLevels.some(ml => ml.modality === 'running') && (
                       <div>
                         <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
                           🏃 Pace Limiar
@@ -817,7 +864,7 @@ export default function AthleteFormModal({
                     )}
 
                     {/* CSS (for swimming) */}
-                    {formData.modalities.includes('swimming') && (
+                    {formData.modalityLevels.some(ml => ml.modality === 'swimming') && (
                       <div>
                         <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
                           🏊 CSS (Critical Swim Speed)
@@ -832,16 +879,16 @@ export default function AthleteFormModal({
                       </div>
                     )}
 
-                    {formData.modalities.length === 0 && (
+                    {formData.modalityLevels.length === 0 && (
                       <p className="text-xs text-ceramic-text-secondary italic">
-                        Selecione pelo menos uma modalidade para configurar os thresholds
+                        Selecione pelo menos uma modalidade para configurar os limiares
                       </p>
                     )}
 
-                    {formData.modalities.length > 0 &&
-                     !formData.modalities.some(m => ['cycling', 'running', 'swimming'].includes(m)) && (
+                    {formData.modalityLevels.length > 0 &&
+                     !formData.modalityLevels.some(ml => ['cycling', 'running', 'swimming'].includes(ml.modality)) && (
                       <p className="text-xs text-ceramic-text-secondary italic">
-                        Thresholds específicos não aplicáveis para as modalidades selecionadas
+                        Limiares específicos não aplicáveis para as modalidades selecionadas
                       </p>
                     )}
                   </div>

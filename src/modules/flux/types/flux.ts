@@ -23,6 +23,21 @@ export type AthleteLevel =
   | 'avancado';
 
 /**
+ * Simplified athlete levels (3 categories)
+ * Used for modality-specific level assignment
+ */
+export type SimpleAthleteLevel = 'iniciante' | 'intermediario' | 'avancado';
+
+/**
+ * Modality with associated level
+ * Athletes can have multiple modalities, each with its own level
+ */
+export interface ModalityLevel {
+  modality: TrainingModality;
+  level: SimpleAthleteLevel;
+}
+
+/**
  * Athlete account status
  */
 export type AthleteStatus = 'active' | 'paused' | 'trial' | 'churned';
@@ -76,6 +91,11 @@ export interface Athlete {
   trial_expires_at?: string; // ISO 8601
   onboarding_data?: Record<string, unknown>; // AI onboarding responses
   anamnesis?: AnamnesisData;
+
+  // Health documentation configuration (set by coach)
+  requires_cardio_exam?: boolean; // Cardiological exam required
+  requires_clearance_cert?: boolean; // Physical activity clearance certificate required
+  allow_parq_onboarding?: boolean; // Allow athlete to complete PAR-Q questionnaire
 
   // Performance thresholds (for load calculation)
   ftp?: number; // Functional Threshold Power (watts) - cycling
@@ -396,6 +416,15 @@ export const LEVEL_LABELS: Record<AthleteLevel, string> = {
   intermediario_2: 'Intermediario II',
   intermediario_3: 'Intermediario III',
   avancado: 'Avancado',
+};
+
+/**
+ * Simplified level display names
+ */
+export const SIMPLE_LEVEL_LABELS: Record<SimpleAthleteLevel, string> = {
+  iniciante: 'Iniciante',
+  intermediario: 'Intermediário',
+  avancado: 'Avançado',
 };
 
 /**

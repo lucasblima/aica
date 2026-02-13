@@ -201,20 +201,23 @@ export default function FluxDashboard() {
   };
 
   // Handle save athlete (create or update)
-  const handleSaveAthlete = async (athleteData: Partial<Athlete> & { modalities?: TrainingModality[] }) => {
+  const handleSaveAthlete = async (athleteData: Partial<Athlete> & { modalityLevels?: any[] }) => {
     try {
-      const modalities = athleteData.modalities || [];
+      const modalityLevels = athleteData.modalityLevels || [];
 
       // Validate: at least one modality must be selected
-      if (modalities.length === 0) {
+      if (modalityLevels.length === 0) {
         throw new Error('Selecione pelo menos uma modalidade');
       }
+
+      // Extract just modalities array for syncProfilesForAthlete
+      const modalities = modalityLevels.map(ml => ml.modality);
 
       // First modality = primary modality in athletes table
       const primaryModality = modalities[0];
 
-      // Prepare athlete data (without modalities array)
-      const { modalities: _, ...athletePayload } = athleteData;
+      // Prepare athlete data (without modalityLevels array)
+      const { modalityLevels: _, ...athletePayload } = athleteData;
       const athleteWithModality = {
         ...athletePayload,
         modality: primaryModality,
@@ -256,6 +259,8 @@ export default function FluxDashboard() {
       }
 
       // Sync athlete profiles for all selected modalities
+      // Note: syncProfilesForAthlete expects simple modality array, not modalityLevels
+      // Level is managed per profile in athlete_profiles table
       const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
         athleteId,
         modalities,
