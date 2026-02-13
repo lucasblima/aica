@@ -33,7 +33,7 @@ export function TermsOfServicePage() {
           Termos de Serviço
         </h1>
         <p className="text-sm text-[#5C554B] mb-8">
-          Última atualização: {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+          Última atualização: 13 de fevereiro de 2026
         </p>
 
         <div className="prose prose-slate max-w-none space-y-8">
@@ -159,13 +159,24 @@ export function TermsOfServicePage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Integrações de Terceiros</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica permite integração com serviços de terceiros (Google Calendar, etc.):
+              A Aica permite integração com serviços de terceiros, incluindo o Google Calendar:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
               <li>Você é responsável por seus relacionamentos com esses provedores</li>
               <li>Não somos responsáveis pelos serviços ou políticas de terceiros</li>
               <li>Revise os termos e políticas dos serviços que você conecta</li>
-              <li>Você pode revogar integrações a qualquer momento</li>
+              <li>Você pode revogar integrações a qualquer momento nas configurações</li>
+              <li>A integração com Google Calendar solicita apenas acesso de leitura (calendar.readonly) — seus eventos não são modificados</li>
+              <li>O uso de dados do Google está em conformidade com a{' '}
+                <a
+                  href="https://developers.google.com/terms/api-services-user-data-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-ceramic-info hover:underline"
+                >
+                  Google API Services User Data Policy
+                </a>
+              </li>
             </ul>
           </section>
 
@@ -346,7 +357,7 @@ export function TermsOfServicePage() {
               Se você tiver dúvidas sobre estes Termos de Serviço, entre em contato conosco:
             </p>
             <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6">
-              <p className="text-[#5C554B]"><strong>E-mail:</strong> contato@comtxae.com</p>
+              <p className="text-[#5C554B]"><strong>E-mail:</strong> contato@aica.guru</p>
             </div>
           </section>
 
