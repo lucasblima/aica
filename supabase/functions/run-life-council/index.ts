@@ -141,30 +141,19 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    const body = await req.json().catch(() => ({}))
+    const userId = body.userId
+
+    if (!userId) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'userId is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Get user from JWT
-    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-    const { data: { user }, error: authError } = await userClient.auth.getUser()
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
 
     const startTime = Date.now()
 
@@ -173,7 +162,7 @@ serve(async (req: Request) => {
     // =====================================================================
 
     const { data: context, error: contextError } = await supabaseClient
-      .rpc('get_council_context', { p_user_id: user.id })
+      .rpc('get_council_context', { p_user_id: userId })
 
     if (contextError) {
       console.error('[LIFE-COUNCIL] Context fetch error:', contextError)
@@ -325,7 +314,7 @@ serve(async (req: Request) => {
     const { data: saved, error: saveError } = await supabaseClient
       .from('daily_council_insights')
       .upsert({
-        user_id: user.id,
+        user_id: userId,
         insight_date: new Date().toISOString().split('T')[0],
         philosopher_output: philosopherOutput,
         strategist_output: strategistOutput,
