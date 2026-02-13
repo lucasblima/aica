@@ -2,24 +2,24 @@
  * WhatsAppStepContent Component
  * Issue #100 - Step de conexao WhatsApp no wizard de organizacoes
  *
- * Permite conectar o WhatsApp da organizacao durante o wizard,
+ * Permite importar conversas do WhatsApp durante o wizard,
  * com gamificacao e feedback visual.
+ *
+ * Updated: Removed Evolution API — now uses WhatsApp export import.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle,
   CheckCircle2,
-  XCircle,
   Sparkles,
-  Phone,
-  ArrowRight,
   Shield,
   Clock,
   Users,
+  Upload,
 } from 'lucide-react';
-import { ConnectionStatusCard } from '@/modules/connections/components/whatsapp/ConnectionStatusCard';
+import { WhatsAppExportUpload } from '@/modules/connections/components/whatsapp/WhatsAppExportUpload';
 import { STEP_COMPLETION_BONUS } from '../../types/wizard';
 
 // =============================================================================
@@ -29,11 +29,11 @@ import { STEP_COMPLETION_BONUS } from '../../types/wizard';
 interface WhatsAppStepContentProps {
   /** Telefone da organizacao (do step de contato) */
   organizationPhone?: string;
-  /** Callback quando conexao e bem-sucedida */
+  /** Callback quando importacao e bem-sucedida */
   onConnectionSuccess?: () => void;
   /** Callback para conceder XP */
   onAwardXP?: (xp: number) => void;
-  /** Se a conexao ja foi feita anteriormente */
+  /** Se a importacao ja foi feita anteriormente */
   isAlreadyConnected?: boolean;
 }
 
@@ -41,23 +41,23 @@ interface WhatsAppStepContentProps {
 // Constants
 // =============================================================================
 
-const WHATSAPP_CONNECTION_XP = 50; // XP bonus por conectar WhatsApp
+const WHATSAPP_IMPORT_XP = 50;
 
 const BENEFITS = [
   {
     icon: Users,
-    title: 'Atendimento Automatizado',
-    description: 'Responda parceiros e interessados 24/7',
+    title: 'Analise de Contatos',
+    description: 'Descubra insights sobre seus parceiros e colaboradores',
   },
   {
     icon: Clock,
-    title: 'Notificacoes em Tempo Real',
-    description: 'Receba alertas de editais e oportunidades',
+    title: 'Deteccao de Tarefas',
+    description: 'Tarefas e compromissos detectados automaticamente',
   },
   {
     icon: Shield,
-    title: 'Comunicacao Segura',
-    description: 'Seus dados protegidos com criptografia',
+    title: 'Privacidade Garantida',
+    description: 'Mensagens nunca sao armazenadas, apenas resumos',
   },
 ];
 
@@ -66,36 +66,24 @@ const BENEFITS = [
 // =============================================================================
 
 export function WhatsAppStepContent({
-  organizationPhone = '',
   onConnectionSuccess,
   onAwardXP,
   isAlreadyConnected = false,
 }: WhatsAppStepContentProps) {
-  const [isConnected, setIsConnected] = useState(isAlreadyConnected);
+  const [isImported, setIsImported] = useState(isAlreadyConnected);
   const [showReward, setShowReward] = useState(false);
-  const [hasAwaredXP, setHasAwardedXP] = useState(isAlreadyConnected);
+  const [hasAwardedXP, setHasAwardedXP] = useState(isAlreadyConnected);
 
-  // Handle successful connection
-  const handleConnectionSuccess = useCallback(() => {
-    if (!hasAwaredXP) {
-      setIsConnected(true);
+  const handleImportSuccess = useCallback(() => {
+    if (!hasAwardedXP) {
+      setIsImported(true);
       setShowReward(true);
       setHasAwardedXP(true);
-
-      // Award XP for connection
-      onAwardXP?.(WHATSAPP_CONNECTION_XP);
+      onAwardXP?.(WHATSAPP_IMPORT_XP);
       onConnectionSuccess?.();
-
-      // Hide reward after animation
       setTimeout(() => setShowReward(false), 2000);
     }
-  }, [hasAwaredXP, onAwardXP, onConnectionSuccess]);
-
-  // Clean phone number for pairing code
-  const cleanedPhone = organizationPhone.replace(/\D/g, '');
-  const formattedPhone = cleanedPhone.length >= 10
-    ? `55${cleanedPhone}` // Adiciona codigo do Brasil se necessario
-    : '';
+  }, [hasAwardedXP, onAwardXP, onConnectionSuccess]);
 
   return (
     <div className="space-y-6">
@@ -107,12 +95,12 @@ export function WhatsAppStepContent({
           </div>
           <div>
             <h3 className="text-lg font-bold text-ceramic-text-primary">
-              Conectar WhatsApp
+              Importar WhatsApp
             </h3>
             <p className="text-sm text-ceramic-text-secondary">
-              {isConnected
-                ? 'WhatsApp conectado com sucesso!'
-                : 'Vincule o WhatsApp da sua organizacao'
+              {isImported
+                ? 'Conversas importadas com sucesso!'
+                : 'Importe conversas relevantes da organizacao'
               }
             </p>
           </div>
@@ -122,13 +110,13 @@ export function WhatsAppStepContent({
         <div className="relative">
           <div className={`
             px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5
-            ${isConnected
+            ${isImported
               ? 'bg-ceramic-success-bg text-ceramic-success'
               : 'bg-amber-100 text-amber-600'
             }
           `}>
             <Sparkles className="w-4 h-4" />
-            <span>{isConnected ? 'Conectado' : `+${WHATSAPP_CONNECTION_XP} XP`}</span>
+            <span>{isImported ? 'Importado' : `+${WHATSAPP_IMPORT_XP} XP`}</span>
           </div>
 
           {/* XP Reward Animation */}
@@ -140,7 +128,7 @@ export function WhatsAppStepContent({
                 animate={{ opacity: 1, y: -10, scale: 1 }}
                 exit={{ opacity: 0, y: -30, scale: 0.5 }}
               >
-                +{WHATSAPP_CONNECTION_XP} XP
+                +{WHATSAPP_IMPORT_XP} XP
               </motion.div>
             )}
           </AnimatePresence>
@@ -148,7 +136,7 @@ export function WhatsAppStepContent({
       </div>
 
       {/* Status Indicator */}
-      {isConnected ? (
+      {isImported ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -160,11 +148,11 @@ export function WhatsAppStepContent({
             </div>
             <div className="flex-1">
               <h4 className="text-lg font-bold text-ceramic-success">
-                WhatsApp Conectado!
+                Conversas Importadas!
               </h4>
               <p className="text-sm text-ceramic-success">
-                Sua organizacao agora pode receber notificacoes e se comunicar
-                com parceiros diretamente pelo WhatsApp.
+                O AICA esta analisando suas conversas para extrair insights,
+                contatos e oportunidades relevantes.
               </p>
             </div>
           </div>
@@ -192,38 +180,16 @@ export function WhatsAppStepContent({
             ))}
           </div>
 
-          {/* Phone Number Info */}
-          {organizationPhone && (
-            <div className="flex items-center gap-3 p-4 bg-ceramic-info-bg border border-ceramic-info/20 rounded-xl">
-              <Phone className="w-5 h-5 text-ceramic-info" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-ceramic-info">
-                  Numero detectado: {organizationPhone}
-                </p>
-                <p className="text-xs text-ceramic-info">
-                  Usaremos este numero para gerar o codigo de pareamento
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Connection Card */}
-          <ConnectionStatusCard
-            phoneNumber={formattedPhone}
-            showQRCode={true}
-            autoRefresh={true}
-            refreshInterval={5000}
-            defaultMethod="pairing"
-            className="!p-0 !shadow-none !rounded-none"
-          />
+          {/* Import Upload Component */}
+          <WhatsAppExportUpload />
 
           {/* Skip Option */}
           <div className="text-center pt-4 border-t border-ceramic-border">
             <p className="text-sm text-ceramic-text-secondary mb-2">
-              Voce pode pular esta etapa e conectar depois
+              Voce pode pular esta etapa e importar depois
             </p>
             <p className="text-xs text-ceramic-text-secondary">
-              O WhatsApp pode ser configurado a qualquer momento nas configuracoes
+              A importacao pode ser feita a qualquer momento em Conexoes &gt; Importar
             </p>
           </div>
         </>

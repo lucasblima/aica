@@ -11,29 +11,25 @@
 import React, { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
-// Supabase URL for proxy endpoint
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-
 /**
- * Get proxied URL for WhatsApp profile pictures
- * WhatsApp blocks direct hotlinking, so we proxy through our Edge Function
- *
- * Issue #180: Supports Supabase Storage URLs which don't need proxying
+ * Resolve WhatsApp profile picture URLs.
+ * WhatsApp CDN URLs expire quickly — without a proxy they'll likely 403.
+ * We return null for those so the initials fallback kicks in.
+ * Supabase Storage URLs are returned as-is.
  */
-function getProxiedWhatsAppUrl(url: string | null | undefined): string | null {
+function resolveProfilePicUrl(url: string | null | undefined): string | null {
   if (!url) return null;
 
-  // Supabase Storage URLs don't need proxying (Issue #180)
+  // Supabase Storage URLs work directly
   if (url.includes('supabase.co/storage') || url.includes('supabase.in/storage')) {
     return url;
   }
 
-  // Only proxy WhatsApp CDN URLs (they expire and block hotlinking)
+  // WhatsApp CDN URLs expire and block hotlinking — skip them
   if (url.includes('pps.whatsapp.net') || url.includes('mmg.whatsapp.net')) {
-    return `${SUPABASE_URL}/functions/v1/proxy-whatsapp-image?url=${encodeURIComponent(url)}`;
+    return null;
   }
 
-  // Return other URLs as-is
   return url;
 }
 
@@ -152,9 +148,8 @@ export function ContactAvatar({
   const imageUrl = useMemo(() => {
     if (imageError && fallbackError) return null;
     if (imageError) return avatarUrl;
-    // Proxy WhatsApp URLs to avoid 403 hotlink protection
-    const proxiedWhatsApp = getProxiedWhatsAppUrl(whatsappProfilePicUrl);
-    return proxiedWhatsApp || avatarUrl;
+    const resolvedWhatsApp = resolveProfilePicUrl(whatsappProfilePicUrl);
+    return resolvedWhatsApp || avatarUrl;
   }, [whatsappProfilePicUrl, avatarUrl, imageError, fallbackError]);
 
   const initials = useMemo(() => getInitials(name), [name]);

@@ -1,22 +1,19 @@
 /**
  * OnboardingFlow Component
- * Sprint: "Ordem ao Caos do WhatsApp"
  *
  * Main orchestrator for the onboarding flow:
  * - Progress indicator
  * - Step transitions with animations
  * - State management via useOnboarding hook
  *
- * @see PR #120 - WhatsApp Onboarding Flow
+ * Updated: Removed Evolution API dependency — now uses WhatsApp export import.
  */
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboarding } from '../hooks/useOnboarding';
-import { useWhatsAppSessionSubscription } from '@/hooks/useWhatsAppSessionSubscription';
 import { WelcomeStep } from './WelcomeStep';
-import { WhatsAppPairingStep } from './WhatsAppPairingStep';
-import { ContactsSyncStep } from './ContactsSyncStep';
+import { WhatsAppImportStep } from './WhatsAppImportStep';
 import { ReadyStep } from './ReadyStep';
 import { STEP_LABELS } from '../types';
 import type { OnboardingStep } from '../types';
@@ -51,21 +48,8 @@ export function OnboardingFlow() {
     complete,
   } = useOnboarding();
 
-  // Real-time WhatsApp session subscription for auto-detecting connection
-  const {
-    session: whatsAppSession,
-    isConnected: whatsAppConnected,
-    status: whatsAppStatus,
-  } = useWhatsAppSessionSubscription();
-
   // Track direction for animations
   const [direction, setDirection] = useState(0);
-
-  // Simulated sync data (would come from actual sync in production)
-  const [syncData, setSyncData] = useState({
-    contactsCount: 0,
-    groupsCount: 0,
-  });
 
   // Handle step transitions
   const handleNext = async () => {
@@ -82,22 +66,11 @@ export function OnboardingFlow() {
     await complete();
   };
 
-  // Update sync data when sync completes
-  const handleSyncComplete = () => {
-    // In production, this would come from the actual sync
-    setSyncData({
-      contactsCount: Math.floor(Math.random() * 150) + 50,
-      groupsCount: Math.floor(Math.random() * 20) + 5,
-    });
-    handleNext();
-  };
-
   // Progress steps for indicator
   const steps = useMemo<{ key: OnboardingStep; label: string }[]>(
     () => [
       { key: 'welcome', label: STEP_LABELS.welcome },
-      { key: 'whatsapp_pairing', label: STEP_LABELS.whatsapp_pairing },
-      { key: 'contacts_sync', label: STEP_LABELS.contacts_sync },
+      { key: 'whatsapp_import', label: STEP_LABELS.whatsapp_import },
       { key: 'ready', label: STEP_LABELS.ready },
     ],
     []
@@ -227,25 +200,18 @@ export function OnboardingFlow() {
                 />
               )}
 
-              {currentStep === 'whatsapp_pairing' && (
-                <WhatsAppPairingStep
-                  onSuccess={handleNext}
+              {currentStep === 'whatsapp_import' && (
+                <WhatsAppImportStep
+                  onComplete={handleNext}
                   onBack={handleBack}
-                  session={whatsAppSession}
-                  isConnected={whatsAppConnected}
-                  sessionStatus={whatsAppStatus}
                 />
-              )}
-
-              {currentStep === 'contacts_sync' && (
-                <ContactsSyncStep onComplete={handleSyncComplete} />
               )}
 
               {currentStep === 'ready' && (
                 <ReadyStep
                   credits={credits?.balance || 10}
-                  contactsCount={syncData.contactsCount}
-                  groupsCount={syncData.groupsCount}
+                  contactsCount={0}
+                  groupsCount={0}
                   onStart={handleComplete}
                 />
               )}

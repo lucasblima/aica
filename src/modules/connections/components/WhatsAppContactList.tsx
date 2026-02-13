@@ -7,7 +7,6 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { VirtualList } from './VirtualList';
 import { WhatsAppContactCard } from './WhatsAppContactCard';
 import { ContactFilters } from './ContactFilters';
 import { ContactSearchBar } from './ContactSearchBar';
@@ -167,9 +166,6 @@ export function WhatsAppContactList({
     [favoriteSet, onContactClick, onChatClick, onFavoriteToggle, onMoreClick, cardVariant]
   );
 
-  // Get item key for virtual list
-  const getItemKey = useCallback((contact: ContactNetwork) => contact.id, []);
-
   // Determine empty state type
   const emptyStateType = filters.searchQuery
     ? 'search'
@@ -232,14 +228,11 @@ export function WhatsAppContactList({
           <DefaultEmptyState filterType={emptyStateType} />
         )
       ) : (
-        <VirtualList
-          items={filteredContacts}
-          renderItem={renderContact}
-          getItemKey={getItemKey}
-          estimateSize={cardVariant === 'compact' ? 80 : 140}
-          className={height}
-          emptyMessage="Nenhum contato encontrado"
-        />
+        <div className="overflow-y-auto" style={{ maxHeight: height }}>
+          {filteredContacts.map((contact) => (
+            <div key={contact.id}>{renderContact(contact)}</div>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -35,45 +35,16 @@ const DEFAULT_PAGE_SIZE = 50;
 // ============================================================================
 
 /**
- * Calculate health score for a single contact
- * Calls the Edge Function to recalculate and update the contact's health score
+ * Calculate health score for a single contact.
+ * NOTE: The calculate-health-scores Edge Function was removed (Evolution API cleanup).
+ * Health scores are now derived from imported conversation data.
+ * This function is kept as a stub for future re-implementation.
  */
 export async function calculateHealthScore(
   contactId: string
 ): Promise<SingleCalculateResponse> {
-  log.info('Calculating health score for contact:', contactId);
-
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error('User not authenticated');
-  }
-
-  const response = await supabase.functions.invoke('calculate-health-scores', {
-    body: { contactId },
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
-
-  if (response.error) {
-    log.error('Calculate health score error:', response.error);
-    throw new Error(response.error.message || 'Failed to calculate health score');
-  }
-
-  const result = response.data as SingleCalculateResponse;
-
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to calculate health score');
-  }
-
-  log.info('Health score calculated:', {
-    contactId,
-    score: result.healthScore,
-    trend: result.trend,
-  });
-
-  return result;
+  log.warn('calculateHealthScore called but Edge Function is not available. Contact:', contactId);
+  throw new Error('Health score calculation is temporarily unavailable. Import WhatsApp conversations to populate health data.');
 }
 
 // ============================================================================

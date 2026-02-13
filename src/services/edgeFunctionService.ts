@@ -6,7 +6,6 @@
  *
  * Supported Edge Functions:
  * - gemini-chat: AI operations (Gemini API)
- * - webhook-evolution: WhatsApp operations (Evolution API)
  * - send-guest-approval-link: Podcast guest approval notifications
  */
 
@@ -51,31 +50,6 @@ interface EdgeFunctionResponse<T = any> {
     candidatesTokenCount?: number
     totalTokenCount?: number
   }
-}
-
-// ============================================================================
-// WHATSAPP TYPES
-// ============================================================================
-
-export interface QRCodeResponse {
-  success: boolean
-  qrcode?: {
-    base64?: string
-    code?: string
-  }
-  error?: string
-}
-
-export interface WhatsAppMessageResponse {
-  success: boolean
-  messageId?: string
-  error?: string
-}
-
-export interface WhatsAppConnectionResponse {
-  success: boolean
-  state?: string
-  error?: string
 }
 
 // ============================================================================
@@ -431,70 +405,6 @@ export async function researchGuest(payload: {
   researched_at: string
 }> {
   return callGeminiEdgeFunction('research_guest', payload, 'smart')
-}
-
-// ============================================================================
-// WHATSAPP FUNCTIONS (webhook-evolution)
-// ============================================================================
-
-/**
- * Generate QR code for WhatsApp connection
- */
-export async function generateWhatsAppQRCode(
-  instanceName: string
-): Promise<QRCodeResponse> {
-  return invokeEdgeFunction<QRCodeResponse>('webhook-evolution', {
-    action: 'generate_qrcode',
-    instance: instanceName,
-  }, {
-    logContext: { action: 'generate_qrcode', instance: instanceName },
-  })
-}
-
-/**
- * Send a WhatsApp message
- */
-export async function sendWhatsAppMessage(
-  phone: string,
-  message: string,
-  instanceName: string
-): Promise<WhatsAppMessageResponse> {
-  return invokeEdgeFunction<WhatsAppMessageResponse>('webhook-evolution', {
-    action: 'send_message',
-    instance: instanceName,
-    phone,
-    message,
-  }, {
-    logContext: { action: 'send_message', instance: instanceName },
-  })
-}
-
-/**
- * Disconnect WhatsApp instance
- */
-export async function disconnectWhatsApp(
-  instanceName: string
-): Promise<WhatsAppConnectionResponse> {
-  return invokeEdgeFunction<WhatsAppConnectionResponse>('webhook-evolution', {
-    action: 'disconnect',
-    instance: instanceName,
-  }, {
-    logContext: { action: 'disconnect', instance: instanceName },
-  })
-}
-
-/**
- * Check WhatsApp connection status
- */
-export async function checkWhatsAppConnection(
-  instanceName: string
-): Promise<WhatsAppConnectionResponse> {
-  return invokeEdgeFunction<WhatsAppConnectionResponse>('webhook-evolution', {
-    action: 'check_connection',
-    instance: instanceName,
-  }, {
-    logContext: { action: 'check_connection', instance: instanceName },
-  })
 }
 
 // ============================================================================

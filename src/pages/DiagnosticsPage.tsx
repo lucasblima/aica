@@ -147,11 +147,10 @@ export default function DiagnosticsPage() {
 
   const testEdgeFunction = async () => {
     setIsLoading(true)
-    log('🚀 Iniciando teste da Edge Function...', 'info')
+    log('🚀 Iniciando teste da Edge Function gemini-chat...', 'info')
     log('─'.repeat(60), 'info')
 
     try {
-      // 1. Verificar sessão
       const session = await checkSession()
 
       if (!session) {
@@ -161,90 +160,27 @@ export default function DiagnosticsPage() {
       }
 
       log('', 'info')
-      log('📡 Chamando Edge Function sync-whatsapp-contacts...', 'info')
+      log('📡 Chamando Edge Function gemini-chat (ping)...', 'info')
 
-      // 2. Chamar Edge Function
       const startTime = Date.now()
-
-      const response = await fetch(
-        'https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/sync-whatsapp-contacts',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({}),
-        }
-      )
-
+      const { data, error } = await supabase.functions.invoke('gemini-chat', {
+        body: { action: 'ping', payload: {} },
+      })
       const duration = Date.now() - startTime
 
-      log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error')
-      log(`⏱️  Tempo de resposta: ${duration}ms`, 'info')
-
-      const responseText = await response.text()
-
-      if (response.status === 200) {
-        log('✅ SUCESSO! Edge Function funcionou!', 'success')
-
-        try {
-          const result = JSON.parse(responseText)
-          log(`📋 Contatos sincronizados: ${result.contactsSynced || 0}`, 'success')
-          log(`📋 Contatos ignorados: ${result.contactsSkipped || 0}`, 'info')
-          log(`⏱️  Duração (servidor): ${result.durationMs || 0}ms`, 'info')
-
-          if (result.errors && result.errors.length > 0) {
-            log(`⚠️  Erros encontrados: ${result.errors.length}`, 'warning')
-            result.errors.forEach((err: string) => {
-              log(`   - ${err}`, 'warning')
-            })
-          }
-        } catch (e) {
-          log(`📋 Response (texto): ${responseText}`, 'info')
-        }
-      } else if (response.status === 401) {
-        log('❌ 401 UNAUTHORIZED', 'error')
-        log('🔧 Possíveis causas:', 'warning')
-        log('   1. Token expirado → Faça logout/login novamente', 'warning')
-        log('   2. Token inválido → Limpe cookies e faça login', 'warning')
-        log('   3. Edge Function não configurada para aceitar este token', 'warning')
-        log(`📋 Response: ${responseText}`, 'error')
-
-        // Check for old cookies
-        log('', 'info')
-        log('🔍 Verificando cookies antigos...', 'info')
-        checkCookies()
-      } else if (response.status === 404) {
-        log('❌ 404 NOT FOUND', 'error')
-        log('🔧 Edge Function não encontrada ou não deployada', 'warning')
-        log('   Verifique: https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions', 'info')
-        log(`📋 Response: ${responseText}`, 'error')
-      } else if (response.status === 500) {
-        log('❌ 500 SERVER ERROR', 'error')
-        log('🔧 Erro na Edge Function - veja logs no Supabase:', 'warning')
-        log(
-          '   https://supabase.com/dashboard/project/uzywajqzbdbrfammshdg/functions/sync-whatsapp-contacts/logs',
-          'info'
-        )
-        log(`📋 Response: ${responseText}`, 'error')
+      if (error) {
+        log(`❌ Erro: ${error.message}`, 'error')
+        log('🔧 Verifique CORS e deploy da Edge Function', 'warning')
       } else {
-        log(`⚠️  Status inesperado: ${response.status}`, 'warning')
-        log(`📋 Response: ${responseText}`, 'info')
+        log('✅ SUCESSO! Edge Function respondeu!', 'success')
+        log(`⏱️  Tempo de resposta: ${duration}ms`, 'info')
+        log(`📋 Response: ${JSON.stringify(data)}`, 'info')
       }
     } catch (error) {
       log(
-        `❌ Erro ao chamar Edge Function: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        `❌ Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         'error'
       )
-
-      if (error instanceof Error) {
-        if (error.message.includes('CORS')) {
-          log('🔧 Erro de CORS - Edge Function pode não estar deployada', 'warning')
-        } else if (error.message.includes('fetch') || error.message.includes('network')) {
-          log('🔧 Erro de rede - verifique conexão e URL', 'warning')
-        }
-      }
     } finally {
       log('─'.repeat(60), 'info')
       log('✅ Teste finalizado!', 'success')
@@ -280,7 +216,7 @@ export default function DiagnosticsPage() {
             <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
           </button>
           <h1 className="text-3xl font-bold text-ceramic-text-primary mb-2">🔧 Diagnósticos e Testes</h1>
-          <p className="text-ceramic-text-secondary">Ferramentas de diagnóstico para WhatsApp Sync</p>
+          <p className="text-ceramic-text-secondary">Ferramentas de diagnóstico para AICA</p>
           <p className="text-sm text-ceramic-text-secondary mt-1">
             Usuário: <span className="text-ceramic-accent">lucasboscacci@gmail.com</span>
           </p>
@@ -347,18 +283,12 @@ export default function DiagnosticsPage() {
           <h3 className="text-lg font-semibold text-ceramic-text-primary mb-3">ℹ️ Informações</h3>
           <div className="space-y-2 text-sm text-ceramic-text-secondary">
             <p>
-              <strong className="text-ceramic-text-primary">Edge Function URL:</strong>{' '}
-              <code className="text-ceramic-accent text-xs">
-                https://uzywajqzbdbrfammshdg.supabase.co/functions/v1/sync-whatsapp-contacts
-              </code>
+              <strong className="text-ceramic-text-primary">Edge Function:</strong>{' '}
+              <code className="text-ceramic-accent text-xs">gemini-chat (ping test)</code>
             </p>
             <p>
-              <strong className="text-ceramic-text-primary">Projeto Atual:</strong>{' '}
+              <strong className="text-ceramic-text-primary">Projeto Supabase:</strong>{' '}
               <code className="text-ceramic-success text-xs">uzywajqzbdbrfammshdg</code>
-            </p>
-            <p>
-              <strong className="text-ceramic-text-primary">Projeto Antigo (não usar):</strong>{' '}
-              <code className="text-ceramic-error text-xs">gppebtrshbvuzatmebhr</code>
             </p>
           </div>
         </div>

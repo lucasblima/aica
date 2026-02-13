@@ -21,6 +21,9 @@ import {
   Users,
   Clock,
   BarChart3,
+  Mail,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useWhatsAppImport } from '../../hooks/useWhatsAppImport';
 import {
@@ -99,7 +102,12 @@ const ImportHistoryItem: React.FC<ImportHistoryItemProps> = ({ item }) => {
             {item.original_filename}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {item.source === 'email_import' && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 bg-ceramic-accent/10 rounded text-[10px] text-ceramic-accent">
+              <Mail className="w-3 h-3" /> email
+            </span>
+          )}
           {isCompleted && <CheckCircle className="w-4 h-4 text-ceramic-success" />}
           {isFailed && <AlertCircle className="w-4 h-4 text-ceramic-error" />}
           {!isCompleted && !isFailed && (
@@ -139,6 +147,62 @@ const ImportHistoryItem: React.FC<ImportHistoryItemProps> = ({ item }) => {
           minute: '2-digit',
         })}
       </div>
+    </div>
+  );
+};
+
+// =====================================================
+// Email Import Section
+// =====================================================
+
+const EMAIL_IMPORT_ADDRESS = 'import@import.aica.guru';
+
+const EmailImportSection: React.FC = () => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(EMAIL_IMPORT_ADDRESS);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for non-HTTPS contexts
+      const textarea = document.createElement('textarea');
+      textarea.value = EMAIL_IMPORT_ADDRESS;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, []);
+
+  return (
+    <div className="mt-4 ceramic-inset p-4 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <Mail className="w-4 h-4 text-ceramic-accent" />
+        <p className="text-sm font-bold text-ceramic-text-primary">Ou envie por email</p>
+      </div>
+      <p className="text-xs text-ceramic-text-secondary mb-3">
+        Exporte a conversa do WhatsApp e envie o arquivo .txt como anexo para:
+      </p>
+      <button
+        onClick={handleCopy}
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-ceramic-base rounded-xl border border-ceramic-border hover:border-ceramic-accent/40 transition-colors group"
+      >
+        <code className="text-sm font-mono text-ceramic-accent">{EMAIL_IMPORT_ADDRESS}</code>
+        <span className="shrink-0">
+          {copied ? (
+            <Check className="w-4 h-4 text-ceramic-success" />
+          ) : (
+            <Copy className="w-4 h-4 text-ceramic-text-secondary group-hover:text-ceramic-accent transition-colors" />
+          )}
+        </span>
+      </button>
+      <p className="text-xs text-ceramic-text-tertiary mt-2">
+        Use o mesmo email da sua conta AICA. O processamento leva alguns minutos.
+      </p>
     </div>
   );
 };
@@ -416,6 +480,9 @@ export const WhatsAppExportUpload: React.FC<WhatsAppExportUploadProps> = ({ clas
             </button>
           </div>
         )}
+
+        {/* Email Import Option */}
+        <EmailImportSection />
 
         {/* Privacy Notice */}
         <div className="mt-4 p-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl">
