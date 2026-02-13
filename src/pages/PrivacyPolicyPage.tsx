@@ -33,7 +33,7 @@ export function PrivacyPolicyPage() {
           Política de Privacidade
         </h1>
         <p className="text-sm text-[#5C554B] mb-8">
-          Última atualização: {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+          Última atualização: 13 de fevereiro de 2026
         </p>
 
         <div className="prose prose-slate max-w-none space-y-8">
@@ -107,9 +107,75 @@ export function PrivacyPolicyPage() {
             </ul>
           </section>
 
+          {/* Google Calendar API Integration */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">5. Integração com Google Calendar API</h2>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A Aica oferece integração opcional com o Google Calendar para sincronizar seus eventos
+              e compromissos. Esta seção descreve como utilizamos os dados obtidos através da Google Calendar API.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.1. Escopos de Acesso Solicitados</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Quando você conecta seu Google Calendar, solicitamos apenas os seguintes escopos mínimos:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li><strong>calendar.readonly:</strong> Acesso somente leitura aos seus eventos de calendário. A Aica NÃO modifica, cria ou exclui eventos no seu calendário.</li>
+              <li><strong>userinfo.email:</strong> Acesso ao seu endereço de e-mail Google para identificação da conta conectada.</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.2. Dados Acessados e Uso</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Os dados acessados do Google Calendar incluem:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li>Títulos e descrições de eventos</li>
+              <li>Datas, horários e fusos horários</li>
+              <li>Participantes e organizadores</li>
+              <li>Status do evento (confirmado, tentativo, cancelado)</li>
+            </ul>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Esses dados são utilizados exclusivamente para:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li>Exibir seus compromissos no módulo Agenda da Aica</li>
+              <li>Detectar conflitos de horário entre eventos</li>
+              <li>Gerar insights de produtividade baseados na sua agenda</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.3. Armazenamento de Tokens</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Os tokens de acesso OAuth são armazenados de forma segura no banco de dados, associados
+              ao seu usuário e protegidos por políticas de Row Level Security (RLS). Os tokens são
+              renovados automaticamente e podem ser revogados a qualquer momento.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.4. Revogação de Acesso</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Você pode desconectar o Google Calendar a qualquer momento através das configurações
+              da plataforma. Ao desconectar, os tokens de acesso são removidos do nosso banco de dados
+              e o acesso ao seu calendário é imediatamente revogado.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.5. Conformidade com Políticas do Google</h3>
+            <p className="text-[#5C554B] leading-relaxed">
+              O uso dos dados do Google Calendar pela Aica está em conformidade com a{' '}
+              <a
+                href="https://developers.google.com/terms/api-services-user-data-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ceramic-info hover:underline"
+              >
+                Google API Services User Data Policy
+              </a>
+              , incluindo os requisitos de Limited Use. Os dados obtidos do Google Calendar não são
+              compartilhados com terceiros, não são usados para publicidade e não são vendidos.
+            </p>
+          </section>
+
           {/* Data Sharing */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">5. Compartilhamento de Dados</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Compartilhamento de Dados</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Nós não vendemos suas informações pessoais. Podemos compartilhar seus dados apenas nas seguintes situações:
             </p>
@@ -123,7 +189,7 @@ export function PrivacyPolicyPage() {
 
           {/* Data Security */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Segurança dos Dados</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Segurança dos Dados</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações:
             </p>
@@ -138,7 +204,7 @@ export function PrivacyPolicyPage() {
 
           {/* User Rights */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Seus Direitos (LGPD)</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">8. Seus Direitos (LGPD)</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               De acordo com a LGPD, você tem os seguintes direitos:
             </p>
@@ -152,13 +218,13 @@ export function PrivacyPolicyPage() {
               <li><strong>Informação:</strong> Saber com quem compartilhamos seus dados</li>
             </ul>
             <p className="text-[#5C554B] leading-relaxed mt-4">
-              Para exercer seus direitos, entre em contato conosco através do e-mail: contato@comtxae.com
+              Para exercer seus direitos, entre em contato conosco através do e-mail: contato@aica.guru
             </p>
           </section>
 
           {/* Data Retention */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">8. Retenção de Dados</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">9. Retenção de Dados</h2>
             <p className="text-[#5C554B] leading-relaxed">
               Mantemos suas informações pessoais pelo tempo necessário para cumprir os propósitos descritos
               nesta política, a menos que um período de retenção mais longo seja exigido ou permitido por lei.
@@ -169,7 +235,7 @@ export function PrivacyPolicyPage() {
 
           {/* Cookies */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">9. Cookies e Tecnologias Similares</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">10. Cookies e Tecnologias Similares</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Utilizamos cookies e tecnologias similares para melhorar sua experiência:
             </p>
@@ -185,7 +251,7 @@ export function PrivacyPolicyPage() {
 
           {/* Children Privacy */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">10. Privacidade de Menores</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">11. Privacidade de Menores</h2>
             <p className="text-[#5C554B] leading-relaxed">
               A Aica não é destinada a menores de 18 anos. Não coletamos intencionalmente informações pessoais
               de crianças e adolescentes. Se você é pai/mãe ou responsável e acredita que seu filho forneceu
@@ -195,7 +261,7 @@ export function PrivacyPolicyPage() {
 
           {/* International Transfers */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">11. Transferências Internacionais</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">12. Transferências Internacionais</h2>
             <p className="text-[#5C554B] leading-relaxed">
               Suas informações podem ser transferidas e mantidas em servidores localizados fora do Brasil.
               Quando isso ocorrer, garantimos que medidas de segurança adequadas estejam em vigor para proteger
@@ -205,7 +271,7 @@ export function PrivacyPolicyPage() {
 
           {/* Policy Changes */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">12. Alterações nesta Política</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">13. Alterações nesta Política</h2>
             <p className="text-[#5C554B] leading-relaxed">
               Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre alterações
               significativas através de um aviso destacado em nossa plataforma ou por e-mail. Recomendamos que
@@ -215,13 +281,13 @@ export function PrivacyPolicyPage() {
 
           {/* Contact */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">13. Contato</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">14. Contato</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Se você tiver dúvidas sobre esta Política de Privacidade ou sobre como tratamos seus dados pessoais,
               entre em contato conosco:
             </p>
             <div className="bg-[#F8F7F5] border border-[#E8E6E0] rounded-lg p-6">
-              <p className="text-[#5C554B]"><strong>E-mail:</strong> contato@comtxae.com</p>
+              <p className="text-[#5C554B]"><strong>E-mail:</strong> contato@aica.guru</p>
             </div>
           </section>
 
@@ -234,6 +300,16 @@ export function PrivacyPolicyPage() {
               <li>Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018)</li>
               <li>Marco Civil da Internet (Lei nº 12.965/2014)</li>
               <li>Código de Defesa do Consumidor (Lei nº 8.078/1990)</li>
+              <li>
+                <a
+                  href="https://developers.google.com/terms/api-services-user-data-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-ceramic-info hover:underline"
+                >
+                  Google API Services User Data Policy
+                </a>
+              </li>
             </ul>
           </section>
         </div>

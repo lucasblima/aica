@@ -4,7 +4,7 @@
 
 **Objetivo:** Preparar a plataforma AICA para lancamento beta publico, incluindo aprovacao Google OAuth para escopos sensiveis (Google Calendar API).
 
-**Status Atual:** 🟡 55% Pronto
+**Status Atual:** 🟡 65% Pronto
 **Meta:** 🟢 100% Pronto para Beta Launch
 **Ultima Atualizacao:** 2026-02-13
 
@@ -39,7 +39,7 @@
 │   │   EPICO 3    │     │   EPICO 5    │     │   EPICO 4    │             │
 │   │   Privacy    │◄────│   Branding   │     │    Video     │             │
 │   │   Policy     │     │   Contato    │     │    Demo      │             │
-│   │   ⬜ Pendente │     │   🔄 Parcial │     │   ⬜ Pendente │             │
+│   │   ✅ FEITO   │     │   🔄 Parcial │     │   ⬜ Pendente │             │
 │   └──────┬───────┘     └──────┬───────┘     └──────┬───────┘             │
 │          │                    │                    │                      │
 │          └────────────────────┼────────────────────┘                      │
@@ -131,35 +131,39 @@ https://www.googleapis.com/auth/userinfo.email       ← Email do usuario
 
 ---
 
-## EPICO 3: Atualizacao da Politica de Privacidade
+## EPICO 3: Atualizacao da Politica de Privacidade ✅ CONCLUIDO
 
 ### Informacoes Gerais
 
 | Campo | Valor |
 |-------|-------|
-| **Prioridade** | 🔴 ALTA |
-| **Esforco Estimado** | 2-4 horas |
-| **Status** | ⬜ Nao iniciado |
+| **Prioridade** | ✅ CONCLUIDO |
+| **Data Conclusao** | 2026-02-13 |
 | **Dependencias** | EPICO 1 (escopos definidos) |
 
-### Descricao
+### O que foi feito
 
-A politica de privacidade (`src/pages/PrivacyPolicyPage.tsx`) nao menciona a integracao com Google Calendar API, escopos OAuth, ou conformidade com Google API Services User Data Policy.
+- Nova secao 5 "Integracao com Google Calendar API" com 5 subsecoes: escopos, dados acessados/uso, armazenamento de tokens, revogacao, conformidade Google
+- Link para Google API Services User Data Policy na secao e no Legal Framework
+- Data fixa "13 de fevereiro de 2026" (removida data dinamica)
+- Email atualizado para `contato@aica.guru` em ambas as paginas
+- Terms of Service secao 7 atualizada com detalhes da integracao Google Calendar
+- LGPD: secao 8 ja cobria todos os direitos exigidos, verificado OK
 
 ### Tarefas
 
-- [ ] **3.1** Adicionar secao Google Calendar API — escopos, uso de dados, armazenamento, revogacao
-- [ ] **3.2** Corrigir data de atualizacao (trocar data dinamica por fixa)
-- [ ] **3.3** Adicionar link para Google API Services User Data Policy
-- [ ] **3.4** Atualizar email de contato para `contato@aica.guru`
-- [ ] **3.5** Verificar conformidade LGPD
+- [x] **3.1** Adicionar secao Google Calendar API — escopos, uso de dados, armazenamento, revogacao
+- [x] **3.2** Corrigir data de atualizacao (trocar data dinamica por fixa)
+- [x] **3.3** Adicionar link para Google API Services User Data Policy
+- [x] **3.4** Atualizar email de contato para `contato@aica.guru`
+- [x] **3.5** Verificar conformidade LGPD
 
-### Arquivos
+### Arquivos Modificados
 
 | Arquivo | Acao |
 |---------|------|
-| `src/pages/PrivacyPolicyPage.tsx` | Adicionar secao Google Calendar |
-| `src/pages/TermsOfServicePage.tsx` | Verificar mencoes a Google |
+| `src/pages/PrivacyPolicyPage.tsx` | Nova secao 5 Google Calendar, email, data fixa, link Google Policy |
+| `src/pages/TermsOfServicePage.tsx` | Secao 7 detalhada, email, data fixa |
 
 ---
 
@@ -284,15 +288,15 @@ Codigo:
 
 Paginas Publicas:
   [x] Homepage acessivel: https://aica.guru
-  [ ] Privacy Policy atualizada: https://aica.guru/privacy
-  [ ] Terms of Service atualizado: https://aica.guru/terms
+  [x] Privacy Policy atualizada: https://aica.guru/privacy
+  [x] Terms of Service atualizado: https://aica.guru/terms
 
 Privacy Policy:
-  [ ] Secao Google Calendar API
-  [ ] Escopos listados e explicados
-  [ ] Link para Google User Data Policy
-  [ ] Data fixa de atualizacao
-  [ ] Email de contato correto
+  [x] Secao Google Calendar API
+  [x] Escopos listados e explicados
+  [x] Link para Google User Data Policy
+  [x] Data fixa de atualizacao
+  [x] Email de contato correto
 
 OAuth Consent Screen:
   [ ] Nome: AICA - Life OS
