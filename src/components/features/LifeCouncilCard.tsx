@@ -73,6 +73,10 @@ interface LifeCouncilCardProps {
   error: string | null
   onRun: () => void
   onMarkViewed?: () => void
+  /** Compact mode for Home dashboard — shows headline + status only */
+  compact?: boolean
+  /** Callback when user wants to see full details (navigates to Journey) */
+  onViewMore?: () => void
 }
 
 // =============================================================================
@@ -86,6 +90,8 @@ export function LifeCouncilCard({
   error,
   onRun,
   onMarkViewed,
+  compact = false,
+  onViewMore,
 }: LifeCouncilCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -94,7 +100,7 @@ export function LifeCouncilCard({
       <div className="bg-ceramic-base rounded-2xl p-6 animate-pulse">
         <div className="h-5 bg-ceramic-text-secondary/10 rounded w-48 mb-3" />
         <div className="h-4 bg-ceramic-text-secondary/10 rounded w-full mb-2" />
-        <div className="h-4 bg-ceramic-text-secondary/10 rounded w-3/4" />
+        {!compact && <div className="h-4 bg-ceramic-text-secondary/10 rounded w-3/4" />}
       </div>
     )
   }
@@ -102,23 +108,25 @@ export function LifeCouncilCard({
   // No insight yet — prompt to generate
   if (!insight) {
     return (
-      <div className="bg-ceramic-base rounded-2xl p-6 border border-ceramic-border">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-amber-500" />
+      <div className="bg-ceramic-base rounded-2xl p-5 border border-ceramic-border">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <Sparkles className="w-4.5 h-4.5 text-amber-500" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-ceramic-text-primary">
               Conselho de Vida
             </h3>
-            <p className="text-xs text-ceramic-text-secondary">
-              3 personas AI analisam seu dia
-            </p>
+            {!compact && (
+              <p className="text-xs text-ceramic-text-secondary">
+                3 personas AI analisam seu dia
+              </p>
+            )}
           </div>
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 mb-4 p-3 rounded-xl bg-ceramic-error/10">
+          <div className="flex items-start gap-2 mb-3 p-2.5 rounded-xl bg-ceramic-error/10">
             <AlertCircle className="w-4 h-4 text-ceramic-error mt-0.5 shrink-0" />
             <p className="text-xs text-ceramic-error">{error}</p>
           </div>
@@ -127,7 +135,7 @@ export function LifeCouncilCard({
         <button
           onClick={onRun}
           disabled={isRunning}
-          className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
         >
           {isRunning ? (
             <>
@@ -137,7 +145,7 @@ export function LifeCouncilCard({
           ) : (
             <>
               <Sparkles className="w-4 h-4" />
-              Gerar Insight do Dia
+              Gerar Insight
             </>
           )}
         </button>
@@ -148,6 +156,44 @@ export function LifeCouncilCard({
   const status = STATUS_CONFIG[insight.overall_status] || STATUS_CONFIG.balanced
   const isToday = insight.insight_date === new Date().toISOString().split('T')[0]
 
+  // ── Compact mode: headline + status only ──
+  if (compact) {
+    return (
+      <div
+        className="bg-ceramic-base rounded-2xl border border-ceramic-border p-4 cursor-pointer hover:scale-[1.01] transition-transform"
+        onClick={onViewMore}
+      >
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className={`w-9 h-9 rounded-xl ${status.bg} flex items-center justify-center text-base shrink-0`}>
+            {status.icon}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-ceramic-text-secondary">
+                Conselho de Vida
+              </h3>
+              <span className={`text-[10px] font-medium ${status.color}`}>
+                {status.label}
+              </span>
+            </div>
+            <p className="text-sm font-medium text-ceramic-text-primary truncate mt-0.5">
+              {insight.headline}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-ceramic-text-secondary line-clamp-2 leading-relaxed">
+          {insight.synthesis}
+        </p>
+        {onViewMore && (
+          <button className="flex items-center gap-1 mt-2 text-xs text-amber-500 font-medium">
+            <ChevronDown className="w-3 h-3" /> Ver completo
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // ── Full mode ──
   return (
     <div className="bg-ceramic-base rounded-2xl border border-ceramic-border overflow-hidden">
       {/* Header */}

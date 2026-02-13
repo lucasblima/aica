@@ -91,32 +91,37 @@ export interface UseLifeCouncilReturn {
 // HOOK
 // =============================================================================
 
-export function useLifeCouncil(): UseLifeCouncilReturn {
+export function useLifeCouncil(options?: { autoTrigger?: boolean }): UseLifeCouncilReturn {
+  const { autoTrigger = false } = options || {}
   const [insight, setInsight] = useState<CouncilInsight | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRunning, setIsRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [metadata, setMetadata] = useState<CouncilMetadata | null>(null)
+  const [autoTriggered, setAutoTriggered] = useState(false)
 
   // Fetch latest insight on mount
   const fetchLatest = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) return null
 
       const { data, error: rpcError } = await supabase
         .rpc('get_latest_council_insight', { p_user_id: user.id })
 
       if (rpcError) {
         log.error('Failed to fetch latest insight:', rpcError)
-        return
+        return null
       }
 
       if (data && data.id) {
         setInsight(data as CouncilInsight)
+        return data as CouncilInsight
       }
+      return null
     } catch (err) {
       log.error('Error fetching insight:', err)
+      return null
     } finally {
       setIsLoading(false)
     }
@@ -126,8 +131,26 @@ export function useLifeCouncil(): UseLifeCouncilReturn {
     fetchLatest()
   }, [fetchLatest])
 
+  // Auto-trigger: generate insight if none exists for today
+  useEffect(() => {
+    if (!autoTrigger || autoTriggered || isLoading || isRunning) return
+
+    const today = new Date().toISOString().split('T')[0]
+    const hasToday = insight?.insight_date === today
+
+    if (!hasToday) {
+      setAutoTriggered(true)
+      // Small delay so the UI renders the loading state first
+      const timer = setTimeout(() => {
+        runCouncilInternal()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTrigger, autoTriggered, isLoading, insight])
+
   // Run the Life Council (generates new insight)
-  const runCouncil = useCallback(async () => {
+  const runCouncilInternal = useCallback(async () => {
     setIsRunning(true)
     setError(null)
 
@@ -159,6 +182,8 @@ export function useLifeCouncil(): UseLifeCouncilReturn {
       setIsRunning(false)
     }
   }, [])
+
+  const runCouncil = runCouncilInternal
 
   // Mark insight as viewed
   const markViewed = useCallback(async () => {

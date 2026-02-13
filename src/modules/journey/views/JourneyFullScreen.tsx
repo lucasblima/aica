@@ -14,6 +14,9 @@ import { UnifiedTimelineView } from '../components/timeline'
 import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { PatternDashboard } from '../components/insights/PatternDashboard'
+import { LifeCouncilCard, PatternsSummary } from '@/components/features'
+import { useLifeCouncil } from '@/hooks/useLifeCouncil'
+import { useUserPatterns } from '@/hooks/useUserPatterns'
 
 import { JourneySearchPanel } from '../components/JourneySearchPanel'
 import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
@@ -156,6 +159,8 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   } | null>(null)
 
   const { user } = useAuth()
+  const council = useLifeCouncil({ autoTrigger: true })
+  const userPatterns = useUserPatterns()
   const { moments, create: createMoment } = useMoments()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
   const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
@@ -483,6 +488,25 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
+              {/* Life Council — Full card */}
+              <LifeCouncilCard
+                insight={council.insight}
+                isLoading={council.isLoading}
+                isRunning={council.isRunning}
+                error={council.error}
+                onRun={council.runCouncil}
+                onMarkViewed={council.markViewed}
+              />
+
+              {/* Behavioral Patterns — Full list */}
+              <PatternsSummary
+                patterns={userPatterns.patterns}
+                isLoading={userPatterns.isLoading}
+                isSynthesizing={userPatterns.isSynthesizing}
+                error={userPatterns.error}
+                onSynthesize={userPatterns.synthesize}
+              />
+
               {isLoadingSummary ? (
                 <WeeklySummarySkeleton />
               ) : summary ? (

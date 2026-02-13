@@ -46,6 +46,10 @@ interface PatternsSummaryProps {
   isSynthesizing: boolean
   error: string | null
   onSynthesize: () => void
+  /** Compact mode for Home — shows top 3 patterns only, no synthesize button */
+  compact?: boolean
+  /** Callback when user wants full view (navigates to Journey) */
+  onViewMore?: () => void
 }
 
 // =============================================================================
@@ -58,10 +62,15 @@ export function PatternsSummary({
   isSynthesizing,
   error,
   onSynthesize,
+  compact = false,
+  onViewMore,
 }: PatternsSummaryProps) {
+  const displayPatterns = compact ? patterns.slice(0, 3) : patterns
+  const hasMore = compact && patterns.length > 3
+
   if (isLoading) {
     return (
-      <div className="bg-ceramic-base rounded-2xl p-6 animate-pulse">
+      <div className="bg-ceramic-base rounded-2xl p-5 animate-pulse">
         <div className="h-5 bg-ceramic-text-secondary/10 rounded w-40 mb-4" />
         {[1, 2, 3].map(i => (
           <div key={i} className="mb-3">
@@ -74,11 +83,14 @@ export function PatternsSummary({
   }
 
   return (
-    <div className="bg-ceramic-base rounded-2xl border border-ceramic-border p-5">
+    <div
+      className={`bg-ceramic-base rounded-2xl border border-ceramic-border p-4 ${compact ? 'cursor-pointer hover:scale-[1.01] transition-transform' : 'p-5'}`}
+      onClick={compact ? onViewMore : undefined}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Brain className="w-5 h-5 text-amber-500" />
+          <Brain className="w-4.5 h-4.5 text-amber-500" />
           <h3 className="text-sm font-semibold text-ceramic-text-primary">
             Seus Padroes
           </h3>
@@ -88,18 +100,20 @@ export function PatternsSummary({
             </span>
           )}
         </div>
-        <button
-          onClick={onSynthesize}
-          disabled={isSynthesizing}
-          className="text-xs text-amber-500 hover:text-amber-600 font-medium flex items-center gap-1"
-        >
-          {isSynthesizing ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <RefreshCw className="w-3 h-3" />
-          )}
-          {isSynthesizing ? 'Analisando...' : 'Sintetizar'}
-        </button>
+        {!compact && (
+          <button
+            onClick={onSynthesize}
+            disabled={isSynthesizing}
+            className="text-xs text-amber-500 hover:text-amber-600 font-medium flex items-center gap-1"
+          >
+            {isSynthesizing ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3 h-3" />
+            )}
+            {isSynthesizing ? 'Analisando...' : 'Sintetizar'}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -108,23 +122,35 @@ export function PatternsSummary({
 
       {/* Empty state */}
       {patterns.length === 0 && !error && (
-        <div className="text-center py-6">
-          <Brain className="w-8 h-8 text-ceramic-text-tertiary mx-auto mb-2" />
+        <div className="text-center py-4">
+          <Brain className="w-7 h-7 text-ceramic-text-tertiary mx-auto mb-2" />
           <p className="text-xs text-ceramic-text-secondary">
             Nenhum padrao identificado ainda.
           </p>
-          <p className="text-xs text-ceramic-text-tertiary mt-1">
-            Gere insights diarios para que a IA descubra seus padroes.
-          </p>
+          {!compact && (
+            <p className="text-xs text-ceramic-text-tertiary mt-1">
+              Gere insights diarios para que a IA descubra seus padroes.
+            </p>
+          )}
         </div>
       )}
 
       {/* Pattern list */}
-      <div className="space-y-3">
-        {patterns.map(pattern => (
+      <div className="space-y-2.5">
+        {displayPatterns.map(pattern => (
           <PatternRow key={pattern.id} pattern={pattern} />
         ))}
       </div>
+
+      {/* View more link in compact mode */}
+      {hasMore && onViewMore && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onViewMore(); }}
+          className="flex items-center gap-1 mt-2.5 text-xs text-amber-500 font-medium"
+        >
+          +{patterns.length - 3} padroes
+        </button>
+      )}
     </div>
   )
 }
