@@ -6,9 +6,6 @@ interface ImportMetaEnv {
     readonly VITE_N8N_API_KEY: string;
     readonly VITE_SUPABASE_URL: string;
     readonly VITE_SUPABASE_ANON_KEY: string;
-    readonly VITE_EVOLUTION_URL: string;
-    readonly VITE_EVOLUTION_API_KEY: string;
-    readonly VITE_EVOLUTION_INSTANCE: string;
     readonly VITE_PLANE_BASE_URL: string;
     readonly VITE_PLANE_API_KEY: string;
     readonly VITE_PLANE_WORKSPACE_SLUG: string;

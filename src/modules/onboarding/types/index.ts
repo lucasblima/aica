@@ -51,29 +51,6 @@ export interface UserProfile {
 }
 
 // =============================================================================
-// WHATSAPP SESSION
-// =============================================================================
-
-export type WhatsAppSessionStatus = 'disconnected' | 'pairing' | 'connected' | 'error';
-
-export interface WhatsAppSession {
-  id: string;
-  user_id: string;
-  instance_name: string;
-  pairing_code: string | null;
-  pairing_code_expires_at: string | null;
-  status: WhatsAppSessionStatus;
-  phone_number: string | null;
-  connected_at: string | null;
-  last_sync_at: string | null;
-  contacts_count: number;
-  groups_count: number;
-  error_message: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-// =============================================================================
 // USER CREDITS
 // =============================================================================
 
@@ -105,7 +82,6 @@ export interface CreditTransaction {
 
 export interface OnboardingData {
   profile: UserProfile | null;
-  session: WhatsAppSession | null;
   credits: UserCredits | null;
 }
 
@@ -132,8 +108,6 @@ export interface UseOnboardingReturn {
   error: string | null;
   /** User profile data */
   profile: UserProfile | null;
-  /** WhatsApp session data */
-  session: WhatsAppSession | null;
   /** User credits data */
   credits: UserCredits | null;
   /** Go to next step */

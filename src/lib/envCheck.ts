@@ -28,7 +28,6 @@ export interface EnvConfig {
   // Optional services
   pdfExtractorUrl?: string;
   n8nWebhookUrl?: string;
-  evolutionInstanceName?: string;
   apiUrl?: string;
 }
 
@@ -59,7 +58,6 @@ export function validateEnv(): EnvValidationResult {
     googleOAuthClientId: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID,
     pdfExtractorUrl: import.meta.env.VITE_PDF_EXTRACTOR_URL,
     n8nWebhookUrl: import.meta.env.VITE_N8N_WEBHOOK_URL,
-    evolutionInstanceName: import.meta.env.VITE_EVOLUTION_INSTANCE_NAME,
     apiUrl: import.meta.env.VITE_API_URL,
   };
 
@@ -152,7 +150,6 @@ export function logEnvStatus(): void {
   log.info(`    VITE_GOOGLE_OAUTH_CLIENT_ID: ${import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ? 'SET' : 'NOT SET'}`);
   log.info(`    VITE_PDF_EXTRACTOR_URL: ${import.meta.env.VITE_PDF_EXTRACTOR_URL || 'NOT SET'}`);
   log.info(`    VITE_N8N_WEBHOOK_URL: ${import.meta.env.VITE_N8N_WEBHOOK_URL ? 'SET' : 'NOT SET'}`);
-  log.info(`    VITE_EVOLUTION_INSTANCE_NAME: ${import.meta.env.VITE_EVOLUTION_INSTANCE_NAME || 'NOT SET'}`);
 }
 
 /**

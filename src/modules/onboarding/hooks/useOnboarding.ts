@@ -18,7 +18,6 @@ import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('useOnboarding');
 import {
   getUserProfile,
-  getWhatsAppSession,
   getUserCredits,
   updateOnboardingStep,
   completeOnboarding as completeOnboardingService,
@@ -27,7 +26,6 @@ import {
 import type {
   OnboardingStep,
   UserProfile,
-  WhatsAppSession,
   UserCredits,
   UseOnboardingReturn,
 } from '../types';
@@ -40,7 +38,6 @@ export function useOnboarding(): UseOnboardingReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<WhatsAppSession | null>(null);
   const [credits, setCredits] = useState<UserCredits | null>(null);
 
   // Derived state
@@ -71,12 +68,8 @@ export function useOnboarding(): UseOnboardingReturn {
         userProfile = data.profile;
         setCredits(data.credits);
       } else {
-        // Load session and credits
-        const [sessionData, creditsData] = await Promise.all([
-          getWhatsAppSession(user.id),
-          getUserCredits(user.id),
-        ]);
-        setSession(sessionData);
+        // Load credits
+        const creditsData = await getUserCredits(user.id);
         setCredits(creditsData);
       }
 
@@ -182,7 +175,6 @@ export function useOnboarding(): UseOnboardingReturn {
     isLoading,
     error,
     profile,
-    session,
     credits,
     goToNextStep,
     goToPreviousStep,

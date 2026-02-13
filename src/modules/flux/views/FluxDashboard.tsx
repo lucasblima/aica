@@ -9,21 +9,15 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
-import {
-  MOCK_ATHLETES_WITH_METRICS,
-  MOCK_ALERTS,
-  getMockAlertsForAthlete,
-  getMockFeedbacksForAthlete,
-  getMockUnacknowledgedAlerts,
-  getMockAthleteCountsByModality,
-} from '../mockData';
+import { useAthletes } from '../hooks/useAthletes';
+import { AthleteService, CreateAthleteInput } from '../services/athleteService';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
-import { AlertBadge } from '../components/AlertBadge';
 import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
-import type { AthleteWithMetrics } from '../types';
-import { ArrowLeft, AlertCircle, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Zap } from 'lucide-react';
+import AthleteFormModal from '../components/forms/AthleteFormModal';
+import type { Athlete } from '../types';
+import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 
 // Sort options
 type SortOrder = 'none' | 'asc' | 'desc';
@@ -77,22 +71,39 @@ export default function FluxDashboard() {
   const navigate = useNavigate();
   const { actions } = useFlux();
 
+  // Fetch real athletes from Supabase
+  const { athletes: allAthletes, isLoading, error } = useAthletes();
+
   // Filter and sort states
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
   const [selectedLevel, setSelectedLevel] = useState<LevelCategory>('all');
   const [consistencySort, setAdherenceSort] = useState<SortOrder>('none');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // WhatsApp modal state
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
-  const [selectedAthleteForWhatsApp, setSelectedAthleteForWhatsApp] = useState<AthleteWithMetrics | null>(null);
-  const [selectedAthleteAlerts, setSelectedAthleteAlerts] = useState<typeof MOCK_ALERTS[number][]>([]);
+  const [selectedAthleteForWhatsApp, setSelectedAthleteForWhatsApp] = useState<Athlete | null>(null);
+  const [selectedAthleteAlerts, setSelectedAthleteAlerts] = useState<any[]>([]);
 
-  // Mock data
-  const allAthletes = MOCK_ATHLETES_WITH_METRICS;
-  const unacknowledgedAlerts = getMockUnacknowledgedAlerts();
-  const criticalAlerts = unacknowledgedAlerts.filter((a) => a.severity === 'critical');
-  const documentAlerts = unacknowledgedAlerts.filter((a) => a.alert_type === 'documents');
-  const modalityCounts = getMockAthleteCountsByModality();
+  // Athlete form modal state
+  const [athleteModalOpen, setAthleteModalOpen] = useState(false);
+
+  // Calculate modality counts
+  const modalityCounts = useMemo(() => {
+    const counts: Record<TrainingModality, number> = {
+      swimming: 0,
+      running: 0,
+      cycling: 0,
+      strength: 0,
+      walking: 0,
+    };
+
+    for (const athlete of allAthletes) {
+      counts[athlete.modality]++;
+    }
+
+    return counts;
+  }, [allAthletes]);
 
   // Calculate level counts
   const levelCounts = useMemo(() => {
@@ -116,6 +127,12 @@ export default function FluxDashboard() {
   const filteredAthletes = useMemo(() => {
     let result = [...allAthletes];
 
+    // Filter by search query (name)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((a) => a.name.toLowerCase().includes(query));
+    }
+
     // Filter by modality
     if (selectedModality !== 'all') {
       result = result.filter((a) => a.modality === selectedModality);
@@ -129,17 +146,19 @@ export default function FluxDashboard() {
       }
     }
 
-    // Sort by consistency rate
+    // Sort by name (alphabetically) for now
+    // TODO: Add consistency_rate column to athletes table for sorting
     if (consistencySort !== 'none') {
       result.sort((a, b) => {
-        const aRate = a.consistency_rate || 0;
-        const bRate = b.consistency_rate || 0;
-        return consistencySort === 'asc' ? aRate - bRate : bRate - aRate;
+        // Fallback to alphabetical sort until consistency tracking is implemented
+        return consistencySort === 'asc'
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
       });
     }
 
     return result;
-  }, [allAthletes, selectedModality, selectedLevel, consistencySort]);
+  }, [allAthletes, selectedModality, selectedLevel, consistencySort, searchQuery]);
 
   // Toggle sort order
   const toggleAdherenceSort = () => {
@@ -152,10 +171,8 @@ export default function FluxDashboard() {
 
   // Aggregate stats (based on filtered athletes)
   const activeAthletes = filteredAthletes.filter((a) => a.status === 'active').length;
-  const avgConsistency =
-    filteredAthletes.length > 0
-      ? filteredAthletes.reduce((sum, a) => sum + (a.consistency_rate || 0), 0) / filteredAthletes.length
-      : 0;
+  // TODO: Calculate avgConsistency from workout completion data
+  const avgConsistency = 0; // Placeholder until consistency tracking is implemented
 
   // Handle athlete click
   const handleAthleteClick = (athleteId: string) => {
@@ -170,11 +187,73 @@ export default function FluxDashboard() {
   };
 
   // Handle WhatsApp message
-  const handleWhatsAppClick = (athlete: AthleteWithMetrics, alerts: typeof MOCK_ALERTS) => {
+  const handleWhatsAppClick = (athlete: Athlete, alerts: any[]) => {
     setSelectedAthleteForWhatsApp(athlete);
     setSelectedAthleteAlerts(alerts);
     setWhatsAppModalOpen(true);
   };
+
+  // Handle save athlete
+  const handleSaveAthlete = async (athleteData: Partial<Athlete>) => {
+    try {
+      // Create athlete in Supabase
+      const { data, error } = await AthleteService.createAthlete(athleteData as CreateAthleteInput);
+
+      if (error) {
+        throw new Error(error.message || 'Erro ao criar atleta');
+      }
+
+      if (!data) {
+        throw new Error('Atleta criado mas sem dados retornados');
+      }
+
+      console.log('Atleta criado com sucesso:', data);
+
+      // Close modal on success (list auto-updates via real-time subscription)
+      setAthleteModalOpen(false);
+    } catch (error) {
+      console.error('Error creating athlete:', error);
+      throw error; // Let modal handle error display
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base">
+        <div className="ceramic-card p-8 text-center space-y-4">
+          <div className="w-16 h-16 mx-auto">
+            <div className="w-16 h-16 border-4 border-ceramic-accent/20 border-t-ceramic-accent rounded-full animate-spin" />
+          </div>
+          <p className="text-lg font-bold text-ceramic-text-primary">Carregando atletas...</p>
+          <p className="text-sm text-ceramic-text-secondary">Conectando ao Supabase</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base px-6">
+        <div className="ceramic-card p-8 text-center space-y-4 max-w-md">
+          <div className="w-16 h-16 mx-auto ceramic-inset rounded-full flex items-center justify-center">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-ceramic-error mb-2">Erro ao carregar atletas</p>
+            <p className="text-sm text-ceramic-text-secondary">{error.message}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-ceramic-accent text-white rounded-lg font-medium hover:bg-ceramic-accent/90 transition-colors"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
@@ -288,35 +367,6 @@ export default function FluxDashboard() {
           </div>
         </div>
 
-        {/* Critical Alerts Preview */}
-        {criticalAlerts.length > 0 && (
-          <div
-            onClick={handleAlertsClick}
-            className="ceramic-card p-4 mb-6 bg-ceramic-error/10 border border-ceramic-error/20 cursor-pointer hover:scale-[1.02] transition-transform"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <AlertCircle className="w-5 h-5 text-ceramic-error" />
-              <p className="text-sm font-bold text-ceramic-error">
-                {criticalAlerts.length} alerta(s) critico(s) requer(em) atencao
-              </p>
-            </div>
-            <div className="space-y-2">
-              {criticalAlerts.slice(0, 2).map((alert) => (
-                <AlertBadge key={alert.id} alert={alert} compact />
-              ))}
-            </div>
-            {/* Exames pendentes */}
-            {documentAlerts.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-ceramic-error/20 flex items-center gap-2">
-                <span className="text-lg">🩺</span>
-                <p className="text-sm font-medium text-ceramic-error">
-                  {documentAlerts.length} exame(s) cardiologico(s) e atestado(s) pendente(s)
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Filters Section */}
         <div className="space-y-4 mb-4">
           {/* Modality Filter Tabs */}
@@ -386,6 +436,26 @@ export default function FluxDashboard() {
 
       {/* Athletes Grid */}
       <div className="px-6 space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-secondary" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar atleta por nome..."
+            className="w-full ceramic-inset pl-11 pr-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+            >
+              <span className="text-xs font-bold">✕</span>
+            </button>
+          )}
+        </div>
+
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-ceramic-text-primary">
             {selectedModality === 'all' && selectedLevel === 'all'
@@ -432,7 +502,10 @@ export default function FluxDashboard() {
             </button>
 
             {/* New Athlete Button */}
-            <button className="flex items-center gap-2 px-4 py-2 ceramic-card hover:scale-105 transition-transform">
+            <button
+              onClick={() => setAthleteModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 ceramic-card hover:scale-105 transition-transform"
+            >
               <Plus className="w-4 h-4 text-ceramic-text-primary" />
               <span className="text-sm font-bold text-ceramic-text-primary">Novo Atleta</span>
             </button>
@@ -441,8 +514,9 @@ export default function FluxDashboard() {
 
         <div className="grid gap-4">
           {filteredAthletes.slice(0, 20).map((athlete) => {
-            const athleteAlerts = getMockAlertsForAthlete(athlete.id);
-            const athleteFeedbacks = getMockFeedbacksForAthlete(athlete.id);
+            // TODO: Fetch real alerts and feedbacks from database
+            const athleteAlerts: any[] = [];
+            const athleteFeedbacks: any[] = [];
 
             return (
               <AthleteCard
@@ -450,7 +524,7 @@ export default function FluxDashboard() {
                 athlete={athlete}
                 recentFeedbacks={athleteFeedbacks}
                 activeAlerts={athleteAlerts}
-                consistencyRate={athlete.consistency_rate || 0}
+                consistencyRate={0} // TODO: Calculate from workout completion
                 onClick={() => handleAthleteClick(athlete.id)}
                 onWhatsAppClick={() => handleWhatsAppClick(athlete, athleteAlerts)}
               />
@@ -514,6 +588,14 @@ export default function FluxDashboard() {
           alerts={selectedAthleteAlerts}
         />
       )}
+
+      {/* Athlete Form Modal */}
+      <AthleteFormModal
+        mode="create"
+        isOpen={athleteModalOpen}
+        onClose={() => setAthleteModalOpen(false)}
+        onSave={handleSaveAthlete}
+      />
     </div>
   );
 }
