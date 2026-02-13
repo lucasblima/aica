@@ -490,7 +490,9 @@ function TemplateCard({
             <span>min</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="font-medium">{CATEGORY_LABELS[template.category]}</span>
+            <span className="font-medium">
+              {{ warmup: 'Aquecimento', main: 'Principal', cooldown: 'Volta à calma' }[template.category] || template.category}
+            </span>
           </div>
           {template.usage_count > 0 && (
             <div className="flex items-center gap-1">
