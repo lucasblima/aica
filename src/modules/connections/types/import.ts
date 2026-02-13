@@ -13,6 +13,8 @@ export type ImportProcessingStatus =
   | 'completed'
   | 'failed';
 
+export type ImportSource = 'web_upload' | 'email_import';
+
 export interface WhatsAppFileImport {
   id: string;
   user_id: string;
@@ -33,6 +35,9 @@ export interface WhatsAppFileImport {
   is_group_export: boolean;
   file_search_store_id: string | null;
   file_search_document_id: string | null;
+  source: ImportSource;
+  sender_email: string | null;
+  email_message_id: string | null;
   created_at: string;
   updated_at: string;
 }

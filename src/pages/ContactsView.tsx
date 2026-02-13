@@ -7,24 +7,22 @@
  *
  * Features:
  * - Search + filter (Todos | Pessoas | Grupos | Com pendencias)
- * - WhatsApp status pill (connected/disconnected)
  * - Entity inbox banner (pending suggestions from conversations)
  * - Intelligent contact cards with progressive L0-L4 levels
  * - Contact detail bottom sheet (dossier, timeline, group analytics)
+ *
+ * Updated: Removed Evolution API dependency — contacts come from WhatsApp export import.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, RefreshCw, MessageCircle, X, Inbox, Check, Sparkles } from 'lucide-react'
+import { Search, MessageCircle, X, Inbox, Sparkles, Upload } from 'lucide-react'
 import { HeaderGlobal } from '../components'
 import { useAuth } from '../hooks/useAuth'
-import { syncWhatsAppContacts, getSyncStatus } from '../services/whatsappContactSyncService'
 import { supabase } from '../services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
 import type { ContactNetwork } from '../types/memoryTypes'
 
-import { WhatsAppPairingStep } from '../modules/onboarding/components/WhatsAppPairingStep'
-import { useWhatsAppConnection } from '../modules/connections/hooks/useWhatsAppConnection'
 import { IntelligentContactCard } from '@/modules/connections/components/whatsapp/IntelligentContactCard'
 import { ContactDetailSheet } from '@/modules/connections/components/whatsapp/ContactDetailSheet'
 import { EntityInbox } from '@/modules/connections/components/whatsapp/EntityInbox'
@@ -39,16 +37,14 @@ const FILTER_OPTIONS: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'Todos' },
   { key: 'people', label: 'Pessoas' },
   { key: 'groups', label: 'Grupos' },
-  { key: 'pending', label: 'Com pendências' },
+  { key: 'pending', label: 'Com pendencias' },
 ]
 
 export function ContactsView() {
   const { user } = useAuth()
   const [contacts, setContacts] = useState<ContactNetwork[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [syncStatus, setSyncStatus] = useState<{ lastSyncAt: string | null; contactCount: number } | null>(null)
 
   // Search and filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -60,23 +56,6 @@ export function ContactsView() {
 
   // Entity inbox
   const [isEntityInboxExpanded, setIsEntityInboxExpanded] = useState(false)
-
-  // Auto-sync state
-  const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false)
-  const [isAutoSyncing, setIsAutoSyncing] = useState(false)
-
-  // Pairing flow expanded state — persisted to sessionStorage
-  const [isPairingExpanded, setIsPairingExpanded] = useState(() => {
-    try { return sessionStorage.getItem('aica:pairingExpanded') === 'true' } catch { return false }
-  })
-
-  useEffect(() => {
-    try { sessionStorage.setItem('aica:pairingExpanded', String(isPairingExpanded)) } catch { /* ignore */ }
-  }, [isPairingExpanded])
-
-  // WhatsApp connection
-  const { configureWebhook, session: whatsappSession, isConnected, isLoading: isCheckingSession } = useWhatsAppConnection()
-  const needsPairing = !whatsappSession || whatsappSession.status !== 'connected'
 
   // Entity inbox hook
   const {
@@ -94,7 +73,6 @@ export function ContactsView() {
     const ids = new Set<string>()
     for (const e of pendingEntities) {
       if (e.contact_name) {
-        // Match by name since entity has contact_name not contact_id in the hook
         const match = contacts.find(c => c.name === e.contact_name)
         if (match) ids.add(match.id)
       }
@@ -106,7 +84,6 @@ export function ContactsView() {
   const filteredContacts = useMemo(() => {
     let result = contacts
 
-    // Search filter (debounce handled by input)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(c =>
@@ -116,7 +93,6 @@ export function ContactsView() {
       )
     }
 
-    // Type filter
     switch (activeFilter) {
       case 'people':
         result = result.filter(c => c.relationship_type !== 'group')
@@ -134,34 +110,10 @@ export function ContactsView() {
 
   // Load contacts from database
   useEffect(() => {
-    if (user?.id && whatsappSession?.status === 'connected') {
+    if (user?.id) {
       loadContacts()
-      loadSyncStatus()
     }
-  }, [user?.id, whatsappSession?.status])
-
-  // AUTO-SYNC: connected + never synced before
-  useEffect(() => {
-    const shouldAutoSync =
-      whatsappSession?.status === 'connected' &&
-      !isLoading && !isCheckingSession &&
-      syncStatus !== null && syncStatus.lastSyncAt === null &&
-      !hasAttemptedAutoSync && !isSyncing && !isAutoSyncing
-
-    if (shouldAutoSync) {
-      log.debug('Auto-sync triggered: connected but never synced')
-      setHasAttemptedAutoSync(true)
-      setIsAutoSyncing(true)
-
-      syncWhatsAppContacts()
-        .then((result) => {
-          if (result.success) { loadContacts(); loadSyncStatus() }
-          else setError(`Erro ao sincronizar: ${result.errors.join(', ')}`)
-        })
-        .catch((err) => setError(`Erro ao sincronizar: ${err.message}`))
-        .finally(() => setIsAutoSyncing(false))
-    }
-  }, [whatsappSession?.status, isLoading, isCheckingSession, syncStatus, hasAttemptedAutoSync, isSyncing, isAutoSyncing])
+  }, [user?.id])
 
   const loadContacts = async () => {
     setIsLoading(true)
@@ -183,139 +135,23 @@ export function ContactsView() {
     }
   }
 
-  const loadSyncStatus = async () => {
-    try {
-      const status = await getSyncStatus()
-      setSyncStatus({ lastSyncAt: status.lastSyncAt, contactCount: status.contactCount })
-    } catch (err) {
-      log.error('Error loading sync status:', err)
-    }
-  }
-
-  const handleWhatsAppSync = async () => {
-    setIsSyncing(true)
-    setError(null)
-    try {
-      const result = await syncWhatsAppContacts()
-      if (result.success) {
-        await loadContacts()
-        await loadSyncStatus()
-      } else {
-        throw new Error(result.errors.join(', '))
-      }
-    } catch (err) {
-      setError(`Erro ao sincronizar: ${(err as Error).message}`)
-    } finally {
-      setIsSyncing(false)
-    }
-  }
-
   const handleContactClick = useCallback((contact: ContactNetwork) => {
     setSelectedContact(contact)
     setIsDetailOpen(true)
   }, [])
 
-  const handlePairingSuccess = async () => {
-    setIsPairingExpanded(false)
-    try { sessionStorage.removeItem('aica:pairingExpanded'); sessionStorage.removeItem('aica:pairingCode') } catch { /* ignore */ }
-    if (isConnected) { loadContacts(); loadSyncStatus() }
-  }
+  const hasContacts = contacts.length > 0
 
   return (
     <div className="min-h-screen bg-ceramic-base">
       <HeaderGlobal
         title="Pessoas"
-        subtitle={!isCheckingSession && !needsPairing
-          ? `${contacts.length} contatos`
-          : undefined
-        }
+        subtitle={hasContacts ? `${contacts.length} contatos` : undefined}
         userEmail={user?.email}
       />
 
       <main className="px-4 pt-3 pb-6 space-y-3 max-w-3xl mx-auto">
-        {/* ── WhatsApp Status Pill + Sync ── */}
-        {!isCheckingSession && (
-          <div className="flex items-center gap-2">
-            {/* Status pill */}
-            {needsPairing ? (
-              <button
-                onClick={() => setIsPairingExpanded(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                </span>
-                Conectar WhatsApp
-              </button>
-            ) : (
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-ceramic-success/10 text-ceramic-success">
-                <span className="w-2 h-2 rounded-full bg-ceramic-success" />
-                Conectado
-              </span>
-            )}
-
-            {/* Sync button (when connected) */}
-            {!needsPairing && (
-              <button
-                onClick={handleWhatsAppSync}
-                disabled={isSyncing}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-ceramic-text-secondary hover:bg-ceramic-cool/60 transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
-              </button>
-            )}
-
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Contact count */}
-            {syncStatus && syncStatus.contactCount > 0 && (
-              <span className="text-[10px] text-ceramic-text-tertiary">
-                {syncStatus.contactCount} contatos
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* ── Pairing flow (expanded) ── */}
-        <AnimatePresence>
-          {isPairingExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden rounded-2xl"
-              style={{
-                background: 'rgba(255, 255, 255, 0.7)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.4)',
-                boxShadow: '0 4px 24px rgba(163, 158, 145, 0.08)',
-              }}
-            >
-              <div className="flex items-center justify-end px-6 pt-4">
-                <button
-                  onClick={() => setIsPairingExpanded(false)}
-                  className="p-2 rounded-full hover:bg-ceramic-cool/60 transition-colors"
-                >
-                  <X className="w-4 h-4 text-ceramic-text-secondary" />
-                </button>
-              </div>
-              <div className="px-6 pb-8">
-                <WhatsAppPairingStep
-                  onSuccess={handlePairingSuccess}
-                  onBack={() => setIsPairingExpanded(false)}
-                  session={whatsappSession}
-                  isConnected={isConnected}
-                  sessionStatus={whatsappSession?.status ?? null}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Entity Inbox Banner ── */}
+        {/* Entity Inbox Banner */}
         {pendingEntities.length > 0 && !isEntitiesLoading && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
@@ -335,7 +171,7 @@ export function ContactsView() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ceramic-text-primary">
-                    {pendingEntities.length} sugestão{pendingEntities.length !== 1 ? 'ões' : ''} do WhatsApp
+                    {pendingEntities.length} sugestao{pendingEntities.length !== 1 ? 'es' : ''} do WhatsApp
                   </p>
                   <p className="text-xs text-ceramic-text-secondary truncate">
                     Tarefas, eventos e valores detectados nas conversas
@@ -375,8 +211,8 @@ export function ContactsView() {
           </motion.div>
         )}
 
-        {/* ── Search Bar ── */}
-        {!isCheckingSession && contacts.length > 0 && (
+        {/* Search Bar */}
+        {hasContacts && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-tertiary pointer-events-none" />
             <input
@@ -397,8 +233,8 @@ export function ContactsView() {
           </div>
         )}
 
-        {/* ── Filter Chips ── */}
-        {!isCheckingSession && contacts.length > 0 && (
+        {/* Filter Chips */}
+        {hasContacts && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             {FILTER_OPTIONS.map(opt => (
               <button
@@ -421,32 +257,7 @@ export function ContactsView() {
           </div>
         )}
 
-        {/* ── Auto-sync indicator ── */}
-        {isAutoSyncing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl"
-            style={{
-              background: 'rgba(255, 255, 255, 0.6)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(217, 119, 6, 0.1)',
-            }}
-          >
-            <motion.div
-              className="w-4 h-4 rounded-full"
-              style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
-              animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <div>
-              <p className="text-sm font-medium text-ceramic-text-primary">Sincronizando contatos...</p>
-              <p className="text-xs text-ceramic-text-secondary">Primeira sincronizacao em andamento</p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── Error ── */}
+        {/* Error */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
@@ -461,8 +272,8 @@ export function ContactsView() {
           </motion.div>
         )}
 
-        {/* ── Loading ── */}
-        {isCheckingSession && (
+        {/* Loading */}
+        {isLoading && (
           <div className="flex flex-col items-center justify-center py-16">
             <motion.div
               className="w-8 h-8 rounded-full"
@@ -477,12 +288,12 @@ export function ContactsView() {
               }}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             />
-            <p className="mt-6 text-sm text-ceramic-text-secondary">Verificando conexao...</p>
+            <p className="mt-6 text-sm text-ceramic-text-secondary">Carregando contatos...</p>
           </div>
         )}
 
-        {/* ── Contact List ── */}
-        {!isCheckingSession && (
+        {/* Contact List */}
+        {!isLoading && (
           <div
             className="rounded-2xl overflow-hidden divide-y divide-ceramic-border/40"
             style={{
@@ -498,12 +309,16 @@ export function ContactsView() {
                   className="w-14 h-14 rounded-full flex items-center justify-center mb-5"
                   style={{ backgroundColor: 'rgba(148, 141, 130, 0.06)' }}
                 >
-                  <MessageCircle className="w-6 h-6 text-ceramic-text-secondary/40" />
+                  {hasContacts ? (
+                    <MessageCircle className="w-6 h-6 text-ceramic-text-secondary/40" />
+                  ) : (
+                    <Upload className="w-6 h-6 text-ceramic-text-secondary/40" />
+                  )}
                 </div>
                 <h3 className="text-base font-semibold text-ceramic-text-primary mb-1.5">
                   {searchQuery
                     ? 'Nenhum resultado'
-                    : needsPairing
+                    : !hasContacts
                       ? 'Nenhum contato ainda'
                       : 'Nenhum contato nesta categoria'
                   }
@@ -511,8 +326,8 @@ export function ContactsView() {
                 <p className="text-sm text-ceramic-text-secondary max-w-xs">
                   {searchQuery
                     ? `Nenhum contato encontrado para "${searchQuery}"`
-                    : needsPairing
-                      ? 'Conecte seu WhatsApp para sincronizar contatos.'
+                    : !hasContacts
+                      ? 'Importe conversas do WhatsApp em Conexoes > Importar para ver seus contatos aqui.'
                       : activeFilter === 'pending'
                         ? 'Nenhum contato com pendencias no momento.'
                         : 'Tente ajustar os filtros.'
@@ -533,7 +348,7 @@ export function ContactsView() {
         )}
       </main>
 
-      {/* ── Contact Detail Bottom Sheet ── */}
+      {/* Contact Detail Bottom Sheet */}
       <ContactDetailSheet
         contact={selectedContact}
         isOpen={isDetailOpen}

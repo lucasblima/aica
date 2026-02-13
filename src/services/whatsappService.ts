@@ -1,28 +1,24 @@
 /**
  * WhatsApp Service
- * Issue #12: WhatsApp Integration via Evolution API
  *
- * Frontend service for interacting with WhatsApp functionality:
- * - Message history
+ * Frontend service for reading WhatsApp data:
+ * - Message history (from imports)
  * - Conversations
- * - Send messages
- * - Connection status
- * - Consent management
+ * - Consent management (LGPD)
+ * - Privacy purge monitoring
+ *
+ * Note: Evolution API removed. Data comes from manual WhatsApp export imports.
  */
 
 import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '@/services/supabaseClient';
-import { sendWhatsAppMessage as sendWhatsAppMessageEdge } from './edgeFunctionService';
 
 const log = createNamespacedLogger('WhatsAppService');
 import {
   WhatsAppMessage,
   WhatsAppConversation,
   WhatsAppMessageFilter,
-  SendMessageRequest,
-  SendMessageResponse,
   PaginatedResponse,
-  WhatsAppConnectionStatus,
   ConsentRecord,
   ConsentType,
   MediaMetadata,
@@ -63,7 +59,6 @@ export interface PrivacyPurgeLog {
 // CONSTANTS
 // ============================================================================
 
-const EVOLUTION_INSTANCE_NAME = import.meta.env.VITE_EVOLUTION_INSTANCE_NAME || 'Lucas_4569';
 const DEFAULT_PAGE_SIZE = 50;
 
 // ============================================================================
@@ -232,100 +227,6 @@ export async function getConversation(contactPhone: string): Promise<WhatsAppCon
   }
 
   return data as WhatsAppConversation;
-}
-
-// ============================================================================
-// SEND MESSAGE OPERATIONS
-// ============================================================================
-
-/**
- * Send a WhatsApp message via Evolution API
- * Uses centralized Edge Function helper for unified error handling
- */
-export async function sendMessage(request: SendMessageRequest): Promise<SendMessageResponse> {
-  try {
-    const instanceName = request.instanceName || EVOLUTION_INSTANCE_NAME;
-    const response = await sendWhatsAppMessageEdge(
-      request.phone,
-      request.message,
-      instanceName
-    );
-
-    return {
-      success: response.success,
-      messageId: response.messageId,
-      error: response.error,
-    };
-  } catch (err) {
-    const error = err as Error;
-    log.error('sendMessage exception:', { error });
-    return { success: false, error: error.message };
-  }
-}
-
-// ============================================================================
-// CONNECTION STATUS
-// ============================================================================
-
-/**
- * Get WhatsApp connection status
- */
-export async function getConnectionStatus(): Promise<WhatsAppConnectionStatus> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return {
-        isConnected: false,
-        state: 'disconnected',
-        instanceName: EVOLUTION_INSTANCE_NAME,
-        lastConnectedAt: null,
-        lastDisconnectedAt: null,
-        qrCode: null,
-        phone: null,
-      };
-    }
-
-    // Get user's WhatsApp status from users table
-    const { data, error } = await supabase
-      .from('users')
-      .select('whatsapp_connected, whatsapp_connected_at, whatsapp_disconnected_at, instance_name')
-      .eq('id', user.id)
-      .single();
-
-    if (error) {
-      log.error('getConnectionStatus error:', { error });
-      return {
-        isConnected: false,
-        state: 'disconnected',
-        instanceName: EVOLUTION_INSTANCE_NAME,
-        lastConnectedAt: null,
-        lastDisconnectedAt: null,
-        qrCode: null,
-        phone: null,
-      };
-    }
-
-    return {
-      isConnected: data?.whatsapp_connected || false,
-      state: data?.whatsapp_connected ? 'open' : 'disconnected',
-      instanceName: data?.instance_name || EVOLUTION_INSTANCE_NAME,
-      lastConnectedAt: data?.whatsapp_connected_at || null,
-      lastDisconnectedAt: data?.whatsapp_disconnected_at || null,
-      qrCode: null, // QR code is fetched separately when needed
-      phone: null,
-    };
-  } catch (err) {
-    log.error('getConnectionStatus exception:', { error: err });
-    return {
-      isConnected: false,
-      state: 'disconnected',
-      instanceName: EVOLUTION_INSTANCE_NAME,
-      lastConnectedAt: null,
-      lastDisconnectedAt: null,
-      qrCode: null,
-      phone: null,
-    };
-  }
 }
 
 // ============================================================================
@@ -627,14 +528,10 @@ export default {
   getMessage,
   getContactMessages,
   deleteMessage,
-  sendMessage,
 
   // Conversations
   getConversations,
   getConversation,
-
-  // Connection
-  getConnectionStatus,
 
   // Consent
   getConsentRecords,

@@ -9,19 +9,17 @@
 // ONBOARDING STEPS
 // =============================================================================
 
-export type OnboardingStep = 'welcome' | 'whatsapp_pairing' | 'contacts_sync' | 'ready';
+export type OnboardingStep = 'welcome' | 'whatsapp_import' | 'ready';
 
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   'welcome',
-  'whatsapp_pairing',
-  'contacts_sync',
+  'whatsapp_import',
   'ready',
 ];
 
 export const STEP_LABELS: Record<OnboardingStep, string> = {
   welcome: 'Bem-vindo',
-  whatsapp_pairing: 'Conectar WhatsApp',
-  contacts_sync: 'Sincronizar Contatos',
+  whatsapp_import: 'Importar Conversas',
   ready: 'Pronto!',
 };
 

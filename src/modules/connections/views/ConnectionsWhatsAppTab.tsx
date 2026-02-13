@@ -1,44 +1,37 @@
 /**
- * ConnectionsWhatsAppTab - Main WhatsApp Analytics View
+ * ConnectionsWhatsAppTab - Main WhatsApp Integration View
  *
- * Privacy-first WhatsApp integration dashboard with emotional analytics,
- * LGPD consent management, and connection status.
+ * Import-first WhatsApp integration dashboard. Users import conversations
+ * via WhatsApp's native export feature (100% legal, zero ban risk).
  *
- * Features:
- * - Tab navigation (Overview, Contacts, Consent, Analytics)
- * - Connection status with QR code
- * - Synced contacts list from Evolution API
- * - LGPD consent management
- * - Emotional thermometer visualization
- * - Contact insights and sentiment scores
- * - Topic clustering and anomaly alerts
+ * Tabs:
+ * - Importar: WhatsApp export upload (main entry point)
+ * - Contatos: Imported contacts with dossier + group analytics
+ * - Inteligencia: EntityInbox + ConversationTimeline + threads
+ * - Analytics: Sentiment scores + anomaly alerts + emotional thermometer
  *
- * Related: Issue #12 - Privacy-First WhatsApp Integration, Task 3.4
- * Updated: Issue #92 - Contacts list integration
+ * Evolution API removed — all data comes from manual export import.
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MessageSquare,
-  Shield,
+  Upload,
   TrendingUp,
   Users,
   Bell,
   Loader2,
   AlertTriangle,
   Sparkles,
-  RefreshCw,
   Phone,
   Clock,
   ArrowUp,
   ArrowDown,
   SortAsc,
+  Brain,
 } from 'lucide-react';
 import { CeramicTabSelector, ContactAvatar } from '@/components/ui';
 import {
-  ConnectionStatusCard,
-  ConsentManager,
   EmotionalThermometer,
   ContactDossierCard,
   ConversationTimeline,
@@ -55,7 +48,7 @@ import whatsappAnalyticsService, {
 } from '@/services/whatsappAnalyticsService';
 import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion';
 import { useWhatsAppGamification } from '../hooks/useWhatsAppGamification';
-import { useWhatsAppContacts, WhatsAppContact, ContactSortField, ContactSortOrder } from '@/hooks/useWhatsAppContacts';
+import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 const log = createNamespacedLogger('ConnectionsWhatsAppTab');
 
@@ -63,12 +56,28 @@ const log = createNamespacedLogger('ConnectionsWhatsAppTab');
 // TYPES
 // ============================================================================
 
-type TabId = 'overview' | 'import' | 'contacts' | 'consent' | 'analytics';
+type TabId = 'import' | 'contacts' | 'intelligence' | 'analytics';
 
 interface ConnectionsWhatsAppTabProps {
   userId?: string;
   className?: string;
 }
+
+// Contact type (from contact_network table)
+interface ImportedContact {
+  id: string;
+  name: string;
+  phone: string;
+  whatsapp_id: string | null;
+  whatsapp_phone: string | null;
+  whatsapp_name: string | null;
+  whatsapp_profile_pic_url: string | null;
+  whatsapp_message_count: number;
+  last_whatsapp_message_at: string | null;
+}
+
+type ContactSortField = 'name' | 'message_count' | 'last_activity';
+type ContactSortOrder = 'asc' | 'desc';
 
 // ============================================================================
 // CONTACT INSIGHT CARD COMPONENT
@@ -81,9 +90,9 @@ interface ContactInsightCardProps {
 
 const ContactInsightCard: React.FC<ContactInsightCardProps> = ({ contact, onClick }) => {
   const getSentimentColor = (sentiment: number): string => {
-    if (sentiment >= 0.3) return '#6B7B5C'; // Positive
-    if (sentiment >= -0.3) return '#D4AF37'; // Neutral
-    return '#9B4D3A'; // Negative
+    if (sentiment >= 0.3) return '#6B7B5C';
+    if (sentiment >= -0.3) return '#D4AF37';
+    return '#9B4D3A';
   };
 
   const getSentimentLabel = (sentiment: number): string => {
@@ -103,57 +112,30 @@ const ContactInsightCard: React.FC<ContactInsightCardProps> = ({ contact, onClic
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center ceramic-concave"
-            style={{ backgroundColor: `${getSentimentColor(contact.overallSentiment)}20` }}
+            style={{ backgroundColor: `${getSentimentColor(contact.sentimentScore)}20` }}
           >
-            <Users className="w-5 h-5" style={{ color: getSentimentColor(contact.overallSentiment) }} />
+            <Users className="w-5 h-5" style={{ color: getSentimentColor(contact.sentimentScore) }} />
           </div>
           <div>
             <p className="text-sm font-bold text-ceramic-text-primary">
-              Contato {contact.contactHash.substring(0, 8)}...
+              {contact.contactName}
             </p>
             <p className="text-xs text-ceramic-text-secondary">
-              {contact.totalMessages} mensagens
+              {contact.messageCount} mensagens
             </p>
           </div>
         </div>
         <div className="text-right">
           <p
             className="text-lg font-bold"
-            style={{ color: getSentimentColor(contact.overallSentiment) }}
+            style={{ color: getSentimentColor(contact.sentimentScore) }}
           >
-            {contact.overallSentiment.toFixed(2)}
+            {contact.sentimentScore.toFixed(2)}
           </p>
           <p className="text-xs text-ceramic-text-secondary">
-            {getSentimentLabel(contact.overallSentiment)}
+            {getSentimentLabel(contact.sentimentScore)}
           </p>
         </div>
-      </div>
-
-      {/* Top Topics */}
-      {contact.topTopics && contact.topTopics.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
-          {contact.topTopics.slice(0, 3).map((topic, idx) => (
-            <span
-              key={idx}
-              className="px-2 py-1 bg-ceramic-inset rounded text-xs text-ceramic-text-secondary"
-            >
-              {topic}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Trend and Anomalies */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-ceramic-text-secondary">
-          Tendência: <span className="font-bold">{contact.trend}</span>
-        </span>
-        {contact.recentAnomalies > 0 && (
-          <span className="flex items-center gap-1 text-ceramic-accent">
-            <Bell className="w-3 h-3" />
-            {contact.recentAnomalies} alertas
-          </span>
-        )}
       </div>
     </motion.div>
   );
@@ -170,14 +152,10 @@ interface AnomalyAlertCardProps {
 const AnomalyAlertCard: React.FC<AnomalyAlertCardProps> = ({ alert }) => {
   const getAnomalyColor = (type: string): string => {
     switch (type) {
-      case 'spike_positive':
-        return '#6B7B5C';
-      case 'spike_negative':
-        return '#9B4D3A';
-      case 'volume_surge':
-        return '#D97706';
-      default:
-        return '#9CA3AF';
+      case 'message_volume': return '#D97706';
+      case 'sentiment_drop': return '#9B4D3A';
+      case 'contact_silence': return '#6B7B5C';
+      default: return '#9CA3AF';
     }
   };
 
@@ -186,29 +164,15 @@ const AnomalyAlertCard: React.FC<AnomalyAlertCardProps> = ({ alert }) => {
       <div className="flex items-start gap-3">
         <div
           className="p-2 rounded-lg"
-          style={{ backgroundColor: `${getAnomalyColor(alert.anomalyType)}20` }}
+          style={{ backgroundColor: `${getAnomalyColor(alert.type)}20` }}
         >
-          <AlertTriangle
-            className="w-5 h-5"
-            style={{ color: getAnomalyColor(alert.anomalyType) }}
-          />
+          <AlertTriangle className="w-5 h-5" style={{ color: getAnomalyColor(alert.type) }} />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-bold text-ceramic-text-primary mb-1">
-            {alert.description}
-          </p>
+          <p className="text-sm font-bold text-ceramic-text-primary mb-1">{alert.message}</p>
           <p className="text-xs text-ceramic-text-secondary">
-            {new Date(alert.date).toLocaleDateString('pt-BR')} • Contato:{' '}
-            {alert.contactHash.substring(0, 8)}...
+            {new Date(alert.timestamp).toLocaleDateString('pt-BR')} • Severidade: {alert.severity}
           </p>
-          <div className="flex items-center gap-4 mt-2 text-xs">
-            <span className="text-ceramic-text-secondary">
-              Sentimento: <span className="font-bold">{alert.avgSentiment.toFixed(2)}</span>
-            </span>
-            <span className="text-ceramic-text-secondary">
-              Mensagens: <span className="font-bold">{alert.messageCount}</span>
-            </span>
-          </div>
         </div>
       </div>
     </div>
@@ -216,19 +180,17 @@ const AnomalyAlertCard: React.FC<AnomalyAlertCardProps> = ({ alert }) => {
 };
 
 // ============================================================================
-// WHATSAPP CONTACT CARD COMPONENT (Issue #92)
+// IMPORTED CONTACT CARD
 // ============================================================================
 
-interface WhatsAppContactCardProps {
-  contact: WhatsAppContact;
+interface ImportedContactCardProps {
+  contact: ImportedContact;
   onClick?: () => void;
 }
 
-const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onClick }) => {
-  // Format phone number for display
+const ImportedContactCard: React.FC<ImportedContactCardProps> = ({ contact, onClick }) => {
   const formatPhone = (phone: string): string => {
     if (!phone) return '';
-    // Remove +55 prefix and format
     const cleaned = phone.replace(/^\+?55/, '');
     if (cleaned.length === 11) {
       return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
@@ -236,32 +198,20 @@ const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onCl
     return phone;
   };
 
-  // Format relative time for last activity
   const formatLastActivity = (timestamp: string | null): string => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'Agora';
-    if (minutes < 60) return `${minutes}min`;
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
-  // Get display name (prefer whatsapp_name, fallback to name)
   const displayName = contact.whatsapp_name || contact.name || 'Contato';
-
-  // Check if it's a group (WhatsApp groups have @g.us in their ID)
-  const isGroup = contact.whatsapp_id?.includes('@g.us') || contact.whatsapp_id?.includes('-');
-
-  // Message count and last activity
   const messageCount = contact.whatsapp_message_count || 0;
-  const lastActivity = contact.last_whatsapp_message_at;
 
   return (
     <motion.div
@@ -271,34 +221,27 @@ const WhatsAppContactCard: React.FC<WhatsAppContactCardProps> = ({ contact, onCl
       whileTap={{ scale: 0.98 }}
     >
       <div className="flex items-center gap-3">
-        {/* Profile Picture or Avatar */}
         <ContactAvatar
           name={displayName}
           whatsappProfilePicUrl={contact.whatsapp_profile_pic_url}
           size="lg"
         />
-
-        {/* Contact Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-ceramic-text-primary truncate">
-            {displayName}
-          </p>
+          <p className="text-sm font-bold text-ceramic-text-primary truncate">{displayName}</p>
           <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
             <Phone className="w-3 h-3" />
             <span>{formatPhone(contact.whatsapp_phone || contact.phone)}</span>
           </div>
         </div>
-
-        {/* Metrics Badge */}
         <div className="flex flex-col items-end gap-1">
           {messageCount > 0 && (
             <span className="px-2 py-0.5 bg-ceramic-info/10 text-ceramic-info text-xs rounded-full font-medium">
               {messageCount} msg
             </span>
           )}
-          {lastActivity && (
+          {contact.last_whatsapp_message_at && (
             <span className="text-xs text-ceramic-text-secondary">
-              {formatLastActivity(lastActivity)}
+              {formatLastActivity(contact.last_whatsapp_message_at)}
             </span>
           )}
         </div>
@@ -315,29 +258,18 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   userId,
   className = '',
 }) => {
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [activeTab, setActiveTab] = useState<TabId>('import');
   const [contacts, setContacts] = useState<ContactSentimentScore[]>([]);
+  const [importedContacts, setImportedContacts] = useState<ImportedContact[]>([]);
   const [anomalies, setAnomalies] = useState<AnomalyAlert[]>([]);
-  const [selectedContactHash, setSelectedContactHash] = useState<string | null>(null);
+  const [selectedAnalyticsId, setSelectedAnalyticsId] = useState<string | null>(null);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
+  const [isLoadingImported, setIsLoadingImported] = useState(true);
   const [isLoadingAnomalies, setIsLoadingAnomalies] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Gamification tracking
   const { trackAnalyticsView, trackContactAnalysis } = useWhatsAppGamification();
-
-  // WhatsApp contacts from sync (Issue #92)
-  const {
-    contacts: syncedContacts,
-    totalCount: syncedTotalCount,
-    groupsCount: syncedGroupsCount,
-    syncStatus,
-    syncContacts,
-    isLoading: isSyncLoading,
-    error: syncError,
-    lastSyncAt,
-    fetchContacts,
-  } = useWhatsAppContacts();
 
   // Local sorting state
   const [sortBy, setSortBy] = useState<ContactSortField>('last_activity');
@@ -353,23 +285,22 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
 
   // Tab configuration
   const tabs = [
-    { id: 'overview', label: 'Visão Geral' },
     { id: 'import', label: 'Importar' },
     { id: 'contacts', label: 'Contatos' },
-    { id: 'consent', label: 'Consentimento' },
+    { id: 'intelligence', label: 'Inteligencia' },
     { id: 'analytics', label: 'Analytics' },
   ];
 
-  // Load contacts on mount
+  // Load data on mount
   useEffect(() => {
-    loadContacts();
+    loadAnalyticsContacts();
     loadAnomalies();
+    loadImportedContacts();
   }, []);
 
-  // Reload WhatsApp contacts when sorting changes
+  // Reload imported contacts when sorting changes
   useEffect(() => {
-    fetchContacts(sortBy, sortOrder);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadImportedContacts();
   }, [sortBy, sortOrder]);
 
   // Track analytics view when tab changes to 'analytics'
@@ -379,21 +310,17 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     }
   }, [activeTab, trackAnalyticsView]);
 
-  const loadContacts = async () => {
+  const loadAnalyticsContacts = async () => {
     setIsLoadingContacts(true);
     setError(null);
-
     try {
       const contactsList = await whatsappAnalyticsService.getContactsList();
       setContacts(contactsList);
-
-      // Auto-select first contact for thermometer
-      if (contactsList.length > 0 && !selectedContactHash) {
-        setSelectedContactHash(contactsList[0].contactHash);
+      if (contactsList.length > 0 && !selectedAnalyticsId) {
+        setSelectedAnalyticsId(contactsList[0].contactId);
       }
     } catch (err) {
-      log.error('[ConnectionsWhatsAppTab] Error loading contacts:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar contatos');
+      log.error('Error loading analytics contacts:', err);
     } finally {
       setIsLoadingContacts(false);
     }
@@ -401,77 +328,191 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
 
   const loadAnomalies = async () => {
     setIsLoadingAnomalies(true);
-
     try {
       const alerts = await whatsappAnalyticsService.getAnomalyAlerts(7, 5);
       setAnomalies(alerts);
     } catch (err) {
-      log.error('[ConnectionsWhatsAppTab] Error loading anomalies:', err);
+      log.error('Error loading anomalies:', err);
     } finally {
       setIsLoadingAnomalies(false);
     }
   };
 
-  // Handle contact selection with gamification tracking
-  const handleContactSelect = async (contactHash: string) => {
-    setSelectedContactHash(contactHash);
-    await trackContactAnalysis(contactHash);
+  const loadImportedContacts = async () => {
+    setIsLoadingImported(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const query = supabase
+        .from('contact_network')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('sync_source', 'whatsapp');
+
+      switch (sortBy) {
+        case 'message_count':
+          query.order('whatsapp_message_count', { ascending: sortOrder === 'asc', nullsFirst: false });
+          break;
+        case 'last_activity':
+          query.order('last_whatsapp_message_at', { ascending: sortOrder === 'asc', nullsFirst: false });
+          break;
+        case 'name':
+        default:
+          query.order('whatsapp_name', { ascending: sortOrder === 'asc' });
+          break;
+      }
+
+      const { data } = await query;
+      setImportedContacts(data || []);
+    } catch (err) {
+      log.error('Error loading imported contacts:', err);
+    } finally {
+      setIsLoadingImported(false);
+    }
   };
 
-  // Render loading state
+  const handleContactSelect = async (contactId: string) => {
+    setSelectedAnalyticsId(contactId);
+    await trackContactAnalysis(contactId);
+  };
+
   const renderLoading = () => (
     <div className="flex items-center justify-center h-96">
       <Loader2 className="w-8 h-8 animate-spin text-ceramic-accent" />
     </div>
   );
 
-  // Render error state
-  const renderError = () => (
-    <div className="ceramic-card p-8 rounded-3xl text-center">
-      <AlertTriangle className="w-12 h-12 text-ceramic-negative mx-auto mb-4" />
-      <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
-        Erro ao carregar dados
-      </h3>
-      <p className="text-sm text-ceramic-text-secondary mb-4">{error}</p>
-      <button
-        onClick={loadContacts}
-        className="ceramic-card px-6 py-3 rounded-xl font-bold text-ceramic-accent hover:scale-105 active:scale-95 transition-transform"
-      >
-        Tentar novamente
-      </button>
+  // ── Import Tab ──
+  const renderImportTab = () => (
+    <WhatsAppExportUpload />
+  );
+
+  // ── Contacts Tab ──
+  const renderContactsTab = () => (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="ceramic-card p-6 rounded-3xl">
+        <div className="flex items-center gap-3 mb-4">
+          <Users className="w-6 h-6 text-ceramic-accent" />
+          <div>
+            <h2 className="text-xl font-bold text-ceramic-text-primary">
+              Contatos Importados
+            </h2>
+            <p className="text-sm text-ceramic-text-secondary">
+              {importedContacts.length} contatos de conversas importadas
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Sort Controls */}
+      <div className="ceramic-card p-4 rounded-3xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary">
+            <SortAsc className="w-4 h-4" />
+            <span>Ordenar por:</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as ContactSortField)}
+              className="ceramic-inset px-3 py-2 rounded-xl text-sm font-medium text-ceramic-text-primary bg-transparent border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
+            >
+              <option value="name">Nome</option>
+              <option value="message_count">Volume de mensagens</option>
+              <option value="last_activity">Atividade recente</option>
+            </select>
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="ceramic-card p-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
+            >
+              {sortOrder === 'asc' ? (
+                <ArrowUp className="w-4 h-4 text-ceramic-text-secondary" />
+              ) : (
+                <ArrowDown className="w-4 h-4 text-ceramic-text-secondary" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Contacts List */}
+      <div className="ceramic-card p-6 rounded-3xl space-y-4">
+        {isLoadingImported ? (
+          renderLoading()
+        ) : importedContacts.length === 0 ? (
+          <motion.div className="text-center py-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="w-20 h-20 rounded-full bg-ceramic-inset flex items-center justify-center mx-auto mb-4">
+              <Upload className="w-10 h-10 text-ceramic-text-secondary" />
+            </div>
+            <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
+              Nenhum contato importado
+            </h3>
+            <p className="text-sm text-ceramic-text-secondary max-w-sm mx-auto mb-4">
+              Importe conversas do WhatsApp na aba "Importar" para ver contatos aqui.
+            </p>
+            <button
+              onClick={() => setActiveTab('import')}
+              className="px-6 py-3 bg-ceramic-accent text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform"
+            >
+              Importar Conversas
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {importedContacts.map((contact) => (
+              <motion.div key={contact.id} variants={staggerItem}>
+                <ImportedContactCard
+                  contact={contact}
+                  onClick={() => setSelectedContactId(prev => prev === contact.id ? null : contact.id)}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+
+      {/* Contact Dossier + Conversation Timeline */}
+      {selectedContactId && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="space-y-4"
+        >
+          <ContactDossierCard
+            dossier={dossier}
+            isLoading={isDossierLoading}
+            isRefreshing={isDossierRefreshing}
+            hasDossier={hasDossier}
+            onRefresh={refreshDossier}
+          />
+          {importedContacts.find(c => c.id === selectedContactId)?.whatsapp_id?.includes('@g.us') && (
+            <GroupAnalyticsCard groupContactId={selectedContactId} />
+          )}
+          <ConversationTimeline
+            threads={threads}
+            isLoading={isThreadsLoading}
+            isBuilding={isThreadsBuilding}
+            hasMore={hasMoreThreads}
+            onLoadMore={loadMoreThreads}
+            onBuildThreads={buildThreads}
+          />
+        </motion.div>
+      )}
     </div>
   );
 
-  // Render empty state
-  const renderEmptyState = () => (
-    <motion.div
-      className="ceramic-tray p-12 rounded-3xl text-center"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <div className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-6 bg-ceramic-info/10">
-        <MessageSquare className="w-12 h-12 text-ceramic-accent" />
-      </div>
-      <h3 className="text-xl font-bold text-ceramic-text-primary mb-3">
-        Conecte seu WhatsApp
-      </h3>
-      <p className="text-sm text-ceramic-text-secondary max-w-md mx-auto mb-6">
-        Escaneie o QR Code na seção "Visão Geral" para começar a analisar suas conversas
-        de forma privada e segura.
-      </p>
-      <p className="text-xs text-ceramic-text-secondary">
-        🔒 Armazenamos apenas embeddings vetoriais, nunca mensagens completas
-      </p>
-    </motion.div>
-  );
-
-  // Render Overview Tab
-  const renderOverviewTab = () => (
+  // ── Intelligence Tab ──
+  const renderIntelligenceTab = () => (
     <div className="space-y-6">
-      {/* Connection Status */}
-      <ConnectionStatusCard showQRCode={true} autoRefresh={true} />
-
-      {/* Entity Inbox (Conversation Intelligence Phase 3) */}
+      {/* Entity Inbox */}
       <EntityInbox
         entities={entities}
         stats={entityStats}
@@ -490,14 +531,9 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             <h3 className="text-lg font-bold text-ceramic-text-primary">
               Alertas Recentes
             </h3>
-            <span className="text-xs text-ceramic-text-secondary">
-              (Últimos 7 dias)
-            </span>
+            <span className="text-xs text-ceramic-text-secondary">(Ultimos 7 dias)</span>
           </div>
-
-          {isLoadingAnomalies ? (
-            renderLoading()
-          ) : (
+          {isLoadingAnomalies ? renderLoading() : (
             <div className="space-y-3">
               {anomalies.map(alert => (
                 <AnomalyAlertCard key={alert.id} alert={alert} />
@@ -512,7 +548,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
         <div className="ceramic-card p-6 rounded-3xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-ceramic-accent" />
+              <Sparkles className="w-5 h-5 text-ceramic-accent" />
               <h3 className="text-lg font-bold text-ceramic-text-primary">
                 Principais Contatos
               </h3>
@@ -524,14 +560,13 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
               Ver todos
             </button>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {contacts.slice(0, 4).map(contact => (
               <ContactInsightCard
-                key={contact.contactHash}
+                key={contact.contactId}
                 contact={contact}
                 onClick={() => {
-                  handleContactSelect(contact.contactHash);
+                  handleContactSelect(contact.contactId);
                   setActiveTab('analytics');
                 }}
               />
@@ -539,301 +574,33 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
           </div>
         </div>
       )}
+
+      {/* Empty state */}
+      {entities.length === 0 && anomalies.length === 0 && contacts.length === 0 && !isEntitiesLoading && (
+        <motion.div className="ceramic-tray p-12 rounded-3xl text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-6 bg-ceramic-info/10">
+            <Brain className="w-12 h-12 text-ceramic-accent" />
+          </div>
+          <h3 className="text-xl font-bold text-ceramic-text-primary mb-3">
+            Inteligencia de Conversas
+          </h3>
+          <p className="text-sm text-ceramic-text-secondary max-w-md mx-auto">
+            Importe conversas do WhatsApp para que o AICA detecte tarefas, eventos e
+            insights automaticamente.
+          </p>
+        </motion.div>
+      )}
     </div>
   );
 
-  // Render Import Tab
-  const renderImportTab = () => (
-    <WhatsAppExportUpload />
-  );
-
-  // Render Contacts Tab (Issue #92)
-  const renderContactsTab = () => {
-    // Format last sync time
-    const formatLastSync = (timestamp: string | null): string => {
-      if (!timestamp) return 'Nunca sincronizado';
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
-      const minutes = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
-
-      if (minutes < 1) return 'Agora mesmo';
-      if (minutes < 60) return `Há ${minutes} min`;
-      if (hours < 24) return `Há ${hours}h`;
-      return `Há ${days} dias`;
-    };
-
-    return (
-      <div className="space-y-6">
-        {/* Header with Sync Status */}
-        <div className="ceramic-card p-6 rounded-3xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Users className="w-6 h-6 text-ceramic-accent" />
-              <div>
-                <h2 className="text-xl font-bold text-ceramic-text-primary">
-                  Contatos Sincronizados
-                </h2>
-                <p className="text-sm text-ceramic-text-secondary">
-                  {syncedTotalCount} contatos • {syncedGroupsCount} grupos
-                </p>
-              </div>
-            </div>
-
-            {/* Sync Button */}
-            <button
-              onClick={() => syncContacts()}
-              disabled={isSyncLoading || syncStatus.status === 'syncing'}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all ${
-                isSyncLoading || syncStatus.status === 'syncing'
-                  ? 'bg-ceramic-inset text-ceramic-text-secondary cursor-not-allowed'
-                  : 'bg-ceramic-success hover:bg-ceramic-success/90 text-white'
-              }`}
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${
-                  isSyncLoading || syncStatus.status === 'syncing' ? 'animate-spin' : ''
-                }`}
-              />
-              {syncStatus.status === 'syncing' ? 'Sincronizando...' : 'Sincronizar'}
-            </button>
-          </div>
-
-          {/* Last Sync Info */}
-          <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary">
-            <Clock className="w-4 h-4" />
-            <span>Última sincronização: {formatLastSync(lastSyncAt)}</span>
-          </div>
-
-          {/* Sync Progress */}
-          {syncStatus.status === 'syncing' && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-ceramic-text-secondary">{syncStatus.message}</span>
-                <span className="font-bold text-ceramic-accent">{syncStatus.progress}%</span>
-              </div>
-              <div className="w-full h-2 bg-ceramic-inset rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-ceramic-success rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${syncStatus.progress}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Sync Error */}
-          {syncError && (
-            <div className="mt-4 p-3 bg-ceramic-error/10 border border-ceramic-error/20 rounded-xl">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-ceramic-error mt-0.5" />
-                <p className="text-sm text-ceramic-error">{syncError}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Sync Result */}
-          {syncStatus.status === 'completed' && syncStatus.result && (
-            <div className="mt-4 p-3 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
-              <p className="text-sm text-ceramic-success">
-                ✓ {syncStatus.result.synced} contatos sincronizados
-                {syncStatus.result.skipped > 0 && ` • ${syncStatus.result.skipped} ignorados`}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Sort Controls */}
-        <div className="ceramic-card p-4 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-ceramic-text-secondary">
-              <SortAsc className="w-4 h-4" />
-              <span>Ordenar por:</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as ContactSortField)}
-                className="ceramic-inset px-3 py-2 rounded-xl text-sm font-medium text-ceramic-text-primary bg-transparent border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
-              >
-                <option value="name">Nome</option>
-                <option value="message_count">Volume de mensagens</option>
-                <option value="last_activity">Atividade recente</option>
-              </select>
-              <button
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="ceramic-card p-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
-                title={sortOrder === 'asc' ? 'Ordem crescente' : 'Ordem decrescente'}
-              >
-                {sortOrder === 'asc' ? (
-                  <ArrowUp className="w-4 h-4 text-ceramic-text-secondary" />
-                ) : (
-                  <ArrowDown className="w-4 h-4 text-ceramic-text-secondary" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Contacts List */}
-        <div className="ceramic-card p-6 rounded-3xl space-y-4">
-          {isSyncLoading && syncedContacts.length === 0 ? (
-            renderLoading()
-          ) : syncedContacts.length === 0 ? (
-            <motion.div
-              className="text-center py-12"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <div className="w-20 h-20 rounded-full bg-ceramic-inset flex items-center justify-center mx-auto mb-4">
-                <Users className="w-10 h-10 text-ceramic-text-secondary" />
-              </div>
-              <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
-                Nenhum contato sincronizado
-              </h3>
-              <p className="text-sm text-ceramic-text-secondary max-w-sm mx-auto mb-4">
-                Clique em "Sincronizar" para importar seus contatos do WhatsApp.
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
-              {syncedContacts.map((contact) => (
-                <motion.div key={contact.id} variants={staggerItem}>
-                  <WhatsAppContactCard
-                    contact={contact}
-                    onClick={() => {
-                      setSelectedContactId(prev => prev === contact.id ? null : contact.id);
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </div>
-
-        {/* Contact Dossier + Conversation Timeline (Conversation Intelligence) */}
-        {selectedContactId && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-4"
-          >
-            <ContactDossierCard
-              dossier={dossier}
-              isLoading={isDossierLoading}
-              isRefreshing={isDossierRefreshing}
-              hasDossier={hasDossier}
-              onRefresh={refreshDossier}
-            />
-            {/* Group Analytics (Phase 4) — shown only for group contacts */}
-            {syncedContacts.find(c => c.id === selectedContactId)?.whatsapp_id?.includes('@g.us') && (
-              <GroupAnalyticsCard groupContactId={selectedContactId} />
-            )}
-            <ConversationTimeline
-              threads={threads}
-              isLoading={isThreadsLoading}
-              isBuilding={isThreadsBuilding}
-              hasMore={hasMoreThreads}
-              onLoadMore={loadMoreThreads}
-              onBuildThreads={buildThreads}
-            />
-          </motion.div>
-        )}
-      </div>
-    );
-  };
-
-  // Render Consent Tab
-  const renderConsentTab = () => (
-    <div className="space-y-6">
-      <div className="ceramic-card p-6 rounded-3xl">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="ceramic-concave p-4 rounded-xl">
-            <Shield className="w-6 h-6 text-ceramic-accent" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-ceramic-text-primary">
-              Gestão de Consentimento LGPD
-            </h2>
-            <p className="text-sm text-ceramic-text-secondary">
-              Controle como seus dados do WhatsApp são processados
-            </p>
-          </div>
-        </div>
-
-        {/* Privacy Guarantee Notice */}
-        <div className="p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded-xl mb-6">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-ceramic-info mt-0.5" />
-            <div>
-              <p className="text-sm font-bold text-ceramic-text-primary mb-1">
-                Privacidade Garantida
-              </p>
-              <p className="text-xs text-ceramic-info">
-                Armazenamos apenas embeddings vetoriais e agregados estatísticos.
-                Suas mensagens NUNCA são salvas no sistema.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Select contact for consent management */}
-        {contacts.length > 0 ? (
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-bold text-ceramic-text-primary mb-2 block">
-                Selecione um contato:
-              </label>
-              <select
-                value={selectedContactHash || ''}
-                onChange={(e) => setSelectedContactHash(e.target.value)}
-                className="w-full ceramic-inset px-4 py-3 rounded-xl text-sm font-bold text-ceramic-text-primary bg-transparent border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-ceramic-accent"
-              >
-                <option value="">Selecione...</option>
-                {contacts.map(contact => (
-                  <option key={contact.contactHash} value={contact.contactHash}>
-                    Contato {contact.contactHash.substring(0, 16)}... ({contact.totalMessages}{' '}
-                    mensagens)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {selectedContactHash && (
-              <ConsentManager
-                contactPhone={selectedContactHash}
-                contactName={`Contato ${selectedContactHash.substring(0, 8)}`}
-              />
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-sm text-ceramic-text-secondary">
-              Nenhum contato disponível. Conecte seu WhatsApp primeiro.
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Render Analytics Tab
+  // ── Analytics Tab ──
   const renderAnalyticsTab = () => (
     <div className="space-y-6">
       {/* Emotional Thermometer */}
-      {selectedContactHash ? (
+      {selectedAnalyticsId ? (
         <EmotionalThermometer
-          contactHash={selectedContactHash}
-          contactName={`Contato ${selectedContactHash.substring(0, 8)}`}
+          contactHash={selectedAnalyticsId}
+          contactName={contacts.find(c => c.contactId === selectedAnalyticsId)?.contactName || 'Contato'}
           defaultTimeWindow="week"
           showTimeWindowSelector={true}
           height={400}
@@ -842,7 +609,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
         <div className="ceramic-card p-12 rounded-3xl text-center">
           <TrendingUp className="w-12 h-12 text-ceramic-text-secondary mx-auto mb-4" />
           <p className="text-sm text-ceramic-text-secondary">
-            Selecione um contato abaixo para visualizar o termômetro emocional
+            Selecione um contato abaixo para visualizar o termometro emocional
           </p>
         </div>
       )}
@@ -854,15 +621,21 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
           <h3 className="text-lg font-bold text-ceramic-text-primary">
             Todos os Contatos
           </h3>
-          <span className="text-xs text-ceramic-text-secondary">
-            ({contacts.length})
-          </span>
+          <span className="text-xs text-ceramic-text-secondary">({contacts.length})</span>
         </div>
 
-        {isLoadingContacts ? (
-          renderLoading()
-        ) : contacts.length === 0 ? (
-          renderEmptyState()
+        {isLoadingContacts ? renderLoading() : contacts.length === 0 ? (
+          <motion.div className="ceramic-tray p-12 rounded-3xl text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="ceramic-inset w-24 h-24 flex items-center justify-center mx-auto mb-6 bg-ceramic-info/10">
+              <Upload className="w-12 h-12 text-ceramic-accent" />
+            </div>
+            <h3 className="text-xl font-bold text-ceramic-text-primary mb-3">
+              Importe Conversas
+            </h3>
+            <p className="text-sm text-ceramic-text-secondary max-w-md mx-auto">
+              Importe conversas do WhatsApp na aba "Importar" para ver analytics aqui.
+            </p>
+          </motion.div>
         ) : (
           <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
@@ -871,10 +644,10 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             animate="visible"
           >
             {contacts.map(contact => (
-              <motion.div key={contact.contactHash} variants={staggerItem}>
+              <motion.div key={contact.contactId} variants={staggerItem}>
                 <ContactInsightCard
                   contact={contact}
-                  onClick={() => handleContactSelect(contact.contactHash)}
+                  onClick={() => handleContactSelect(contact.contactId)}
                 />
               </motion.div>
             ))}
@@ -892,15 +665,14 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-black text-ceramic-text-primary text-etched">
-              WhatsApp Analytics
+              WhatsApp
             </h1>
             <p className="text-sm text-ceramic-text-secondary mt-1">
-              Insights emocionais das suas conversas
+              Importe e analise suas conversas
             </p>
           </div>
         </div>
 
-        {/* Tab Selector */}
         <CeramicTabSelector
           tabs={tabs}
           activeTab={activeTab}
@@ -918,17 +690,10 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {error && activeTab !== 'overview' && activeTab !== 'contacts' ? (
-              renderError()
-            ) : (
-              <>
-                {activeTab === 'overview' && renderOverviewTab()}
-                {activeTab === 'import' && renderImportTab()}
-                {activeTab === 'contacts' && renderContactsTab()}
-                {activeTab === 'consent' && renderConsentTab()}
-                {activeTab === 'analytics' && renderAnalyticsTab()}
-              </>
-            )}
+            {activeTab === 'import' && renderImportTab()}
+            {activeTab === 'contacts' && renderContactsTab()}
+            {activeTab === 'intelligence' && renderIntelligenceTab()}
+            {activeTab === 'analytics' && renderAnalyticsTab()}
           </motion.div>
         </AnimatePresence>
       </main>

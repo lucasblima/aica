@@ -24,10 +24,8 @@ export {
 // WHATSAPP ONBOARDING FLOW
 // =============================================================================
 export { OnboardingFlow } from './components/OnboardingFlow';
-export { PairingCodeDisplay } from './components/PairingCodeDisplay';
 export { WelcomeStep } from './components/WelcomeStep';
-export { WhatsAppPairingStep } from './components/WhatsAppPairingStep';
-export { ContactsSyncStep } from './components/ContactsSyncStep';
+export { WhatsAppImportStep } from './components/WhatsAppImportStep';
 export { ReadyStep } from './components/ReadyStep';
 
 // =============================================================================
