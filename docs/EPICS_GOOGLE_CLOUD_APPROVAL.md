@@ -4,9 +4,9 @@
 
 **Objetivo:** Preparar a plataforma AICA para lancamento beta publico, incluindo aprovacao Google OAuth para escopos sensiveis (Google Calendar API).
 
-**Status Atual:** 🟡 45% Pronto
+**Status Atual:** 🟡 55% Pronto
 **Meta:** 🟢 100% Pronto para Beta Launch
-**Ultima Atualizacao:** 2026-02-11
+**Ultima Atualizacao:** 2026-02-13
 
 ### Infraestrutura Atual (Configurada)
 
@@ -29,7 +29,7 @@
 │   │   EPICO 1    │     │   EPICO 2    │                                   │
 │   │   Escopos    │     │   Dominio    │                                   │
 │   │   OAuth      │     │   Proprio    │                                   │
-│   │   ⬜ Pendente │     │   ✅ FEITO   │                                   │
+│   │   ✅ FEITO   │     │   ✅ FEITO   │                                   │
 │   └──────┬───────┘     └──────┬───────┘                                   │
 │          │                    │                                            │
 │          │    ┌───────────────┘                                            │
@@ -66,34 +66,39 @@
 
 ---
 
-## EPICO 1: Correcao de Escopos OAuth
+## EPICO 1: Correcao de Escopos OAuth ✅ CONCLUIDO
 
 ### Informacoes Gerais
 
 | Campo | Valor |
 |-------|-------|
-| **Prioridade** | 🔴 ALTA - BLOQUEANTE |
-| **Esforco Estimado** | 4-6 horas |
-| **Status** | ⬜ Nao iniciado |
+| **Prioridade** | ✅ CONCLUIDO |
+| **Data Conclusao** | 2026-02-13 |
 
-### Descricao
+### O que foi feito
 
-O codigo em `src/services/googleAuthService.ts` solicita escopos redundantes e excessivos. Precisa seguir principio do minimo privilegio.
+Removidos 2 escopos desnecessarios (`contacts.readonly`, `contacts.other.readonly`) que eram solicitados mas nunca usados. `googleContactsService.ts` e `contactSyncService.ts` sao dead code — nunca importados.
 
 ### Tarefas
 
-- [ ] **1.1** Analisar requisitos de escopo — listar funcionalidades que usam Calendar e determinar escopos minimos
-- [ ] **1.2** Atualizar `src/services/googleAuthService.ts` — remover escopos redundantes, usar `calendar.readonly` + `userinfo.email`
-- [ ] **1.3** Atualizar documentacao `docs/features/GOOGLE_CALENDAR_INTEGRATION.md`
-- [ ] **1.4** Testar fluxo OAuth com novos escopos em dev.aica.guru
+- [x] **1.1** Analisar requisitos de escopo — apenas `calendar.readonly` e `userinfo.email` sao usados
+- [x] **1.2** Atualizar `src/services/googleAuthService.ts` — removidos `GOOGLE_CONTACTS_SCOPES`, `ALL_GOOGLE_SCOPES` agora tem apenas 2 escopos
+- [x] **1.3** Atualizar documentacao `docs/features/GOOGLE_CALENDAR_INTEGRATION.md` — corrigido storage (DB, nao localStorage), scopes atualizados
+- [ ] **1.4** Testar fluxo OAuth com novos escopos em dev.aica.guru (precisa deploy staging)
 
-### Arquivos
+### Escopos Finais
 
-| Arquivo | Acao |
-|---------|------|
-| `src/services/googleAuthService.ts` | Modificar escopos |
-| `src/services/googleCalendarService.ts` | Verificar compatibilidade |
-| `docs/features/GOOGLE_CALENDAR_INTEGRATION.md` | Atualizar |
+```
+https://www.googleapis.com/auth/calendar.readonly   ← Leitura de eventos
+https://www.googleapis.com/auth/userinfo.email       ← Email do usuario
+```
+
+### Dead Code Identificado (nao removido — baixa prioridade)
+
+| Arquivo | Status |
+|---------|--------|
+| `src/services/googleContactsService.ts` | Dead code — nunca importado |
+| `src/services/contactSyncService.ts` | Dead code — nunca importado |
 
 ---
 
@@ -274,8 +279,8 @@ Infraestrutura:
   [ ] Dominio verificado no Google Search Console
 
 Codigo:
-  [ ] Escopos OAuth sao minimos necessarios
-  [ ] Tratamento de erros OAuth implementado
+  [x] Escopos OAuth sao minimos necessarios (calendar.readonly + userinfo.email)
+  [x] Tratamento de erros OAuth implementado
 
 Paginas Publicas:
   [x] Homepage acessivel: https://aica.guru
