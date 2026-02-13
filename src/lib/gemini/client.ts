@@ -51,6 +51,9 @@ const DEDICATED_EDGE_FUNCTIONS: Record<string, string> = {
   'cache_get_stats': 'context-cache',
   'cache_invalidate': 'context-cache',
   'cache_refresh': 'context-cache',
+  // OpenClaw Adaptation (#251)
+  'run_life_council': 'run-life-council',
+  'synthesize_patterns': 'synthesize-user-patterns',
 }
 
 /**

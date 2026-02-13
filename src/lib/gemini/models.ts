@@ -82,3 +82,59 @@ export const USE_CASE_TO_MODEL: Record<string, GeminiModel> = {
 export function getModelForUseCase(useCase: string): GeminiModel {
   return USE_CASE_TO_MODEL[useCase] || 'fast'
 }
+
+// ============================================================================
+// MODEL ROUTER — Complexity-based model selection
+// Mirrors _shared/model-router.ts for frontend awareness
+// @see docs/OPENCLAW_ADAPTATION.md Section 3
+// @issue #252
+// ============================================================================
+
+export type ComplexityLevel = 'low' | 'medium' | 'high'
+
+export const USE_CASE_TO_COMPLEXITY: Record<string, ComplexityLevel> = {
+  // LOW — Fast, simple tasks (< 200ms target)
+  'categorize_task': 'low',
+  'suggest_priority': 'low',
+  'generate_tags': 'low',
+  'analyze_moment_sentiment': 'low',
+  'extract_task_from_voice': 'low',
+  'sentiment_analysis': 'low',
+
+  // MEDIUM — Standard tasks (< 3s target)
+  'chat_aica': 'medium',
+  'finance_chat': 'medium',
+  'extract_insights': 'medium',
+  'generate_daily_question': 'medium',
+  'suggest_guest': 'medium',
+  'suggest_topic': 'medium',
+  'analyze_news': 'medium',
+  'refine_pauta_section': 'medium',
+  'contact_context': 'medium',
+  'analyze_moment': 'medium',
+  'evaluate_quality': 'medium',
+  'chat_with_agent': 'medium',
+
+  // HIGH — Complex reasoning (< 15s target)
+  'run_life_council': 'high',
+  'synthesize_patterns': 'high',
+  'generate_field_content': 'high',
+  'generate_dossier': 'high',
+  'generate_weekly_summary': 'high',
+  'generate_pauta_outline': 'high',
+  'generate_pauta_questions': 'high',
+  'enrich_pauta_with_sources': 'high',
+  'deep_research': 'high',
+  'research_guest': 'high',
+  'analyze_spending': 'high',
+  'predict_expenses': 'high',
+  'parse_statement': 'high',
+  'daily_report': 'high',
+  'weekly_summary': 'high',
+  'grounded_search': 'high',
+  'agent_chat': 'high',
+}
+
+export function getComplexityForUseCase(useCase: string): ComplexityLevel {
+  return USE_CASE_TO_COMPLEXITY[useCase] || 'medium'
+}
