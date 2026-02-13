@@ -96,6 +96,10 @@ export type GeminiAction =
   | 'cache_invalidate'
   | 'cache_refresh'
 
+  // OpenClaw Adaptation (#251)
+  | 'run_life_council'
+  | 'synthesize_patterns'
+
 /**
  * Request base para chamadas ao Gemini
  */
