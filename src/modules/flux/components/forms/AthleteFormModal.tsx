@@ -489,22 +489,22 @@ export default function AthleteFormModal({
                                   : [...formData.modalities, option.value];
                                 handleChange('modalities', newModalities as any);
                               }}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                              className={`relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-2 ${
                                 isSelected
-                                  ? 'ceramic-card bg-ceramic-base shadow-md'
-                                  : 'ceramic-inset hover:bg-white/50'
+                                  ? 'bg-ceramic-success/10 border-ceramic-success shadow-md'
+                                  : 'ceramic-inset border-transparent hover:border-ceramic-border'
                               }`}
                             >
-                              <span className="text-lg">{option.icon}</span>
-                              <span className={`text-xs font-bold ${
+                              <span className="text-2xl">{option.icon}</span>
+                              <span className={`text-sm font-bold flex-1 text-left ${
                                 isSelected
-                                  ? 'text-ceramic-text-primary'
+                                  ? 'text-ceramic-success'
                                   : 'text-ceramic-text-secondary'
                               }`}>
                                 {option.label}
                               </span>
                               {isSelected && (
-                                <CheckCircle className="w-3 h-3 text-ceramic-success ml-auto" />
+                                <CheckCircle className="w-6 h-6 text-ceramic-success flex-shrink-0" />
                               )}
                             </button>
                           );
