@@ -1,8 +1,8 @@
 /**
- * AthleteFormModal Component (Refactored v2.0)
+ * AthleteFormModal Component (Refactored v2.1)
  *
  * Modal for creating/editing athletes with:
- * - 5 Accordion sections (BasicInfo, Modalities, Account, Health Config, Performance)
+ * - 3 Accordion sections (BasicInfo, Modalities, Health Config)
  * - Integrated modality + level selection
  * - Health documentation configuration (coach perspective)
  * - Form validation and submission
@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertCircle, CheckCircle, ChevronDown, User, Target, Settings, Heart, Zap, Info } from 'lucide-react';
+import { X, AlertCircle, CheckCircle, ChevronDown, User, Target, Heart, Info } from 'lucide-react';
 import type { Athlete, AthleteStatus, TrainingModality, SimpleAthleteLevel, ModalityLevel } from '../../types/flux';
 import { AthleteProfileService } from '../../services/athleteProfileService';
 import { SIMPLE_LEVEL_LABELS } from '../../types/flux';
@@ -31,16 +31,10 @@ interface FormData {
   email: string;
   phone: string;
   modalityLevels: ModalityLevel[]; // Multiple modalities with levels
-  status: AthleteStatus;
-  trial_expires_at: string;
   // Health configuration (coach perspective)
   requires_cardio_exam: boolean;
   requires_clearance_cert: boolean;
   allow_parq_onboarding: boolean;
-  // Performance thresholds
-  ftp: string;
-  pace_threshold: string;
-  swim_css: string;
 }
 
 // Modality options
@@ -59,14 +53,6 @@ const LEVEL_OPTIONS: { value: SimpleAthleteLevel; label: string }[] = [
   { value: 'avancado', label: 'Avançado' },
 ];
 
-// Status options
-const STATUS_OPTIONS: { value: AthleteStatus; label: string; description: string; color: string }[] = [
-  { value: 'active', label: 'Ativo', description: 'Atleta está treinando normalmente', color: 'text-ceramic-success' },
-  { value: 'trial', label: 'Período de Teste', description: 'Atleta em período experimental', color: 'text-ceramic-info' },
-  { value: 'paused', label: 'Pausado', description: 'Treinos temporariamente suspensos', color: 'text-ceramic-warning' },
-  { value: 'churned', label: 'Desistente', description: 'Não está mais treinando', color: 'text-ceramic-error' },
-];
-
 export default function AthleteFormModal({
   mode,
   initialData,
@@ -82,14 +68,9 @@ export default function AthleteFormModal({
         email: initialData.email || '',
         phone: initialData.phone || '',
         modalityLevels: initialData.modality ? [{ modality: initialData.modality, level: 'iniciante' }] : [],
-        status: initialData.status || 'active',
-        trial_expires_at: initialData.trial_expires_at || '',
         requires_cardio_exam: initialData.requires_cardio_exam || false,
         requires_clearance_cert: initialData.requires_clearance_cert || false,
         allow_parq_onboarding: initialData.allow_parq_onboarding || false,
-        ftp: initialData.ftp?.toString() || '',
-        pace_threshold: initialData.pace_threshold || '',
-        swim_css: initialData.swim_css || '',
       };
     }
     return {
@@ -97,14 +78,9 @@ export default function AthleteFormModal({
       email: '',
       phone: '',
       modalityLevels: [],
-      status: 'active',
-      trial_expires_at: '',
       requires_cardio_exam: false,
       requires_clearance_cert: false,
       allow_parq_onboarding: false,
-      ftp: '',
-      pace_threshold: '',
-      swim_css: '',
     };
   };
 
@@ -116,13 +92,11 @@ export default function AthleteFormModal({
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
-  // Accordion state (5 sections)
+  // Accordion state (3 sections)
   const [openSections, setOpenSections] = useState({
     basic: true,
     modalities: false,
-    account: false,
     health: false,
-    performance: false,
   });
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -245,16 +219,6 @@ export default function AthleteFormModal({
       newErrors.email = 'Email inválido';
     }
 
-    // Trial expiration required if status is trial
-    if (formData.status === 'trial' && !formData.trial_expires_at) {
-      newErrors.trial_expires_at = 'Data de expiração obrigatória para período de teste';
-    }
-
-    // FTP validation (optional but must be positive if provided)
-    if (formData.ftp && (isNaN(Number(formData.ftp)) || Number(formData.ftp) <= 0)) {
-      newErrors.ftp = 'FTP deve ser um número positivo';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -281,14 +245,10 @@ export default function AthleteFormModal({
         level: formData.modalityLevels[0].level === 'iniciante' ? 'iniciante_1'
           : formData.modalityLevels[0].level === 'intermediario' ? 'intermediario_1'
           : 'avancado', // Map to full AthleteLevel
-        status: formData.status,
-        trial_expires_at: formData.status === 'trial' ? formData.trial_expires_at : undefined,
+        status: 'active', // Default to active (no longer configurable in modal)
         requires_cardio_exam: formData.requires_cardio_exam,
         requires_clearance_cert: formData.requires_clearance_cert,
         allow_parq_onboarding: formData.allow_parq_onboarding,
-        ftp: formData.ftp ? Number(formData.ftp) : undefined,
-        pace_threshold: formData.pace_threshold.trim() || undefined,
-        swim_css: formData.swim_css.trim() || undefined,
         modalityLevels: formData.modalityLevels, // Pass for profile sync
       };
 
@@ -592,87 +552,7 @@ export default function AthleteFormModal({
                 )}
               </div>
 
-              {/* Section 3: Account Settings (renumbered) */}
-              <div className="ceramic-card overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('account')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="ceramic-inset p-2">
-                      <Settings className="w-4 h-4 text-ceramic-text-primary" />
-                    </div>
-                    <span className="text-sm font-bold text-ceramic-text-primary">
-                      3. Configurações de Conta
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className={`w-5 h-5 text-ceramic-text-secondary transition-transform ${
-                      openSections.account ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-
-                {openSections.account && (
-                  <div className="p-4 pt-0 space-y-4">
-                    {/* Status */}
-                    <div>
-                      <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                        Status
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {STATUS_OPTIONS.map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => handleChange('status', option.value)}
-                            className={`px-3 py-3 rounded-lg transition-all text-left ${
-                              formData.status === option.value
-                                ? 'ceramic-card bg-ceramic-base shadow-md'
-                                : 'ceramic-inset hover:bg-white/50'
-                            }`}
-                            title={option.description}
-                          >
-                            <div className="space-y-1">
-                              <span className={`text-xs font-bold block ${
-                                formData.status === option.value
-                                  ? option.color
-                                  : 'text-ceramic-text-secondary'
-                              }`}>
-                                {option.label}
-                              </span>
-                              <span className="text-[10px] text-ceramic-text-secondary block">
-                                {option.description}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Trial Expiration (only if status is trial) */}
-                    {formData.status === 'trial' && (
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                          Data de Expiração do Trial *
-                        </label>
-                        <input
-                          type="date"
-                          value={formData.trial_expires_at}
-                          onChange={(e) => handleChange('trial_expires_at', e.target.value)}
-                          className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                        />
-                        {errors.trial_expires_at && (
-                          <p className="text-xs text-ceramic-error mt-1">{errors.trial_expires_at}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Section 4: Health Configuration (REFACTORED) */}
+              {/* Section 3: Health Configuration (renumbered) */}
               <div className="ceramic-card overflow-hidden">
                 <button
                   type="button"
@@ -684,7 +564,7 @@ export default function AthleteFormModal({
                       <Heart className="w-4 h-4 text-ceramic-text-primary" />
                     </div>
                     <span className="text-sm font-bold text-ceramic-text-primary">
-                      4. Dados de Saúde
+                      3. Dados de Saúde
                     </span>
                   </div>
                   <ChevronDown
@@ -796,104 +676,6 @@ export default function AthleteFormModal({
                 )}
               </div>
 
-              {/* Section 5: Performance Thresholds (renumbered) */}
-              <div className="ceramic-card overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('performance')}
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="ceramic-inset p-2">
-                      <Zap className="w-4 h-4 text-ceramic-text-primary" />
-                    </div>
-                    <span className="text-sm font-bold text-ceramic-text-primary">
-                      5. Limiar de Desempenho (Opcional)
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className={`w-5 h-5 text-ceramic-text-secondary transition-transform ${
-                      openSections.performance ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-
-                {openSections.performance && (
-                  <div className="p-4 pt-0 space-y-4">
-                    <p className="text-xs text-ceramic-text-secondary italic">
-                      Configure os valores de limiar de acordo com as modalidades selecionadas
-                    </p>
-
-                    {/* FTP (for cycling) */}
-                    {formData.modalityLevels.some(ml => ml.modality === 'cycling') && (
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                          🚴 FTP (Functional Threshold Power)
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={formData.ftp}
-                            onChange={(e) => handleChange('ftp', e.target.value)}
-                            className="flex-1 ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                            placeholder="250"
-                            min="0"
-                          />
-                          <span className="text-xs text-ceramic-text-secondary font-medium">watts</span>
-                        </div>
-                        {errors.ftp && (
-                          <p className="text-xs text-ceramic-error mt-1">{errors.ftp}</p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Pace Threshold (for running) */}
-                    {formData.modalityLevels.some(ml => ml.modality === 'running') && (
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                          🏃 Pace Limiar
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.pace_threshold}
-                          onChange={(e) => handleChange('pace_threshold', e.target.value)}
-                          className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                          placeholder="4:30/km"
-                        />
-                      </div>
-                    )}
-
-                    {/* CSS (for swimming) */}
-                    {formData.modalityLevels.some(ml => ml.modality === 'swimming') && (
-                      <div>
-                        <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
-                          🏊 CSS (Critical Swim Speed)
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.swim_css}
-                          onChange={(e) => handleChange('swim_css', e.target.value)}
-                          className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                          placeholder="1:30/100m"
-                        />
-                      </div>
-                    )}
-
-                    {formData.modalityLevels.length === 0 && (
-                      <p className="text-xs text-ceramic-text-secondary italic">
-                        Selecione pelo menos uma modalidade para configurar os limiares
-                      </p>
-                    )}
-
-                    {formData.modalityLevels.length > 0 &&
-                     !formData.modalityLevels.some(ml => ['cycling', 'running', 'swimming'].includes(ml.modality)) && (
-                      <p className="text-xs text-ceramic-text-secondary italic">
-                        Limiares específicos não aplicáveis para as modalidades selecionadas
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           </form>
 
