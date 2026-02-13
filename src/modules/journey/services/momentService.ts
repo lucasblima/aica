@@ -341,3 +341,34 @@ async function analyzeMomentFull(content: string, momentId: string, userId: stri
     log.error('Error in full moment analysis:', error)
   }
 }
+
+/**
+ * Batch re-analyze moments that have neutral or null emotion.
+ * Calls the reanalyze-moments Edge Function which uses AI to detect real emotions.
+ *
+ * @param limit Max moments to process (default 50, max 100)
+ * @returns Results with old/new emotions
+ */
+export async function reanalyzeMoments(limit: number = 50): Promise<{
+  success: boolean
+  processed: number
+  updated: number
+  results: Array<{ id: string; oldEmotion: string | null; newEmotion: string; newMood: { emoji: string; label: string } }>
+}> {
+  try {
+    const { data, error } = await supabase.functions.invoke('reanalyze-moments', {
+      body: { limit },
+    })
+
+    if (error) {
+      log.error('Error calling reanalyze-moments:', error)
+      throw error
+    }
+
+    log.info(`Reanalysis complete: ${data.processed} processed, ${data.updated} updated`)
+    return data
+  } catch (error) {
+    log.error('Error in reanalyzeMoments:', error)
+    throw error
+  }
+}
