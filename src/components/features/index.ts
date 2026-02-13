@@ -53,5 +53,4 @@ export { WeeklyCalendarView } from './WeeklyCalendarView';
 export { InviteBadge } from './InviteBadge';
 export { InviteModal } from './InviteModal';
 
-// Admin Components - Issue #129
-export { CapacityGauge, StatusPieChart, InstanceTable, ErrorsLog, HealthAlerts } from './admin';
+

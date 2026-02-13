@@ -15,7 +15,6 @@ import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type {
   UserProfile,
-  WhatsAppSession,
   UserCredits,
   OnboardingStep,
   OnboardingData,
@@ -122,83 +121,6 @@ export async function completeOnboarding(userId: string): Promise<boolean> {
 }
 
 // =============================================================================
-// WHATSAPP SESSION
-// =============================================================================
-
-/**
- * Get WhatsApp session for user
- */
-export async function getWhatsAppSession(userId: string): Promise<WhatsAppSession | null> {
-  const { data, error } = await supabase
-    .from('whatsapp_sessions')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null;
-    }
-    log.error('Error fetching WhatsApp session:', error);
-    return null;
-  }
-
-  return data as WhatsAppSession;
-}
-
-/**
- * Create WhatsApp session
- */
-export async function createWhatsAppSession(
-  userId: string,
-  instanceName: string
-): Promise<WhatsAppSession | null> {
-  const { data, error } = await supabase
-    .from('whatsapp_sessions')
-    .insert({
-      user_id: userId,
-      instance_name: instanceName,
-      status: 'disconnected',
-    })
-    .select()
-    .single();
-
-  if (error) {
-    log.error('Error creating WhatsApp session:', error);
-    return null;
-  }
-
-  return data as WhatsAppSession;
-}
-
-/**
- * Update WhatsApp session status
- */
-export async function updateWhatsAppSessionStatus(
-  sessionId: string,
-  status: WhatsAppSession['status'],
-  additionalData?: Partial<WhatsAppSession>
-): Promise<boolean> {
-  const { error } = await supabase
-    .from('whatsapp_sessions')
-    .update({
-      status,
-      ...additionalData,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', sessionId);
-
-  if (error) {
-    log.error('Error updating WhatsApp session:', error);
-    return false;
-  }
-
-  return true;
-}
-
-// =============================================================================
 // USER CREDITS
 // =============================================================================
 
@@ -249,15 +171,13 @@ export async function initializeUserCredits(userId: string): Promise<UserCredits
  * Get all onboarding data for a user
  */
 export async function getOnboardingData(userId: string): Promise<OnboardingData> {
-  const [profile, session, credits] = await Promise.all([
+  const [profile, credits] = await Promise.all([
     getUserProfile(userId),
-    getWhatsAppSession(userId),
     getUserCredits(userId),
   ]);
 
   return {
     profile,
-    session,
     credits,
   };
 }
@@ -273,7 +193,6 @@ export async function initializeOnboardingData(userId: string): Promise<Onboardi
 
   return {
     profile,
-    session: null, // Session is created when user starts pairing
     credits,
   };
 }

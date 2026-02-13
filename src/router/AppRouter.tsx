@@ -16,7 +16,6 @@ import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
-import { AdminGuard } from '../components/guards/AdminGuard';
 import { AuthGuard } from '../components/guards/AuthGuard';
 import { AicaChatFAB } from '../components/features/AicaChatFAB';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -79,9 +78,6 @@ const DiagnosticsPage = lazy(() => import('../pages/DiagnosticsPage').then(m => 
 // Legal Pages - Rarely accessed
 const PrivacyPolicyPage = lazy(() => import('../pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('../pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
-
-// Admin Pages - Issue #129
-const WhatsAppMonitoringDashboard = lazy(() => import('../pages/admin/WhatsAppMonitoringDashboard').then(m => ({ default: m.WhatsAppMonitoringDashboard })));
 
 
 const ProfilePage = lazy(() => import('../views/ProfilePage').then(m => ({ default: m.ProfilePage })));
@@ -701,15 +697,6 @@ export function AppRouter() {
                   element={<DiagnosticsPage />}
                />
 
-               {/* Admin Pages - Issue #129: WhatsApp Monitoring Dashboard */}
-               <Route
-                  path="/admin/whatsapp-monitoring"
-                  element={
-                     <AdminGuard>
-                        <WhatsAppMonitoringDashboard />
-                     </AdminGuard>
-                  }
-               />
 
                {/* AI Cost Dashboard - Protected */}
                <Route
