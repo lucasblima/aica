@@ -487,7 +487,14 @@ export default function AthleteFormModal({
                                 const newModalities = isSelected
                                   ? formData.modalities.filter(m => m !== option.value)
                                   : [...formData.modalities, option.value];
-                                handleChange('modalities', newModalities as any);
+                                setFormData((prev) => ({ ...prev, modalities: newModalities }));
+                                setIsDirty(true);
+                                // Clear modality error
+                                setErrors((prev) => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors.modalities;
+                                  return newErrors;
+                                });
                               }}
                               className={`relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-2 ${
                                 isSelected
