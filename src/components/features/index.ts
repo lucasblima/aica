@@ -53,4 +53,8 @@ export { WeeklyCalendarView } from './WeeklyCalendarView';
 export { InviteBadge } from './InviteBadge';
 export { InviteModal } from './InviteModal';
 
+// OpenClaw Adaptation — Life Council & Patterns
+export { LifeCouncilCard } from './LifeCouncilCard';
+export { PatternsSummary } from './PatternsSummary';
+
 
