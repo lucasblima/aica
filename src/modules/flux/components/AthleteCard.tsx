@@ -6,15 +6,17 @@
  * Includes WhatsApp quick action for athlete follow-up.
  */
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { AthleteCardProps } from '../types';
 import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
-import { User, AlertCircle, TrendingUp, Calendar, MessageCircle } from 'lucide-react';
+import { User, AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 
 interface ExtendedAthleteCardProps extends AthleteCardProps {
   onWhatsAppClick?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export function AthleteCard({
@@ -24,7 +26,27 @@ export function AthleteCard({
   adherenceRate = 0,
   onClick,
   onWhatsAppClick,
+  onEdit,
+  onDelete,
 }: ExtendedAthleteCardProps) {
+  // Menu dropdown state
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMenuOpen]);
+
   // Status configuration
   const statusConfig = STATUS_CONFIG[athlete.status];
 
@@ -91,6 +113,54 @@ export function AthleteCard({
           >
             {statusConfig.label}
           </div>
+
+          {/* Actions Menu */}
+          {(onEdit || onDelete) && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen(!isMenuOpen);
+                }}
+                className="ceramic-inset p-1.5 hover:bg-ceramic-cool transition-colors rounded-lg"
+                title="Ações"
+              >
+                <MoreVertical className="w-4 h-4 text-ceramic-text-secondary" />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 ceramic-card border border-ceramic-border shadow-lg rounded-lg overflow-hidden z-50 min-w-[140px]">
+                  {onEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMenuOpen(false);
+                        onEdit();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-ceramic-text-primary hover:bg-ceramic-cool transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4 text-ceramic-info" />
+                      <span>Editar</span>
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMenuOpen(false);
+                        onDelete();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-ceramic-text-primary hover:bg-ceramic-error/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-ceramic-error" />
+                      <span className="text-ceramic-error">Excluir</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Metrics Row */}

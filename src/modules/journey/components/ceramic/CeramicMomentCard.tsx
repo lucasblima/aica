@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { TrashIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { getEmotionDisplay } from '../../types/emotionHelper'
 
 export interface CeramicMomentCardProps {
   moment: {
@@ -28,6 +29,7 @@ export function CeramicMomentCard({ moment, onDelete }: CeramicMomentCardProps) 
   const createdAt = new Date(moment.created_at)
   const dateFormatted = format(createdAt, "dd 'de' MMMM", { locale: ptBR })
   const timeFormatted = format(createdAt, 'HH:mm', { locale: ptBR })
+  const emotionDisplay = getEmotionDisplay(moment.emotion)
 
   const handleDelete = () => {
     if (onDelete) {
@@ -64,8 +66,9 @@ export function CeramicMomentCard({ moment, onDelete }: CeramicMomentCardProps) 
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+              title={emotionDisplay.label}
             >
-              {moment.emotion}
+              {emotionDisplay.emoji}
             </motion.span>
           )}
 

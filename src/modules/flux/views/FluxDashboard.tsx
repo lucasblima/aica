@@ -11,11 +11,13 @@ import { useNavigate } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import { useAthletes } from '../hooks/useAthletes';
 import { AthleteService, CreateAthleteInput } from '../services/athleteService';
+import { AthleteProfileService } from '../services/athleteProfileService';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
 import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
 import AthleteFormModal from '../components/forms/AthleteFormModal';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import type { Athlete } from '../types';
 import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 
@@ -87,6 +89,11 @@ export default function FluxDashboard() {
 
   // Athlete form modal state
   const [athleteModalOpen, setAthleteModalOpen] = useState(false);
+  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
+
+  // Delete confirmation modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
 
   // Calculate modality counts
   const modalityCounts = useMemo(() => {
@@ -193,27 +200,132 @@ export default function FluxDashboard() {
     setWhatsAppModalOpen(true);
   };
 
-  // Handle save athlete
-  const handleSaveAthlete = async (athleteData: Partial<Athlete>) => {
+  // Handle save athlete (create or update)
+  const handleSaveAthlete = async (athleteData: Partial<Athlete> & { modalities?: TrainingModality[] }) => {
     try {
-      // Create athlete in Supabase
-      const { data, error } = await AthleteService.createAthlete(athleteData as CreateAthleteInput);
+      const modalities = athleteData.modalities || [];
+
+      // Validate: at least one modality must be selected
+      if (modalities.length === 0) {
+        throw new Error('Selecione pelo menos uma modalidade');
+      }
+
+      // First modality = primary modality in athletes table
+      const primaryModality = modalities[0];
+
+      // Prepare athlete data (without modalities array)
+      const { modalities: _, ...athletePayload } = athleteData;
+      const athleteWithModality = {
+        ...athletePayload,
+        modality: primaryModality,
+      };
+
+      let athleteId: string;
+
+      if (editingAthlete) {
+        // Update existing athlete
+        const { data, error } = await AthleteService.updateAthlete({
+          id: editingAthlete.id,
+          ...athleteWithModality,
+        });
+
+        if (error) {
+          throw new Error(error.message || 'Erro ao atualizar atleta');
+        }
+
+        if (!data) {
+          throw new Error('Atleta atualizado mas sem dados retornados');
+        }
+
+        athleteId = data.id;
+        console.log('Atleta atualizado com sucesso:', data);
+      } else {
+        // Create new athlete
+        const { data, error } = await AthleteService.createAthlete(athleteWithModality as CreateAthleteInput);
+
+        if (error) {
+          throw new Error(error.message || 'Erro ao criar atleta');
+        }
+
+        if (!data) {
+          throw new Error('Atleta criado mas sem dados retornados');
+        }
+
+        athleteId = data.id;
+        console.log('Atleta criado com sucesso:', data);
+      }
+
+      // Sync athlete profiles for all selected modalities
+      const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
+        athleteId,
+        modalities,
+        {
+          level: athleteData.level as AthleteLevel,
+          anamnesis: athleteData.anamnesis,
+          ftp: athleteData.ftp,
+          pace_threshold: athleteData.pace_threshold,
+          css: athleteData.swim_css,
+        }
+      );
+
+      if (profileError) {
+        console.error('Error syncing athlete profiles:', profileError);
+        // Don't throw - athlete was saved successfully, profiles are secondary
+      } else {
+        console.log(`Synced ${modalities.length} athlete profiles`);
+      }
+
+      // Close modal and reset editing state (list auto-updates via real-time subscription)
+      setAthleteModalOpen(false);
+      setEditingAthlete(null);
+    } catch (error) {
+      console.error('Error saving athlete:', error);
+      throw error; // Let modal handle error display
+    }
+  };
+
+  // Handle edit athlete
+  const handleEditAthlete = (athlete: Athlete) => {
+    setEditingAthlete(athlete);
+    setAthleteModalOpen(true);
+  };
+
+  // Handle delete click
+  const handleDeleteClick = (athlete: Athlete) => {
+    setAthleteToDelete(athlete);
+    setDeleteModalOpen(true);
+  };
+
+  // Handle confirm delete
+  const handleConfirmDelete = async () => {
+    if (!athleteToDelete) return;
+
+    try {
+      // Delete athlete profiles first (cascade safety)
+      const { error: profileError } = await AthleteProfileService.deleteProfilesByAthleteId(
+        athleteToDelete.id
+      );
+
+      if (profileError) {
+        console.error('Error deleting athlete profiles:', profileError);
+        // Continue anyway - profiles will be cascaded by DB
+      }
+
+      // Delete athlete
+      const { error } = await AthleteService.deleteAthlete(athleteToDelete.id);
 
       if (error) {
-        throw new Error(error.message || 'Erro ao criar atleta');
+        throw new Error(error.message || 'Erro ao excluir atleta');
       }
 
-      if (!data) {
-        throw new Error('Atleta criado mas sem dados retornados');
-      }
+      console.log('Atleta excluído com sucesso:', athleteToDelete.id);
 
-      console.log('Atleta criado com sucesso:', data);
-
-      // Close modal on success (list auto-updates via real-time subscription)
-      setAthleteModalOpen(false);
+      // Close modal and reset state (list auto-updates via real-time subscription)
+      setDeleteModalOpen(false);
+      setAthleteToDelete(null);
     } catch (error) {
-      console.error('Error creating athlete:', error);
-      throw error; // Let modal handle error display
+      console.error('Error deleting athlete:', error);
+      throw error;
     }
   };
 
@@ -527,6 +639,8 @@ export default function FluxDashboard() {
                 adherenceRate={0} // TODO: Calculate from workout completion
                 onClick={() => handleAthleteClick(athlete.id)}
                 onWhatsAppClick={() => handleWhatsAppClick(athlete, athleteAlerts)}
+                onEdit={() => handleEditAthlete(athlete)}
+                onDelete={() => handleDeleteClick(athlete)}
               />
             );
           })}
@@ -597,10 +711,30 @@ export default function FluxDashboard() {
 
       {/* Athlete Form Modal */}
       <AthleteFormModal
-        mode="create"
+        mode={editingAthlete ? 'edit' : 'create'}
+        initialData={editingAthlete || undefined}
         isOpen={athleteModalOpen}
-        onClose={() => setAthleteModalOpen(false)}
+        onClose={() => {
+          setAthleteModalOpen(false);
+          setEditingAthlete(null);
+        }}
         onSave={handleSaveAthlete}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setAthleteToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Atleta"
+        message={
+          athleteToDelete
+            ? `Tem certeza que deseja excluir ${athleteToDelete.name}? Esta ação não pode ser desfeita.`
+            : ''
+        }
       />
     </div>
   );

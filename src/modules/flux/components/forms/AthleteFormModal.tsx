@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, CheckCircle, ChevronDown, User, Settings, Heart, Zap } from 'lucide-react';
 import type { Athlete, AthleteLevel, AthleteStatus, TrainingModality, AnamnesisData } from '../../types/flux';
+import { AthleteProfileService } from '../../services/athleteProfileService';
 
 interface AthleteFormModalProps {
   mode: 'create' | 'edit';
@@ -120,6 +121,7 @@ export default function AthleteFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
   // Accordion state
   const [openSections, setOpenSections] = useState({
@@ -135,6 +137,52 @@ export default function AthleteFormModal({
       [section]: !prev[section],
     }));
   };
+
+  // Load athlete profiles when editing
+  useEffect(() => {
+    const loadProfiles = async () => {
+      if (mode === 'edit' && initialData?.id && isOpen) {
+        setIsLoadingProfiles(true);
+        try {
+          const { data: profiles, error } = await AthleteProfileService.getProfilesByAthleteId(
+            initialData.id
+          );
+
+          if (error) {
+            console.error('Error loading athlete profiles:', error);
+            return;
+          }
+
+          if (profiles && profiles.length > 0) {
+            // Collect all modalities: primary modality + profile modalities
+            const allModalities = new Set<TrainingModality>();
+
+            // Add primary modality
+            if (initialData.modality) {
+              allModalities.add(initialData.modality);
+            }
+
+            // Add profile modalities
+            profiles.forEach((profile) => {
+              allModalities.add(profile.modality);
+            });
+
+            // Update formData with all modalities
+            setFormData((prev) => ({
+              ...prev,
+              modalities: Array.from(allModalities),
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading athlete profiles:', error);
+        } finally {
+          setIsLoadingProfiles(false);
+        }
+      }
+    };
+
+    loadProfiles();
+  }, [mode, initialData?.id, isOpen]);
 
   // Handle input change
   const handleChange = (field: keyof FormData, value: string) => {
