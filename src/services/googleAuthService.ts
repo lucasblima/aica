@@ -22,38 +22,18 @@ const GOOGLE_CALENDAR_EXPIRY_KEY = 'google_calendar_token_expiry';
 const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
 
 /**
- * Google Calendar Scopes - Minimum privilege required
+ * Google OAuth Scopes — Minimum privilege required
  *
- * Scopes:
- * - calendar.readonly: Read-only access to calendar events
- * - userinfo.email: Get user email address
+ * Only the scopes actually used by the application are requested:
+ * - calendar.readonly: Read-only access to calendar events (Agenda sync)
+ * - userinfo.email: Get user email for identification
  *
- * Note: Using read-only scope for Google approval compliance
- * Aica does NOT modify the user's calendar (only reads for conflict detection)
- */
-const GOOGLE_CALENDAR_SCOPES = [
-    'https://www.googleapis.com/auth/calendar.readonly', // Read calendar events
-    'https://www.googleapis.com/auth/userinfo.email',    // Get user email
-];
-
-/**
- * Google Contacts Scopes
- *
- * Scopes:
- * - contacts.readonly: Read-only access to user's contacts
- * - contacts.other.readonly: Read-only access to other contacts
- */
-const GOOGLE_CONTACTS_SCOPES = [
-    'https://www.googleapis.com/auth/contacts.readonly',       // User contacts
-    'https://www.googleapis.com/auth/contacts.other.readonly', // Other contacts
-];
-
-/**
- * Combined Google Scopes for OAuth
+ * AICA does NOT modify the user's calendar (read-only).
+ * Google Contacts scopes were removed — contact sync uses WhatsApp/manual input.
  */
 const ALL_GOOGLE_SCOPES = [
-    ...GOOGLE_CALENDAR_SCOPES,
-    ...GOOGLE_CONTACTS_SCOPES,
+    'https://www.googleapis.com/auth/calendar.readonly', // Read calendar events
+    'https://www.googleapis.com/auth/userinfo.email',    // Get user email
 ];
 
 /**

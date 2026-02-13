@@ -136,11 +136,8 @@ Main authentication and token management service.
 - `storeGoogleTokens()` - Store tokens locally
 
 **Token Storage:**
-- Uses `localStorage` with keys:
-  - `google_calendar_access_token`
-  - `google_calendar_refresh_token`
-  - `google_calendar_token_expiry`
-  - `google_calendar_connected`
+- Stored in Supabase `google_calendar_tokens` table (per user, RLS-protected)
+- Legacy localStorage keys are deprecated and no longer used
 
 ### `googleCalendarService.ts`
 
@@ -301,18 +298,18 @@ When token refresh fails permanently (e.g., `INVALID_GRANT`):
 
 ## Security Considerations
 
-1. **Tokens are stored in localStorage**
-   - Suitable for single-user apps
-   - Consider IndexedDB or sessionStorage for enhanced security
+1. **Tokens are stored in Supabase database** (RLS-protected per user)
+   - Row Level Security ensures users can only access their own tokens
+   - No tokens stored in localStorage or sessionStorage
 
 2. **Refresh tokens are rotated** automatically by Google
 
-3. **Scopes are minimal**
-   - Read-only access to calendar
-   - No write permissions
-   - No access to other services
+3. **Scopes are minimal** (only 2 scopes requested)
+   - `calendar.readonly` — Read-only access to calendar
+   - `userinfo.email` — User email for identification
+   - No write permissions, no contacts access
 
-4. **SSL/HTTPS is required** in production
+4. **SSL/HTTPS is required** in production (enforced via aica.guru)
 
 ## Troubleshooting
 
