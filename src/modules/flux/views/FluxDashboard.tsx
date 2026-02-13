@@ -561,9 +561,15 @@ export default function FluxDashboard() {
             </div>
             <button
               onClick={() => {
-                setSelectedModality('all');
-                setSelectedLevel('all');
-                setAdherenceSort('none');
+                // Se não há filtros ativos, abre modal de criar atleta
+                if (selectedModality === 'all' && selectedLevel === 'all') {
+                  setAthleteModalOpen(true);
+                } else {
+                  // Se há filtros ativos, limpa os filtros
+                  setSelectedModality('all');
+                  setSelectedLevel('all');
+                  setAdherenceSort('none');
+                }
               }}
               className="px-6 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
             >

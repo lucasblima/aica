@@ -597,12 +597,21 @@ export default function AthleteFormModal({
                 {openSections.health && (
                   <div className="p-4 pt-0 space-y-4">
                     {/* Anamnesis Info Notice */}
-                    <div className="flex items-start gap-3 p-3 bg-ceramic-info/10 border border-ceramic-info/20 rounded-lg">
-                      <AlertCircle className="w-4 h-4 text-ceramic-info mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-ceramic-text-secondary">
-                        <span className="font-bold text-ceramic-info">Atenção:</span> Estes dados serão enriquecidos
-                        automaticamente com a anamnese completa que o atleta receberá por WhatsApp.
-                      </p>
+                    <div className="flex items-start gap-3 p-4 bg-ceramic-info/10 border border-ceramic-info/20 rounded-lg">
+                      <AlertCircle className="w-5 h-5 text-ceramic-info mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-ceramic-info mb-2">
+                          💡 Anamnese Inteligente
+                        </p>
+                        <p className="text-sm text-ceramic-text-primary mb-2 leading-relaxed">
+                          Estes dados serão enriquecidos automaticamente quando o atleta responder a anamnese completa.
+                        </p>
+                        <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                          O atleta poderá responder via <span className="font-semibold text-ceramic-text-primary">voz</span> (transcrição automática) ou{' '}
+                          <span className="font-semibold text-ceramic-text-primary">texto</span>, tanto na interface web quanto por WhatsApp/Telegram.
+                          A Aica preenche os campos e esclarece dúvidas até completar.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Sleep Quality */}

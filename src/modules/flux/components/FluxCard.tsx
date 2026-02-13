@@ -5,17 +5,12 @@
  * Acts as an entry point to the Flux training management module.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Users } from 'lucide-react';
-import {
-  getMockAthleteCountsByModality,
-  getMockAlertsSummary,
-  getMockUnacknowledgedAlerts,
-  MOCK_ATHLETES,
-} from '../mockData';
-import { MODALITY_CONFIG, SEVERITY_COLORS } from '../types';
-import type { TrainingModality, AlertSeverity } from '../types';
+import { useAthletes } from '../hooks/useAthletes';
+import { MODALITY_CONFIG } from '../types';
+import type { TrainingModality } from '../types';
 
 // Modality icons as components for better rendering
 const ModalityIcon: React.FC<{ modality: TrainingModality; className?: string }> = ({ modality, className }) => {
@@ -24,6 +19,7 @@ const ModalityIcon: React.FC<{ modality: TrainingModality; className?: string }>
     running: '🏃',
     cycling: '🚴',
     strength: '🏋️',
+    walking: '🚶',
   };
   return <span className={className}>{icons[modality]}</span>;
 };
@@ -31,21 +27,51 @@ const ModalityIcon: React.FC<{ modality: TrainingModality; className?: string }>
 export function FluxCard() {
   const navigate = useNavigate();
 
-  // Get data from mock
-  const athleteCounts = getMockAthleteCountsByModality();
-  const alertsSummary = getMockAlertsSummary();
-  const unacknowledgedAlerts = getMockUnacknowledgedAlerts();
-  const totalAthletes = MOCK_ATHLETES.length;
+  // Get real data from Supabase
+  const { athletes, isLoading } = useAthletes();
+
+  // Calculate athlete counts by modality
+  const athleteCounts = useMemo(() => {
+    const counts: Record<TrainingModality, number> = {
+      swimming: 0,
+      running: 0,
+      cycling: 0,
+      strength: 0,
+      walking: 0,
+    };
+
+    for (const athlete of athletes) {
+      if (athlete.modality in counts) {
+        counts[athlete.modality]++;
+      }
+    }
+
+    return counts;
+  }, [athletes]);
+
+  const totalAthletes = athletes.length;
 
   // Handle navigation
   const handleClick = () => {
     navigate('/flux');
   };
 
-  const handleAlertsClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate('/flux/alerts');
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <div
+        className="ceramic-card relative overflow-hidden p-5 min-h-[180px] flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(135deg, #F0EFE9 0%, #E6F2F5 100%)',
+        }}
+      >
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-ceramic-accent/20 border-t-ceramic-accent rounded-full animate-spin" />
+          <span className="text-xs text-ceramic-text-secondary">Carregando...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -68,12 +94,14 @@ export function FluxCard() {
           </div>
           <div>
             <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Flux</span>
-            <p className="text-lg font-bold text-ceramic-text-primary">{totalAthletes} Atletas</p>
+            <p className="text-lg font-bold text-ceramic-text-primary">
+              {totalAthletes} {totalAthletes === 1 ? 'Atleta' : 'Atletas'}
+            </p>
           </div>
         </div>
 
         {/* Modality Grid */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-5 gap-2 mb-4">
           {(Object.keys(MODALITY_CONFIG) as TrainingModality[]).map((modality) => {
             const config = MODALITY_CONFIG[modality];
             const count = athleteCounts[modality];
@@ -92,30 +120,6 @@ export function FluxCard() {
             );
           })}
         </div>
-
-        {/* Alerts Summary (if any) */}
-        {unacknowledgedAlerts.length > 0 && (
-          <div
-            onClick={handleAlertsClick}
-            className="flex items-center gap-3 p-3 bg-white/50 rounded-lg mb-3 hover:bg-white/70 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-1">
-              {alertsSummary.critical > 0 && (
-                <span className="w-2 h-2 rounded-full bg-ceramic-error" title={`${alertsSummary.critical} criticos`} />
-              )}
-              {alertsSummary.high > 0 && (
-                <span className="w-2 h-2 rounded-full bg-ceramic-warning" title={`${alertsSummary.high} altos`} />
-              )}
-              {alertsSummary.medium > 0 && (
-                <span className="w-2 h-2 rounded-full bg-ceramic-warning" title={`${alertsSummary.medium} medios`} />
-              )}
-            </div>
-            <p className="text-xs text-ceramic-text-secondary flex-1">
-              <span className="font-bold text-ceramic-text-primary">{unacknowledgedAlerts.length}</span> alertas pendentes
-            </p>
-            <ChevronRight className="w-4 h-4 text-ceramic-text-secondary" />
-          </div>
-        )}
 
         {/* Footer */}
         <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform mt-auto">
