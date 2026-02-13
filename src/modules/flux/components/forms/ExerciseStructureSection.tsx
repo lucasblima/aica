@@ -1,22 +1,26 @@
 /**
- * ExerciseStructureSection Component
+ * ExerciseStructureSection Component (V2)
  *
- * Orchestrates the display of correct exercise structure editor based on category:
- * - strength → SetsRepsEditor
- * - cardio_intervals → IntervalsEditor (currently mapped to 'main' or 'test')
- * - base_endurance/recovery → DistanceTimeEditor
+ * Complete rebuild of exercise structure editor with simplified UX.
  *
- * Note: WorkoutCategory doesn't have 'cardio_intervals' explicitly,
- * so we'll use heuristics: 'main' + endurance modality → intervals option
+ * New structure:
+ * 1. Warmup (textarea, 280 char limit)
+ * 2. Series Editor (dynamic add/remove, modality-specific forms, zone selection)
+ * 3. Timeline Visual (horizontal bar showing zone distribution)
+ * 4. Cooldown (textarea, 280 char limit)
+ *
+ * Removed from V1:
+ * - Standalone intensity section (embedded in series)
+ * - Three separate editors (Sets/Intervals/Distance) → unified SeriesEditor
+ * - Organization section (tags, levels, public/favorite flags)
  */
 
-import React, { useState } from 'react';
-import { ChevronDown, Eye } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown } from 'lucide-react';
+import SeriesEditor from './SeriesEditor';
+import TimelineVisual from './TimelineVisual';
 import type { TemplateFormState } from './useTemplateForm';
-import type { ExerciseStructure } from '../../types/flow';
-import SetsRepsEditor from './SetsRepsEditor';
-import IntervalsEditor from './IntervalsEditor';
-import DistanceTimeEditor from './DistanceTimeEditor';
+import type { WorkoutSeries } from '../../types/series';
 
 interface ExerciseStructureSectionProps {
   formData: TemplateFormState;
@@ -37,71 +41,50 @@ export default function ExerciseStructureSection({
   isOpen,
   onToggle,
 }: ExerciseStructureSectionProps) {
-  const [editorMode, setEditorMode] = useState<'sets' | 'intervals' | 'continuous'>(() => {
-    // Determine initial mode based on category and modality
-    if (formData.category === 'warmup' || formData.category === 'cooldown') {
-      return 'continuous';
-    }
-    if (formData.modality === 'strength') {
-      return 'sets';
-    }
-    if (formData.category === 'recovery') {
-      return 'continuous';
-    }
-    // Default to intervals for main workouts in endurance modalities
-    return 'intervals';
-  });
+  const [warmupCharCount, setWarmupCharCount] = useState(0);
+  const [cooldownCharCount, setCooldownCharCount] = useState(0);
 
-  const handleStructureChange = (structure: ExerciseStructure) => {
-    onChange('exercise_structure', structure);
-  };
+  // Update char counts on mount and when exercise_structure changes
+  useEffect(() => {
+    setWarmupCharCount(formData.exercise_structure?.warmup?.length || 0);
+    setCooldownCharCount(formData.exercise_structure?.cooldown?.length || 0);
+  }, [formData.exercise_structure?.warmup, formData.exercise_structure?.cooldown]);
 
   const hasErrors = ['exercise_structure'].some(
     (field) => errors[field as keyof TemplateFormState]
   );
 
-  // Determine which editors are available based on category and modality
-  const availableEditors = (() => {
-    const editors: Array<{ mode: typeof editorMode; label: string }> = [];
-
-    if (formData.modality === 'strength') {
-      editors.push({ mode: 'sets', label: 'Séries/Reps' });
-    } else {
-      // Endurance modalities can use either intervals or continuous
-      if (formData.category === 'main' || formData.category === 'test') {
-        editors.push({ mode: 'intervals', label: 'Intervalos' });
-      }
-      if (
-        formData.category !== 'test' ||
-        formData.category === 'recovery' ||
-        formData.category === 'warmup' ||
-        formData.category === 'cooldown'
-      ) {
-        editors.push({ mode: 'continuous', label: 'Contínuo' });
-      }
+  const handleWarmupChange = (value: string) => {
+    if (value.length <= 280) {
+      setWarmupCharCount(value.length);
+      onChange('exercise_structure', {
+        ...formData.exercise_structure,
+        warmup: value,
+        series: formData.exercise_structure?.series || [],
+        cooldown: formData.exercise_structure?.cooldown || '',
+      });
     }
+  };
 
-    return editors;
-  })();
-
-  // Summary text
-  const getSummary = (): string => {
-    if (!formData.exercise_structure) return 'Não configurado';
-
-    const { sets, reps, intervals, distance, target_time } = formData.exercise_structure;
-
-    if (sets && reps) {
-      return `${sets} × ${reps} reps`;
+  const handleCooldownChange = (value: string) => {
+    if (value.length <= 280) {
+      setCooldownCharCount(value.length);
+      onChange('exercise_structure', {
+        ...formData.exercise_structure,
+        warmup: formData.exercise_structure?.warmup || '',
+        series: formData.exercise_structure?.series || [],
+        cooldown: value,
+      });
     }
-    if (intervals && intervals.length > 0) {
-      return `${intervals.length} intervalos`;
-    }
-    if (distance && target_time) {
-      const km = distance / 1000;
-      return `${km >= 1 ? `${km.toFixed(1)}km` : `${distance}m`}`;
-    }
+  };
 
-    return 'Configurado';
+  const handleSeriesChange = (series: WorkoutSeries[]) => {
+    onChange('exercise_structure', {
+      ...formData.exercise_structure,
+      warmup: formData.exercise_structure?.warmup || '',
+      series,
+      cooldown: formData.exercise_structure?.cooldown || '',
+    });
   };
 
   return (
@@ -114,11 +97,8 @@ export default function ExerciseStructureSection({
       >
         <div className="flex items-center gap-3">
           <span className="text-lg font-bold text-ceramic-text-primary">
-            3. Estrutura do Exercício
+            2. Estrutura do Exercício
           </span>
-          {!isOpen && (
-            <span className="text-xs text-ceramic-text-secondary">{getSummary()}</span>
-          )}
           {hasErrors && (
             <span className="w-2 h-2 bg-ceramic-error rounded-full" title="Seção com erros" />
           )}
@@ -132,91 +112,78 @@ export default function ExerciseStructureSection({
 
       {/* Content */}
       {isOpen && (
-        <div className="p-4 pt-0 space-y-4 border-t border-ceramic-text-secondary/10">
-          {/* Editor Mode Selector (if multiple available) */}
-          {availableEditors.length > 1 && (
-            <div>
-              <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
-                Tipo de Estrutura
-              </label>
-              <div className="flex items-center gap-2">
-                {availableEditors.map((editor) => (
-                  <button
-                    key={editor.mode}
-                    type="button"
-                    onClick={() => setEditorMode(editor.mode)}
-                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      editorMode === editor.mode
-                        ? 'bg-ceramic-accent text-white shadow-md'
-                        : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
-                    }`}
-                  >
-                    {editor.label}
-                  </button>
-                ))}
-              </div>
+        <div className="p-4 pt-0 space-y-6 border-t border-ceramic-text-secondary/10">
+          {/* Warmup */}
+          <div>
+            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+              Aquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+            </label>
+            <textarea
+              value={formData.exercise_structure?.warmup || ''}
+              onChange={(e) => handleWarmupChange(e.target.value)}
+              onBlur={() => onBlur('exercise_structure')}
+              placeholder="Descreva o aquecimento... (máx. 280 caracteres)"
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none"
+            />
+            <div className="flex items-center justify-between mt-1">
+              <span
+                className={`text-xs ${
+                  warmupCharCount > 280
+                    ? 'text-ceramic-error font-medium'
+                    : 'text-ceramic-text-secondary'
+                }`}
+              >
+                {warmupCharCount}/280 caracteres
+              </span>
             </div>
-          )}
+          </div>
 
-          {/* Editor Content */}
-          <div className="p-4 bg-white/20 rounded-lg">
-            {editorMode === 'sets' && (
-              <SetsRepsEditor
-                structure={formData.exercise_structure}
-                onChange={handleStructureChange}
-              />
-            )}
-
-            {editorMode === 'intervals' && (
-              <IntervalsEditor
-                structure={formData.exercise_structure}
-                onChange={handleStructureChange}
-              />
-            )}
-
-            {editorMode === 'continuous' && (
-              <DistanceTimeEditor
-                structure={formData.exercise_structure}
-                onChange={handleStructureChange}
-                modality={formData.modality as string}
-              />
+          {/* Series Editor */}
+          <div>
+            <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
+              Séries <span className="text-ceramic-error">*</span>
+            </label>
+            <SeriesEditor
+              modality={formData.modality}
+              series={formData.exercise_structure?.series || []}
+              onChange={handleSeriesChange}
+            />
+            {touched.has('exercise_structure') && errors.exercise_structure && (
+              <p className="mt-2 text-xs text-ceramic-error">{errors.exercise_structure}</p>
             )}
           </div>
 
-          {/* Common Description Field */}
-          {editorMode !== 'continuous' && (
-            <div>
-              <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-                Instruções Adicionais{' '}
-                <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
-              </label>
-              <textarea
-                value={formData.exercise_structure?.description || ''}
-                onChange={(e) =>
-                  handleStructureChange({
-                    ...formData.exercise_structure,
-                    description: e.target.value,
-                  })
-                }
-                placeholder="Observações técnicas, foco do treino, etc..."
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none"
-              />
-            </div>
+          {/* Timeline Visual */}
+          {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
+            <TimelineVisual series={formData.exercise_structure.series} />
           )}
 
-          {/* Preview Card */}
-          {formData.exercise_structure && (
-            <div className="flex items-center gap-2 p-3 ceramic-inset rounded-lg">
-              <Eye className="w-4 h-4 text-ceramic-accent" />
-              <div className="flex-1">
-                <p className="text-xs text-ceramic-text-secondary uppercase tracking-wider mb-0.5">
-                  Preview Rápido
-                </p>
-                <p className="text-sm font-medium text-ceramic-text-primary">{getSummary()}</p>
-              </div>
+          {/* Cooldown */}
+          <div>
+            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+              Desaquecimento <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+            </label>
+            <textarea
+              value={formData.exercise_structure?.cooldown || ''}
+              onChange={(e) => handleCooldownChange(e.target.value)}
+              onBlur={() => onBlur('exercise_structure')}
+              placeholder="Descreva o desaquecimento... (máx. 280 caracteres)"
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none"
+            />
+            <div className="flex items-center justify-between mt-1">
+              <span
+                className={`text-xs ${
+                  cooldownCharCount > 280
+                    ? 'text-ceramic-error font-medium'
+                    : 'text-ceramic-text-secondary'
+                }`}
+              >
+                {cooldownCharCount}/280 caracteres
+              </span>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

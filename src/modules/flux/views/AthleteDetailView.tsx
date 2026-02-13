@@ -5,15 +5,11 @@
  * Contextual descent view with back button (no global nav).
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
-import {
-  getMockAthleteWithMetricsById,
-  getMockAlertsForAthlete,
-  getMockFeedbacksForAthlete,
-  getMockActiveBlockForAthlete,
-} from '../mockData';
+import { AthleteService } from '../services/athleteService';
+import type { Athlete } from '../types';
 import { LevelBadge } from '../components/LevelBadge';
 import { ProgressionBar } from '../components/ProgressionBar';
 import { AlertBadge } from '../components/AlertBadge';
@@ -28,6 +24,7 @@ import {
   Edit,
   Zap,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
 
 export default function AthleteDetailView() {
@@ -35,11 +32,33 @@ export default function AthleteDetailView() {
   const { athleteId } = useParams<{ athleteId: string }>();
   const { actions } = useFlux();
 
-  // Fetch athlete data (mock)
-  const athlete = athleteId ? getMockAthleteWithMetricsById(athleteId) : null;
-  const alerts = athleteId ? getMockAlertsForAthlete(athleteId) : [];
-  const feedbacks = athleteId ? getMockFeedbacksForAthlete(athleteId) : [];
-  const activeBlock = athleteId ? getMockActiveBlockForAthlete(athleteId) : null;
+  const [athlete, setAthlete] = useState<Athlete | null>(null);
+  const [loading, setLoading] = useState(true);
+  const alerts: never[] = [];
+  const feedbacks: never[] = [];
+  const activeBlock = null;
+
+  useEffect(() => {
+    if (!athleteId) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadAthlete = async () => {
+      try {
+        const { data, error } = await AthleteService.getAthleteById(athleteId);
+        if (!cancelled && data) {
+          setAthlete(data);
+        }
+        if (error) console.error('Error loading athlete:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadAthlete();
+    return () => { cancelled = true; };
+  }, [athleteId]);
 
   // Handle back
   const handleBack = () => {
@@ -59,6 +78,16 @@ export default function AthleteDetailView() {
       }
     }
   };
+
+  // Loading
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
+        <Loader2 className="w-8 h-8 text-ceramic-text-secondary animate-spin mb-4" />
+        <p className="text-sm text-ceramic-text-secondary">Carregando atleta...</p>
+      </div>
+    );
+  }
 
   // Not found
   if (!athlete) {
@@ -175,9 +204,9 @@ export default function AthleteDetailView() {
       {activeBlock && (
         <div className="mb-4">
           <ProgressionBar
-            currentWeek={athlete.current_week || 1}
+            currentWeek={1}
             totalWeeks={12}
-            consistencyRate={athlete.consistency_rate || 0}
+            consistencyRate={0}
             completedWorkouts={8}
             totalWorkouts={12}
           />
