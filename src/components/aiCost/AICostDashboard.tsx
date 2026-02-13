@@ -7,7 +7,7 @@ import { CostTrendChart } from './CostTrendChart';
 import { OperationBreakdownChart } from './OperationBreakdownChart';
 import { ModelBreakdownChart } from './ModelBreakdownChart';
 import { TopExpensiveOperationsTable } from './TopExpensiveOperationsTable';
-import { BudgetSettingsModal } from './BudgetSettingsModal';
+import { BudgetSettingsDrawer } from './BudgetSettingsDrawer';
 import {
   getDailyAICosts,
   getOperationCostBreakdown,
@@ -183,14 +183,13 @@ export const AICostDashboard: React.FC<AICostDashboardProps> = ({ userId, onBack
         <TopExpensiveOperationsTable operations={topOperations} />
       </main>
 
-      {/* Budget Settings Modal */}
-      {showBudgetModal && (
-        <BudgetSettingsModal
-          currentBudget={budget}
-          onSave={handleBudgetUpdate}
-          onClose={() => setShowBudgetModal(false)}
-        />
-      )}
+      {/* Budget Settings Drawer */}
+      <BudgetSettingsDrawer
+        currentBudget={budget}
+        isOpen={showBudgetModal}
+        onClose={() => setShowBudgetModal(false)}
+        onSave={handleBudgetUpdate}
+      />
     </div>
   );
 };

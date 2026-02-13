@@ -1,3 +1,5 @@
 export { ProfileModal } from './ProfileModal'
+export { ProfileDrawer } from './ProfileDrawer'
 export { DangerZone } from './DangerZone'
 export { default } from './ProfileModal'
+export { default as ProfileDrawerDefault } from './ProfileDrawer'

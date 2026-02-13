@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase, Sparkles } from 'lucide-react';
-import { HeaderGlobal, ProfileModal, ConnectionArchetypes, ModuleCard } from '../components';
+import { HeaderGlobal, ProfileDrawer, ConnectionArchetypes, ModuleCard } from '../components';
 import { LifeCouncilCard, PatternsSummary } from '../components/features';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
@@ -104,7 +104,7 @@ export default function Home({
       }
    };
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
-   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+   const [isProfileDrawerOpen, setProfileDrawerOpen] = useState(false);
 
    // User metadata for avatar and profile
    const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
@@ -113,10 +113,10 @@ export default function Home({
       return user.user_metadata?.full_name || user.email?.split('@')[0];
    }, [user]);
 
-   // Reset ProfileModal when component unmounts (prevents modal persisting across views)
+   // Reset ProfileDrawer when component unmounts (prevents drawer persisting across views)
    useEffect(() => {
       return () => {
-         setProfileModalOpen(false);
+         setProfileDrawerOpen(false);
       };
    }, []);
 
@@ -185,7 +185,7 @@ export default function Home({
                onLogout={onLogout}
                onNavigateToAICost={onNavigateToAICost}
                onNavigateToFileSearch={onNavigateToFileSearch}
-               onOpenProfile={() => setProfileModalOpen(true)}
+               onOpenProfile={() => setProfileDrawerOpen(true)}
                showTabs={false}
                activeTab={activeTab}
                onTabChange={handleTabChange}
@@ -202,7 +202,7 @@ export default function Home({
                   <JourneyHeroCard
                      onOpenProfile={() => {
                         log.debug(' JourneyHeroCard onOpenProfile clicked');
-                        setProfileModalOpen(true);
+                        setProfileDrawerOpen(true);
                      }}
                      onOpenJourney={() => {
                         log.debug(' JourneyHeroCard onOpenJourney clicked');
@@ -470,10 +470,10 @@ export default function Home({
                </div>
             </main>
 
-            {/* Profile Modal */}
-            <ProfileModal
-               isOpen={isProfileModalOpen}
-               onClose={() => setProfileModalOpen(false)}
+            {/* Profile Drawer */}
+            <ProfileDrawer
+               isOpen={isProfileDrawerOpen}
+               onClose={() => setProfileDrawerOpen(false)}
                userId={userId}
                userEmail={userEmail || ''}
                onDeleteAccount={handleDeleteAccount}
@@ -495,7 +495,7 @@ export default function Home({
                onLogout={onLogout}
                onNavigateToAICost={onNavigateToAICost}
                onNavigateToFileSearch={onNavigateToFileSearch}
-               onOpenProfile={() => setProfileModalOpen(true)}
+               onOpenProfile={() => setProfileDrawerOpen(true)}
                showTabs={false}
                activeTab={activeTab}
                onTabChange={handleTabChange}

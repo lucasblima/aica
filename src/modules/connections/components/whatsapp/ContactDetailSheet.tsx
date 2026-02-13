@@ -132,28 +132,27 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
             onClick={onClose}
           />
 
-          {/* Sheet */}
+          {/* Sheet - Desktop: slide from right, Mobile: slide from bottom */}
           <motion.div
             key="sheet"
             ref={sheetRef}
-            initial={{ y: '100%' }}
-            animate={{ y: '10%' }}
-            exit={{ y: '100%' }}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
-            className="fixed inset-x-0 bottom-0 z-50 bg-ceramic-base rounded-t-3xl shadow-2xl overflow-hidden"
-            style={{ height: '90vh', maxHeight: '90vh' }}
+            className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[600px] bg-ceramic-base shadow-2xl flex flex-col overflow-hidden sm:rounded-l-2xl"
           >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
-              <div className="w-10 h-1 rounded-full bg-ceramic-border" />
+            {/* Mobile drag handle */}
+            <div className="sm:hidden flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
+              <div className="w-10 h-1 rounded-full bg-ceramic-text-secondary/30" />
             </div>
 
             {/* Scrollable content */}
-            <div className="overflow-y-auto h-full pb-24 px-5">
+            <div className="flex-1 overflow-y-auto px-5 pb-6">
               {/* Header */}
               <div className="flex items-start gap-4 mb-6">
                 {/* Avatar */}

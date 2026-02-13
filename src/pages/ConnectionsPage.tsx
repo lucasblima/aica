@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectionsView } from '../modules/connections/views/ConnectionsView';
-import { CreateSpaceModal } from '../modules/connections/components/CreateSpaceModal';
+import { CreateSpaceDrawer } from '../modules/connections/components/CreateSpaceDrawer';
 import { useAuth } from '../hooks/useAuth';
 import type { ConnectionSpace, ArchetypeType } from '../modules/connections/types';
 
@@ -47,7 +47,7 @@ export function ConnectionsPage() {
         onCreateSpace={handleCreateSpace}
       />
 
-      <CreateSpaceModal
+      <CreateSpaceDrawer
         isOpen={showCreateModal}
         onClose={() => {
           setShowCreateModal(false);

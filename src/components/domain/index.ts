@@ -10,3 +10,4 @@ export { EmptyQuadrantState } from './EmptyQuadrantState';
 export { PriorityMatrix } from './PriorityMatrix';
 export { TaskCreationQuickAdd } from './TaskCreationQuickAdd';
 export { TaskEditModal } from './TaskEditModal';
+export { TaskEditDrawer } from './TaskEditDrawer';

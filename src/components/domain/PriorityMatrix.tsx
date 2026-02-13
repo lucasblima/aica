@@ -16,7 +16,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Sparkles, Calendar, Clock, Edit2, Trash2, Filter } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { Task, Quadrant } from '@/types';
-import { TaskEditModal } from '@/components/domain';
+import { TaskEditDrawer } from '@/components/domain';
 import { ConfirmationModal } from '@/components/ui';
 import { EmptyQuadrantState } from '@/components/domain';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -449,9 +449,9 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                 ))}
             </div>
 
-            {/* Edit Modal */}
+            {/* Edit Drawer */}
             {editingTask && (
-                <TaskEditModal
+                <TaskEditDrawer
                     taskId={editingTask.id}
                     initialData={editingTask}
                     isOpen={isEditModalOpen}

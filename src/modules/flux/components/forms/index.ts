@@ -6,11 +6,13 @@
 
 // V2 Components (preferred)
 export { default as TemplateFormDrawer } from './TemplateFormDrawer';
+export { default as AthleteFormDrawer } from './AthleteFormDrawer';
 export { default as SeriesEditor } from './SeriesEditor';
 export { default as TimelineVisual } from './TimelineVisual';
 
 // V1 Components (deprecated, kept for backward compatibility)
 export { default as TemplateFormModal } from './TemplateFormModal';
+export { default as AthleteFormModal } from './AthleteFormModal';
 export { default as BasicInfoSection } from './BasicInfoSection';
 export { default as IntensitySection } from './IntensitySection';
 export { default as ExerciseStructureSection } from './ExerciseStructureSection';
