@@ -13,7 +13,8 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { TemplateFormState } from './useTemplateForm';
-import type { WorkoutCategory, WorkoutIntensity, TrainingModality } from '../../types/flow';
+import type { TrainingModality } from '../../types/flow';
+import type { WorkoutCategorySimplified } from '../../types/series';
 import { MODALITY_CONFIG } from '../../types/flux';
 
 interface BasicInfoSectionProps {
@@ -26,18 +27,10 @@ interface BasicInfoSectionProps {
   onToggle: () => void;
 }
 
-const CATEGORY_OPTIONS: { value: WorkoutCategory; label: string }[] = [
+const CATEGORY_OPTIONS: { value: WorkoutCategorySimplified; label: string }[] = [
   { value: 'warmup', label: 'Aquecimento' },
   { value: 'main', label: 'Principal' },
   { value: 'cooldown', label: 'Desaquecimento' },
-  { value: 'recovery', label: 'Recuperação' },
-  { value: 'test', label: 'Teste' },
-];
-
-const INTENSITY_OPTIONS: { value: WorkoutIntensity; label: string; color: string }[] = [
-  { value: 'low', label: 'Leve', color: 'bg-ceramic-info/20 text-ceramic-info' },
-  { value: 'medium', label: 'Moderada', color: 'bg-ceramic-warning/20 text-ceramic-warning' },
-  { value: 'high', label: 'Alta', color: 'bg-ceramic-error/20 text-ceramic-error' },
 ];
 
 const MODALITY_OPTIONS: TrainingModality[] = ['swimming', 'running', 'cycling', 'strength', 'walking'];
@@ -51,7 +44,7 @@ export default function BasicInfoSection({
   isOpen,
   onToggle,
 }: BasicInfoSectionProps) {
-  const hasErrors = ['name', 'description', 'category', 'modality', 'duration', 'intensity'].some(
+  const hasErrors = ['modality', 'category'].some(
     (field) => errors[field as keyof TemplateFormState]
   );
 
@@ -79,71 +72,7 @@ export default function BasicInfoSection({
       {/* Content */}
       {isOpen && (
         <div className="p-4 pt-0 space-y-4 border-t border-ceramic-text-secondary/10">
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-              Nome do Exercício <span className="text-ceramic-error">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => onChange('name', e.target.value)}
-              onBlur={() => onBlur('name')}
-              placeholder="Ex: Fartlek 5km"
-              className={`w-full px-3 py-2 rounded-lg border ${
-                touched.has('name') && errors.name
-                  ? 'border-ceramic-error bg-ceramic-error/5'
-                  : 'border-ceramic-text-secondary/20 bg-white/50'
-              } text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50`}
-            />
-            {touched.has('name') && errors.name && (
-              <p className="mt-1 text-xs text-ceramic-error">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-              Descrição <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
-            </label>
-            <textarea
-              value={formData.description || ''}
-              onChange={(e) => onChange('description', e.target.value || undefined)}
-              onBlur={() => onBlur('description')}
-              placeholder="Objetivo e instruções do treino..."
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none"
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
-              Categoria <span className="text-ceramic-error">*</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {CATEGORY_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => onChange('category', option.value)}
-                  onBlur={() => onBlur('category')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    formData.category === option.value
-                      ? 'bg-ceramic-accent text-white shadow-md'
-                      : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {touched.has('category') && errors.category && (
-              <p className="mt-1 text-xs text-ceramic-error">{errors.category}</p>
-            )}
-          </div>
-
-          {/* Modality */}
+          {/* Modality - PRIMEIRO CAMPO */}
           <div>
             <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
               Modalidade <span className="text-ceramic-error">*</span>
@@ -174,48 +103,21 @@ export default function BasicInfoSection({
             )}
           </div>
 
-          {/* Duration */}
-          <div>
-            <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
-              Duração (minutos) <span className="text-ceramic-error">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min="1"
-                max="600"
-                step="5"
-                value={formData.duration}
-                onChange={(e) => onChange('duration', parseInt(e.target.value) || 0)}
-                onBlur={() => onBlur('duration')}
-                className={`flex-1 px-3 py-2 rounded-lg border ${
-                  touched.has('duration') && errors.duration
-                    ? 'border-ceramic-error bg-ceramic-error/5'
-                    : 'border-ceramic-text-secondary/20 bg-white/50'
-                } text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50`}
-              />
-              <span className="text-sm text-ceramic-text-secondary">min</span>
-            </div>
-            {touched.has('duration') && errors.duration && (
-              <p className="mt-1 text-xs text-ceramic-error">{errors.duration}</p>
-            )}
-          </div>
-
-          {/* Intensity */}
+          {/* Category - Estrutura da Série */}
           <div>
             <label className="block text-sm font-medium text-ceramic-text-primary mb-2">
-              Intensidade Geral <span className="text-ceramic-error">*</span>
+              Estrutura da Série <span className="text-ceramic-error">*</span>
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {INTENSITY_OPTIONS.map((option) => (
+              {CATEGORY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => onChange('intensity', option.value)}
-                  onBlur={() => onBlur('intensity')}
+                  onClick={() => onChange('category', option.value)}
+                  onBlur={() => onBlur('category')}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    formData.intensity === option.value
-                      ? `${option.color} shadow-md`
+                    formData.category === option.value
+                      ? 'bg-ceramic-accent text-white shadow-md'
                       : 'ceramic-inset hover:bg-white/50 text-ceramic-text-primary'
                   }`}
                 >
@@ -223,8 +125,8 @@ export default function BasicInfoSection({
                 </button>
               ))}
             </div>
-            {touched.has('intensity') && errors.intensity && (
-              <p className="mt-1 text-xs text-ceramic-error">{errors.intensity}</p>
+            {touched.has('category') && errors.category && (
+              <p className="mt-1 text-xs text-ceramic-error">{errors.category}</p>
             )}
           </div>
         </div>

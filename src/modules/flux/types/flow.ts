@@ -10,13 +10,24 @@
  */
 
 import type { TrainingModality } from './flux';
+import type {
+  ExerciseStructureV2,
+  WorkoutCategorySimplified,
+  WorkoutTemplateV2,
+  CreateWorkoutTemplateV2Input,
+  UpdateWorkoutTemplateV2Input,
+} from './series';
 
 // ============================================================================
 // ENUMS & CONSTANTS
 // ============================================================================
 
+/**
+ * @deprecated Use WorkoutCategorySimplified from series.ts instead
+ * V2 removes 'recovery' and 'test' categories
+ */
 export type WorkoutCategory = 'warmup' | 'main' | 'cooldown' | 'recovery' | 'test';
-export type WorkoutIntensity = 'low' | 'medium' | 'high';
+export type WorkoutIntensity = 'low' | 'medium' | 'high' | 'z1' | 'z2' | 'z3' | 'z4' | 'z5';
 export type MicrocycleWeekFocus = 'volume' | 'intensity' | 'recovery' | 'test';
 export type MicrocycleStatus = 'draft' | 'active' | 'completed' | 'archived';
 export type AthleteLevel =
@@ -59,6 +70,10 @@ export type CoachMessageTriggerType =
 // EXERCISE STRUCTURE TYPES
 // ============================================================================
 
+/**
+ * @deprecated Use ExerciseStructureV2 from series.ts instead
+ * V2 uses unified series structure with warmup/series/cooldown
+ */
 export interface IntervalSet {
   duration: number; // seconds or meters
   intensity: number; // percentage or pace
@@ -66,6 +81,10 @@ export interface IntervalSet {
   repetitions: number;
 }
 
+/**
+ * @deprecated Use ExerciseStructureV2 from series.ts instead
+ * V2 uses unified series structure with warmup/series/cooldown
+ */
 export interface ExerciseStructure {
   // Strength/Circuit format
   sets?: number;
@@ -84,10 +103,18 @@ export interface ExerciseStructure {
   equipment?: string[];
 }
 
+// Re-export V2 as the preferred structure
+export type { ExerciseStructureV2 } from './series';
+
 // ============================================================================
 // TABLE 1: WORKOUT_TEMPLATES
 // ============================================================================
 
+/**
+ * @deprecated Use WorkoutTemplateV2 from series.ts instead
+ * V2 removes: duration, intensity, ftp_percentage, pace_zone, css_percentage, rpe, tags, level, is_public, is_favorite
+ * V2 uses: simplified category (3 options), ExerciseStructureV2 with series
+ */
 export interface WorkoutTemplate {
   id: string;
   user_id: string;
@@ -121,6 +148,9 @@ export interface WorkoutTemplate {
   usage_count: number;
 }
 
+/**
+ * @deprecated Use CreateWorkoutTemplateV2Input from series.ts instead
+ */
 export interface CreateWorkoutTemplateInput {
   name: string;
   description?: string;
@@ -138,9 +168,20 @@ export interface CreateWorkoutTemplateInput {
   is_public?: boolean;
 }
 
+/**
+ * @deprecated Use UpdateWorkoutTemplateV2Input from series.ts instead
+ */
 export interface UpdateWorkoutTemplateInput extends Partial<CreateWorkoutTemplateInput> {
   id: string;
 }
+
+// Re-export V2 types as preferred
+export type {
+  WorkoutTemplateV2,
+  CreateWorkoutTemplateV2Input,
+  UpdateWorkoutTemplateV2Input,
+  WorkoutCategorySimplified,
+} from './series';
 
 // ============================================================================
 // TABLE 2: MICROCYCLES

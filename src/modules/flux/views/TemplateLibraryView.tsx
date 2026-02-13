@@ -22,7 +22,7 @@ import {
 import { AnimatePresence } from 'framer-motion';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
 import { useWorkoutTemplates } from '../hooks';
-import { TemplateFormModal } from '../components/forms';
+import TemplateFormDrawer from '../components/forms/TemplateFormDrawer';
 import type {
   WorkoutTemplate,
   TemplateFilters,
@@ -32,24 +32,40 @@ import type {
 } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
 
-const CATEGORY_LABELS: Record<WorkoutCategory, string> = {
+const CATEGORY_LABELS: Record<string, string> = {
   warmup: 'Aquecimento',
   main: 'Principal',
   cooldown: 'Desaquecimento',
-  recovery: 'Recuperação',
-  test: 'Teste',
 };
 
-const INTENSITY_LABELS: Record<WorkoutIntensity, string> = {
+const ZONE_LABELS: Record<string, string> = {
+  z1: 'Z1 - Recuperação',
+  z2: 'Z2 - Base',
+  z3: 'Z3 - Tempo',
+  z4: 'Z4 - Limiar',
+  z5: 'Z5 - VO2max',
+};
+
+const INTENSITY_LABELS: Record<string, string> = {
   low: 'Leve',
   medium: 'Moderada',
   high: 'Alta',
+  z1: 'Z1',
+  z2: 'Z2',
+  z3: 'Z3',
+  z4: 'Z4',
+  z5: 'Z5',
 };
 
-const INTENSITY_COLORS: Record<WorkoutIntensity, string> = {
+const INTENSITY_COLORS: Record<string, string> = {
   low: 'bg-ceramic-info/20 text-ceramic-info',
   medium: 'bg-ceramic-warning/20 text-ceramic-warning',
   high: 'bg-ceramic-error/20 text-ceramic-error',
+  z1: 'bg-ceramic-info/20 text-ceramic-info',
+  z2: 'bg-ceramic-success/20 text-ceramic-success',
+  z3: 'bg-ceramic-warning/20 text-ceramic-warning',
+  z4: 'bg-amber-500/20 text-amber-600',
+  z5: 'bg-ceramic-error/20 text-ceramic-error',
 };
 
 export default function TemplateLibraryView() {
@@ -265,7 +281,7 @@ export default function TemplateLibraryView() {
                 Modalidade
               </p>
               <div className="flex flex-wrap gap-2">
-                {(['swimming', 'running', 'cycling', 'strength'] as TrainingModality[]).map(
+                {(['swimming', 'running', 'cycling', 'strength', 'walking'] as TrainingModality[]).map(
                   (modality) => (
                     <button
                       key={modality}
@@ -308,18 +324,18 @@ export default function TemplateLibraryView() {
               </div>
             </div>
 
-            {/* Intensity Filter */}
+            {/* Zone Filter */}
             <div>
               <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-2">
-                Intensidade
+                Zona
               </p>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(INTENSITY_LABELS).map(([intensity, label]) => (
+                {Object.entries(ZONE_LABELS).map(([zone, label]) => (
                   <button
-                    key={intensity}
-                    onClick={() => handleFilterChange('intensity', intensity as WorkoutIntensity)}
+                    key={zone}
+                    onClick={() => handleFilterChange('intensity', zone as WorkoutIntensity)}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      filters.intensity === intensity
+                      filters.intensity === zone
                         ? 'bg-ceramic-accent text-white'
                         : 'ceramic-inset hover:bg-white/50'
                     }`}
@@ -400,17 +416,14 @@ export default function TemplateLibraryView() {
         )}
       </div>
 
-      {/* Template Form Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <TemplateFormModal
-            mode={mode === 'edit' ? 'edit' : 'create'}
-            initialData={editingTemplate || undefined}
-            onClose={handleModalClose}
-            onSave={handleModalSave}
-          />
-        )}
-      </AnimatePresence>
+      {/* Template Form Drawer */}
+      <TemplateFormDrawer
+        mode={mode === 'edit' ? 'edit' : 'create'}
+        initialData={editingTemplate || undefined}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSave={handleModalSave}
+      />
     </div>
   );
 }

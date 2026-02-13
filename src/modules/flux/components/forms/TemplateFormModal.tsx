@@ -1,12 +1,16 @@
 /**
- * TemplateFormModal Component
+ * TemplateFormModal Component (V2)
  *
  * Modal wrapper for template creation/editing with:
- * - 4 Accordion sections (BasicInfo, Intensity, ExerciseStructure, Organization)
+ * - 2 Accordion sections (BasicInfo, ExerciseStructure)
  * - Form validation and submission
  * - Dirty state warning on close
  * - Loading states
  * - Ceramic design system styling
+ *
+ * Removed sections:
+ * - IntensitySection (zones now embedded in series)
+ * - OrganizationSection (tags, levels, public/favorite flags)
  */
 
 import React, { useState, useEffect } from 'react';
@@ -14,9 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, CheckCircle } from 'lucide-react';
 import { useTemplateForm } from './useTemplateForm';
 import BasicInfoSection from './BasicInfoSection';
-import IntensitySection from './IntensitySection';
 import ExerciseStructureSection from './ExerciseStructureSection';
-import OrganizationSection from './OrganizationSection';
 import type { WorkoutTemplate } from '../../types/flow';
 
 interface TemplateFormModalProps {
@@ -48,12 +50,10 @@ export default function TemplateFormModal({
     },
   });
 
-  // Accordion state
+  // Accordion state (reduced from 4 to 2 sections)
   const [openSections, setOpenSections] = useState({
     basic: true,
-    intensity: false,
     structure: false,
-    organization: false,
   });
 
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export default function TemplateFormModal({
   };
 
   const errorCount = Object.keys(errors).length;
-  const isFormValid = errorCount === 0 && formData.name && formData.category && formData.modality;
+  const isFormValid = errorCount === 0 && formData.modality && formData.category;
 
   return (
     <AnimatePresence>
@@ -177,18 +177,7 @@ export default function TemplateFormModal({
                 onToggle={() => toggleSection('basic')}
               />
 
-              {/* Section 2: Intensity */}
-              <IntensitySection
-                formData={formData}
-                errors={errors}
-                touched={touched}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                isOpen={openSections.intensity}
-                onToggle={() => toggleSection('intensity')}
-              />
-
-              {/* Section 3: Exercise Structure */}
+              {/* Section 2: Exercise Structure */}
               <ExerciseStructureSection
                 formData={formData}
                 errors={errors}
@@ -197,17 +186,6 @@ export default function TemplateFormModal({
                 onBlur={handleBlur}
                 isOpen={openSections.structure}
                 onToggle={() => toggleSection('structure')}
-              />
-
-              {/* Section 4: Organization */}
-              <OrganizationSection
-                formData={formData}
-                errors={errors}
-                touched={touched}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                isOpen={openSections.organization}
-                onToggle={() => toggleSection('organization')}
               />
             </div>
           </form>

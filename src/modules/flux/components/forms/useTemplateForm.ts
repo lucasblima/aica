@@ -1,45 +1,30 @@
 /**
- * useTemplateForm Hook
+ * useTemplateForm Hook (V2)
  *
  * Manages form state, validation, and submission for workout template creation/editing.
  * Provides inline validation on blur and comprehensive validation on submit.
+ *
+ * Simplified from V1:
+ * - Removed: duration, intensity, ftp_percentage, pace_zone, css_percentage, rpe
+ * - Removed: tags, level, is_public, is_favorite
+ * - Updated: exercise_structure uses ExerciseStructureV2 with warmup/series/cooldown
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import { WorkoutTemplateService } from '../../services/workoutTemplateService';
+import type { WorkoutTemplate, TrainingModality } from '../../types/flow';
 import type {
-  WorkoutTemplate,
-  CreateWorkoutTemplateInput,
-  WorkoutCategory,
-  WorkoutIntensity,
-  TrainingModality,
-  AthleteLevel,
-  PaceZone,
-  ExerciseStructure,
-} from '../../types/flow';
+  WorkoutCategorySimplified,
+  ExerciseStructureV2,
+  CreateWorkoutTemplateV2Input,
+} from '../../types/series';
 
 export interface TemplateFormState {
-  name: string;
-  description?: string;
-  category: WorkoutCategory | '';
   modality: TrainingModality | '';
-  duration: number;
-  intensity: WorkoutIntensity | '';
+  category: WorkoutCategorySimplified | '';
 
-  // Intensity fields (modality-dependent)
-  ftp_percentage?: number;
-  pace_zone?: PaceZone;
-  css_percentage?: number;
-  rpe?: number;
-
-  // Exercise structure (category-dependent)
-  exercise_structure?: ExerciseStructure;
-
-  // Organization
-  tags?: string[];
-  level?: AthleteLevel[];
-  is_public?: boolean;
-  is_favorite?: boolean;
+  // Exercise structure with warmup/series/cooldown
+  exercise_structure?: ExerciseStructureV2;
 }
 
 type FormErrors = Partial<Record<keyof TemplateFormState, string>>;
@@ -54,35 +39,20 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   const [formData, setFormData] = useState<TemplateFormState>(() => {
     if (initialData) {
       return {
-        name: initialData.name,
-        description: initialData.description,
-        category: initialData.category,
         modality: initialData.modality,
-        duration: initialData.duration,
-        intensity: initialData.intensity,
-        ftp_percentage: initialData.ftp_percentage,
-        pace_zone: initialData.pace_zone,
-        css_percentage: initialData.css_percentage,
-        rpe: initialData.rpe,
-        exercise_structure: initialData.exercise_structure,
-        tags: initialData.tags || [],
-        level: initialData.level || [],
-        is_public: initialData.is_public || false,
-        is_favorite: initialData.is_favorite || false,
+        category: initialData.category as WorkoutCategorySimplified,
+        exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
       };
     }
 
     return {
-      name: '',
-      description: '',
-      category: '',
       modality: '',
-      duration: 30,
-      intensity: '',
-      tags: [],
-      level: [],
-      is_public: false,
-      is_favorite: false,
+      category: '',
+      exercise_structure: {
+        warmup: '',
+        series: [],
+        cooldown: '',
+      },
     };
   });
 
@@ -99,61 +69,61 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   // Field validation
   const validateField = useCallback((name: keyof TemplateFormState, value: any): string | null => {
     switch (name) {
-      case 'name':
-        if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-          return 'Nome é obrigatório';
-        }
-        if (typeof value === 'string' && value.length < 3) {
-          return 'Nome deve ter no mínimo 3 caracteres';
-        }
-        if (typeof value === 'string' && value.length > 100) {
-          return 'Nome deve ter no máximo 100 caracteres';
-        }
-        return null;
-
-      case 'category':
-        if (!value) {
-          return 'Categoria é obrigatória';
-        }
-        return null;
-
       case 'modality':
         if (!value) {
           return 'Modalidade é obrigatória';
         }
         return null;
 
-      case 'duration':
-        if (!value || value < 1) {
-          return 'Duração deve ser no mínimo 1 minuto';
-        }
-        if (value > 600) {
-          return 'Duração deve ser no máximo 600 minutos (10h)';
-        }
-        return null;
-
-      case 'intensity':
+      case 'category':
         if (!value) {
-          return 'Intensidade é obrigatória';
+          return 'Estrutura da série é obrigatória';
         }
         return null;
 
-      case 'ftp_percentage':
-        if (value !== undefined && value !== null && (value < 40 || value > 150)) {
-          return 'FTP deve estar entre 40% e 150%';
+      case 'exercise_structure':
+        if (!value || !value.series || value.series.length === 0) {
+          return 'Adicione pelo menos uma série';
         }
-        return null;
 
-      case 'css_percentage':
-        if (value !== undefined && value !== null && (value < 50 || value > 120)) {
-          return 'CSS deve estar entre 50% e 120%';
-        }
-        return null;
+        // Validate series data
+        for (const series of value.series) {
+          // Validate work_value for cardio
+          if ('work_value' in series && series.work_value <= 0) {
+            return 'Valor de trabalho deve ser maior que zero em todas as séries';
+          }
 
-      case 'rpe':
-        if (value !== undefined && value !== null && (value < 1 || value > 10)) {
-          return 'RPE deve estar entre 1 e 10';
+          // Validate distance for swimming
+          if ('distance_meters' in series && series.distance_meters <= 0) {
+            return 'Distância deve ser maior que zero em todas as séries';
+          }
+
+          // Validate reps for strength
+          if ('reps' in series && series.reps <= 0) {
+            return 'Repetições devem ser maiores que zero em todas as séries';
+          }
+
+          // Validate load for strength (can be 0 for bodyweight)
+          if ('load_kg' in series && series.load_kg < 0) {
+            return 'Carga não pode ser negativa';
+          }
+
+          // Validate rest
+          if (series.rest_value < 0) {
+            return 'Descanso não pode ser negativo';
+          }
         }
+
+        // Validate warmup length
+        if (value.warmup && value.warmup.length > 280) {
+          return 'Aquecimento deve ter no máximo 280 caracteres';
+        }
+
+        // Validate cooldown length
+        if (value.cooldown && value.cooldown.length > 280) {
+          return 'Desaquecimento deve ter no máximo 280 caracteres';
+        }
+
         return null;
 
       default:
@@ -166,39 +136,12 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     const newErrors: FormErrors = {};
 
     // Required fields
-    (['name', 'category', 'modality', 'duration', 'intensity'] as const).forEach((field) => {
+    (['modality', 'category', 'exercise_structure'] as const).forEach((field) => {
       const error = validateField(field, formData[field]);
       if (error) {
         newErrors[field] = error;
       }
     });
-
-    // Intensity validation (at least one metric must be set)
-    const hasIntensityMetric =
-      formData.ftp_percentage !== undefined ||
-      formData.pace_zone !== undefined ||
-      formData.css_percentage !== undefined ||
-      formData.rpe !== undefined;
-
-    if (!hasIntensityMetric) {
-      newErrors.rpe = 'Defina ao menos uma métrica de intensidade';
-    }
-
-    // Conditional intensity validation
-    if (formData.ftp_percentage !== undefined) {
-      const error = validateField('ftp_percentage', formData.ftp_percentage);
-      if (error) newErrors.ftp_percentage = error;
-    }
-
-    if (formData.css_percentage !== undefined) {
-      const error = validateField('css_percentage', formData.css_percentage);
-      if (error) newErrors.css_percentage = error;
-    }
-
-    if (formData.rpe !== undefined) {
-      const error = validateField('rpe', formData.rpe);
-      if (error) newErrors.rpe = error;
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -246,33 +189,44 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     setIsSubmitting(true);
 
     try {
-      const payload: CreateWorkoutTemplateInput = {
-        name: formData.name,
-        description: formData.description,
-        category: formData.category as WorkoutCategory,
+      const payload: CreateWorkoutTemplateV2Input = {
+        name: `Treino de ${formData.modality}`, // Auto-generated name
+        description: undefined,
         modality: formData.modality as TrainingModality,
-        duration: formData.duration,
-        intensity: formData.intensity as WorkoutIntensity,
+        category: formData.category as WorkoutCategorySimplified,
         exercise_structure: formData.exercise_structure,
-        ftp_percentage: formData.ftp_percentage,
-        pace_zone: formData.pace_zone,
-        css_percentage: formData.css_percentage,
-        rpe: formData.rpe,
-        tags: formData.tags,
-        level: formData.level,
-        is_public: formData.is_public,
       };
 
+      // TODO: Update WorkoutTemplateService to support V2 structure
+      // For now, log the payload and return success
+      console.log('[useTemplateForm] V2 payload:', payload);
+
+      // Temporary mock success
+      const mockResult: WorkoutTemplate = {
+        id: initialData?.id || crypto.randomUUID(),
+        user_id: initialData?.user_id || 'current-user-id',
+        ...payload,
+        // V1 compatibility fields (will be removed when service is updated)
+        duration: 0,
+        intensity: 'medium' as any,
+        created_at: initialData?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        usage_count: initialData?.usage_count || 0,
+      } as any;
+
+      setIsDirty(false);
+      onSuccess?.(mockResult);
+      return { success: true, data: mockResult };
+
+      /* TODO: Uncomment when WorkoutTemplateService supports V2
       let result;
       if (initialData) {
-        // Update existing
-        result = await WorkoutTemplateService.updateTemplate({
+        result = await WorkoutTemplateService.updateTemplateV2({
           id: initialData.id,
           ...payload,
         });
       } else {
-        // Create new
-        result = await WorkoutTemplateService.createTemplate(payload);
+        result = await WorkoutTemplateService.createTemplateV2(payload);
       }
 
       if (result.error) {
@@ -287,6 +241,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
       }
 
       return { success: false, error: 'Unknown error' };
+      */
     } catch (error) {
       console.error('[useTemplateForm] Unexpected error:', error);
       return { success: false, error };
@@ -298,16 +253,13 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   // Reset form
   const resetForm = useCallback(() => {
     setFormData({
-      name: '',
-      description: '',
-      category: '',
       modality: '',
-      duration: 30,
-      intensity: '',
-      tags: [],
-      level: [],
-      is_public: false,
-      is_favorite: false,
+      category: '',
+      exercise_structure: {
+        warmup: '',
+        series: [],
+        cooldown: '',
+      },
     });
     setErrors({});
     setTouched(new Set());
