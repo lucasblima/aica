@@ -524,7 +524,7 @@ export default function FluxDashboard() {
                 athlete={athlete}
                 recentFeedbacks={athleteFeedbacks}
                 activeAlerts={athleteAlerts}
-                consistencyRate={0} // TODO: Calculate from workout completion
+                adherenceRate={0} // TODO: Calculate from workout completion
                 onClick={() => handleAthleteClick(athlete.id)}
                 onWhatsAppClick={() => handleWhatsAppClick(athlete, athleteAlerts)}
               />
