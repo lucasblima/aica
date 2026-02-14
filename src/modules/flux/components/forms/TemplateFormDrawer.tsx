@@ -57,6 +57,14 @@ export default function TemplateFormDrawer({
 
   const y = useMotionValue(0);
 
+  // Reset success/error state when drawer opens (prevents stale messages on edit)
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitError(null);
+      setSubmitSuccess(false);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     setWarmupCharCount(formData.exercise_structure?.warmup?.length || 0);
     setCooldownCharCount(formData.exercise_structure?.cooldown?.length || 0);
