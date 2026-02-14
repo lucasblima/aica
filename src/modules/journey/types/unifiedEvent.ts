@@ -100,6 +100,8 @@ export interface MomentEvent extends BaseEvent {
   energy_level?: number
   tags?: string[]
   sentiment?: EventSentiment
+  /** AI-detected emotions (e.g. ["saudade", "tristeza"]) */
+  emotions_detected?: string[]
 }
 
 /**

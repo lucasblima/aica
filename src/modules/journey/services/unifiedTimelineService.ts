@@ -371,6 +371,7 @@ async function fetchMomentEvents(
         : moment.sentiment_data?.sentiment === 'very_negative' || moment.sentiment_data?.sentiment === 'negative'
         ? 'negative'
         : moment.sentiment_data ? 'neutral' : undefined,
+      emotions_detected: moment.sentiment_data?.emotions,
       displayData: { icon: '', title: '', label: '', color: '', preview: '' }, // Placeholder
     }))
 

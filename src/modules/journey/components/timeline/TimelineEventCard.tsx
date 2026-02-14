@@ -18,6 +18,7 @@ import {
   isQuestionEvent,
   isSummaryEvent,
 } from '../../types/unifiedEvent'
+import { getEmotionDisplay } from '../../types/emotionHelper'
 
 export interface TimelineEventCardProps {
   event: UnifiedEvent
@@ -132,17 +133,20 @@ export function TimelineEventCard({ event, onClick, compact = false }: TimelineE
 
       {/* Badges: Emotion + Tags */}
       <div className="flex flex-wrap gap-2 items-center">
-        {/* Emotion (extract just emoji from "emoji label" format) */}
-        {'emotion' in event && event.emotion && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-xl"
-            title={event.emotion}
-          >
-            {event.emotion.match(/^\p{Emoji}/u)?.[0] || event.emotion}
-          </motion.span>
-        )}
+        {/* Emotion emoji */}
+        {'emotion' in event && event.emotion && (() => {
+          const display = getEmotionDisplay(event.emotion)
+          return (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-xl"
+              title={display.label}
+            >
+              {display.emoji}
+            </motion.span>
+          )
+        })()}
 
         {/* Tags */}
         {'tags' in event &&
@@ -275,6 +279,38 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
             <p className="text-sm text-[#5C554B] leading-relaxed whitespace-pre-wrap">
               {event.content}
             </p>
+          </div>
+        )}
+
+        {/* AI-detected emotions */}
+        {event.emotions_detected && event.emotions_detected.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-[#948D82]">Também detectado:</span>
+            {event.emotions_detected.map((emotion, index) => (
+              <span
+                key={`${emotion}-${index}`}
+                className="px-2 py-0.5 text-xs text-[#5C554B] bg-ceramic-warm rounded-full"
+              >
+                {emotion}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Energy level */}
+        {event.energy_level != null && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#948D82]">Energia:</span>
+            <div className="flex-1 max-w-[120px] h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${event.energy_level}%`,
+                  backgroundColor: event.energy_level > 60 ? '#C4A574' : event.energy_level > 30 ? '#948D82' : '#B8A99A',
+                }}
+              />
+            </div>
+            <span className="text-xs text-[#948D82]">{event.energy_level}%</span>
           </div>
         )}
 
