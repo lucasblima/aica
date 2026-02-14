@@ -259,6 +259,8 @@ async function fetchWhatsAppEvents(
         )
       `)
       .eq('user_id', userId)
+      // Only show messages that have been processed (have intent_summary)
+      .in('processing_status', ['completed', 'skipped'])
       .order('message_timestamp', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -293,7 +295,7 @@ async function fetchWhatsAppEvents(
       created_at: msg.message_timestamp || msg.created_at,
       user_id: msg.user_id,
       // Privacy-first: Use intent_summary instead of raw text (Issue #91)
-      content: msg.intent_summary || (msg.processing_status === 'pending' ? 'Processando...' : ''),
+      content: msg.intent_summary || '',
       contact_name: msg.contact_network?.name || msg.contact_network?.whatsapp_name || 'Contato Desconhecido',
       contact_number: msg.contact_network?.phone_number || '',
       contact_id: msg.contact_id,

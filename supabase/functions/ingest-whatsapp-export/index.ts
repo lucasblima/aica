@@ -528,23 +528,18 @@ serve(async (req: Request) => {
       contacts_resolved: contactsResolved,
     });
 
-    // ---- Step 5: Extract intents (async, rate-limited) ----
-    // Process intents in background — don't block the response
-    // We fire-and-forget for large imports
+    // ---- Step 5: Extract intents (fully awaited) ----
+    // Process ALL intents synchronously to avoid stuck "pending" messages.
+    // Supabase Edge Functions have a 150s wall-clock limit, so we process
+    // in batches of 50 with a small delay to respect Gemini rate limits.
     if (intentQueue.length > 0) {
-      log.info(`Queuing ${intentQueue.length} messages for intent extraction...`);
+      log.info(`Processing ${intentQueue.length} messages for intent extraction...`);
 
-      // Process first 100 intents synchronously for quick feedback
-      const syncBatch = intentQueue.slice(0, 100);
-      await extractIntentBatch(supabaseUrl, serviceRoleKey, syncBatch);
-
-      // If more remain, fire-and-forget the rest
-      if (intentQueue.length > 100) {
-        const asyncBatch = intentQueue.slice(100);
-        // Don't await — let it process in the background
-        extractIntentBatch(supabaseUrl, serviceRoleKey, asyncBatch).catch((err) => {
-          log.error('Async intent extraction failed:', err instanceof Error ? err.message : String(err));
-        });
+      const INTENT_BATCH_SIZE = 50;
+      for (let i = 0; i < intentQueue.length; i += INTENT_BATCH_SIZE) {
+        const batch = intentQueue.slice(i, i + INTENT_BATCH_SIZE);
+        await extractIntentBatch(supabaseUrl, serviceRoleKey, batch);
+        log.info(`Intent extraction progress: ${Math.min(i + INTENT_BATCH_SIZE, intentQueue.length)}/${intentQueue.length}`);
       }
     }
 
