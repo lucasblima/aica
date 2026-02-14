@@ -149,17 +149,29 @@ async function resolveContact(
 }
 
 /**
- * Call extract-intent for a batch of messages.
- * Fire-and-forget pattern from webhook-evolution.
+ * Process intent extraction with time budget and controlled concurrency.
+ * Processes as many messages as possible within the time budget.
+ * Returns the number of messages successfully processed.
  */
-async function extractIntentBatch(
+async function processIntentsWithBudget(
   supabaseUrl: string,
   serviceRoleKey: string,
-  messages: Array<{ id: string; intentSummaryText: string; senderName: string }>
-): Promise<void> {
-  for (const msg of messages) {
-    try {
-      await fetch(`${supabaseUrl}/functions/v1/extract-intent`, {
+  messages: Array<{ id: string; text: string; senderName: string }>,
+  timeBudgetMs = 100_000,
+  concurrency = 5
+): Promise<number> {
+  const startTime = Date.now();
+  let processed = 0;
+
+  for (let i = 0; i < messages.length; i += concurrency) {
+    if (Date.now() - startTime > timeBudgetMs) {
+      log.info(`Intent time budget reached: ${processed}/${messages.length} processed`);
+      break;
+    }
+
+    const chunk = messages.slice(i, i + concurrency);
+    const promises = chunk.map((msg) =>
+      fetch(`${supabaseUrl}/functions/v1/extract-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -167,18 +179,20 @@ async function extractIntentBatch(
         },
         body: JSON.stringify({
           messageId: msg.id,
-          rawText: msg.intentSummaryText,
+          rawText: msg.text,
           contactName: msg.senderName,
-          source: 'whatsapp', // Must be 'whatsapp' so extract-intent writes to DB
+          source: 'whatsapp',
         }),
-      });
-    } catch (err) {
-      log.warn(`extract-intent failed for ${msg.id}:`, err instanceof Error ? err.message : String(err));
-    }
+      }).catch((err) => {
+        log.warn(`extract-intent failed for ${msg.id}:`, err instanceof Error ? err.message : String(err));
+      })
+    );
 
-    // Rate limit: ~2 per second
-    await new Promise((r) => setTimeout(r, 500));
+    await Promise.all(promises);
+    processed += chunk.length;
   }
+
+  return processed;
 }
 
 // ============================================================================
@@ -410,65 +424,96 @@ serve(async (req: Request) => {
       });
     }
 
-    // ---- Step 4: Resolve contacts and insert messages ----
-    await updateImportStatus(supabase, importId, { processing_status: 'extracting_intents' });
-
-    const contactCache = new Map<string, string>();
-    let messagesImported = 0;
-    let messagesDeduplicated = 0;
-    let contactsResolved = 0;
-    const intentQueue: Array<{ id: string; intentSummaryText: string; senderName: string }> = [];
-
     // Process text messages only (skip system and media_omitted)
     const textMessages = parsed.messages.filter(
       (m) => m.messageType === 'text' && m.senderName && m.text.trim().length > 0
     );
 
-    // Process in batches of 50
-    const BATCH_SIZE = 50;
-    for (let i = 0; i < textMessages.length; i += BATCH_SIZE) {
-      const batch = textMessages.slice(i, i + BATCH_SIZE);
-      const inserts: Array<Record<string, unknown>> = [];
+    // ---- Step 4: Resolve contacts upfront ----
+    // Resolve unique senders ONCE (not per-message) — O(unique_senders) not O(messages)
+    await updateImportStatus(supabase, importId, { processing_status: 'resolving_contacts' });
 
-      for (const msg of batch) {
-        // Resolve contact
-        const contactId = await resolveContact(supabase, userId, msg.senderName, contactCache);
-        if (!contactId) continue;
+    const contactCache = new Map<string, string>();
+    const uniqueSenders = [...new Set(textMessages.map((m) => m.senderName))];
 
-        if (!contactCache.has(`counted_${msg.senderName}`)) {
-          contactsResolved++;
-          contactCache.set(`counted_${msg.senderName}`, 'true');
-        }
+    for (const sender of uniqueSenders) {
+      await resolveContact(supabase, userId, sender, contactCache);
+    }
 
-        // Generate dedup hash
-        const dedupHash = await generateDedupHash(
-          contactId,
-          msg.timestamp,
-          msg.senderName,
-          msg.text
-        );
+    const contactsResolved = uniqueSenders.filter((s) => contactCache.has(s)).length;
+    log.info(`Resolved ${contactsResolved} contacts from ${uniqueSenders.length} unique senders`);
 
-        inserts.push({
-          user_id: userId,
-          contact_id: contactId,
-          contact_phone: extractPhoneFromSender(msg.senderName) || '',
-          contact_name: msg.senderName,
-          message_direction: 'incoming',
-          message_type: 'text',
-          message_text: '', // Privacy: raw text never stored, extract-intent will fill intent_summary
-          message_timestamp: msg.timestamp.toISOString(),
-          processing_status: 'pending',
-          source: 'file_import',
-          dedup_hash: dedupHash,
-          import_id: importId,
-          instance_name: `import_${importId.substring(0, 8)}`,
-          message_id: `imp_${dedupHash.substring(0, 16)}`,
-        });
+    // ---- Step 5: Insert messages with dedup pre-filter ----
+    // Strategy: compute hashes in parallel → check which exist → insert only new ones
+    // This eliminates the one-by-one fallback that caused timeouts on large imports.
+    await updateImportStatus(supabase, importId, { processing_status: 'storing_messages' });
+
+    // 5a: Compute dedup hashes in parallel (batches of 200 for memory)
+    type PreparedMsg = { msg: ParsedMessage; contactId: string; hash: string };
+    const prepared: PreparedMsg[] = [];
+
+    const HASH_BATCH = 200;
+    for (let i = 0; i < textMessages.length; i += HASH_BATCH) {
+      const batch = textMessages.slice(i, i + HASH_BATCH);
+      const results = await Promise.all(
+        batch.map(async (msg): Promise<PreparedMsg | null> => {
+          const contactId = contactCache.get(msg.senderName);
+          if (!contactId) return null;
+          const hash = await generateDedupHash(contactId, msg.timestamp, msg.senderName, msg.text);
+          return { msg, contactId, hash };
+        })
+      );
+      for (const r of results) {
+        if (r) prepared.push(r);
       }
+    }
 
-      if (inserts.length === 0) continue;
+    // 5b: Pre-filter duplicates — query existing hashes in sub-batches of 80
+    // (keeps URL under PostgREST's 8KB limit: 80 × 64-char hashes ≈ 5KB)
+    const existingHashes = new Set<string>();
+    const DEDUP_CHECK_BATCH = 80;
 
-      // Bulk insert messages
+    for (let i = 0; i < prepared.length; i += DEDUP_CHECK_BATCH) {
+      const subBatch = prepared.slice(i, i + DEDUP_CHECK_BATCH).map((p) => p.hash);
+      const { data: existing } = await supabase
+        .from('whatsapp_messages')
+        .select('dedup_hash')
+        .eq('user_id', userId)
+        .in('dedup_hash', subBatch);
+
+      for (const row of existing || []) {
+        existingHashes.add(row.dedup_hash);
+      }
+    }
+
+    const newMessages = prepared.filter((p) => !existingHashes.has(p.hash));
+    const messagesDeduplicated = prepared.length - newMessages.length;
+    let messagesImported = 0;
+    const intentQueue: Array<{ id: string; text: string; senderName: string }> = [];
+
+    log.info(`Dedup: ${prepared.length} total, ${newMessages.length} new, ${messagesDeduplicated} duplicates`);
+
+    // 5c: Bulk insert only new messages (no conflicts possible)
+    const INSERT_BATCH = 200;
+    for (let i = 0; i < newMessages.length; i += INSERT_BATCH) {
+      const batch = newMessages.slice(i, i + INSERT_BATCH);
+      const inserts = batch.map((b) => ({
+        user_id: userId,
+        contact_id: b.contactId,
+        contact_phone: extractPhoneFromSender(b.msg.senderName) || '',
+        contact_name: b.msg.senderName,
+        message_direction: 'incoming',
+        message_type: 'text',
+        message_text: '',
+        message_timestamp: b.msg.timestamp.toISOString(),
+        processing_status: 'pending',
+        source: 'file_import',
+        dedup_hash: b.hash,
+        import_id: importId,
+        instance_name: `import_${importId.substring(0, 8)}`,
+        message_id: `imp_${b.hash.substring(0, 16)}`,
+      }));
+
       const { data: inserted, error: insertError } = await supabase
         .from('whatsapp_messages')
         .insert(inserts)
@@ -476,42 +521,25 @@ serve(async (req: Request) => {
 
       if (insertError) {
         log.warn(`Batch insert error at offset ${i}: ${insertError.message}`);
-        // If bulk fails, try one-by-one to skip problematic rows
-        for (const row of inserts) {
-          const { data: single, error: singleErr } = await supabase
-            .from('whatsapp_messages')
-            .insert(row)
-            .select('id')
-            .single();
-          if (singleErr) {
-            log.warn(`Single insert failed for ${row.message_id}: ${singleErr.message}`);
-            messagesDeduplicated++;
-          } else if (single) {
-            messagesImported++;
-          }
-        }
         continue;
       }
 
       const insertedCount = inserted?.length || 0;
       messagesImported += insertedCount;
 
-      // Queue inserted messages for intent extraction
+      // Queue for intent extraction (raw text only available now, never stored)
       if (inserted) {
-        for (let j = 0; j < inserted.length; j++) {
-          const originalMsg = batch[j];
-          if (originalMsg) {
-            intentQueue.push({
-              id: inserted[j].id,
-              intentSummaryText: originalMsg.text.substring(0, 500),
-              senderName: originalMsg.senderName,
-            });
-          }
+        for (let j = 0; j < inserted.length && j < batch.length; j++) {
+          intentQueue.push({
+            id: inserted[j].id,
+            text: batch[j].msg.text.substring(0, 500),
+            senderName: batch[j].msg.senderName,
+          });
         }
       }
 
-      // Update progress every batch
-      if (i % (BATCH_SIZE * 5) === 0) {
+      // Progress update every 3 batches
+      if (i > 0 && i % (INSERT_BATCH * 3) === 0) {
         await updateImportStatus(supabase, importId, {
           messages_imported: messagesImported,
           messages_deduplicated: messagesDeduplicated,
@@ -520,79 +548,74 @@ serve(async (req: Request) => {
       }
     }
 
-    log.info(`Inserted ${messagesImported} messages, ${messagesDeduplicated} deduplicated, ${contactsResolved} contacts`);
+    log.info(`Stored ${messagesImported} messages, ${messagesDeduplicated} deduplicated, ${contactsResolved} contacts`);
 
+    // ---- Step 6: Mark import completed (messages are safe) ----
+    // Mark completed BEFORE async processing so the import doesn't appear stuck.
     await updateImportStatus(supabase, importId, {
+      processing_status: 'completed',
       messages_imported: messagesImported,
       messages_deduplicated: messagesDeduplicated,
       contacts_resolved: contactsResolved,
     });
 
-    // ---- Step 5: Extract intents (fully awaited) ----
-    // Process ALL intents synchronously to avoid stuck "pending" messages.
-    // Supabase Edge Functions have a 150s wall-clock limit, so we process
-    // in batches of 50 with a small delay to respect Gemini rate limits.
+    // ---- Step 7: Intent extraction (time-budgeted, best-effort) ----
+    // Process with concurrency=5 and 100s time budget.
+    // For 120 msgs: 120/5 × ~2s = ~48s ✓
+    // For 4500 msgs: processes ~250 within budget, rest stays pending.
     if (intentQueue.length > 0) {
-      log.info(`Processing ${intentQueue.length} messages for intent extraction...`);
-
-      const INTENT_BATCH_SIZE = 50;
-      for (let i = 0; i < intentQueue.length; i += INTENT_BATCH_SIZE) {
-        const batch = intentQueue.slice(i, i + INTENT_BATCH_SIZE);
-        await extractIntentBatch(supabaseUrl, serviceRoleKey, batch);
-        log.info(`Intent extraction progress: ${Math.min(i + INTENT_BATCH_SIZE, intentQueue.length)}/${intentQueue.length}`);
-      }
+      log.info(`Extracting intents for ${intentQueue.length} messages (time-budgeted)...`);
+      const intentCount = await processIntentsWithBudget(
+        supabaseUrl, serviceRoleKey, intentQueue, 100_000, 5
+      );
+      log.info(`Intent extraction: ${intentCount}/${intentQueue.length} processed`);
     }
 
-    // ---- Step 6: Index in File Search V2 for RAG ----
-    await updateImportStatus(supabase, importId, { processing_status: 'indexing_rag' });
-
+    // ---- Step 8: RAG indexing (fire-and-forget) ----
     const ragText = extractTextForRAG(parsed);
     if (ragText.length > 100) {
-      try {
-        const ragResponse = await fetch(`${supabaseUrl}/functions/v1/file-search-v2`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${serviceRoleKey}`,
-          },
-          body: JSON.stringify({
-            action: 'upload_document',
-            userId,
-            storeName: `whatsapp-conversations-${userId}`,
-            storeDisplayName: 'WhatsApp Conversations',
-            documentContent: ragText,
-            documentDisplayName: filename || 'whatsapp-export.txt',
-            metadata: {
-              importId,
-              participants: parsed.participants,
-              dateRange: {
-                start: parsed.dateRange.start.toISOString(),
-                end: parsed.dateRange.end.toISOString(),
-              },
+      fetch(`${supabaseUrl}/functions/v1/file-search-v2`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({
+          action: 'upload_document',
+          userId,
+          storeName: `whatsapp-conversations-${userId}`,
+          storeDisplayName: 'WhatsApp Conversations',
+          documentContent: ragText,
+          documentDisplayName: filename || 'whatsapp-export.txt',
+          metadata: {
+            importId,
+            participants: parsed.participants,
+            dateRange: {
+              start: parsed.dateRange.start.toISOString(),
+              end: parsed.dateRange.end.toISOString(),
             },
-          }),
-        });
-
-        if (ragResponse.ok) {
-          const ragResult = await ragResponse.json();
-          if (ragResult.storeId || ragResult.documentId) {
+          },
+        }),
+      }).then(async (resp) => {
+        if (resp.ok) {
+          const result = await resp.json();
+          if (result.storeId || result.documentId) {
             await updateImportStatus(supabase, importId, {
-              file_search_store_id: ragResult.storeId || null,
-              file_search_document_id: ragResult.documentId || null,
+              file_search_store_id: result.storeId || null,
+              file_search_document_id: result.documentId || null,
             });
           }
           log.info('RAG indexing completed');
         } else {
-          log.warn('RAG indexing failed:', await ragResponse.text());
+          log.warn('RAG indexing failed:', await resp.text());
         }
-      } catch (ragErr) {
-        log.warn('RAG indexing error (non-fatal):', ragErr instanceof Error ? ragErr.message : String(ragErr));
-      }
+      }).catch((err) => {
+        log.warn('RAG indexing error (non-fatal):', err instanceof Error ? err.message : String(err));
+      });
     }
 
-    // ---- Step 7: Trigger downstream pipelines ----
-    // Fire-and-forget: build-contact-dossier and build-conversation-threads
-    const uniqueContactIds = [...new Set(Array.from(contactCache.values()).filter(v => v !== 'true'))];
+    // ---- Step 9: Trigger downstream pipelines (fire-and-forget) ----
+    const uniqueContactIds = [...new Set(Array.from(contactCache.values()))];
 
     for (const fn of ['build-contact-dossier', 'build-conversation-threads']) {
       fetch(`${supabaseUrl}/functions/v1/${fn}`, {
@@ -606,14 +629,6 @@ serve(async (req: Request) => {
         log.warn(`${fn} trigger failed (non-fatal):`, err instanceof Error ? err.message : String(err));
       });
     }
-
-    // ---- Step 8: Mark completed ----
-    await updateImportStatus(supabase, importId, {
-      processing_status: 'completed',
-      messages_imported: messagesImported,
-      messages_deduplicated: messagesDeduplicated,
-      contacts_resolved: contactsResolved,
-    });
 
     log.info(`Import ${importId} completed successfully`);
 

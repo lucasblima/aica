@@ -35,6 +35,37 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 
 // =============================================================================
+// ROBUST JSON EXTRACTION (handles Gemini preamble text, code fences, etc.)
+// =============================================================================
+
+function extractJSON<T = unknown>(text: string): T {
+  // Try direct parse first
+  try { return JSON.parse(text) } catch (_e) { /* continue */ }
+
+  // Try extracting from markdown code fences
+  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
+  if (fenceMatch) {
+    try { return JSON.parse(fenceMatch[1].trim()) } catch (_e) { /* continue */ }
+  }
+
+  // Try finding JSON object in text (handles preamble/trailing content)
+  const braceStart = text.indexOf('{')
+  const braceEnd = text.lastIndexOf('}')
+  if (braceStart !== -1 && braceEnd > braceStart) {
+    try { return JSON.parse(text.substring(braceStart, braceEnd + 1)) } catch (_e) { /* continue */ }
+  }
+
+  // Try finding JSON array
+  const bracketStart = text.indexOf('[')
+  const bracketEnd = text.lastIndexOf(']')
+  if (bracketStart !== -1 && bracketEnd > bracketStart) {
+    try { return JSON.parse(text.substring(bracketStart, bracketEnd + 1)) } catch (_e) { /* continue */ }
+  }
+
+  throw new Error(`No valid JSON found in text: ${text.substring(0, 200)}`)
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -457,12 +488,14 @@ serve(async (req) => {
     log('DEBUG', 'Calling Gemini for intent extraction')
 
     const geminiResponse = await callGeminiWithRetry(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         contents: [{ parts: [{ text: intentPrompt }] }],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 500,
+          maxOutputTokens: 1024,
+          responseMimeType: 'application/json',
+          thinkingConfig: { thinkingBudget: 0 },
         },
       }
     )
@@ -475,23 +508,24 @@ serve(async (req) => {
 
     const geminiResult = await geminiResponse.json()
     const intentText = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text
+    const finishReason = geminiResult.candidates?.[0]?.finishReason
+
+    if (finishReason && finishReason !== 'STOP') {
+      log('WARN', 'Gemini response not fully completed', { finishReason })
+    }
 
     if (!intentText) {
       throw new Error('Empty response from Gemini')
     }
 
-    // Parse JSON response (remove markdown if present)
-    const cleanedJson = intentText
-      .replace(/```json\n?/g, '')
-      .replace(/```\n?/g, '')
-      .trim()
-
+    // Parse JSON response robustly (handles preamble text, code fences, trailing content)
     let intentData: Record<string, unknown>
     try {
-      intentData = JSON.parse(cleanedJson)
+      intentData = extractJSON(intentText) as Record<string, unknown>
     } catch (parseError) {
-      log('ERROR', 'Failed to parse Gemini response', { response: cleanedJson })
-      throw new Error('Invalid JSON response from Gemini')
+      const errMsg = parseError instanceof Error ? parseError.message : String(parseError)
+      log('ERROR', 'Failed to parse Gemini response', { error: errMsg, response: intentText.substring(0, 500) })
+      throw new Error(`Invalid JSON response from Gemini: ${errMsg}`)
     }
 
     // Validate required fields
