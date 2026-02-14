@@ -97,6 +97,9 @@ export { default as AthleteDetailView } from './views/AthleteDetailView';
 export { default as CanvasEditorView } from './views/CanvasEditorView';
 export { default as AlertsView } from './views/AlertsView';
 
+// Athlete Portal
+export { default as AthletePortalView } from './views/AthletePortalView';
+
 // Flow Module Views
 export { default as TemplateLibraryView } from './views/TemplateLibraryView';
 export { default as MicrocycleEditorView } from './views/MicrocycleEditorView';

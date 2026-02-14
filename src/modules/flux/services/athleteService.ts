@@ -6,7 +6,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient';
-import type { Athlete, AthleteStatus, AthleteLevel, TrainingModality } from '../types/flux';
+import type { Athlete, AthleteStatus, AthleteLevel, TrainingModality, MyAthleteProfile } from '../types/flux';
 
 export interface CreateAthleteInput {
   name: string;
@@ -343,6 +343,29 @@ export class AthleteService {
       return { data: count, error };
     } catch (error) {
       console.error('[AthleteService] Error fetching active count:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get the current user's athlete profile (athlete portal).
+   * Calls RPC get_my_athlete_profile() which returns data based on auth_user_id.
+   */
+  static async getMyAthleteProfile(): Promise<{
+    data: MyAthleteProfile | null;
+    error: any;
+  }> {
+    try {
+      const { data, error } = await supabase.rpc('get_my_athlete_profile');
+
+      if (error) {
+        console.error('[AthleteService] Error fetching my athlete profile:', error);
+        return { data: null, error };
+      }
+
+      return { data: data as MyAthleteProfile | null, error: null };
+    } catch (error) {
+      console.error('[AthleteService] Error fetching my athlete profile:', error);
       return { data: null, error };
     }
   }

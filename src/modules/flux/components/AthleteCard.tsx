@@ -11,6 +11,7 @@ import type { AthleteCardProps } from '../types';
 import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
+import { ConnectionStatusDot } from './ConnectionStatusDot';
 import { User, AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 
 interface ExtendedAthleteCardProps extends AthleteCardProps {
@@ -85,8 +86,9 @@ export function AthleteCard({
 
           {/* Name + Level + Modality */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-bold text-ceramic-text-primary truncate">
+            <h3 className="text-base font-bold text-ceramic-text-primary truncate flex items-center gap-1.5">
               {athlete.name}
+              <ConnectionStatusDot status={athlete.invitation_status} />
             </h3>
             <div className="mt-1 flex items-center gap-2">
               <LevelBadge level={athlete.level} size="sm" />

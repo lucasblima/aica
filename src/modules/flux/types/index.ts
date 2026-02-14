@@ -18,6 +18,7 @@ export type {
   // Enums
   AthleteLevel,
   AthleteStatus,
+  InvitationStatus,
   BlockStatus,
   PlanStatus,
   AlertType,
@@ -55,6 +56,9 @@ export type {
   // Helper Types
   FluxLoadResult,
   AthleteWithMetrics,
+
+  // Athlete Portal
+  MyAthleteProfile,
 } from './flux';
 
 export {

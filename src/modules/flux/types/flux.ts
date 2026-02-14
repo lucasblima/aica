@@ -43,6 +43,11 @@ export interface ModalityLevel {
 export type AthleteStatus = 'active' | 'paused' | 'trial' | 'churned';
 
 /**
+ * Athlete invitation/linking status
+ */
+export type InvitationStatus = 'none' | 'pending' | 'connected';
+
+/**
  * Workout block status
  */
 export type BlockStatus = 'draft' | 'active' | 'completed' | 'cancelled';
@@ -91,6 +96,11 @@ export interface Athlete {
   trial_expires_at?: string; // ISO 8601
   onboarding_data?: Record<string, unknown>; // AI onboarding responses
   anamnesis?: AnamnesisData;
+
+  // User linking (athlete ↔ AICA user)
+  auth_user_id?: string; // FK to auth.users — the athlete's own account
+  linked_at?: string; // When the link was established
+  invitation_status?: InvitationStatus; // 'none' | 'pending' | 'connected'
 
   // Health documentation configuration (set by coach)
   requires_cardio_exam?: boolean; // Cardiological exam required
@@ -259,6 +269,45 @@ export interface Exercise {
   default_rest?: string;
   level_range?: AthleteLevel[];
   tags?: string[];
+}
+
+/**
+ * Athlete portal profile returned by RPC get_my_athlete_profile()
+ */
+export interface MyAthleteProfile {
+  athlete_id: string;
+  athlete_name: string;
+  coach_name: string;
+  modality: TrainingModality;
+  level: AthleteLevel;
+  status: AthleteStatus;
+  active_microcycle: {
+    id: string;
+    name: string;
+    status: string;
+    start_date: string;
+    current_week: number;
+    total_slots: number;
+    completed_slots: number;
+    slots: Array<{
+      id: string;
+      day_of_week: number;
+      week_number: number;
+      time_of_day: string | null;
+      is_completed: boolean;
+      completed_at: string | null;
+      athlete_feedback: string | null;
+      custom_duration: number | null;
+      custom_notes: string | null;
+      template: {
+        id: string;
+        name: string;
+        category: string;
+        duration: number;
+        intensity: string;
+      };
+    }>;
+  } | null;
 }
 
 // ============================================
