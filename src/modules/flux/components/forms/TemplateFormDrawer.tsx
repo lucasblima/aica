@@ -248,6 +248,36 @@ export default function TemplateFormDrawer({
                   )}
                 </div>
 
+                {/* Name & Description (edit mode only) */}
+                {mode === 'edit' && (
+                  <div className="space-y-3 p-3 ceramic-inset rounded-lg">
+                    <div>
+                      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">
+                        Nome do Exercício
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name || ''}
+                        onChange={(e) => handleChange('name', e.target.value)}
+                        placeholder="Gerado automaticamente ao salvar"
+                        className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">
+                        Descrição
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.description || ''}
+                        onChange={(e) => handleChange('description', e.target.value)}
+                        placeholder="Gerada automaticamente ao salvar"
+                        className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Aquecimento */}
                 <div>
                   <label className="block text-sm font-medium text-ceramic-text-primary mb-1">

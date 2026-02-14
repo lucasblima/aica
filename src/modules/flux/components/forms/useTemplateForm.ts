@@ -2,12 +2,8 @@
  * useTemplateForm Hook (V2)
  *
  * Manages form state, validation, and submission for workout template creation/editing.
- * Provides inline validation on blur and comprehensive validation on submit.
- *
- * Simplified from V1:
- * - Removed: duration, intensity, ftp_percentage, pace_zone, css_percentage, rpe
- * - Removed: tags, level, is_public, is_favorite
- * - Updated: exercise_structure uses ExerciseStructureV2 with warmup/series/cooldown
+ * Auto-generates name and description from exercise structure using market-standard terminology.
+ * Name/description are editable in edit mode but not shown in create mode.
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -17,11 +13,12 @@ import type {
   ExerciseStructureV2,
   CreateWorkoutTemplateV2Input,
 } from '../../types/series';
+import { generateWorkoutName, generateWorkoutDescription } from '../../types/series';
 
 export interface TemplateFormState {
   modality: TrainingModality | '';
-
-  // Exercise structure with warmup/series/cooldown
+  name?: string; // Editable in edit mode, auto-generated in create
+  description?: string; // Editable in edit mode, auto-generated in create
   exercise_structure?: ExerciseStructureV2;
 }
 
@@ -38,6 +35,8 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     if (initialData) {
       return {
         modality: initialData.modality,
+        name: initialData.name,
+        description: initialData.description,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
       };
     }
@@ -78,38 +77,26 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
 
         // Validate series data
         for (const series of value.series) {
-          // Validate work_value for cardio
           if ('work_value' in series && series.work_value <= 0) {
             return 'Valor de trabalho deve ser maior que zero em todas as séries';
           }
-
-          // Validate distance for swimming
           if ('distance_meters' in series && series.distance_meters <= 0) {
             return 'Distância deve ser maior que zero em todas as séries';
           }
-
-          // Validate reps for strength
           if ('reps' in series && series.reps <= 0) {
             return 'Repetições devem ser maiores que zero em todas as séries';
           }
-
-          // Validate load for strength (can be 0 for bodyweight)
           if ('load_kg' in series && series.load_kg < 0) {
             return 'Carga não pode ser negativa';
           }
-
-          // Validate rest/interval
           if ((series.rest_minutes ?? 0) < 0 || (series.rest_seconds ?? 0) < 0) {
             return 'Intervalo não pode ser negativo';
           }
         }
 
-        // Validate warmup length
         if (value.warmup && value.warmup.length > 280) {
           return 'Aquecimento deve ter no máximo 280 caracteres';
         }
-
-        // Validate cooldown length
         if (value.cooldown && value.cooldown.length > 280) {
           return 'Desaquecimento deve ter no máximo 280 caracteres';
         }
@@ -125,7 +112,6 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   const validateAll = useCallback((): boolean => {
     const newErrors: FormErrors = {};
 
-    // Required fields
     (['modality', 'exercise_structure'] as const).forEach((field) => {
       const error = validateField(field, formData[field]);
       if (error) {
@@ -144,7 +130,6 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
       [name]: value,
     }));
 
-    // Clear error when user starts typing
     if (touched.has(name)) {
       const error = validateField(name, value);
       setErrors((prev) => ({
@@ -167,11 +152,9 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
 
   // Handle submit
   const handleSubmit = useCallback(async (): Promise<{ success: boolean; data?: WorkoutTemplate; error?: any }> => {
-    // Mark all fields as touched
     const allFields = new Set(Object.keys(formData));
     setTouched(allFields);
 
-    // Validate all fields
     if (!validateAll()) {
       return { success: false, error: 'Corrija os erros antes de salvar' };
     }
@@ -179,10 +162,19 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     setIsSubmitting(true);
 
     try {
+      const modality = formData.modality as TrainingModality;
+      const series = formData.exercise_structure?.series || [];
+
+      // Auto-generate name/description if not manually set (or use edited values)
+      const autoName = generateWorkoutName(modality, series);
+      const autoDescription = formData.exercise_structure
+        ? generateWorkoutDescription(modality, formData.exercise_structure)
+        : undefined;
+
       const payload: CreateWorkoutTemplateV2Input = {
-        name: `Treino de ${formData.modality}`,
-        description: undefined,
-        modality: formData.modality as TrainingModality,
+        name: formData.name || autoName,
+        description: formData.description || autoDescription,
+        modality,
         category: 'main',
         exercise_structure: formData.exercise_structure,
       };
