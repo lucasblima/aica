@@ -56,6 +56,21 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
+  // Sync form state when initialData changes (async load for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        modality: initialData.modality,
+        name: initialData.name,
+        description: initialData.description,
+        exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
+      });
+      setErrors({});
+      setTouched(new Set());
+      setIsDirty(false);
+    }
+  }, [initialData]);
+
   // Track dirty state
   useEffect(() => {
     setIsDirty(true);
