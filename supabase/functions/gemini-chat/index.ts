@@ -728,33 +728,34 @@ async function handleAnalyzeMoment(genAI: GoogleGenerativeAI, payload: AnalyzeMo
   const model = genAI.getGenerativeModel({
     model: MODELS.fast,
     generationConfig: {
-      temperature: 0.5,
+      temperature: 0.6,
       topP: 0.9,
       topK: 40,
-      maxOutputTokens: 512,
-      responseMimeType: 'application/json',
+      maxOutputTokens: 4096,
     },
   })
 
-  const prompt = `Voce e um analista emocional especializado em diarios pessoais. Analise com sensibilidade o seguinte momento:
+  const prompt = `Analise a emocao deste registro de diario em portugues. Retorne SOMENTE JSON.
 
-"${payload.content}"
+EXEMPLOS:
 
-IMPORTANTE: Identifique a emocao REAL por tras das palavras. Nao use "neutral" a menos que o texto seja genuinamente neutro (ex: lista de compras, dado factual sem emocao). A maioria dos registros de diario contem emocao — identifique-a.
+Entrada: "Estou com muitas saudades das minhas filhas"
+{"tags":["saudade","filhas","familia"],"mood":{"emoji":"😢","label":"Saudade","value":"sad"},"sentiment":"negative","sentimentScore":-0.6,"emotions":["saudade","tristeza"],"triggers":["distancia da familia"],"energyLevel":30}
 
-Retorne JSON com:
-- tags: lista de 3-5 palavras-chave tematicas (portugues, minusculas, sem acentos)
-- mood: objeto com:
-  - "emoji": 1 emoji que melhor representa o humor
-  - "label": nome da emocao em portugues (ex: "Feliz", "Ansioso", "Grato", "Determinado")
-  - "value": um destes valores EXATOS: happy, sad, anxious, angry, thoughtful, calm, grateful, tired, inspired, neutral, excited, disappointed, frustrated, loving, scared, determined, sleepy, overwhelmed, confident, confused
-- sentiment: 'very_positive' | 'positive' | 'neutral' | 'negative' | 'very_negative'
-- sentimentScore: -1.0 a 1.0
-- emotions: lista de emocoes detectadas (max 5, portugues)
-- triggers: gatilhos/contextos (max 3)
-- energyLevel: 0-100
+Entrada: "Hoje foi um dia produtivo, consegui entregar tudo"
+{"tags":["produtividade","entrega","trabalho"],"mood":{"emoji":"😎","label":"Confiante","value":"confident"},"sentiment":"very_positive","sentimentScore":0.8,"emotions":["satisfacao","orgulho"],"triggers":["trabalho concluido"],"energyLevel":85}
 
-Dica: reflexoes profundas geralmente sao "thoughtful", desabafos sao "frustrated"/"overwhelmed", conquistas sao "excited"/"confident", gratidao e "grateful".`
+Entrada: "Nao consigo parar de pensar no que aconteceu"
+{"tags":["ruminacao","pensamento","preocupacao"],"mood":{"emoji":"😰","label":"Ansioso","value":"anxious"},"sentiment":"negative","sentimentScore":-0.5,"emotions":["ansiedade","preocupacao"],"triggers":["evento passado"],"energyLevel":60}
+
+Entrada: "Acordei repleto de energia e motivacao"
+{"tags":["motivacao","energia","inicio"],"mood":{"emoji":"🤩","label":"Inspirado","value":"inspired"},"sentiment":"very_positive","sentimentScore":0.9,"emotions":["inspiracao","entusiasmo"],"triggers":["novo dia"],"energyLevel":95}
+
+AGORA ANALISE:
+
+Entrada: "${payload.content.replace(/"/g, '\\"')}"
+
+REGRAS: Responda SOMENTE com o JSON. Nunca use "neutral" exceto para textos puramente factuais sem emocao. mood.value DEVE ser um destes: happy, sad, anxious, angry, thoughtful, calm, grateful, tired, inspired, excited, disappointed, frustrated, loving, scared, determined, sleepy, overwhelmed, confident, confused`
 
   const result = await model.generateContent(prompt)
   const text = result.response.text()
