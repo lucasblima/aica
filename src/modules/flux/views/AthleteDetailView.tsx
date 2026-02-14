@@ -13,6 +13,7 @@ import type { Athlete } from '../types';
 import { LevelBadge } from '../components/LevelBadge';
 import { ProgressionBar } from '../components/ProgressionBar';
 import { AlertBadge } from '../components/AlertBadge';
+import { ConnectionStatusDot } from '../components/ConnectionStatusDot';
 import {
   ArrowLeft,
   User,
@@ -151,6 +152,7 @@ export default function AthleteDetailView() {
               <p className="text-xs text-ceramic-text-secondary truncate">
                 {athlete.email || 'Sem email'}
               </p>
+              <ConnectionStatusDot status={athlete.invitation_status} />
             </div>
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-ceramic-text-secondary" />

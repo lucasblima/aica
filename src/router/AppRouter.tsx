@@ -56,6 +56,9 @@ const FluxAthleteDetailView = lazy(() => import('../modules/flux').then(m => ({ 
 const FluxCanvasEditorView = lazy(() => import('../modules/flux').then(m => ({ default: m.CanvasEditorView })));
 const FluxAlertsView = lazy(() => import('../modules/flux').then(m => ({ default: m.AlertsView })));
 
+// Athlete Portal - Read-only training view for athletes
+const AthletePortalView = lazy(() => import('../modules/flux/views/AthletePortalView').then(m => ({ default: m.default })));
+
 // Flow Module - Intelligent training prescription system (5 screens)
 const TemplateLibraryView = lazy(() => import('../modules/flux/views/TemplateLibraryView').then(m => ({ default: m.default })));
 const MicrocycleEditorView = lazy(() => import('../modules/flux/views/MicrocycleEditorView').then(m => ({ default: m.default })));
@@ -672,6 +675,9 @@ export function AppRouter() {
                <Route path="/flux/leveling" element={<AuthGuard><FluxProvider><LevelingEngineView /></FluxProvider></AuthGuard>} />
                <Route path="/flux/intensity/:athleteId?" element={<AuthGuard><FluxProvider><IntensityCalculatorView /></FluxProvider></AuthGuard>} />
                <Route path="/flux/crm" element={<AuthGuard><FluxProvider><CRMCommandCenterView /></FluxProvider></AuthGuard>} />
+
+               {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
+               <Route path="/meu-treino" element={<AuthGuard><AthletePortalView /></AuthGuard>} />
 
                {/* Contacts Module Routes - Protected */}
                <Route
