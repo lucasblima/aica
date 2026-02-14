@@ -11,7 +11,14 @@ import type {
   UpdateWorkoutTemplateInput,
   TemplateFilters,
   TemplateUsageStats,
+  WorkoutIntensity,
 } from '../types/flow';
+import type {
+  CreateWorkoutTemplateV2Input,
+  UpdateWorkoutTemplateV2Input,
+  WorkoutSeries,
+} from '../types/series';
+import { calculateTotalDuration } from '../types/series';
 
 export class WorkoutTemplateService {
   /**
@@ -299,6 +306,102 @@ export class WorkoutTemplateService {
       return { data, error };
     } catch (error) {
       console.error('[WorkoutTemplateService] Error bulk creating templates:', error);
+      return { data: null, error };
+    }
+  }
+
+  // ==========================================================================
+  // V2 METHODS (Series-based exercise structure)
+  // ==========================================================================
+
+  /**
+   * Derive intensity from highest zone in series.
+   * Strength (no zones) defaults to 'medium'.
+   */
+  private static deriveIntensityFromSeries(series: WorkoutSeries[]): WorkoutIntensity {
+    let highest = 0;
+    for (const s of series) {
+      if ('zone' in s) {
+        const num = parseInt(s.zone.replace('Z', ''), 10);
+        if (num > highest) highest = num;
+      }
+    }
+    if (highest === 0) return 'medium'; // strength or empty
+    return `z${highest}` as WorkoutIntensity;
+  }
+
+  /**
+   * Create template using V2 structure (warmup/series/cooldown)
+   */
+  static async createTemplateV2(
+    input: CreateWorkoutTemplateV2Input
+  ): Promise<{ data: WorkoutTemplate | null; error: any }> {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        return { data: null, error: new Error('User not authenticated') };
+      }
+
+      const duration = input.exercise_structure?.series
+        ? calculateTotalDuration(input.exercise_structure.series)
+        : 0;
+
+      const intensity = input.exercise_structure?.series?.length
+        ? this.deriveIntensityFromSeries(input.exercise_structure.series)
+        : 'medium';
+
+      const { data, error } = await supabase
+        .from('workout_templates')
+        .insert({
+          user_id: userData.user.id,
+          name: input.name,
+          description: input.description || null,
+          modality: input.modality,
+          category: input.category || 'main',
+          duration,
+          intensity,
+          exercise_structure: input.exercise_structure,
+        })
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('[WorkoutTemplateService] Error creating V2 template:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Update template using V2 structure
+   */
+  static async updateTemplateV2(
+    input: UpdateWorkoutTemplateV2Input
+  ): Promise<{ data: WorkoutTemplate | null; error: any }> {
+    try {
+      const { id, ...updates } = input;
+
+      const dbUpdates: Record<string, any> = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Recalculate duration and intensity if exercise_structure changed
+      if (updates.exercise_structure?.series) {
+        dbUpdates.duration = calculateTotalDuration(updates.exercise_structure.series);
+        dbUpdates.intensity = this.deriveIntensityFromSeries(updates.exercise_structure.series);
+      }
+
+      const { data, error } = await supabase
+        .from('workout_templates')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      console.error('[WorkoutTemplateService] Error updating V2 template:', error);
       return { data: null, error };
     }
   }

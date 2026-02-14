@@ -70,14 +70,9 @@ export { WhatsAppMessageModal } from './components/WhatsAppMessageModal';
 
 // Form Components
 export {
-  TemplateFormModal,
-  BasicInfoSection,
-  IntensitySection,
-  ExerciseStructureSection,
-  OrganizationSection,
-  SetsRepsEditor,
-  IntervalsEditor,
-  DistanceTimeEditor,
+  TemplateFormDrawer,
+  SeriesEditor,
+  TimelineVisual,
   useTemplateForm,
 } from './components/forms';
 export type { TemplateFormState } from './components/forms';

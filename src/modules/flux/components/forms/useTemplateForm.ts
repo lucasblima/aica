@@ -180,35 +180,13 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
 
     try {
       const payload: CreateWorkoutTemplateV2Input = {
-        name: `Treino de ${formData.modality}`, // Auto-generated name
+        name: `Treino de ${formData.modality}`,
         description: undefined,
         modality: formData.modality as TrainingModality,
-        category: 'main', // Default category
+        category: 'main',
         exercise_structure: formData.exercise_structure,
       };
 
-      // TODO: Update WorkoutTemplateService to support V2 structure
-      // For now, log the payload and return success
-      console.log('[useTemplateForm] V2 payload:', payload);
-
-      // Temporary mock success
-      const mockResult: WorkoutTemplate = {
-        id: initialData?.id || crypto.randomUUID(),
-        user_id: initialData?.user_id || 'current-user-id',
-        ...payload,
-        // V1 compatibility fields (will be removed when service is updated)
-        duration: 0,
-        intensity: 'medium' as any,
-        created_at: initialData?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        usage_count: initialData?.usage_count || 0,
-      } as any;
-
-      setIsDirty(false);
-      onSuccess?.(mockResult);
-      return { success: true, data: mockResult };
-
-      /* TODO: Uncomment when WorkoutTemplateService supports V2
       let result;
       if (initialData) {
         result = await WorkoutTemplateService.updateTemplateV2({
@@ -230,8 +208,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         return { success: true, data: result.data };
       }
 
-      return { success: false, error: 'Unknown error' };
-      */
+      return { success: false, error: 'Erro desconhecido' };
     } catch (error) {
       console.error('[useTemplateForm] Unexpected error:', error);
       return { success: false, error };
