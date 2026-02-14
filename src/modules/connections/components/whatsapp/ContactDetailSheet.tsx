@@ -11,15 +11,18 @@
  * GroupAnalyticsCard for maximum code reuse.
  */
 
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import {
   X,
   MessageCircle,
   Users,
   RefreshCw,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ConfirmationModal } from '@/components/ui'
+import { deleteContact } from '@/services/contactNetworkService'
 import type { ContactNetwork } from '@/types/memoryTypes'
 import { ContactDossierCard } from './ContactDossierCard'
 import { ConversationTimeline } from './ConversationTimeline'
@@ -33,6 +36,7 @@ export interface ContactDetailSheetProps {
   contact: ContactNetwork | null
   isOpen: boolean
   onClose: () => void
+  onDelete?: (contactId: string) => void
 }
 
 function getInitials(name: string): string {
@@ -63,9 +67,12 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
   contact,
   isOpen,
   onClose,
+  onDelete,
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null)
   const isGroup = contact?.relationship_type === 'group'
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Tri-state intelligence hook — replaces auto-fetching useContactDossier + useConversationThreads
   const {
@@ -111,6 +118,21 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
     }
   }, [onClose])
 
+  const handleDelete = useCallback(async () => {
+    if (!contact) return
+    setIsDeleting(true)
+    try {
+      await deleteContact(contact.id)
+      setShowDeleteConfirm(false)
+      onClose()
+      onDelete?.(contact.id)
+    } catch {
+      // Error already logged by service
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [contact, onClose, onDelete])
+
   if (!contact) return null
 
   const messageCount = contact.whatsapp_message_count || 0
@@ -118,6 +140,7 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
   const isRefreshing = state === 'processing' && !!dossier
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -224,6 +247,13 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
                     {isRefreshing ? 'Atualizando...' : 'Atualizar dossiê'}
                   </button>
                 )}
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20 transition-colors ml-auto"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Remover
+                </button>
               </div>
 
               {/* ===== TRI-STATE CONTENT ===== */}
@@ -312,6 +342,18 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
         </>
       )}
     </AnimatePresence>
+
+    <ConfirmationModal
+      isOpen={showDeleteConfirm}
+      variant="danger"
+      title="Remover contato"
+      message={`Tem certeza que deseja remover "${contact?.name}"? Todas as mensagens, threads e dados associados serão removidos permanentemente.`}
+      confirmText="Remover"
+      isLoading={isDeleting}
+      onConfirm={handleDelete}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
+    </>
   )
 }
 
