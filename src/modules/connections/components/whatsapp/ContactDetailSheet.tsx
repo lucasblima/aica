@@ -77,6 +77,7 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
   // Tri-state intelligence hook — replaces auto-fetching useContactDossier + useConversationThreads
   const {
     state,
+    currentDepth,
     progress,
     dossier,
     threads,
@@ -258,17 +259,16 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
 
               {/* ===== TRI-STATE CONTENT ===== */}
 
-              {/* Pristine / Processing: Show CTA card */}
-              {(state === 'pristine' || state === 'processing') && (
-                <ProcessingCTA
-                  messageCount={messageCount}
-                  state={state}
-                  progress={progress}
-                  error={error}
-                  onActivate={activate}
-                  className="mb-4"
-                />
-              )}
+              {/* CTA: pristine (all options), processing (stepper), completed (upgrade) */}
+              <ProcessingCTA
+                messageCount={messageCount}
+                state={state}
+                currentDepth={currentDepth}
+                progress={progress}
+                error={error}
+                onActivate={activate}
+                className="mb-4"
+              />
 
               {/* Webhook stats (always visible in pristine/processing) */}
               {state !== 'completed' && messageCount > 0 && (
