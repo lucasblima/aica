@@ -4,7 +4,7 @@
 
 **Objetivo:** Preparar a plataforma AICA para lancamento beta publico, incluindo aprovacao Google OAuth para escopos sensiveis (Google Calendar API).
 
-**Status Atual:** 🟡 65% Pronto
+**Status Atual:** 🟡 75% Pronto
 **Meta:** 🟢 100% Pronto para Beta Launch
 **Ultima Atualizacao:** 2026-02-13
 
@@ -208,31 +208,32 @@ Visibilidade: NAO LISTADO
 
 ---
 
-## EPICO 5: Consistencia de Branding e Contato
+## EPICO 5: Consistencia de Branding e Contato 🔄 PARCIAL
 
 ### Informacoes Gerais
 
 | Campo | Valor |
 |-------|-------|
 | **Prioridade** | 🟡 MEDIA |
-| **Esforco Estimado** | 2-3 horas |
-| **Status** | 🔄 Parcial (dominio configurado, emails pendentes) |
+| **Status** | 🔄 Codigo concluido, acoes manuais pendentes |
 | **Dependencias** | EPICO 2 ✅ |
 
 ### Descricao
 
-Emails de contato inconsistentes entre footer, privacy policy, e OAuth consent screen. Agora que temos dominio proprio, unificar tudo com `@aica.guru`.
+Emails de contato unificados com `@aica.guru` em todo o codigo. Restam acoes manuais externas (Hostinger, Google Cloud Console).
 
 ### Tarefas
 
-- [ ] **5.1** Configurar email `contato@aica.guru` (Hostinger email forwarding ou Google Workspace)
-- [ ] **5.2** Atualizar footer — `src/modules/onboarding/components/landing-v2/MinimalFooter.tsx` → `contato@aica.guru`
-- [ ] **5.3** Atualizar Privacy Policy — `src/pages/PrivacyPolicyPage.tsx` → `contato@aica.guru`
-- [ ] **5.4** Atualizar Terms of Service — `src/pages/TermsOfServicePage.tsx`
-- [ ] **5.5** Atualizar OAuth Consent Screen no Google Cloud Console (support email, home page, privacy policy URL, terms URL)
-- [ ] **5.6** Verificar logo no OAuth consent screen
+- [ ] **5.1** Configurar email `contato@aica.guru` (Hostinger email forwarding ou Google Workspace) — **MANUAL**
+- [x] **5.2** ~~Atualizar footer~~ — MinimalFooter nao existe mais; LandingPage footer nao tem email (apenas links privacy/terms). Copyright atualizado para ano dinamico.
+- [x] **5.3** Atualizar Privacy Policy — `contato@aica.guru` (feito no EPICO 3)
+- [x] **5.4** Atualizar Terms of Service — `contato@aica.guru` (feito no EPICO 3)
+- [ ] **5.5** Atualizar OAuth Consent Screen no Google Cloud Console — **MANUAL**
+- [ ] **5.6** Verificar logo no OAuth consent screen — **MANUAL**
+- [x] **5.7** Atualizar OAUTH_MATURITY_REPORT.md com status atual
+- [x] **5.8** Zero ocorrencias de `comtxae.com` em codigo fonte (.tsx/.ts)
 
-### URLs para OAuth Consent Screen
+### URLs para OAuth Consent Screen (configurar manualmente)
 
 ```
 App name: AICA - Life OS
@@ -241,15 +242,23 @@ Homepage: https://aica.guru
 Privacy Policy: https://aica.guru/privacy
 Terms of Service: https://aica.guru/terms
 Authorized domains: aica.guru
+Logo: public/assets/images/logo-aica-blue.png
 ```
 
-### Arquivos
+### Acoes Manuais Pendentes
+
+1. **Hostinger**: Painel → Email → Criar `contato@aica.guru` (forwarding para email pessoal)
+2. **Google Cloud Console**: APIs & Services → OAuth consent screen → Editar conforme URLs acima
+3. **Google Search Console**: Verificar dominio `aica.guru` via DNS TXT record
+
+### Arquivos Modificados
 
 | Arquivo | Acao |
 |---------|------|
-| `src/modules/onboarding/components/landing-v2/MinimalFooter.tsx` | Email → contato@aica.guru |
-| `src/pages/PrivacyPolicyPage.tsx` | Email → contato@aica.guru |
-| `src/pages/TermsOfServicePage.tsx` | Verificar/atualizar email |
+| `src/pages/PrivacyPolicyPage.tsx` | Email atualizado (EPICO 3) |
+| `src/pages/TermsOfServicePage.tsx` | Email atualizado (EPICO 3) |
+| `src/modules/onboarding/components/landing/LandingPage.tsx` | Copyright ano dinamico |
+| `OAUTH_MATURITY_REPORT.md` | Relatorio atualizado com status corrente |
 
 ---
 

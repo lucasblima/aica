@@ -301,7 +301,7 @@ export function LandingPage() {
           <div className="flex items-center gap-8 text-sm font-bold text-ceramic-text-secondary uppercase tracking-widest">
             <a href="/privacy" className="hover:text-ceramic-text-primary transition-colors">Privacidade</a>
             <a href="/terms" className="hover:text-ceramic-text-primary transition-colors">Termos</a>
-            <span className="opacity-40">&copy; 2025 Aica</span>
+            <span className="opacity-40">&copy; {new Date().getFullYear()} Aica</span>
           </div>
         </div>
       </footer>
