@@ -262,8 +262,10 @@ function renderExpandedContent(event: UnifiedEvent): React.ReactNode {
           <span>
             {event.direction === 'incoming' ? '📥 Recebida' : '📤 Enviada'}
           </span>
-          {event.processing_status === 'pending' && (
-            <span className="text-amber-600">⏳ Processando intent...</span>
+          {event.processing_status && event.processing_status !== 'completed' && (
+            <span className="text-xs text-[#948D82]">
+              {event.processing_status === 'failed' ? 'Resumo indisponível' : ''}
+            </span>
           )}
         </div>
       </div>
