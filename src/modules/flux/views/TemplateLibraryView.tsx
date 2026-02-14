@@ -29,6 +29,7 @@ import type {
   WorkoutIntensity,
   TrainingModality,
 } from '../types/flow';
+import type { ExerciseStructureV2 } from '../types/series';
 import { MODALITY_CONFIG } from '../types/flux';
 
 const ZONE_LABELS: Record<string, string> = {
@@ -60,6 +61,24 @@ const INTENSITY_COLORS: Record<string, string> = {
   z4: 'bg-amber-500/20 text-amber-600',
   z5: 'bg-ceramic-error/20 text-ceramic-error',
 };
+
+const ZONE_PILL_COLORS: Record<string, string> = {
+  Z1: 'bg-green-500',
+  Z2: 'bg-yellow-400',
+  Z3: 'bg-orange-400',
+  Z4: 'bg-red-400',
+  Z5: 'bg-red-600',
+};
+
+/** Extract unique zones from V2 exercise_structure */
+function getUniqueZones(es: any): string[] {
+  if (!es?.series || !Array.isArray(es.series)) return [];
+  const zones = new Set<string>();
+  for (const s of es.series) {
+    if (s.zone) zones.add(s.zone);
+  }
+  return Array.from(zones).sort();
+}
 
 export default function TemplateLibraryView() {
   const navigate = useNavigate();
@@ -463,37 +482,89 @@ function TemplateCard({
         <div className="pr-8">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">{modalityConfig?.icon}</span>
-            <span
-              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                INTENSITY_COLORS[template.intensity]
-              }`}
-            >
-              {INTENSITY_LABELS[template.intensity]}
-            </span>
+            {/* Zone pills from exercise_structure */}
+            {(() => {
+              const zones = getUniqueZones(template.exercise_structure);
+              if (zones.length > 0) {
+                return zones.map((z) => (
+                  <span
+                    key={z}
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${ZONE_PILL_COLORS[z] || 'bg-ceramic-text-secondary'}`}
+                  >
+                    {z}
+                  </span>
+                ));
+              }
+              // Fallback for legacy templates without V2 structure
+              return (
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                    INTENSITY_COLORS[template.intensity] || ''
+                  }`}
+                >
+                  {INTENSITY_LABELS[template.intensity] || template.intensity}
+                </span>
+              );
+            })()}
           </div>
           <h3 className="text-base font-bold text-ceramic-text-primary line-clamp-2">
             {template.name}
           </h3>
         </div>
 
-        {/* Description */}
-        {template.description && (
-          <p className="text-sm text-ceramic-text-secondary line-clamp-2">
-            {template.description}
-          </p>
-        )}
+        {/* Exercise Structure Mini-List */}
+        {(() => {
+          const es = template.exercise_structure as ExerciseStructureV2 | undefined;
+          if (!es?.series?.length) {
+            // Fallback: plain description for legacy templates
+            return template.description ? (
+              <p className="text-sm text-ceramic-text-secondary line-clamp-2">
+                {template.description}
+              </p>
+            ) : null;
+          }
+          return (
+            <div className="space-y-1 text-xs text-ceramic-text-secondary">
+              {es.warmup && (
+                <div className="flex items-start gap-1.5">
+                  <span className="text-ceramic-warning font-bold shrink-0">Aq.</span>
+                  <span className="line-clamp-1">{es.warmup}</span>
+                </div>
+              )}
+              <div className="flex items-start gap-1.5">
+                <span className="text-ceramic-accent font-bold shrink-0">
+                  {es.series.length}x
+                </span>
+                <span className="line-clamp-1">
+                  {es.series.map((s: any) => {
+                    if (s.reps) return `${s.repetitions ?? 1}x${s.reps}rep`;
+                    if (s.distance_meters) return `${s.repetitions ?? 1}x${s.distance_meters}m`;
+                    if (s.work_value) {
+                      const unit = s.work_unit === 'minutes' ? 'min' : s.work_unit === 'seconds' ? 's' : 'm';
+                      return `${s.repetitions ?? 1}x${s.work_value}${unit}`;
+                    }
+                    return `${s.repetitions ?? 1}x série`;
+                  }).join(' + ')}
+                </span>
+              </div>
+              {es.cooldown && (
+                <div className="flex items-start gap-1.5">
+                  <span className="text-ceramic-info font-bold shrink-0">Des.</span>
+                  <span className="line-clamp-1">{es.cooldown}</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Metadata */}
         <div className="flex items-center gap-3 text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-text-secondary/10">
-          <div className="flex items-center gap-1">
-            <span className="font-medium">{template.duration}</span>
-            <span>min</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="font-medium">
-              {{ warmup: 'Aquecimento', main: 'Principal', cooldown: 'Volta à calma' }[template.category] || template.category}
-            </span>
-          </div>
+          {template.duration > 0 && (
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{template.duration}</span>
+              <span>min</span>
+            </div>
+          )}
           {template.usage_count > 0 && (
             <div className="flex items-center gap-1">
               <Copy className="w-3 h-3" />
@@ -501,25 +572,6 @@ function TemplateCard({
             </div>
           )}
         </div>
-
-        {/* Tags */}
-        {template.tags && template.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {template.tags.slice(0, 3).map((tag, index) => (
-              <span
-                key={index}
-                className="px-2 py-0.5 bg-ceramic-cool rounded text-[10px] font-medium text-ceramic-text-primary"
-              >
-                {tag}
-              </span>
-            ))}
-            {template.tags.length > 3 && (
-              <span className="px-2 py-0.5 bg-ceramic-cool rounded text-[10px] font-medium text-ceramic-text-secondary">
-                +{template.tags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2 border-t border-ceramic-text-secondary/10">
