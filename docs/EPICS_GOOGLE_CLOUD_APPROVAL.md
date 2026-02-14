@@ -4,7 +4,7 @@
 
 **Objetivo:** Preparar a plataforma AICA para lancamento beta publico, incluindo aprovacao Google OAuth para escopos sensiveis (Google Calendar API).
 
-**Status Atual:** 🟡 75% Pronto
+**Status Atual:** 🟡 85% Pronto (codigo 100%, acoes manuais pendentes)
 **Meta:** 🟢 100% Pronto para Beta Launch
 **Ultima Atualizacao:** 2026-02-13
 
@@ -262,26 +262,25 @@ Logo: public/assets/images/logo-aica-blue.png
 
 ---
 
-## EPICO 6: Preparacao e Submissao Final
+## EPICO 6: Preparacao e Submissao Final 🔄 PARCIAL
 
 ### Informacoes Gerais
 
 | Campo | Valor |
 |-------|-------|
 | **Prioridade** | 🟡 MEDIA |
-| **Esforco Estimado** | 2-4 horas |
-| **Status** | ⬜ Nao iniciado |
+| **Status** | 🔄 Documentacao pronta, acoes manuais pendentes |
 | **Dependencias** | TODOS os epicos anteriores |
 
 ### Tarefas
 
-- [ ] **6.1** Criar conta de teste (`google-review@aica.guru`) com dados de exemplo
-- [ ] **6.2** Escrever justificativas detalhadas para cada escopo OAuth
-- [ ] **6.3** Verificar dominio no Google Search Console
-- [ ] **6.4** Compilar documentacao de suporte (screenshots, links)
-- [ ] **6.5** Preencher formulario de verificacao no Google Cloud Console
-- [ ] **6.6** Revisao final — executar checklist pre-submissao
-- [ ] **6.7** Submeter para verificacao
+- [ ] **6.1** Criar conta de teste (`google-review@aica.guru`) com dados de exemplo — **MANUAL**
+- [x] **6.2** Escrever justificativas detalhadas para cada escopo OAuth — `docs/GOOGLE_OAUTH_SUBMISSION_GUIDE.md`
+- [ ] **6.3** Verificar dominio no Google Search Console — **MANUAL**
+- [x] **6.4** Compilar documentacao de suporte (valores do formulario, roteiro video, FAQ) — `docs/GOOGLE_OAUTH_SUBMISSION_GUIDE.md`
+- [ ] **6.5** Preencher formulario de verificacao no Google Cloud Console — **MANUAL**
+- [x] **6.6** Revisao final — checklist pre-submissao compilado no guia
+- [ ] **6.7** Submeter para verificacao — **MANUAL**
 
 ### Checklist Pre-Submissao
 
