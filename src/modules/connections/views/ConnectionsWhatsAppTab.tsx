@@ -29,8 +29,11 @@ import {
   ArrowDown,
   SortAsc,
   Brain,
+  CheckCircle2,
+  Circle,
+  Trash2,
 } from 'lucide-react';
-import { CeramicTabSelector, ContactAvatar } from '@/components/ui';
+import { CeramicTabSelector, ContactAvatar, ConfirmationModal } from '@/components/ui';
 import {
   EmotionalThermometer,
   ContactDossierCard,
@@ -38,7 +41,9 @@ import {
   EntityInbox,
   GroupAnalyticsCard,
   WhatsAppExportUpload,
+  ContactDetailSheet,
 } from '../components/whatsapp';
+import { deleteContacts } from '@/services/contactNetworkService';
 import { useContactDossier } from '../hooks/useContactDossier';
 import { useConversationThreads } from '../hooks/useConversationThreads';
 import { useExtractedEntities } from '../hooks/useExtractedEntities';
@@ -46,6 +51,7 @@ import whatsappAnalyticsService, {
   ContactSentimentScore,
   AnomalyAlert,
 } from '@/services/whatsappAnalyticsService';
+import { cn } from '@/lib/utils';
 import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion';
 import { useWhatsAppGamification } from '../hooks/useWhatsAppGamification';
 import { supabase } from '@/services/supabaseClient';
@@ -275,6 +281,15 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
   const [sortBy, setSortBy] = useState<ContactSortField>('last_activity');
   const [sortOrder, setSortOrder] = useState<ContactSortOrder>('desc');
 
+  // Select mode for batch delete
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false);
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+
+  // Contact detail sheet
+  const [detailContact, setDetailContact] = useState<ImportedContact | null>(null);
+
   // Selected contact for dossier (Conversation Intelligence Phase 1)
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const { dossier, isLoading: isDossierLoading, isRefreshing: isDossierRefreshing, hasDossier, refreshDossier } = useContactDossier(selectedContactId);
@@ -372,6 +387,37 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     }
   };
 
+  const toggleSelectId = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBatchDeleting(true);
+    try {
+      await deleteContacts(Array.from(selectedIds));
+      setShowBatchDeleteConfirm(false);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+      await loadImportedContacts();
+    } catch (err) {
+      log.error('Error batch deleting contacts:', err);
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
+
+  const handleSingleDelete = async (contactId: string) => {
+    setDetailContact(null);
+    setSelectedContactId(null);
+    await loadImportedContacts();
+  };
+
   const handleContactSelect = async (contactId: string) => {
     setSelectedAnalyticsId(contactId);
     await trackContactAnalysis(contactId);
@@ -393,9 +439,9 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="ceramic-card p-6 rounded-3xl">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-ceramic-accent" />
-          <div>
+          <div className="flex-1">
             <h2 className="text-xl font-bold text-ceramic-text-primary">
               Contatos Importados
             </h2>
@@ -403,6 +449,22 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
               {importedContacts.length} contatos de conversas importadas
             </p>
           </div>
+          {importedContacts.length > 0 && (
+            <button
+              onClick={() => {
+                setIsSelectMode(prev => !prev);
+                setSelectedIds(new Set());
+              }}
+              className={cn(
+                'px-4 py-2 rounded-xl text-sm font-medium transition-colors',
+                isSelectMode
+                  ? 'bg-ceramic-error/10 text-ceramic-error hover:bg-ceramic-error/20'
+                  : 'bg-ceramic-cool text-ceramic-text-secondary hover:bg-ceramic-cool/80'
+              )}
+            >
+              {isSelectMode ? 'Cancelar' : 'Selecionar'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -468,18 +530,55 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
           >
             {importedContacts.map((contact) => (
               <motion.div key={contact.id} variants={staggerItem}>
-                <ImportedContactCard
-                  contact={contact}
-                  onClick={() => setSelectedContactId(prev => prev === contact.id ? null : contact.id)}
-                />
+                {isSelectMode ? (
+                  <div
+                    className={cn(
+                      'ceramic-card p-4 rounded-xl cursor-pointer transition-all',
+                      selectedIds.has(contact.id)
+                        ? 'ring-2 ring-ceramic-accent bg-ceramic-accent/5'
+                        : 'hover:scale-[1.02]'
+                    )}
+                    onClick={() => toggleSelectId(contact.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {selectedIds.has(contact.id) ? (
+                        <CheckCircle2 className="w-6 h-6 text-ceramic-accent flex-shrink-0" />
+                      ) : (
+                        <Circle className="w-6 h-6 text-ceramic-text-secondary/40 flex-shrink-0" />
+                      )}
+                      <ContactAvatar
+                        name={contact.whatsapp_name || contact.name || 'Contato'}
+                        whatsappProfilePicUrl={contact.whatsapp_profile_pic_url}
+                        size="md"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-ceramic-text-primary truncate">
+                          {contact.whatsapp_name || contact.name || 'Contato'}
+                        </p>
+                        <p className="text-xs text-ceramic-text-secondary">
+                          {contact.whatsapp_message_count || 0} msg
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <ImportedContactCard
+                    contact={contact}
+                    onClick={() => {
+                      const full = importedContacts.find(c => c.id === contact.id) || null;
+                      setDetailContact(full);
+                      setSelectedContactId(prev => prev === contact.id ? null : contact.id);
+                    }}
+                  />
+                )}
               </motion.div>
             ))}
           </motion.div>
         )}
       </div>
 
-      {/* Contact Dossier + Conversation Timeline */}
-      {selectedContactId && (
+      {/* Contact Dossier + Conversation Timeline (inline, non-select mode) */}
+      {selectedContactId && !isSelectMode && !detailContact && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -506,6 +605,49 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
           />
         </motion.div>
       )}
+
+      {/* Floating batch delete button */}
+      <AnimatePresence>
+        {isSelectMode && selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30"
+          >
+            <button
+              onClick={() => setShowBatchDeleteConfirm(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-ceramic-error text-white rounded-2xl font-bold shadow-lg hover:scale-105 active:scale-95 transition-transform"
+            >
+              <Trash2 className="w-5 h-5" />
+              Remover {selectedIds.size} contato{selectedIds.size > 1 ? 's' : ''}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Batch delete confirmation */}
+      <ConfirmationModal
+        isOpen={showBatchDeleteConfirm}
+        variant="danger"
+        title="Remover contatos"
+        message={`Tem certeza que deseja remover ${selectedIds.size} contato${selectedIds.size > 1 ? 's' : ''}? Todas as mensagens, threads e dados associados serão removidos permanentemente.`}
+        confirmText={`Remover ${selectedIds.size}`}
+        isLoading={isBatchDeleting}
+        onConfirm={handleBatchDelete}
+        onCancel={() => setShowBatchDeleteConfirm(false)}
+      />
+
+      {/* Contact Detail Sheet */}
+      <ContactDetailSheet
+        contact={detailContact as any}
+        isOpen={!!detailContact}
+        onClose={() => {
+          setDetailContact(null);
+          setSelectedContactId(null);
+        }}
+        onDelete={handleSingleDelete}
+      />
     </div>
   );
 

@@ -176,6 +176,24 @@ export async function deleteContact(contactId: string): Promise<void> {
   }
 }
 
+/**
+ * Delete multiple contacts permanently (batch)
+ */
+export async function deleteContacts(contactIds: string[]): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('contact_network')
+      .delete()
+      .in('id', contactIds);
+
+    if (error) throw error;
+    log.debug(`Batch deleted ${contactIds.length} contacts`);
+  } catch (error) {
+    log.error(`Error batch deleting ${contactIds.length} contacts:`, { error: error });
+    throw error;
+  }
+}
+
 // ============================================================================
 // INTERACTION TRACKING
 // ============================================================================
