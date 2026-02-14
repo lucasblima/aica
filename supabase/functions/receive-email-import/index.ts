@@ -5,9 +5,9 @@
  * Pipeline:
  *   1. Validate webhook signature (svix)
  *   2. Extract sender email + attachments
- *   3. Resolve user by email (auth.users lookup)
+ *   3. Resolve user by email (auth.users lookup + aliases)
  *   4. Rate limit: max 10 imports/day per user
- *   5. Download attachment from Resend API
+ *   5. Download attachment via Resend Received Email Attachments API
  *   6. Upload to Storage (whatsapp-exports/{user_id}/)
  *   7. Create whatsapp_file_imports record with source='email_import'
  *   8. Invoke ingest-whatsapp-export (reuses entire pipeline)
@@ -19,7 +19,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { createNamespacedLogger } from '../_shared/logger.ts';
-import { createHash } from 'https://deno.land/std@0.168.0/crypto/mod.ts';
 
 const log = createNamespacedLogger('receive-email-import');
 
@@ -123,11 +122,49 @@ function uint8ArrayToBase64(bytes: Uint8Array): string {
 // ============================================================================
 
 /**
- * Download attachment content from Resend API.
+ * Extract email address from "Name <email>" format or plain email.
+ */
+function extractEmailAddress(from: string): string {
+  const match = from.match(/<([^>]+)>/);
+  if (match) return match[1].toLowerCase().trim();
+  // Plain email
+  return from.toLowerCase().trim();
+}
+
+/**
+ * Fetch received email details from Resend Receiving API.
+ * This gets the full email including attachment metadata.
+ */
+async function fetchReceivedEmail(emailId: string): Promise<any | null> {
+  if (!RESEND_API_KEY) return null;
+
+  try {
+    const response = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}` },
+    });
+
+    if (!response.ok) {
+      log.error(`Failed to fetch received email ${emailId}: ${response.status} ${response.statusText}`);
+      const text = await response.text();
+      log.error(`Response body: ${text.substring(0, 500)}`);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    log.error('Error fetching received email:', error);
+    return null;
+  }
+}
+
+/**
+ * Download attachment content via Resend Received Email Attachments API.
+ * Uses GET /emails/receiving/{email_id}/attachments/{attachment_id} → download_url.
  */
 async function downloadAttachment(
   emailId: string,
-  attachmentIndex: number,
+  attachmentId: string,
+  attachmentFilename: string,
 ): Promise<{ content: Uint8Array; filename: string; size: number } | null> {
   if (!RESEND_API_KEY) {
     log.error('RESEND_API_KEY not configured');
@@ -135,30 +172,41 @@ async function downloadAttachment(
   }
 
   try {
-    // Get email details with attachments
-    const response = await fetch(`https://api.resend.com/emails/${emailId}`, {
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}` },
-    });
+    // Step 1: Get attachment download URL
+    const metaResponse = await fetch(
+      `https://api.resend.com/emails/receiving/${emailId}/attachments/${attachmentId}`,
+      { headers: { Authorization: `Bearer ${RESEND_API_KEY}` } },
+    );
 
-    if (!response.ok) {
-      log.error(`Failed to fetch email ${emailId}: ${response.status}`);
+    if (!metaResponse.ok) {
+      log.error(`Failed to fetch attachment meta ${attachmentId}: ${metaResponse.status}`);
+      const text = await metaResponse.text();
+      log.error(`Response: ${text.substring(0, 500)}`);
       return null;
     }
 
-    const emailData = await response.json();
-    const attachments = emailData.attachments || [];
+    const meta = await metaResponse.json();
+    const downloadUrl = meta.download_url;
 
-    if (attachmentIndex >= attachments.length) {
-      log.error(`Attachment index ${attachmentIndex} out of range (${attachments.length} attachments)`);
+    if (!downloadUrl) {
+      log.error(`No download_url in attachment meta: ${JSON.stringify(meta).substring(0, 300)}`);
       return null;
     }
 
-    const attachment = attachments[attachmentIndex];
-    const content = base64ToUint8Array(attachment.content);
+    // Step 2: Download actual file content
+    const contentResponse = await fetch(downloadUrl);
+
+    if (!contentResponse.ok) {
+      log.error(`Failed to download from URL: ${contentResponse.status}`);
+      return null;
+    }
+
+    const arrayBuffer = await contentResponse.arrayBuffer();
+    const content = new Uint8Array(arrayBuffer);
 
     return {
       content,
-      filename: attachment.filename || `attachment_${attachmentIndex}.txt`,
+      filename: attachmentFilename || meta.filename || 'attachment.txt',
       size: content.length,
     };
   } catch (error) {
@@ -289,12 +337,35 @@ serve(async (req) => {
   }
 
   const emailData = payload.data;
-  const senderEmail = emailData?.from?.toLowerCase().trim();
-  const emailId = emailData?.id || payload.data?.email_id;
-  const subject = emailData?.subject || '';
-  const attachments = emailData?.attachments || [];
 
-  log.info(`Email received from ${senderEmail}, subject: "${subject}", attachments: ${attachments.length}`);
+  // Log full webhook payload structure (keys only) for debugging
+  log.info(`Webhook payload keys: ${JSON.stringify(Object.keys(payload))}`);
+  log.info(`Webhook data keys: ${JSON.stringify(Object.keys(emailData || {}))}`);
+  log.info(`Webhook data.from: ${JSON.stringify(emailData?.from)}`);
+  log.info(`Webhook data.attachments: ${JSON.stringify(emailData?.attachments)}`);
+
+  // Extract email from "Name <email>" format
+  const rawFrom = emailData?.from || '';
+  const senderEmail = extractEmailAddress(rawFrom);
+  const emailId = emailData?.email_id || emailData?.id;
+  const subject = emailData?.subject || '';
+  let attachments = emailData?.attachments || [];
+
+  log.info(`Email received from "${rawFrom}" → parsed as "${senderEmail}", emailId: ${emailId}, subject: "${subject}", webhook attachments: ${attachments.length}`);
+
+  // If webhook reported 0 attachments, try fetching via Received Email API as fallback
+  if (attachments.length === 0 && emailId) {
+    log.info('Webhook had 0 attachments — fetching received email via API for fallback...');
+    const fullEmail = await fetchReceivedEmail(emailId);
+    if (fullEmail) {
+      log.info(`API received email keys: ${JSON.stringify(Object.keys(fullEmail))}`);
+      log.info(`API attachments: ${JSON.stringify(fullEmail.attachments)}`);
+      if (fullEmail.attachments && fullEmail.attachments.length > 0) {
+        attachments = fullEmail.attachments;
+        log.info(`Found ${attachments.length} attachments via API fallback!`);
+      }
+    }
+  }
 
   // 2. Create audit log entry
   const { data: logEntry, error: logError } = await supabase
@@ -328,7 +399,7 @@ serve(async (req) => {
       .eq('id', logId);
   };
 
-  // 3. Resolve user by sender email
+  // 3. Resolve user by sender email (direct match + aliases)
   if (!senderEmail) {
     await updateLog('rejected', 'No sender email');
     return jsonResponse({ ok: true, rejected: true, reason: 'no_sender' });
@@ -342,9 +413,29 @@ serve(async (req) => {
     return jsonResponse({ error: 'Internal error' }, 500);
   }
 
-  const matchedUser = users.users.find(
+  // Try direct match first
+  let matchedUser = users.users.find(
     (u: any) => u.email?.toLowerCase() === senderEmail,
   );
+
+  // If no direct match, check email aliases table
+  if (!matchedUser) {
+    log.info(`No direct match for ${senderEmail}, checking aliases...`);
+    const { data: alias } = await supabase
+      .from('user_email_aliases')
+      .select('user_id')
+      .eq('alias_email', senderEmail)
+      .eq('is_verified', true)
+      .limit(1)
+      .single();
+
+    if (alias?.user_id) {
+      matchedUser = users.users.find((u: any) => u.id === alias.user_id);
+      if (matchedUser) {
+        log.info(`Resolved ${senderEmail} via alias → user ${matchedUser.id}`);
+      }
+    }
+  }
 
   if (!matchedUser) {
     log.warn(`No AICA account found for email: ${senderEmail}`);
@@ -357,7 +448,7 @@ serve(async (req) => {
       rejectionEmailHTML(
         `Nenhuma conta AICA encontrada para o email <strong>${senderEmail}</strong>. ` +
         `Crie sua conta em <a href="https://aica.guru">aica.guru</a> e tente novamente ` +
-        `usando o mesmo email.`,
+        `usando o mesmo email cadastrado na sua conta.`,
       ),
     );
 
@@ -419,7 +510,10 @@ serve(async (req) => {
   for (let i = 0; i < attachments.length; i++) {
     const att = attachments[i];
     const filename = att.filename || `attachment_${i}`;
+    const attachmentId = att.id;
     const extension = '.' + filename.split('.').pop()?.toLowerCase();
+
+    log.info(`Processing attachment ${i}: id=${attachmentId}, filename=${filename}, content_type=${att.content_type}`);
 
     // Validate file type
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
@@ -428,11 +522,17 @@ serve(async (req) => {
       continue;
     }
 
-    // Download attachment content
-    const attachmentData = await downloadAttachment(emailId, i);
+    // Download attachment content via Resend Attachments API
+    if (!attachmentId) {
+      log.error(`Attachment ${i} has no id — cannot download`);
+      results.push({ filename, error: 'Anexo sem identificador' });
+      continue;
+    }
+
+    const attachmentData = await downloadAttachment(emailId, attachmentId, filename);
 
     if (!attachmentData) {
-      log.error(`Failed to download attachment ${i}`);
+      log.error(`Failed to download attachment ${attachmentId}`);
       results.push({ filename, error: 'Falha ao baixar anexo' });
       continue;
     }

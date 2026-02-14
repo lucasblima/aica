@@ -132,7 +132,7 @@ async function resolveContact(
       name: senderName,
       phone_number: phone || null,
       whatsapp_phone: phone || null,
-      source: 'file_import',
+      sync_source: 'file_import',
       health_score: 10,
       health_score_trend: 'stable',
     })
@@ -169,7 +169,7 @@ async function extractIntentBatch(
           messageId: msg.id,
           rawText: msg.intentSummaryText,
           contactName: msg.senderName,
-          source: 'file_import',
+          source: 'whatsapp', // Must be 'whatsapp' so extract-intent writes to DB
         }),
       });
     } catch (err) {
@@ -252,56 +252,119 @@ serve(async (req: Request) => {
     const lowerFilename = (filename || storagePath).toLowerCase();
 
     if (lowerFilename.endsWith('.zip')) {
-      // For zip files, we need to extract the chat text file
       // WhatsApp exports as zip contain a _chat.txt file
+      // Supports: stored (method 0) and DEFLATE (method 8)
+      // Handles data descriptor flag (bit 3) where local header sizes are 0
       try {
-        // Use the Deno zip library to extract
         const zipBuffer = await fileData.arrayBuffer();
-        // Simple zip extraction — WhatsApp zips contain a single .txt file
-        // For Deno edge functions, use a stream-based approach
-        const decoder = new TextDecoder('utf-8');
-
-        // Try to find the .txt content in the zip
-        // WhatsApp zip structure: single _chat.txt at root
-        // Simplified: look for PK header and text content
         const bytes = new Uint8Array(zipBuffer);
+        const decoder = new TextDecoder('utf-8');
+        let extracted = false;
 
-        // Find the local file header for .txt file
-        let txtStart = -1;
-        let txtEnd = -1;
+        // Helper: read 2-byte little-endian
+        const u16 = (off: number) => bytes[off] | (bytes[off + 1] << 8);
+        // Helper: read 4-byte little-endian
+        const u32 = (off: number) => (bytes[off] | (bytes[off + 1] << 8) | (bytes[off + 2] << 16) | (bytes[off + 3] << 24)) >>> 0;
 
-        for (let i = 0; i < bytes.length - 4; i++) {
-          // Look for local file header signature (PK\x03\x04)
-          if (bytes[i] === 0x50 && bytes[i + 1] === 0x4B && bytes[i + 2] === 0x03 && bytes[i + 3] === 0x04) {
-            // Parse local file header
-            const filenameLength = bytes[i + 26] | (bytes[i + 27] << 8);
-            const extraLength = bytes[i + 28] | (bytes[i + 29] << 8);
-            const compressedSize = bytes[i + 18] | (bytes[i + 19] << 8) | (bytes[i + 20] << 16) | (bytes[i + 21] << 24);
-            const compressionMethod = bytes[i + 8] | (bytes[i + 9] << 8);
-            const headerEnd = i + 30 + filenameLength + extraLength;
-            const zipFilename = decoder.decode(bytes.slice(i + 30, i + 30 + filenameLength));
-
-            if (zipFilename.endsWith('.txt') && compressionMethod === 0) {
-              // Stored (no compression) — WhatsApp typically does this
-              txtStart = headerEnd;
-              txtEnd = headerEnd + compressedSize;
-              break;
-            }
+        // Step 1: Find End of Central Directory (scan from end)
+        // EOCD signature: PK\x05\x06
+        let eocdOffset = -1;
+        for (let i = bytes.length - 22; i >= 0; i--) {
+          if (bytes[i] === 0x50 && bytes[i + 1] === 0x4B && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
+            eocdOffset = i;
+            break;
           }
         }
 
-        if (txtStart >= 0 && txtEnd > txtStart) {
-          textContent = decoder.decode(bytes.slice(txtStart, txtEnd));
-        } else {
-          // Fallback: try to decode the whole thing (may work for simple zips)
-          textContent = decoder.decode(bytes);
-          log.warn('Could not find .txt in zip, attempting raw decode');
+        if (eocdOffset < 0) {
+          log.error('No EOCD record found — not a valid zip');
+          throw new Error('Invalid zip file');
+        }
+
+        const cdOffset = u32(eocdOffset + 16); // Offset of Central Directory
+        const cdEntries = u16(eocdOffset + 10); // Total entries in CD
+        log.info(`ZIP EOCD: ${cdEntries} entries, CD at offset ${cdOffset}`);
+
+        // Step 2: Parse Central Directory to find .txt file with correct sizes
+        let pos = cdOffset;
+        for (let entry = 0; entry < cdEntries; entry++) {
+          if (pos + 46 > bytes.length) break;
+          // Central Directory header: PK\x01\x02
+          if (bytes[pos] !== 0x50 || bytes[pos + 1] !== 0x4B || bytes[pos + 2] !== 0x01 || bytes[pos + 3] !== 0x02) {
+            break;
+          }
+
+          const cdCompressionMethod = u16(pos + 10);
+          const cdCompressedSize = u32(pos + 20);
+          const cdUncompressedSize = u32(pos + 24);
+          const cdFilenameLength = u16(pos + 28);
+          const cdExtraLength = u16(pos + 30);
+          const cdCommentLength = u16(pos + 32);
+          const localHeaderOffset = u32(pos + 42);
+          const cdFilename = decoder.decode(bytes.slice(pos + 46, pos + 46 + cdFilenameLength));
+
+          log.info(`ZIP CD entry: "${cdFilename}" method=${cdCompressionMethod} compressed=${cdCompressedSize} uncompressed=${cdUncompressedSize} localOff=${localHeaderOffset}`);
+
+          if (cdFilename.endsWith('.txt') && cdCompressedSize > 0) {
+            // Found the .txt — read from local file header using CD's sizes
+            const localFilenameLen = u16(localHeaderOffset + 26);
+            const localExtraLen = u16(localHeaderOffset + 28);
+            const dataStart = localHeaderOffset + 30 + localFilenameLen + localExtraLen;
+            const compressedData = bytes.slice(dataStart, dataStart + cdCompressedSize);
+
+            log.info(`Extracting ${cdCompressedSize} bytes from offset ${dataStart}`);
+
+            if (cdCompressionMethod === 0) {
+              textContent = decoder.decode(compressedData);
+              extracted = true;
+            } else if (cdCompressionMethod === 8) {
+              // DEFLATE
+              const ds = new DecompressionStream('deflate-raw');
+              const writer = ds.writable.getWriter();
+              const reader = ds.readable.getReader();
+
+              writer.write(compressedData).then(() => writer.close());
+
+              const chunks: Uint8Array[] = [];
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+              }
+
+              const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+              const decompressed = new Uint8Array(totalLen);
+              let off = 0;
+              for (const chunk of chunks) {
+                decompressed.set(chunk, off);
+                off += chunk.length;
+              }
+
+              textContent = decoder.decode(decompressed);
+              extracted = true;
+              log.info(`Decompressed: ${compressedData.length} → ${totalLen} bytes`);
+            }
+
+            if (extracted) break;
+          }
+
+          // Advance to next CD entry
+          pos += 46 + cdFilenameLength + cdExtraLength + cdCommentLength;
+        }
+
+        if (!extracted) {
+          log.error('No extractable .txt file found in zip');
+          await updateImportStatus(supabase, importId, {
+            processing_status: 'failed',
+            processing_error: 'Nenhum arquivo .txt encontrado no zip. Exporte a conversa do WhatsApp e envie o arquivo .zip ou .txt.',
+          });
+          return jsonResponse({ success: false, error: 'No .txt found in zip' }, 400);
         }
       } catch (zipErr) {
         log.error('Failed to extract zip:', zipErr instanceof Error ? zipErr.message : String(zipErr));
         await updateImportStatus(supabase, importId, {
           processing_status: 'failed',
-          processing_error: 'Failed to extract zip file. Please upload the .txt file directly.',
+          processing_error: 'Falha ao extrair o zip. Envie o arquivo .txt diretamente.',
         });
         return jsonResponse({ success: false, error: 'Failed to extract zip' }, 400);
       }
@@ -390,8 +453,9 @@ serve(async (req: Request) => {
           contact_id: contactId,
           contact_phone: extractPhoneFromSender(msg.senderName) || '',
           contact_name: msg.senderName,
-          message_direction: 'incoming', // All imported messages are from others
+          message_direction: 'incoming',
           message_type: 'text',
+          message_text: '', // Privacy: raw text never stored, extract-intent will fill intent_summary
           message_timestamp: msg.timestamp.toISOString(),
           processing_status: 'pending',
           source: 'file_import',
@@ -404,24 +468,33 @@ serve(async (req: Request) => {
 
       if (inserts.length === 0) continue;
 
-      // Bulk insert with dedup — ON CONFLICT DO NOTHING
+      // Bulk insert messages
       const { data: inserted, error: insertError } = await supabase
         .from('whatsapp_messages')
-        .upsert(inserts, {
-          onConflict: 'user_id,dedup_hash',
-          ignoreDuplicates: true,
-        })
+        .insert(inserts)
         .select('id');
 
       if (insertError) {
-        log.warn(`Batch insert error at offset ${i}:`, insertError.message);
-        // Continue processing despite partial errors
+        log.warn(`Batch insert error at offset ${i}: ${insertError.message}`);
+        // If bulk fails, try one-by-one to skip problematic rows
+        for (const row of inserts) {
+          const { data: single, error: singleErr } = await supabase
+            .from('whatsapp_messages')
+            .insert(row)
+            .select('id')
+            .single();
+          if (singleErr) {
+            log.warn(`Single insert failed for ${row.message_id}: ${singleErr.message}`);
+            messagesDeduplicated++;
+          } else if (single) {
+            messagesImported++;
+          }
+        }
+        continue;
       }
 
       const insertedCount = inserted?.length || 0;
-      const dedupedCount = inserts.length - insertedCount;
       messagesImported += insertedCount;
-      messagesDeduplicated += dedupedCount;
 
       // Queue inserted messages for intent extraction
       if (inserted) {
