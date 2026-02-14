@@ -2,10 +2,9 @@
  * useContactIntelligence Hook
  * Orchestrates on-demand AI processing pipeline for a contact.
  *
- * Tri-state: pristine → processing → completed
- * - Pristine: contact has no dossier, shows CTA
- * - Processing: pipeline running (dossier → threads → entities)
- * - Completed: all data available, show intelligence cards
+ * States: pristine → processing → completed
+ * Supports depth escalation: quick → standard → full
+ * After completing at a given depth, user can upgrade to a deeper analysis.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -41,6 +40,7 @@ export interface ProcessingProgress {
 
 export interface UseContactIntelligenceReturn {
   state: IntelligenceState
+  currentDepth: ProcessingDepth | null
   progress: ProcessingProgress | null
   dossier: ContactDossier | null
   threads: ConversationThread[]
@@ -54,6 +54,8 @@ const DEPTH_MESSAGE_LIMITS: Record<ProcessingDepth, number | undefined> = {
   standard: 200,
   full: undefined, // no limit
 }
+
+const DEPTH_ORDER: ProcessingDepth[] = ['quick', 'standard', 'full']
 
 const STAGE_LABELS: Record<ProcessingStage, string> = {
   enabling: 'Ativando processamento...',
@@ -72,6 +74,7 @@ export function useContactIntelligence(
   isOpen: boolean
 ): UseContactIntelligenceReturn {
   const [state, setState] = useState<IntelligenceState>('pristine')
+  const [currentDepth, setCurrentDepth] = useState<ProcessingDepth | null>(null)
   const [progress, setProgress] = useState<ProcessingProgress | null>(null)
   const [dossier, setDossier] = useState<ContactDossier | null>(null)
   const [threads, setThreads] = useState<ConversationThread[]>([])
@@ -82,6 +85,7 @@ export function useContactIntelligence(
   useEffect(() => {
     if (!contact || !isOpen) {
       setState('pristine')
+      setCurrentDepth(null)
       setDossier(null)
       setThreads([])
       setProgress(null)
@@ -92,9 +96,11 @@ export function useContactIntelligence(
     // If contact already has dossier data, go straight to completed
     if (contact.dossier_summary) {
       setState('completed')
+      setCurrentDepth((contact.ai_processing_depth as ProcessingDepth) || 'quick')
       fetchCompletedData(contact.id)
     } else {
       setState('pristine')
+      setCurrentDepth(null)
       setDossier(null)
       setThreads([])
     }
@@ -168,7 +174,7 @@ export function useContactIntelligence(
 
       // Stage 2: Build dossier
       updateProgress('dossier', 1)
-      const { error: dossierError } = await supabase.functions.invoke('build-contact-dossier', {
+      const { data: dossierResponse, error: dossierError } = await supabase.functions.invoke('build-contact-dossier', {
         body: {
           userId: user.id,
           contactId: contact.id,
@@ -177,13 +183,16 @@ export function useContactIntelligence(
       })
       if (dossierError) {
         log.error('Dossier build failed:', dossierError)
-        // Continue pipeline — dossier failure is non-fatal
+        setError('Falha ao gerar dossiê. Tente novamente.')
+      } else if (dossierResponse && !dossierResponse.success) {
+        log.error('Dossier build returned error:', dossierResponse.error)
+        setError(`Dossiê: ${dossierResponse.error}`)
       }
       if (abortRef.current) return
 
       // Stage 3: Build conversation threads
       updateProgress('threads', 2)
-      const { error: threadsError } = await supabase.functions.invoke('build-conversation-threads', {
+      const { data: threadsResponse, error: threadsError } = await supabase.functions.invoke('build-conversation-threads', {
         body: {
           userId: user.id,
           contactId: contact.id,
@@ -192,6 +201,10 @@ export function useContactIntelligence(
       })
       if (threadsError) {
         log.error('Threads build failed:', threadsError)
+        // Append to existing error if any
+        setError(prev => prev ? `${prev} | Threads também falharam.` : 'Falha ao agrupar conversas.')
+      } else if (threadsResponse && !threadsResponse.success) {
+        log.error('Threads build returned error:', threadsResponse.error)
       }
       if (abortRef.current) return
 
@@ -211,24 +224,22 @@ export function useContactIntelligence(
       updateProgress('fetching', 3)
       await fetchCompletedData(contact.id)
 
+      setCurrentDepth(depth)
       setState('completed')
       setProgress(null)
     } catch (err) {
       log.error('Intelligence pipeline failed:', err)
       setError(err instanceof Error ? err.message : 'Erro ao processar contato')
-      setState('pristine')
+      setState(currentDepth ? 'completed' : 'pristine')
       setProgress(null)
     }
-  }, [contact, fetchCompletedData])
+  }, [contact, currentDepth, fetchCompletedData])
 
   // Refresh all data for an already-completed contact
   const refreshAll = useCallback(async () => {
     if (!contact) return
-    setState('processing')
-    await activate(
-      (contact.ai_processing_depth as ProcessingDepth) || 'standard'
-    )
-  }, [contact, activate])
+    await activate(currentDepth || (contact.ai_processing_depth as ProcessingDepth) || 'standard')
+  }, [contact, currentDepth, activate])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -239,6 +250,7 @@ export function useContactIntelligence(
 
   return {
     state,
+    currentDepth,
     progress,
     dossier,
     threads,
