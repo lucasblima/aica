@@ -334,3 +334,192 @@ export function calculateTotalDuration(series: WorkoutSeries[]): number {
 
   return Math.round(total);
 }
+
+// ============================================================================
+// AUTO-NAMING (Market-standard workout terminology)
+// ============================================================================
+
+const MODALITY_LABELS: Record<string, string> = {
+  running: 'Corrida',
+  walking: 'Caminhada',
+  swimming: 'Natação',
+  cycling: 'Ciclismo',
+  strength: 'Musculação',
+};
+
+/**
+ * Classify workout type based on series structure using standard terminology:
+ *
+ * Running/Walking:
+ *   - Intervalado: multiple series with Z3+ and rest periods
+ *   - Fartlek: mixed zones (2+ different zones)
+ *   - Tempo Run: single zone Z3
+ *   - Progressivo: zones increase across series
+ *   - Longo / Contínuo: single series Z1-Z2
+ *   - Tiros: short high-intensity (Z4-Z5)
+ *
+ * Swimming:
+ *   - Séries: multiple distance sets
+ *   - Contínuo: single long distance
+ *   - Educativos: low zone technique work
+ *
+ * Cycling:
+ *   - Sweet Spot: Z3 sustained efforts
+ *   - FTP: Z4 threshold work
+ *   - Endurance: Z1-Z2 long rides
+ *   - VO2max: Z5 intervals
+ *
+ * Strength:
+ *   - Força Máxima: low reps (1-5), high load
+ *   - Hipertrofia: moderate reps (6-12)
+ *   - Resistência Muscular: high reps (13+)
+ *   - Circuito: 4+ different series
+ */
+export function generateWorkoutName(
+  modality: string,
+  series: WorkoutSeries[]
+): string {
+  const label = MODALITY_LABELS[modality] || modality;
+  if (series.length === 0) return `Treino de ${label}`;
+
+  const zones = series.filter((s) => 'zone' in s).map((s) => (s as any).zone as IntensityZone);
+  const uniqueZones = [...new Set(zones)].sort();
+
+  // --- STRENGTH ---
+  if (modality === 'strength') {
+    const avgReps = series.reduce((sum, s) => sum + ((s as StrengthSeries).reps || 0), 0) / series.length;
+    const totalSeries = series.reduce((sum, s) => sum + (s.repetitions ?? 1), 0);
+
+    if (series.length >= 4) {
+      return `Circuito ${totalSeries} séries`;
+    }
+    if (avgReps <= 5) {
+      return `Força Máxima ${series.length}x${Math.round(avgReps)}rep`;
+    }
+    if (avgReps <= 12) {
+      return `Hipertrofia ${series.length}x${Math.round(avgReps)}rep`;
+    }
+    return `Resistência Muscular ${series.length}x${Math.round(avgReps)}rep`;
+  }
+
+  // --- SWIMMING ---
+  if (modality === 'swimming') {
+    const distances = series.map((s) => (s as SwimmingSeries).distance_meters || 0);
+    const totalDist = distances.reduce((a, b) => a + b, 0);
+    const reps = series[0]?.repetitions ?? 1;
+    const zoneStr = uniqueZones.length > 0 ? ` ${uniqueZones.join('/')}` : '';
+
+    if (series.length === 1 && reps === 1) {
+      return `Contínuo ${totalDist}m${zoneStr}`;
+    }
+    if (uniqueZones.length === 1 && uniqueZones[0] === 'Z1') {
+      return `Educativos ${reps}x${distances[0]}m`;
+    }
+    return `Séries ${reps}x${distances[0]}m${zoneStr}`;
+  }
+
+  // --- CYCLING ---
+  if (modality === 'cycling') {
+    const mainSeries = series[0];
+    const reps = mainSeries?.repetitions ?? 1;
+    const zoneStr = uniqueZones.length > 0 ? ` ${uniqueZones.join('/')}` : '';
+
+    if (uniqueZones.length === 1) {
+      if (uniqueZones[0] === 'Z5') return `VO2max ${reps}x séries${zoneStr}`;
+      if (uniqueZones[0] === 'Z4') return `FTP ${reps}x séries${zoneStr}`;
+      if (uniqueZones[0] === 'Z3') return `Sweet Spot ${reps}x séries${zoneStr}`;
+      if (uniqueZones[0] === 'Z1' || uniqueZones[0] === 'Z2') return `Endurance${zoneStr}`;
+    }
+    return `Intervalado Ciclismo${zoneStr}`;
+  }
+
+  // --- RUNNING / WALKING ---
+  const reps = series[0]?.repetitions ?? 1;
+  const zoneStr = uniqueZones.length > 0 ? ` ${uniqueZones.join('/')}` : '';
+
+  // Check if zones are progressive (ascending)
+  if (zones.length >= 2) {
+    const isProgressive = zones.every((z, i) => i === 0 || z >= zones[i - 1]);
+    if (isProgressive && uniqueZones.length >= 2) {
+      return `Progressivo ${label}${zoneStr}`;
+    }
+  }
+
+  // Multiple different zones = Fartlek
+  if (uniqueZones.length >= 2) {
+    return `Fartlek${zoneStr}`;
+  }
+
+  // High intensity short intervals
+  if (uniqueZones.length === 1 && (uniqueZones[0] === 'Z4' || uniqueZones[0] === 'Z5')) {
+    if (series.length > 1 || reps > 1) {
+      return `Tiros ${reps > 1 ? `${reps}x` : ''}${uniqueZones[0]}`;
+    }
+  }
+
+  // Z3 = Tempo Run
+  if (uniqueZones.length === 1 && uniqueZones[0] === 'Z3') {
+    return `Tempo Run ${label}${zoneStr}`;
+  }
+
+  // Multiple series with rest = Intervalado
+  if (series.length > 1 || reps > 1) {
+    return `Intervalado ${reps > 1 ? `${reps}x ` : ''}${label}${zoneStr}`;
+  }
+
+  // Single low-intensity series = Contínuo/Longo
+  return `${modality === 'walking' ? 'Caminhada' : 'Contínuo'}${zoneStr}`;
+}
+
+/**
+ * Generate a structured description from exercise structure.
+ * Format: "Aq: ... | 3x10min Z3 c/ 2min intervalo | Des: ..."
+ */
+export function generateWorkoutDescription(
+  modality: string,
+  structure: ExerciseStructureV2
+): string {
+  const parts: string[] = [];
+
+  // Warmup
+  if (structure.warmup) {
+    parts.push(`Aq: ${structure.warmup}`);
+  }
+
+  // Series summary
+  for (const s of structure.series) {
+    const reps = s.repetitions ?? 1;
+    const repsStr = reps > 1 ? `${reps}x` : '';
+    let workStr = '';
+
+    if ('distance_meters' in s && s.distance_meters) {
+      workStr = `${s.distance_meters}m`;
+    } else if ('work_value' in s && s.work_value) {
+      if (s.work_unit === 'minutes') workStr = `${s.work_value}min`;
+      else if (s.work_unit === 'seconds') workStr = `${s.work_value}s`;
+      else if (s.work_unit === 'time' && 'unit_detail' in s) {
+        const detail = (s as CyclingSeries).unit_detail;
+        workStr = detail === 'minutes' ? `${s.work_value}min` : `${s.work_value}s`;
+      } else workStr = `${s.work_value}m`;
+    } else if ('reps' in s && s.reps) {
+      const load = (s as StrengthSeries).load_kg;
+      workStr = `${s.reps}rep${load ? ` ${load}kg` : ''}`;
+    }
+
+    const zone = 'zone' in s ? ` ${(s as any).zone}` : '';
+    const restMin = s.rest_minutes ?? 0;
+    const restSec = s.rest_seconds ?? 0;
+    const restStr = (restMin > 0 || restSec > 0)
+      ? ` c/ ${restMin > 0 ? `${restMin}min` : ''}${restSec > 0 ? `${restSec}s` : ''} intervalo`
+      : '';
+
+    parts.push(`${repsStr}${workStr}${zone}${restStr}`);
+  }
+
+  // Cooldown
+  if (structure.cooldown) {
+    parts.push(`Des: ${structure.cooldown}`);
+  }
+
+  return parts.join(' | ');
+}
