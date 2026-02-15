@@ -13,6 +13,7 @@ import { supabase } from '@/services/supabaseClient'
 import { classifyIntent, type IntentResult } from '@/lib/agents/intentClassifier'
 import { getAgentPrompt, hasAgent } from '@/lib/agents'
 import type { AgentModule } from '@/lib/agents/types'
+import type { TrustLevel } from '@/lib/agents/trustLevel'
 
 export interface DisplayMessage {
   id: string
@@ -41,9 +42,15 @@ export interface UseChatSessionReturn {
   isReclassifying: boolean
 }
 
-const SYSTEM_PROMPT = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
+const BASE_SYSTEM_PROMPT = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
 Voce ajuda o usuario com produtividade, organizacao e bem-estar.
 Seja concisa, amigavel e objetiva. Responda em portugues.`
+
+const TRUST_SUFFIXES: Record<TrustLevel, string> = {
+  suggest_confirm: '\n\nVoce esta no modo "Sugerir e Confirmar". Sugira acoes e peca confirmacao antes de executar qualquer mudanca no sistema.',
+  execute_validate: '\n\nVoce esta no modo "Executar e Validar". Quando tiver alta confianca, execute acoes diretamente e informe o resultado para validacao.',
+  jarvis: '\n\nModo Jarvis ativo. Execute acoes autonomamente, otimize proativamente e informe resultados. O usuario confia no seu julgamento.',
+}
 
 function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
   return {
@@ -55,17 +62,20 @@ function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
 }
 
 /**
- * Get the system prompt for a classified agent module.
- * Falls back to the default SYSTEM_PROMPT for coordinator or unknown modules.
+ * Get the system prompt for a classified agent module + trust level.
+ * Falls back to the default BASE_SYSTEM_PROMPT for coordinator or unknown modules.
  */
-function getSystemPromptForAgent(module: AgentModule | 'coordinator'): string {
-  if (module !== 'coordinator' && hasAgent(module)) {
-    return getAgentPrompt(module as AgentModule)
-  }
-  return SYSTEM_PROMPT
+function getSystemPromptForAgent(
+  module: AgentModule | 'coordinator',
+  trustLevel: TrustLevel = 'suggest_confirm'
+): string {
+  const base = module !== 'coordinator' && hasAgent(module)
+    ? getAgentPrompt(module as AgentModule)
+    : BASE_SYSTEM_PROMPT
+  return base + TRUST_SUFFIXES[trustLevel]
 }
 
-export function useChatSession(): UseChatSessionReturn {
+export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseChatSessionReturn {
   const [session, setSession] = useState<ChatSession | null>(null)
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [messages, setMessages] = useState<DisplayMessage[]>([])
@@ -163,8 +173,8 @@ export function useChatSession(): UseChatSessionReturn {
         .slice(-10)
         .map(m => ({ role: m.role, content: m.content }))
 
-      // Get agent-specific system prompt
-      const systemPrompt = getSystemPromptForAgent(classification.module)
+      // Get agent-specific system prompt with trust level
+      const systemPrompt = getSystemPromptForAgent(classification.module, trustLevel)
 
       // Call Gemini — reuses chat_aica with agent-specific systemPrompt
       const client = GeminiClient.getInstance()
@@ -205,7 +215,7 @@ export function useChatSession(): UseChatSessionReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [session, messages, isLoading, getUserId])
+  }, [session, messages, isLoading, getUserId, trustLevel])
 
   /**
    * Re-classify the last user message via server-side Gemini classification.
@@ -244,8 +254,8 @@ export function useChatSession(): UseChatSessionReturn {
       setLastClassification(newClassification)
       setActiveAgent(serverResult.module)
 
-      // Re-send with new agent prompt
-      const systemPrompt = getSystemPromptForAgent(serverResult.module)
+      // Re-send with new agent prompt + trust level
+      const systemPrompt = getSystemPromptForAgent(serverResult.module, trustLevel)
       const history = messages
         .slice(-10)
         .filter(m => m.content !== lastUserMsg.content)
@@ -296,7 +306,7 @@ export function useChatSession(): UseChatSessionReturn {
     } finally {
       setIsReclassifying(false)
     }
-  }, [messages, isLoading, isReclassifying, session, getUserId])
+  }, [messages, isLoading, isReclassifying, session, getUserId, trustLevel])
 
   const createNewSession = useCallback(() => {
     setSession(null)
