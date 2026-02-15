@@ -11,6 +11,8 @@ import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Ref
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
 import type { DisplayMessage } from '@/hooks/useChatSession'
+import { useUserStats } from '@/hooks/useUserStats'
+import { calculateTrustLevel, getTrustLevelLabel } from '@/lib/agents/trustLevel'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import type { AgentModule } from '@/lib/agents/types'
 import './AicaChatFAB.css'
@@ -41,6 +43,11 @@ export function AicaChatFAB({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Trust level from user engagement stats
+  const { stats } = useUserStats()
+  const trustLevel = stats ? calculateTrustLevel(stats) : 'suggest_confirm'
+  const trustLabel = getTrustLevelLabel(trustLevel)
+
   const {
     session,
     sessions,
@@ -57,7 +64,7 @@ export function AicaChatFAB({
     lastClassification,
     reclassifyLastMessage,
     isReclassifying,
-  } = useChatSession()
+  } = useChatSession(trustLevel)
 
   // Escape to close
   useEffect(() => {
@@ -175,6 +182,11 @@ export function AicaChatFAB({
                     ? <span className="aica-fab-agent-indicator">{AGENT_LABELS[activeAgent]}</span>
                     : (session ? 'Conversa ativa' : 'Assistente pessoal')
                   }
+                  {stats && (
+                    <span className={cn('aica-fab-trust-badge', `aica-fab-trust-badge--${trustLevel}`)}>
+                      {trustLabel}
+                    </span>
+                  )}
                 </p>
               </div>
               <button
