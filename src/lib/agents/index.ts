@@ -33,6 +33,8 @@ import { studioAgentConfig } from './prompts/studio'
 import { journeyAgentConfig } from './prompts/journey'
 import { financeAgentConfig } from './prompts/finance'
 import { connectionsAgentConfig } from './prompts/connections'
+import { fluxAgentConfig } from './prompts/flux'
+import { agendaAgentConfig } from './prompts/agenda'
 import { coordinatorAgentConfig } from './prompts/coordinator'
 
 /**
@@ -45,6 +47,8 @@ const AGENT_REGISTRY: Record<AgentModule, AgentConfig> = {
   journey: journeyAgentConfig,
   finance: financeAgentConfig,
   connections: connectionsAgentConfig,
+  flux: fluxAgentConfig,
+  agenda: agendaAgentConfig,
   coordinator: coordinatorAgentConfig,
 }
 

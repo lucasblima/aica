@@ -100,6 +100,9 @@ export type GeminiAction =
   | 'run_life_council'
   | 'synthesize_patterns'
 
+  // Agent-Aware Chat (Phase 1)
+  | 'classify_intent'
+
 /**
  * Request base para chamadas ao Gemini
  */
@@ -108,7 +111,7 @@ export interface GeminiChatRequest {
   payload: Record<string, any>
   model?: GeminiModel
   stream?: boolean
-  agent?: 'atlas' | 'captacao' | 'studio' | 'journey' | 'finance' | 'connections' | 'coordinator'
+  agent?: 'atlas' | 'captacao' | 'studio' | 'journey' | 'finance' | 'connections' | 'flux' | 'agenda' | 'coordinator'
 }
 
 /**

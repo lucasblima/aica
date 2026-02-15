@@ -2,6 +2,7 @@
  * useChatSession - Session lifecycle hook for Aica Chat
  *
  * Wraps chatService (persistence) + GeminiClient (AI calls).
+ * Integrates client-side intent classification for agent routing.
  * NEVER calls supabase.auth.refreshSession() — uses getSession() only.
  */
 
@@ -9,12 +10,17 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { chatService, type ChatSession, type ChatMessage } from '@/services/chatService'
 import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
+import { classifyIntent, type IntentResult } from '@/lib/agents/intentClassifier'
+import { getAgentPrompt, hasAgent } from '@/lib/agents'
+import type { AgentModule } from '@/lib/agents/types'
 
 export interface DisplayMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
   created_at: string
+  agent?: AgentModule | 'coordinator'
+  classification?: IntentResult
 }
 
 export interface UseChatSessionReturn {
@@ -29,6 +35,10 @@ export interface UseChatSessionReturn {
   archiveSession: (sessionId: string) => Promise<void>
   showSessions: boolean
   setShowSessions: (show: boolean) => void
+  activeAgent: AgentModule | 'coordinator' | null
+  lastClassification: IntentResult | null
+  reclassifyLastMessage: () => Promise<void>
+  isReclassifying: boolean
 }
 
 const SYSTEM_PROMPT = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
@@ -44,6 +54,17 @@ function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
   }
 }
 
+/**
+ * Get the system prompt for a classified agent module.
+ * Falls back to the default SYSTEM_PROMPT for coordinator or unknown modules.
+ */
+function getSystemPromptForAgent(module: AgentModule | 'coordinator'): string {
+  if (module !== 'coordinator' && hasAgent(module)) {
+    return getAgentPrompt(module as AgentModule)
+  }
+  return SYSTEM_PROMPT
+}
+
 export function useChatSession(): UseChatSessionReturn {
   const [session, setSession] = useState<ChatSession | null>(null)
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -51,6 +72,9 @@ export function useChatSession(): UseChatSessionReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showSessions, setShowSessions] = useState(false)
+  const [activeAgent, setActiveAgent] = useState<AgentModule | 'coordinator' | null>(null)
+  const [lastClassification, setLastClassification] = useState<IntentResult | null>(null)
+  const [isReclassifying, setIsReclassifying] = useState(false)
   const initRef = useRef(false)
 
   // Load sessions on mount
@@ -103,12 +127,18 @@ export function useChatSession(): UseChatSessionReturn {
         setSessions(prev => [currentSession!, ...prev])
       }
 
+      // Classify intent — client-side keyword matching
+      const classification = classifyIntent(trimmed)
+      setLastClassification(classification)
+      setActiveAgent(classification.module)
+
       // Optimistic user message
       const tempUserMsg: DisplayMessage = {
         id: `temp-${Date.now()}`,
         role: 'user',
         content: trimmed,
         created_at: new Date().toISOString(),
+        classification,
       }
       setMessages(prev => [...prev, tempUserMsg])
 
@@ -122,7 +152,10 @@ export function useChatSession(): UseChatSessionReturn {
 
       // Replace temp with saved
       setMessages(prev =>
-        prev.map(m => m.id === tempUserMsg.id ? chatMsgToDisplay(savedUserMsg) : m)
+        prev.map(m => m.id === tempUserMsg.id
+          ? { ...chatMsgToDisplay(savedUserMsg), classification }
+          : m
+        )
       )
 
       // Build history for context (last 10 messages)
@@ -130,14 +163,17 @@ export function useChatSession(): UseChatSessionReturn {
         .slice(-10)
         .map(m => ({ role: m.role, content: m.content }))
 
-      // Call Gemini
+      // Get agent-specific system prompt
+      const systemPrompt = getSystemPromptForAgent(classification.module)
+
+      // Call Gemini — reuses chat_aica with agent-specific systemPrompt
       const client = GeminiClient.getInstance()
       const response = await client.call({
         action: 'chat_aica',
         payload: {
           message: trimmed,
           history,
-          systemPrompt: SYSTEM_PROMPT,
+          systemPrompt,
         },
       })
 
@@ -158,9 +194,11 @@ export function useChatSession(): UseChatSessionReturn {
         tokensOutput: response?.tokensUsed?.output,
       })
 
-      setMessages(prev => [...prev, chatMsgToDisplay(savedAssistantMsg)])
-
-      // Auto-title: if this was the first message, title is already set
+      setMessages(prev => [...prev, {
+        ...chatMsgToDisplay(savedAssistantMsg),
+        agent: classification.module,
+        classification,
+      }])
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'
       setError(message)
@@ -169,11 +207,104 @@ export function useChatSession(): UseChatSessionReturn {
     }
   }, [session, messages, isLoading, getUserId])
 
+  /**
+   * Re-classify the last user message via server-side Gemini classification.
+   * Replaces the last assistant response with a new one from the correct agent.
+   */
+  const reclassifyLastMessage = useCallback(async () => {
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    if (!lastUserMsg || isLoading || isReclassifying) return
+
+    setIsReclassifying(true)
+    setError(null)
+
+    try {
+      const userId = await getUserId()
+      const client = GeminiClient.getInstance()
+
+      // Server-side classification via Edge Function
+      const classifyResponse = await client.call({
+        action: 'classify_intent',
+        payload: { message: lastUserMsg.content },
+      })
+
+      const serverResult = classifyResponse?.result?.classification
+      if (!serverResult?.module) {
+        setError('Nao foi possivel reclassificar')
+        return
+      }
+
+      const newClassification: IntentResult = {
+        module: serverResult.module,
+        confidence: serverResult.confidence || 0.9,
+        actionHint: serverResult.action_hint || '',
+        needsServerClassification: false,
+      }
+
+      setLastClassification(newClassification)
+      setActiveAgent(serverResult.module)
+
+      // Re-send with new agent prompt
+      const systemPrompt = getSystemPromptForAgent(serverResult.module)
+      const history = messages
+        .slice(-10)
+        .filter(m => m.content !== lastUserMsg.content)
+        .map(m => ({ role: m.role, content: m.content }))
+
+      const response = await client.call({
+        action: 'chat_aica',
+        payload: {
+          message: lastUserMsg.content,
+          history,
+          systemPrompt,
+        },
+      })
+
+      const responseText =
+        response?.result?.response ||
+        response?.result ||
+        'Desculpe, nao consegui gerar uma resposta.'
+      const finalText = typeof responseText === 'string' ? responseText : JSON.stringify(responseText)
+
+      // Save new response to DB
+      if (!session) return
+      const savedMsg = await chatService.saveMessage({
+        sessionId: session.id,
+        userId,
+        content: finalText,
+        direction: 'outbound',
+        modelUsed: 'gemini-2.5-flash',
+      })
+
+      // Replace last assistant message in UI
+      setMessages(prev => {
+        const msgs = [...prev]
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i].role === 'assistant') {
+            msgs[i] = {
+              ...chatMsgToDisplay(savedMsg),
+              agent: serverResult.module,
+              classification: newClassification,
+            }
+            break
+          }
+        }
+        return msgs
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao reclassificar')
+    } finally {
+      setIsReclassifying(false)
+    }
+  }, [messages, isLoading, isReclassifying, session, getUserId])
+
   const createNewSession = useCallback(() => {
     setSession(null)
     setMessages([])
     setError(null)
     setShowSessions(false)
+    setActiveAgent(null)
+    setLastClassification(null)
   }, [])
 
   const switchSession = useCallback(async (sessionId: string) => {
@@ -185,6 +316,8 @@ export function useChatSession(): UseChatSessionReturn {
       setSession(target)
       setShowSessions(false)
       setError(null)
+      setActiveAgent(null)
+      setLastClassification(null)
     } catch {
       setError('Erro ao carregar conversa')
     }
@@ -198,6 +331,8 @@ export function useChatSession(): UseChatSessionReturn {
       if (session?.id === sessionId) {
         setSession(null)
         setMessages([])
+        setActiveAgent(null)
+        setLastClassification(null)
       }
     } catch {
       setError('Erro ao arquivar conversa')
@@ -216,5 +351,9 @@ export function useChatSession(): UseChatSessionReturn {
     archiveSession,
     showSessions,
     setShowSessions,
+    activeAgent,
+    lastClassification,
+    reclassifyLastMessage,
+    isReclassifying,
   }
 }

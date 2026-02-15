@@ -3,14 +3,29 @@
  *
  * Chat interface with persistent sessions (chat_sessions + chat_messages).
  * Uses useChatSession hook for lifecycle, GeminiClient for AI calls.
+ * Displays agent routing indicators and supports reclassification.
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
+import type { DisplayMessage } from '@/hooks/useChatSession'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
+import type { AgentModule } from '@/lib/agents/types'
 import './AicaChatFAB.css'
+
+const AGENT_LABELS: Record<AgentModule | 'coordinator', string> = {
+  atlas: 'Atlas',
+  journey: 'Jornada',
+  connections: 'Conexoes',
+  finance: 'Financas',
+  flux: 'Flux',
+  studio: 'Studio',
+  captacao: 'Captacao',
+  agenda: 'Agenda',
+  coordinator: 'Aica',
+}
 
 interface AicaChatFABProps {
   position?: 'bottom-right' | 'bottom-left'
@@ -38,6 +53,10 @@ export function AicaChatFAB({
     archiveSession,
     showSessions,
     setShowSessions,
+    activeAgent,
+    lastClassification,
+    reclassifyLastMessage,
+    isReclassifying,
   } = useChatSession()
 
   // Escape to close
@@ -99,6 +118,16 @@ export function AicaChatFAB({
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
   }
 
+  const isLastAssistantMessage = (msg: DisplayMessage, idx: number) => {
+    if (msg.role !== 'assistant') return false
+    for (let i = idx + 1; i < messages.length; i++) {
+      if (messages[i].role === 'assistant') return false
+    }
+    return true
+  }
+
+  const showReclassifyButton = lastClassification?.needsServerClassification && !isLoading
+
   return (
     <>
       {/* Backdrop */}
@@ -142,7 +171,10 @@ export function AicaChatFAB({
                   {session?.title || 'Aica'}
                 </h3>
                 <p className="aica-fab-header__subtitle">
-                  {session ? 'Conversa ativa' : 'Assistente pessoal'}
+                  {activeAgent
+                    ? <span className="aica-fab-agent-indicator">{AGENT_LABELS[activeAgent]}</span>
+                    : (session ? 'Conversa ativa' : 'Assistente pessoal')
+                  }
                 </p>
               </div>
               <button
@@ -221,21 +253,51 @@ export function AicaChatFAB({
                 </div>
               )}
 
-              {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    'aica-fab-message',
-                    msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+              {messages.map((msg, idx) => (
+                <div key={msg.id}>
+                  <div
+                    className={cn(
+                      'aica-fab-message',
+                      msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+                    )}
+                  >
+                    {msg.role === 'assistant' ? (
+                      <div
+                        className="aica-fab-message__content"
+                        dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
+                      />
+                    ) : (
+                      <p>{msg.content}</p>
+                    )}
+                  </div>
+
+                  {/* Agent badge for assistant messages */}
+                  {msg.role === 'assistant' && msg.agent && (
+                    <div className="aica-fab-agent-badge">
+                      {AGENT_LABELS[msg.agent]}
+                      {msg.classification && (
+                        <span className="aica-fab-agent-badge__confidence">
+                          {Math.round(msg.classification.confidence * 100)}%
+                        </span>
+                      )}
+                    </div>
                   )}
-                >
-                  {msg.role === 'assistant' ? (
-                    <div
-                      className="aica-fab-message__content"
-                      dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
-                    />
-                  ) : (
-                    <p>{msg.content}</p>
+
+                  {/* Reclassify button on last assistant message */}
+                  {isLastAssistantMessage(msg, idx) && showReclassifyButton && (
+                    <button
+                      className="aica-fab-reclassify"
+                      onClick={reclassifyLastMessage}
+                      disabled={isReclassifying}
+                      title="Reanalisar com IA"
+                    >
+                      {isReclassifying ? (
+                        <Loader2 size={12} className="aica-fab-loading-icon" />
+                      ) : (
+                        <RefreshCw size={12} />
+                      )}
+                      <span>Reanalisar</span>
+                    </button>
                   )}
                 </div>
               ))}
@@ -265,12 +327,12 @@ export function AicaChatFAB({
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={isLoading}
+                disabled={isLoading || isReclassifying}
               />
               <button
                 className="aica-fab-send"
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || isReclassifying}
                 aria-label="Enviar"
               >
                 <Send size={16} />

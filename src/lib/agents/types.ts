@@ -18,6 +18,8 @@ export type AgentModule =
   | 'journey'
   | 'finance'
   | 'connections'
+  | 'flux'
+  | 'agenda'
   | 'coordinator'
 
 /**
