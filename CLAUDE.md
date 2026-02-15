@@ -38,12 +38,23 @@ npx supabase functions serve  # Local Edge Functions
 | **Finance** | `src/modules/finance/` | `finance_transactions` |
 | **Flux** | `src/modules/flux/` | `athletes`, `workout_blocks`, `alerts` |
 
+## Default Working Mode: Clarify → Team → Execute
+
+For medium+ complexity tasks (2+ files, decisions involved, new features):
+1. **Clarify** — Ask about information gaps before starting (see `clarification-first.md`)
+2. **Team** — Create an Agent Team with appropriate composition (see `agent-teams.md`)
+3. **Execute** — Teammates work in parallel, lead synthesizes and reports
+
+Solo work is reserved for trivially clear single-file fixes only.
+
 ## Modular Rules Index
 
 Detailed instructions are in `.claude/rules/` (loaded automatically):
 
 | Rule File | Loading | Content |
 |-----------|---------|---------|
+| `clarification-first.md` | Always | **Ask about gaps before acting** — 6 dimensions framework |
+| `agent-teams.md` | Always | **Team-first workflow** — composition patterns, task rules |
 | `security.md` | Always | API keys, RLS, auth, OWASP, backup ban |
 | `deploy-pipeline.md` | Always | Staging-first pipeline, commands, services |
 | `architecture.md` | Always | Auth decisions, DB patterns, Edge Functions |
@@ -65,6 +76,8 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 
 ## Critical Rules (Summary)
 
+- **ALWAYS** clarify information gaps before starting medium+ tasks
+- **ALWAYS** create Agent Teams for tasks touching 2+ files or involving decisions
 - **NEVER** expose API keys in frontend — use Edge Functions
 - **NEVER** create .backup/.bak files — Git is the backup
 - **NEVER** deploy without staging validation first

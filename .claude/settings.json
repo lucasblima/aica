@@ -38,6 +38,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "CLASSIFY this message: (A) Question/conversation about tools, concepts, errors, or how things work — answer directly, no clarification needed. (B) Simple code task affecting 1 file with no decisions — execute directly. (C) Code task affecting 2+ files or involving decisions — call AskUserQuestion immediately with 2-4 targeted questions, then create an Agent Team after answers. For (C): do NOT output any text before AskUserQuestion. Just call the tool."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Bash",
@@ -55,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"C:/Users/lucas/repos/Aica_frontend/Aica_frontend\" && git diff --quiet HEAD 2>/dev/null; if [ $? -ne 0 ]; then echo '⚠️  UNCOMMITTED CHANGES DETECTED!\n\nYou have uncommitted changes. Consider committing before ending the session.\n\nChanged files:'; git diff --name-only HEAD 2>/dev/null; fi"
+            "command": "git diff --quiet HEAD 2>/dev/null; if [ $? -ne 0 ]; then echo 'UNCOMMITTED CHANGES DETECTED. Consider committing before ending the session. Changed files:'; git diff --name-only HEAD 2>/dev/null; fi; exit 0"
           }
         ]
       }
@@ -66,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"C:/Users/lucas/repos/Aica_frontend/Aica_frontend\" && npx tsc --noEmit --pretty 2>&1 | head -30; if [ ${PIPESTATUS[0]} -ne 0 ]; then echo '\n⚠️  TYPECHECK FAILED — fix errors before marking task complete.'; fi"
+            "command": "npx tsc --noEmit --pretty 2>&1 | head -30; exit 0"
           }
         ]
       }
