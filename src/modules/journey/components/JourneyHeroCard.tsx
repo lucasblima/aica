@@ -15,6 +15,7 @@ import { useMoments } from '../hooks/useMoments'
 import { useDailyQuestion } from '../hooks/useDailyQuestion'
 import { useAuth } from '@/hooks/useAuth'
 import { LEVEL_COLORS } from '../types/consciousnessPoints'
+import { getEmotionDisplay } from '../types/emotionHelper'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -229,7 +230,7 @@ export function JourneyHeroCard({
 
             <div className="flex items-start gap-2">
               {lastMoment.emotion && (
-                <span className="text-xl">{lastMoment.emotion}</span>
+                <span className="text-xl">{getEmotionDisplay(lastMoment.emotion).emoji}</span>
               )}
               <p className="text-sm text-[#5C554B] line-clamp-2">
                 {lastMoment.content || 'Áudio gravado'}
