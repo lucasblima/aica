@@ -466,8 +466,9 @@ export class AutomationService {
   }
 
   /**
-   * Schedule weekly workout plan via WhatsApp
-   * Integrates with notification-sender Edge Function
+   * Schedule weekly workout plan.
+   * Note: WhatsApp delivery removed (Evolution API — ToS violation risk).
+   * Plans are tracked in scheduled_workouts; coach contacts athlete manually.
    */
   static async scheduleWeeklyPlan(params: {
     microcycleId: string;
@@ -561,30 +562,21 @@ export class AutomationService {
         return { data: null, error: workoutError };
       }
 
-      // 6. Create notification in scheduled_notifications table (for notification-sender)
-      const { error: notificationError } = await supabase
-        .from('scheduled_notifications')
+      // 6. Create in-app alert for coach to contact athlete manually
+      const { error: alertError } = await supabase
+        .from('alerts')
         .insert({
           user_id: userData.user.id,
-          target_phone: athlete.phone,
-          target_name: athlete.name,
-          notification_type: 'weekly_plan',
-          message_template: messageTemplate,
-          message_variables: {
-            athlete_name: athlete.name,
-            week_number: params.weekNumber.toString(),
-            microcycle_title: microcycle.name,
-            focus: (microcycle[focusKey] as string) || '',
-          },
-          scheduled_for: params.scheduledFor.toISOString(),
-          timezone: 'America/Sao_Paulo',
-          status: 'scheduled',
-          priority: 5,
+          athlete_id: params.athleteId,
+          alert_type: 'motivation',
+          severity: 'low',
+          keywords_detected: [],
+          message_preview: `Plano semanal ${params.weekNumber} agendado para ${athlete.name} — contatar manualmente`,
+          feedback_id: null,
         });
 
-      if (notificationError) {
-        console.error('[AutomationService] Error creating notification:', notificationError);
-        // Don't fail the whole operation, just log the error
+      if (alertError) {
+        console.error('[AutomationService] Error creating alert:', alertError);
       }
 
       return { data: scheduledWorkout, error: null };
