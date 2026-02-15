@@ -8,14 +8,16 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, Send, Zap, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { AthleteProfileService } from '../services/athleteProfileService';
+import { AthleteService } from '../services/athleteService';
 import { AutomationService } from '../services/automationService';
-import type { FlowAthleteProfile, WorkoutAutomation, CRMFilters } from '../types/flow';
+import { ConnectionStatusDot } from '../components/ConnectionStatusDot';
+import type { Athlete } from '../types/flux';
+import type { WorkoutAutomation, CRMFilters } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
 
 export default function CRMCommandCenterView() {
   const navigate = useNavigate();
-  const [athletes, setAthletes] = useState<FlowAthleteProfile[]>([]);
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [automations, setAutomations] = useState<WorkoutAutomation[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<CRMFilters>({});
@@ -28,7 +30,7 @@ export default function CRMCommandCenterView() {
   const loadData = async () => {
     setLoading(true);
     const [athletesRes, automationsRes] = await Promise.all([
-      AthleteProfileService.getAllProfiles(),
+      AthleteService.getAthletes(),
       AutomationService.getActiveAutomations(),
     ]);
 
@@ -41,16 +43,6 @@ export default function CRMCommandCenterView() {
     if (filters.modality && athlete.modality !== filters.modality) return false;
     if (filters.level && athlete.level !== filters.level) return false;
     if (filters.status && athlete.status !== filters.status) return false;
-    if (
-      filters.consistency_min &&
-      (athlete.consistency_rate || 0) < filters.consistency_min
-    )
-      return false;
-    if (
-      filters.consistency_max &&
-      (athlete.consistency_rate || 0) > filters.consistency_max
-    )
-      return false;
     if (
       filters.search &&
       !athlete.name.toLowerCase().includes(filters.search.toLowerCase())
@@ -70,20 +62,14 @@ export default function CRMCommandCenterView() {
   };
 
   const selectAll = () => {
-    setSelectedAthletes(new Set(filteredAthletes.map((a) => a.athlete_id)));
+    setSelectedAthletes(new Set(filteredAthletes.map((a) => a.id)));
   };
 
   const clearSelection = () => {
     setSelectedAthletes(new Set());
   };
 
-  const avgConsistency =
-    filteredAthletes.length > 0
-      ? Math.round(
-          filteredAthletes.reduce((sum, a) => sum + (a.consistency_rate || 0), 0) /
-            filteredAthletes.length
-        )
-      : 0;
+  const avgConsistency = 0; // TODO: compute from workout_slots completion data
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
@@ -172,13 +158,13 @@ export default function CRMCommandCenterView() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredAthletes.map((athlete) => {
-              const isSelected = selectedAthletes.has(athlete.athlete_id);
-              const modalityConfig = MODALITY_CONFIG[athlete.modality as any];
+              const isSelected = selectedAthletes.has(athlete.id);
+              const modalityConfig = MODALITY_CONFIG[athlete.modality];
 
               return (
                 <div
-                  key={athlete.athlete_id}
-                  onClick={() => toggleAthlete(athlete.athlete_id)}
+                  key={athlete.id}
+                  onClick={() => toggleAthlete(athlete.id)}
                   className={`ceramic-card p-4 cursor-pointer transition-all ${
                     isSelected ? 'ring-2 ring-ceramic-accent' : ''
                   }`}
@@ -188,29 +174,26 @@ export default function CRMCommandCenterView() {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => toggleAthlete(athlete.athlete_id)}
+                        onChange={() => toggleAthlete(athlete.id)}
                         className="w-4 h-4 rounded"
                         onClick={(e) => e.stopPropagation()}
                       />
                       <span className="text-xl">{modalityConfig?.icon}</span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-ceramic-text-secondary">Consistência</p>
-                      <p className="text-lg font-bold">{athlete.consistency_rate || 0}%</p>
-                    </div>
+                    <ConnectionStatusDot status={athlete.invitation_status} />
                   </div>
 
                   <h3 className="text-base font-bold text-ceramic-text-primary mb-1">
                     {athlete.name}
                   </h3>
                   <p className="text-xs text-ceramic-text-secondary mb-2">
-                    {athlete.level} • {modalityConfig?.label}
+                    {athlete.level} · {modalityConfig?.label}
                   </p>
 
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/flux/athlete/${athlete.athlete_id}`);
+                      navigate(`/flux/athlete/${athlete.id}`);
                     }}
                     className="w-full px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg text-xs font-medium transition-colors"
                   >

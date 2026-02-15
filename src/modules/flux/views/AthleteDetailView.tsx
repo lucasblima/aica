@@ -152,7 +152,7 @@ export default function AthleteDetailView() {
               <p className="text-xs text-ceramic-text-secondary truncate">
                 {athlete.email || 'Sem email'}
               </p>
-              <ConnectionStatusDot status={athlete.invitation_status} />
+              <ConnectionStatusDot status={athlete.invitation_status} size="md" />
             </div>
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-ceramic-text-secondary" />
