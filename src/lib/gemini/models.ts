@@ -74,6 +74,9 @@ export const USE_CASE_TO_MODEL: Record<string, GeminiModel> = {
 
   // ADK Multi-Agent (proxied to Cloud Run)
   'agent_chat': 'smart',               // ADK coordinator agent
+
+  // Intent Classification
+  'classify_intent': 'fast',           // Client-side intent routing
 }
 
 /**
@@ -100,6 +103,9 @@ export const USE_CASE_TO_COMPLEXITY: Record<string, ComplexityLevel> = {
   'analyze_moment_sentiment': 'low',
   'extract_task_from_voice': 'low',
   'sentiment_analysis': 'low',
+
+  // LOW — Intent classification
+  'classify_intent': 'low',
 
   // MEDIUM — Standard tasks (< 3s target)
   'chat_aica': 'medium',
