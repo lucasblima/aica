@@ -14,9 +14,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
-import { X, AlertCircle, CheckCircle, ChevronDown, User, Target, Heart, Info } from 'lucide-react';
+import { X, AlertCircle, CheckCircle, ChevronDown, User, Target, Heart, Info, Copy, Mail, Loader2 } from 'lucide-react';
 import type { Athlete, AthleteStatus, TrainingModality, SimpleAthleteLevel, ModalityLevel, AthleteLevel } from '../../types/flux';
 import { AthleteProfileService } from '../../services/athleteProfileService';
+import { AthleteService } from '../../services/athleteService';
 import { SIMPLE_LEVEL_LABELS } from '../../types/flux';
 
 interface AthleteFormDrawerProps {
@@ -93,6 +94,11 @@ export default function AthleteFormDrawer({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
+
+  // Invite system state
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteToast, setInviteToast] = useState<string | null>(null);
+  const [copyToast, setCopyToast] = useState(false);
 
   // Accordion state (3 sections)
   const [openSections, setOpenSections] = useState({
@@ -201,6 +207,51 @@ export default function AthleteFormDrawer({
     }));
     setIsDirty(true);
   };
+
+  // Copy invite link to clipboard
+  const handleCopyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText('https://aica.guru/meu-treino');
+      setCopyToast(true);
+      setTimeout(() => setCopyToast(false), 3000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
+
+  // Send invite email via Edge Function
+  const handleSendInvite = async () => {
+    if (!initialData?.id || !formData.email) return;
+
+    setIsSendingInvite(true);
+    try {
+      const result = await AthleteService.sendInvite({
+        athleteId: initialData.id,
+        athleteName: formData.name,
+        athleteEmail: formData.email,
+        coachName: '', // Edge Function resolves from JWT
+      });
+
+      if (result.success) {
+        setInviteToast(`Convite enviado para ${formData.email}`);
+      } else {
+        setInviteToast(`Erro: ${result.error || 'Falha ao enviar convite'}`);
+      }
+    } catch (err) {
+      setInviteToast('Erro ao enviar convite');
+    } finally {
+      setIsSendingInvite(false);
+      setTimeout(() => setInviteToast(null), 4000);
+    }
+  };
+
+  // Show invite buttons when editing and athlete has email but not connected
+  const showInviteActions =
+    mode === 'edit' &&
+    initialData?.id &&
+    formData.email &&
+    formData.email.includes('@') &&
+    initialData?.invitation_status !== 'connected';
 
   // Validate form
   const validate = (): boolean => {
@@ -473,6 +524,49 @@ export default function AthleteFormDrawer({
                           </p>
                         )}
                       </div>
+
+                      {/* Invite Actions */}
+                      {showInviteActions && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleCopyInviteLink}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 ceramic-inset hover:bg-white/50 rounded-lg transition-colors"
+                          >
+                            <Copy className="w-4 h-4 text-ceramic-info" />
+                            <span className="text-xs font-bold text-ceramic-info">
+                              {copyToast ? 'Link copiado!' : 'Copiar Link de Convite'}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSendInvite}
+                            disabled={isSendingInvite || initialData?.invitation_sent_at != null}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-ceramic-info/10 hover:bg-ceramic-info/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+                          >
+                            {isSendingInvite ? (
+                              <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
+                            ) : (
+                              <Mail className="w-4 h-4 text-ceramic-info" />
+                            )}
+                            <span className="text-xs font-bold text-ceramic-info">
+                              {isSendingInvite
+                                ? 'Enviando...'
+                                : initialData?.invitation_sent_at
+                                ? 'Convite enviado'
+                                : 'Enviar Convite por Email'}
+                            </span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Invite Toast */}
+                      {inviteToast && (
+                        <div className="flex items-center gap-2 p-2.5 bg-ceramic-success/10 border border-ceramic-success/20 rounded-lg">
+                          <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0" />
+                          <p className="text-xs font-medium text-ceramic-success">{inviteToast}</p>
+                        </div>
+                      )}
 
                       {/* Phone */}
                       <div>

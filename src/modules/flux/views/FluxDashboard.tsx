@@ -10,7 +10,9 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import { useAthletes } from '../hooks/useAthletes';
+import { useAthleteActivity } from '../hooks/useAthleteActivity';
 import { AthleteService, CreateAthleteInput } from '../services/athleteService';
+import { supabase } from '@/services/supabaseClient';
 import { AthleteProfileService } from '../services/athleteProfileService';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel } from '../types';
@@ -19,7 +21,7 @@ import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
 import { AthleteFormDrawer } from '../components/forms';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import type { Athlete } from '../types';
-import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search, CheckCircle, X } from 'lucide-react';
 
 // Sort options
 type SortOrder = 'none' | 'asc' | 'desc';
@@ -73,8 +75,11 @@ export default function FluxDashboard() {
   const navigate = useNavigate();
   const { actions } = useFlux();
 
-  // Fetch real athletes from Supabase
+  // Fetch real athletes with adherence from Supabase
   const { athletes: allAthletes, isLoading, error } = useAthletes();
+
+  // Realtime activity notifications
+  const { notifications, dismissNotification } = useAthleteActivity();
 
   // Filter and sort states
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
@@ -94,6 +99,9 @@ export default function FluxDashboard() {
   // Delete confirmation modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
+
+  // Invite toast state
+  const [inviteToast, setInviteToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Calculate modality counts
   const modalityCounts = useMemo(() => {
@@ -153,14 +161,12 @@ export default function FluxDashboard() {
       }
     }
 
-    // Sort by name (alphabetically) for now
-    // TODO: Add consistency_rate column to athletes table for sorting
+    // Sort by adherence rate
     if (consistencySort !== 'none') {
       result.sort((a, b) => {
-        // Fallback to alphabetical sort until consistency tracking is implemented
-        return consistencySort === 'asc'
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
+        const rateA = a.adherence_rate ?? 0;
+        const rateB = b.adherence_rate ?? 0;
+        return consistencySort === 'asc' ? rateA - rateB : rateB - rateA;
       });
     }
 
@@ -178,8 +184,12 @@ export default function FluxDashboard() {
 
   // Aggregate stats (based on filtered athletes)
   const activeAthletes = filteredAthletes.filter((a) => a.status === 'active').length;
-  // TODO: Calculate avgConsistency from workout completion data
-  const avgConsistency = 0; // Placeholder until consistency tracking is implemented
+  const avgConsistency = useMemo(() => {
+    const activeWithAdherence = filteredAthletes.filter((a) => a.status === 'active');
+    if (activeWithAdherence.length === 0) return 0;
+    const sum = activeWithAdherence.reduce((acc, a) => acc + (a.adherence_rate ?? 0), 0);
+    return sum / activeWithAdherence.length;
+  }, [filteredAthletes]);
 
   // Handle athlete click
   const handleAthleteClick = (athleteId: string) => {
@@ -198,6 +208,25 @@ export default function FluxDashboard() {
     setSelectedAthleteForWhatsApp(athlete);
     setSelectedAthleteAlerts(alerts);
     setWhatsAppModalOpen(true);
+  };
+
+  // Handle send invite email
+  const handleSendInvite = async (athlete: Athlete) => {
+    if (!athlete.email) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const coachName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Seu Coach';
+    const { success, error } = await AthleteService.sendInvite({
+      athleteId: athlete.id,
+      athleteName: athlete.name,
+      athleteEmail: athlete.email,
+      coachName,
+    });
+    if (success) {
+      setInviteToast({ message: `Convite enviado para ${athlete.email}`, type: 'success' });
+    } else {
+      setInviteToast({ message: error || 'Erro ao enviar convite', type: 'error' });
+    }
+    setTimeout(() => setInviteToast(null), 4000);
   };
 
   // Handle save athlete (create or update)
@@ -631,7 +660,6 @@ export default function FluxDashboard() {
 
         <div className="grid gap-4">
           {filteredAthletes.slice(0, 20).map((athlete) => {
-            // TODO: Fetch real alerts and feedbacks from database
             const athleteAlerts: any[] = [];
             const athleteFeedbacks: any[] = [];
 
@@ -641,11 +669,14 @@ export default function FluxDashboard() {
                 athlete={athlete}
                 recentFeedbacks={athleteFeedbacks}
                 activeAlerts={athleteAlerts}
-                adherenceRate={0} // TODO: Calculate from workout completion
+                adherenceRate={athlete.adherence_rate ?? 0}
+                inviteStatus={athlete.invitation_email_status ?? 'none'}
                 onClick={() => handleAthleteClick(athlete.id)}
                 onWhatsAppClick={() => handleWhatsAppClick(athlete, athleteAlerts)}
                 onEdit={() => handleEditAthlete(athlete)}
                 onDelete={() => handleDeleteClick(athlete)}
+                onSendInvite={() => handleSendInvite(athlete)}
+                onCopyLink={() => {}}
               />
             );
           })}
@@ -741,6 +772,50 @@ export default function FluxDashboard() {
             : ''
         }
       />
+
+      {/* Invite Toast */}
+      {inviteToast && (
+        <div className={`fixed top-6 right-6 z-50 ceramic-card p-4 shadow-lg flex items-center gap-3 max-w-sm ${
+          inviteToast.type === 'success' ? 'border-l-4 border-ceramic-success' : 'border-l-4 border-ceramic-error'
+        }`}>
+          {inviteToast.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0" />
+          ) : (
+            <X className="w-5 h-5 text-ceramic-error flex-shrink-0" />
+          )}
+          <p className="text-sm text-ceramic-text-primary">{inviteToast.message}</p>
+        </div>
+      )}
+
+      {/* Activity Toast Notifications */}
+      {notifications.length > 0 && (
+        <div className="fixed bottom-24 right-6 z-50 space-y-2 max-w-sm">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className="ceramic-card p-3 flex items-center gap-3 shadow-lg animate-in slide-in-from-right"
+            >
+              <div className="ceramic-inset p-1.5 bg-ceramic-success/10">
+                <CheckCircle className="w-4 h-4 text-ceramic-success" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-ceramic-text-primary truncate">
+                  {n.athleteName}
+                </p>
+                <p className="text-xs text-ceramic-text-secondary truncate">
+                  completou {n.workoutName}
+                </p>
+              </div>
+              <button
+                onClick={() => dismissNotification(n.id)}
+                className="p-1 hover:bg-ceramic-cool rounded transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -12,12 +12,15 @@ import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ConnectionStatusDot } from './ConnectionStatusDot';
-import { User, AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { User, AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check } from 'lucide-react';
 
 interface ExtendedAthleteCardProps extends AthleteCardProps {
   onWhatsAppClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onSendInvite?: () => void;
+  onCopyLink?: () => void;
+  inviteStatus?: 'none' | 'sent' | 'delivered' | 'bounced' | 'failed';
 }
 
 export function AthleteCard({
@@ -29,9 +32,13 @@ export function AthleteCard({
   onWhatsAppClick,
   onEdit,
   onDelete,
+  onSendInvite,
+  onCopyLink,
+  inviteStatus = 'none',
 }: ExtendedAthleteCardProps) {
   // Menu dropdown state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -158,6 +165,58 @@ export function AthleteCard({
                       <Trash2 className="w-4 h-4 text-ceramic-error" />
                       <span className="text-ceramic-error">Excluir</span>
                     </button>
+                  )}
+
+                  {/* Invite actions — show when athlete has email and is not connected */}
+                  {athlete.email && athlete.invitation_status !== 'connected' && (
+                    <>
+                      <div className="border-t border-ceramic-border" />
+                      {onCopyLink && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsMenuOpen(false);
+                            navigator.clipboard.writeText('https://aica.guru/meu-treino').then(() => {
+                              setLinkCopied(true);
+                              setTimeout(() => setLinkCopied(false), 2000);
+                            });
+                            onCopyLink();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-ceramic-text-primary hover:bg-ceramic-cool transition-colors"
+                        >
+                          {linkCopied ? (
+                            <>
+                              <Check className="w-4 h-4 text-ceramic-success" />
+                              <span className="text-ceramic-success">Link copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4 text-ceramic-info" />
+                              <span>Copiar Link</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                      {onSendInvite && inviteStatus !== 'sent' && inviteStatus !== 'delivered' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsMenuOpen(false);
+                            onSendInvite();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-ceramic-text-primary hover:bg-amber-500/10 transition-colors"
+                        >
+                          <Mail className="w-4 h-4 text-amber-600" />
+                          <span>Enviar Convite</span>
+                        </button>
+                      )}
+                      {(inviteStatus === 'sent' || inviteStatus === 'delivered') && (
+                        <div className="flex items-center gap-2 px-3 py-2 text-sm text-ceramic-success">
+                          <Check className="w-4 h-4" />
+                          <span>Convite enviado</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
