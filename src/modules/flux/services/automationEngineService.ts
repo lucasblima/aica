@@ -387,64 +387,40 @@ export class AutomationEngineService {
   }
 
   /**
-   * Send WhatsApp message via notification-sender
+   * Create in-app alert for coach to contact athletes manually.
+   * Previously sent WhatsApp messages via Evolution API (removed — WhatsApp ToS violation risk).
    */
   private static async executeSendWhatsApp(
     automation: WorkoutAutomation,
     context?: Record<string, any>
   ): Promise<string> {
-    const messageTemplateId = automation.action_config?.message_template_id;
-    if (!messageTemplateId) {
-      throw new Error('No message template configured');
-    }
-
-    // Fetch template
-    const { data: template, error: templateError } = await supabase
-      .from('coach_messages')
-      .select('*')
-      .eq('id', messageTemplateId)
-      .single();
-
-    if (templateError || !template) {
-      throw new Error('Message template not found');
-    }
-
-    // Get target athletes from context
     const athletes = context?.athletes || context?.microcycles?.map((m: any) => m.athlete_profiles);
 
     if (!athletes || athletes.length === 0) {
       throw new Error('No target athletes found');
     }
 
-    let messagesSent = 0;
+    let alertsCreated = 0;
 
     for (const athlete of athletes) {
       try {
-        // Create scheduled notification
-        await supabase.from('scheduled_notifications').insert({
+        await supabase.from('alerts').insert({
           user_id: automation.user_id,
-          target_phone: athlete.phone,
-          target_name: athlete.name,
-          notification_type: 'automation',
-          message_template: template.message_template,
-          message_variables: {
-            athlete_name: athlete.name,
-            consistency_rate: athlete.consistency_rate || 0,
-            ...context,
-          },
-          scheduled_for: new Date().toISOString(), // Send immediately
-          timezone: 'America/Sao_Paulo',
-          status: 'scheduled',
-          priority: 5,
+          athlete_id: athlete.athlete_id || athlete.id,
+          alert_type: 'motivation',
+          severity: 'medium',
+          keywords_detected: [],
+          message_preview: `Automação "${automation.name}": contatar ${athlete.name} manualmente`,
+          feedback_id: null,
         });
 
-        messagesSent++;
+        alertsCreated++;
       } catch (error) {
-        log.error(`Error sending WhatsApp to ${athlete.name}:`, error);
+        log.error(`Error creating alert for ${athlete.name}:`, error);
       }
     }
 
-    return `Sent ${messagesSent} WhatsApp message(s)`;
+    return `Created ${alertsCreated} alert(s) to contact athlete(s) manually`;
   }
 
   /**
