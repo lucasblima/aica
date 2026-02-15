@@ -451,11 +451,26 @@ export default function AthleteFormDrawer({
                           type="email"
                           value={formData.email}
                           onChange={(e) => handleChange('email', e.target.value)}
-                          className="w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                          disabled={initialData?.invitation_status === 'connected'}
+                          className={`w-full ceramic-inset px-4 py-3 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 ${
+                            initialData?.invitation_status === 'connected' ? 'opacity-60 cursor-not-allowed' : ''
+                          }`}
                           placeholder="email@exemplo.com"
                         />
                         {errors.email && (
                           <p className="text-xs text-ceramic-error mt-1">{errors.email}</p>
+                        )}
+                        {/* Connection status hints */}
+                        {formData.email && initialData?.invitation_status === 'connected' && (
+                          <p className="text-xs text-ceramic-success mt-1.5 flex items-center gap-1.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-ceramic-success" />
+                            Conectado
+                          </p>
+                        )}
+                        {formData.email && initialData?.invitation_status !== 'connected' && formData.email.includes('@') && (
+                          <p className="text-xs text-ceramic-text-secondary mt-1.5">
+                            Quando {formData.name || 'o atleta'} criar conta AICA, será conectado automaticamente
+                          </p>
                         )}
                       </div>
 
