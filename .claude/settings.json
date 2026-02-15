@@ -38,17 +38,6 @@
         ]
       }
     ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "CLASSIFY this message: (A) Question/conversation about tools, concepts, errors, or how things work — answer directly, no clarification needed. (B) Simple code task affecting 1 file with no decisions — execute directly. (C) Code task affecting 2+ files or involving decisions — call AskUserQuestion immediately with 2-4 targeted questions, then create an Agent Team after answers. For (C): do NOT output any text before AskUserQuestion. Just call the tool."
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Bash",
