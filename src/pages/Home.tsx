@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase, Sparkles } from 'lucide-react';
+import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ConnectionArchetypes, ModuleCard } from '../components';
-import { LifeCouncilCard, PatternsSummary } from '../components/features';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
 import { FluxCard } from '../modules/flux';
 import { RecentContactsWidget } from '../components';
-import { useLifeCouncil } from '../hooks/useLifeCouncil';
-import { useUserPatterns } from '../hooks/useUserPatterns';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
 import { ViewState } from '../../types';
@@ -92,9 +89,6 @@ export default function Home({
    const { user } = useAuth();
    const [activeTab, setActiveTab] = useState<TabState>('personal');
 
-   // OpenClaw: Life Council + Patterns
-   const council = useLifeCouncil({ autoTrigger: true });
-   const patterns = useUserPatterns();
    // Handle tab change - navigate to /connections for network tab
    const handleTabChange = (tab: TabState) => {
       if (tab === 'network') {
@@ -212,49 +206,14 @@ export default function Home({
                </motion.div>
 
 
-               {/* AI Insights Section — Life Council + Patterns (compact) */}
-               <motion.div
-                  variants={cardVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={1}
-               >
-                  <div className="flex items-center gap-2 mb-3">
-                     <Sparkles className="w-4 h-4 text-amber-500" />
-                     <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-                        Seus Insights AI
-                     </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <LifeCouncilCard
-                        insight={council.insight}
-                        isLoading={council.isLoading}
-                        isRunning={council.isRunning}
-                        error={council.error}
-                        onRun={council.runCouncil}
-                        compact
-                        onViewMore={() => onNavigateToView('journey')}
-                     />
-                     <PatternsSummary
-                        patterns={patterns.patterns}
-                        isLoading={patterns.isLoading}
-                        isSynthesizing={patterns.isSynthesizing}
-                        error={patterns.error}
-                        onSynthesize={patterns.synthesize}
-                        compact
-                        onViewMore={() => onNavigateToView('journey')}
-                     />
-                  </div>
-               </motion.div>
-
-               {/* GAP 6: Life Modules Grid - Essencial (Vida Pessoal + Profissional + Financeiro) */}
+               {/* Life Modules Grid - Essencial (Vida Pessoal + Profissional + Financeiro) */}
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Saúde */}
                   <motion.div
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={2}
+                     custom={1}
                      onClick={() => onNavigateToView('health')}
                   >
                      <ModuleCard
@@ -271,7 +230,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={3}
+                     custom={2}
                      onClick={() => onNavigateToView('education')}
                   >
                      <ModuleCard
@@ -288,7 +247,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={4}
+                     custom={3}
                      onClick={() => onNavigateToView('professional')}
                   >
                      <ModuleCard
@@ -305,7 +264,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={5}
+                     custom={4}
                      onClick={() => onNavigateToView('legal')}
                   >
                      <ModuleCard
@@ -323,7 +282,7 @@ export default function Home({
                         variants={cardVariants}
                         initial="hidden"
                         animate="visible"
-                        custom={6}
+                        custom={5}
                         className="cursor-pointer hover:scale-[1.01] transition-transform"
                         onClick={() => onNavigateToView('finance')}
                      >
@@ -334,7 +293,7 @@ export default function Home({
                         variants={cardVariants}
                         initial="hidden"
                         animate="visible"
-                        custom={6}
+                        custom={5}
                         onClick={() => onNavigateToView('finance')}
                      >
                         <ModuleCard
@@ -352,7 +311,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={7}
+                     custom={6}
                      className="cursor-pointer hover:scale-[1.01] transition-transform"
                      onClick={() => onNavigateToView('grants')}
                   >
@@ -371,7 +330,7 @@ export default function Home({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={8}
+                  custom={7}
                >
                   <RecentContactsWidget
                      onViewAllClick={() => navigate('/contacts')}
@@ -384,7 +343,7 @@ export default function Home({
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={9}
+                  custom={8}
                   onClick={() => onNavigateToView('connections')}
                   className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                >
@@ -426,7 +385,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={10}
+                     custom={9}
                      onClick={() => onNavigateToView('studio')}
                      className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
                      style={{
@@ -463,7 +422,7 @@ export default function Home({
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={11}
+                     custom={10}
                   >
                      <FluxCard />
                   </motion.div>
