@@ -36,9 +36,10 @@ CREATE INDEX IF NOT EXISTS idx_athletes_invitation_email_status
 
 CREATE OR REPLACE FUNCTION public.get_athletes_with_adherence(p_user_id UUID)
 RETURNS TABLE (
-  athlete_id UUID,
+  id UUID,
   name TEXT,
   email TEXT,
+  phone TEXT,
   modality TEXT,
   level TEXT,
   status TEXT,
@@ -46,6 +47,8 @@ RETURNS TABLE (
   invitation_sent_at TIMESTAMPTZ,
   invitation_email_status TEXT,
   auth_user_id UUID,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
   adherence_rate INTEGER
 )
 LANGUAGE plpgsql
@@ -56,9 +59,10 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    a.id AS athlete_id,
+    a.id,
     a.name,
     a.email,
+    a.phone,
     a.modality,
     a.level,
     a.status,
@@ -66,6 +70,8 @@ BEGIN
     a.invitation_sent_at,
     a.invitation_email_status,
     a.auth_user_id,
+    a.created_at,
+    a.updated_at,
     COALESCE(
       CASE
         WHEN slot_counts.total_slots = 0 THEN 0
