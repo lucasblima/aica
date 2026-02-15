@@ -14,6 +14,9 @@ import { AthleteService } from '../services/athleteService';
 
 const log = createNamespacedLogger('useAthletes');
 
+/** Athlete with adherence_rate from RPC */
+export type AthleteWithAdherence = Athlete & { adherence_rate: number };
+
 export interface UseAthletesOptions {
   status?: string;
   modality?: string;
@@ -21,7 +24,7 @@ export interface UseAthletesOptions {
 }
 
 export function useAthletes(options?: UseAthletesOptions) {
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<AthleteWithAdherence[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const hasInitiallyLoaded = useRef(false);
@@ -31,7 +34,7 @@ export function useAthletes(options?: UseAthletesOptions) {
       if (!hasInitiallyLoaded.current) setIsLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await AthleteService.getAthletes();
+      const { data, error: fetchError } = await AthleteService.getAthletesWithAdherence();
 
       if (fetchError) throw fetchError;
 
@@ -95,8 +98,10 @@ export function useAthletes(options?: UseAthletesOptions) {
                 if (options?.level && newAthlete.level !== options.level) passes = false;
 
                 setAthletes((prev) => {
+                  const existing = prev.find((a) => a.id === newAthlete.id);
+                  const merged: AthleteWithAdherence = { ...newAthlete, adherence_rate: existing?.adherence_rate ?? 0 };
                   const filtered = prev.filter((a) => a.id !== newAthlete.id);
-                  return passes ? [...filtered, newAthlete].sort((a, b) => a.name.localeCompare(b.name)) : filtered;
+                  return passes ? [...filtered, merged].sort((a, b) => a.name.localeCompare(b.name)) : filtered;
                 });
               } else if (payload.eventType === 'DELETE') {
                 setAthletes((prev) => prev.filter((a) => a.id !== payload.old.id));

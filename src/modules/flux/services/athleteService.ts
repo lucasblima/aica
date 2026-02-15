@@ -371,6 +371,74 @@ export class AthleteService {
   }
 
   /**
+   * Get all athletes with adherence rates via RPC
+   */
+  static async getAthletesWithAdherence(): Promise<{
+    data: (Athlete & { adherence_rate: number })[] | null;
+    error: any;
+  }> {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        return { data: null, error: new Error('User not authenticated') };
+      }
+
+      const { data, error } = await supabase.rpc('get_athletes_with_adherence', {
+        p_user_id: userData.user.id,
+      });
+
+      if (error) {
+        console.error('[AthleteService] RPC get_athletes_with_adherence failed, falling back:', error);
+        // Fallback: return athletes with 0 adherence
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('athletes')
+          .select('*')
+          .order('name');
+
+        if (fallbackError) return { data: null, error: fallbackError };
+        return {
+          data: (fallbackData || []).map((a) => ({ ...a, adherence_rate: 0 })),
+          error: null,
+        };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error('[AthleteService] Error fetching athletes with adherence:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Send invite email to athlete via Edge Function
+   */
+  static async sendInvite(params: {
+    athleteId: string;
+    athleteName: string;
+    athleteEmail: string;
+    coachName: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-athlete-invite', {
+        body: params,
+      });
+
+      if (error) {
+        console.error('[AthleteService] Error sending invite:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: data?.success ?? true };
+    } catch (error) {
+      console.error('[AthleteService] Error sending invite:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    }
+  }
+
+  /**
    * Get trial expiring athletes (within next 7 days)
    */
   static async getTrialExpiring(): Promise<{ data: Athlete[] | null; error: any }> {

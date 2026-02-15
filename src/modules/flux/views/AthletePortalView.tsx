@@ -7,8 +7,9 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
+import { AthleteWelcome } from '../components/AthleteWelcome';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
 import {
@@ -24,10 +25,17 @@ const DAY_LABELS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
 
 export default function AthletePortalView() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile, isLoading, error, isLinked, refetch } = useMyAthleteProfile();
   const [feedbackSlotId, setFeedbackSlotId] = useState<string | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
+
+  // Show welcome screen on first visit or when ?welcome=true is present
+  const welcomeParam = searchParams.get('welcome') === 'true';
+  const [showWelcome, setShowWelcome] = useState(
+    () => welcomeParam || !AthleteWelcome.hasBeenShown()
+  );
 
   // Toggle workout completion
   const toggleCompleted = async (slotId: string, currentlyCompleted: boolean) => {
@@ -92,6 +100,27 @@ export default function AthletePortalView() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // Athlete welcome onboarding screen
+  if (showWelcome) {
+    return (
+      <AthleteWelcome
+        profile={profile}
+        onStartTraining={() => {
+          setShowWelcome(false);
+          // Remove ?welcome=true from URL without triggering navigation
+          if (welcomeParam) {
+            searchParams.delete('welcome');
+            setSearchParams(searchParams, { replace: true });
+          }
+        }}
+        onExplore={() => {
+          setShowWelcome(false);
+          navigate('/');
+        }}
+      />
     );
   }
 

@@ -101,6 +101,8 @@ export interface Athlete {
   auth_user_id?: string; // FK to auth.users — the athlete's own account
   linked_at?: string; // When the link was established
   invitation_status?: InvitationStatus; // 'none' | 'pending' | 'connected'
+  invitation_sent_at?: string; // When invite email was sent
+  invitation_email_status?: 'none' | 'sent' | 'delivered' | 'bounced' | 'failed';
 
   // Health documentation configuration (set by coach)
   requires_cardio_exam?: boolean; // Cardiological exam required

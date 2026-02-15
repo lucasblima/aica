@@ -5,7 +5,7 @@
  * e visão consolidada de todos os atletas
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Users, Send, Zap, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AthleteService } from '../services/athleteService';
@@ -17,7 +17,7 @@ import { MODALITY_CONFIG } from '../types/flux';
 
 export default function CRMCommandCenterView() {
   const navigate = useNavigate();
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<(Athlete & { adherence_rate?: number })[]>([]);
   const [automations, setAutomations] = useState<WorkoutAutomation[]>([]);
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<CRMFilters>({});
@@ -30,7 +30,7 @@ export default function CRMCommandCenterView() {
   const loadData = async () => {
     setLoading(true);
     const [athletesRes, automationsRes] = await Promise.all([
-      AthleteService.getAthletes(),
+      AthleteService.getAthletesWithAdherence(),
       AutomationService.getActiveAutomations(),
     ]);
 
@@ -69,7 +69,12 @@ export default function CRMCommandCenterView() {
     setSelectedAthletes(new Set());
   };
 
-  const avgConsistency = 0; // TODO: compute from workout_slots completion data
+  const avgConsistency = useMemo(() => {
+    const active = filteredAthletes.filter((a) => a.status === 'active');
+    if (active.length === 0) return 0;
+    const sum = active.reduce((acc, a) => acc + (a.adherence_rate ?? 0), 0);
+    return Math.round(sum / active.length);
+  }, [filteredAthletes]);
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
