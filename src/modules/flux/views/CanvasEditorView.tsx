@@ -681,12 +681,34 @@ export default function CanvasEditorView() {
     setViewMode('weekly');
   }, []);
 
-  // Loading
-  if (workoutsLoading && !athlete) {
+  // Loading — block UI until microcycle is loaded (prevents DnD before data is ready)
+  if (workoutsLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
         <div className="w-8 h-8 border-2 border-ceramic-info border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-sm text-ceramic-text-secondary font-medium">Preparando os treinos...</p>
+      </div>
+    );
+  }
+
+  // Microcycle failed to load or create
+  if (!activeMicrocycle && !workoutsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
+        <p className="text-lg font-bold text-ceramic-text-primary mb-2">Erro ao carregar microciclo</p>
+        <p className="text-sm text-ceramic-text-secondary mb-6">
+          Nao foi possivel criar o microciclo para este atleta.
+        </p>
+        <button
+          onClick={() => navigate('/flux')}
+          className="px-6 py-3 rounded-[16px] text-sm font-bold text-ceramic-text-primary transition-transform hover:scale-105"
+          style={{
+            background: '#F0EFE9',
+            boxShadow: '4px 4px 10px rgba(163,158,145,0.15), -4px -4px 10px rgba(255,255,255,0.9)',
+          }}
+        >
+          Voltar ao Dashboard
+        </button>
       </div>
     );
   }
