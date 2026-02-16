@@ -12,18 +12,23 @@
  * Usage: /flux/canvas/:athleteId/:blockId?  OR  /flux/canvas/
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Calculator,
   Calendar,
+  CalendarCheck,
   CalendarDays,
+  Check,
   Eye,
   EyeOff,
+  Loader2,
   RefreshCw,
   LayoutGrid,
   List,
+  ShieldAlert,
+  Upload,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlux } from '../context/FluxContext';
@@ -31,6 +36,9 @@ import { useAthletes, type AthleteWithAdherence } from '../hooks/useAthletes';
 import { useCanvasWorkouts } from '../hooks/useCanvasWorkouts';
 import { useCanvasCalendar, type BusySlot } from '../hooks/useCanvasCalendar';
 import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
+import { useCalendarSync } from '@/hooks/useCalendarSync';
+import { isGoogleCalendarConnected } from '@/services/googleAuthService';
+import { hasCalendarWriteScope } from '@/services/googleCalendarTokenService';
 import type { Athlete } from '../types/flux';
 import type { WorkoutTemplate, WorkoutSlot } from '../types/flow';
 import type { WeekWorkout } from '../components/canvas/WeeklyGrid';
@@ -226,6 +234,98 @@ const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
         title="Sincronizar calendarios"
       >
         <RefreshCw className={`w-3 h-3 text-ceramic-text-secondary ${isLoading ? 'animate-spin' : ''}`} />
+      </button>
+    </div>
+  );
+};
+
+// ============================================
+// Calendar Sync Status Indicator
+// ============================================
+
+type SyncState = 'disconnected' | 'readonly' | 'ready' | 'syncing' | 'done';
+
+interface CalendarSyncStatusProps {
+  syncState: SyncState;
+  isSyncing: boolean;
+  syncStats: { synced: number; skipped: number; failed: number } | null;
+  onUpgradeScope: () => void;
+  onBulkSync: () => void;
+}
+
+const CalendarSyncStatus: React.FC<CalendarSyncStatusProps> = ({
+  syncState,
+  isSyncing,
+  syncStats,
+  onUpgradeScope,
+  onBulkSync,
+}) => {
+  if (syncState === 'disconnected') return null;
+
+  if (syncState === 'readonly') {
+    return (
+      <button
+        onClick={onUpgradeScope}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider transition-all bg-amber-100 text-amber-700 hover:bg-amber-200"
+        title="Autorize escrita no Google Calendar para sincronizar treinos"
+      >
+        <ShieldAlert size={12} />
+        Autorizar escrita
+      </button>
+    );
+  }
+
+  if (isSyncing) {
+    return (
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider bg-ceramic-info/10 text-ceramic-info">
+        <Loader2 size={12} className="animate-spin" />
+        Sincronizando...
+      </div>
+    );
+  }
+
+  if (syncStats) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider bg-ceramic-success/10 text-ceramic-success">
+          <Check size={12} />
+          {syncStats.synced} sync{syncStats.failed > 0 && ` · ${syncStats.failed} erro(s)`}
+        </div>
+        <button
+          onClick={onBulkSync}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider transition-all hover:bg-ceramic-text-secondary/10"
+          style={{
+            boxShadow: 'inset 1px 1px 3px rgba(163,158,145,0.15), inset -1px -1px 3px rgba(255,255,255,0.85)',
+          }}
+          title="Sincronizar todos os treinos com Google Calendar"
+        >
+          <Upload size={11} />
+          Sync
+        </button>
+      </div>
+    );
+  }
+
+  // Ready state — connected with write scope
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider text-ceramic-success"
+        title="Google Calendar sincronizado com permissao de escrita"
+      >
+        <CalendarCheck size={12} />
+        GCal
+      </div>
+      <button
+        onClick={onBulkSync}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-[10px] font-bold uppercase tracking-wider transition-all hover:bg-ceramic-text-secondary/10"
+        style={{
+          boxShadow: 'inset 1px 1px 3px rgba(163,158,145,0.15), inset -1px -1px 3px rgba(255,255,255,0.85)',
+        }}
+        title="Sincronizar todos os treinos com Google Calendar"
+      >
+        <Upload size={11} />
+        Sync tudo
       </button>
     </div>
   );
@@ -499,6 +599,39 @@ export default function CanvasEditorView() {
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutBlockData | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [calSyncState, setCalSyncState] = useState<SyncState>('disconnected');
+
+  // Calendar sync hook
+  const {
+    bulkSyncFlux,
+    isSyncing: calSyncing,
+    syncStats: calSyncStats,
+    scopeUpgradeNeeded,
+    requestScopeUpgrade,
+  } = useCalendarSync();
+
+  // Detect calendar connection + scope state on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const connected = await isGoogleCalendarConnected();
+        if (cancelled) return;
+        if (!connected) { setCalSyncState('disconnected'); return; }
+        const hasWrite = await hasCalendarWriteScope();
+        if (cancelled) return;
+        setCalSyncState(hasWrite ? 'ready' : 'readonly');
+      } catch {
+        if (!cancelled) setCalSyncState('disconnected');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Update state when scopeUpgradeNeeded is set by sync operations
+  useEffect(() => {
+    if (scopeUpgradeNeeded) setCalSyncState('readonly');
+  }, [scopeUpgradeNeeded]);
 
   // All hooks MUST be called before any conditional return (React Rules of Hooks)
   const { athletes, isLoading: athletesLoading } = useAthletes();
@@ -565,6 +698,12 @@ export default function CanvasEditorView() {
     }
     return map;
   }, [slots]);
+
+  // Bulk sync all slots in the active microcycle to Google Calendar
+  const handleBulkSync = useCallback(async () => {
+    if (!activeMicrocycle) return;
+    await bulkSyncFlux(activeMicrocycle.id, activeMicrocycle.start_date);
+  }, [activeMicrocycle, bulkSyncFlux]);
 
   // Handlers
   const handleBack = useCallback(() => {
@@ -787,6 +926,15 @@ export default function CanvasEditorView() {
               toggleAthlete={toggleAthlete}
               onRefresh={refreshCalendar}
               isLoading={calendarLoading}
+            />
+
+            {/* Calendar Sync Status */}
+            <CalendarSyncStatus
+              syncState={calSyncState}
+              isSyncing={calSyncing}
+              syncStats={calSyncStats}
+              onUpgradeScope={requestScopeUpgrade}
+              onBulkSync={handleBulkSync}
             />
 
             {/* View Toggle */}

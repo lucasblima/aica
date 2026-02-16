@@ -18,6 +18,7 @@ import {
   type GoogleCalendarEventInput,
 } from './googleCalendarWriteService';
 import type { SyncModule } from './calendarSyncTransforms';
+import { fluxSlotToGoogleEvent, type FluxSlotData } from './calendarSyncTransforms';
 
 const log = createNamespacedLogger('CalendarSyncService');
 
@@ -203,5 +204,72 @@ export async function getUserSyncMappings(module?: SyncModule): Promise<SyncMapp
   } catch (error) {
     log.error('[getUserSyncMappings] Error:', error);
     return [];
+  }
+}
+
+/**
+ * Bulk sync all workout slots from a microcycle to Google Calendar.
+ * Syncs sequentially to respect Google API rate limits.
+ */
+export async function bulkSyncFluxSlots(
+  microcycleId: string,
+  microcycleStartDate: string
+): Promise<{ synced: number; skipped: number; failed: number; scopeUpgradeNeeded: boolean }> {
+  const stats = { synced: 0, skipped: 0, failed: 0, scopeUpgradeNeeded: false };
+
+  try {
+    const userId = await getUserId();
+
+    const { data: slots, error } = await supabase
+      .from('workout_slots')
+      .select('id, name, day_of_week, week_number, start_time, duration, modality, intensity')
+      .eq('microcycle_id', microcycleId)
+      .eq('user_id', userId);
+
+    if (error) {
+      log.error('[bulkSyncFluxSlots] Error fetching slots:', error);
+      throw error;
+    }
+
+    if (!slots || slots.length === 0) {
+      log.debug('[bulkSyncFluxSlots] No workout slots found for microcycle:', microcycleId);
+      return stats;
+    }
+
+    log.debug(`[bulkSyncFluxSlots] Syncing ${slots.length} slots for microcycle:`, microcycleId);
+
+    for (const slot of slots) {
+      try {
+        const eventData = fluxSlotToGoogleEvent(slot as FluxSlotData, microcycleStartDate);
+
+        if (!eventData) {
+          stats.skipped++;
+          continue;
+        }
+
+        const result = await syncEntityToGoogle('flux', slot.id, eventData);
+
+        if (result.scopeUpgradeNeeded) {
+          stats.scopeUpgradeNeeded = true;
+          stats.failed += slots.length - stats.synced - stats.skipped;
+          break;
+        }
+
+        if (result.googleEventId) {
+          stats.synced++;
+        } else {
+          stats.skipped++;
+        }
+      } catch (slotError) {
+        log.error(`[bulkSyncFluxSlots] Failed to sync slot ${slot.id}:`, slotError);
+        stats.failed++;
+      }
+    }
+
+    log.debug('[bulkSyncFluxSlots] Complete:', stats);
+    return stats;
+  } catch (error) {
+    log.error('[bulkSyncFluxSlots] Error:', error);
+    throw error;
   }
 }
