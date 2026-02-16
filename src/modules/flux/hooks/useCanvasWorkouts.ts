@@ -283,6 +283,18 @@ export function useCanvasWorkouts(
       }
 
       log.debug('Slot created:', data?.id);
+
+      // Optimistic: add to local state immediately (don't wait for realtime)
+      if (data) {
+        setSlots((prev) => {
+          const filtered = prev.filter((s) => s.id !== data.id);
+          return [...filtered, data].sort((a, b) => {
+            if (a.week_number !== b.week_number) return a.week_number - b.week_number;
+            return a.day_of_week - b.day_of_week;
+          });
+        });
+      }
+
       return data;
     },
     [activeMicrocycle, athleteId]
@@ -321,6 +333,16 @@ export function useCanvasWorkouts(
         return null;
       }
 
+      // Optimistic: update in local state immediately
+      if (data) {
+        setSlots((prev) =>
+          prev.map((s) => (s.id === data.id ? data : s)).sort((a, b) => {
+            if (a.week_number !== b.week_number) return a.week_number - b.week_number;
+            return a.day_of_week - b.day_of_week;
+          })
+        );
+      }
+
       return data;
     },
     []
@@ -333,6 +355,9 @@ export function useCanvasWorkouts(
       setError(deleteError instanceof Error ? deleteError : new Error(String(deleteError)));
       return false;
     }
+
+    // Optimistic: remove from local state immediately
+    setSlots((prev) => prev.filter((s) => s.id !== slotId));
 
     return true;
   }, []);
@@ -352,6 +377,11 @@ export function useCanvasWorkouts(
           completeError instanceof Error ? completeError : new Error(String(completeError))
         );
         return null;
+      }
+
+      // Optimistic: update in local state immediately
+      if (data) {
+        setSlots((prev) => prev.map((s) => (s.id === data.id ? data : s)));
       }
 
       return data;
