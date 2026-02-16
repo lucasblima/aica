@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, type LucideIcon } from 'lucide-react';
-import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
+import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -191,6 +191,13 @@ export default function Home({
             currentStreak={cpStats?.current_streak || 0}
             onAvatarClick={() => setProfileDrawerOpen(true)}
          />
+
+         {/* Credit Balance - compact inline */}
+         {userId && (
+            <div className="px-6 pt-3 flex justify-end">
+               <CreditBalanceWidget compact showStats={false} />
+            </div>
+         )}
 
          <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
             {/* Journey CTA — full width, own section */}

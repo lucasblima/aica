@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Settings, LogOut, DollarSign, FileSearch } from 'lucide-react';
+import { Settings, LogOut, DollarSign, FileSearch, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -160,6 +160,22 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
 
                     {/* Menu Items */}
                     <div className="p-2">
+                        {/* Pricing / Plan Button */}
+                        <button
+                            onClick={() => {
+                                navigate('/pricing');
+                                setIsOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-ceramic-text-primary hover:bg-white/40 transition-all group mb-1"
+                        >
+                            <div className="w-8 h-8 rounded-full ceramic-inset flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Crown className="w-4 h-4 text-ceramic-text-secondary group-hover:text-amber-500" />
+                            </div>
+                            <span className="font-bold text-sm transition-colors">
+                                Meu Plano
+                            </span>
+                        </button>
+
                         {/* AI Cost Dashboard Button - Always visible */}
                         <button
                             onClick={() => {

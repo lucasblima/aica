@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, Zap, Brain, MessageSquare, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { PageShell } from '@/components/ui';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,11 +20,19 @@ interface PricingPlan {
   features: string[];
   is_active: boolean;
   highlight?: string;
+  multiplier?: string;
 }
 
 interface FAQItem {
   question: string;
   answer: string;
+}
+
+interface CreditTier {
+  cost: number;
+  label: string;
+  examples: string;
+  icon: React.ReactNode;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,10 +60,9 @@ const PLANS: PricingPlan[] = [
     description: 'Para quem quer produtividade maxima',
     price_brl_monthly: 34.99,
     monthly_credits: 2500,
-    highlight: '5x mais creditos',
+    multiplier: '5x',
     features: [
       '2.500 creditos por mes',
-      'Todos os 8 modulos',
       'Chat com IA avancado',
       'Analise profunda com Gemini Pro',
       'Suporte prioritario',
@@ -68,11 +76,11 @@ const PLANS: PricingPlan[] = [
     description: 'Para power users e profissionais',
     price_brl_monthly: 89.99,
     monthly_credits: 10000,
-    highlight: '20x mais creditos',
+    multiplier: '20x',
     features: [
       '10.000 creditos por mes',
-      'Tudo do Pro',
-      'API access',
+      'Tudo do Pro incluido',
+      'Acesso via API',
       'Dashboard de uso avancado',
       'Suporte dedicado',
     ],
@@ -80,33 +88,102 @@ const PLANS: PricingPlan[] = [
   },
 ];
 
+const CREDIT_TIERS: CreditTier[] = [
+  {
+    cost: 1,
+    label: '1 credito',
+    examples: 'Analise de sentimento, classificacao, resumo rapido',
+    icon: <Zap className="w-5 h-5 text-amber-500" />,
+  },
+  {
+    cost: 2,
+    label: '2 creditos',
+    examples: 'Chat com IA, analise de tarefas, sugestoes',
+    icon: <MessageSquare className="w-5 h-5 text-amber-500" />,
+  },
+  {
+    cost: 3,
+    label: '3 creditos',
+    examples: 'Relatorios diarios, briefings, dossie de contato',
+    icon: <Brain className="w-5 h-5 text-amber-500" />,
+  },
+  {
+    cost: 5,
+    label: '5 creditos',
+    examples: 'Conselho de Vida, sintese de padroes, analise profunda',
+    icon: <Sparkles className="w-5 h-5 text-amber-500" />,
+  },
+];
+
 const FAQ_ITEMS: FAQItem[] = [
   {
     question: 'Como funcionam os creditos?',
     answer:
-      'Cada acao de IA consome creditos. Acoes simples (analise de sentimento, classificacao) custam 1 credito. Chat e analises custam 2 creditos. Relatorios e briefings custam 3. Acoes avancadas como Conselho de Vida custam 5 creditos. Seus creditos renovam todo mes.',
+      'Cada acao de IA consome creditos. Acoes simples custam 1 credito, chat e analises custam 2, relatorios custam 3, e acoes avancadas como Conselho de Vida custam 5 creditos. Seus creditos renovam todo mes.',
   },
   {
     question: 'Posso trocar de plano a qualquer momento?',
     answer:
-      'Sim. Voce pode fazer upgrade ou downgrade a qualquer momento. Ao fazer upgrade, a diferenca proporcional sera cobrada. Ao fazer downgrade, o novo preco sera aplicado no proximo ciclo de cobranca.',
+      'Sim. Ao fazer upgrade, a diferenca proporcional sera cobrada. Ao fazer downgrade, o novo preco sera aplicado no proximo ciclo de cobranca.',
   },
   {
     question: 'O que acontece se meus creditos acabarem?',
     answer:
-      'Voce pode continuar usando o AICA normalmente ate o fim do mes, mas as funcionalidades de IA ficam limitadas. Voce pode fazer upgrade para ter mais creditos imediatamente ou aguardar a renovacao mensal.',
+      'Voce continua usando o AICA, mas funcionalidades de IA ficam limitadas. Faca upgrade para mais creditos ou aguarde a renovacao mensal.',
   },
   {
     question: 'Quais formas de pagamento sao aceitas?',
     answer:
-      'Aceitamos cartao de credito (Visa, Mastercard, Elo, American Express) e Pix. O processamento e feito via Stripe, garantindo seguranca total dos seus dados.',
+      'Cartao de credito (Visa, Mastercard, Elo, Amex) e Pix. Processamento seguro via Stripe.',
   },
   {
     question: 'Posso cancelar minha assinatura?',
     answer:
-      'Sim, voce pode cancelar a qualquer momento sem multa. Apos o cancelamento, voce continua com acesso ao plano pago ate o final do ciclo de cobranca atual e depois retorna automaticamente para o plano Free.',
+      'Sim, cancele a qualquer momento sem multa. Voce mantem acesso ao plano pago ate o final do ciclo e depois retorna ao Free.',
   },
 ];
+
+// ---------------------------------------------------------------------------
+// FAQ Accordion Item
+// ---------------------------------------------------------------------------
+
+function FAQAccordionItem({ item, isOpen, onToggle }: { item: FAQItem; isOpen: boolean; onToggle: () => void }) {
+  return (
+    <div className="border-b border-ceramic-border/40 last:border-b-0">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between py-5 text-left group"
+      >
+        <span className="text-[15px] font-semibold text-ceramic-text-primary pr-4 group-hover:text-amber-600 transition-colors">
+          {item.question}
+        </span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="flex-shrink-0"
+        >
+          <ChevronDown className="w-4 h-4 text-ceramic-text-secondary" />
+        </motion.div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <p className="pb-5 text-sm text-ceramic-text-secondary leading-relaxed">
+              {item.answer}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -162,7 +239,6 @@ export function PricingPage() {
     } catch (err) {
       const raw =
         err instanceof Error ? err.message : 'Erro ao processar assinatura.';
-      // Translate config errors to user-friendly Portuguese
       const message = raw.includes('Stripe price configured')
         ? 'Este plano ainda nao esta disponivel para compra. Tente novamente em breve.'
         : raw;
@@ -172,29 +248,31 @@ export function PricingPage() {
     }
   };
 
-  const toggleFAQ = (index: number) => {
-    setExpandedFAQ(expandedFAQ === index ? null : index);
-  };
-
   return (
-    <PageShell title="Planos e Precos" onBack={() => navigate(-1)}>
-      {/* Header Description */}
-      <div className="text-center max-w-2xl mx-auto">
-        <p className="text-ceramic-text-secondary font-medium">
-          Escolha o plano ideal para transformar sua produtividade com IA.
-          Todos os planos incluem acesso aos 8 modulos do AICA.
+    <PageShell title="Planos" onBack={() => navigate(-1)}>
+      {/* Hero section */}
+      <div className="text-center max-w-xl mx-auto pt-4 pb-8">
+        <h1 className="text-3xl sm:text-4xl font-black text-ceramic-text-primary tracking-tight leading-tight">
+          Escolha seu plano
+        </h1>
+        <p className="mt-3 text-base text-ceramic-text-secondary leading-relaxed">
+          Todos os planos incluem acesso completo aos 8 modulos.
+          <br className="hidden sm:block" />
+          Mude ou cancele quando quiser.
         </p>
       </div>
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-ceramic-error/10 border border-ceramic-error/20 text-ceramic-error rounded-xl p-4 text-sm font-medium text-center">
-          {error}
+        <div className="max-w-2xl mx-auto mb-6">
+          <div className="bg-ceramic-error/8 border border-ceramic-error/15 text-ceramic-error rounded-xl px-5 py-3.5 text-sm font-medium text-center">
+            {error}
+          </div>
         </div>
       )}
 
-      {/* Plan Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+      {/* Plan Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-4xl mx-auto items-start">
         {PLANS.map((plan) => (
           <PlanCard
             key={plan.id}
@@ -207,49 +285,61 @@ export function PricingPage() {
         ))}
       </div>
 
-      {/* FAQ Section */}
-      <div className="mt-12">
-        <h2 className="text-xl font-bold text-ceramic-text-primary text-center mb-6">
-          Perguntas Frequentes
-        </h2>
+      {/* Credit Tiers */}
+      <div className="mt-20 max-w-3xl mx-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-xl font-bold text-ceramic-text-primary tracking-tight">
+            O que custa cada acao?
+          </h2>
+          <p className="mt-2 text-sm text-ceramic-text-secondary">
+            Acoes mais simples custam menos. Voce decide como usar seus creditos.
+          </p>
+        </div>
 
-        <div className="max-w-2xl mx-auto space-y-3">
-          {FAQ_ITEMS.map((item, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {CREDIT_TIERS.map((tier) => (
             <div
-              key={index}
-              className="bg-ceramic-50 rounded-xl shadow-ceramic-emboss overflow-hidden"
+              key={tier.cost}
+              className="bg-ceramic-50 rounded-xl p-5 shadow-ceramic-emboss hover:shadow-lg transition-shadow duration-200"
             >
-              <button
-                onClick={() => toggleFAQ(index)}
-                className="w-full flex items-center justify-between p-4 text-left"
-              >
-                <span className="text-sm font-bold text-ceramic-text-primary pr-4">
-                  {item.question}
+              <div className="flex items-center gap-2.5 mb-3">
+                {tier.icon}
+                <span className="text-lg font-black text-ceramic-text-primary">
+                  {tier.label}
                 </span>
-                {expandedFAQ === index ? (
-                  <ChevronUp className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
-                )}
-              </button>
-
-              {expandedFAQ === index && (
-                <div className="px-4 pb-4">
-                  <p className="text-sm text-ceramic-text-secondary leading-relaxed">
-                    {item.answer}
-                  </p>
-                </div>
-              )}
+              </div>
+              <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+                {tier.examples}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Footer Note */}
-      <div className="text-center mt-8 pb-4">
-        <p className="text-xs text-ceramic-text-secondary">
+      {/* FAQ */}
+      <div className="mt-20 max-w-2xl mx-auto">
+        <h2 className="text-xl font-bold text-ceramic-text-primary tracking-tight text-center mb-6">
+          Perguntas frequentes
+        </h2>
+
+        <div className="bg-ceramic-50 rounded-2xl shadow-ceramic-emboss px-6">
+          {FAQ_ITEMS.map((item, index) => (
+            <FAQAccordionItem
+              key={index}
+              item={item}
+              isOpen={expandedFAQ === index}
+              onToggle={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center mt-16 pb-8">
+        <p className="text-xs text-ceramic-text-secondary/60 leading-relaxed">
           Precos em Reais (BRL). Cobranca mensal via Stripe.
-          Cancelamento a qualquer momento sem multa.
+          <br />
+          Cancelamento a qualquer momento, sem multa.
         </p>
       </div>
     </PageShell>
