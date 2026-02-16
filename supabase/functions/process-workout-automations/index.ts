@@ -10,26 +10,17 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getCorsHeaders as _getCorsHeaders } from '../_shared/cors.ts';
 
 // ============================================================================
-// CORS
+// CORS — extends shared config with x-cron-secret header
 // ============================================================================
-
-const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://dev.aica.guru',
-  'https://aica.guru',
-];
 
 function getCorsHeaders(request: Request): Record<string, string> {
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  const base = _getCorsHeaders(request);
   return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+    ...base,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Credentials': 'true',
   };
 }
 

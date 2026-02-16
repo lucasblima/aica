@@ -22,7 +22,7 @@
  * ```
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface NavigationContextValue {
@@ -132,7 +132,7 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     return '/' + segments.join('/');
   }, []);
 
-  const value: NavigationContextValue = {
+  const value = useMemo<NavigationContextValue>(() => ({
     depth,
     pushDepth,
     popDepth,
@@ -141,7 +141,7 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     exitFocusedMode,
     returnPath,
     computeParentPath,
-  };
+  }), [depth, pushDepth, popDepth, isFocusedMode, enterFocusedMode, exitFocusedMode, returnPath, computeParentPath]);
 
   return (
     <NavigationContext.Provider value={value}>

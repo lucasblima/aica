@@ -16,6 +16,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { createNamespacedLogger } from '../_shared/logger.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 import {
   parseWhatsAppExport,
   extractTextForRAG,
@@ -25,19 +26,12 @@ import {
 
 const log = createNamespacedLogger('ingest-whatsapp-export');
 
-// ============================================================================
-// CORS
-// ============================================================================
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+let _currentCorsHeaders: Record<string, string> = {};
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ..._currentCorsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
@@ -200,6 +194,9 @@ async function processIntentsWithBudget(
 // ============================================================================
 
 serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+  _currentCorsHeaders = corsHeaders;
+
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });

@@ -20,6 +20,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
 import PptxGenJS from "npm:pptxgenjs@3.12.0"
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // =============================================================================
 // ENVIRONMENT & CONFIGURATION
@@ -1259,14 +1260,12 @@ async function loadProjectData(
 // =============================================================================
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
+      headers: corsHeaders,
     })
   }
 
@@ -1284,8 +1283,8 @@ Deno.serve(async (req) => {
         {
           status: 401,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
           },
         }
       )
@@ -1300,8 +1299,8 @@ Deno.serve(async (req) => {
         {
           status: 400,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
           },
         }
       )
@@ -1319,8 +1318,8 @@ Deno.serve(async (req) => {
         {
           status: 401,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
           },
         }
       )
@@ -1341,8 +1340,8 @@ Deno.serve(async (req) => {
         {
           status: 404,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
           },
         }
       )
@@ -1392,8 +1391,8 @@ Deno.serve(async (req) => {
       }),
       {
         headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
         },
       }
     )
@@ -1408,8 +1407,8 @@ Deno.serve(async (req) => {
       {
         status: 500,
         headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
         },
       }
     )

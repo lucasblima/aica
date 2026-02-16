@@ -11,15 +11,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
 import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.2.1'
-
-// ============================================================================
-// CORS HEADERS
-// ============================================================================
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // ============================================================================
 // TYPES
@@ -73,6 +65,8 @@ const MODEL_CONFIG = {
 // ============================================================================
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })

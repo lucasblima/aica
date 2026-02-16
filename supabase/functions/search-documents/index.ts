@@ -11,6 +11,7 @@
  */
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10'
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // =============================================================================
 // TYPES
@@ -71,16 +72,14 @@ const MAX_QUERY_LENGTH = parseInt(Deno.env.get('MAX_QUERY_LENGTH') || '1000', 10
 // CORS HELPERS
 // =============================================================================
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+// corsHeaders is initialized per-request inside the handler via getCorsHeaders(req)
+
+let _corsHeaders: Record<string, string> = {}
 
 function createResponse(data: SearchResponse, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ..._corsHeaders, 'Content-Type': 'application/json' },
   })
 }
 
@@ -405,9 +404,11 @@ function validateRequest(body: unknown): SearchRequest {
 // =============================================================================
 
 Deno.serve(async (req) => {
+  _corsHeaders = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 204, headers: _corsHeaders })
   }
 
   // Only allow POST

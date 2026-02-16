@@ -33,6 +33,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // =============================================================================
 // ROBUST JSON EXTRACTION (handles Gemini preamble text, code fences, etc.)
@@ -142,11 +143,6 @@ interface IntentExtractionResponse {
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
@@ -351,6 +347,8 @@ Responda APENAS com JSON valido:
 // =============================================================================
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
