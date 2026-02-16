@@ -153,8 +153,8 @@ export function PricingPage() {
 
       if (fnError) throw fnError;
 
-      if (data?.url) {
-        window.location.href = data.url;
+      if (data?.checkout_url) {
+        window.location.href = data.checkout_url;
       } else {
         throw new Error('Nao foi possivel criar a sessao de checkout.');
       }

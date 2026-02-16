@@ -34,11 +34,11 @@ function getCorsHeaders(request: Request): Record<string, string> {
 interface CheckoutRequest {
   // For subscription checkout
   plan_id?: string
-  // For one-time credit purchase
+  // For one-time credit purchase (integer interaction credits)
   credit_amount?: number
-  // Required URLs
-  success_url: string
-  cancel_url: string
+  // Optional — defaults to current origin + /pricing
+  success_url?: string
+  cancel_url?: string
 }
 
 interface CheckoutResponse {
@@ -92,19 +92,16 @@ serve(async (req) => {
     }
 
     const body: CheckoutRequest = await req.json()
-    const { plan_id, credit_amount, success_url, cancel_url } = body
+    const { plan_id, credit_amount } = body
+    // Default URLs if not provided (PricingPage doesn't send them)
+    const origin = req.headers.get('origin') || 'https://aica.guru'
+    const success_url = body.success_url || `${origin}/pricing`
+    const cancel_url = body.cancel_url || `${origin}/pricing`
 
     // Validate request
     if (!plan_id && !credit_amount) {
       return new Response(
         JSON.stringify({ error: 'Either plan_id or credit_amount is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!success_url || !cancel_url) {
-      return new Response(
-        JSON.stringify({ error: 'success_url and cancel_url are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -132,30 +129,30 @@ serve(async (req) => {
       })
       customerId = customer.id
 
-      // Store customer ID
+      // Store customer ID — upsert to handle existing free-tier records
       await supabaseClient
         .from('user_subscriptions')
         .upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
-          plan_id: null,
-          status: 'inactive',
-        })
+          plan_id: 'free',
+          status: 'active',
+        }, { onConflict: 'user_id' })
     }
 
     let session: Stripe.Checkout.Session
 
     if (plan_id) {
-      // Subscription checkout
+      // Subscription checkout — lookup plan in pricing_plans (consolidated billing schema)
       const { data: plan, error: planError } = await supabaseClient
-        .from('billing_plans')
+        .from('pricing_plans')
         .select('stripe_price_id, name')
         .eq('id', plan_id)
         .single()
 
       if (planError || !plan?.stripe_price_id) {
         return new Response(
-          JSON.stringify({ error: 'Invalid plan_id or plan has no Stripe price configured' }),
+          JSON.stringify({ error: 'Invalid plan_id or plan has no Stripe price configured. Configure stripe_price_id in pricing_plans table.' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }

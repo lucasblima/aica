@@ -288,9 +288,10 @@ CREATE INDEX idx_usage_logs_user_action
 CREATE INDEX idx_usage_logs_module
     ON public.usage_logs(module, created_at DESC)
     WHERE module IS NOT NULL;
-CREATE INDEX idx_usage_logs_today
-    ON public.usage_logs(user_id, created_at)
-    WHERE created_at >= CURRENT_DATE;
+-- Note: Cannot use CURRENT_DATE in partial index (not IMMUTABLE).
+-- Using a regular composite index instead — queries filter by date range anyway.
+CREATE INDEX idx_usage_logs_user_date
+    ON public.usage_logs(user_id, created_at DESC);
 
 -- user_credits
 CREATE INDEX idx_user_credits_user_id
