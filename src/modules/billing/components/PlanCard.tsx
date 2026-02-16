@@ -1,14 +1,15 @@
 import React from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Zap } from 'lucide-react';
 
 interface PricingPlan {
   id: string;
   name: string;
   description: string;
   price_brl_monthly: number;
-  daily_interaction_limit: number | null;
+  monthly_credits: number;
   features: string[];
   is_active: boolean;
+  highlight?: string;
 }
 
 interface PlanCardProps {
@@ -25,9 +26,9 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoadin
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
   };
 
-  const formatLimit = (limit: number | null): string => {
-    if (limit === null) return 'Ilimitadas';
-    return `${limit}/dia`;
+  const formatCredits = (credits: number): string => {
+    if (credits >= 1000) return `${(credits / 1000).toFixed(credits % 1000 === 0 ? 0 : 1)}k`;
+    return String(credits);
   };
 
   return (
@@ -37,7 +38,7 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoadin
       }`}
     >
       {/* Badges */}
-      {isPopular && (
+      {isPopular && !isCurrentPlan && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="bg-amber-500 text-white text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full shadow-lg shadow-amber-500/20">
             Mais Popular
@@ -69,11 +70,17 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoadin
         )}
       </div>
 
-      {/* Interaction Limit */}
-      <div className="mt-4 text-center">
-        <span className="inline-block bg-amber-100 text-amber-700 text-sm font-bold px-3 py-1 rounded-full">
-          {formatLimit(plan.daily_interaction_limit)} interacoes
+      {/* Monthly Credits Badge */}
+      <div className="mt-4 text-center space-y-2">
+        <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-sm font-bold px-3 py-1.5 rounded-full">
+          <Zap className="w-3.5 h-3.5" />
+          {formatCredits(plan.monthly_credits)} creditos/mes
         </span>
+        {plan.highlight && (
+          <p className="text-xs font-bold text-ceramic-accent uppercase tracking-wide">
+            {plan.highlight}
+          </p>
+        )}
       </div>
 
       {/* Features */}
@@ -106,6 +113,8 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoadin
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Processando...
               </span>
+            ) : plan.price_brl_monthly === 0 ? (
+              'Comecar Gratis'
             ) : (
               `Assinar ${plan.name}`
             )}
