@@ -32,6 +32,7 @@ export interface AIUsageRecord {
   tokens_input: number;
   tokens_output: number;
   cost_brl: number;
+  credits_used: number;
   credit_deducted?: boolean;
   created_at: string;
 }
@@ -46,11 +47,13 @@ export interface CostByOperation {
   total_requests: number;
   total_tokens: number;
   total_cost_brl: number;
+  total_credits: number;
 }
 
 export interface DailyCostSummary {
   date: string;
   total_cost_brl: number;
+  total_credits: number;
   total_requests: number;
 }
 
@@ -58,12 +61,14 @@ export interface ModelCostBreakdown {
   ai_model: string;
   total_requests: number;
   total_cost_brl: number;
+  total_credits: number;
   percentage: number;
 }
 
 export interface OperationCostBreakdown {
   operation_type: string;
   total_cost_brl: number;
+  total_credits: number;
   percentage: number;
   count: number;
 }
@@ -73,6 +78,7 @@ export interface TopExpensiveOperation {
   action: string;
   model_used: string;
   cost_brl: number;
+  credits_used: number;
   created_at: string;
   module?: string;
 }
@@ -88,6 +94,17 @@ export interface MonthlyCostSummary {
   days_remaining: number;
   projected_month_end_cost: number;
   is_over_budget: boolean;
+  credits_used: number;
+  credits_total: number;
+  credits_percentage: number;
+  plan_name: string;
+}
+
+export interface CreditSummary {
+  used: number;
+  total: number;
+  percentage: number;
+  plan_name: string;
 }
 
 export interface BudgetAlert {
@@ -115,6 +132,7 @@ export interface ChartDataPoint {
 export interface TrendChartDataPoint {
   date: string;
   cost: number;
+  credits: number;
   requests: number;
 }
 
@@ -148,6 +166,46 @@ export const OPERATION_TYPE_LABELS: Record<string, string> = {
   route_entities_to_modules: 'Roteamento de Entidades',
   classify_intent: 'Classificacao de Intencao',
 };
+
+// =====================================================
+// Credit Costs per Action (mirrors DB action_credit_costs)
+// =====================================================
+
+export const ACTION_CREDIT_COSTS: Record<string, number> = {
+  // 1 credit
+  analyze_moment_sentiment: 1,
+  evaluate_quality: 1,
+  generate_daily_question: 1,
+  route_entities_to_modules: 1,
+  text_embedding: 1,
+  classify_intent: 1,
+  // 2 credits
+  chat: 2,
+  chat_aica: 2,
+  analyze_moment: 2,
+  build_conversation_threads: 2,
+  generate_tags: 2,
+  whatsapp_sentiment: 2,
+  // 3 credits
+  generate_report: 3,
+  build_contact_dossier: 3,
+  generate_briefing: 3,
+  research_guest: 3,
+  generate_pauta_outline: 3,
+  parse_statement: 3,
+  generate_field_content: 3,
+  // 5 credits
+  life_council: 5,
+  pattern_synthesis: 5,
+  generate_weekly_summary: 5,
+};
+
+/**
+ * Get the credit cost for an action. Falls back to 1 for unknown actions.
+ */
+export function getActionCreditCost(action: string): number {
+  return ACTION_CREDIT_COSTS[action] ?? 1;
+}
 
 // =====================================================
 // Color Palette for Charts
@@ -232,6 +290,13 @@ export function getOperationColor(actionType: string): string {
  */
 export function getModelLabel(model: string): string {
   return AI_MODEL_LABELS[model] || model;
+}
+
+/**
+ * Format credits display (Portuguese)
+ */
+export function formatCredits(n: number): string {
+  return n === 1 ? '1 credito' : `${n} creditos`;
 }
 
 /**

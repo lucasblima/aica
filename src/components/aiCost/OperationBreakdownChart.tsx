@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { OperationCostBreakdown } from '../../types/aiCost';
-import { getOperationLabel, getOperationColor, formatBRL, formatPercentage } from '../../types/aiCost';
+import { getOperationLabel, getOperationColor, formatCredits, formatPercentage } from '../../types/aiCost';
 
 interface OperationBreakdownChartProps {
   data: OperationCostBreakdown[];
@@ -38,14 +38,14 @@ export const OperationBreakdownChart: React.FC<OperationBreakdownChartProps> = (
     return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
   };
 
-  const totalCost = data.reduce((sum, d) => sum + d.total_cost_brl, 0);
+  const totalCredits = data.reduce((sum, d) => sum + d.total_credits, 0);
 
   if (data.length === 0) {
     return (
       <div className="ceramic-card p-6">
-        <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operação</h3>
+        <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operacao</h3>
         <div className="ceramic-inset p-8 rounded-xl text-center">
-          <p className="text-sm text-ceramic-text-secondary">Nenhum dado disponível</p>
+          <p className="text-sm text-ceramic-text-secondary">Nenhum dado disponivel</p>
         </div>
       </div>
     );
@@ -53,7 +53,7 @@ export const OperationBreakdownChart: React.FC<OperationBreakdownChartProps> = (
 
   return (
     <div className="ceramic-card p-6">
-      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operação</h3>
+      <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Por Tipo de Operacao</h3>
       <div className="flex flex-col md:flex-row items-center gap-6">
         <div className="relative w-48 h-48">
           <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
@@ -68,7 +68,7 @@ export const OperationBreakdownChart: React.FC<OperationBreakdownChartProps> = (
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <p className="text-xs text-ceramic-text-secondary">Total</p>
-            <p className="text-lg font-bold text-ceramic-text-primary">{formatBRL(totalCost)}</p>
+            <p className="text-lg font-bold text-ceramic-text-primary">{formatCredits(totalCredits)}</p>
           </div>
         </div>
         <div className="flex-1 space-y-2">
@@ -79,8 +79,9 @@ export const OperationBreakdownChart: React.FC<OperationBreakdownChartProps> = (
                 <span className="text-sm text-ceramic-text-primary">{seg.label}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-ceramic-text-secondary">{formatPercentage(seg.percentage)}</span>
-                <span className="text-sm font-bold text-ceramic-text-primary w-20 text-right">{formatBRL(seg.total_cost_brl)}</span>
+                <span className="text-xs font-bold text-ceramic-text-secondary">
+                  {formatCredits(seg.total_credits)} ({formatPercentage(seg.percentage)})
+                </span>
               </div>
             </div>
           ))}

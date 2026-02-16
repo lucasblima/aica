@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, TrendingUp, TrendingDown, Calendar, Settings } from 'lucide-react';
+import { Coins, TrendingUp, TrendingDown, Calendar, Settings } from 'lucide-react';
 import type { MonthlyCostSummary } from '../../types/aiCost';
-import { formatBRL, formatPercentage } from '../../types/aiCost';
+import { formatBRL, formatCredits, formatPercentage } from '../../types/aiCost';
 import { cardElevationVariants } from '../../lib/animations/ceramic-motion';
 
 // =====================================================
-// Monthly Cost Card Component - Ceramic Design
+// Monthly Cost Card Component - Credit System
 // =====================================================
 
 interface MonthlyCostCardProps {
@@ -17,23 +17,25 @@ interface MonthlyCostCardProps {
 export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEditBudget }) => {
   const {
     current_month_cost,
-    budget,
-    percentage_used,
     days_remaining,
-    projected_month_end_cost,
-    is_over_budget
+    credits_used,
+    credits_total,
+    credits_percentage,
+    plan_name
   } = summary;
 
-  // Determine status color
-  const getStatusColor = (): string => {
-    if (is_over_budget) return 'text-ceramic-negative';
-    if (percentage_used >= 90) return 'text-ceramic-warning';
-    if (percentage_used >= 80) return 'text-ceramic-warning';
-    return 'text-ceramic-positive';
+  // Determine bar color based on credit usage
+  const getBarColor = (): string => {
+    if (credits_percentage > 85) return 'bg-gradient-to-r from-ceramic-error to-ceramic-error/80';
+    if (credits_percentage > 60) return 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80';
+    return 'bg-gradient-to-r from-ceramic-success to-ceramic-success/80';
   };
 
-  // Determine if projection is good or bad
-  const isProjectionGood = projected_month_end_cost <= budget;
+  const getStatusColor = (): string => {
+    if (credits_percentage > 85) return 'text-ceramic-negative';
+    if (credits_percentage > 60) return 'text-ceramic-warning';
+    return 'text-ceramic-positive';
+  };
 
   return (
     <motion.div
@@ -47,66 +49,67 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
-            <DollarSign className="w-6 h-6 text-ceramic-accent" />
+            <Coins className="w-6 h-6 text-ceramic-accent" />
           </div>
           <div>
             <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
-              Custo Mensal de IA
+              Creditos Mensais
             </p>
             <h2 className="text-2xl font-black text-ceramic-text-primary text-etched">
-              {formatBRL(current_month_cost)}
+              {credits_used} / {credits_total}
             </h2>
           </div>
         </div>
 
-        {onEditBudget && (
-          <button
-            onClick={onEditBudget}
-            className="w-10 h-10 ceramic-inset hover:scale-105 transition-transform flex items-center justify-center"
-            title="Editar Orçamento"
-          >
-            <Settings className="w-4 h-4 text-ceramic-text-secondary" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-ceramic-accent uppercase bg-ceramic-accent/10 px-2 py-1 rounded-lg">
+            {plan_name}
+          </span>
+          {onEditBudget && (
+            <button
+              onClick={onEditBudget}
+              className="w-10 h-10 ceramic-inset hover:scale-105 transition-transform flex items-center justify-center"
+              title="Editar Plano"
+            >
+              <Settings className="w-4 h-4 text-ceramic-text-secondary" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Budget Status */}
-      {budget > 0 ? (
+      {/* Credit Progress Bar */}
+      {credits_total > 0 ? (
         <>
-          {/* Progress Bar */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-ceramic-text-secondary uppercase">
-                Orçamento
+                {formatCredits(credits_used)} usados
               </span>
               <span className={`text-sm font-bold ${getStatusColor()}`}>
-                {formatPercentage(percentage_used)}
+                {formatPercentage(credits_percentage)}
               </span>
             </div>
 
             <div className="h-3 ceramic-inset rounded-full overflow-hidden">
               <div
-                className={`h-full transition-all duration-500 ${
-                  is_over_budget
-                    ? 'bg-gradient-to-r from-ceramic-error to-ceramic-error/80'
-                    : percentage_used >= 90
-                    ? 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80'
-                    : percentage_used >= 80
-                    ? 'bg-gradient-to-r from-ceramic-warning/80 to-ceramic-warning/60'
-                    : 'bg-gradient-to-r from-ceramic-success to-ceramic-success/80'
-                }`}
-                style={{ width: `${Math.min(percentage_used, 100)}%` }}
+                className={`h-full transition-all duration-500 ${getBarColor()}`}
+                style={{ width: `${Math.min(credits_percentage, 100)}%` }}
               />
             </div>
 
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-ceramic-text-secondary">
-                {formatBRL(0)}
+                0
               </span>
               <span className="text-xs font-bold text-ceramic-text-primary">
-                {formatBRL(budget)}
+                {formatCredits(credits_total)}
               </span>
             </div>
+          </div>
+
+          {/* Secondary BRL cost */}
+          <div className="mb-4 text-xs text-ceramic-text-secondary">
+            Custo estimado: {formatBRL(current_month_cost)}
           </div>
 
           {/* Stats Grid */}
@@ -124,56 +127,55 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
               </p>
             </div>
 
-            {/* Projected Cost */}
+            {/* Credits Remaining */}
             <div className="ceramic-inset p-3 rounded-xl">
               <div className="flex items-center gap-2 mb-1">
-                {isProjectionGood ? (
+                {credits_percentage <= 85 ? (
                   <TrendingDown className="w-3 h-3 text-ceramic-positive" />
                 ) : (
                   <TrendingUp className="w-3 h-3 text-ceramic-negative" />
                 )}
                 <span className="text-xs font-bold text-ceramic-text-secondary uppercase">
-                  Projeção
+                  Restantes
                 </span>
               </div>
               <p
                 className={`text-xl font-black text-etched ${
-                  isProjectionGood ? 'text-ceramic-positive' : 'text-ceramic-negative'
+                  credits_percentage <= 85 ? 'text-ceramic-positive' : 'text-ceramic-negative'
                 }`}
               >
-                {formatBRL(projected_month_end_cost)}
+                {Math.max(0, credits_total - credits_used)}
               </p>
             </div>
           </div>
 
-          {/* Budget Remaining/Exceeded */}
+          {/* Exceeded / Available */}
           <div className="mt-4 ceramic-inset p-3 rounded-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-ceramic-text-secondary uppercase">
-                {is_over_budget ? 'Excedido' : 'Disponível'}
+                {credits_used > credits_total ? 'Excedido' : 'Disponivel'}
               </span>
               <span
                 className={`text-lg font-black text-etched ${
-                  is_over_budget ? 'text-ceramic-negative' : 'text-ceramic-positive'
+                  credits_used > credits_total ? 'text-ceramic-negative' : 'text-ceramic-positive'
                 }`}
               >
-                {formatBRL(Math.abs(budget - current_month_cost))}
+                {formatCredits(Math.abs(credits_total - credits_used))}
               </span>
             </div>
           </div>
         </>
       ) : (
-        /* No Budget Set */
         <div className="ceramic-inset p-4 rounded-xl text-center">
           <p className="text-sm text-ceramic-text-secondary mb-2">
-            Nenhum orçamento definido
+            Nenhum plano ativo
           </p>
           {onEditBudget && (
             <button
               onClick={onEditBudget}
               className="text-xs font-bold text-ceramic-accent hover:underline uppercase"
             >
-              Definir Orçamento Mensal
+              Escolher Plano
             </button>
           )}
         </div>

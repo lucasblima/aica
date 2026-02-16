@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { TrendingUp } from 'lucide-react';
 import type { DailyCostSummary } from '../../types/aiCost';
-import { formatBRL } from '../../types/aiCost';
+import { formatCredits } from '../../types/aiCost';
 
 // =====================================================
-// Cost Trend Chart Component - Custom SVG Line Chart
+// Cost Trend Chart Component - Credits (Custom SVG)
 // =====================================================
 
 interface CostTrendChartProps {
@@ -16,8 +16,8 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return null;
 
-    const maxCost = Math.max(...data.map((d) => d.total_cost_brl), 1);
-    const padding = { top: 20, right: 20, bottom: 40, left: 80 };
+    const maxCredits = Math.max(...data.map((d) => d.total_credits), 1);
+    const padding = { top: 20, right: 20, bottom: 40, left: 60 };
     const width = 800;
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
@@ -25,8 +25,8 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     // Create path for line chart
     const points = data.map((d, i) => {
       const x = padding.left + (i / (data.length - 1)) * chartWidth;
-      const y = padding.top + chartHeight - (d.total_cost_brl / maxCost) * chartHeight;
-      return { x, y, cost: d.total_cost_brl, date: d.date };
+      const y = padding.top + chartHeight - (d.total_credits / maxCredits) * chartHeight;
+      return { x, y, credits: d.total_credits, date: d.date };
     });
 
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
@@ -35,19 +35,13 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     const areaPath =
       linePath + ` L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`;
 
-    // Y-axis labels — compact format for small values
+    // Y-axis labels
     const yTicks = 5;
-    const formatYLabel = (value: number): string => {
-      if (value === 0) return 'R$ 0';
-      if (value >= 1) return `R$ ${value.toFixed(2)}`;
-      if (value >= 0.01) return `R$ ${value.toFixed(3)}`;
-      return `R$ ${value.toFixed(4)}`;
-    };
     const yLabels = Array.from({ length: yTicks }, (_, i) => {
-      const value = (maxCost / (yTicks - 1)) * (yTicks - 1 - i);
+      const value = Math.round((maxCredits / (yTicks - 1)) * (yTicks - 1 - i));
       return {
         y: padding.top + (chartHeight / (yTicks - 1)) * i,
-        label: formatYLabel(value)
+        label: `${value}`
       };
     });
 
@@ -55,7 +49,7 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     const xLabelInterval = Math.ceil(data.length / 7);
     const xLabels = data
       .filter((_, i) => i % xLabelInterval === 0 || i === data.length - 1)
-      .map((d, idx, arr) => {
+      .map((d) => {
         const originalIndex = data.indexOf(d);
         return {
           x: padding.left + (originalIndex / (data.length - 1)) * chartWidth,
@@ -72,8 +66,8 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
       width,
       height,
       padding,
-      maxCost,
-      totalCost: data.reduce((sum, d) => sum + d.total_cost_brl, 0)
+      maxCredits,
+      totalCredits: data.reduce((sum, d) => sum + d.total_credits, 0)
     };
   }, [data, height]);
 
@@ -81,11 +75,11 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     return (
       <div className="ceramic-card p-6">
         <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">
-          Tendência de Custos (30 dias)
+          Tendencia de Creditos (30 dias)
         </h3>
         <div className="ceramic-inset p-8 rounded-xl text-center">
           <p className="text-sm text-ceramic-text-secondary">
-            Nenhum dado disponível para exibir a tendência
+            Nenhum dado disponivel para exibir a tendencia
           </p>
         </div>
       </div>
@@ -102,15 +96,15 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
           </div>
           <div>
             <h3 className="text-lg font-semibold text-ceramic-text-primary">
-              Tendência de Custos
+              Tendencia de Creditos
             </h3>
-            <p className="text-xs text-ceramic-text-secondary">Últimos 30 dias</p>
+            <p className="text-xs text-ceramic-text-secondary">Ultimos 30 dias</p>
           </div>
         </div>
         <div className="text-right">
           <p className="text-xs text-ceramic-text-secondary uppercase font-bold">Total</p>
           <p className="text-xl font-black text-ceramic-text-primary text-etched">
-            {formatBRL(chartData.totalCost)}
+            {formatCredits(chartData.totalCredits)}
           </p>
         </div>
       </div>
