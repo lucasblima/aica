@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
 import { useInterviewSessions } from '../../hooks/useInterviewer'
 import { getCategoryCompletion } from '../../services/interviewerService'
 import type { InterviewCategory } from '../../types/interviewer'
 import { INTERVIEW_CATEGORY_META } from '../../types/interviewer'
+import { InterviewProgress } from './InterviewProgress'
 
 interface InterviewCategoryPickerProps {
   onSessionStart: (sessionId: string) => void
@@ -98,8 +99,16 @@ export function InterviewCategoryPicker({ onSessionStart }: InterviewCategoryPic
     return 'Iniciar'
   }
 
+  const hasAnsweredAny = useMemo(() => {
+    if (!completions) return false
+    return Object.values(completions).some(c => c.answered > 0)
+  }, [completions])
+
   return (
     <div className="space-y-4">
+      {/* Progress dashboard — only if user has answered at least 1 question */}
+      {hasAnsweredAny && <InterviewProgress />}
+
       {/* Header */}
       <div className="ceramic-card p-5">
         <h2 className="text-lg font-bold text-ceramic-text-primary mb-1">
