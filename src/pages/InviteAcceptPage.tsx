@@ -84,7 +84,7 @@ export function InviteAcceptPage() {
       // Store token for post-login acceptance
       storeInviteToken(token);
     }
-    navigate('/login', { state: { from: `/invite/${token}` } });
+    navigate('/landing', { state: { from: `/invite/${token}` } });
   };
 
   // Handle continue to app

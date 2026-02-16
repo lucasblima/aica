@@ -7,6 +7,7 @@ import { getAssociations, getDailyAgenda, getLifeAreas, createAssociation, getMo
 import { generateMissingDailyReports } from '../services/dailyReportService';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NotificationContainer, LoadingScreen, BottomNav, CeramicLoadingState } from '../components';
+import { ErrorBoundary, ModuleErrorFallback } from '../components/ui/ErrorBoundary';
 import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
 import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -501,16 +502,18 @@ export function AppRouter() {
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
             <AnimatePresence mode="wait">
             {currentView === 'vida' && <motion.div key="vida" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderVida()}</motion.div>}
-            {currentView === 'agenda' && <motion.div key="agenda" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderAgenda()}</motion.div>}
-            {currentView === 'connections' && <motion.div key="connections" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderConnections()}</motion.div>}
-            {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderStudio()}</motion.div>}
+            {currentView === 'agenda' && <motion.div key="agenda" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Agenda" />}>{renderAgenda()}</ErrorBoundary></motion.div>}
+            {currentView === 'connections' && <motion.div key="connections" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}>{renderConnections()}</ErrorBoundary></motion.div>}
+            {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>{renderStudio()}</ErrorBoundary></motion.div>}
             {currentView === 'association_detail' && <motion.div key="association_detail" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderAssociationDetail()}</motion.div>}
-            {currentView === 'finance' && <motion.div key="finance" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderFinance()}</motion.div>}
-            {currentView === 'finance_agent' && <motion.div key="finance_agent" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderFinanceAgent()}</motion.div>}
-            {currentView === 'journey' && <motion.div key="journey" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderJourney()}</motion.div>}
+            {currentView === 'finance' && <motion.div key="finance" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Finance" />}>{renderFinance()}</ErrorBoundary></motion.div>}
+            {currentView === 'finance_agent' && <motion.div key="finance_agent" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Finance" />}>{renderFinanceAgent()}</ErrorBoundary></motion.div>}
+            {currentView === 'journey' && <motion.div key="journey" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Journey" />}>{renderJourney()}</ErrorBoundary></motion.div>}
             {currentView === 'grants' && (
                <motion.div key="grants" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
-                  <GrantsModuleView onBack={() => setCurrentView('vida')} />
+                  <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Grants" />}>
+                     <GrantsModuleView onBack={() => setCurrentView('vida')} />
+                  </ErrorBoundary>
                </motion.div>
             )}
             {currentView === 'ai-cost' && userId && (
@@ -599,6 +602,7 @@ export function AppRouter() {
    // Wrapped in Suspense to handle lazy-loaded components
    // TourProvider enables contextual onboarding tours (Phase 2 - Organic Onboarding)
    return (
+      <ErrorBoundary>
       <TourProvider tours={allTours}>
          <XPNotificationProvider>
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-ceramic-base"><CeramicLoadingState variant="page" /></div>}>
@@ -646,8 +650,8 @@ export function AppRouter() {
                />
 
                {/* Connections Module Routes - Simplified 2-level navigation */}
-               <Route path="/connections" element={<AuthGuard><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></AuthGuard>} />
-               <Route path="/connections/:spaceId" element={<AuthGuard><SpaceDetailView /></AuthGuard>} />
+               <Route path="/connections" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></ErrorBoundary></AuthGuard>} />
+               <Route path="/connections/:spaceId" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><SpaceDetailView /></ErrorBoundary></AuthGuard>} />
                {/* Legacy redirects: old /connections/:archetype/:spaceId → new /connections/:spaceId */}
                <Route path="/connections/:archetype/:spaceId" element={<LegacySpaceRedirect />} />
                <Route path="/connections/:archetype/:spaceId/:section" element={<LegacySpaceRedirect />} />
@@ -658,39 +662,44 @@ export function AppRouter() {
                   path="/studio"
                   element={
                      <AuthGuard>
-                        <StudioProvider>
-                           <StudioMainView />
-                        </StudioProvider>
+                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>
+                           <StudioProvider>
+                              <StudioMainView />
+                           </StudioProvider>
+                        </ErrorBoundary>
                      </AuthGuard>
                   }
                />
 
                {/* Flux Module Routes - Protected */}
-               <Route path="/flux" element={<AuthGuard><FluxProvider><FluxDashboard /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/athlete/:athleteId" element={<AuthGuard><FluxProvider><FluxAthleteDetailView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/canvas/:athleteId/:blockId?" element={<AuthGuard><FluxProvider><FluxCanvasEditorView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/alerts" element={<AuthGuard><FluxProvider><FluxAlertsView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxDashboard /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/athlete/:athleteId" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAthleteDetailView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/canvas" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/canvas/:athleteId/:blockId?" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/alerts" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAlertsView /></FluxProvider></ErrorBoundary></AuthGuard>} />
 
                {/* Flow Module Routes (Intelligent Prescription) - Protected */}
-               <Route path="/flux/templates" element={<AuthGuard><FluxProvider><TemplateLibraryView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/templates/new" element={<AuthGuard><FluxProvider><TemplateLibraryView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/templates/:templateId/edit" element={<AuthGuard><FluxProvider><TemplateLibraryView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/microcycle/:microcycleId" element={<AuthGuard><FluxProvider><MicrocycleEditorView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/leveling" element={<AuthGuard><FluxProvider><LevelingEngineView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/intensity/:athleteId?" element={<AuthGuard><FluxProvider><IntensityCalculatorView /></FluxProvider></AuthGuard>} />
-               <Route path="/flux/crm" element={<AuthGuard><FluxProvider><CRMCommandCenterView /></FluxProvider></AuthGuard>} />
+               <Route path="/flux/templates" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/templates/new" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/templates/:templateId/edit" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/microcycle/:microcycleId" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><MicrocycleEditorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/leveling" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><LevelingEngineView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/intensity/:athleteId?" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><IntensityCalculatorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/crm" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><CRMCommandCenterView /></FluxProvider></ErrorBoundary></AuthGuard>} />
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
-               <Route path="/meu-treino" element={<AuthGuard><AthletePortalView /></AuthGuard>} />
+               <Route path="/meu-treino" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></AuthGuard>} />
 
                {/* Contacts Module Routes - Protected */}
                <Route
                   path="/contacts"
                   element={
                      <AuthGuard>
-                        <ConnectionsLayout>
-                           <ContactsView />
-                        </ConnectionsLayout>
+                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Contacts" />}>
+                           <ConnectionsLayout>
+                              <ContactsView />
+                           </ConnectionsLayout>
+                        </ErrorBoundary>
                      </AuthGuard>
                   }
                />
@@ -745,5 +754,6 @@ export function AppRouter() {
             </Suspense>
          </XPNotificationProvider>
       </TourProvider>
+      </ErrorBoundary>
    );
 }

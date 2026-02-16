@@ -34,6 +34,7 @@ import {
   MagnifyingGlassIcon,
   ArrowLeftIcon,
   FireIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/solid'
 import { CreateMomentInput } from '../types/moment'
 import { LEVEL_COLORS, getProgressToNextLevel } from '../types/consciousnessPoints'
@@ -42,6 +43,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
 import { SettingsMenu, HelpButton } from '@/components'
 import { CeramicFilterTab } from '@/components/ui'
+import { InterviewCategoryPicker, InterviewSession as InterviewSessionView } from '../components/interviewer'
 
 // ── Skeleton Components ──────────────────────────────────────────
 
@@ -149,7 +151,8 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   }, []);
 
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search'>('timeline')
+  const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search' | 'interview'>('timeline')
+  const [activeInterviewSessionId, setActiveInterviewSessionId] = useState<string | null>(null)
   const [showInsight, setShowInsight] = useState(false)
   const [currentInsight, setCurrentInsight] = useState<{
     message: string;
@@ -431,6 +434,12 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
             isActive={activeTab === 'search'}
             onClick={() => setActiveTab('search')}
           />
+          <CeramicFilterTab
+            icon={<ClipboardDocumentListIcon className="h-4 w-4" />}
+            label="Entrevista"
+            isActive={activeTab === 'interview'}
+            onClick={() => setActiveTab('interview')}
+          />
         </div>
 
         {/* QuickCapture */}
@@ -559,6 +568,30 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 hasMoments={hasIndexedMoments}
                 onClear={clearSearchResults}
               />
+            </motion.div>
+          )}
+
+          {/* Interview Tab */}
+          {activeTab === 'interview' && (
+            <motion.div
+              key="interview"
+              variants={tabContentVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.2 }}
+            >
+              {activeInterviewSessionId ? (
+                <InterviewSessionView
+                  sessionId={activeInterviewSessionId}
+                  onComplete={() => setActiveInterviewSessionId(null)}
+                  onBack={() => setActiveInterviewSessionId(null)}
+                />
+              ) : (
+                <InterviewCategoryPicker
+                  onSessionStart={(sessionId) => setActiveInterviewSessionId(sessionId)}
+                />
+              )}
             </motion.div>
           )}
         </AnimatePresence>

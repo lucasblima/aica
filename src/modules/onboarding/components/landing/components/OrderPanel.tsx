@@ -302,7 +302,7 @@ function ConnectionsCard({ connections }: { connections: Connection[] }) {
         </div>
         <div>
           <h4 className="text-lg font-black text-ceramic-text-primary tracking-tight">Connections</h4>
-          <p className="text-xs font-bold text-ceramic-text-secondary/60 uppercase tracking-widest">{connections.length} Redes</p>
+          <p className="text-xs font-bold text-ceramic-text-secondary/60 uppercase tracking-widest">{connections.length} Conexões</p>
         </div>
       </div>
 
