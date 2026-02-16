@@ -103,6 +103,11 @@ export type GeminiAction =
   // Agent-Aware Chat (Phase 1)
   | 'classify_intent'
 
+  // Planner Agent (Phase 2)
+  | 'create_plan'
+  | 'execute_step'
+  | 'get_plan'
+
 /**
  * Request base para chamadas ao Gemini
  */
