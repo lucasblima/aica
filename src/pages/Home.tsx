@@ -9,8 +9,7 @@ import { JourneyHeroCard } from '../modules/journey';
 import { FluxCard } from '../modules/flux';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
-import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
-import type { GrantDeadline, GrantProject } from '../modules/grants/types';
+import { useGrantsHomeQuery } from '@/hooks/queries';
 import { ViewState } from '../../types';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -135,35 +134,14 @@ export default function Home({
       }
    };
 
-   // Grants Card State
-   const [grantsActiveProjects, setGrantsActiveProjects] = useState<number>(0);
-   const [grantsUpcomingDeadlines, setGrantsUpcomingDeadlines] = useState<GrantDeadline[]>([]);
-   const [grantsRecentProjects, setGrantsRecentProjects] = useState<GrantProject[]>([]);
+   // Grants Card data via React Query (cached, deduplicated)
+   const { data: grantsData } = useGrantsHomeQuery(!!userId);
+   const grantsActiveProjects = grantsData?.activeProjects ?? 0;
+   const grantsUpcomingDeadlines = grantsData?.upcomingDeadlines ?? [];
+   const grantsRecentProjects = grantsData?.recentProjects ?? [];
 
    const handleTasksLoaded = useCallback((moduleId: string, taskCount: number) => {
       setModulesStatus(prev => ({ ...prev, [moduleId]: taskCount }));
-   }, []);
-
-   // Load Grants Card data
-   useEffect(() => {
-      const loadGrantsData = async () => {
-         try {
-            const activeCount = await countAllActiveProjects();
-            setGrantsActiveProjects(activeCount);
-
-            const deadlines = await getUpcomingDeadlines(30);
-            setGrantsUpcomingDeadlines(deadlines);
-
-            const recent = await getRecentProjects(2);
-            setGrantsRecentProjects(recent);
-
-            log.debug('Grants data loaded:', { activeCount, deadlines: deadlines.length, recent: recent.length });
-         } catch (error) {
-            log.error('Error loading grants data:', error);
-         }
-      };
-
-      loadGrantsData();
    }, []);
 
    // Determine active vs inactive generic modules
