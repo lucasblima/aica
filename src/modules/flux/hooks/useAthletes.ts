@@ -62,7 +62,8 @@ export function useAthletes(options?: UseAthletesOptions) {
 
   useEffect(() => {
     fetchAthletes();
-  }, [fetchAthletes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options?.status, options?.modality, options?.level]);
 
   // Real-time subscription (separate effect to prevent race conditions)
   const channelRef = useRef<RealtimeChannel | null>(null);
