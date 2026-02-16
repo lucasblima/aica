@@ -99,7 +99,7 @@ export class MicrocycleService {
         .from('microcycles')
         .select('*')
         .eq('athlete_id', athleteId)
-        .eq('status', 'active')
+        .in('status', ['active', 'draft'])
         .order('start_date', { ascending: false })
         .limit(1)
         .maybeSingle();

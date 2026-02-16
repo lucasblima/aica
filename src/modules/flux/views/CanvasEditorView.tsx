@@ -295,8 +295,6 @@ const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
   warmup: { label: 'Aquecimento', icon: '🔥' },
   main: { label: 'Principal', icon: '💪' },
   cooldown: { label: 'Desaquecimento', icon: '❄️' },
-  recovery: { label: 'Recuperação', icon: '🧘' },
-  test: { label: 'Teste', icon: '📊' },
 };
 
 const INTENSITY_COLORS: Record<string, string> = {
@@ -501,23 +499,13 @@ export default function CanvasEditorView() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-  // If no athleteId, show athlete picker
+  // All hooks MUST be called before any conditional return (React Rules of Hooks)
   const { athletes, isLoading: athletesLoading } = useAthletes();
 
-  if (!athleteId) {
-    return (
-      <AthletePicker
-        athletes={athletes}
-        isLoading={athletesLoading}
-        onSelect={(a) => navigate(`/flux/canvas/${a.id}`)}
-      />
-    );
-  }
-
   // Find selected athlete from list
-  const athlete = athletes.find((a) => a.id === athleteId);
+  const athlete = athleteId ? athletes.find((a) => a.id === athleteId) : undefined;
 
-  // Data hooks
+  // Data hooks — always called, use placeholder athleteId when absent
   const {
     slots,
     weekWorkouts: weekWorkoutData,
@@ -526,7 +514,7 @@ export default function CanvasEditorView() {
     createSlotFromTemplate,
     updateSlot,
     deleteSlot,
-  } = useCanvasWorkouts({ athleteId, weekNumber: currentWeek });
+  } = useCanvasWorkouts({ athleteId: athleteId || '__none__', weekNumber: currentWeek });
 
   // Calendar start date (Monday of current week within microcycle)
   const weekStartDate = useMemo(() => {
@@ -547,6 +535,17 @@ export default function CanvasEditorView() {
     isLoading: calendarLoading,
     refresh: refreshCalendar,
   } = useCanvasCalendar({ weekStartDate, athleteId });
+
+  // If no athleteId, show athlete picker (after all hooks)
+  if (!athleteId) {
+    return (
+      <AthletePicker
+        athletes={athletes}
+        isLoading={athletesLoading}
+        onSelect={(a) => navigate(`/flux/canvas/${a.id}`)}
+      />
+    );
+  }
 
   // Transform slots to WeekWorkout format for the grid
   const gridWorkouts = useMemo<WeekWorkout[]>(
@@ -876,7 +875,7 @@ export default function CanvasEditorView() {
                 transition={{ duration: 0.3 }}
                 className="p-6"
               >
-                {activeMicrocycle && (
+                {activeMicrocycle ? (
                   <MicrocycleGrid
                     microcycle={{
                       id: activeMicrocycle.id,
@@ -891,6 +890,19 @@ export default function CanvasEditorView() {
                     onDropWorkout={handleMicrocycleDropWorkout}
                     onWeekClick={handleWeekClick}
                     isLoading={workoutsLoading}
+                  />
+                ) : (
+                  <MicrocycleGrid
+                    microcycle={{
+                      id: '',
+                      title: 'Carregando Microciclo...',
+                      start_date: new Date().toISOString(),
+                      focus: '',
+                    }}
+                    workoutsByWeek={{ 1: [], 2: [], 3: [] }}
+                    currentWeek={currentWeek}
+                    onWeekClick={handleWeekClick}
+                    isLoading={true}
                   />
                 )}
               </motion.div>

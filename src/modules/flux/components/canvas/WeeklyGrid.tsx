@@ -292,7 +292,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     onDragLeaveDay();
-    const templateData = e.dataTransfer.getData('templateId') || e.dataTransfer.getData('text/plain');
+    const templateData = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('templateId');
     if (templateData) {
       onDrop(templateData);
     }
