@@ -249,6 +249,7 @@ export interface WorkoutSlot {
   // Slot Position
   week_number: number; // 1-3
   day_of_week: number; // 1-7
+  start_time?: string; // "HH:MM" e.g. "09:00", "14:30"
 
   // Workout Details
   name: string;
@@ -286,6 +287,7 @@ export interface CreateWorkoutSlotInput {
   template_id?: string;
   week_number: number;
   day_of_week: number;
+  start_time?: string; // "HH:MM"
   name: string;
   duration: number;
   intensity: WorkoutIntensity;

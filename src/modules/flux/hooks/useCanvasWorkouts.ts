@@ -43,7 +43,8 @@ export interface UseCanvasWorkoutsReturn {
   createSlotFromTemplate: (
     template: WorkoutTemplate,
     dayOfWeek: number,
-    weekNumber?: number
+    weekNumber?: number,
+    startTime?: string
   ) => Promise<WorkoutSlot | null>;
   updateSlot: (input: UpdateWorkoutSlotInput) => Promise<WorkoutSlot | null>;
   deleteSlot: (slotId: string) => Promise<boolean>;
@@ -84,9 +85,9 @@ export function useCanvasWorkouts(
       return {
         dayOfWeek,
         slots: (byDay.get(dayOfWeek) || []).sort((a, b) => {
-          // Sort by time_of_day if present, fallback to created_at
-          const aTime = (a as any).time_of_day || a.created_at;
-          const bTime = (b as any).time_of_day || b.created_at;
+          // Sort by start_time if present, fallback to created_at
+          const aTime = a.start_time || a.created_at;
+          const bTime = b.start_time || b.created_at;
           return aTime < bTime ? -1 : aTime > bTime ? 1 : 0;
         }),
       };
@@ -304,12 +305,14 @@ export function useCanvasWorkouts(
     async (
       template: WorkoutTemplate,
       dayOfWeek: number,
-      week?: number
+      week?: number,
+      startTime?: string
     ): Promise<WorkoutSlot | null> => {
       return createSlot({
         template_id: template.id,
         week_number: week ?? weekNumber,
         day_of_week: dayOfWeek,
+        start_time: startTime,
         name: template.name,
         duration: template.duration,
         intensity: template.intensity,

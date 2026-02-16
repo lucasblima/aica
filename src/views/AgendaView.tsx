@@ -28,6 +28,7 @@ import { Task, Quadrant } from '../../types';
 // import { ProjectList } from '../modules/atlas/components/ProjectList';
 // import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
+import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
 // TODO: Re-enable onboarding tour after app functionality is stable
 // import { useTourAutoStart } from '../hooks/useTourAutoStart';
 import { TimelineEvent } from '../services/googleCalendarService';
@@ -76,7 +77,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     }, []); // Sem dependências - criar apenas uma vez por dia
 
     const {
-        events: calendarEvents,
+        events: googleCalendarEvents,
         isConnected: isCalendarConnected,
         isLoading: isLoadingCalendar,
         error: calendarError,
@@ -89,6 +90,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         startDate: dateRange.today,
         endDate: dateRange.nextWeek
     });
+
+    // Flux workout slots as calendar events
+    const { events: fluxEvents } = useFluxAgendaEvents();
+
+    // Merge Google Calendar + Flux workout events
+    const calendarEvents = useMemo(() => {
+        return [...googleCalendarEvents, ...fluxEvents].sort((a, b) =>
+            a.startTime.localeCompare(b.startTime)
+        );
+    }, [googleCalendarEvents, fluxEvents]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -284,8 +295,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             startTime: event.startTime,
             endTime: event.endTime,
             type: 'event' as const,
-            location: event.location,
-            color: '#D97706' // Amber
+            location: (event as any).location,
+            color: event.color || '#D97706' // Use event color (Flux modality) or default Amber
         }));
 
         // Add tasks to rest of day

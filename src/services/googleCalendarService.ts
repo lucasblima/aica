@@ -211,7 +211,8 @@ export interface TimelineEvent {
     attendees?: string[]; // emails dos participantes
     organizer?: string;
     isAllDay: boolean;
-    source: 'google_calendar';
+    source: 'google_calendar' | 'flux_workout';
+    color?: string;
 }
 
 export function transformGoogleEvent(event: GoogleCalendarEvent): TimelineEvent {
