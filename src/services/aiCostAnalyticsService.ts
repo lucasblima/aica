@@ -36,7 +36,7 @@ export async function getUserAICosts(
 
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('action, model, tokens_input, tokens_output, cost_brl')
+    .select('action, model_used, tokens_input, tokens_output, cost_brl')
     .eq('user_id', userId)
     .gte('created_at', start)
     .lte('created_at', end);
@@ -50,7 +50,7 @@ export async function getUserAICosts(
   const groupMap = new Map<string, { requests: number; tokens: number; cost: number }>();
 
   (data || []).forEach((record) => {
-    const key = `${record.action}::${record.model}`;
+    const key = `${record.action}::${record.model_used}`;
     const existing = groupMap.get(key) || { requests: 0, tokens: 0, cost: 0 };
     groupMap.set(key, {
       requests: existing.requests + 1,
@@ -60,10 +60,10 @@ export async function getUserAICosts(
   });
 
   return Array.from(groupMap.entries()).map(([key, stats]) => {
-    const [action, model] = key.split('::');
+    const [action, model_used] = key.split('::');
     return {
       action,
-      model,
+      model: model_used,
       total_requests: stats.requests,
       total_tokens: stats.tokens,
       total_cost_brl: stats.cost
@@ -148,7 +148,7 @@ export async function getModelCostBreakdown(
 
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('model, cost_brl')
+    .select('model_used, cost_brl')
     .eq('user_id', userId)
     .gte('created_at', startDate);
 
@@ -165,8 +165,8 @@ export async function getModelCostBreakdown(
     const cost = Number(record.cost_brl || 0);
     totalCost += cost;
 
-    const existing = modelMap.get(record.model) || { total_cost: 0, count: 0 };
-    modelMap.set(record.model, {
+    const existing = modelMap.get(record.model_used) || { total_cost: 0, count: 0 };
+    modelMap.set(record.model_used, {
       total_cost: existing.total_cost + cost,
       count: existing.count + 1
     });
@@ -236,7 +236,7 @@ export async function getTopExpensiveOperations(
 ): Promise<TopExpensiveOperation[]> {
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('id, action, model, cost_brl, created_at, module')
+    .select('id, action, model_used, cost_brl, created_at, module')
     .eq('user_id', userId)
     .order('cost_brl', { ascending: false })
     .limit(limit);

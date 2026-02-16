@@ -40,7 +40,7 @@ export const TopExpensiveOperationsTable: React.FC<TopExpensiveOperationsTablePr
                   <span className="text-sm font-medium text-ceramic-text-primary">{getOperationLabel(op.action)}</span>
                 </td>
                 <td className="py-3 px-2">
-                  <span className="text-sm text-ceramic-text-secondary">{getModelLabel(op.model)}</span>
+                  <span className="text-sm text-ceramic-text-secondary">{getModelLabel(op.model_used)}</span>
                 </td>
                 <td className="py-3 px-2 hidden md:table-cell">
                   <span className="text-xs font-bold text-ceramic-accent uppercase">{op.module || '-'}</span>
