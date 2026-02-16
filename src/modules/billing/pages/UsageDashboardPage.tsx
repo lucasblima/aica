@@ -182,7 +182,7 @@ export function UsageDashboardPage() {
         const planNames: Record<string, string> = {
           free: 'Free',
           pro: 'Pro',
-          teams: 'Teams',
+          max: 'Max',
         };
 
         setSummary({
