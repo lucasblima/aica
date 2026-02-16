@@ -674,10 +674,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     // Handler para conectar Google Calendar
     const handleConnectCalendar = async () => {
         log.debug(' Conectando Google Calendar...');
-        // Escopos completos para funcionamento como secretária executiva
+        // Escopos mínimos para verificação OAuth do Google (#256)
+        // AICA apenas lê eventos — NÃO modifica o calendário do usuário
         const googleCalendarScopes = [
-            'https://www.googleapis.com/auth/calendar',
-            'https://www.googleapis.com/auth/calendar.events',
             'https://www.googleapis.com/auth/calendar.readonly',
             'https://www.googleapis.com/auth/userinfo.email',
         ].join(' ');

@@ -77,6 +77,7 @@ export { default as GoogleCalendarEventsList } from './features/GoogleCalendarEv
 export { LifeWeeksGrid } from './features/LifeWeeksGrid';
 // prettier-ignore
 export { default as ModuleCard } from './features/ModuleCard';
+export { ExploreMoreSection } from './features/ExploreMoreSection';
 export { NextEventHero } from './features/NextEventHero';
 export { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from './features/NextTwoDaysView';
 // prettier-ignore

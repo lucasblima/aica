@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Wallet, Heart, Users, Building2, BookOpen, Scale, CheckCircle2, Mic, Plus, Briefcase } from 'lucide-react';
-import { HeaderGlobal, ProfileDrawer, ConnectionArchetypes, ModuleCard } from '../components';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, type LucideIcon } from 'lucide-react';
+import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
 import { FluxCard } from '../modules/flux';
-import { RecentContactsWidget } from '../components';
+import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
+import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
 import { getUpcomingDeadlines, countAllActiveProjects, getRecentProjects } from '../modules/grants/services/grantService';
 import type { GrantDeadline, GrantProject } from '../modules/grants/types';
 import { ViewState } from '../../types';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { createNamespacedLogger } from '@/lib/logger';
+import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 
 const log = createNamespacedLogger('Home');
-
-// Types
-type TabState = 'personal' | 'network';
 
 // Animation variants for card entrance choreography
 const cardVariants = {
@@ -41,6 +40,29 @@ const cardVariants = {
    })
 };
 
+// MODULE_REGISTRY — typed config for all modules
+interface ModuleConfig {
+   id: string;
+   label: string;
+   icon: string;
+   route: ViewState | string;
+   type: 'core' | 'generic';
+}
+
+const MODULE_REGISTRY: ModuleConfig[] = [
+   // Core modules — always visible, have dedicated cards
+   { id: 'finance', label: 'Finanças', icon: '💰', route: 'finance', type: 'core' },
+   { id: 'grants', label: 'Captação', icon: '📄', route: 'grants', type: 'core' },
+   { id: 'flux', label: 'Flux', icon: '🏋️', route: 'flux', type: 'core' },
+   { id: 'studio', label: 'Studio', icon: '🎙️', route: 'studio', type: 'core' },
+   { id: 'connections', label: 'Conexões', icon: '🏢', route: 'connections', type: 'core' },
+   // Generic modules — active if have tasks
+   { id: 'health', label: 'Saúde', icon: '🫀', route: 'health', type: 'generic' },
+   { id: 'education', label: 'Educação', icon: '📚', route: 'education', type: 'generic' },
+   { id: 'professional', label: 'Profissional', icon: '💼', route: 'professional', type: 'generic' },
+   { id: 'legal', label: 'Jurídico', icon: '⚖️', route: 'legal', type: 'generic' },
+];
+
 interface HomeProps {
    userId: string;
    userEmail: string | null;
@@ -54,23 +76,6 @@ interface HomeProps {
    onSelectArchetype: (archetypeId: string | null) => void;
    onCreateAssociation: () => void;
 }
-
-interface LifeArea {
-   id: string;
-   label: string;
-   icon: string;
-   route: ViewState;
-}
-
-// Life Areas configuration for minimalst grid
-const LIFE_AREAS: LifeArea[] = [
-   { id: 'finance', label: 'Finanças', icon: '💰', route: 'finance' },
-   { id: 'health', label: 'Saúde', icon: '🫀', route: 'health' },
-   { id: 'education', label: 'Educação', icon: '📚', route: 'education' },
-   { id: 'legal', label: 'Jurídico', icon: '⚖️', route: 'legal' },
-   { id: 'professional', label: 'Profissional', icon: '💼', route: 'professional' },
-   { id: 'relationships', label: 'Relacionamentos', icon: '💝', route: 'relationships' },
-];
 
 export default function Home({
    userId,
@@ -87,18 +92,12 @@ export default function Home({
 }: HomeProps) {
    const navigate = useNavigate();
    const { user } = useAuth();
-   const [activeTab, setActiveTab] = useState<TabState>('personal');
 
-   // Handle tab change - navigate to /connections for network tab
-   const handleTabChange = (tab: TabState) => {
-      if (tab === 'network') {
-         navigate('/connections');
-      } else {
-         setActiveTab(tab);
-      }
-   };
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileDrawerOpen, setProfileDrawerOpen] = useState(false);
+
+   // Identity data from Journey CP system
+   const { stats: cpStats, progress: cpProgress, isLoading: cpLoading } = useConsciousnessPoints();
 
    // User metadata for avatar and profile
    const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
@@ -107,7 +106,18 @@ export default function Home({
       return user.user_metadata?.full_name || user.email?.split('@')[0];
    }, [user]);
 
-   // Reset ProfileDrawer when component unmounts (prevents drawer persisting across views)
+   // Level/progress data for HeaderGlobal identity bar
+   const levelColor = useMemo(() => {
+      if (!cpStats) return undefined;
+      return LEVEL_COLORS[cpStats.level];
+   }, [cpStats]);
+
+   const progressPercentage = useMemo(() => {
+      if (!cpProgress) return 0;
+      return cpProgress.progress_percentage || 0;
+   }, [cpProgress]);
+
+   // Reset ProfileDrawer when component unmounts
    useEffect(() => {
       return () => {
          setProfileDrawerOpen(false);
@@ -117,7 +127,6 @@ export default function Home({
    // Handle account deletion
    const handleDeleteAccount = async () => {
       try {
-         // Sign out and redirect
          await supabase.auth.signOut();
          window.location.href = '/';
       } catch (error) {
@@ -135,14 +144,6 @@ export default function Home({
       setModulesStatus(prev => ({ ...prev, [moduleId]: taskCount }));
    }, []);
 
-   const secondaryModules = ['health', 'education', 'legal'];
-   const allSecondaryModulesEmpty = secondaryModules.every(
-      moduleId => modulesStatus[moduleId] === 0
-   );
-   const allSecondaryModulesLoaded = secondaryModules.every(
-      moduleId => modulesStatus[moduleId] !== undefined
-   );
-
    // Load Grants Card data
    useEffect(() => {
       const loadGrantsData = async () => {
@@ -156,7 +157,7 @@ export default function Home({
             const recent = await getRecentProjects(2);
             setGrantsRecentProjects(recent);
 
-            log.debug(' Grants data loaded:', { activeCount, deadlines: deadlines.length, recent: recent.length });
+            log.debug('Grants data loaded:', { activeCount, deadlines: deadlines.length, recent: recent.length });
          } catch (error) {
             log.error('Error loading grants data:', error);
          }
@@ -165,351 +166,258 @@ export default function Home({
       loadGrantsData();
    }, []);
 
-   const personalAssoc = associations.find(a => a.type === 'personal');
+   // Determine active vs inactive generic modules
+   const genericModules = MODULE_REGISTRY.filter(m => m.type === 'generic');
+   const activeGenericModules = genericModules.filter(m => (modulesStatus[m.id] || 0) > 0);
+   const inactiveModules = genericModules.filter(m => !modulesStatus[m.id] || modulesStatus[m.id] === 0);
 
-   if (activeTab === 'personal') {
-      return (
-         <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-            <HeaderGlobal
-               title="Minha Vida"
-               subtitle="LIFE OS"
-               userEmail={userEmail || undefined}
-               avatarUrl={avatarUrl}
-               userName={userName}
-               onLogout={onLogout}
-               onNavigateToAICost={onNavigateToAICost}
-               onNavigateToFileSearch={onNavigateToFileSearch}
-               onOpenProfile={() => setProfileDrawerOpen(true)}
-               showTabs={false}
-               activeTab={activeTab}
-               onTabChange={handleTabChange}
-            />
+   // Connection count for compact card
+   const connectionCount = associations.filter(a => a.type !== 'personal').length;
 
-            <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-8">
-               {/* 1. Journey Hero Card - Unified Identity + Journey Preview */}
+   // Icon map for generic ModuleCards
+   const ICON_MAP: Record<string, LucideIcon> = {
+      health: Heart,
+      education: BookOpen,
+      professional: Briefcase,
+      legal: Scale,
+   };
+
+   const ACCENT_MAP: Record<string, string> = {
+      health: 'bg-ceramic-warning/10 border-ceramic-warning/20 text-ceramic-warning',
+      education: 'bg-ceramic-info/10 border-ceramic-info/20 text-ceramic-info',
+      professional: 'bg-ceramic-accent/10 border-ceramic-accent/20 text-ceramic-accent',
+      legal: 'bg-ceramic-text-secondary/10 border-ceramic-text-secondary/20 text-ceramic-text-secondary',
+   };
+
+   let cardIndex = 1; // Journey is 0
+
+   return (
+      <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+         <HeaderGlobal
+            title="Minha Vida"
+            subtitle="LIFE OS"
+            userEmail={userEmail || undefined}
+            avatarUrl={avatarUrl}
+            userName={userName}
+            onLogout={onLogout}
+            onNavigateToAICost={onNavigateToAICost}
+            onNavigateToFileSearch={onNavigateToFileSearch}
+            onOpenProfile={() => setProfileDrawerOpen(true)}
+            // Identity bar props
+            level={cpStats?.level}
+            levelName={cpStats?.level_name}
+            levelColor={levelColor}
+            progressPercentage={progressPercentage}
+            totalPoints={cpStats?.total_points || 0}
+            currentStreak={cpStats?.current_streak || 0}
+            onAvatarClick={() => setProfileDrawerOpen(true)}
+         />
+
+         <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+               {/* Journey CTA — col-span-2, always first */}
                <motion.div
+                  className="col-span-2"
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
                   custom={0}
                >
                   <JourneyHeroCard
-                     onOpenProfile={() => {
-                        log.debug(' JourneyHeroCard onOpenProfile clicked');
-                        setProfileDrawerOpen(true);
-                     }}
-                     onOpenJourney={() => {
-                        log.debug(' JourneyHeroCard onOpenJourney clicked');
-                        onNavigateToView('journey');
-                     }}
+                     onOpenJourney={() => onNavigateToView('journey')}
+                     stats={cpStats}
                   />
                </motion.div>
 
-
-               {/* Life Modules Grid - Essencial (Vida Pessoal + Profissional + Financeiro) */}
-               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Saúde */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={1}
-                     onClick={() => onNavigateToView('health')}
-                  >
-                     <ModuleCard
-                        moduleId="health"
-                        title="Saúde"
-                        icon={Heart}
-                        color="orange"
-                        accentColor="bg-ceramic-warning/10 border-ceramic-warning/20 text-ceramic-warning"
-                     />
-                  </motion.div>
-
-                  {/* Educação */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={2}
-                     onClick={() => onNavigateToView('education')}
-                  >
-                     <ModuleCard
-                        moduleId="education"
-                        title="Educação"
-                        icon={BookOpen}
-                        color="blue"
-                        accentColor="bg-ceramic-info/10 border-ceramic-info/20 text-ceramic-info"
-                     />
-                  </motion.div>
-
-                  {/* Profissional */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={3}
-                     onClick={() => onNavigateToView('professional')}
-                  >
-                     <ModuleCard
-                        moduleId="professional"
-                        title="Profissional"
-                        icon={Briefcase}
-                        color="indigo"
-                        accentColor="bg-ceramic-accent/10 border-ceramic-accent/20 text-ceramic-accent"
-                     />
-                  </motion.div>
-
-                  {/* Jurídico */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={4}
-                     onClick={() => onNavigateToView('legal')}
-                  >
-                     <ModuleCard
-                        moduleId="legal"
-                        title="Jurídico"
-                        icon={Scale}
-                        color="slate"
-                        accentColor="bg-ceramic-text-secondary/10 border-ceramic-text-secondary/20 text-ceramic-text-secondary"
-                     />
-                  </motion.div>
-
-                  {/* Finanças */}
+               {/* Finance — compact */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  className="cursor-pointer"
+                  onClick={() => onNavigateToView('finance')}
+               >
                   {userId ? (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={5}
-                        className="cursor-pointer hover:scale-[1.01] transition-transform"
-                        onClick={() => onNavigateToView('finance')}
-                     >
-                        <FinanceCard userId={userId} />
-                     </motion.div>
+                     <FinanceCard userId={userId} compact />
                   ) : (
-                     <motion.div
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={5}
-                        onClick={() => onNavigateToView('finance')}
-                     >
-                        <ModuleCard
-                           moduleId="finance"
-                           title="Finanças"
-                           icon={Wallet}
-                           color="emerald"
-                           accentColor="bg-ceramic-success/10 border-ceramic-success/20 text-ceramic-success"
-                        />
-                     </motion.div>
-                  )}
-
-                  {/* Captação (Grants) */}
-                  <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={6}
-                     className="cursor-pointer hover:scale-[1.01] transition-transform"
-                     onClick={() => onNavigateToView('grants')}
-                  >
-                     <GrantsCard
-                        activeProjects={grantsActiveProjects}
-                        upcomingDeadlines={grantsUpcomingDeadlines}
-                        recentProjects={grantsRecentProjects}
-                        onOpenModule={() => onNavigateToView('grants')}
-                        onCreateProject={() => onNavigateToView('grants')}
+                     <ModuleCard
+                        moduleId="finance"
+                        title="Finanças"
+                        icon={Wallet}
+                        color="emerald"
+                        accentColor="bg-ceramic-success/10 border-ceramic-success/20 text-ceramic-success"
+                        compact
                      />
-                  </motion.div>
-               </div>
+                  )}
+               </motion.div>
 
-               {/* Recent Contacts Widget - Full Width (Conexões são muito importantes) */}
+               {/* Grants — compact */}
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={7}
+                  custom={cardIndex++}
+                  className="cursor-pointer"
+                  onClick={() => onNavigateToView('grants')}
                >
-                  <RecentContactsWidget
-                     onViewAllClick={() => navigate('/contacts')}
-                     onContactClick={(contact) => log.debug('Contact clicked:', contact)}
+                  <GrantsCard
+                     activeProjects={grantsActiveProjects}
+                     upcomingDeadlines={grantsUpcomingDeadlines}
+                     recentProjects={grantsRecentProjects}
+                     onOpenModule={() => onNavigateToView('grants')}
+                     onCreateProject={() => onNavigateToView('grants')}
+                     compact
                   />
                </motion.div>
 
-               {/* Rede/Associações - Full Width (Conexões são muito importantes) */}
+               {/* Flux — compact */}
                <motion.div
                   variants={cardVariants}
                   initial="hidden"
                   animate="visible"
-                  custom={8}
-                  onClick={() => onNavigateToView('connections')}
-                  className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+                  custom={cardIndex++}
                >
-                  <Building2 className="absolute -right-4 -bottom-4 w-32 h-32 text-ceramic-info opacity-10 group-hover:scale-110 transition-transform duration-500" />
-                  <div className="relative z-10 flex flex-col h-full">
-                     <div className="flex items-center gap-2 mb-3">
-                        <div className="ceramic-inset p-2">
-                           <Building2 className="w-5 h-5 text-ceramic-info" />
-                        </div>
-                        <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
-                     </div>
-                     {associations.filter(a => a.type !== 'personal').length === 0 ? (
-                        <div className="flex-1 flex flex-col justify-center space-y-3">
-                           <div>
-                              <p className="text-sm font-bold text-ceramic-text-primary mb-1">
-                                 Mapeie seus relacionamentos
-                              </p>
-                              <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                                 Organize suas conexões em 4 arquétipos: Habitat, Ventures, Academia e Tribo
-                              </p>
-                           </div>
-                        </div>
-                     ) : (
-                        <p className="text-sm text-ceramic-text-primary mb-3 font-medium flex-1">
-                           {associations.filter(a => a.type !== 'personal').length} Conexões
-                        </p>
-                     )}
-                     <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
-                        <span>{associations.filter(a => a.type !== 'personal').length === 0 ? 'Começar' : 'Ver'}</span>
-                        <ChevronRight className="w-3 h-3" />
-                     </div>
-                  </div>
+                  <FluxCard compact />
                </motion.div>
 
-               {/* Premium Modules Grid (Studio + Flux) */}
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Podcast Copilot */}
+               {/* Studio — compact inline card */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('studio')}
+                  className="cursor-pointer"
+               >
                   <motion.div
-                     variants={cardVariants}
-                     initial="hidden"
-                     animate="visible"
-                     custom={9}
-                     onClick={() => onNavigateToView('studio')}
-                     className="ceramic-card relative overflow-hidden p-5 flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
                      style={{
                         background: 'linear-gradient(135deg, #F0EFE9 0%, #F5E6F0 100%)'
                      }}
+                     variants={cardElevationVariants}
+                     initial="rest"
+                     whileHover="hover"
+                     whileTap="pressed"
                   >
-                     <Mic className="absolute -right-4 -bottom-4 w-32 h-32 text-ceramic-warning opacity-10 group-hover:scale-110 transition-transform duration-500" />
+                     <Mic className="absolute -right-2 -bottom-2 w-20 h-20 text-ceramic-warning opacity-10" />
                      <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex items-center gap-2 mb-3">
-                           <div className="ceramic-inset p-2">
-                              <Mic className="w-5 h-5 text-ceramic-warning" />
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="ceramic-inset p-1.5">
+                              <Mic className="w-4 h-4 text-ceramic-warning" />
                            </div>
                            <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Studio</span>
                         </div>
-                        <div className="flex-1 flex flex-col justify-center space-y-3">
-                           <div>
-                              <p className="text-sm font-bold text-ceramic-text-primary mb-1">
-                                 Podcast Copilot
-                              </p>
-                              <p className="text-xs text-ceramic-text-secondary leading-relaxed">
-                                 Transforme suas reflexoes em episodios de podcast
-                              </p>
-                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform">
-                           <span>Gerar</span>
-                           <ChevronRight className="w-3 h-3" />
-                        </div>
+                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">
+                           Podcast Copilot
+                        </p>
                      </div>
                   </motion.div>
+               </motion.div>
 
-                  {/* Flux - Training Management Mini Dashboard */}
+               {/* Connections — compact inline card */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('connections')}
+                  className="cursor-pointer"
+               >
                   <motion.div
+                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
+                     variants={cardElevationVariants}
+                     initial="rest"
+                     whileHover="hover"
+                     whileTap="pressed"
+                  >
+                     <Building2 className="absolute -right-2 -bottom-2 w-20 h-20 text-ceramic-info opacity-10" />
+                     <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-center justify-between mb-2">
+                           <div className="flex items-center gap-2">
+                              <div className="ceramic-inset p-1.5">
+                                 <Building2 className="w-4 h-4 text-ceramic-info" />
+                              </div>
+                              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
+                           </div>
+                           {connectionCount > 0 && (
+                              <div className="ceramic-inset px-2 py-0.5 rounded-full">
+                                 <span className="text-[10px] font-bold text-ceramic-info">
+                                    {connectionCount}
+                                 </span>
+                              </div>
+                           )}
+                        </div>
+                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">
+                           {connectionCount === 0 ? 'Mapeie seus relacionamentos' : `${connectionCount} conexões`}
+                        </p>
+                     </div>
+                  </motion.div>
+               </motion.div>
+
+               {/* Active generic modules — compact ModuleCards */}
+               {activeGenericModules.map(mod => (
+                  <motion.div
+                     key={mod.id}
                      variants={cardVariants}
                      initial="hidden"
                      animate="visible"
-                     custom={10}
+                     custom={cardIndex++}
+                     onClick={() => onNavigateToView(mod.route as ViewState)}
+                     className="cursor-pointer"
                   >
-                     <FluxCard />
+                     <ModuleCard
+                        moduleId={mod.id}
+                        title={mod.label}
+                        icon={ICON_MAP[mod.id] || Heart}
+                        color="slate"
+                        accentColor={ACCENT_MAP[mod.id] || ''}
+                        onTasksLoaded={handleTasksLoaded}
+                        compact
+                     />
                   </motion.div>
-               </div>
-            </main>
+               ))}
+            </div>
 
-            {/* Profile Drawer */}
-            <ProfileDrawer
-               isOpen={isProfileDrawerOpen}
-               onClose={() => setProfileDrawerOpen(false)}
-               userId={userId}
-               userEmail={userEmail || ''}
-               onDeleteAccount={handleDeleteAccount}
-            />
-         </div>
-      );
-   } else {
-      // NETWORK TAB
-      const networkAssocs = associations.filter(a => a.type !== 'personal');
-
-      return (
-         <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-            <HeaderGlobal
-               title="Minha Vida"
-               subtitle="LIFE OS"
-               userEmail={userEmail || undefined}
-               avatarUrl={avatarUrl}
-               userName={userName}
-               onLogout={onLogout}
-               onNavigateToAICost={onNavigateToAICost}
-               onNavigateToFileSearch={onNavigateToFileSearch}
-               onOpenProfile={() => setProfileDrawerOpen(true)}
-               showTabs={false}
-               activeTab={activeTab}
-               onTabChange={handleTabChange}
-            />
-
-            <main className="flex-1 overflow-y-auto pb-40 pt-4">
-               {networkAssocs.length === 0 ? (
-                  /* Arquétipos de Conexão quando vazio */
-                  <ConnectionArchetypes
-                     multiSelect={false}
-                     onSelectArchetype={(archetypeId) => {
-                        log.debug(' Arquétipo selecionado:', archetypeId);
-                        onSelectArchetype(archetypeId);
-                     }}
-                     onCreateCustom={() => {
-                        log.debug(' Criar espaço personalizado');
-                        onSelectArchetype(null);
-                     }}
+            {/* Hidden ModuleCards to track task counts for generic modules */}
+            <div className="hidden">
+               {genericModules.map(mod => (
+                  <ModuleCard
+                     key={`tracker-${mod.id}`}
+                     moduleId={mod.id}
+                     title={mod.label}
+                     icon={ICON_MAP[mod.id] || Heart}
+                     color="slate"
+                     accentColor=""
+                     onTasksLoaded={handleTasksLoaded}
                   />
-               ) : (
-                  /* Lista de Associações */
-                  <div className="px-6 space-y-4">
-                     {/* Create New Association Button */}
-                     <button
-                        onClick={onCreateAssociation}
-                        className="ceramic-inset w-full p-4 flex items-center justify-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors group"
-                     >
-                        <div className="w-8 h-8 rounded-full bg-ceramic-base/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                           <Plus className="w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-sm">Nova Associação</span>
-                     </button>
+               ))}
+            </div>
 
-                     {networkAssocs.map(assoc => (
-                        <div
-                           key={assoc.id}
-                           onClick={() => onOpenAssociation(assoc)}
-                           className="ceramic-card p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group"
-                        >
-                           <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 ceramic-inset flex items-center justify-center">
-                                 <Users className="w-6 h-6 text-ceramic-text-primary" />
-                              </div>
-                              <div>
-                                 <h3 className="font-bold text-lg text-ceramic-text-primary text-etched">{assoc.name}</h3>
-                                 <p className="text-xs text-ceramic-text-secondary font-light">{assoc.description || ''}</p>
-                              </div>
-                           </div>
-                           <ChevronRight className="w-5 h-5 text-ceramic-text-secondary group-hover:translate-x-1 transition-transform" />
-                        </div>
-                     ))}
-                  </div>
-               )}
-            </main>
-         </div>
-      );
-   }
+            {/* Explore More — inactive generic modules */}
+            {inactiveModules.length > 0 && (
+               <ExploreMoreSection
+                  modules={inactiveModules.map(m => ({
+                     id: m.id,
+                     icon: m.icon,
+                     label: m.label,
+                  }))}
+                  onConfigure={(id) => {
+                     const mod = MODULE_REGISTRY.find(m => m.id === id);
+                     if (mod) onNavigateToView(mod.route as ViewState);
+                  }}
+               />
+            )}
+         </main>
+
+         {/* Profile Drawer */}
+         <ProfileDrawer
+            isOpen={isProfileDrawerOpen}
+            onClose={() => setProfileDrawerOpen(false)}
+            userId={userId}
+            userEmail={userEmail || ''}
+            onDeleteAccount={handleDeleteAccount}
+         />
+      </div>
+   );
 }
