@@ -15,12 +15,43 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion'
-import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp } from 'lucide-react'
+import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp, Crown, Zap } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { DangerZone } from './DangerZone'
 import { EfficiencyFlowCard } from '../EfficiencyFlowCard'
 import { createNamespacedLogger } from '@/lib/logger'
 
 const log = createNamespacedLogger('ProfileDrawer')
+
+function PlanSection() {
+  const navigate = useNavigate()
+  return (
+    <div className="ceramic-stats-tray space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Crown className="w-4 h-4 text-amber-500" />
+          <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+            Seu Plano
+          </h4>
+        </div>
+        <span className="text-xs font-bold text-ceramic-text-primary bg-ceramic-text-secondary/10 px-2 py-0.5 rounded-full">
+          Free
+        </span>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
+        <Zap className="w-3 h-3" />
+        <span>500 creditos/mes</span>
+      </div>
+      <button
+        onClick={() => navigate('/pricing')}
+        className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm px-4 py-2 transition-colors"
+      >
+        <Crown className="w-4 h-4" />
+        Fazer upgrade
+      </button>
+    </div>
+  )
+}
 
 interface ProfileDrawerProps {
   isOpen: boolean
@@ -210,6 +241,9 @@ export function ProfileDrawer({
                       </div>
                     </div>
                   </div>
+
+                  {/* Plan Section */}
+                  <PlanSection />
 
                   {/* Data Sovereignty Section */}
                   <div className="pt-4">

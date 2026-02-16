@@ -7,7 +7,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, RefreshCw } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, RefreshCw, Zap } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
 import type { DisplayMessage } from '@/hooks/useChatSession'
@@ -42,6 +43,7 @@ export function AicaChatFAB({
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
 
   // Trust level from user engagement stats
   const { stats } = useUserStats()
@@ -336,6 +338,13 @@ export function AicaChatFAB({
                         Plano: {limitInfo.plan} | {limitInfo.remaining} creditos restantes | Renova: {new Date(limitInfo.resetsAt).toLocaleDateString('pt-BR')}
                       </p>
                     )}
+                    <button
+                      onClick={() => navigate('/pricing')}
+                      className="mt-2 flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                    >
+                      <Zap size={12} />
+                      Fazer upgrade
+                    </button>
                   </div>
                 ) : (
                   <div className="aica-fab-error">

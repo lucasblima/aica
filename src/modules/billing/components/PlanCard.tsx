@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Loader2, Zap } from 'lucide-react';
+import { Check, Loader2, Zap, Crown, Sparkles } from 'lucide-react';
 
 interface PricingPlan {
   id: string;
@@ -10,6 +10,7 @@ interface PricingPlan {
   features: string[];
   is_active: boolean;
   highlight?: string;
+  multiplier?: string;
 }
 
 interface PlanCardProps {
@@ -20,106 +21,152 @@ interface PlanCardProps {
   isLoading?: boolean;
 }
 
-export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoading = false }: PlanCardProps) {
-  const formatPrice = (price: number): string => {
-    if (price === 0) return 'Gratis';
-    return `R$ ${price.toFixed(2).replace('.', ',')}`;
-  };
+const PLAN_ICONS: Record<string, React.ReactNode> = {
+  free: <Zap className="w-5 h-5" />,
+  pro: <Sparkles className="w-5 h-5" />,
+  max: <Crown className="w-5 h-5" />,
+};
 
+export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoading = false }: PlanCardProps) {
   const formatCredits = (credits: number): string => {
     if (credits >= 1000) return `${(credits / 1000).toFixed(credits % 1000 === 0 ? 0 : 1)}k`;
     return String(credits);
   };
 
+  const icon = PLAN_ICONS[plan.id] ?? <Zap className="w-5 h-5" />;
+
   return (
     <div
-      className={`relative bg-ceramic-50 rounded-xl p-6 shadow-ceramic-emboss flex flex-col transition-transform hover:scale-[1.02] ${
-        isPopular ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-ceramic-base' : ''
-      }`}
+      className={`
+        relative bg-ceramic-50 rounded-2xl flex flex-col
+        transition-all duration-300 ease-out
+        hover:shadow-xl hover:-translate-y-1
+        ${isPopular
+          ? 'ring-2 ring-amber-400/60 ring-offset-4 ring-offset-ceramic-base shadow-xl scale-[1.03] z-10'
+          : 'shadow-ceramic-emboss'
+        }
+      `}
     >
-      {/* Badges */}
+      {/* Popular badge */}
       {isPopular && !isCurrentPlan && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="bg-amber-500 text-white text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full shadow-lg shadow-amber-500/20">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+          <span className="bg-amber-500 text-white text-[11px] font-bold uppercase tracking-widest px-5 py-1.5 rounded-full shadow-lg shadow-amber-500/25">
             Mais Popular
           </span>
         </div>
       )}
 
       {isCurrentPlan && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="bg-ceramic-success text-white text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+          <span className="bg-ceramic-success text-white text-[11px] font-bold uppercase tracking-widest px-5 py-1.5 rounded-full">
             Plano Atual
           </span>
         </div>
       )}
 
-      {/* Plan Header */}
-      <div className="pt-2 text-center">
-        <h3 className="text-lg font-bold text-ceramic-text-primary">{plan.name}</h3>
-        <p className="text-sm text-ceramic-text-secondary mt-1">{plan.description}</p>
-      </div>
+      {/* Card content */}
+      <div className="p-8 pt-10 flex flex-col flex-1">
+        {/* Icon + Plan name */}
+        <div className="flex items-center gap-2.5 mb-1">
+          <span className={`${isPopular ? 'text-amber-500' : 'text-ceramic-text-secondary'}`}>
+            {icon}
+          </span>
+          <h3 className="text-lg font-bold text-ceramic-text-primary tracking-tight">
+            {plan.name}
+          </h3>
+        </div>
 
-      {/* Price */}
-      <div className="mt-5 text-center">
-        <span className="text-4xl font-black text-ceramic-text-primary">
-          {formatPrice(plan.price_brl_monthly)}
-        </span>
-        {plan.price_brl_monthly > 0 && (
-          <span className="text-sm text-ceramic-text-secondary font-medium">/mes</span>
-        )}
-      </div>
+        <p className="text-sm text-ceramic-text-secondary leading-relaxed">
+          {plan.description}
+        </p>
 
-      {/* Monthly Credits Badge */}
-      <div className="mt-4 text-center space-y-2">
-        <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-sm font-bold px-3 py-1.5 rounded-full">
-          <Zap className="w-3.5 h-3.5" />
-          {formatCredits(plan.monthly_credits)} creditos/mes
-        </span>
-        {plan.highlight && (
-          <p className="text-xs font-bold text-ceramic-accent uppercase tracking-wide">
-            {plan.highlight}
-          </p>
-        )}
-      </div>
-
-      {/* Features */}
-      <ul className="mt-6 space-y-3 flex-1">
-        {plan.features.map((feature, idx) => (
-          <li key={idx} className="flex items-start gap-2.5">
-            <Check className="w-4 h-4 text-ceramic-success flex-shrink-0 mt-0.5" />
-            <span className="text-sm text-ceramic-text-secondary">{feature}</span>
-          </li>
-        ))}
-      </ul>
-
-      {/* CTA Button */}
-      <div className="mt-6">
-        {isCurrentPlan ? (
-          <button
-            disabled
-            className="w-full py-3 px-4 rounded-xl text-sm font-bold bg-ceramic-text-secondary/10 text-ceramic-text-secondary cursor-not-allowed"
-          >
-            Plano Atual
-          </button>
-        ) : (
-          <button
-            onClick={onSubscribe}
-            disabled={isLoading}
-            className="w-full py-3 px-4 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Processando...
+        {/* Price — the hero element */}
+        <div className="mt-6 mb-1">
+          {plan.price_brl_monthly === 0 ? (
+            <div className="flex items-baseline">
+              <span className="text-5xl font-black text-ceramic-text-primary tracking-tight">
+                Gratis
               </span>
-            ) : plan.price_brl_monthly === 0 ? (
-              'Comecar Gratis'
-            ) : (
-              `Assinar ${plan.name}`
-            )}
-          </button>
-        )}
+            </div>
+          ) : (
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm font-medium text-ceramic-text-secondary -mr-0.5">R$</span>
+              <span className="text-5xl font-black text-ceramic-text-primary tracking-tight">
+                {Math.floor(plan.price_brl_monthly)}
+              </span>
+              <span className="text-xl font-bold text-ceramic-text-primary/60">
+                ,{String(Math.round((plan.price_brl_monthly % 1) * 100)).padStart(2, '0')}
+              </span>
+              <span className="text-sm font-medium text-ceramic-text-secondary ml-0.5">/mes</span>
+            </div>
+          )}
+        </div>
+
+        {/* Credits badge + multiplier */}
+        <div className="flex items-center gap-2 mt-3">
+          <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-sm font-semibold px-3 py-1.5 rounded-full border border-amber-200/60">
+            <Zap className="w-3.5 h-3.5" />
+            {formatCredits(plan.monthly_credits)} creditos/mes
+          </span>
+          {plan.multiplier && (
+            <span className="inline-flex items-center bg-amber-500/10 text-amber-600 text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wide">
+              {plan.multiplier}
+            </span>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-ceramic-border/50 my-6" />
+
+        {/* Features */}
+        <ul className="space-y-3 flex-1">
+          {plan.features.map((feature, idx) => (
+            <li key={idx} className="flex items-start gap-3">
+              <div className="mt-0.5 w-4.5 h-4.5 rounded-full bg-ceramic-success/10 flex items-center justify-center flex-shrink-0">
+                <Check className="w-3.5 h-3.5 text-ceramic-success" />
+              </div>
+              <span className="text-sm text-ceramic-text-secondary leading-snug">{feature}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* CTA */}
+        <div className="mt-8">
+          {isCurrentPlan ? (
+            <button
+              disabled
+              className="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-ceramic-text-secondary/8 text-ceramic-text-secondary/60 cursor-not-allowed transition-colors"
+            >
+              Plano Atual
+            </button>
+          ) : (
+            <button
+              onClick={onSubscribe}
+              disabled={isLoading}
+              className={`
+                w-full py-3.5 px-4 rounded-xl text-sm font-bold transition-all duration-200
+                disabled:opacity-50 disabled:cursor-not-allowed
+                ${isPopular
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30'
+                  : plan.price_brl_monthly === 0
+                    ? 'bg-ceramic-text-primary/5 hover:bg-ceramic-text-primary/10 text-ceramic-text-primary'
+                    : 'bg-ceramic-text-primary hover:bg-ceramic-text-primary/90 text-white shadow-lg shadow-ceramic-text-primary/10'
+                }
+              `}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processando...
+                </span>
+              ) : plan.price_brl_monthly === 0 ? (
+                'Comecar Gratis'
+              ) : (
+                `Assinar ${plan.name}`
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
