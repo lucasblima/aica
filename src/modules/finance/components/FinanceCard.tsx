@@ -117,27 +117,27 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
                 whileTap="pressed"
             >
                 {/* Decorative Background Icon — smaller */}
-                <Wallet className="absolute -right-4 -bottom-4 w-24 h-24 text-ceramic-success/20 opacity-10" />
+                <Wallet className="absolute -right-2 -bottom-2 w-20 h-20 text-ceramic-success/20 opacity-10" />
 
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2 relative z-10">
                     <div className="flex items-center gap-2">
-                        <div className="ceramic-concave w-6 h-6 flex items-center justify-center">
-                            <Wallet className="w-3 h-3 text-ceramic-success" />
+                        <div className="ceramic-inset p-1.5">
+                            <Wallet className="w-4 h-4 text-ceramic-success" />
                         </div>
-                        <span className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider font-bold">
-                            Financas
+                        <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                            Finanças
                         </span>
                     </div>
                     <button
                         onClick={toggleVisibility}
-                        className="ceramic-concave w-6 h-6 flex items-center justify-center hover:scale-95 transition-transform"
+                        className="ceramic-inset p-1.5 flex items-center justify-center hover:scale-95 transition-transform"
                         title={isValuesVisible ? 'Ocultar' : 'Mostrar'}
                     >
                         {isValuesVisible ? (
-                            <EyeOff className="w-2.5 h-2.5 text-ceramic-text-secondary" />
+                            <EyeOff className="w-3.5 h-3.5 text-ceramic-text-secondary" />
                         ) : (
-                            <Eye className="w-2.5 h-2.5 text-ceramic-text-secondary" />
+                            <Eye className="w-3.5 h-3.5 text-ceramic-text-secondary" />
                         )}
                     </button>
                 </div>
