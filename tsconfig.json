@@ -25,5 +25,13 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": ["src", "types"],
+  "exclude": [
+    "node_modules",
+    "_deprecated",
+    "docs",
+    "supabase/functions",
+    "tests"
+  ]
 }
