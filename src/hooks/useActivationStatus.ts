@@ -3,6 +3,11 @@
  *
  * Checks if the current user has been activated via invite.
  * Used by ActivationGuard to gate access to the app.
+ *
+ * CRITICAL: This hook processes pending invites (from localStorage)
+ * BEFORE checking activation status. This prevents a race condition
+ * where ActivationGuard blocks the app before useInviteSystem can
+ * process the stored invite token/code.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,6 +15,7 @@ import { useAuth } from './useAuth';
 import {
   checkActivationStatus,
   activateWithCode,
+  processPendingInvite,
   type ActivateWithCodeResult
 } from '../services/inviteSystemService';
 
@@ -33,6 +39,18 @@ export function useActivationStatus(): UseActivationStatusReturn {
     }
 
     try {
+      // STEP 1: Process any pending invite from localStorage FIRST
+      // This handles the case where user entered a code on the landing page
+      // or clicked an invite link, then logged in.
+      const pendingResult = await processPendingInvite();
+      if (pendingResult?.success) {
+        console.log('[useActivationStatus] Pending invite processed:', pendingResult);
+        setIsActivated(true);
+        setLoading(false);
+        return;
+      }
+
+      // STEP 2: Check activation status from database
       const status = await checkActivationStatus();
       setIsActivated(status?.is_activated ?? true); // Default to true if check fails
     } catch (error) {
@@ -48,7 +66,7 @@ export function useActivationStatus(): UseActivationStatusReturn {
     refresh();
   }, [refresh]);
 
-  // Activate with invite code
+  // Activate with invite code (from WaitingRoom manual input)
   const activate = useCallback(async (code: string): Promise<ActivateWithCodeResult> => {
     const result = await activateWithCode(code);
     if (result.success) {
