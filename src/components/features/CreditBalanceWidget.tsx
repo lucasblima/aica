@@ -1,10 +1,11 @@
 /**
  * CreditBalanceWidget Component
  *
- * Displays the user's Aica Credit balance with:
- * - Current balance
+ * Displays the user's monthly credit balance with:
+ * - Remaining credits (monthly budget + extra)
+ * - Usage progress bar
  * - Daily claim button (if available)
- * - Lifetime stats
+ * - Monthly stats
  */
 
 import React, { useState } from 'react'
@@ -28,6 +29,8 @@ export function CreditBalanceWidget({
 }: CreditBalanceWidgetProps) {
   const {
     balance,
+    monthlyBudget,
+    monthUsed,
     lifetimeEarned,
     isLoading,
     canClaimDaily,
@@ -46,7 +49,7 @@ export function CreditBalanceWidget({
       const result = await claimDaily()
       if (result.success) {
         setClaimSuccess(true)
-        setClaimMessage(`+${result.creditsEarned} créditos!`)
+        setClaimMessage(`+${result.creditsEarned} creditos!`)
         setTimeout(() => {
           setClaimSuccess(false)
           setClaimMessage(null)
@@ -66,6 +69,9 @@ export function CreditBalanceWidget({
     )
   }
 
+  // Usage percentage for progress bar
+  const usagePercent = monthlyBudget > 0 ? Math.min(100, (monthUsed / monthlyBudget) * 100) : 0
+
   // Compact mode - just show balance inline
   if (compact) {
     return (
@@ -77,7 +83,7 @@ export function CreditBalanceWidget({
             onClick={handleClaimDaily}
             disabled={isClaiming}
             className="p-1 rounded-full bg-amber-100 hover:bg-amber-200 transition-colors"
-            title="Resgatar créditos diários"
+            title="Resgatar creditos diarios"
           >
             {isClaiming ? (
               <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
@@ -109,7 +115,7 @@ export function CreditBalanceWidget({
               {balance}
             </motion.div>
             <div className="text-xs text-ceramic-text-secondary font-medium">
-              Créditos Aica
+              Creditos restantes
             </div>
           </div>
         </div>
@@ -149,6 +155,26 @@ export function CreditBalanceWidget({
         </AnimatePresence>
       </div>
 
+      {/* Monthly Usage Progress */}
+      <div className="mt-3">
+        <div className="flex justify-between text-xs text-ceramic-text-secondary mb-1">
+          <span>{monthUsed} usados</span>
+          <span>{monthlyBudget}/mes</span>
+        </div>
+        <div className="h-2 bg-ceramic-text-secondary/10 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${usagePercent}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className={`h-full rounded-full ${
+              usagePercent > 90 ? 'bg-ceramic-error' :
+              usagePercent > 70 ? 'bg-amber-500' :
+              'bg-ceramic-success'
+            }`}
+          />
+        </div>
+      </div>
+
       {/* Claim Message */}
       <AnimatePresence>
         {claimMessage && (
@@ -172,7 +198,7 @@ export function CreditBalanceWidget({
         <div className="mt-4 pt-3 border-t border-ceramic-text-secondary/10">
           <div className="flex items-center gap-1 text-xs text-ceramic-text-secondary">
             <TrendingUp className="w-3 h-3" />
-            <span>{lifetimeEarned} créditos ganhos no total</span>
+            <span>{lifetimeEarned} creditos bonus ganhos no total</span>
           </div>
         </div>
       )}

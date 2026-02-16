@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, type LucideIcon } from 'lucide-react';
-import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget } from '../components';
+import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget, InviteShareCard, InviteModal } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
@@ -95,6 +95,7 @@ export default function Home({
 
    const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
    const [isProfileDrawerOpen, setProfileDrawerOpen] = useState(false);
+   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
 
    // Identity data from Journey CP system
    const { stats: cpStats, progress: cpProgress, isLoading: cpLoading } = useConsciousnessPoints();
@@ -353,6 +354,16 @@ export default function Home({
                   <InterviewerCard compact />
                </motion.div>
 
+               {/* Invites — compact */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+               >
+                  <InviteShareCard onClick={() => setInviteModalOpen(true)} />
+               </motion.div>
+
                {/* Active generic modules — compact ModuleCards */}
                {activeGenericModules.map(mod => (
                   <motion.div
@@ -415,6 +426,12 @@ export default function Home({
             userId={userId}
             userEmail={userEmail || ''}
             onDeleteAccount={handleDeleteAccount}
+         />
+
+         {/* Invite Modal */}
+         <InviteModal
+            isOpen={isInviteModalOpen}
+            onClose={() => setInviteModalOpen(false)}
          />
       </div>
    );

@@ -36,6 +36,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
     generating,
     revoking,
     currentUrl,
+    currentCode,
     hasInvites,
     availableCount,
     pendingCount,
@@ -48,6 +49,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
   } = useInviteSystem();
 
   const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showPending, setShowPending] = useState(false);
 
@@ -80,9 +82,27 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
     }
   }, [copied]);
 
+  // Reset copiedCode state
+  useEffect(() => {
+    if (copiedCode) {
+      const timer = setTimeout(() => setCopiedCode(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copiedCode]);
+
   const handleCopy = async () => {
     const success = await copyLink();
     if (success) setCopied(true);
+  };
+
+  const handleCopyCode = async () => {
+    if (!currentCode) return;
+    try {
+      await navigator.clipboard.writeText(currentCode);
+      setCopiedCode(true);
+    } catch {
+      setCopiedCode(true);
+    }
   };
 
   const handleShare = async () => {
@@ -189,19 +209,83 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
             </div>
           </div>
 
-          {/* Invite Link Section */}
+          {/* Invite Code + Link Section */}
           {hasInvites ? (
             <div className="space-y-4">
-              {/* Link display */}
               {currentUrl ? (
-                <div className="ceramic-concave p-3 rounded-xl">
-                  <div className="text-xs text-ceramic-text-tertiary mb-1">
-                    Seu link de convite:
+                <>
+                  {/* Code + Link pair */}
+                  <div className="space-y-3">
+                    {/* Invite Code (prominent) */}
+                    {currentCode && (
+                      <div className="ceramic-concave p-4 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-xs text-ceramic-text-tertiary font-medium">
+                            Código de convite
+                          </div>
+                          <button
+                            onClick={handleCopyCode}
+                            className="flex items-center gap-1 text-xs text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
+                          >
+                            {copiedCode ? (
+                              <>
+                                <Check className="w-3 h-3 text-ceramic-success" />
+                                <span className="text-ceramic-success">Copiado!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Copiar</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <div className="text-2xl font-mono font-bold text-ceramic-text-primary tracking-[0.25em] text-center">
+                          {currentCode.length === 8
+                            ? `${currentCode.slice(0, 4)}-${currentCode.slice(4)}`
+                            : currentCode}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Invite Link */}
+                    <div className="ceramic-concave p-3 rounded-xl">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-xs text-ceramic-text-tertiary font-medium">
+                          Link de convite
+                        </div>
+                        <button
+                          onClick={handleCopy}
+                          className="flex items-center gap-1 text-xs text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
+                        >
+                          {copied ? (
+                            <>
+                              <Check className="w-3 h-3 text-ceramic-success" />
+                              <span className="text-ceramic-success">Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Link2 className="w-3 h-3" />
+                              <span>Copiar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="text-sm text-ceramic-text-primary font-mono truncate">
+                        {currentUrl}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-ceramic-text-primary font-mono truncate">
-                    {currentUrl}
-                  </div>
-                </div>
+
+                  {/* Share button */}
+                  <button
+                    onClick={handleShare}
+                    className="w-full p-3 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl shadow-md"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Compartilhar convite
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={handleGenerateNew}
@@ -213,37 +297,8 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                   ) : (
                     <Gift className="w-5 h-5" />
                   )}
-                  <span className="font-bold">Gerar Link de Convite</span>
+                  <span className="font-bold">Gerar Convite</span>
                 </button>
-              )}
-
-              {/* Action buttons */}
-              {currentUrl && (
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCopy}
-                    className="flex-1 ceramic-card p-3 flex items-center justify-center gap-2 text-ceramic-text-primary hover:scale-[1.02] active:scale-[0.98] transition-transform"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4 text-ceramic-success" />
-                        <span className="text-sm font-medium text-ceramic-success">Copiado!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        <span className="text-sm font-medium">Copiar</span>
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="flex-1 ceramic-card p-3 flex items-center justify-center gap-2 bg-ceramic-accent text-white hover:scale-[1.02] active:scale-[0.98] transition-transform"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    <span className="text-sm font-bold">Compartilhar</span>
-                  </button>
-                </div>
               )}
 
               {/* Generate new button */}
@@ -253,7 +308,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                   disabled={generating}
                   className="w-full text-sm text-ceramic-text-tertiary hover:text-ceramic-accent transition-colors disabled:opacity-50"
                 >
-                  {generating ? 'Gerando...' : `Gerar novo link (${availableCount} restantes)`}
+                  {generating ? 'Gerando...' : `Gerar novo convite (${availableCount} restantes)`}
                 </button>
               )}
             </div>
@@ -317,11 +372,16 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                       className="ceramic-concave p-3 rounded-lg flex items-center justify-between gap-2"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs text-ceramic-text-primary font-mono truncate">
-                          .../{invite.invite_token.slice(-8)}
-                        </div>
+                        {invite.invite_code && (
+                          <div className="text-xs text-ceramic-text-primary font-mono font-bold">
+                            {invite.invite_code.length === 8
+                              ? `${invite.invite_code.slice(0, 4)}-${invite.invite_code.slice(4)}`
+                              : invite.invite_code}
+                          </div>
+                        )}
                         <div className="text-[10px] text-ceramic-text-tertiary">
-                          Criado em {new Date(invite.created_at).toLocaleDateString('pt-BR')}
+                          {new Date(invite.created_at).toLocaleDateString('pt-BR')}
+                          {' · '}.../{invite.invite_token.slice(-8)}
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -379,35 +439,54 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                     referrals.map((referral) => (
                       <div
                         key={referral.id}
-                        className="ceramic-concave p-3 rounded-lg flex items-center justify-between"
+                        className="ceramic-concave p-3 rounded-lg space-y-1.5"
                       >
-                        <div className="flex items-center gap-2">
-                          <UserPlus className="w-4 h-4 text-ceramic-text-tertiary" />
-                          <div>
-                            <div className="text-xs text-ceramic-text-primary">
-                              {referral.status === 'accepted'
-                                ? 'Aceito'
-                                : referral.status === 'pending'
-                                ? 'Pendente'
-                                : 'Expirado'}
-                            </div>
-                            <div className="text-[10px] text-ceramic-text-tertiary">
-                              {new Date(referral.created_at).toLocaleDateString('pt-BR')}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <UserPlus className="w-4 h-4 text-ceramic-text-tertiary" />
+                            <div>
+                              <div className="text-xs text-ceramic-text-primary">
+                                {referral.status === 'accepted'
+                                  ? 'Aceito'
+                                  : referral.status === 'pending'
+                                  ? 'Pendente'
+                                  : 'Expirado'}
+                              </div>
+                              <div className="text-[10px] text-ceramic-text-tertiary">
+                                {new Date(referral.created_at).toLocaleDateString('pt-BR')}
+                              </div>
                             </div>
                           </div>
+                          <div
+                            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              referral.status === 'accepted'
+                                ? 'bg-ceramic-success/10 text-ceramic-success'
+                                : referral.status === 'pending'
+                                ? 'bg-ceramic-warning/10 text-ceramic-warning'
+                                : 'bg-ceramic-cool text-ceramic-text-tertiary'
+                            }`}
+                          >
+                            {referral.status === 'accepted' && `+${referral.xp_awarded} XP`}
+                            {referral.status === 'pending' && 'Aguardando'}
+                            {referral.status === 'expired' && 'Expirado'}
+                          </div>
                         </div>
-                        <div
-                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                            referral.status === 'accepted'
-                              ? 'bg-ceramic-success/10 text-ceramic-success'
-                              : referral.status === 'pending'
-                              ? 'bg-ceramic-warning/10 text-ceramic-warning'
-                              : 'bg-ceramic-cool text-ceramic-text-tertiary'
-                          }`}
-                        >
-                          {referral.status === 'accepted' && `+${referral.xp_awarded} XP`}
-                          {referral.status === 'pending' && 'Aguardando'}
-                          {referral.status === 'expired' && 'Expirado'}
+                        {/* Code + copy link */}
+                        <div className="flex items-center justify-between pl-6">
+                          {referral.invite_code && (
+                            <span className="text-[10px] font-mono font-bold text-ceramic-text-secondary">
+                              {referral.invite_code.length === 8
+                                ? `${referral.invite_code.slice(0, 4)}-${referral.invite_code.slice(4)}`
+                                : referral.invite_code}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => copyInviteUrl(referral.invite_token)}
+                            className="flex items-center gap-1 text-[10px] text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
+                          >
+                            <Copy className="w-3 h-3" />
+                            Copiar link
+                          </button>
                         </div>
                       </div>
                     ))

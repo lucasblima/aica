@@ -53,6 +53,7 @@ export { WeeklyCalendarView } from './WeeklyCalendarView';
 // Invite System - Viral Growth (Gmail-style)
 export { InviteBadge } from './InviteBadge';
 export { InviteModal } from './InviteModal';
+export { InviteShareCard } from './InviteShareCard';
 
 // OpenClaw Adaptation — Life Council & Patterns
 export { LifeCouncilCard } from './LifeCouncilCard';

@@ -34,19 +34,22 @@ async function handleCheckoutSessionCompleted(
     const planId = session.metadata?.plan_id
     const subscriptionId = session.subscription as string
 
-    console.log(`[stripe-webhook] Activating subscription ${subscriptionId} for user ${userId}`)
+    const stripeCustomerId = session.customer as string
+
+    console.log(`[stripe-webhook] Activating subscription ${subscriptionId} for user ${userId}, plan=${planId}`)
 
     await supabase
       .from('user_subscriptions')
-      .update({
+      .upsert({
+        user_id: userId,
         plan_id: planId,
         stripe_subscription_id: subscriptionId,
+        stripe_customer_id: stripeCustomerId,
         status: 'active',
         current_period_start: new Date().toISOString(),
         current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // +30 days
         updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId)
+      }, { onConflict: 'user_id' })
 
   } else if (checkoutType === 'credits') {
     // Handle credit purchase (interaction credits, not BRL)
@@ -104,7 +107,9 @@ async function handleSubscriptionUpdated(
     return
   }
 
-  console.log(`[stripe-webhook] Updating subscription ${subscription.id} status to ${subscription.status}`)
+  const planId = subscription.metadata?.plan_id
+
+  console.log(`[stripe-webhook] Updating subscription ${subscription.id} status to ${subscription.status}, plan=${planId}`)
 
   // Map Stripe statuses to our schema: active | cancelled | past_due | trialing
   const statusMap: Record<string, string> = {
@@ -118,15 +123,22 @@ async function handleSubscriptionUpdated(
     'paused': 'cancelled',
   }
 
+  const updateData: Record<string, unknown> = {
+    status: statusMap[subscription.status] || 'inactive',
+    current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    updated_at: new Date().toISOString(),
+  }
+
+  // Update plan_id if present in metadata (e.g., plan upgrade/downgrade)
+  if (planId) {
+    updateData.plan_id = planId
+  }
+
   await supabase
     .from('user_subscriptions')
-    .update({
-      status: statusMap[subscription.status] || 'inactive',
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('user_id', userId)
 }
 
@@ -194,6 +206,64 @@ async function handleInvoicePaymentFailed(
   // Note: action_queue was dropped in consolidated billing migration.
   // Payment failure notifications are handled client-side via subscription status check.
   console.log(`[stripe-webhook] User ${subscription.user_id} subscription marked as past_due`)
+}
+
+async function handleInvoicePaymentSucceeded(
+  supabase: ReturnType<typeof createClient>,
+  invoice: Stripe.Invoice
+): Promise<void> {
+  const subscriptionId = invoice.subscription as string
+
+  if (!subscriptionId) {
+    console.log('[stripe-webhook] Invoice payment succeeded (no subscription, likely one-time)')
+    return
+  }
+
+  console.log(`[stripe-webhook] Invoice payment succeeded for subscription ${subscriptionId}`)
+
+  // Find the user with this subscription
+  const { data: sub } = await supabase
+    .from('user_subscriptions')
+    .select('user_id, plan_id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .single()
+
+  if (!sub) {
+    console.error('[stripe-webhook] No subscription found for:', subscriptionId)
+    return
+  }
+
+  // Look up monthly credits from pricing_plans (source of truth)
+  const { data: plan } = await supabase
+    .from('pricing_plans')
+    .select('monthly_credits')
+    .eq('id', sub.plan_id)
+    .single()
+
+  const credits = plan?.monthly_credits ?? 500 // fallback to free tier
+
+  console.log(`[stripe-webhook] Resetting monthly credits for user ${sub.user_id}: ${credits} (plan=${sub.plan_id})`)
+
+  await supabase
+    .from('user_credits')
+    .upsert({
+      user_id: sub.user_id,
+      balance: credits,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+
+  // Record the credit transaction
+  await supabase
+    .from('credit_transactions')
+    .insert({
+      user_id: sub.user_id,
+      amount: credits,
+      transaction_type: 'monthly_reset',
+      balance_after: credits,
+      description: `Reset mensal de creditos - plano ${sub.plan_id}`,
+      reference_type: 'invoice_payment',
+      reference_id: invoice.id,
+    })
 }
 
 // ============================================================================
@@ -285,8 +355,7 @@ serve(async (req) => {
           break
 
         case 'invoice.payment_succeeded':
-          // Log successful payments for auditing
-          console.log(`[stripe-webhook] Invoice payment succeeded: ${(event.data.object as Stripe.Invoice).id}`)
+          await handleInvoicePaymentSucceeded(supabase, event.data.object as Stripe.Invoice)
           result.processed = true
           break
 
