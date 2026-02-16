@@ -14,7 +14,7 @@ import {
     CollisionDetection,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { supabase } from '../services/supabaseClient';
+
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('AgendaView');
@@ -32,7 +32,7 @@ import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
 // TODO: Re-enable onboarding tour after app functionality is stable
 // import { useTourAutoStart } from '../hooks/useTourAutoStart';
 import { TimelineEvent } from '../services/googleCalendarService';
-import { disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
+import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
 import { notificationService } from '../services/notificationService';
 import { syncEntityToGoogle, unsyncEntityFromGoogle } from '../services/calendarSyncService';
 import { atlasTaskToGoogleEvent } from '../services/calendarSyncTransforms';
@@ -707,26 +707,10 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         }
     };
 
-    // Handler para conectar Google Calendar
+    // Handler para conectar Google Calendar — delega ao serviço centralizado
     const handleConnectCalendar = async () => {
         log.debug(' Conectando Google Calendar...');
-        // Bidirectional sync: read + write calendar events
-        const googleCalendarScopes = [
-            'https://www.googleapis.com/auth/calendar.events',
-            'https://www.googleapis.com/auth/userinfo.email',
-        ].join(' ');
-
-        await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                scopes: googleCalendarScopes,
-                redirectTo: window.location.origin,
-                queryParams: {
-                    access_type: 'offline', // Garante refresh_token
-                    prompt: 'consent',      // Força tela de consentimento
-                },
-            }
-        });
+        await connectGoogleCalendar();
     };
 
     // Handler para desconectar Google Calendar
