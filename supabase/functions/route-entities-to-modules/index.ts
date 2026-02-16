@@ -260,18 +260,20 @@ serve(async (req) => {
     const { entities, usageMetadata } = await callGemini(prompt, apiKey)
     const durationMs = Date.now() - startMs
 
-    // Fire-and-forget cost tracking
+    // Fire-and-forget usage tracking
     if (usageMetadata) {
-      supabase.rpc('log_ai_usage', {
+      supabase.rpc('log_interaction', {
         p_user_id: userId,
-        p_operation_type: 'entity_extraction',
-        p_ai_model: GEMINI_MODEL,
-        p_input_tokens: usageMetadata.promptTokenCount || 0,
-        p_output_tokens: usageMetadata.candidatesTokenCount || 0,
-        p_module_type: 'whatsapp',
-        p_module_id: null,
-        p_duration_seconds: durationMs / 1000,
-      }).catch(err => console.warn('[CI] Cost tracking failed (non-blocking):', err))
+        p_action: 'route_entities_to_modules',
+        p_module: 'connections',
+        p_model: GEMINI_MODEL,
+        p_tokens_in: usageMetadata.promptTokenCount || 0,
+        p_tokens_out: usageMetadata.candidatesTokenCount || 0,
+      }).then(() => {
+        console.log('[route-entities-to-modules] Logged interaction')
+      }).catch((err: any) => {
+        console.warn('[route-entities-to-modules] Failed to log interaction:', err.message)
+      })
     }
 
     if (entities.length === 0) {

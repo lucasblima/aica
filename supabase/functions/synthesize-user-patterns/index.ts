@@ -166,6 +166,20 @@ serve(async (req: Request) => {
       synthesis = { updates: [], new_patterns: [], deactivations: [] }
     }
 
+    // Fire-and-forget usage tracking
+    supabaseClient.rpc('log_interaction', {
+      p_user_id: userId,
+      p_action: 'pattern_synthesis',
+      p_module: 'journey',
+      p_model: synthesisResult.model,
+      p_tokens_in: synthesisResult.tokens.input,
+      p_tokens_out: synthesisResult.tokens.output,
+    }).then(() => {
+      console.log('[synthesize-user-patterns] Logged interaction')
+    }).catch((err: any) => {
+      console.warn('[synthesize-user-patterns] Failed to log interaction:', err.message)
+    })
+
     // =====================================================================
     // STEP 3: Apply changes to user_patterns
     // =====================================================================

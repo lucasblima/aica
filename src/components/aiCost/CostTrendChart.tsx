@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { TrendingUp } from 'lucide-react';
 import type { DailyCostSummary } from '../../types/aiCost';
-import { formatUSD } from '../../types/aiCost';
+import { formatBRL } from '../../types/aiCost';
 
 // =====================================================
 // Cost Trend Chart Component - Custom SVG Line Chart
@@ -16,7 +16,7 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return null;
 
-    const maxCost = Math.max(...data.map((d) => d.total_cost_usd), 1);
+    const maxCost = Math.max(...data.map((d) => d.total_cost_brl), 1);
     const padding = { top: 20, right: 20, bottom: 40, left: 60 };
     const width = 800;
     const chartWidth = width - padding.left - padding.right;
@@ -25,8 +25,8 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     // Create path for line chart
     const points = data.map((d, i) => {
       const x = padding.left + (i / (data.length - 1)) * chartWidth;
-      const y = padding.top + chartHeight - (d.total_cost_usd / maxCost) * chartHeight;
-      return { x, y, cost: d.total_cost_usd, date: d.date };
+      const y = padding.top + chartHeight - (d.total_cost_brl / maxCost) * chartHeight;
+      return { x, y, cost: d.total_cost_brl, date: d.date };
     });
 
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
@@ -41,7 +41,7 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
       const value = (maxCost / (yTicks - 1)) * (yTicks - 1 - i);
       return {
         y: padding.top + (chartHeight / (yTicks - 1)) * i,
-        label: formatUSD(value)
+        label: formatBRL(value)
       };
     });
 
@@ -67,7 +67,7 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
       height,
       padding,
       maxCost,
-      totalCost: data.reduce((sum, d) => sum + d.total_cost_usd, 0)
+      totalCost: data.reduce((sum, d) => sum + d.total_cost_brl, 0)
     };
   }, [data, height]);
 
@@ -104,7 +104,7 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
         <div className="text-right">
           <p className="text-xs text-ceramic-text-secondary uppercase font-bold">Total</p>
           <p className="text-xl font-black text-ceramic-text-primary text-etched">
-            {formatUSD(chartData.totalCost)}
+            {formatBRL(chartData.totalCost)}
           </p>
         </div>
       </div>

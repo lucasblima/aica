@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import type { TopExpensiveOperation } from '../../types/aiCost';
-import { getOperationLabel, getModelLabel, formatUSD } from '../../types/aiCost';
+import { getOperationLabel, getModelLabel, formatBRL } from '../../types/aiCost';
 
 interface TopExpensiveOperationsTableProps {
   operations: TopExpensiveOperation[];
@@ -34,16 +34,16 @@ export const TopExpensiveOperationsTable: React.FC<TopExpensiveOperationsTablePr
             </tr>
           </thead>
           <tbody>
-            {operations.map((op, i) => (
+            {operations.map((op) => (
               <tr key={op.id} className="border-b border-ceramic-border/50 hover:bg-ceramic-base/50 transition-colors">
                 <td className="py-3 px-2">
-                  <span className="text-sm font-medium text-ceramic-text-primary">{getOperationLabel(op.operation_type)}</span>
+                  <span className="text-sm font-medium text-ceramic-text-primary">{getOperationLabel(op.action)}</span>
                 </td>
                 <td className="py-3 px-2">
-                  <span className="text-sm text-ceramic-text-secondary">{getModelLabel(op.ai_model)}</span>
+                  <span className="text-sm text-ceramic-text-secondary">{getModelLabel(op.model)}</span>
                 </td>
                 <td className="py-3 px-2 hidden md:table-cell">
-                  <span className="text-xs font-bold text-ceramic-accent uppercase">{op.module_type || '-'}</span>
+                  <span className="text-xs font-bold text-ceramic-accent uppercase">{op.module || '-'}</span>
                 </td>
                 <td className="py-3 px-2 hidden md:table-cell">
                   <span className="text-xs text-ceramic-text-secondary">
@@ -51,7 +51,7 @@ export const TopExpensiveOperationsTable: React.FC<TopExpensiveOperationsTablePr
                   </span>
                 </td>
                 <td className="py-3 px-2 text-right">
-                  <span className="text-sm font-bold text-ceramic-text-primary">{formatUSD(op.total_cost_usd)}</span>
+                  <span className="text-sm font-bold text-ceramic-text-primary">{formatBRL(op.cost_brl)}</span>
                 </td>
               </tr>
             ))}

@@ -168,6 +168,20 @@ Decomponha este objetivo em um plano de execução.`
     maxOutputTokens: 4096,
   })
 
+  // Fire-and-forget usage tracking
+  supabaseClient.rpc('log_interaction', {
+    p_user_id: userId,
+    p_action: 'plan_and_execute',
+    p_module: null,
+    p_model: result.model,
+    p_tokens_in: result.tokens.input,
+    p_tokens_out: result.tokens.output,
+  }).then(() => {
+    console.log('[plan-and-execute] Logged interaction for decompose')
+  }).catch((err: any) => {
+    console.warn('[plan-and-execute] Failed to log interaction:', err.message)
+  })
+
   const parsed = extractJSON(result.text)
 
   // Validate the parsed plan
@@ -219,6 +233,8 @@ async function executeStep(
   planGoal: string,
   step: { module: string; action: string; step_order: number },
   previousResults: Array<{ step_order: number; result: unknown }>,
+  supabaseClient?: ReturnType<typeof createClient>,
+  userId?: string,
 ): Promise<Record<string, unknown>> {
   const previousContext = previousResults.length > 0
     ? `\n\nResultados dos passos anteriores:\n${previousResults.map(
@@ -240,6 +256,22 @@ Execute este passo e retorne o resultado.`
     temperature: 0.3,
     maxOutputTokens: 4096,
   })
+
+  // Fire-and-forget usage tracking
+  if (supabaseClient && userId) {
+    supabaseClient.rpc('log_interaction', {
+      p_user_id: userId,
+      p_action: 'plan_and_execute',
+      p_module: step.module,
+      p_model: result.model,
+      p_tokens_in: result.tokens.input,
+      p_tokens_out: result.tokens.output,
+    }).then(() => {
+      console.log(`[plan-and-execute] Logged interaction for step ${step.step_order}`)
+    }).catch((err: any) => {
+      console.warn('[plan-and-execute] Failed to log interaction:', err.message)
+    })
+  }
 
   return extractJSON(result.text)
 }
@@ -445,6 +477,8 @@ async function handleExecuteStep(
           step_order: s.step_order,
           result: s.result,
         })),
+        supabaseClient,
+        userId,
       ),
     )
 
