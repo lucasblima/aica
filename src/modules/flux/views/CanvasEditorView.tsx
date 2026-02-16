@@ -462,6 +462,7 @@ function slotToWeekWorkout(slot: WorkoutSlot): WeekWorkout {
   return {
     id: slot.id,
     day_of_week: slot.day_of_week,
+    start_time: slot.start_time,
     name: slot.name,
     duration: slot.duration,
     intensity: slot.intensity as 'low' | 'medium' | 'high',
@@ -593,12 +594,12 @@ export default function CanvasEditorView() {
   );
 
   const handleDropWorkout = useCallback(
-    async (dayOfWeek: number, templateData: string) => {
+    async (dayOfWeek: number, startTime: string, templateData: string) => {
       // Try to parse as JSON template
       try {
         const template = JSON.parse(templateData) as WorkoutTemplate;
         if (template.id && template.name) {
-          await createSlotFromTemplate(template, dayOfWeek);
+          await createSlotFromTemplate(template, dayOfWeek, undefined, startTime);
           return;
         }
       } catch {
@@ -611,7 +612,7 @@ export default function CanvasEditorView() {
       );
       const tmpl = templates?.find((t: WorkoutTemplate) => t.id === templateData);
       if (tmpl) {
-        await createSlotFromTemplate(tmpl, dayOfWeek);
+        await createSlotFromTemplate(tmpl, dayOfWeek, undefined, startTime);
       }
     },
     [createSlotFromTemplate, athlete?.modality]
@@ -633,8 +634,8 @@ export default function CanvasEditorView() {
   );
 
   const handleReorderWorkout = useCallback(
-    async (workoutId: string, _fromDay: number, toDay: number) => {
-      await updateSlot({ id: workoutId, day_of_week: toDay });
+    async (workoutId: string, _fromDay: number, toDay: number, toTime: string) => {
+      await updateSlot({ id: workoutId, day_of_week: toDay, start_time: toTime });
     },
     [updateSlot]
   );
