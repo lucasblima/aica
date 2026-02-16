@@ -645,6 +645,8 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
         onClose={() => {
           setDetailContact(null);
           setSelectedContactId(null);
+          // Refresh contact list so dossier_summary is fresh on next open
+          loadImportedContacts();
         }}
         onDelete={handleSingleDelete}
       />
