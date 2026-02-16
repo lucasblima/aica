@@ -82,28 +82,46 @@ export function useContactIntelligence(
   const abortRef = useRef(false)
 
   // Determine initial state when contact changes or sheet opens
+  // Always probe the DB — don't rely on stale parent prop for dossier_summary
   useEffect(() => {
     if (!contact || !isOpen) {
-      setState('pristine')
-      setCurrentDepth(null)
-      setDossier(null)
-      setThreads([])
+      // Only reset progress/error on close — preserve dossier/threads for quick re-open
       setProgress(null)
       setError(null)
       return
     }
 
-    // If contact already has dossier data, go straight to completed
-    if (contact.dossier_summary) {
-      setState('completed')
-      setCurrentDepth((contact.ai_processing_depth as ProcessingDepth) || 'quick')
-      fetchCompletedData(contact.id)
-    } else {
-      setState('pristine')
-      setCurrentDepth(null)
-      setDossier(null)
-      setThreads([])
+    // Always check DB for existing dossier (parent list may be stale)
+    const checkAndFetch = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data } = await supabase.rpc('get_contact_dossier', {
+          p_user_id: user.id,
+          p_contact_id: contact.id,
+        })
+
+        if (data?.length > 0 && data[0].dossier_summary) {
+          setState('completed')
+          setCurrentDepth((contact.ai_processing_depth as ProcessingDepth) || 'quick')
+          await fetchCompletedData(contact.id)
+        } else {
+          setState('pristine')
+          setCurrentDepth(null)
+          setDossier(null)
+          setThreads([])
+        }
+      } catch (err) {
+        log.error('Failed to check existing dossier:', err)
+        setState('pristine')
+        setCurrentDepth(null)
+        setDossier(null)
+        setThreads([])
+      }
     }
+
+    checkAndFetch()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact?.id, isOpen])
 
@@ -184,9 +202,13 @@ export function useContactIntelligence(
       if (dossierError) {
         log.error('Dossier build failed:', dossierError)
         setError('Falha ao gerar dossiê. Tente novamente.')
+        // Don't stop pipeline — threads and entities can still work
       } else if (dossierResponse && !dossierResponse.success) {
         log.error('Dossier build returned error:', dossierResponse.error)
         setError(`Dossiê: ${dossierResponse.error}`)
+      } else if (dossierResponse?.dossier) {
+        // Use dossier from Edge Function response immediately (faster than re-fetching)
+        setDossier(dossierResponse.dossier as ContactDossier)
       }
       if (abortRef.current) return
 
