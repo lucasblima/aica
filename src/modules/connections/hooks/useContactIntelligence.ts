@@ -125,10 +125,24 @@ export function useContactIntelligence(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact?.id, isOpen])
 
-  const fetchCompletedData = useCallback(async (contactId: string) => {
+  const fetchCompletedData = useCallback(async (contactId: string, opts?: { skipDossier?: boolean }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+
+      if (opts?.skipDossier) {
+        // Only fetch threads — dossier already set from Edge Function response
+        const { data: threadsData } = await supabase.rpc('get_contact_threads', {
+          p_user_id: user.id,
+          p_contact_id: contactId,
+          p_limit: 20,
+          p_offset: 0,
+        })
+        if (threadsData) {
+          setThreads(threadsData as ConversationThread[])
+        }
+        return
+      }
 
       // Fetch dossier and threads in parallel
       const [dossierResult, threadsResult] = await Promise.all([
@@ -192,6 +206,7 @@ export function useContactIntelligence(
 
       // Stage 2: Build dossier
       updateProgress('dossier', 1)
+      let dossierFromEdge = false
       const { data: dossierResponse, error: dossierError } = await supabase.functions.invoke('build-contact-dossier', {
         body: {
           userId: user.id,
@@ -207,8 +222,14 @@ export function useContactIntelligence(
         log.error('Dossier build returned error:', dossierResponse.error)
         setError(`Dossiê: ${dossierResponse.error}`)
       } else if (dossierResponse?.dossier) {
-        // Use dossier from Edge Function response immediately (faster than re-fetching)
+        log.info('Dossier received from Edge Function:', {
+          hasSummary: !!dossierResponse.dossier.dossier_summary,
+          version: dossierResponse.dossier.dossier_version,
+        })
         setDossier(dossierResponse.dossier as ContactDossier)
+        dossierFromEdge = true
+      } else {
+        log.warn('Edge Function returned success but no dossier object:', dossierResponse)
       }
       if (abortRef.current) return
 
@@ -242,9 +263,9 @@ export function useContactIntelligence(
       }
       if (abortRef.current) return
 
-      // Fetch all results
+      // Fetch threads (and dossier only if Edge Function didn't provide it)
       updateProgress('fetching', 3)
-      await fetchCompletedData(contact.id)
+      await fetchCompletedData(contact.id, { skipDossier: dossierFromEdge })
 
       setCurrentDepth(depth)
       setState('completed')

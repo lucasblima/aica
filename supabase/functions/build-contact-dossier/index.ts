@@ -269,7 +269,7 @@ async function buildDossierForContact(
   contact: ContactForDossier,
   apiKey: string,
   intentLimit: number = MAX_INTENTS_PER_CONTACT
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; dossier?: DossierResult }> {
   try {
     // Fetch intent summaries (privacy-first: no raw text)
     const { data: intents, error: intentsError } = await supabase.rpc(
@@ -287,8 +287,11 @@ async function buildDossierForContact(
     }
 
     if (!intents || intents.length === 0) {
+      console.log(`[build-contact-dossier] No intents found for contact ${contact.contact_id} (last_dossier_at: ${contact.last_dossier_at}). Skipping dossier build.`)
       return { success: true } // No new intents to process
     }
+
+    console.log(`[build-contact-dossier] Found ${intents.length} intents for contact ${contact.contact_name}`)
 
     // Determine if group
     const isGroup = contact.relationship_type === 'group'
@@ -315,8 +318,8 @@ async function buildDossierForContact(
       })
     }
 
-    // Update contact_network with dossier
-    const { data: updated, error: updateError } = await supabase.rpc(
+    // Update contact_network with dossier via RPC
+    const { data: rpcFound, error: updateError } = await supabase.rpc(
       'update_contact_dossier',
       {
         p_user_id: userId,
@@ -329,12 +332,37 @@ async function buildDossierForContact(
     )
 
     if (updateError) {
+      console.error(`[build-contact-dossier] RPC update_contact_dossier error:`, updateError.message)
       throw new Error(`Failed to update dossier: ${updateError.message}`)
     }
 
-    console.log(`[build-contact-dossier] Updated dossier for ${contact.contact_name} (v${(contact.current_dossier_version || 0) + 1}), ${intents.length} intents processed`)
+    // Check FOUND — if RPC matched 0 rows, fall back to direct UPDATE
+    if (rpcFound === false) {
+      console.warn(`[build-contact-dossier] RPC returned FOUND=false for contact ${contact.contact_id}, attempting direct UPDATE`)
+      const { error: directError } = await supabase
+        .from('contact_network')
+        .update({
+          dossier_summary: dossier.summary,
+          dossier_topics: dossier.topics,
+          dossier_pending_items: dossier.pending_items,
+          dossier_context: dossier.context,
+          dossier_updated_at: new Date().toISOString(),
+          dossier_version: (contact.current_dossier_version || 0) + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', contact.contact_id)
+        .eq('user_id', userId)
 
-    return { success: true }
+      if (directError) {
+        console.error(`[build-contact-dossier] Direct UPDATE also failed:`, directError.message)
+        throw new Error(`Failed to save dossier (both RPC and direct): ${directError.message}`)
+      }
+      console.log(`[build-contact-dossier] Direct UPDATE succeeded for ${contact.contact_name}`)
+    }
+
+    console.log(`[build-contact-dossier] Saved dossier for ${contact.contact_name} (v${(contact.current_dossier_version || 0) + 1}), ${intents.length} intents, RPC FOUND=${rpcFound}`)
+
+    return { success: true, dossier }
   } catch (error) {
     console.error(`[build-contact-dossier] Error for contact ${contact.contact_id}:`, error)
     return { success: false, error: (error as Error).message }
@@ -409,17 +437,32 @@ serve(async (req) => {
 
       const result = await buildDossierForContact(supabase, userId, contact, apiKey, effectiveMessageLimit)
 
-      // Fetch updated dossier
+      // Fetch updated dossier from DB to get the full record with all fields
       const { data: updatedDossier } = await supabase.rpc(
         'get_contact_dossier',
         { p_user_id: userId, p_contact_id: contactId }
       )
 
+      // Use DB re-fetch if available, otherwise construct from Gemini result
+      let responseDossier = updatedDossier?.[0] || null
+      if (result.dossier && (!responseDossier?.dossier_summary)) {
+        console.warn('[build-contact-dossier] DB re-fetch returned no dossier_summary, using Gemini result directly')
+        responseDossier = {
+          ...(responseDossier || {}),
+          contact_id: contactId,
+          dossier_summary: result.dossier.summary,
+          dossier_topics: result.dossier.topics,
+          dossier_pending_items: result.dossier.pending_items,
+          dossier_context: result.dossier.context,
+          dossier_version: (contact.current_dossier_version || 0) + 1,
+        }
+      }
+
       return new Response(
         JSON.stringify({
           success: result.success,
           error: result.error,
-          dossier: updatedDossier?.[0] || null,
+          dossier: responseDossier,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
