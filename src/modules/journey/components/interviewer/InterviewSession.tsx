@@ -39,6 +39,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
   const [localAnswer, setLocalAnswer] = useState<Record<string, unknown>>({})
   const [showCPAnimation, setShowCPAnimation] = useState(false)
   const [lastCPEarned, setLastCPEarned] = useState(0)
+  const [levelUpName, setLevelUpName] = useState<string | null>(null)
 
   const handleSubmit = async () => {
     if (!currentQuestion) return
@@ -83,6 +84,12 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
       setLastCPEarned(result.cp_earned)
       setShowCPAnimation(true)
       setTimeout(() => setShowCPAnimation(false), 1500)
+
+      // Show level up notification if applicable
+      if (result.cp_result?.leveled_up) {
+        setLevelUpName(result.cp_result.level_name)
+        setTimeout(() => setLevelUpName(null), 3000)
+      }
 
       // Reset local answer for next question
       setLocalAnswer({})
@@ -260,6 +267,28 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
               <Sparkles className="h-10 w-10 text-amber-500 mx-auto mb-2" />
               <div className="text-2xl font-bold text-ceramic-text-primary">
                 +{lastCPEarned} CP
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Level Up notification */}
+      <AnimatePresence>
+        {levelUpName && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
+          >
+            <div className="ceramic-card p-8 text-center shadow-xl border-2 border-amber-400">
+              <div className="text-4xl mb-3">🎖️</div>
+              <div className="text-lg font-bold text-ceramic-text-primary mb-1">
+                Level Up!
+              </div>
+              <div className="text-amber-600 font-semibold">
+                {levelUpName}
               </div>
             </div>
           </motion.div>
