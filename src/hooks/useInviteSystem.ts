@@ -31,6 +31,7 @@ interface UseInviteSystemReturn {
   generating: boolean;
   revoking: string | null; // ID being revoked
   currentToken: string | null;
+  currentCode: string | null;
   currentUrl: string | null;
 
   // Actions
@@ -59,6 +60,7 @@ export function useInviteSystem(): UseInviteSystemReturn {
   const [generating, setGenerating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [currentToken, setCurrentToken] = useState<string | null>(null);
+  const [currentCode, setCurrentCode] = useState<string | null>(null);
 
   // Computed
   const hasInvites = (stats?.available ?? 0) > 0;
@@ -151,6 +153,7 @@ export function useInviteSystem(): UseInviteSystemReturn {
 
       if (result.success && result.token) {
         setCurrentToken(result.token);
+        setCurrentCode(result.invite_code ?? null);
         // Refresh stats to update available count
         await refreshStats();
         return result.token;
@@ -216,6 +219,7 @@ export function useInviteSystem(): UseInviteSystemReturn {
     generating,
     revoking,
     currentToken,
+    currentCode,
     currentUrl,
     generateInvite,
     copyLink,

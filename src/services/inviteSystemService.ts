@@ -25,7 +25,20 @@ export interface InviteStats {
 export interface InviteTokenResult {
   success: boolean;
   token?: string;
+  invite_code?: string;
   referral_id?: string;
+  error?: string;
+}
+
+export interface ActivationStatus {
+  is_activated: boolean;
+  activated_at: string | null;
+}
+
+export interface ActivateWithCodeResult {
+  success: boolean;
+  inviter_name?: string;
+  xp_awarded?: number;
   error?: string;
 }
 
@@ -50,6 +63,7 @@ export interface Referral {
   inviter_id: string;
   invitee_id: string | null;
   invite_token: string;
+  invite_code: string | null;
   status: 'pending' | 'accepted' | 'expired';
   xp_awarded: number;
   created_at: string;
@@ -224,42 +238,129 @@ export async function shareInvite(token: string): Promise<boolean> {
   return copyInviteLink(token);
 }
 
+// ============================================================================
+// INVITE CODE FUNCTIONS
+// ============================================================================
+
 /**
- * Check if user came from an invite link
- * Stores token in localStorage for post-login acceptance
+ * Validate an invite code (can be called without auth)
+ */
+export async function validateInviteCode(code: string): Promise<InviteValidation> {
+  const { data, error } = await supabase.rpc('validate_invite_code', {
+    p_code: code.toUpperCase().trim()
+  });
+
+  if (error) {
+    console.error('[InviteSystem] Error validating code:', error);
+    return { valid: false, error: error.message };
+  }
+
+  return data as InviteValidation;
+}
+
+/**
+ * Activate user account with an invite code (requires auth)
+ */
+export async function activateWithCode(code: string): Promise<ActivateWithCodeResult> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Faça login para ativar com código' };
+  }
+
+  const { data, error } = await supabase.rpc('activate_with_code', {
+    p_user_id: user.id,
+    p_code: code.toUpperCase().trim()
+  });
+
+  if (error) {
+    console.error('[InviteSystem] Error activating with code:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data as ActivateWithCodeResult;
+}
+
+/**
+ * Check if current user is activated
+ */
+export async function checkActivationStatus(): Promise<ActivationStatus | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase.rpc('check_user_activated', {
+    p_user_id: user.id
+  });
+
+  if (error) {
+    console.error('[InviteSystem] Error checking activation:', error);
+    // If RPC doesn't exist yet (migration not applied), assume activated
+    return { is_activated: true, activated_at: null };
+  }
+
+  return data as ActivationStatus;
+}
+
+// ============================================================================
+// LOCAL STORAGE — TOKEN & CODE
+// ============================================================================
+
+/**
+ * Store invite token in localStorage for post-login acceptance
  */
 export function storeInviteToken(token: string): void {
   localStorage.setItem('aica_invite_token', token);
 }
 
-/**
- * Get stored invite token
- */
 export function getStoredInviteToken(): string | null {
   return localStorage.getItem('aica_invite_token');
 }
 
-/**
- * Clear stored invite token
- */
 export function clearStoredInviteToken(): void {
   localStorage.removeItem('aica_invite_token');
 }
 
 /**
- * Process pending invite after login
+ * Store invite code in localStorage for post-login activation
+ */
+export function storeInviteCode(code: string): void {
+  localStorage.setItem('aica_invite_code', code.toUpperCase().trim());
+}
+
+export function getStoredInviteCode(): string | null {
+  return localStorage.getItem('aica_invite_code');
+}
+
+export function clearStoredInviteCode(): void {
+  localStorage.removeItem('aica_invite_code');
+}
+
+/**
+ * Process pending invite after login — checks both token and code
  */
 export async function processPendingInvite(): Promise<AcceptInviteResult | null> {
+  // Try token first (from /invite/:token flow)
   const token = getStoredInviteToken();
-  if (!token) return null;
-
-  const result = await acceptInvite(token);
-
-  if (result.success) {
-    clearStoredInviteToken();
+  if (token) {
+    const result = await acceptInvite(token);
+    if (result.success) {
+      clearStoredInviteToken();
+      clearStoredInviteCode(); // Clean both
+      return result;
+    }
   }
 
-  return result;
+  // Try code (from landing page code input)
+  const code = getStoredInviteCode();
+  if (code) {
+    const result = await activateWithCode(code);
+    if (result.success) {
+      clearStoredInviteCode();
+      clearStoredInviteToken(); // Clean both
+      return result;
+    }
+  }
+
+  return null;
 }
 
 // ============================================================================
