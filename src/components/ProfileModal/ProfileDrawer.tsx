@@ -15,11 +15,12 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion'
-import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp, Crown, Zap } from 'lucide-react'
+import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp, Crown, Zap, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { DangerZone } from './DangerZone'
 import { EfficiencyFlowCard } from '../EfficiencyFlowCard'
 import { useUserPlan } from '@/hooks/useUserPlan'
+import { supabase } from '@/services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
 
 const log = createNamespacedLogger('ProfileDrawer')
@@ -28,10 +29,49 @@ function PlanSection() {
   const navigate = useNavigate()
   const { plan, isLoading } = useUserPlan()
   const isFree = plan.id === 'free'
+  const [portalLoading, setPortalLoading] = useState(false)
 
   const formatCredits = (credits: number): string => {
     if (credits >= 1000) return `${(credits / 1000).toFixed(credits % 1000 === 0 ? 0 : 1)}k`
     return String(credits)
+  }
+
+  const handleManagePlan = async () => {
+    if (isFree) {
+      navigate('/pricing')
+      return
+    }
+
+    setPortalLoading(true)
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session?.access_token) {
+        navigate('/pricing')
+        return
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-portal-session', {
+        body: { return_url: window.location.origin + '/pricing' },
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      })
+
+      if (error || data?.error) {
+        log.error('Portal session error:', error || data?.error)
+        navigate('/pricing')
+        return
+      }
+
+      if (data?.portal_url) {
+        window.location.href = data.portal_url
+      }
+    } catch (err) {
+      log.error('Failed to open portal:', err)
+      navigate('/pricing')
+    } finally {
+      setPortalLoading(false)
+    }
   }
 
   return (
@@ -52,11 +92,16 @@ function PlanSection() {
         <span>{isLoading ? '...' : `${formatCredits(plan.monthly_credits)} creditos/mes`}</span>
       </div>
       <button
-        onClick={() => navigate('/pricing')}
-        className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm px-4 py-2 transition-colors"
+        onClick={handleManagePlan}
+        disabled={portalLoading}
+        className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm px-4 py-2 transition-colors disabled:opacity-50"
       >
-        <Crown className="w-4 h-4" />
-        {isFree ? 'Fazer upgrade' : 'Gerenciar plano'}
+        {portalLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Crown className="w-4 h-4" />
+        )}
+        {portalLoading ? 'Abrindo...' : isFree ? 'Fazer upgrade' : 'Gerenciar plano'}
       </button>
     </div>
   )

@@ -1382,6 +1382,20 @@ Deno.serve(async (req) => {
 
     console.log('[generate-sponsor-deck] Deck generation completed successfully')
 
+    // Fire-and-forget usage tracking
+    supabase.rpc('log_interaction', {
+      p_user_id: userId,
+      p_action: 'generate_field_content',
+      p_module: 'grants',
+      p_model: 'gemini-2.5-flash',
+      p_tokens_in: usageMetadata?.promptTokenCount || 0,
+      p_tokens_out: usageMetadata?.candidatesTokenCount || 0,
+    }).then(() => {
+      console.log('[generate-sponsor-deck] Logged interaction')
+    }).catch((err: Error) => {
+      console.warn('[generate-sponsor-deck] Failed to log interaction:', err.message)
+    })
+
     return new Response(
       JSON.stringify({
         success: true,

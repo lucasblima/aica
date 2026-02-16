@@ -197,6 +197,7 @@ export function PricingPage() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
+  const [manageLoading, setManageLoading] = useState(false);
 
   const currentPlanId = userPlan.id;
 
@@ -249,6 +250,47 @@ export function PricingPage() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    setError(null);
+    setManageLoading(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (!sessionData.session?.access_token) {
+        throw new Error('Sessao expirada. Faca login novamente.');
+      }
+
+      const { data, error: fnError } = await supabase.functions.invoke(
+        'create-portal-session',
+        {
+          body: { return_url: window.location.origin + '/pricing' },
+          headers: {
+            Authorization: `Bearer ${sessionData.session.access_token}`,
+          },
+        }
+      );
+
+      if (fnError) throw fnError;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.portal_url) {
+        window.location.href = data.portal_url;
+      } else {
+        throw new Error('Nao foi possivel abrir o portal de gerenciamento.');
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao abrir portal de gerenciamento.';
+      setError(message);
+    } finally {
+      setManageLoading(false);
+    }
+  };
+
   return (
     <PageShell title="Planos" onBack={() => navigate(-1)}>
       {/* Hero section */}
@@ -282,6 +324,8 @@ export function PricingPage() {
             isPopular={plan.id === 'pro'}
             onSubscribe={() => handleSubscribe(plan.id)}
             isLoading={loadingPlan === plan.id}
+            onManageSubscription={handleManageSubscription}
+            isManageLoading={manageLoading}
           />
         ))}
       </div>

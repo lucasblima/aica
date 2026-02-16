@@ -283,6 +283,22 @@ REGRAS: Responda SOMENTE com o JSON. Nunca use "neutral" exceto para textos pura
 
     console.log(`[reanalyze-moments] Done: ${results.length} processed, ${updated} changed from neutral`)
 
+    // Fire-and-forget: log one interaction per batch (analyze_moment covers all)
+    if (results.length > 0) {
+      adminClient.rpc('log_interaction', {
+        p_user_id: userId,
+        p_action: 'analyze_moment',
+        p_module: 'journey',
+        p_model: 'gemini-2.5-flash',
+        p_tokens_in: 0,
+        p_tokens_out: 0,
+      }).then(() => {
+        console.log('[reanalyze-moments] Logged interaction')
+      }).catch((err: Error) => {
+        console.warn('[reanalyze-moments] Failed to log interaction:', err.message)
+      })
+    }
+
     return new Response(JSON.stringify({
       success: true,
       processed: results.length,

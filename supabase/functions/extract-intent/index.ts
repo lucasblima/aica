@@ -507,6 +507,7 @@ serve(async (req) => {
     const geminiResult = await geminiResponse.json()
     const intentText = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text
     const finishReason = geminiResult.candidates?.[0]?.finishReason
+    const intentUsageMetadata = geminiResult.usageMetadata
 
     if (finishReason && finishReason !== 'STOP') {
       log('WARN', 'Gemini response not fully completed', { finishReason })
@@ -547,6 +548,7 @@ serve(async (req) => {
     // =========================================================================
 
     let embedding: number[] = []
+    let embeddingUsageMetadata: { promptTokenCount?: number; candidatesTokenCount?: number } | null = null
 
     try {
       log('DEBUG', 'Generating embedding')
@@ -562,6 +564,7 @@ serve(async (req) => {
       if (embeddingResponse.ok) {
         const embeddingResult = await embeddingResponse.json()
         embedding = embeddingResult.embedding?.values || []
+        embeddingUsageMetadata = embeddingResult.usageMetadata || null
 
         // Verify and normalize embedding dimension (should be 768)
         if (embedding.length !== 768) {
@@ -607,6 +610,56 @@ serve(async (req) => {
     if (shouldUpdateDb && messageId) {
       await updateMessageIntent(supabase, messageId, extractedIntent, embedding)
       log('INFO', 'Message intent updated in database', { messageId })
+    }
+
+    // =========================================================================
+    // STEP 6b: Fire-and-forget usage tracking
+    // =========================================================================
+
+    // Resolve userId: from request body (non-WhatsApp) or from message (WhatsApp)
+    let trackingUserId = userId
+    if (!trackingUserId && isWhatsAppPath && messageId && supabase) {
+      const { data: msgRow } = await supabase
+        .from('whatsapp_messages')
+        .select('user_id')
+        .eq('id', messageId)
+        .single()
+      trackingUserId = msgRow?.user_id
+    }
+
+    if (trackingUserId && supabase) {
+      // Track intent extraction (classify_intent action)
+      const intentTokensIn = intentUsageMetadata?.promptTokenCount || 0
+      const intentTokensOut = intentUsageMetadata?.candidatesTokenCount || 0
+      supabase.rpc('log_interaction', {
+        p_user_id: trackingUserId,
+        p_action: 'classify_intent',
+        p_module: moduleContext || (isWhatsAppPath ? 'connections' : null),
+        p_model: 'gemini-2.5-flash',
+        p_tokens_in: intentTokensIn,
+        p_tokens_out: intentTokensOut,
+      }).then(() => {
+        log('INFO', 'Logged classify_intent interaction')
+      }).catch((err: Error) => {
+        log('WARN', 'Failed to log classify_intent interaction', err.message)
+      })
+
+      // Track embedding generation (text_embedding action) if it was generated
+      if (embedding.length > 0) {
+        const embTokensIn = embeddingUsageMetadata?.promptTokenCount || 0
+        supabase.rpc('log_interaction', {
+          p_user_id: trackingUserId,
+          p_action: 'text_embedding',
+          p_module: moduleContext || (isWhatsAppPath ? 'connections' : null),
+          p_model: 'text-embedding-004',
+          p_tokens_in: embTokensIn,
+          p_tokens_out: 0,
+        }).then(() => {
+          log('INFO', 'Logged text_embedding interaction')
+        }).catch((err: Error) => {
+          log('WARN', 'Failed to log text_embedding interaction', err.message)
+        })
+      }
     }
 
     // =========================================================================

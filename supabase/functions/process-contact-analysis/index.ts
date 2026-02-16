@@ -374,6 +374,20 @@ serve(async (req: Request) => {
       }
     }
 
+    // 5b. Fire-and-forget usage tracking for billing
+    supabase.rpc('log_interaction', {
+      p_user_id: user.id,
+      p_action: 'whatsapp_sentiment',
+      p_module: 'connections',
+      p_model: 'gemini-2.5-flash',
+      p_tokens_in: 0,
+      p_tokens_out: 0,
+    }).then(() => {
+      console.log('[process-contact-analysis] Logged interaction')
+    }).catch((err: Error) => {
+      console.warn('[process-contact-analysis] Failed to log interaction:', err.message)
+    })
+
     // 6. Update analysis with results
     const { error: updateError } = await supabase
       .from('contact_analysis')
