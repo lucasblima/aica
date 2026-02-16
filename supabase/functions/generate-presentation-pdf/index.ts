@@ -20,6 +20,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import puppeteer from 'https://deno.land/x/puppeteer@16.2.0/mod.ts'
 import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib@^1.17.1'
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // =============================================================================
 // ENVIRONMENT & CONFIGURATION
@@ -57,15 +58,7 @@ interface DeckData {
 
 type TemplateType = 'professional' | 'creative' | 'institutional'
 
-// =============================================================================
-// CORS HELPERS
-// =============================================================================
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+// CORS headers are initialized per-request via getCorsHeaders(req)
 
 // =============================================================================
 // TEMPLATE CSS DEFINITIONS
@@ -1001,6 +994,8 @@ async function mergePDFs(pdfs: Uint8Array[]): Promise<Uint8Array> {
 // =============================================================================
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {

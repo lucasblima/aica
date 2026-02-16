@@ -7,6 +7,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
@@ -174,14 +175,12 @@ IMPORTANTE:
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
+      headers: corsHeaders,
     })
   }
 
@@ -200,8 +199,8 @@ Deno.serve(async (req) => {
         {
           status: 400,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
           },
         }
       )
@@ -241,8 +240,8 @@ Deno.serve(async (req) => {
       }),
       {
         headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
         },
       }
     )
@@ -257,8 +256,8 @@ Deno.serve(async (req) => {
       {
         status: 500,
         headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
         },
       }
     )

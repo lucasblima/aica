@@ -31,6 +31,11 @@ if (import.meta.env.PROD && !envValidation.isValid) {
   );
 }
 
+// Global safety net for uncaught promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[AICA] Unhandled promise rejection:', event.reason);
+});
+
 // Limpa parametros OAuth expirados ANTES de inicializar a aplicacao
 // Isso previne erros do Supabase ao tentar processar tokens expirados
 cleanExpiredOAuthParams();

@@ -96,6 +96,9 @@ const ShareTargetPage = lazy(() => import('../pages/ShareTargetPage').then(m => 
 // Life Area Views - Generic view for health, education, legal, professional modules
 const LifeAreaView = lazy(() => import('../views/LifeAreaView').then(m => ({ default: m.LifeAreaView })));
 
+// 404 Not Found
+const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
+
 // Legacy redirect for old /connections/:archetype/:spaceId URLs
 function LegacySpaceRedirect() {
    const params = useParams<{ spaceId?: string }>();
@@ -745,11 +748,14 @@ export function AppRouter() {
                   element={<AuthGuard><UsageDashboardPage /></AuthGuard>}
                />
 
-               {/* Main App - Authenticated users */}
+               {/* Main App - Authenticated users (root path only, ViewState-driven) */}
                <Route
-                  path="/*"
+                  path="/"
                   element={<AuthGuard>{renderMainApp()}</AuthGuard>}
                />
+
+               {/* 404 Not Found - Catch all unknown routes */}
+               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             </Suspense>
          </XPNotificationProvider>

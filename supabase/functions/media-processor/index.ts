@@ -13,6 +13,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // ============================================================================
 // CONFIGURATION
@@ -29,13 +30,7 @@ const MAX_AUDIO_DURATION_SECONDS = 600 // 10 minutes
 const MAX_FILE_SIZE_BYTES = 52428800 // 50MB
 const TRANSCRIPTION_TIMEOUT_MS = 120000 // 2 minutes
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
-}
+// Note: Content-Type is set per-response, not via CORS headers
 
 // ============================================================================
 // TYPES
@@ -773,6 +768,8 @@ async function updateMessageRecord(
 // ============================================================================
 
 serve(async (req) => {
+  const corsHeaders = { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
+
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })

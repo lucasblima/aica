@@ -7,6 +7,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -245,14 +246,12 @@ async function updateInvitationEmailStatus(
 // ============================================================================
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // CORS Headers
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
+      headers: corsHeaders,
     });
   }
 
@@ -261,7 +260,7 @@ serve(async (req) => {
     if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ error: 'Method not allowed. Use POST.' }),
-        { status: 405, headers: { 'Content-Type': 'application/json' } }
+        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -273,7 +272,7 @@ serve(async (req) => {
     if (!invitation_id || !to_email || !inviter_name || !space_name || !token) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: invitation_id, to_email, inviter_name, space_name, token' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -314,7 +313,7 @@ serve(async (req) => {
           message: 'Invitation email sent successfully',
           messageId: result.messageId,
         }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else {
       // Update invitation status to 'failed' with error
@@ -325,7 +324,7 @@ serve(async (req) => {
           success: false,
           error: result.error,
         }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
@@ -335,7 +334,7 @@ serve(async (req) => {
         success: false,
         error: error instanceof Error ? error.message : 'Internal server error',
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

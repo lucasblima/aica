@@ -19,6 +19,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm'
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // =============================================================================
 // TYPES
@@ -56,11 +57,6 @@ interface ThreadSummary {
 // =============================================================================
 // CONSTANTS
 // =============================================================================
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
 
 const GEMINI_MODEL = 'gemini-2.5-flash'
 const GAP_THRESHOLD_MS = 30 * 60 * 1000 // 30 minutes
@@ -233,6 +229,8 @@ async function callGemini(prompt: string, apiKey: string): Promise<GeminiCallRes
 // =============================================================================
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
