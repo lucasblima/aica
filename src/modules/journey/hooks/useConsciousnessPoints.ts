@@ -67,7 +67,8 @@ export function useConsciousnessPoints() {
     if (user?.id) {
       fetchStats()
     }
-  }, [user?.id, fetchStats])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   return {
     stats,
@@ -119,7 +120,8 @@ export function useCPLog(limit: number = 50) {
     if (user?.id) {
       fetchLog()
     }
-  }, [user?.id, fetchLog])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, limit])
 
   return {
     log,
@@ -173,7 +175,8 @@ export function useAchievements() {
     if (user?.id) {
       fetchAchievements()
     }
-  }, [user?.id, fetchAchievements])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   return {
     achievements,
