@@ -1,7 +1,7 @@
 /**
  * Interviewer Service
  * Manages structured interview sessions, questions, and responses
- * Routes answers to user_memory for cross-module personalization
+ * Phase 2: Delegates response processing to Edge Function for AI extraction + CP awards
  */
 
 import { supabase } from '@/services/supabaseClient'
@@ -20,6 +20,22 @@ import { INTERVIEW_CATEGORY_META } from '../types/interviewer'
 const log = createNamespacedLogger('InterviewerService')
 
 const CP_PER_ANSWER = 5
+
+/** Enriched response from process-interview-response Edge Function */
+export interface ProcessedInterviewResponse {
+  success: boolean
+  response_id: string
+  cp_earned: number
+  cp_result: {
+    success: boolean
+    new_total: number
+    level: number
+    level_name: string
+    leveled_up: boolean
+  } | null
+  insights_extracted: number
+  processing_time_ms: number
+}
 
 /**
  * Fetch all interview sessions for a user
@@ -113,7 +129,9 @@ export async function getInterviewStats(userId: string): Promise<InterviewStats>
 }
 
 /**
- * Submit an interview response, route to user_memory, and update session progress
+ * Submit an interview response via Edge Function.
+ * The Edge Function handles: save → memory routing → AI extraction → embedding → CP → session update
+ * Falls back to local insert if Edge Function is unavailable.
  */
 export async function submitInterviewResponse(
   userId: string,
@@ -121,12 +139,73 @@ export async function submitInterviewResponse(
   sessionId: string | null,
   answer: InterviewAnswer,
   answerText: string | null
-): Promise<{ success: boolean; cp_earned: number }> {
+): Promise<ProcessedInterviewResponse> {
+  const fallbackResult: ProcessedInterviewResponse = {
+    success: false,
+    response_id: '',
+    cp_earned: 0,
+    cp_result: null,
+    insights_extracted: 0,
+    processing_time_ms: 0,
+  }
+
   try {
-    // 1. Insert response
-    const { error: insertError } = await supabase
+    // Call the Edge Function — handles memory routing, AI extraction, embedding, CP award
+    const { data, error: fnError } = await supabase.functions.invoke('process-interview-response', {
+      body: {
+        question_id: questionId,
+        session_id: sessionId,
+        answer,
+        answer_text: answerText,
+      },
+    })
+
+    if (fnError) {
+      log.warn('Edge Function error, falling back to local insert:', fnError)
+      return await submitInterviewResponseLocal(userId, questionId, sessionId, answer, answerText)
+    }
+
+    if (!data?.success) {
+      log.warn('Edge Function returned error:', data?.error)
+      return await submitInterviewResponseLocal(userId, questionId, sessionId, answer, answerText)
+    }
+
+    log.info('Response processed via Edge Function:', {
+      response_id: data.response_id,
+      cp_earned: data.cp_earned,
+      insights: data.insights_extracted,
+      time_ms: data.processing_time_ms,
+    })
+
+    return {
+      success: true,
+      response_id: data.response_id,
+      cp_earned: data.cp_earned || CP_PER_ANSWER,
+      cp_result: data.cp_result || null,
+      insights_extracted: data.insights_extracted || 0,
+      processing_time_ms: data.processing_time_ms || 0,
+    }
+  } catch (error) {
+    log.error('Error calling Edge Function:', error)
+    return await submitInterviewResponseLocal(userId, questionId, sessionId, answer, answerText)
+  }
+}
+
+/**
+ * Local fallback for submitting interview responses (Phase 1 behavior).
+ * Used when the Edge Function is unavailable.
+ */
+async function submitInterviewResponseLocal(
+  userId: string,
+  questionId: string,
+  sessionId: string | null,
+  answer: InterviewAnswer,
+  answerText: string | null
+): Promise<ProcessedInterviewResponse> {
+  try {
+    const { data: insertData, error: insertError } = await supabase
       .from('interviewer_responses')
-      .insert({
+      .upsert({
         user_id: userId,
         session_id: sessionId,
         question_id: questionId,
@@ -135,65 +214,61 @@ export async function submitInterviewResponse(
         routed_to_memory: false,
         routed_modules: [],
         cp_earned: CP_PER_ANSWER,
-      })
+      }, { onConflict: 'user_id,question_id' })
+      .select('id')
+      .single()
 
     if (insertError) {
-      log.error('Error inserting interview response:', insertError)
-      return { success: false, cp_earned: 0 }
+      log.error('Error inserting interview response (local):', insertError)
+      return { success: false, response_id: '', cp_earned: 0, cp_result: null, insights_extracted: 0, processing_time_ms: 0 }
     }
 
-    // 2. Read question's memory_mapping and route to user_memory
-    const { data: question, error: questionError } = await supabase
+    // Route to user_memory locally
+    const { data: question } = await supabase
       .from('interviewer_questions')
       .select('memory_mapping, target_modules')
       .eq('id', questionId)
       .single()
 
-    if (!questionError && question?.memory_mapping) {
+    if (question?.memory_mapping) {
       const mapping = question.memory_mapping as { category: string; key: string; module: string | null }
 
-      // Upsert into user_memory
       const { error: memoryError } = await supabase
         .from('user_memory')
-        .upsert(
-          {
-            user_id: userId,
-            category: mapping.category,
-            key: mapping.key,
-            value: answer,
-            source: 'interview',
-            module: mapping.module,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,category,key,module' }
-        )
+        .upsert({
+          user_id: userId,
+          category: mapping.category,
+          key: mapping.key,
+          value: answer,
+          source: 'interview',
+          module: mapping.module,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,category,key,module' })
 
-      if (memoryError) {
-        log.warn('Error routing to user_memory (non-blocking):', memoryError)
-      } else {
-        // Mark response as routed
+      if (!memoryError) {
         await supabase
           .from('interviewer_responses')
-          .update({
-            routed_to_memory: true,
-            routed_modules: question.target_modules || [],
-          })
-          .eq('user_id', userId)
-          .eq('question_id', questionId)
-          .order('created_at', { ascending: false })
-          .limit(1)
+          .update({ routed_to_memory: true, routed_modules: question.target_modules || [] })
+          .eq('id', insertData.id)
       }
     }
 
-    // 3. Update session progress if session exists
+    // Update session progress
     if (sessionId) {
       await updateSessionProgress(sessionId)
     }
 
-    return { success: true, cp_earned: CP_PER_ANSWER }
+    return {
+      success: true,
+      response_id: insertData.id,
+      cp_earned: CP_PER_ANSWER,
+      cp_result: null,
+      insights_extracted: 0,
+      processing_time_ms: 0,
+    }
   } catch (error) {
-    log.error('Error in submitInterviewResponse:', error)
-    return { success: false, cp_earned: 0 }
+    log.error('Error in submitInterviewResponseLocal:', error)
+    return { success: false, response_id: '', cp_earned: 0, cp_result: null, insights_extracted: 0, processing_time_ms: 0 }
   }
 }
 

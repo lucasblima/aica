@@ -21,6 +21,7 @@ import {
   submitInterviewResponse,
   startSession,
 } from '../services/interviewerService'
+import type { ProcessedInterviewResponse } from '../services/interviewerService'
 
 const log = createNamespacedLogger('useInterviewer')
 
@@ -90,9 +91,13 @@ export function useInterviewer(sessionId?: string) {
   }, [sessionId, user?.id, loadSession])
 
   const submitAnswer = useCallback(
-    async (answer: InterviewAnswer): Promise<{ success: boolean; cp_earned: number }> => {
+    async (answer: InterviewAnswer): Promise<ProcessedInterviewResponse> => {
+      const fallback: ProcessedInterviewResponse = {
+        success: false, response_id: '', cp_earned: 0, cp_result: null, insights_extracted: 0, processing_time_ms: 0,
+      }
+
       if (!user?.id || !questions[currentIndex]) {
-        return { success: false, cp_earned: 0 }
+        return fallback
       }
 
       try {
@@ -128,13 +133,21 @@ export function useInterviewer(sessionId?: string) {
             completion_percentage: Math.round(((prev.answered_count + 1) / prev.total_questions) * 100),
             cp_earned: prev.cp_earned + result.cp_earned,
           } : null)
+
+          // Log enriched results when available
+          if (result.insights_extracted > 0) {
+            log.info(`AI extracted ${result.insights_extracted} insights in ${result.processing_time_ms}ms`)
+          }
+          if (result.cp_result?.leveled_up) {
+            log.info(`User leveled up to ${result.cp_result.level_name}!`)
+          }
         }
 
         return result
       } catch (err) {
         setError(err as Error)
         log.error('Error submitting answer:', err)
-        return { success: false, cp_earned: 0 }
+        return fallback
       } finally {
         setIsSubmitting(false)
       }
