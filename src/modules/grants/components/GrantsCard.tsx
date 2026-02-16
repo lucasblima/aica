@@ -77,10 +77,10 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between mb-2 relative z-10">
           <div className="flex items-center gap-2">
-            <div className="ceramic-concave w-6 h-6 flex items-center justify-center">
-              <FileText className="w-3 h-3 text-ceramic-info" />
+            <div className="ceramic-inset p-1.5">
+              <FileText className="w-4 h-4 text-ceramic-info" />
             </div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">Captacao</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">Captação</h2>
           </div>
           <div className="ceramic-inset px-2 py-0.5 rounded-full">
             <span className="text-[10px] font-bold text-ceramic-info">
