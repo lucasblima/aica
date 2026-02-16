@@ -27,7 +27,7 @@ export interface AIUsageRecord {
   id: string;
   user_id: string;
   action: string;
-  model: string;
+  model_used: string;
   module?: string;
   tokens_input: number;
   tokens_output: number;
@@ -71,7 +71,7 @@ export interface OperationCostBreakdown {
 export interface TopExpensiveOperation {
   id: string;
   action: string;
-  model: string;
+  model_used: string;
   cost_brl: number;
   created_at: string;
   module?: string;
