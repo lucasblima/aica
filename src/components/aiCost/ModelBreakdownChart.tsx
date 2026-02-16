@@ -1,19 +1,21 @@
 import React from 'react';
 import type { ModelCostBreakdown } from '../../types/aiCost';
-import { getModelLabel, formatUSD, formatPercentage } from '../../types/aiCost';
+import { getModelLabel, formatBRL, formatPercentage } from '../../types/aiCost';
 
 interface ModelBreakdownChartProps {
   data: ModelCostBreakdown[];
 }
 
 const MODEL_COLORS: Record<string, string> = {
-  'gemini-2.0-flash': '#3b82f6',
-  'gemini-1.5-pro': '#8b5cf6',
-  'gemini-1.5-flash': '#6366f1',
-  'veo-2': '#ec4899',
-  'imagen-3': '#a855f7',
-  'whisper-large-v3': '#10b981',
-  'text-embedding-004': '#06b6d4'
+  'gemini-2.5-flash': '#3b82f6',
+  'gemini-2.5-pro': '#8b5cf6',
+  'gemini-2.0-flash': '#6366f1',
+  'gemini-1.5-pro': '#a855f7',
+  'gemini-1.5-flash': '#ec4899',
+  'veo-2': '#f59e0b',
+  'imagen-3': '#10b981',
+  'whisper-large-v3': '#06b6d4',
+  'text-embedding-004': '#84cc16'
 };
 
 export const ModelBreakdownChart: React.FC<ModelBreakdownChartProps> = ({ data }) => {
@@ -28,8 +30,8 @@ export const ModelBreakdownChart: React.FC<ModelBreakdownChartProps> = ({ data }
     );
   }
 
-  const maxCost = Math.max(...data.map((d) => d.total_cost_usd), 1);
-  const totalCost = data.reduce((sum, d) => sum + d.total_cost_usd, 0);
+  const maxCost = Math.max(...data.map((d) => d.total_cost_brl), 1);
+  const totalCost = data.reduce((sum, d) => sum + d.total_cost_brl, 0);
 
   return (
     <div className="ceramic-card p-6">
@@ -41,14 +43,14 @@ export const ModelBreakdownChart: React.FC<ModelBreakdownChartProps> = ({ data }
               <span className="text-sm font-medium text-ceramic-text-primary">{getModelLabel(model.ai_model)}</span>
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-ceramic-text-secondary">{formatPercentage(model.percentage)}</span>
-                <span className="text-sm font-bold text-ceramic-text-primary w-20 text-right">{formatUSD(model.total_cost_usd)}</span>
+                <span className="text-sm font-bold text-ceramic-text-primary w-20 text-right">{formatBRL(model.total_cost_brl)}</span>
               </div>
             </div>
             <div className="ceramic-trough p-1 rounded-full">
               <div
                 className="h-3 rounded-full transition-all duration-500"
                 style={{
-                  width: `${(model.total_cost_usd / maxCost) * 100}%`,
+                  width: `${(model.total_cost_brl / maxCost) * 100}%`,
                   backgroundColor: MODEL_COLORS[model.ai_model] || '#6b7280'
                 }}
               />

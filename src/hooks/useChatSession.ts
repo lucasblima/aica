@@ -14,6 +14,7 @@ import { classifyIntent, type IntentResult } from '@/lib/agents/intentClassifier
 import { getAgentPrompt, hasAgent } from '@/lib/agents'
 import type { AgentModule } from '@/lib/agents/types'
 import type { TrustLevel } from '@/lib/agents/trustLevel'
+import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 
 export interface DisplayMessage {
   id: string
@@ -30,6 +31,8 @@ export interface UseChatSessionReturn {
   messages: DisplayMessage[]
   isLoading: boolean
   error: string | null
+  limitReached: boolean
+  limitInfo: InteractionLimitResult | null
   sendMessage: (text: string) => Promise<void>
   createNewSession: () => void
   switchSession: (sessionId: string) => Promise<void>
@@ -81,6 +84,8 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
   const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [limitReached, setLimitReached] = useState(false)
+  const [limitInfo, setLimitInfo] = useState<InteractionLimitResult | null>(null)
   const [showSessions, setShowSessions] = useState(false)
   const [activeAgent, setActiveAgent] = useState<AgentModule | 'coordinator' | null>(null)
   const [lastClassification, setLastClassification] = useState<IntentResult | null>(null)
@@ -123,9 +128,23 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
     if (!trimmed || isLoading) return
 
     setError(null)
+    setLimitReached(false)
     setIsLoading(true)
 
     try {
+      // Check interaction limit before calling Gemini (fail-open)
+      try {
+        const limit = await checkInteractionLimit()
+        setLimitInfo(limit)
+        if (!limit.allowed) {
+          setLimitReached(true)
+          setError('Voce atingiu o limite diario de interacoes. Faca upgrade do seu plano ou aguarde ate amanha.')
+          return
+        }
+      } catch {
+        // Fail-open: if the check throws, let the message through
+      }
+
       const userId = await getUserId()
 
       // Create session lazily if none exists
@@ -355,6 +374,8 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
     messages,
     isLoading,
     error,
+    limitReached,
+    limitInfo,
     sendMessage,
     createNewSession,
     switchSession,

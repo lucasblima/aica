@@ -54,6 +54,8 @@ export function AicaChatFAB({
     messages,
     isLoading,
     error,
+    limitReached,
+    limitInfo,
     sendMessage,
     createNewSession,
     switchSession,
@@ -321,9 +323,25 @@ export function AicaChatFAB({
               )}
 
               {error && (
-                <div className="aica-fab-error">
-                  <p>{error}</p>
-                </div>
+                limitReached ? (
+                  <div className="rounded-lg mx-3 my-2 p-3 bg-ceramic-warning/10 border border-ceramic-warning/30">
+                    <p className="text-ceramic-warning text-xs font-medium mb-1">
+                      Limite diario atingido
+                    </p>
+                    <p className="text-ceramic-text-secondary text-xs">
+                      {error}
+                    </p>
+                    {limitInfo && (
+                      <p className="text-ceramic-text-secondary text-[10px] mt-1">
+                        Plano: {limitInfo.plan} | Renova: {new Date(limitInfo.resetsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="aica-fab-error">
+                    <p>{error}</p>
+                  </div>
+                )
               )}
 
               <div ref={messagesEndRef} />

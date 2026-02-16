@@ -2,22 +2,18 @@
  * AI Cost Analytics Types
  *
  * Type definitions for AI usage tracking and cost analytics dashboard.
+ * Reads from `usage_logs` table (populated by `log_interaction` RPC).
  */
 
 // =====================================================
 // Core Types
 // =====================================================
 
-export type AIOperationType =
-  | 'text_generation'
-  | 'image_generation'
-  | 'video_generation'
-  | 'audio_generation'
-  | 'transcription'
-  | 'file_indexing'
-  | 'file_search_query'
-  | 'image_analysis'
-  | 'embedding';
+/**
+ * Action names from usage_logs. Uses `string` to accommodate
+ * all actions logged by gemini-chat and other Edge Functions.
+ */
+export type AIOperationType = string;
 
 export type ModuleType = 'grants' | 'journey' | 'podcast' | 'finance' | 'atlas' | 'chat' | 'connections' | 'flux' | 'studio';
 
@@ -30,19 +26,13 @@ export type AlertLevel = 'ok' | 'warning' | 'critical' | 'danger' | 'none';
 export interface AIUsageRecord {
   id: string;
   user_id: string;
-  operation_type: AIOperationType;
-  ai_model: string;
-  input_tokens?: number;
-  output_tokens?: number;
-  total_tokens?: number;
-  duration_seconds?: number;
-  input_cost_usd?: number;
-  output_cost_usd?: number;
-  total_cost_usd: number;
-  module_type?: ModuleType;
-  module_id?: string;
-  asset_id?: string;
-  request_metadata?: Record<string, any>;
+  action: string;
+  model: string;
+  module?: string;
+  tokens_input: number;
+  tokens_output: number;
+  cost_brl: number;
+  credit_deducted?: boolean;
   created_at: string;
 }
 
@@ -51,41 +41,40 @@ export interface AIUsageRecord {
 // =====================================================
 
 export interface CostByOperation {
-  operation_type: AIOperationType;
-  ai_model: string;
+  action: string;
+  model: string;
   total_requests: number;
   total_tokens: number;
-  total_cost_usd: number;
+  total_cost_brl: number;
 }
 
 export interface DailyCostSummary {
   date: string;
-  total_cost_usd: number;
+  total_cost_brl: number;
   total_requests: number;
 }
 
 export interface ModelCostBreakdown {
   ai_model: string;
   total_requests: number;
-  total_cost_usd: number;
+  total_cost_brl: number;
   percentage: number;
 }
 
 export interface OperationCostBreakdown {
-  operation_type: AIOperationType;
-  total_cost_usd: number;
+  operation_type: string;
+  total_cost_brl: number;
   percentage: number;
   count: number;
 }
 
 export interface TopExpensiveOperation {
   id: string;
-  operation_type: AIOperationType;
-  ai_model: string;
-  total_cost_usd: number;
+  action: string;
+  model: string;
+  cost_brl: number;
   created_at: string;
-  module_type?: ModuleType;
-  request_metadata?: Record<string, any>;
+  module?: string;
 }
 
 // =====================================================
@@ -108,7 +97,7 @@ export interface BudgetAlert {
 }
 
 export interface UserAIBudget {
-  monthly_ai_budget_usd: number;
+  monthly_ai_budget_brl: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -133,39 +122,74 @@ export interface TrendChartDataPoint {
 // Operation Type Display Names
 // =====================================================
 
-export const OPERATION_TYPE_LABELS: Record<AIOperationType, string> = {
-  text_generation: 'Geração de Texto',
-  image_generation: 'Geração de Imagem',
-  video_generation: 'Geração de Vídeo',
-  audio_generation: 'Geração de Áudio',
-  transcription: 'Transcrição',
-  file_indexing: 'Indexação de Arquivos',
+/**
+ * Known action labels (Portuguese). Falls back to the raw action name
+ * for any action not listed here.
+ */
+export const OPERATION_TYPE_LABELS: Record<string, string> = {
+  text_generation: 'Geracao de Texto',
+  image_generation: 'Geracao de Imagem',
+  video_generation: 'Geracao de Video',
+  audio_generation: 'Geracao de Audio',
+  transcription: 'Transcricao',
+  file_indexing: 'Indexacao de Arquivos',
   file_search_query: 'Busca em Arquivos',
-  image_analysis: 'Análise de Imagem',
-  embedding: 'Embeddings'
+  image_analysis: 'Analise de Imagem',
+  embedding: 'Embeddings',
+  chat: 'Chat',
+  suggest_guest_name: 'Sugestao de Convidado',
+  generate_briefing: 'Geracao de Briefing',
+  analyze_moment: 'Analise de Momento',
+  generate_report: 'Geracao de Relatorio',
+  life_council: 'Conselho de Vida',
+  pattern_synthesis: 'Sintese de Padroes',
+  build_contact_dossier: 'Dossie de Contato',
+  build_conversation_threads: 'Threads de Conversa',
+  route_entities_to_modules: 'Roteamento de Entidades',
+  classify_intent: 'Classificacao de Intencao',
 };
 
 // =====================================================
 // Color Palette for Charts
 // =====================================================
 
-export const OPERATION_COLORS: Record<AIOperationType, string> = {
-  text_generation: '#3b82f6',   // blue-500
-  image_generation: '#8b5cf6',  // purple-500
-  video_generation: '#ec4899',  // pink-500
-  audio_generation: '#f59e0b',  // amber-500
-  transcription: '#10b981',     // green-500
-  file_indexing: '#06b6d4',     // cyan-500
-  file_search_query: '#6366f1', // indigo-500
-  image_analysis: '#a855f7',    // violet-500
-  embedding: '#84cc16'          // lime-500
+/**
+ * Known action colors. Falls back to gray for unknown actions.
+ */
+export const OPERATION_COLORS: Record<string, string> = {
+  text_generation: '#3b82f6',
+  image_generation: '#8b5cf6',
+  video_generation: '#ec4899',
+  audio_generation: '#f59e0b',
+  transcription: '#10b981',
+  file_indexing: '#06b6d4',
+  file_search_query: '#6366f1',
+  image_analysis: '#a855f7',
+  embedding: '#84cc16',
+  chat: '#3b82f6',
+  suggest_guest_name: '#8b5cf6',
+  generate_briefing: '#ec4899',
+  analyze_moment: '#f59e0b',
+  generate_report: '#10b981',
+  life_council: '#06b6d4',
+  pattern_synthesis: '#6366f1',
+  build_contact_dossier: '#a855f7',
+  classify_intent: '#84cc16',
 };
+
+// Fallback colors for unknown actions (cycle through)
+const FALLBACK_COLORS = [
+  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
+  '#0ea5e9', '#6366f1', '#a855f7', '#ec4899', '#f43f5e',
+];
 
 // =====================================================
 // AI Model Display Names
 // =====================================================
 
 export const AI_MODEL_LABELS: Record<string, string> = {
+  'gemini-2.5-flash': 'Gemini 2.5 Flash',
+  'gemini-2.5-pro': 'Gemini 2.5 Pro',
   'gemini-2.0-flash': 'Gemini 2.0 Flash',
   'gemini-1.5-pro': 'Gemini 1.5 Pro',
   'gemini-1.5-flash': 'Gemini 1.5 Flash',
@@ -180,17 +204,27 @@ export const AI_MODEL_LABELS: Record<string, string> = {
 // =====================================================
 
 /**
- * Get display label for operation type
+ * Get display label for action type
  */
-export function getOperationLabel(operationType: AIOperationType): string {
-  return OPERATION_TYPE_LABELS[operationType] || operationType;
+export function getOperationLabel(actionType: string): string {
+  return OPERATION_TYPE_LABELS[actionType] || actionType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 /**
- * Get color for operation type
+ * Get color for action type
  */
-export function getOperationColor(operationType: AIOperationType): string {
-  return OPERATION_COLORS[operationType] || '#6b7280'; // gray-500 fallback
+let fallbackColorIndex = 0;
+const assignedFallbackColors = new Map<string, string>();
+
+export function getOperationColor(actionType: string): string {
+  if (OPERATION_COLORS[actionType]) return OPERATION_COLORS[actionType];
+
+  // Assign a stable fallback color for unknown actions
+  if (!assignedFallbackColors.has(actionType)) {
+    assignedFallbackColors.set(actionType, FALLBACK_COLORS[fallbackColorIndex % FALLBACK_COLORS.length]);
+    fallbackColorIndex++;
+  }
+  return assignedFallbackColors.get(actionType) || '#6b7280';
 }
 
 /**
@@ -201,16 +235,21 @@ export function getModelLabel(model: string): string {
 }
 
 /**
- * Format USD currency
+ * Format BRL currency
  */
-export function formatUSD(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatBRL(amount: number): string {
+  return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'BRL',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 4
   }).format(amount);
 }
+
+/**
+ * @deprecated Use formatBRL instead. Kept for backward compatibility.
+ */
+export const formatUSD = formatBRL;
 
 /**
  * Format percentage
@@ -235,14 +274,14 @@ export function getAlertLevelFromPercentage(percentage: number): AlertLevel {
 export function getAlertMessage(level: AlertLevel, percentage: number): string {
   switch (level) {
     case 'danger':
-      return `Você ultrapassou seu orçamento mensal em ${formatPercentage(percentage - 100)}!`;
+      return `Voce ultrapassou seu orcamento mensal em ${formatPercentage(percentage - 100)}!`;
     case 'critical':
-      return `Você está usando ${formatPercentage(percentage)} do seu orçamento mensal!`;
+      return `Voce esta usando ${formatPercentage(percentage)} do seu orcamento mensal!`;
     case 'warning':
-      return `Atenção: ${formatPercentage(percentage)} do orçamento mensal usado.`;
+      return `Atencao: ${formatPercentage(percentage)} do orcamento mensal usado.`;
     case 'ok':
-      return `Você está usando ${formatPercentage(percentage)} do seu orçamento.`;
+      return `Voce esta usando ${formatPercentage(percentage)} do seu orcamento.`;
     default:
-      return 'Nenhum orçamento definido.';
+      return 'Nenhum orcamento definido.';
   }
 }

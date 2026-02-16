@@ -113,7 +113,7 @@ export async function getAIBudgetSettings(): Promise<UserAIBudget> {
         if (insertError) throw insertError;
 
         return {
-          monthly_ai_budget_usd: newSettings?.ai_budget_monthly_usd || 10.00,
+          monthly_ai_budget_brl: newSettings?.ai_budget_monthly_usd || 10.00,
           created_at: newSettings?.created_at,
           updated_at: newSettings?.updated_at
         };
@@ -122,14 +122,14 @@ export async function getAIBudgetSettings(): Promise<UserAIBudget> {
     }
 
     return {
-      monthly_ai_budget_usd: data?.ai_budget_monthly_usd || 10.00,
+      monthly_ai_budget_brl: data?.ai_budget_monthly_usd || 10.00,
       created_at: data?.created_at,
       updated_at: data?.updated_at
     };
   } catch (error) {
     log.error('[userSettings] Error getting AI budget settings:', { error: error });
     return {
-      monthly_ai_budget_usd: 10.00,
+      monthly_ai_budget_brl: 10.00,
       created_at: undefined,
       updated_at: undefined
     };

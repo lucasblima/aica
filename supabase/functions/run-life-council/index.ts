@@ -294,14 +294,36 @@ serve(async (req: Request) => {
     }
 
     // =====================================================================
-    // STEP 4: Save to Database
+    // STEP 4: Log interaction + Save to Database
     // =====================================================================
 
-    const totalTokens =
-      (philosopherResult.tokens.input + philosopherResult.tokens.output) +
-      (strategistResult.tokens.input + strategistResult.tokens.output) +
-      (biohackerResult.tokens.input + biohackerResult.tokens.output) +
-      (synthesisResult.tokens.input + synthesisResult.tokens.output)
+    const totalTokensIn =
+      philosopherResult.tokens.input +
+      strategistResult.tokens.input +
+      biohackerResult.tokens.input +
+      synthesisResult.tokens.input
+
+    const totalTokensOut =
+      philosopherResult.tokens.output +
+      strategistResult.tokens.output +
+      biohackerResult.tokens.output +
+      synthesisResult.tokens.output
+
+    const totalTokens = totalTokensIn + totalTokensOut
+
+    // Fire-and-forget usage tracking
+    supabaseClient.rpc('log_interaction', {
+      p_user_id: userId,
+      p_action: 'life_council',
+      p_module: 'journey',
+      p_model: synthesisResult.model,
+      p_tokens_in: totalTokensIn,
+      p_tokens_out: totalTokensOut,
+    }).then(() => {
+      console.log('[run-life-council] Logged interaction')
+    }).catch((err: any) => {
+      console.warn('[run-life-council] Failed to log interaction:', err.message)
+    })
 
     const processingTime = Date.now() - startTime
 

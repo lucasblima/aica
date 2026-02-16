@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm"
 import { handleGenerateDailyQuestion, type GenerateDailyQuestionPayload } from "./daily-question-handler.ts"
 
 // ============================================================================
@@ -28,6 +29,8 @@ function getCorsHeaders(request: Request): Record<string, string> {
 }
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 // ============================================================================
 // TYPES
@@ -1721,6 +1724,23 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
     const body = await req.json()
 
+    // Extract user ID from JWT for usage logging (best-effort, non-blocking)
+    let userId: string | null = null
+    try {
+      const authHeader = req.headers.get('Authorization')
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '')
+        // Decode JWT payload without verification (service-role will handle the RPC)
+        const payloadB64 = token.split('.')[1]
+        if (payloadB64) {
+          const decoded = JSON.parse(atob(payloadB64))
+          userId = decoded.sub || null
+        }
+      }
+    } catch {
+      // Non-critical: if we can't extract user ID, just skip logging
+    }
+
     if (body.action) {
       const { action, payload } = body as BaseRequest
       console.log(`[gemini-chat] Action: ${action}`)
@@ -1824,6 +1844,28 @@ serve(async (req) => {
 
       // Extract usageMetadata if present (for AI cost tracking)
       const usageMetadata = (result as any)?.__usageMetadata || null
+
+      // Determine which model was used for this action
+      const modelName = SMART_MODEL_ACTIONS.includes(action!) ? MODELS.smart : MODELS.fast
+
+      // Fire-and-forget: log interaction for billing/usage tracking
+      if (userId && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+        const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        })
+        supabaseAdmin.rpc('log_interaction', {
+          p_user_id: userId,
+          p_action: action,
+          p_module: payload?.module || null,
+          p_model: modelName,
+          p_tokens_in: usageMetadata?.promptTokenCount || 0,
+          p_tokens_out: usageMetadata?.candidatesTokenCount || 0,
+        }).then(() => {
+          console.log(`[gemini-chat] Logged interaction: ${action}`)
+        }).catch((err: any) => {
+          console.warn(`[gemini-chat] Failed to log interaction: ${err.message}`)
+        })
+      }
 
       return new Response(
         JSON.stringify({

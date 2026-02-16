@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, TrendingUp, TrendingDown, Calendar, Settings } from 'lucide-react';
 import type { MonthlyCostSummary } from '../../types/aiCost';
-import { formatUSD, formatPercentage } from '../../types/aiCost';
+import { formatBRL, formatPercentage } from '../../types/aiCost';
 import { cardElevationVariants } from '../../lib/animations/ceramic-motion';
 
 // =====================================================
@@ -54,7 +54,7 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
               Custo Mensal de IA
             </p>
             <h2 className="text-2xl font-black text-ceramic-text-primary text-etched">
-              {formatUSD(current_month_cost)}
+              {formatBRL(current_month_cost)}
             </h2>
           </div>
         </div>
@@ -101,10 +101,10 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
 
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-ceramic-text-secondary">
-                {formatUSD(0)}
+                {formatBRL(0)}
               </span>
               <span className="text-xs font-bold text-ceramic-text-primary">
-                {formatUSD(budget)}
+                {formatBRL(budget)}
               </span>
             </div>
           </div>
@@ -141,7 +141,7 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
                   isProjectionGood ? 'text-ceramic-positive' : 'text-ceramic-negative'
                 }`}
               >
-                {formatUSD(projected_month_end_cost)}
+                {formatBRL(projected_month_end_cost)}
               </p>
             </div>
           </div>
@@ -157,7 +157,7 @@ export const MonthlyCostCard: React.FC<MonthlyCostCardProps> = ({ summary, onEdi
                   is_over_budget ? 'text-ceramic-negative' : 'text-ceramic-positive'
                 }`}
               >
-                {formatUSD(Math.abs(budget - current_month_cost))}
+                {formatBRL(Math.abs(budget - current_month_cost))}
               </span>
             </div>
           </div>
