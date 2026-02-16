@@ -6,7 +6,8 @@
 
 export { WorkoutTemplateLibrary } from './WorkoutTemplateLibrary';
 export { WeeklyGrid } from './WeeklyGrid';
-export type { WeekWorkout } from './WeeklyGrid';
+export type { WeekWorkout, BusySlot } from './WeeklyGrid';
+export { MicrocycleGrid } from './MicrocycleGrid';
 export { WorkoutBlock } from './WorkoutBlock';
 export type { WorkoutBlockData } from './WorkoutBlock';
 export { WorkoutBlockEditor } from './WorkoutBlockEditor';

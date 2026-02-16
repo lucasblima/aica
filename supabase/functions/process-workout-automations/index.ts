@@ -11,15 +11,53 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// ============================================================================
+// CORS
+// ============================================================================
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://dev.aica.guru',
+  'https://aica.guru',
+];
+
+function getCorsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Authenticate: require cron secret or valid JWT
+  const cronSecret = req.headers.get('x-cron-secret');
+  const expectedSecret = Deno.env.get('CRON_SECRET');
+  const authHeader = req.headers.get('Authorization');
+
+  if (!cronSecret && !authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (cronSecret && cronSecret !== expectedSecret) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid cron secret' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
