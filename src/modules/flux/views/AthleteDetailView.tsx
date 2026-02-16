@@ -9,11 +9,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import { AthleteService } from '../services/athleteService';
+import { ParQService } from '../services/parqService';
+import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import type { Athlete } from '../types';
+import type { ParQStatus, ParQResponse } from '../types/parq';
 import { LevelBadge } from '../components/LevelBadge';
 import { ProgressionBar } from '../components/ProgressionBar';
 import { AlertBadge } from '../components/AlertBadge';
 import { ConnectionStatusDot } from '../components/ConnectionStatusDot';
+import { ParQCoachView } from '../components/parq/ParQCoachView';
 import {
   ArrowLeft,
   User,
@@ -35,9 +39,14 @@ export default function AthleteDetailView() {
 
   const [athlete, setAthlete] = useState<Athlete | null>(null);
   const [loading, setLoading] = useState(true);
+  const [parqStatus, setParqStatus] = useState<ParQStatus | null>(null);
+  const [latestParQ, setLatestParQ] = useState<ParQResponse | null>(null);
+  const [parqLoading, setParqLoading] = useState(false);
   const alerts: never[] = [];
   const feedbacks: never[] = [];
   const activeBlock = null;
+
+  const docs = useAthleteDocuments({ athleteId: athleteId || '' });
 
   useEffect(() => {
     if (!athleteId) {
@@ -60,6 +69,31 @@ export default function AthleteDetailView() {
     loadAthlete();
     return () => { cancelled = true; };
   }, [athleteId]);
+
+  // Load PAR-Q data when athlete has PAR-Q enabled
+  useEffect(() => {
+    if (!athleteId || !athlete?.allow_parq_onboarding) return;
+    let cancelled = false;
+
+    const loadParQ = async () => {
+      setParqLoading(true);
+      try {
+        const [statusResult, responsesResult] = await Promise.all([
+          ParQService.getParQStatus(athleteId),
+          ParQService.getParQResponsesByAthlete(athleteId),
+        ]);
+        if (cancelled) return;
+        if (statusResult.data) setParqStatus(statusResult.data);
+        if (responsesResult.data && responsesResult.data.length > 0) {
+          setLatestParQ(responsesResult.data[0]);
+        }
+      } finally {
+        if (!cancelled) setParqLoading(false);
+      }
+    };
+    loadParQ();
+    return () => { cancelled = true; };
+  }, [athleteId, athlete?.allow_parq_onboarding]);
 
   // Handle back
   const handleBack = () => {
@@ -184,6 +218,24 @@ export default function AthleteDetailView() {
           </div>
         </div>
       </div>
+
+      {/* PAR-Q / Health Section (only when PAR-Q onboarding is enabled) */}
+      {athlete.allow_parq_onboarding && (
+        <div className="px-6 mb-6">
+          <ParQCoachView
+            athleteName={athlete.name}
+            parqStatus={parqStatus}
+            latestResponse={latestParQ}
+            documents={docs.documents}
+            isLoadingStatus={parqLoading}
+            onReviewDocument={docs.reviewDocument}
+            onViewDocument={async (doc) => docs.getDocumentUrl(doc)}
+            onUploadDocument={(input) => docs.uploadDocument(input)}
+            onFillParQ={() => navigate(`/flux/parq/${athleteId}`)}
+            isUploading={docs.isUploading}
+          />
+        </div>
+      )}
 
       {/* Canvas Access - Always visible */}
       <div className="px-6 mb-6">

@@ -108,6 +108,7 @@ export interface Athlete {
   requires_cardio_exam?: boolean; // Cardiological exam required
   requires_clearance_cert?: boolean; // Physical activity clearance certificate required
   allow_parq_onboarding?: boolean; // Allow athlete to complete PAR-Q questionnaire
+  parq_clearance_status?: 'pending' | 'cleared' | 'cleared_with_restrictions' | 'blocked' | 'expired';
 
   // Performance thresholds (for load calculation)
   ftp?: number; // Functional Threshold Power (watts) - cycling
@@ -283,6 +284,8 @@ export interface MyAthleteProfile {
   modality: TrainingModality;
   level: AthleteLevel;
   status: AthleteStatus;
+  allow_parq_onboarding: boolean;
+  parq_clearance_status: 'pending' | 'cleared' | 'cleared_with_restrictions' | 'blocked' | 'expired' | null;
   active_microcycle: {
     id: string;
     name: string;

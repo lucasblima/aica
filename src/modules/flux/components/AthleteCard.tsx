@@ -12,6 +12,7 @@ import { LEVEL_LABELS, STATUS_CONFIG, MODALITY_CONFIG } from '../types';
 import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ConnectionStatusDot } from './ConnectionStatusDot';
+import { ParQStatusBadge } from './parq/ParQStatusBadge';
 import { User, AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check } from 'lucide-react';
 
 interface ExtendedAthleteCardProps extends AthleteCardProps {
@@ -259,6 +260,11 @@ export function AthleteCard({
                 </p>
               </div>
             </div>
+          )}
+
+          {/* PAR-Q Status */}
+          {athlete.allow_parq_onboarding && athlete.parq_clearance_status && (
+            <ParQStatusBadge status={athlete.parq_clearance_status} size="sm" />
           )}
 
           {/* Active Alerts */}
