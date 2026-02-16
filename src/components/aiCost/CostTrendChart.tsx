@@ -17,7 +17,7 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     if (!data || data.length === 0) return null;
 
     const maxCost = Math.max(...data.map((d) => d.total_cost_brl), 1);
-    const padding = { top: 20, right: 20, bottom: 40, left: 60 };
+    const padding = { top: 20, right: 20, bottom: 40, left: 80 };
     const width = 800;
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
@@ -35,13 +35,19 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
     const areaPath =
       linePath + ` L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`;
 
-    // Y-axis labels
+    // Y-axis labels — compact format for small values
     const yTicks = 5;
+    const formatYLabel = (value: number): string => {
+      if (value === 0) return 'R$ 0';
+      if (value >= 1) return `R$ ${value.toFixed(2)}`;
+      if (value >= 0.01) return `R$ ${value.toFixed(3)}`;
+      return `R$ ${value.toFixed(4)}`;
+    };
     const yLabels = Array.from({ length: yTicks }, (_, i) => {
       const value = (maxCost / (yTicks - 1)) * (yTicks - 1 - i);
       return {
         y: padding.top + (chartHeight / (yTicks - 1)) * i,
-        label: formatBRL(value)
+        label: formatYLabel(value)
       };
     });
 
@@ -110,11 +116,11 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
       </div>
 
       {/* Chart */}
-      <div className="ceramic-inset p-4 rounded-xl overflow-x-auto">
+      <div className="ceramic-inset p-3 rounded-lg overflow-x-auto">
         <svg
           viewBox={`0 0 ${chartData.width} ${chartData.height}`}
           className="w-full"
-          style={{ minWidth: '600px' }}
+          style={{ minWidth: '500px' }}
         >
           {/* Grid lines */}
           {chartData.yLabels.map((label, i) => (
@@ -155,10 +161,10 @@ export const CostTrendChart: React.FC<CostTrendChartProps> = ({ data, height = 2
           {chartData.yLabels.map((label, i) => (
             <text
               key={`ylabel-${i}`}
-              x={chartData.padding.left - 10}
+              x={chartData.padding.left - 8}
               y={label.y + 4}
               textAnchor="end"
-              fontSize="12"
+              fontSize="11"
               fill="#6b7280"
               fontFamily="system-ui"
             >
