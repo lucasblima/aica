@@ -1,12 +1,17 @@
 /**
  * useUserCredits Hook
  *
- * Manages user credit balance for the "Process with Aica" feature.
- * Provides:
- * - Current balance
- * - Lifetime stats
- * - Daily claim functionality
- * - Real-time balance updates
+ * Manages user credit balance for the monthly credit billing system.
+ * Combines monthly plan budget with extra credits from user_credits table.
+ *
+ * Data flow:
+ *   get_usage_summary RPC returns:
+ *     - daily_limit = monthly_credits (plan budget)
+ *     - interactions_today = credits used this month
+ *     - credit_balance = extra credits (user_credits table)
+ *     - plan_id = current plan
+ *
+ *   balance = (monthly_credits - month_used) + extra_credits
  *
  * @example
  * const { balance, claimDaily, canClaimDaily, refreshBalance } = useUserCredits()
@@ -19,10 +24,20 @@ import { createNamespacedLogger } from '@/lib/logger'
 
 const log = createNamespacedLogger('useUserCredits')
 
-interface UserCredits {
+interface CreditState {
+  /** Remaining credits available (monthly remaining + extra credits) */
   balance: number
+  /** Monthly plan budget */
+  monthlyBudget: number
+  /** Credits used this month */
+  monthUsed: number
+  /** Extra credits from user_credits table */
+  extraCredits: number
+  /** Current plan ID */
+  planId: string
+  /** Total credits earned lifetime (from user_credits) */
   lifetimeEarned: number
-  lifetimeSpent: number
+  /** Last daily claim timestamp */
   lastDailyClaim: string | null
 }
 
@@ -35,12 +50,18 @@ interface ClaimResult {
 }
 
 interface UseUserCreditsReturn {
-  /** Current credit balance */
+  /** Total remaining credits (monthly remaining + extra) */
   balance: number
+  /** Monthly plan budget */
+  monthlyBudget: number
+  /** Credits used this month */
+  monthUsed: number
+  /** Extra credits from bonus claims */
+  extraCredits: number
   /** Total credits earned lifetime */
   lifetimeEarned: number
-  /** Total credits spent lifetime */
-  lifetimeSpent: number
+  /** Current plan ID */
+  planId: string
   /** Whether data is loading */
   isLoading: boolean
   /** Error message if any */
@@ -51,18 +72,16 @@ interface UseUserCreditsReturn {
   claimDaily: () => Promise<ClaimResult>
   /** Refresh balance from database */
   refreshBalance: () => Promise<void>
-  /** Spend credits (for external use) */
-  spendCredits: (amount: number, referenceId: string, referenceType: string) => Promise<boolean>
 }
 
 export function useUserCredits(): UseUserCreditsReturn {
   const { user } = useAuth()
-  const [credits, setCredits] = useState<UserCredits | null>(null)
+  const [state, setState] = useState<CreditState | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   /**
-   * Fetch credits from database
+   * Fetch credit data from get_usage_summary RPC + user_credits table
    */
   const fetchCredits = useCallback(async () => {
     if (!user) {
@@ -73,54 +92,62 @@ export function useUserCredits(): UseUserCreditsReturn {
     try {
       setError(null)
 
-      const { data, error: fetchError } = await supabase
-        .from('user_credits')
-        .select('balance, lifetime_earned, lifetime_spent, last_daily_claim')
-        .eq('user_id', user.id)
-        .single()
+      // Fetch usage summary (monthly budget, usage, plan) and user_credits in parallel
+      const [summaryResult, creditsResult] = await Promise.all([
+        supabase.rpc('get_usage_summary', { p_user_id: user.id }),
+        supabase
+          .from('user_credits')
+          .select('balance, lifetime_earned, last_daily_claim')
+          .eq('user_id', user.id)
+          .single()
+      ])
 
-      if (fetchError) {
-        // If no record exists, it will be created by trigger or we create it
-        if (fetchError.code === 'PGRST116') {
-          // Create default credits
-          const { data: newData, error: insertError } = await supabase
-            .from('user_credits')
-            .insert({
-              user_id: user.id,
-              balance: 50,
-              lifetime_earned: 50,
-              lifetime_spent: 0
-            })
-            .select()
-            .single()
-
-          if (!insertError && newData) {
-            setCredits({
-              balance: newData.balance,
-              lifetimeEarned: newData.lifetime_earned,
-              lifetimeSpent: newData.lifetime_spent,
-              lastDailyClaim: newData.last_daily_claim
-            })
-          } else {
-            // Default values if insert fails (RLS may prevent it)
-            setCredits({
-              balance: 50,
-              lifetimeEarned: 50,
-              lifetimeSpent: 0,
-              lastDailyClaim: null
-            })
-          }
-        } else {
-          throw fetchError
-        }
-      } else if (data) {
-        setCredits({
-          balance: data.balance,
-          lifetimeEarned: data.lifetime_earned,
-          lifetimeSpent: data.lifetime_spent,
-          lastDailyClaim: data.last_daily_claim
-        })
+      if (summaryResult.error) {
+        throw summaryResult.error
       }
+
+      const summary = summaryResult.data?.[0]
+      if (!summary) {
+        // No usage data yet — set defaults based on free plan
+        setState({
+          balance: 500,
+          monthlyBudget: 500,
+          monthUsed: 0,
+          extraCredits: 0,
+          planId: 'free',
+          lifetimeEarned: 0,
+          lastDailyClaim: null
+        })
+        return
+      }
+
+      // get_usage_summary returns:
+      //   daily_limit = monthly_credits (plan budget)
+      //   interactions_today = credits used this month (renamed field)
+      //   credit_balance = extra credits from user_credits table
+      //   plan_id = current plan
+      const monthlyBudget = summary.daily_limit ?? 500
+      const monthUsed = Number(summary.interactions_today) || 0
+      const extraCredits = summary.credit_balance ?? 0
+      const planId = summary.plan_id || 'free'
+
+      // Total remaining = monthly remaining + extra credits
+      const monthlyRemaining = Math.max(0, monthlyBudget - monthUsed)
+      const balance = monthlyRemaining + extraCredits
+
+      // user_credits data for lifetime stats and daily claim tracking
+      const lifetimeEarned = creditsResult.data?.lifetime_earned ?? 0
+      const lastDailyClaim = creditsResult.data?.last_daily_claim ?? null
+
+      setState({
+        balance,
+        monthlyBudget,
+        monthUsed,
+        extraCredits,
+        planId,
+        lifetimeEarned,
+        lastDailyClaim
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load credits'
       setError(message)
@@ -134,14 +161,14 @@ export function useUserCredits(): UseUserCreditsReturn {
    * Check if user can claim daily credits
    */
   const canClaimDaily = useCallback((): boolean => {
-    if (!credits?.lastDailyClaim) return true
+    if (!state?.lastDailyClaim) return true
 
-    const lastClaim = new Date(credits.lastDailyClaim)
+    const lastClaim = new Date(state.lastDailyClaim)
     const now = new Date()
 
     // Compare dates (ignoring time)
     return lastClaim.toDateString() !== now.toDateString()
-  }, [credits])
+  }, [state])
 
   /**
    * Claim daily credits via Edge Function
@@ -168,12 +195,12 @@ export function useUserCredits(): UseUserCreditsReturn {
       const result: ClaimResult = {
         success: data.success,
         creditsEarned: data.creditsEarned || 0,
-        newBalance: data.newBalance || credits?.balance || 0,
+        newBalance: data.newBalance || state?.balance || 0,
         message: data.message || '',
         nextClaimAt: data.nextClaimAt
       }
 
-      // Update local state
+      // Refresh all credit data on successful claim
       if (result.success) {
         await fetchCredits()
       }
@@ -185,43 +212,9 @@ export function useUserCredits(): UseUserCreditsReturn {
       return {
         success: false,
         creditsEarned: 0,
-        newBalance: credits?.balance || 0,
+        newBalance: state?.balance || 0,
         message
       }
-    }
-  }
-
-  /**
-   * Spend credits (usually called by processing functions)
-   */
-  const spendCredits = async (
-    amount: number,
-    referenceId: string,
-    referenceType: string
-  ): Promise<boolean> => {
-    try {
-      const { data, error: rpcError } = await supabase.rpc('spend_credits', {
-        p_user_id: user?.id,
-        p_amount: amount,
-        p_reference_id: referenceId,
-        p_reference_type: referenceType,
-        p_metadata: {}
-      })
-
-      if (rpcError) throw rpcError
-
-      const result = data?.[0]
-      if (result?.success) {
-        await fetchCredits()
-        return true
-      }
-
-      setError(result?.message || 'Failed to spend credits')
-      return false
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to spend credits'
-      setError(message)
-      return false
     }
   }
 
@@ -230,7 +223,7 @@ export function useUserCredits(): UseUserCreditsReturn {
     fetchCredits()
   }, [fetchCredits])
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates on user_credits (extra credits changes)
   useEffect(() => {
     if (!user) return
 
@@ -244,17 +237,9 @@ export function useUserCredits(): UseUserCreditsReturn {
           table: 'user_credits',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
-          log.debug('Real-time update:', payload)
-          if (payload.new) {
-            const newData = payload.new as Record<string, unknown>
-            setCredits({
-              balance: newData.balance as number,
-              lifetimeEarned: newData.lifetime_earned as number,
-              lifetimeSpent: newData.lifetime_spent as number,
-              lastDailyClaim: newData.last_daily_claim as string | null
-            })
-          }
+        () => {
+          // Re-fetch everything to keep monthly + extra in sync
+          fetchCredits()
         }
       )
       .subscribe()
@@ -262,18 +247,20 @@ export function useUserCredits(): UseUserCreditsReturn {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user])
+  }, [user, fetchCredits])
 
   return {
-    balance: credits?.balance ?? 0,
-    lifetimeEarned: credits?.lifetimeEarned ?? 0,
-    lifetimeSpent: credits?.lifetimeSpent ?? 0,
+    balance: state?.balance ?? 0,
+    monthlyBudget: state?.monthlyBudget ?? 500,
+    monthUsed: state?.monthUsed ?? 0,
+    extraCredits: state?.extraCredits ?? 0,
+    lifetimeEarned: state?.lifetimeEarned ?? 0,
+    planId: state?.planId ?? 'free',
     isLoading,
     error,
     canClaimDaily: canClaimDaily(),
     claimDaily,
-    refreshBalance: fetchCredits,
-    spendCredits
+    refreshBalance: fetchCredits
   }
 }
 

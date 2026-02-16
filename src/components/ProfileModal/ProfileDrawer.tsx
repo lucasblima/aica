@@ -19,12 +19,21 @@ import { X, User, Mail, Calendar, Shield, AlertTriangle, TrendingUp, Crown, Zap 
 import { useNavigate } from 'react-router-dom'
 import { DangerZone } from './DangerZone'
 import { EfficiencyFlowCard } from '../EfficiencyFlowCard'
+import { useUserPlan } from '@/hooks/useUserPlan'
 import { createNamespacedLogger } from '@/lib/logger'
 
 const log = createNamespacedLogger('ProfileDrawer')
 
 function PlanSection() {
   const navigate = useNavigate()
+  const { plan, isLoading } = useUserPlan()
+  const isFree = plan.id === 'free'
+
+  const formatCredits = (credits: number): string => {
+    if (credits >= 1000) return `${(credits / 1000).toFixed(credits % 1000 === 0 ? 0 : 1)}k`
+    return String(credits)
+  }
+
   return (
     <div className="ceramic-stats-tray space-y-3">
       <div className="flex items-center justify-between">
@@ -35,19 +44,19 @@ function PlanSection() {
           </h4>
         </div>
         <span className="text-xs font-bold text-ceramic-text-primary bg-ceramic-text-secondary/10 px-2 py-0.5 rounded-full">
-          Free
+          {isLoading ? '...' : plan.name}
         </span>
       </div>
       <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary">
         <Zap className="w-3 h-3" />
-        <span>500 creditos/mes</span>
+        <span>{isLoading ? '...' : `${formatCredits(plan.monthly_credits)} creditos/mes`}</span>
       </div>
       <button
         onClick={() => navigate('/pricing')}
         className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm px-4 py-2 transition-colors"
       >
         <Crown className="w-4 h-4" />
-        Fazer upgrade
+        {isFree ? 'Fazer upgrade' : 'Gerenciar plano'}
       </button>
     </div>
   )

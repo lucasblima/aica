@@ -56,6 +56,8 @@ export { ConnectionArchetypes } from './features/ConnectionArchetypes';
 export { default as ContactCard } from './features/ContactCard';
 export { ContactCardGrid } from './features/ContactCardGrid';
 export { CreditBalanceWidget } from './features/CreditBalanceWidget';
+export { InviteModal } from './features/InviteModal';
+export { InviteShareCard } from './features/InviteShareCard';
 // prettier-ignore
 export { default as ContactDetailModal } from './features/ContactDetailModal';
 export { ContactProfileView } from './features/ContactProfileView';

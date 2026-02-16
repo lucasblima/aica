@@ -10,10 +10,11 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Ticket, Share2, LogOut, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { Ticket, Share2, LogOut, Check, AlertCircle, Sparkles, Gift } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useActivationStatus } from '@/hooks/useActivationStatus';
 import { Logo } from '@/components/ui';
+import { InviteModal } from '@/components/features/InviteModal';
 
 export function WaitingRoomPage() {
   const { user, signOut } = useAuth();
@@ -24,6 +25,7 @@ export function WaitingRoomPage() {
   const [activating, setActivating] = useState(false);
   const [activated, setActivated] = useState(false);
   const [xpAwarded, setXpAwarded] = useState(0);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Visitante';
@@ -140,7 +142,9 @@ export function WaitingRoomPage() {
             </motion.div>
           )}
 
+          {/* CTA: Invite friends */}
           <motion.div
+            className="flex flex-col items-center gap-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
@@ -151,8 +155,22 @@ export function WaitingRoomPage() {
             >
               Começar
             </button>
+
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="inline-flex items-center gap-2 text-sm text-ceramic-text-secondary hover:text-amber-600 transition-colors mt-2"
+            >
+              <Gift className="w-4 h-4" />
+              Convidar amigos para o AICA
+            </button>
           </motion.div>
         </motion.div>
+
+        {/* Invite Modal */}
+        <InviteModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+        />
       </div>
     );
   }

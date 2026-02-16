@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PageShell } from '@/components/ui';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserPlan } from '@/hooks/useUserPlan';
 import { PlanCard } from '../components/PlanCard';
 
 // ---------------------------------------------------------------------------
@@ -192,12 +193,12 @@ function FAQAccordionItem({ item, isOpen, onToggle }: { item: FAQItem; isOpen: b
 export function PricingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { plan: userPlan, isLoading: isPlanLoading } = useUserPlan();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
 
-  // TODO: Replace with actual user plan from billing tables
-  const currentPlanId = 'free';
+  const currentPlanId = userPlan.id;
 
   const handleSubscribe = async (planId: string) => {
     if (!user) {
