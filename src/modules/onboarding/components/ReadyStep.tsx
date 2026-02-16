@@ -195,6 +195,32 @@ export function ReadyStep({
         Começar a usar
         <ArrowRight className="w-5 h-5" />
       </motion.button>
+
+      {/* Interview suggestion — only shows once */}
+      {!localStorage.getItem('aica_interview_suggested') && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="ceramic-card p-5 mt-4 text-center"
+        >
+          <div className="text-2xl mb-2">🎯</div>
+          <h3 className="text-sm font-bold text-ceramic-text-primary mb-1">
+            Quer que a AICA te conheça melhor?
+          </h3>
+          <p className="text-xs text-ceramic-text-secondary mb-3">
+            Responda perguntas rápidas para personalizar sua experiência.
+          </p>
+          <button
+            onClick={() => {
+              localStorage.setItem('aica_interview_suggested', 'true')
+            }}
+            className="px-4 py-2 bg-amber-500 text-white rounded-lg text-xs font-medium hover:bg-amber-600 transition-all"
+          >
+            Começar Entrevista
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 }

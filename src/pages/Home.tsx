@@ -7,6 +7,7 @@ import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
 import { JourneyHeroCard } from '../modules/journey';
 import { FluxCard } from '../modules/flux';
+import { InterviewerCard } from '../modules/journey/components/interviewer';
 import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
 import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
 import { useGrantsHomeQuery } from '@/hooks/queries';
@@ -331,6 +332,18 @@ export default function Home({
                         </p>
                      </div>
                   </motion.div>
+               </motion.div>
+
+               {/* Interviewer — compact */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('journey')}
+                  className="cursor-pointer"
+               >
+                  <InterviewerCard compact />
                </motion.div>
 
                {/* Active generic modules — compact ModuleCards */}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ArrowLeft, Pause, SkipForward } from 'lucide-react'
 import { useInterviewer } from '../../hooks/useInterviewer'
@@ -40,6 +40,21 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
   const [showCPAnimation, setShowCPAnimation] = useState(false)
   const [lastCPEarned, setLastCPEarned] = useState(0)
   const [levelUpName, setLevelUpName] = useState<string | null>(null)
+  const [direction, setDirection] = useState(1)
+  const [confettiFired, setConfettiFired] = useState(false)
+
+  const slideVariants = {
+    enter: (d: number) => ({ x: d * 300, opacity: 0 }),
+    center: { x: 0, opacity: 1, transition: { duration: 0.3, ease: 'easeOut' as const } },
+    exit: (d: number) => ({ x: d * -300, opacity: 0, transition: { duration: 0.2 } }),
+  }
+
+  useEffect(() => {
+    if (isComplete && !confettiFired) {
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } })
+      setConfettiFired(true)
+    }
+  }, [isComplete, confettiFired])
 
   const handleSubmit = async () => {
     if (!currentQuestion) return
@@ -77,6 +92,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
         break
     }
 
+    setDirection(1)
     const result = await submitAnswer(answer)
 
     if (result.success) {
@@ -97,6 +113,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
   }
 
   const handleSkip = () => {
+    setDirection(1)
     setLocalAnswer({})
     skipQuestion()
   }
@@ -157,9 +174,6 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
 
   // Complete state
   if (isComplete && session) {
-    // Trigger confetti once
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } })
-
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -213,17 +227,25 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
         </span>
       </div>
 
-      {/* Question Card with transition */}
-      <AnimatePresence mode="wait">
+      {/* Question Card with directional slide transition */}
+      <AnimatePresence mode="wait" custom={direction}>
         {currentQuestion && (
-          <QuestionCard
+          <motion.div
             key={currentQuestion.id}
-            question={currentQuestion}
-            questionNumber={currentIndex + 1}
-            totalQuestions={progress.total}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
           >
-            {renderQuestion(currentQuestion, localAnswer, setLocalAnswer)}
-          </QuestionCard>
+            <QuestionCard
+              question={currentQuestion}
+              questionNumber={currentIndex + 1}
+              totalQuestions={progress.total}
+            >
+              {renderQuestion(currentQuestion, localAnswer, setLocalAnswer)}
+            </QuestionCard>
+          </motion.div>
         )}
       </AnimatePresence>
 
