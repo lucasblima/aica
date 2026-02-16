@@ -13,12 +13,14 @@
  * Usage: /flux/canvas/:athleteId/:blockId
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Calculator, TrendingUp } from 'lucide-react';
 import { useFlux } from '../context/FluxContext';
-import { getMockAthleteById, MOCK_WORKOUT_BLOCKS } from '../mockData';
+import { AthleteService } from '../services/athleteService';
+import { MOCK_WORKOUT_BLOCKS } from '../mockData';
 import { getTemplatesByModality, type WorkoutTemplate } from '../mockData/workoutTemplates';
+import type { Athlete } from '../types/flux';
 
 // Canvas components
 import { WorkoutTemplateLibrary } from '../components/canvas/WorkoutTemplateLibrary';
@@ -40,8 +42,18 @@ export default function CanvasEditorView() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-  // Data
-  const athlete = athleteId ? getMockAthleteById(athleteId) : null;
+  // Fetch real athlete from Supabase
+  const [athlete, setAthlete] = useState<Athlete | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!athleteId) { setLoading(false); return; }
+    AthleteService.getAthleteById(athleteId).then(({ data }) => {
+      setAthlete(data);
+      setLoading(false);
+    });
+  }, [athleteId]);
+
   const block = blockId ? MOCK_WORKOUT_BLOCKS.find((b) => b.id === blockId) : null;
 
   // Mock workouts for current week (would come from database)
@@ -131,6 +143,16 @@ export default function CanvasEditorView() {
   const handlePublishSuccess = () => {
     console.log('Workout plan published successfully!');
   };
+
+  // Loading
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
+        <div className="w-8 h-8 border-2 border-ceramic-info border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm text-ceramic-text-secondary">Carregando canvas...</p>
+      </div>
+    );
+  }
 
   // Not found
   if (!athlete) {
