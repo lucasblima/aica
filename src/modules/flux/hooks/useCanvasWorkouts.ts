@@ -233,17 +233,47 @@ export function useCanvasWorkouts(
 
   const createSlot = useCallback(
     async (input: Omit<CreateWorkoutSlotInput, 'microcycle_id'>): Promise<WorkoutSlot | null> => {
-      if (!activeMicrocycle) {
-        log.error('createSlot called but no activeMicrocycle');
-        setError(new Error('No active microcycle'));
-        return null;
+      let mcId = activeMicrocycle?.id;
+
+      // If no active microcycle, try to fetch/create one on demand
+      if (!mcId) {
+        log.debug('No activeMicrocycle in state, fetching on demand for athlete:', athleteId);
+
+        const { data: mc } = await MicrocycleService.getActiveMicrocycle(athleteId);
+        if (mc) {
+          mcId = mc.id;
+          setActiveMicrocycle(mc);
+        } else {
+          // Auto-create draft
+          const today = new Date();
+          const monday = new Date(today);
+          monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+
+          const { data: newMc, error: createMcError } = await MicrocycleService.createMicrocycle({
+            athlete_id: athleteId,
+            name: `Microciclo ${monday.toLocaleDateString('pt-BR')}`,
+            week_1_focus: 'volume' as MicrocycleWeekFocus,
+            week_2_focus: 'intensity' as MicrocycleWeekFocus,
+            week_3_focus: 'recovery' as MicrocycleWeekFocus,
+            start_date: monday.toISOString().split('T')[0],
+          });
+
+          if (createMcError || !newMc) {
+            log.error('Failed to create microcycle on demand:', createMcError);
+            setError(new Error('Nao foi possivel criar o microciclo'));
+            return null;
+          }
+
+          mcId = newMc.id;
+          setActiveMicrocycle(newMc);
+        }
       }
 
-      log.debug('Creating slot:', { microcycle_id: activeMicrocycle.id, ...input });
+      log.debug('Creating slot:', { microcycle_id: mcId, ...input });
 
       const { data, error: createError } = await MicrocycleService.createSlot({
         ...input,
-        microcycle_id: activeMicrocycle.id,
+        microcycle_id: mcId,
       });
 
       if (createError) {
@@ -255,7 +285,7 @@ export function useCanvasWorkouts(
       log.debug('Slot created:', data?.id);
       return data;
     },
-    [activeMicrocycle]
+    [activeMicrocycle, athleteId]
   );
 
   const createSlotFromTemplate = useCallback(
