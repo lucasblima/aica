@@ -150,7 +150,8 @@ export async function saveGoogleCalendarTokens(
         email?: string;
         name?: string;
         picture?: string;
-    }
+    },
+    grantedScopes?: string[]
 ): Promise<GoogleCalendarToken> {
     try {
         const { data: session } = await supabase.auth.getSession();
@@ -174,9 +175,7 @@ export async function saveGoogleCalendarTokens(
 
         if (existingToken) {
             // Atualizar token existente
-            result = await supabase
-                .from('google_calendar_tokens')
-                .update({
+            const updatePayload: Record<string, unknown> = {
                     access_token: accessToken,
                     refresh_token: refreshToken,
                     token_expiry: tokenExpiry,
@@ -185,15 +184,18 @@ export async function saveGoogleCalendarTokens(
                     picture_url: userInfo?.picture,
                     is_connected: true,
                     last_sync: new Date().toISOString(),
-                })
+            };
+            if (grantedScopes) updatePayload.scopes = grantedScopes;
+
+            result = await supabase
+                .from('google_calendar_tokens')
+                .update(updatePayload)
                 .eq('user_id', userId)
                 .select()
                 .single();
         } else {
             // Criar novo registro
-            result = await supabase
-                .from('google_calendar_tokens')
-                .insert({
+            const insertPayload: Record<string, unknown> = {
                     user_id: userId,
                     access_token: accessToken,
                     refresh_token: refreshToken,
@@ -202,7 +204,12 @@ export async function saveGoogleCalendarTokens(
                     name: userInfo?.name,
                     picture_url: userInfo?.picture,
                     is_connected: true,
-                })
+            };
+            if (grantedScopes) insertPayload.scopes = grantedScopes;
+
+            result = await supabase
+                .from('google_calendar_tokens')
+                .insert(insertPayload)
                 .select()
                 .single();
         }
@@ -750,6 +757,24 @@ export function getTokenRefreshState(): {
             ? new Date(refreshState.lastAttemptTime)
             : null,
     };
+}
+
+/**
+ * Check if the user has calendar write (calendar.events) scope.
+ * Returns false if only calendar.readonly was granted.
+ */
+export async function hasCalendarWriteScope(): Promise<boolean> {
+    try {
+        const tokens = await getGoogleCalendarTokens();
+        if (!tokens || !tokens.scopes) return false;
+        return tokens.scopes.some(
+            (s: string) => s === 'https://www.googleapis.com/auth/calendar.events' ||
+                           s === 'https://www.googleapis.com/auth/calendar'
+        );
+    } catch (error) {
+        log.error('Error checking calendar write scope:', { error });
+        return false;
+    }
 }
 
 /**

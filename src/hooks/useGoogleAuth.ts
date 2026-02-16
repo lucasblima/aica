@@ -24,13 +24,11 @@ export function useGoogleAuth(): UseGoogleAuthReturn {
     setLoading(true);
     setError(null);
 
-    // Escopos mínimos para verificação OAuth do Google
-    // - calendar.readonly: Leitura de calendários (suficiente para o AICA)
-    // - userinfo.email: Email do usuário
-    // NOTA: Scopes reduzidos de calendar (read-write) para calendar.readonly
-    // conforme exigido pelo processo de verificação OAuth do Google (#256)
+    // Scopes for bidirectional Google Calendar sync
+    // - calendar.events: Read + write calendar events
+    // - userinfo.email: User identification
     const googleCalendarScopes = [
-      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/calendar.events',
       'https://www.googleapis.com/auth/userinfo.email',
     ].join(' ');
 

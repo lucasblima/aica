@@ -50,6 +50,9 @@ export async function fetchCalendarEvents(
         if (options.orderBy) params.append('orderBy', options.orderBy);
         if (options.q) params.append('q', options.q);
 
+        // Request extendedProperties so we can identify AICA-synced events
+        params.append('fields', 'items(id,summary,description,start,end,attendees,organizer,transparency,status,extendedProperties),nextPageToken');
+
         const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
 
         log.debug('[fetchCalendarEvents] 🌐 Fazendo requisição para:', url);

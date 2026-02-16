@@ -10,6 +10,11 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { MicrocycleService } from '../services/microcycleService';
+import { ParQService } from '../services/parqService';
+import type { WorkoutClearanceResult } from '../types/parq';
+import { syncEntityToGoogle, unsyncEntityFromGoogle } from '@/services/calendarSyncService';
+import { fluxSlotToGoogleEvent } from '@/services/calendarSyncTransforms';
+import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 import type {
   Microcycle,
   WorkoutSlot,
@@ -53,6 +58,8 @@ export interface UseCanvasWorkoutsReturn {
     completionData?: WorkoutSlot['completion_data']
   ) => Promise<WorkoutSlot | null>;
   refresh: () => Promise<void>;
+  clearance: WorkoutClearanceResult | null;
+  isCheckingClearance: boolean;
 }
 
 export function useCanvasWorkouts(
@@ -64,9 +71,32 @@ export function useCanvasWorkouts(
   const [slots, setSlots] = useState<WorkoutSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [clearance, setClearance] = useState<WorkoutClearanceResult | null>(null);
+  const [isCheckingClearance, setIsCheckingClearance] = useState(false);
 
   const hasInitiallyLoaded = useRef(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // Check workout clearance on mount
+  useEffect(() => {
+    if (!athleteId || athleteId === '__none__') return;
+    let cancelled = false;
+
+    const checkClearance = async () => {
+      setIsCheckingClearance(true);
+      try {
+        const { data } = await ParQService.checkWorkoutClearance(athleteId);
+        if (!cancelled && data) setClearance(data);
+      } catch (err) {
+        log.error('Clearance check error:', err);
+      } finally {
+        if (!cancelled) setIsCheckingClearance(false);
+      }
+    };
+
+    checkClearance();
+    return () => { cancelled = true; };
+  }, [athleteId]);
 
   // Build weekWorkouts map: group slots by day_of_week for the active weekNumber
   const weekWorkouts = useMemo<WeekWorkout[]>(() => {
@@ -294,6 +324,17 @@ export function useCanvasWorkouts(
             return a.day_of_week - b.day_of_week;
           });
         });
+
+        // Sync to Google Calendar (non-blocking)
+        if (activeMicrocycle?.start_date) {
+          isGoogleCalendarConnected().then((connected) => {
+            if (!connected) return;
+            const eventData = fluxSlotToGoogleEvent(data, activeMicrocycle.start_date);
+            syncEntityToGoogle('flux', data.id, eventData).catch((err) =>
+              log.warn('Calendar sync failed for new slot:', err)
+            );
+          });
+        }
       }
 
       return data;
@@ -344,11 +385,22 @@ export function useCanvasWorkouts(
             return a.day_of_week - b.day_of_week;
           })
         );
+
+        // Sync update to Google Calendar (non-blocking)
+        if (activeMicrocycle?.start_date) {
+          isGoogleCalendarConnected().then((connected) => {
+            if (!connected) return;
+            const eventData = fluxSlotToGoogleEvent(data, activeMicrocycle.start_date);
+            syncEntityToGoogle('flux', data.id, eventData).catch((err) =>
+              log.warn('Calendar sync failed for updated slot:', err)
+            );
+          });
+        }
       }
 
       return data;
     },
-    []
+    [activeMicrocycle]
   );
 
   const deleteSlot = useCallback(async (slotId: string): Promise<boolean> => {
@@ -361,6 +413,14 @@ export function useCanvasWorkouts(
 
     // Optimistic: remove from local state immediately
     setSlots((prev) => prev.filter((s) => s.id !== slotId));
+
+    // Unsync from Google Calendar (non-blocking)
+    isGoogleCalendarConnected().then((connected) => {
+      if (!connected) return;
+      unsyncEntityFromGoogle('flux', slotId).catch((err) =>
+        log.warn('Calendar unsync failed for deleted slot:', err)
+      );
+    });
 
     return true;
   }, []);
@@ -404,5 +464,7 @@ export function useCanvasWorkouts(
     deleteSlot,
     markComplete,
     refresh: loadData,
+    clearance,
+    isCheckingClearance,
   };
 }

@@ -32,8 +32,10 @@ import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
 // TODO: Re-enable onboarding tour after app functionality is stable
 // import { useTourAutoStart } from '../hooks/useTourAutoStart';
 import { TimelineEvent } from '../services/googleCalendarService';
-import { disconnectGoogleCalendar } from '../services/googleAuthService';
+import { disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
 import { notificationService } from '../services/notificationService';
+import { syncEntityToGoogle, unsyncEntityFromGoogle } from '../services/calendarSyncService';
+import { atlasTaskToGoogleEvent } from '../services/calendarSyncTransforms';
 
 interface AgendaViewProps {
     userId: string;
@@ -552,6 +554,21 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             .from('work_items')
             .update({ scheduled_time: time, due_date: today })
             .eq('id', taskId);
+
+        // Sync scheduled task to Google Calendar (non-blocking)
+        isGoogleCalendarConnected().then((connected) => {
+            if (!connected) return;
+            const eventData = atlasTaskToGoogleEvent({
+                id: taskId,
+                title: task.title,
+                description: task.description,
+                scheduled_time: time,
+                due_date: today,
+            });
+            syncEntityToGoogle('atlas', taskId, eventData).catch((err) =>
+                log.warn('Calendar sync failed for scheduled task:', err)
+            );
+        });
     };
 
     const updateTaskQuadrant = async (taskId: string, newQuadrant: Quadrant) => {
@@ -668,6 +685,14 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 icon: '✅',
                 duration: 3000
             });
+
+            // Unsync from Google Calendar (non-blocking)
+            isGoogleCalendarConnected().then((connected) => {
+                if (!connected) return;
+                unsyncEntityFromGoogle('atlas', taskId).catch((err) =>
+                    log.warn('Calendar unsync failed for unscheduled task:', err)
+                );
+            });
         } else {
             log.error(' Error unscheduling task:', error);
             notificationService.show({
@@ -685,10 +710,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     // Handler para conectar Google Calendar
     const handleConnectCalendar = async () => {
         log.debug(' Conectando Google Calendar...');
-        // Escopos mínimos para verificação OAuth do Google (#256)
-        // AICA apenas lê eventos — NÃO modifica o calendário do usuário
+        // Bidirectional sync: read + write calendar events
         const googleCalendarScopes = [
-            'https://www.googleapis.com/auth/calendar.readonly',
+            'https://www.googleapis.com/auth/calendar.events',
             'https://www.googleapis.com/auth/userinfo.email',
         ].join(' ');
 

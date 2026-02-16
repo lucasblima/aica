@@ -20,6 +20,9 @@ import { supabase } from '@/services/supabaseClient'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { Topic, TopicCategory } from '../types'
 import { createNamespacedLogger } from '@/lib/logger';
+import { syncEntityToGoogle } from '@/services/calendarSyncService';
+import { studioEpisodeToGoogleEvent } from '@/services/calendarSyncTransforms';
+import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 
 const log = createNamespacedLogger('workspaceDatabaseService');
 
@@ -97,6 +100,25 @@ export async function createEpisode(episode: Partial<Episode>): Promise<Episode>
     .single()
 
   if (error) throw new Error(`Failed to create episode: ${error.message}`)
+
+  // Sync to Google Calendar if episode has a scheduled_date (non-blocking)
+  if (data.scheduled_date) {
+    isGoogleCalendarConnected().then((connected) => {
+      if (!connected) return
+      const eventData = studioEpisodeToGoogleEvent({
+        id: data.id,
+        title: data.title,
+        guest_name: data.guest_name,
+        scheduled_date: data.scheduled_date,
+        duration_minutes: data.duration_minutes,
+        location: data.location,
+      })
+      syncEntityToGoogle('studio', data.id, eventData).catch((err) =>
+        log.warn('Calendar sync failed for new episode:', err)
+      )
+    })
+  }
+
   return data
 }
 
@@ -129,6 +151,25 @@ export async function updateEpisode(id: string, updates: Partial<Episode>): Prom
     .single()
 
   if (error) throw new Error(`Failed to update episode: ${error.message}`)
+
+  // Sync updated episode to Google Calendar if it has a scheduled_date (non-blocking)
+  if (data.scheduled_date) {
+    isGoogleCalendarConnected().then((connected) => {
+      if (!connected) return
+      const eventData = studioEpisodeToGoogleEvent({
+        id: data.id,
+        title: data.title,
+        guest_name: data.guest_name,
+        scheduled_date: data.scheduled_date,
+        duration_minutes: data.duration_minutes,
+        location: data.location,
+      })
+      syncEntityToGoogle('studio', data.id, eventData).catch((err) =>
+        log.warn('Calendar sync failed for updated episode:', err)
+      )
+    })
+  }
+
   return data
 }
 
