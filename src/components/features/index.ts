@@ -23,6 +23,7 @@ export { ProcessWithAicaButton } from './ProcessWithAicaButton';
 export { ProcessingEstimateModal } from './ProcessingEstimateModal';
 export { AnalysisResultsPanel } from './AnalysisResultsPanel';
 export { DailyTimeline } from './DailyTimeline';
+export { ExploreMoreSection } from './ExploreMoreSection';
 export { DailySummaryView } from './DailySummaryView';
 // prettier-ignore
 export { default as EfficiencyControlPanel } from './EfficiencyControlPanel';
