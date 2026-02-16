@@ -6,14 +6,15 @@ import Stripe from "https://esm.sh/stripe@14.14.0"
 // STRIPE SETUP — Required before checkout works
 // ============================================================================
 //
-// 1. Create products/prices in Stripe Dashboard (https://dashboard.stripe.com/products)
-//    - Product "AICA Pro" → recurring monthly R$39.90 → copy price ID (price_...)
-//    - Product "AICA Teams" → recurring monthly R$149.00 → copy price ID (price_...)
+// 1. Run setup-stripe-products Edge Function (creates products + prices automatically)
+//    OR create manually in Stripe Dashboard (https://dashboard.stripe.com/products):
+//    - Product "AICA Pro" → recurring monthly R$34.99 → copy price ID (price_...)
+//    - Product "AICA Max" → recurring monthly R$89.99 → copy price ID (price_...)
 //    - The "free" plan does NOT need a Stripe price ID.
 //
-// 2. Set the price IDs in the database:
+// 2. Price IDs are set automatically by setup-stripe-products, or manually:
 //    UPDATE pricing_plans SET stripe_price_id = 'price_XXXXX' WHERE id = 'pro';
-//    UPDATE pricing_plans SET stripe_price_id = 'price_YYYYY' WHERE id = 'teams';
+//    UPDATE pricing_plans SET stripe_price_id = 'price_YYYYY' WHERE id = 'max';
 //
 // 3. Set Supabase secrets:
 //    supabase secrets set STRIPE_SECRET_KEY=sk_live_...

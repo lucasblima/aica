@@ -57,10 +57,10 @@ interface TokenAvailability {
 // MODEL TIER MAPPINGS
 // ============================================================================
 
-const MODEL_TIER_LIMITS: Record<ModelTier, { free: number; pro: number; teams: number; enterprise: number }> = {
-  premium: { free: 50000, pro: 500000, teams: 2000000, enterprise: 10000000 },
-  standard: { free: 200000, pro: 2000000, teams: 10000000, enterprise: 50000000 },
-  lite: { free: 1000000, pro: 10000000, teams: 50000000, enterprise: -1 }, // -1 = unlimited
+const MODEL_TIER_LIMITS: Record<ModelTier, { free: number; pro: number; max: number }> = {
+  premium: { free: 50000, pro: 500000, max: 2000000 },
+  standard: { free: 200000, pro: 2000000, max: 10000000 },
+  lite: { free: 1000000, pro: 10000000, max: 50000000 },
 }
 
 const MODEL_TO_TIER: Record<string, ModelTier> = {
