@@ -86,7 +86,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
 
     if (loading) {
         return (
-            <div className={`ceramic-card animate-pulse h-full ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px]'}`}>
+            <div className={`ceramic-card animate-pulse ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px] h-full'}`}>
                 <div className="h-4 bg-ceramic-cool rounded w-20 mb-3"></div>
                 <div className={`bg-ceramic-cool rounded w-28 mb-2 ${compact ? 'h-6' : 'h-10'}`}></div>
                 {!compact && <div className="h-3 bg-ceramic-cool rounded w-16"></div>}
@@ -96,7 +96,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
 
     if (error || !summary || !burnRate) {
         return (
-            <div className={`ceramic-card h-full flex items-center justify-center ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px]'}`}>
+            <div className={`ceramic-card flex items-center justify-center ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px] h-full'}`}>
                 <p className="text-ceramic-text-secondary text-xs text-center">
                     {error || 'Sem dados'}
                 </p>
@@ -110,7 +110,7 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = fals
     if (compact) {
         return (
             <motion.div
-                className="ceramic-card p-3 h-full min-h-[100px] flex flex-col relative overflow-hidden cursor-pointer"
+                className="ceramic-card p-3 min-h-[100px] flex flex-col relative overflow-hidden cursor-pointer"
                 variants={cardElevationVariants}
                 initial="rest"
                 whileHover="hover"

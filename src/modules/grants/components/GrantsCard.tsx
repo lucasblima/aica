@@ -65,7 +65,7 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
     return (
       <motion.div
         data-testid="grants-card"
-        className="ceramic-card p-3 h-full min-h-[100px] flex flex-col cursor-pointer relative overflow-hidden"
+        className="ceramic-card p-3 min-h-[100px] flex flex-col cursor-pointer relative overflow-hidden"
         variants={cardElevationVariants}
         initial="rest"
         whileHover="hover"
