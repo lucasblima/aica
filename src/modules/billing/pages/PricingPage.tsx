@@ -15,9 +15,10 @@ interface PricingPlan {
   name: string;
   description: string;
   price_brl_monthly: number;
-  daily_interaction_limit: number | null;
+  monthly_credits: number;
   features: string[];
   is_active: boolean;
+  highlight?: string;
 }
 
 interface FAQItem {
@@ -35,10 +36,9 @@ const PLANS: PricingPlan[] = [
     name: 'Free',
     description: 'Para comecar a organizar sua vida com IA',
     price_brl_monthly: 0,
-    daily_interaction_limit: 50,
+    monthly_credits: 500,
     features: [
-      '50 interacoes por dia',
-      '5 creditos bonus diarios',
+      '500 creditos por mes',
       'Todos os 8 modulos',
       'Chat com IA basico',
       'Exportacao de dados',
@@ -49,11 +49,11 @@ const PLANS: PricingPlan[] = [
     id: 'pro',
     name: 'Pro',
     description: 'Para quem quer produtividade maxima',
-    price_brl_monthly: 39.90,
-    daily_interaction_limit: 500,
+    price_brl_monthly: 34.99,
+    monthly_credits: 2500,
+    highlight: '5x mais creditos',
     features: [
-      '500 interacoes por dia',
-      '20 creditos bonus diarios',
+      '2.500 creditos por mes',
       'Todos os 8 modulos',
       'Chat com IA avancado',
       'Analise profunda com Gemini Pro',
@@ -63,21 +63,18 @@ const PLANS: PricingPlan[] = [
     is_active: true,
   },
   {
-    id: 'teams',
-    name: 'Teams',
-    description: 'Para equipes e associacoes esportivas',
-    price_brl_monthly: 149,
-    daily_interaction_limit: null,
+    id: 'max',
+    name: 'Max',
+    description: 'Para power users e profissionais',
+    price_brl_monthly: 89.99,
+    monthly_credits: 10000,
+    highlight: '20x mais creditos',
     features: [
-      'Interacoes ilimitadas',
-      '50 creditos bonus diarios',
-      'Todos os 8 modulos',
-      'Chat com IA avancado',
-      'Analise profunda com Gemini Pro',
-      'Suporte prioritario',
-      'Integracao WhatsApp completa',
-      'Painel de equipe (ate 10 membros)',
-      'Relatorios consolidados',
+      '10.000 creditos por mes',
+      'Tudo do Pro',
+      'API access',
+      'Dashboard de uso avancado',
+      'Suporte dedicado',
     ],
     is_active: true,
   },
@@ -85,9 +82,9 @@ const PLANS: PricingPlan[] = [
 
 const FAQ_ITEMS: FAQItem[] = [
   {
-    question: 'O que conta como uma interacao?',
+    question: 'Como funcionam os creditos?',
     answer:
-      'Cada chamada de IA conta como uma interacao. Isso inclui mensagens no chat, analises automaticas, geracoes de relatorio e qualquer processamento que utilize o modelo Gemini. Acoes simples como navegar, editar dados ou visualizar telas nao consomem interacoes.',
+      'Cada acao de IA consome creditos. Acoes simples (analise de sentimento, classificacao) custam 1 credito. Chat e analises custam 2 creditos. Relatorios e briefings custam 3. Acoes avancadas como Conselho de Vida custam 5 creditos. Seus creditos renovam todo mes.',
   },
   {
     question: 'Posso trocar de plano a qualquer momento?',
@@ -95,9 +92,9 @@ const FAQ_ITEMS: FAQItem[] = [
       'Sim. Voce pode fazer upgrade ou downgrade a qualquer momento. Ao fazer upgrade, a diferenca proporcional sera cobrada. Ao fazer downgrade, o novo preco sera aplicado no proximo ciclo de cobranca.',
   },
   {
-    question: 'Como funciona o sistema de creditos bonus?',
+    question: 'O que acontece se meus creditos acabarem?',
     answer:
-      'Creditos bonus sao resgatados diariamente e podem ser usados para funcionalidades especiais como analises profundas e geracoes premium. Creditos nao utilizados nao acumulam para o dia seguinte.',
+      'Voce pode continuar usando o AICA normalmente ate o fim do mes, mas as funcionalidades de IA ficam limitadas. Voce pode fazer upgrade para ter mais creditos imediatamente ou aguardar a renovacao mensal.',
   },
   {
     question: 'Quais formas de pagamento sao aceitas?',

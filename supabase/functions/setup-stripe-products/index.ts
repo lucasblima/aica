@@ -13,8 +13,8 @@ import Stripe from "https://esm.sh/stripe@14.14.0"
 //     -H "Authorization: Bearer <service_role_key>"
 //
 // Products created:
-//   - AICA Pro: R$39.90/month (5,000 credits)
-//   - AICA Teams: R$149.00/month (20,000 credits)
+//   - AICA Pro: R$34.99/month (2,500 credits)
+//   - AICA Max: R$89.99/month (10,000 credits)
 //   - Free plan: no Stripe product needed
 //
 // Idempotent: searches for existing products by metadata before creating.
@@ -50,22 +50,22 @@ const PLANS: PlanConfig[] = [
   {
     plan_id: 'pro',
     product_name: 'AICA Pro',
-    price_brl_cents: 3990, // R$39.90
-    monthly_credits: 5000,
+    price_brl_cents: 3499, // R$34.99
+    monthly_credits: 2500,
     features: [
       'Todos os modulos',
-      '5000 creditos/mes',
+      '2500 creditos/mes',
       'Suporte prioritario',
     ],
   },
   {
-    plan_id: 'teams',
-    product_name: 'AICA Teams',
-    price_brl_cents: 14900, // R$149.00
-    monthly_credits: 20000,
+    plan_id: 'max',
+    product_name: 'AICA Max',
+    price_brl_cents: 8999, // R$89.99
+    monthly_credits: 10000,
     features: [
       'Tudo do Pro',
-      '20000 creditos/mes',
+      '10000 creditos/mes',
       'API access',
       'Dashboard de uso',
       'Suporte dedicado',
