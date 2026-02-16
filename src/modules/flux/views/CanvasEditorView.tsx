@@ -594,25 +594,38 @@ export default function CanvasEditorView() {
 
   const handleDropWorkout = useCallback(
     async (dayOfWeek: number, templateData: string) => {
+      console.log('[Canvas] Drop received:', { dayOfWeek, templateData: templateData.substring(0, 100) });
+
       // Try to parse as JSON template
       try {
         const template = JSON.parse(templateData) as WorkoutTemplate;
         if (template.id && template.name) {
-          await createSlotFromTemplate(template, dayOfWeek);
+          console.log('[Canvas] Creating slot from template:', template.name, 'day:', dayOfWeek);
+          const result = await createSlotFromTemplate(template, dayOfWeek);
+          if (!result) {
+            console.error('[Canvas] createSlotFromTemplate returned null — check activeMicrocycle and Supabase errors');
+          } else {
+            console.log('[Canvas] Slot created successfully:', result.id);
+          }
           return;
         }
       } catch {
         // Not JSON, treat as templateId
+        console.log('[Canvas] templateData is not JSON, trying as ID');
       }
 
       // Fallback: find template by ID from the templates list
-      // This handles the simple templateId case from the library
       const { data: templates } = await import('../services/workoutTemplateService').then(
         (m) => m.WorkoutTemplateService.getTemplates({ modality: athlete?.modality as any })
       );
       const tmpl = templates?.find((t: WorkoutTemplate) => t.id === templateData);
       if (tmpl) {
-        await createSlotFromTemplate(tmpl, dayOfWeek);
+        const result = await createSlotFromTemplate(tmpl, dayOfWeek);
+        if (!result) {
+          console.error('[Canvas] Fallback createSlotFromTemplate returned null');
+        }
+      } else {
+        console.error('[Canvas] Template not found by ID:', templateData);
       }
     },
     [createSlotFromTemplate, athlete?.modality]

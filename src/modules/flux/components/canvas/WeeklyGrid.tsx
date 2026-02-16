@@ -291,10 +291,16 @@ const DayColumn: React.FC<DayColumnProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     onDragLeaveDay();
-    const templateData = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('templateId');
+    const textPlain = e.dataTransfer.getData('text/plain');
+    const templateId = e.dataTransfer.getData('templateId');
+    const templateData = textPlain || templateId;
+    console.log('[WeeklyGrid] Drop on day', day.number, '| text/plain:', textPlain?.substring(0, 50), '| templateId:', templateId);
     if (templateData) {
       onDrop(templateData);
+    } else {
+      console.warn('[WeeklyGrid] No template data in drop event');
     }
   };
 
