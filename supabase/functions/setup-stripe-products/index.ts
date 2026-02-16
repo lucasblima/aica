@@ -123,11 +123,16 @@ serve(async (req) => {
           limit: 1,
         })
 
-        if (prices.data.length > 0) {
+        if (prices.data.length > 0 && prices.data[0].unit_amount === plan.price_brl_cents) {
           priceId = prices.data[0].id
           status = 'existing'
           console.log(`[setup-stripe-products] Found existing price: ${priceId}`)
         } else {
+          // Archive old price if amount changed
+          if (prices.data.length > 0 && prices.data[0].unit_amount !== plan.price_brl_cents) {
+            await stripe.prices.update(prices.data[0].id, { active: false })
+            console.log(`[setup-stripe-products] Archived old price: ${prices.data[0].id} (was ${prices.data[0].unit_amount}, now ${plan.price_brl_cents})`)
+          }
           // Product exists but no active price — create one
           const price = await stripe.prices.create({
             product: productId,
