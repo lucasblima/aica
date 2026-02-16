@@ -9,7 +9,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
+import { useParQ } from '../hooks/useParQ';
+import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { AthleteWelcome } from '../components/AthleteWelcome';
+import { ParQWizard } from '../components/parq/ParQWizard';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
 import {
@@ -100,6 +103,54 @@ export default function AthletePortalView() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // PAR-Q gate: show wizard if PAR-Q onboarding is required but not completed
+  const parqRequired = profile?.allow_parq_onboarding === true;
+  const parqCleared = profile?.parq_clearance_status === 'cleared' ||
+    profile?.parq_clearance_status === 'cleared_with_restrictions';
+
+  const parq = useParQ({
+    athleteId: profile?.athlete_id || '',
+    filledByRole: 'athlete',
+  });
+
+  const docs = useAthleteDocuments({
+    athleteId: profile?.athlete_id || '',
+  });
+
+  const [parqCompleted, setParqCompleted] = useState(false);
+
+  if (profile && parqRequired && !parqCleared && !parqCompleted) {
+    return (
+      <ParQWizard
+        athleteName={profile.athlete_name}
+        athleteId={profile.athlete_id}
+        step={parq.step}
+        classicAnswers={parq.classicAnswers}
+        followUpAnswers={parq.followUpAnswers}
+        activeFollowUpCategories={parq.activeFollowUpCategories}
+        calculatedRisk={parq.calculatedRisk}
+        calculatedClearance={parq.calculatedClearance}
+        restrictions={parq.restrictions}
+        signatureText={parq.signatureText}
+        isSubmitting={parq.isSubmitting}
+        submitError={parq.submitError}
+        setStep={parq.setStep}
+        nextStep={parq.nextStep}
+        prevStep={parq.prevStep}
+        setClassicAnswer={parq.setClassicAnswer}
+        setFollowUpAnswer={parq.setFollowUpAnswer}
+        setSignatureText={parq.setSignatureText}
+        submitParQ={parq.submitParQ}
+        onComplete={() => {
+          setParqCompleted(true);
+          refetch();
+        }}
+        onUploadDocument={(input) => docs.uploadDocument(input)}
+        isUploading={docs.isUploading}
+      />
     );
   }
 

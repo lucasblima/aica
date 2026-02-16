@@ -165,3 +165,25 @@ export {
   getRPEColor,
   getRPELabel,
 } from './zones';
+
+// ============================================
+// PAR-Q TYPES
+// ============================================
+
+export type {
+  ParQRiskLevel,
+  ParQClearanceStatus,
+  MedicalDocumentType,
+  ParQWizardStep,
+  FollowUpCategory,
+  ParQClassicQuestion,
+  FollowUpQuestion,
+  FollowUpCategoryBlock,
+  ParQResponse,
+  AthleteDocument,
+  ParQWizardState,
+  ParQStatus,
+  WorkoutClearanceResult,
+  SubmitParQInput,
+  UploadDocumentInput,
+} from './parq';
