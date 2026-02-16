@@ -67,6 +67,7 @@ const MicrocycleEditorView = lazy(() => import('../modules/flux/views/Microcycle
 const LevelingEngineView = lazy(() => import('../modules/flux/views/LevelingEngineView').then(m => ({ default: m.default })));
 const IntensityCalculatorView = lazy(() => import('../modules/flux/views/IntensityCalculatorView').then(m => ({ default: m.default })));
 const CRMCommandCenterView = lazy(() => import('../modules/flux/views/CRMCommandCenterView').then(m => ({ default: m.default })));
+const ParQFormView = lazy(() => import('../modules/flux/views/ParQFormView').then(m => ({ default: m.default })));
 
 // Onboarding Module - Only loaded for new users
 const LandingPage = lazy(() => import('../modules/onboarding/components/landing').then(m => ({ default: m.default })));
@@ -695,6 +696,7 @@ export function AppRouter() {
                <Route path="/flux/leveling" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><LevelingEngineView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
                <Route path="/flux/intensity/:athleteId?" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><IntensityCalculatorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
                <Route path="/flux/crm" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><CRMCommandCenterView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/parq/:athleteId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><ParQFormView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
                <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
