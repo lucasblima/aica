@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { SparklesIcon, ArrowLeftIcon, PauseIcon, ForwardIcon } from '@heroicons/react/24/solid'
+import { Sparkles, ArrowLeft, Pause, SkipForward } from 'lucide-react'
 import { useInterviewer } from '../../hooks/useInterviewer'
 import type { InterviewAnswer, InterviewQuestion } from '../../types/interviewer'
-import { QuestionCard, SingleChoiceRenderer, FreeTextRenderer, ScaleRenderer } from './renderers'
+import {
+  QuestionCard,
+  SingleChoiceRenderer,
+  FreeTextRenderer,
+  ScaleRenderer,
+  MultiChoiceRenderer,
+  LongTextRenderer,
+  DateRenderer,
+  RankedListRenderer,
+} from './renderers'
 import confetti from 'canvas-confetti'
 
 interface InterviewSessionProps {
@@ -40,12 +49,27 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
         if (!localAnswer.selected) return
         answer = { selected: localAnswer.selected as string }
         break
+      case 'multi_choice':
+        if (!localAnswer.selected || !(localAnswer.selected as string[]).length) return
+        answer = { selected: localAnswer.selected as string[] }
+        break
       case 'scale':
         if (localAnswer.value == null) return
         answer = { value: localAnswer.value as number }
         break
-      case 'free_text':
+      case 'date':
+        if (!localAnswer.date) return
+        answer = { date: localAnswer.date as string }
+        break
+      case 'ranked_list':
+        if (!localAnswer.ranked || !(localAnswer.ranked as string[]).length) return
+        answer = { ranked: localAnswer.ranked as string[] }
+        break
       case 'long_text':
+        if (!localAnswer.text || !(localAnswer.text as string).trim()) return
+        answer = { text: (localAnswer.text as string).trim() }
+        break
+      case 'free_text':
       default:
         if (!localAnswer.text || !(localAnswer.text as string).trim()) return
         answer = { text: (localAnswer.text as string).trim() }
@@ -80,8 +104,14 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
     switch (currentQuestion.question_type) {
       case 'single_choice':
         return !!localAnswer.selected
+      case 'multi_choice':
+        return Array.isArray(localAnswer.selected) && (localAnswer.selected as string[]).length > 0
       case 'scale':
         return localAnswer.value != null
+      case 'date':
+        return !!localAnswer.date
+      case 'ranked_list':
+        return Array.isArray(localAnswer.ranked) && (localAnswer.ranked as string[]).length > 0
       case 'free_text':
       case 'long_text':
       default:
@@ -137,7 +167,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
           Voce completou todas as {session.total_questions} perguntas de <strong>{session.title}</strong>.
         </p>
         <div className="flex items-center justify-center gap-2 text-amber-600 font-bold text-lg">
-          <SparklesIcon className="h-5 w-5" />
+          <Sparkles className="h-5 w-5" />
           <span>+{session.cp_earned} CP ganhos</span>
         </div>
         <button
@@ -159,7 +189,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
           className="p-2 rounded-full hover:bg-ceramic-cool/30 transition-all"
           aria-label="Voltar"
         >
-          <ArrowLeftIcon className="h-5 w-5 text-ceramic-text-secondary" />
+          <ArrowLeft className="h-5 w-5 text-ceramic-text-secondary" />
         </button>
         <div className="flex-1">
           <div className="h-2 w-full bg-ceramic-cool/30 rounded-full overflow-hidden">
@@ -204,14 +234,14 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
             onClick={handleSkip}
             className="px-4 py-3 rounded-xl font-medium text-ceramic-text-secondary hover:bg-ceramic-cool/30 transition-all flex items-center gap-1.5"
           >
-            <ForwardIcon className="h-4 w-4" />
+            <SkipForward className="h-4 w-4" />
             Pular
           </button>
           <button
             onClick={handlePause}
             className="px-4 py-3 rounded-xl font-medium text-ceramic-text-secondary hover:bg-ceramic-cool/30 transition-all flex items-center gap-1.5"
           >
-            <PauseIcon className="h-4 w-4" />
+            <Pause className="h-4 w-4" />
             Pausar
           </button>
         </div>
@@ -227,7 +257,7 @@ export function InterviewSession({ sessionId, onComplete, onBack }: InterviewSes
             className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
           >
             <div className="ceramic-card p-6 text-center shadow-lg">
-              <SparklesIcon className="h-10 w-10 text-amber-500 mx-auto mb-2" />
+              <Sparkles className="h-10 w-10 text-amber-500 mx-auto mb-2" />
               <div className="text-2xl font-bold text-ceramic-text-primary">
                 +{lastCPEarned} CP
               </div>
@@ -253,6 +283,14 @@ function renderQuestion(
           onChange={val => setLocalAnswer({ selected: val })}
         />
       )
+    case 'multi_choice':
+      return (
+        <MultiChoiceRenderer
+          question={question}
+          value={(localAnswer.selected as string[]) || []}
+          onChange={selected => setLocalAnswer({ selected })}
+        />
+      )
     case 'scale':
       return (
         <ScaleRenderer
@@ -261,8 +299,32 @@ function renderQuestion(
           onChange={val => setLocalAnswer({ value: val })}
         />
       )
-    case 'free_text':
     case 'long_text':
+      return (
+        <LongTextRenderer
+          value={(localAnswer.text as string) || ''}
+          onChange={text => setLocalAnswer({ text })}
+          placeholder="Conte com detalhes..."
+          maxLength={2000}
+        />
+      )
+    case 'date':
+      return (
+        <DateRenderer
+          question={question}
+          value={(localAnswer.date as string) || null}
+          onChange={date => setLocalAnswer({ date })}
+        />
+      )
+    case 'ranked_list':
+      return (
+        <RankedListRenderer
+          question={question}
+          value={(localAnswer.ranked as string[]) || []}
+          onChange={ranked => setLocalAnswer({ ranked })}
+        />
+      )
+    case 'free_text':
     default:
       return (
         <FreeTextRenderer
