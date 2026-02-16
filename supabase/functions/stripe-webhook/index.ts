@@ -49,15 +49,34 @@ async function handleCheckoutSessionCompleted(
       .eq('user_id', userId)
 
   } else if (checkoutType === 'credits') {
-    // Handle credit purchase
-    const creditAmount = parseFloat(session.metadata?.credit_amount || '0')
+    // Handle credit purchase (interaction credits, not BRL)
+    const creditAmount = parseInt(session.metadata?.credit_amount || '0', 10)
 
     if (creditAmount <= 0) {
       console.error('[stripe-webhook] Invalid credit amount:', creditAmount)
       return
     }
 
-    console.log(`[stripe-webhook] Adding R$${creditAmount} credits for user ${userId}`)
+    console.log(`[stripe-webhook] Adding ${creditAmount} interaction credits for user ${userId}`)
+
+    // Get current balance
+    const { data: currentCredits } = await supabase
+      .from('user_credits')
+      .select('balance')
+      .eq('user_id', userId)
+      .single()
+
+    const currentBalance = currentCredits?.balance ?? 0
+    const newBalance = currentBalance + creditAmount
+
+    // Update user credits balance
+    await supabase
+      .from('user_credits')
+      .upsert({
+        user_id: userId,
+        balance: newBalance,
+        lifetime_earned: currentBalance + creditAmount,
+      }, { onConflict: 'user_id' })
 
     // Record the credit transaction
     await supabase
@@ -66,12 +85,11 @@ async function handleCheckoutSessionCompleted(
         user_id: userId,
         amount: creditAmount,
         transaction_type: 'purchase',
-        description: `Compra de R$${creditAmount} em creditos`,
-        stripe_payment_intent_id: session.payment_intent as string,
+        balance_after: newBalance,
+        description: `Compra de ${creditAmount} creditos via Stripe`,
+        reference_type: 'stripe_purchase',
+        reference_id: session.payment_intent as string,
       })
-
-    // Update user's credit balance (via trigger or direct update)
-    // The database trigger on credit_transactions will handle balance updates
   }
 }
 
@@ -88,15 +106,16 @@ async function handleSubscriptionUpdated(
 
   console.log(`[stripe-webhook] Updating subscription ${subscription.id} status to ${subscription.status}`)
 
+  // Map Stripe statuses to our schema: active | cancelled | past_due | trialing
   const statusMap: Record<string, string> = {
     'active': 'active',
     'past_due': 'past_due',
     'canceled': 'cancelled',
     'unpaid': 'past_due',
     'trialing': 'trialing',
-    'incomplete': 'inactive',
+    'incomplete': 'cancelled',
     'incomplete_expired': 'cancelled',
-    'paused': 'paused',
+    'paused': 'cancelled',
   }
 
   await supabase
@@ -124,19 +143,14 @@ async function handleSubscriptionDeleted(
 
   console.log(`[stripe-webhook] Cancelling subscription ${subscription.id} for user ${userId}`)
 
-  // Get the free plan ID
-  const { data: freePlan } = await supabase
-    .from('billing_plans')
-    .select('id')
-    .eq('name', 'Free')
-    .single()
-
+  // Revert to free plan (TEXT PK = 'free' in consolidated billing schema)
   await supabase
     .from('user_subscriptions')
     .update({
-      plan_id: freePlan?.id || null,
+      plan_id: 'free',
       stripe_subscription_id: null,
       status: 'cancelled',
+      cancelled_at: new Date().toISOString(),
       cancel_at_period_end: false,
       updated_at: new Date().toISOString(),
     })
@@ -177,19 +191,9 @@ async function handleInvoicePaymentFailed(
     })
     .eq('stripe_subscription_id', subscriptionId)
 
-  // Queue notification to user
-  await supabase
-    .from('action_queue')
-    .insert({
-      user_id: subscription.user_id,
-      action_type: 'notification',
-      payload: {
-        title: 'Falha no pagamento',
-        message: 'Houve um problema ao processar seu pagamento. Por favor, atualize suas informacoes de pagamento para evitar a suspensao do servico.',
-        type: 'warning',
-      },
-      priority: 'high',
-    })
+  // Note: action_queue was dropped in consolidated billing migration.
+  // Payment failure notifications are handled client-side via subscription status check.
+  console.log(`[stripe-webhook] User ${subscription.user_id} subscription marked as past_due`)
 }
 
 // ============================================================================
