@@ -179,7 +179,7 @@ const MiniDayCell: React.FC<MiniDayCellProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const templateData =
-      e.dataTransfer.getData('templateId') || e.dataTransfer.getData('text/plain');
+      e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('templateId');
     if (templateData) {
       onDrop?.(templateData);
     }

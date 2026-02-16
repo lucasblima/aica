@@ -95,6 +95,12 @@ export function useCanvasWorkouts(
 
   // Fetch or auto-create microcycle, then fetch its slots
   const loadData = useCallback(async () => {
+    // Skip loading when no real athleteId
+    if (!athleteId || athleteId === '__none__') {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       if (!hasInitiallyLoaded.current) setIsLoading(true);
       setError(null);
