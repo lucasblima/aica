@@ -138,7 +138,7 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
         setLimitInfo(limit)
         if (!limit.allowed) {
           setLimitReached(true)
-          setError('Voce atingiu o limite diario de interacoes. Faca upgrade do seu plano ou aguarde ate amanha.')
+          setError(`Seus creditos mensais acabaram. ${limit.remaining} creditos restantes de ${limit.plan}.`)
           return
         }
       } catch {

@@ -15,6 +15,7 @@ import type {
   MonthlyCostSummary,
   AIUsageRecord
 } from '../types/aiCost';
+import { getActionCreditCost } from '../types/aiCost';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('AICostAnalyticsService');
@@ -36,7 +37,7 @@ export async function getUserAICosts(
 
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('action, model_used, tokens_input, tokens_output, cost_brl')
+    .select('action, model_used, tokens_input, tokens_output, cost_brl, credits_used')
     .eq('user_id', userId)
     .gte('created_at', start)
     .lte('created_at', end);
@@ -47,15 +48,16 @@ export async function getUserAICosts(
   }
 
   // Aggregate by action + model
-  const groupMap = new Map<string, { requests: number; tokens: number; cost: number }>();
+  const groupMap = new Map<string, { requests: number; tokens: number; cost: number; credits: number }>();
 
   (data || []).forEach((record) => {
     const key = `${record.action}::${record.model_used}`;
-    const existing = groupMap.get(key) || { requests: 0, tokens: 0, cost: 0 };
+    const existing = groupMap.get(key) || { requests: 0, tokens: 0, cost: 0, credits: 0 };
     groupMap.set(key, {
       requests: existing.requests + 1,
       tokens: existing.tokens + (record.tokens_input || 0) + (record.tokens_output || 0),
-      cost: existing.cost + Number(record.cost_brl || 0)
+      cost: existing.cost + Number(record.cost_brl || 0),
+      credits: existing.credits + Number(record.credits_used || getActionCreditCost(record.action))
     });
   });
 
@@ -66,7 +68,8 @@ export async function getUserAICosts(
       model: model_used,
       total_requests: stats.requests,
       total_tokens: stats.tokens,
-      total_cost_brl: stats.cost
+      total_cost_brl: stats.cost,
+      total_credits: stats.credits
     };
   });
 }
@@ -82,7 +85,7 @@ export async function getDailyAICosts(
 
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('created_at, cost_brl')
+    .select('created_at, cost_brl, credits_used, action')
     .eq('user_id', userId)
     .gte('created_at', startDate);
 
@@ -92,13 +95,14 @@ export async function getDailyAICosts(
   }
 
   // Aggregate by date
-  const dayMap = new Map<string, { cost: number; requests: number }>();
+  const dayMap = new Map<string, { cost: number; credits: number; requests: number }>();
 
   (data || []).forEach((record) => {
     const date = record.created_at.substring(0, 10); // YYYY-MM-DD
-    const existing = dayMap.get(date) || { cost: 0, requests: 0 };
+    const existing = dayMap.get(date) || { cost: 0, credits: 0, requests: 0 };
     dayMap.set(date, {
       cost: existing.cost + Number(record.cost_brl || 0),
+      credits: existing.credits + Number(record.credits_used || getActionCreditCost(record.action)),
       requests: existing.requests + 1
     });
   });
@@ -107,6 +111,7 @@ export async function getDailyAICosts(
     .map(([date, stats]) => ({
       date,
       total_cost_brl: stats.cost,
+      total_credits: stats.credits,
       total_requests: stats.requests
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -133,6 +138,30 @@ export async function getCurrentMonthCost(userId: string): Promise<number> {
   return (data || []).reduce((sum, record) => sum + Number(record.cost_brl || 0), 0);
 }
 
+/**
+ * Get total credits used in the current month
+ */
+export async function getMonthlyCreditsUsed(userId: string): Promise<number> {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const { data, error } = await supabase
+    .from('usage_logs')
+    .select('credits_used, action')
+    .eq('user_id', userId)
+    .gte('created_at', monthStart);
+
+  if (error) {
+    log.error('[aiCostAnalytics] Error fetching monthly credits:', { error });
+    throw error;
+  }
+
+  return (data || []).reduce(
+    (sum, record) => sum + Number(record.credits_used || getActionCreditCost(record.action)),
+    0
+  );
+}
+
 // =====================================================
 // Client-Side Aggregations
 // =====================================================
@@ -148,7 +177,7 @@ export async function getModelCostBreakdown(
 
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('model_used, cost_brl')
+    .select('model_used, cost_brl, credits_used, action')
     .eq('user_id', userId)
     .gte('created_at', startDate);
 
@@ -158,16 +187,18 @@ export async function getModelCostBreakdown(
   }
 
   // Aggregate by model
-  const modelMap = new Map<string, { total_cost: number; count: number }>();
-  let totalCost = 0;
+  const modelMap = new Map<string, { total_cost: number; total_credits: number; count: number }>();
+  let totalCredits = 0;
 
   (data || []).forEach((record) => {
     const cost = Number(record.cost_brl || 0);
-    totalCost += cost;
+    const credits = Number(record.credits_used || getActionCreditCost(record.action));
+    totalCredits += credits;
 
-    const existing = modelMap.get(record.model_used) || { total_cost: 0, count: 0 };
+    const existing = modelMap.get(record.model_used) || { total_cost: 0, total_credits: 0, count: 0 };
     modelMap.set(record.model_used, {
       total_cost: existing.total_cost + cost,
+      total_credits: existing.total_credits + credits,
       count: existing.count + 1
     });
   });
@@ -177,9 +208,10 @@ export async function getModelCostBreakdown(
       ai_model: model,
       total_requests: stats.count,
       total_cost_brl: stats.total_cost,
-      percentage: totalCost > 0 ? (stats.total_cost / totalCost) * 100 : 0
+      total_credits: stats.total_credits,
+      percentage: totalCredits > 0 ? (stats.total_credits / totalCredits) * 100 : 0
     }))
-    .sort((a, b) => b.total_cost_brl - a.total_cost_brl);
+    .sort((a, b) => b.total_credits - a.total_credits);
 }
 
 /**
@@ -193,7 +225,7 @@ export async function getOperationCostBreakdown(
 
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('action, cost_brl')
+    .select('action, cost_brl, credits_used')
     .eq('user_id', userId)
     .gte('created_at', startDate);
 
@@ -203,16 +235,18 @@ export async function getOperationCostBreakdown(
   }
 
   // Aggregate by action
-  const operationMap = new Map<string, { total_cost: number; count: number }>();
-  let totalCost = 0;
+  const operationMap = new Map<string, { total_cost: number; total_credits: number; count: number }>();
+  let totalCredits = 0;
 
   (data || []).forEach((record) => {
     const cost = Number(record.cost_brl || 0);
-    totalCost += cost;
+    const credits = Number(record.credits_used || getActionCreditCost(record.action));
+    totalCredits += credits;
 
-    const existing = operationMap.get(record.action) || { total_cost: 0, count: 0 };
+    const existing = operationMap.get(record.action) || { total_cost: 0, total_credits: 0, count: 0 };
     operationMap.set(record.action, {
       total_cost: existing.total_cost + cost,
+      total_credits: existing.total_credits + credits,
       count: existing.count + 1
     });
   });
@@ -221,10 +255,11 @@ export async function getOperationCostBreakdown(
     .map(([operation, stats]) => ({
       operation_type: operation,
       total_cost_brl: stats.total_cost,
+      total_credits: stats.total_credits,
       count: stats.count,
-      percentage: totalCost > 0 ? (stats.total_cost / totalCost) * 100 : 0
+      percentage: totalCredits > 0 ? (stats.total_credits / totalCredits) * 100 : 0
     }))
-    .sort((a, b) => b.total_cost_brl - a.total_cost_brl);
+    .sort((a, b) => b.total_credits - a.total_credits);
 }
 
 /**
@@ -236,9 +271,9 @@ export async function getTopExpensiveOperations(
 ): Promise<TopExpensiveOperation[]> {
   const { data, error } = await supabase
     .from('usage_logs')
-    .select('id, action, model_used, cost_brl, created_at, module')
+    .select('id, action, model_used, cost_brl, credits_used, created_at, module')
     .eq('user_id', userId)
-    .order('cost_brl', { ascending: false })
+    .order('credits_used', { ascending: false })
     .limit(limit);
 
   if (error) {
@@ -250,13 +285,18 @@ export async function getTopExpensiveOperations(
 }
 
 /**
- * Get monthly cost summary with budget tracking
+ * Get monthly cost summary with budget and credit tracking
  */
 export async function getMonthlyCostSummary(
   userId: string,
-  budget: number
+  budget: number,
+  monthlyCredits: number = 500,
+  planName: string = 'Free'
 ): Promise<MonthlyCostSummary> {
-  const currentCost = await getCurrentMonthCost(userId);
+  const [currentCost, creditsUsed] = await Promise.all([
+    getCurrentMonthCost(userId),
+    getMonthlyCreditsUsed(userId)
+  ]);
 
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -272,7 +312,11 @@ export async function getMonthlyCostSummary(
     percentage_used: budget > 0 ? (currentCost / budget) * 100 : 0,
     days_remaining: daysRemaining,
     projected_month_end_cost: projectedMonthEndCost,
-    is_over_budget: currentCost > budget
+    is_over_budget: currentCost > budget,
+    credits_used: creditsUsed,
+    credits_total: monthlyCredits,
+    credits_percentage: monthlyCredits > 0 ? (creditsUsed / monthlyCredits) * 100 : 0,
+    plan_name: planName
   };
 }
 
