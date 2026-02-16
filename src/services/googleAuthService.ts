@@ -22,18 +22,17 @@ const GOOGLE_CALENDAR_EXPIRY_KEY = 'google_calendar_token_expiry';
 const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
 
 /**
- * Google OAuth Scopes — Minimum privilege required
+ * Google OAuth Scopes
  *
- * Only the scopes actually used by the application are requested:
- * - calendar.readonly: Read-only access to calendar events (Agenda sync)
+ * - calendar.events: Read/write access to calendar events (bidirectional sync)
  * - userinfo.email: Get user email for identification
  *
- * AICA does NOT modify the user's calendar (read-only).
- * Google Contacts scopes were removed — contact sync uses WhatsApp/manual input.
+ * Note: Upgraded from calendar.readonly to calendar.events for bidirectional sync.
+ * Existing users with readonly scope will be prompted to re-consent once.
  */
 const ALL_GOOGLE_SCOPES = [
-    'https://www.googleapis.com/auth/calendar.readonly', // Read calendar events
-    'https://www.googleapis.com/auth/userinfo.email',    // Get user email
+    'https://www.googleapis.com/auth/calendar.events', // Read + write calendar events
+    'https://www.googleapis.com/auth/userinfo.email',  // Get user email
 ];
 
 /**
@@ -123,6 +122,7 @@ export async function handleOAuthCallback(): Promise<void> {
         log.debug('[handleOAuthCallback] 💾 Salvando tokens no banco de dados...');
 
         // Salvar tokens no banco de dados associados ao usuário
+        // Include granted scopes so we can detect calendar.events vs readonly
         await saveGoogleCalendarTokens(
             data.session.provider_token,
             data.session.provider_refresh_token,
@@ -131,7 +131,8 @@ export async function handleOAuthCallback(): Promise<void> {
                 email: userInfo.email,
                 name: userInfo.name,
                 picture: userInfo.picture,
-            }
+            },
+            ALL_GOOGLE_SCOPES // Save the scopes we requested
         );
 
         log.debug('[handleOAuthCallback] ✅ Tokens salvos com sucesso!');
@@ -222,4 +223,16 @@ export interface GoogleCalendarEvent {
     };
     transparency?: string; // 'opaque' ou 'transparent'
     status: 'confirmed' | 'tentative' | 'cancelled';
+    extendedProperties?: {
+        private?: Record<string, string>;
+        shared?: Record<string, string>;
+    };
+}
+
+/**
+ * Triggers re-consent flow with current (write) scopes.
+ * Used when a user previously consented to readonly but now needs write access.
+ */
+export async function upgradeCalendarScope(): Promise<void> {
+    return connectGoogleCalendar();
 }

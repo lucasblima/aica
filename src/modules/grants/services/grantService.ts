@@ -20,6 +20,9 @@ import type {
   BriefingData
 } from '../types'
 import { createNamespacedLogger } from '@/lib/logger';
+import { syncEntityToGoogle, unsyncEntityFromGoogle } from '@/services/calendarSyncService';
+import { grantDeadlineToGoogleEvent } from '@/services/calendarSyncTransforms';
+import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 
 const log = createNamespacedLogger('GrantService');
 
@@ -69,7 +72,25 @@ export async function createOpportunity(
       .single()
 
     if (error) throw error
-    return data as GrantOpportunity
+    const opportunity = data as GrantOpportunity
+
+    // Sync deadline to Google Calendar (non-blocking)
+    if (opportunity.submission_deadline) {
+      isGoogleCalendarConnected().then((connected) => {
+        if (!connected) return
+        const eventData = grantDeadlineToGoogleEvent({
+          id: opportunity.id,
+          title: opportunity.title,
+          funding_agency: opportunity.funding_agency,
+          submission_deadline: opportunity.submission_deadline,
+        })
+        syncEntityToGoogle('grants', opportunity.id, eventData).catch((err) =>
+          log.warn('Calendar sync failed for new opportunity:', err)
+        )
+      })
+    }
+
+    return opportunity
   } catch (error) {
     log.error('Erro ao criar oportunidade:', error)
     throw new Error(`Falha ao criar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
@@ -159,7 +180,25 @@ export async function updateOpportunity(
       .single()
 
     if (error) throw error
-    return data as GrantOpportunity
+    const opportunity = data as GrantOpportunity
+
+    // Sync deadline update to Google Calendar (non-blocking)
+    if (opportunity.submission_deadline) {
+      isGoogleCalendarConnected().then((connected) => {
+        if (!connected) return
+        const eventData = grantDeadlineToGoogleEvent({
+          id: opportunity.id,
+          title: opportunity.title,
+          funding_agency: opportunity.funding_agency,
+          submission_deadline: opportunity.submission_deadline,
+        })
+        syncEntityToGoogle('grants', opportunity.id, eventData).catch((err) =>
+          log.warn('Calendar sync failed for updated opportunity:', err)
+        )
+      })
+    }
+
+    return opportunity
   } catch (error) {
     log.error('Erro ao atualizar oportunidade:', error)
     throw new Error(`Falha ao atualizar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
@@ -180,6 +219,14 @@ export async function deleteOpportunity(id: string): Promise<void> {
       .eq('id', id)
 
     if (error) throw error
+
+    // Unsync from Google Calendar (non-blocking)
+    isGoogleCalendarConnected().then((connected) => {
+      if (!connected) return
+      unsyncEntityFromGoogle('grants', id).catch((err) =>
+        log.warn('Calendar unsync failed for deleted opportunity:', err)
+      )
+    })
   } catch (error) {
     log.error('Erro ao deletar oportunidade:', error)
     throw new Error(`Falha ao deletar oportunidade: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
