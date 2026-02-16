@@ -234,9 +234,12 @@ export function useCanvasWorkouts(
   const createSlot = useCallback(
     async (input: Omit<CreateWorkoutSlotInput, 'microcycle_id'>): Promise<WorkoutSlot | null> => {
       if (!activeMicrocycle) {
+        log.error('createSlot called but no activeMicrocycle');
         setError(new Error('No active microcycle'));
         return null;
       }
+
+      log.debug('Creating slot:', { microcycle_id: activeMicrocycle.id, ...input });
 
       const { data, error: createError } = await MicrocycleService.createSlot({
         ...input,
@@ -244,10 +247,12 @@ export function useCanvasWorkouts(
       });
 
       if (createError) {
+        log.error('Supabase createSlot error:', createError);
         setError(createError instanceof Error ? createError : new Error(String(createError)));
         return null;
       }
 
+      log.debug('Slot created:', data?.id);
       return data;
     },
     [activeMicrocycle]
