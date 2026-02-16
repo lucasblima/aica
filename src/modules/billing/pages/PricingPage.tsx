@@ -153,14 +153,22 @@ export function PricingPage() {
 
       if (fnError) throw fnError;
 
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
       if (data?.checkout_url) {
         window.location.href = data.checkout_url;
       } else {
         throw new Error('Nao foi possivel criar a sessao de checkout.');
       }
     } catch (err) {
-      const message =
+      const raw =
         err instanceof Error ? err.message : 'Erro ao processar assinatura.';
+      // Translate config errors to user-friendly Portuguese
+      const message = raw.includes('Stripe price configured')
+        ? 'Este plano ainda nao esta disponivel para compra. Tente novamente em breve.'
+        : raw;
       setError(message);
     } finally {
       setLoadingPlan(null);

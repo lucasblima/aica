@@ -127,7 +127,7 @@ export function UsageDashboardPage() {
 
         // Fetch usage logs (last 20)
         const { data: logs } = await supabase
-          .from('ai_usage_logs')
+          .from('usage_logs')
           .select('id, action, module, model_used, tokens_input, tokens_output, cost_brl, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -154,7 +154,7 @@ export function UsageDashboardPage() {
         todayStart.setHours(0, 0, 0, 0);
 
         const { count: todayCount } = await supabase
-          .from('ai_usage_logs')
+          .from('usage_logs')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .gte('created_at', todayStart.toISOString());
@@ -164,7 +164,7 @@ export function UsageDashboardPage() {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         const { data: costData } = await supabase
-          .from('ai_usage_logs')
+          .from('usage_logs')
           .select('cost_brl')
           .eq('user_id', user.id)
           .gte('created_at', thirtyDaysAgo.toISOString());
