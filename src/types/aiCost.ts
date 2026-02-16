@@ -19,7 +19,7 @@ export type AIOperationType =
   | 'image_analysis'
   | 'embedding';
 
-export type ModuleType = 'grants' | 'journey' | 'podcast' | 'finance' | 'atlas';
+export type ModuleType = 'grants' | 'journey' | 'podcast' | 'finance' | 'atlas' | 'chat' | 'connections' | 'flux' | 'studio';
 
 export type AlertLevel = 'ok' | 'warning' | 'critical' | 'danger' | 'none';
 
