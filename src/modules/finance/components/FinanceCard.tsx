@@ -14,9 +14,11 @@ import { cardElevationVariants } from '../../../lib/animations/ceramic-motion';
 
 interface FinanceCardProps {
     userId: string;
+    /** Compact mode for Home dashboard — shows icon + title + balance + visibility toggle */
+    compact?: boolean;
 }
 
-export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
+export const FinanceCard: React.FC<FinanceCardProps> = ({ userId, compact = false }) => {
     const [summary, setSummary] = useState<FinanceSummary | null>(null);
     const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -84,17 +86,17 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
 
     if (loading) {
         return (
-            <div className="ceramic-card p-5 animate-pulse h-full min-h-[180px]">
+            <div className={`ceramic-card animate-pulse h-full ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px]'}`}>
                 <div className="h-4 bg-ceramic-cool rounded w-20 mb-3"></div>
-                <div className="h-10 bg-ceramic-cool rounded w-28 mb-2"></div>
-                <div className="h-3 bg-ceramic-cool rounded w-16"></div>
+                <div className={`bg-ceramic-cool rounded w-28 mb-2 ${compact ? 'h-6' : 'h-10'}`}></div>
+                {!compact && <div className="h-3 bg-ceramic-cool rounded w-16"></div>}
             </div>
         );
     }
 
     if (error || !summary || !burnRate) {
         return (
-            <div className="ceramic-card p-5 h-full min-h-[180px] flex items-center justify-center">
+            <div className={`ceramic-card h-full flex items-center justify-center ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px]'}`}>
                 <p className="text-ceramic-text-secondary text-xs text-center">
                     {error || 'Sem dados'}
                 </p>
@@ -103,6 +105,52 @@ export const FinanceCard: React.FC<FinanceCardProps> = ({ userId }) => {
     }
 
     const { isPositive, percentage, showTrend } = getTrendData();
+
+    // ── Compact mode: icon + title + balance + visibility toggle ──
+    if (compact) {
+        return (
+            <motion.div
+                className="ceramic-card p-3 h-full min-h-[100px] flex flex-col relative overflow-hidden cursor-pointer"
+                variants={cardElevationVariants}
+                initial="rest"
+                whileHover="hover"
+                whileTap="pressed"
+            >
+                {/* Decorative Background Icon — smaller */}
+                <Wallet className="absolute -right-4 -bottom-4 w-24 h-24 text-ceramic-success/20 opacity-10" />
+
+                {/* Header */}
+                <div className="flex items-center justify-between mb-2 relative z-10">
+                    <div className="flex items-center gap-2">
+                        <div className="ceramic-concave w-6 h-6 flex items-center justify-center">
+                            <Wallet className="w-3 h-3 text-ceramic-success" />
+                        </div>
+                        <span className="text-[10px] text-ceramic-text-secondary uppercase tracking-wider font-bold">
+                            Financas
+                        </span>
+                    </div>
+                    <button
+                        onClick={toggleVisibility}
+                        className="ceramic-concave w-6 h-6 flex items-center justify-center hover:scale-95 transition-transform"
+                        title={isValuesVisible ? 'Ocultar' : 'Mostrar'}
+                    >
+                        {isValuesVisible ? (
+                            <EyeOff className="w-2.5 h-2.5 text-ceramic-text-secondary" />
+                        ) : (
+                            <Eye className="w-2.5 h-2.5 text-ceramic-text-secondary" />
+                        )}
+                    </button>
+                </div>
+
+                {/* Balance — smaller */}
+                <div className="flex-1 flex items-center justify-center relative z-10">
+                    <p className={`text-lg font-black text-etched ${getBalanceColor(summary.currentBalance)}`}>
+                        {formatCurrency(summary.currentBalance)}
+                    </p>
+                </div>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div

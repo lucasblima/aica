@@ -24,7 +24,12 @@ const ModalityIcon: React.FC<{ modality: TrainingModality; className?: string }>
   return <span className={className}>{icons[modality]}</span>;
 };
 
-export function FluxCard() {
+interface FluxCardProps {
+  /** Compact mode for Home dashboard — shows icon + title + total athletes + inline modalities */
+  compact?: boolean;
+}
+
+export function FluxCard({ compact = false }: FluxCardProps) {
   const navigate = useNavigate();
 
   // Get real data from Supabase
@@ -60,14 +65,71 @@ export function FluxCard() {
   if (isLoading) {
     return (
       <div
-        className="ceramic-card relative overflow-hidden p-5 min-h-[180px] flex items-center justify-center"
+        className={`ceramic-card relative overflow-hidden flex items-center justify-center ${compact ? 'p-3 min-h-[100px]' : 'p-5 min-h-[180px]'}`}
         style={{
           background: 'linear-gradient(135deg, #F0EFE9 0%, #E6F2F5 100%)',
         }}
       >
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-2 border-ceramic-accent/20 border-t-ceramic-accent rounded-full animate-spin" />
-          <span className="text-xs text-ceramic-text-secondary">Carregando...</span>
+          {!compact && <span className="text-xs text-ceramic-text-secondary">Carregando...</span>}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Compact mode: icon + title + total athletes + inline modality emojis ──
+  if (compact) {
+    const modalityEmojis: Record<TrainingModality, string> = {
+      swimming: '\u{1F3CA}',
+      running: '\u{1F3C3}',
+      cycling: '\u{1F6B4}',
+      strength: '\u{1F3CB}\u{FE0F}',
+      walking: '\u{1F6B6}',
+    };
+
+    return (
+      <div
+        onClick={handleClick}
+        className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col hover:scale-[1.02] transition-transform duration-300 cursor-pointer group"
+        style={{
+          background: 'linear-gradient(135deg, #F0EFE9 0%, #E6F2F5 100%)',
+        }}
+      >
+        {/* Background decoration — smaller */}
+        <div className="absolute -right-4 -bottom-4 w-24 h-24 opacity-5">
+          <span className="text-[80px]">{'\u{1F3CB}\u{FE0F}'}</span>
+        </div>
+
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="ceramic-inset p-1.5">
+                <Users className="w-4 h-4 text-ceramic-info" />
+              </div>
+              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Flux</span>
+            </div>
+            <div className="ceramic-inset px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-ceramic-info">
+                {totalAthletes}
+              </span>
+            </div>
+          </div>
+
+          {/* Inline modality counts */}
+          <div className="flex items-center gap-2 flex-wrap text-xs text-ceramic-text-secondary">
+            {(Object.keys(athleteCounts) as TrainingModality[]).map((modality) => {
+              const count = athleteCounts[modality];
+              if (count === 0) return null;
+              return (
+                <span key={modality} className="whitespace-nowrap">
+                  {modalityEmojis[modality]}{count}
+                </span>
+              );
+            })}
+            {totalAthletes === 0 && <span>Nenhum atleta</span>}
+          </div>
         </div>
       </div>
     );

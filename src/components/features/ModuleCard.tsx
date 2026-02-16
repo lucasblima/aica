@@ -31,6 +31,8 @@ interface ModuleCardProps {
   onTasksLoaded?: (moduleId: string, taskCount: number) => void;
   /** Additional CSS classes */
   className?: string;
+  /** Compact mode for Home dashboard — shows icon + title + badge + 1-line description */
+  compact?: boolean;
 }
 
 /**
@@ -65,7 +67,8 @@ export function ModuleCard({
   color,
   accentColor,
   onTasksLoaded,
-  className = ''
+  className = '',
+  compact = false,
 }: ModuleCardProps) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +80,50 @@ export function ModuleCard({
       onTasksLoaded?.(moduleId, data.length);
     });
   }, [moduleId, onTasksLoaded]);
+
+  // ── Compact mode: icon + title + badge + 1-line description ──
+  if (compact) {
+    return (
+      <motion.div
+        className={`ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col cursor-pointer ${className}`}
+        variants={cardElevationVariants}
+        initial="rest"
+        whileHover="hover"
+        whileTap="pressed"
+      >
+        {/* Background decorative icon — smaller */}
+        <div className="absolute -right-2 -bottom-2 w-20 h-20 icon-engraved">
+          <Icon className={`w-full h-full ${accentColor.split(' ')[2]}`} />
+        </div>
+
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Header: Icon + Title + Badge */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="ceramic-inset p-1.5">
+                <Icon className={`w-4 h-4 ${accentColor.split(' ')[2]}`} />
+              </div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">
+                {title}
+              </h3>
+            </div>
+            {!loading && tasks.length > 0 && (
+              <div className={`ceramic-inset px-2 py-0.5 rounded-full ${accentColor.split(' ')[0]}`}>
+                <span className={`text-[10px] font-bold ${accentColor.split(' ')[2]}`}>
+                  {tasks.length}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* 1-line description */}
+          <p className="text-xs text-ceramic-text-secondary line-clamp-1">
+            {MODULE_DESCRIPTIONS[moduleId] || 'Organize suas tarefas'}
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

@@ -15,6 +15,8 @@ interface GrantsCardProps {
   recentProjects: GrantProject[];
   onOpenModule: () => void;
   onCreateProject: () => void;
+  /** Compact mode for Home dashboard — shows icon + title + project count + next deadline */
+  compact?: boolean;
 }
 
 export const GrantsCard: React.FC<GrantsCardProps> = ({
@@ -22,7 +24,8 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
   upcomingDeadlines,
   recentProjects,
   onOpenModule,
-  onCreateProject
+  onCreateProject,
+  compact = false,
 }) => {
   // Guard clauses - ensure arrays are valid to prevent .slice() errors
   const deadlines = Array.isArray(upcomingDeadlines) ? upcomingDeadlines : [];
@@ -55,6 +58,56 @@ export const GrantsCard: React.FC<GrantsCardProps> = ({
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
+
+  // ── Compact mode: icon + title + project count + next deadline ──
+  if (compact) {
+    const nextDeadline = deadlines.length > 0 ? deadlines[0] : null;
+    return (
+      <motion.div
+        data-testid="grants-card"
+        className="ceramic-card p-3 h-full min-h-[100px] flex flex-col cursor-pointer relative overflow-hidden"
+        variants={cardElevationVariants}
+        initial="rest"
+        whileHover="hover"
+        whileTap="pressed"
+      >
+        {/* Decorative Background Icon — smaller */}
+        <FileText className="absolute -right-2 -bottom-2 w-20 h-20 text-ceramic-warm opacity-10" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2 relative z-10">
+          <div className="flex items-center gap-2">
+            <div className="ceramic-concave w-6 h-6 flex items-center justify-center">
+              <FileText className="w-3 h-3 text-ceramic-info" />
+            </div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary">Captacao</h2>
+          </div>
+          <div className="ceramic-inset px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-ceramic-info">
+              {projectCount}
+            </span>
+          </div>
+        </div>
+
+        {/* Next deadline — 1 line */}
+        <div className="relative z-10 flex-1 flex items-center">
+          {nextDeadline ? (
+            <p className="text-xs text-ceramic-text-secondary line-clamp-1">
+              <span className={`font-medium ${getUrgencyColor(nextDeadline.days_remaining)}`}>
+                {formatDaysRemaining(nextDeadline.days_remaining)}
+              </span>
+              {' — '}
+              {truncate(nextDeadline.opportunity_title, 30)}
+            </p>
+          ) : (
+            <p className="text-xs text-ceramic-text-secondary">
+              {projectCount === 0 ? 'Explore editais FAPERJ, FINEP, CNPq' : 'Sem prazos proximos'}
+            </p>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
