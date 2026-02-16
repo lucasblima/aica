@@ -1,12 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Ticket, Check, AlertCircle } from 'lucide-react';
 import { ChaosPanel } from './components/ChaosPanel';
 import { OrderPanel } from './components/OrderPanel';
 import { ProcessingPipeline } from './components/ProcessingPipeline';
 import { demoProcessingService } from './services/demoProcessingService';
 import { AuthSheet } from '@/components/layout';
 import { Logo } from '@/components/ui';
+import {
+  validateInviteCode,
+  storeInviteCode,
+  getStoredInviteCode,
+} from '@/services/inviteSystemService';
 import type { DemoMessage, ProcessedModules, ProcessingStage } from './types';
 
 /**
@@ -14,6 +20,7 @@ import type { DemoMessage, ProcessedModules, ProcessingStage } from './types';
  */
 export function LandingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isAuthSheetOpen, setIsAuthSheetOpen] = useState(false);
 
   // Demo state
@@ -23,6 +30,57 @@ export function LandingPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState<ProcessingStage | null>(null);
   const [processedModules, setProcessedModules] = useState<ProcessedModules | null>(null);
+
+  // Invite code state
+  const [inviteCode, setInviteCode] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [codeValid, setCodeValid] = useState(false);
+  const [hasStoredInvite, setHasStoredInvite] = useState(() => !!getStoredInviteCode());
+
+  // Check URL params for invite code on mount
+  useEffect(() => {
+    const codeParam = searchParams.get('code');
+    if (codeParam) {
+      const formatted = codeParam.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (formatted.length >= 8) {
+        const code = `${formatted.slice(0, 4)}-${formatted.slice(4, 8)}`;
+        storeInviteCode(code);
+        setHasStoredInvite(true);
+        setInviteCode(code);
+        setCodeValid(true);
+      }
+    }
+  }, [searchParams]);
+
+  // Format invite code input: uppercase, auto-dash
+  const handleCodeInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (raw.length <= 8) {
+      const formatted = raw.length > 4
+        ? `${raw.slice(0, 4)}-${raw.slice(4)}`
+        : raw;
+      setInviteCode(formatted);
+      setCodeError('');
+      setCodeValid(false);
+    }
+  }, []);
+
+  // Validate and store invite code
+  const handleCodeSubmit = useCallback(async () => {
+    const cleanCode = inviteCode.replace(/-/g, '').trim();
+    if (cleanCode.length !== 8) return;
+
+    const result = await validateInviteCode(inviteCode);
+    if (result.valid) {
+      storeInviteCode(inviteCode);
+      setCodeValid(true);
+      setCodeError('');
+      setHasStoredInvite(true);
+    } else {
+      setCodeError(result.error || 'Código inválido ou expirado');
+      setCodeValid(false);
+    }
+  }, [inviteCode]);
 
   // SEO Meta Tags
   useEffect(() => {
@@ -114,9 +172,13 @@ export function LandingPage() {
           </div>
           <button
             onClick={handleOpenLogin}
-            className="px-6 py-2.5 rounded-full font-bold text-sm text-white transition-all hover:scale-105 bg-[#5C554B] shadow-[4px_4px_10px_rgba(92,85,75,0.25)]"
+            className={`px-6 py-2.5 rounded-full font-bold text-sm text-white transition-all hover:scale-105 ${
+              hasStoredInvite
+                ? 'bg-amber-600 shadow-[4px_4px_10px_rgba(180,83,9,0.25)]'
+                : 'bg-[#5C554B] shadow-[4px_4px_10px_rgba(92,85,75,0.25)]'
+            }`}
           >
-            Entrar
+            {hasStoredInvite ? 'Entrar com Convite' : 'Entrar'}
           </button>
         </div>
       </header>
@@ -217,6 +279,76 @@ export function LandingPage() {
           </motion.div>
         </section>
 
+        {/* Invite Code Section */}
+        <motion.section
+          className="max-w-md mx-auto px-6 mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="p-8 text-center ceramic-card relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 opacity-50" />
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <Ticket className="w-6 h-6 text-amber-600" />
+            </div>
+            <h3 className="text-xl font-black text-ceramic-text-primary mb-2 tracking-tight">
+              Acesso por convite
+            </h3>
+            <p className="text-sm text-ceramic-text-secondary mb-6 leading-relaxed">
+              O AICA está em beta exclusivo. Digite seu código para entrar.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="XXXX-XXXX"
+                maxLength={9}
+                value={inviteCode}
+                onChange={handleCodeInput}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && inviteCode.replace(/-/g, '').length === 8) {
+                    handleCodeSubmit();
+                  }
+                }}
+                className="flex-1 px-4 py-3 rounded-xl text-center font-mono text-lg uppercase tracking-[0.2em] text-ceramic-text-primary placeholder:text-ceramic-text-tertiary/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-shadow"
+                style={{ boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.06), inset -2px -2px 4px rgba(255,255,255,0.7)' }}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <button
+                onClick={handleCodeSubmit}
+                disabled={inviteCode.replace(/-/g, '').length !== 8}
+                className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+              >
+                {codeValid ? <Check className="w-5 h-5" /> : 'Entrar'}
+              </button>
+            </div>
+            <AnimatePresence>
+              {codeError && (
+                <motion.p
+                  className="flex items-center justify-center gap-1.5 text-sm text-ceramic-error mt-3"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {codeError}
+                </motion.p>
+              )}
+              {codeValid && (
+                <motion.p
+                  className="text-sm text-ceramic-success mt-3 font-medium"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  Código válido! Clique em "Entrar com Convite" acima.
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.section>
+
         {/* Features Section */}
         <section className="max-w-7xl mx-auto px-6 py-16 mb-16 border-t border-white/20">
           <div className="text-center mb-12">
@@ -283,9 +415,13 @@ export function LandingPage() {
             </p>
             <button
               onClick={handleOpenLogin}
-              className="px-20 py-8 rounded-full font-black text-2xl text-white transition-all hover:scale-[1.02] bg-[#5C554B] shadow-[12px_12px_32px_rgba(92,85,75,0.3)] hover:bg-[#3A3632]"
+              className={`px-20 py-8 rounded-full font-black text-2xl text-white transition-all hover:scale-[1.02] ${
+                hasStoredInvite
+                  ? 'bg-amber-600 shadow-[12px_12px_32px_rgba(180,83,9,0.3)] hover:bg-amber-700'
+                  : 'bg-[#5C554B] shadow-[12px_12px_32px_rgba(92,85,75,0.3)] hover:bg-[#3A3632]'
+              }`}
             >
-              Testar minha conexão
+              {hasStoredInvite ? 'Começar com meu convite' : 'Testar minha conexão'}
             </button>
           </motion.div>
         </section>

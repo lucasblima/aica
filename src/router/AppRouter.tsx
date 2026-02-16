@@ -18,6 +18,7 @@ import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
 import { allTours } from '../config/tours';
 import { AuthGuard } from '../components/guards/AuthGuard';
+import { ActivationGuard } from '../components/guards/ActivationGuard';
 import { AicaChatFAB } from '../components/features/AicaChatFAB';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -103,6 +104,11 @@ const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 function LegacySpaceRedirect() {
    const params = useParams<{ spaceId?: string }>();
    return <Navigate to={`/connections/${params.spaceId}`} replace />;
+}
+
+// Protected route with auth + invite activation check
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+   return <AuthGuard><ActivationGuard>{children}</ActivationGuard></AuthGuard>;
 }
 
 // Reusable Module Card Component (for association detail view)
@@ -649,12 +655,12 @@ export function AppRouter() {
                {/* Onboarding Flow - Protected, for new users */}
                <Route
                   path="/onboarding"
-                  element={<AuthGuard><OnboardingFlow /></AuthGuard>}
+                  element={<ProtectedRoute><OnboardingFlow /></ProtectedRoute>}
                />
 
                {/* Connections Module Routes - Simplified 2-level navigation */}
-               <Route path="/connections" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></ErrorBoundary></AuthGuard>} />
-               <Route path="/connections/:spaceId" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><SpaceDetailView /></ErrorBoundary></AuthGuard>} />
+               <Route path="/connections" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/connections/:spaceId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><SpaceDetailView /></ErrorBoundary></ProtectedRoute>} />
                {/* Legacy redirects: old /connections/:archetype/:spaceId → new /connections/:spaceId */}
                <Route path="/connections/:archetype/:spaceId" element={<LegacySpaceRedirect />} />
                <Route path="/connections/:archetype/:spaceId/:section" element={<LegacySpaceRedirect />} />
@@ -664,53 +670,53 @@ export function AppRouter() {
                <Route
                   path="/studio"
                   element={
-                     <AuthGuard>
+                     <ProtectedRoute>
                         <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>
                            <StudioProvider>
                               <StudioMainView />
                            </StudioProvider>
                         </ErrorBoundary>
-                     </AuthGuard>
+                     </ProtectedRoute>
                   }
                />
 
                {/* Flux Module Routes - Protected */}
-               <Route path="/flux" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxDashboard /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/athlete/:athleteId" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAthleteDetailView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/canvas" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/canvas/:athleteId/:blockId?" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/alerts" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAlertsView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxDashboard /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/athlete/:athleteId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAthleteDetailView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/canvas" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/canvas/:athleteId/:blockId?" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/alerts" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAlertsView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* Flow Module Routes (Intelligent Prescription) - Protected */}
-               <Route path="/flux/templates" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/templates/new" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/templates/:templateId/edit" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/microcycle/:microcycleId" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><MicrocycleEditorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/leveling" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><LevelingEngineView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/intensity/:athleteId?" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><IntensityCalculatorView /></FluxProvider></ErrorBoundary></AuthGuard>} />
-               <Route path="/flux/crm" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><CRMCommandCenterView /></FluxProvider></ErrorBoundary></AuthGuard>} />
+               <Route path="/flux/templates" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/templates/new" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/templates/:templateId/edit" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/microcycle/:microcycleId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><MicrocycleEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/leveling" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><LevelingEngineView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/intensity/:athleteId?" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><IntensityCalculatorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/crm" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><CRMCommandCenterView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
-               <Route path="/meu-treino" element={<AuthGuard><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></AuthGuard>} />
+               <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Contacts Module Routes - Protected */}
                <Route
                   path="/contacts"
                   element={
-                     <AuthGuard>
+                     <ProtectedRoute>
                         <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Contacts" />}>
                            <ConnectionsLayout>
                               <ContactsView />
                            </ConnectionsLayout>
                         </ErrorBoundary>
-                     </AuthGuard>
+                     </ProtectedRoute>
                   }
                />
 
                {/* PWA Share Target - Receives shared files from WhatsApp (Issue #211) */}
                <Route
                   path="/share-target"
-                  element={<AuthGuard><ShareTargetPage /></AuthGuard>}
+                  element={<ProtectedRoute><ShareTargetPage /></ProtectedRoute>}
                />
 
                {/* Diagnostics Page - PUBLIC (needs to be accessible to fix auth issues) */}
@@ -723,35 +729,35 @@ export function AppRouter() {
                {/* AI Cost Dashboard - Protected */}
                <Route
                   path="/ai-cost"
-                  element={<AuthGuard><AICostDashboard userId={userId || ''} onBack={() => navigate('/')} /></AuthGuard>}
+                  element={<ProtectedRoute><AICostDashboard userId={userId || ''} onBack={() => navigate('/')} /></ProtectedRoute>}
                />
 
                {/* File Search Analytics - Protected */}
                <Route
                   path="/file-search"
-                  element={<AuthGuard><FileSearchAnalyticsView userId={userId || ''} onBack={() => navigate('/')} mode="fullpage" /></AuthGuard>}
+                  element={<ProtectedRoute><FileSearchAnalyticsView userId={userId || ''} onBack={() => navigate('/')} mode="fullpage" /></ProtectedRoute>}
                />
 
                {/* Profile Page - Protected */}
                <Route
                   path="/profile"
-                  element={<AuthGuard><ProfilePage /></AuthGuard>}
+                  element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
                />
 
                {/* Billing Module Routes - Protected */}
                <Route
                   path="/pricing"
-                  element={<AuthGuard><PricingPage /></AuthGuard>}
+                  element={<ProtectedRoute><PricingPage /></ProtectedRoute>}
                />
                <Route
                   path="/usage"
-                  element={<AuthGuard><UsageDashboardPage /></AuthGuard>}
+                  element={<ProtectedRoute><UsageDashboardPage /></ProtectedRoute>}
                />
 
                {/* Main App - Authenticated users (root path only, ViewState-driven) */}
                <Route
                   path="/"
-                  element={<AuthGuard>{renderMainApp()}</AuthGuard>}
+                  element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
                />
 
                {/* 404 Not Found - Catch all unknown routes */}
