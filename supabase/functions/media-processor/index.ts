@@ -837,6 +837,20 @@ serve(async (req) => {
 
     log('INFO', 'Processing completed', { message_id, success: result.success })
 
+    // Fire-and-forget usage tracking
+    if (result.success && message.user_id) {
+      supabase.rpc('log_interaction', {
+        p_user_id: message.user_id,
+        p_action: 'analyze_moment',
+        p_module: 'connections',
+        p_model: 'gemini-2.5-flash',
+        p_tokens_in: 0,
+        p_tokens_out: 0,
+      }).catch((err: Error) => {
+        log('WARN', 'Failed to log interaction', err.message)
+      })
+    }
+
     return new Response(
       JSON.stringify({
         success: result.success,

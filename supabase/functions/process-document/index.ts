@@ -1195,6 +1195,20 @@ Deno.serve(async (req) => {
     // Process document
     const result = await processDocument(supabase, genAI, user.id, request)
 
+    // Fire-and-forget usage tracking
+    supabase.rpc('log_interaction', {
+      p_user_id: user.id,
+      p_action: 'parse_statement',
+      p_module: 'grants',
+      p_model: 'gemini-2.5-flash',
+      p_tokens_in: 0,
+      p_tokens_out: 0,
+    }).then(() => {
+      log('INFO', 'Logged interaction')
+    }).catch((err: Error) => {
+      log('WARN', 'Failed to log interaction', err.message)
+    })
+
     return new Response(
       JSON.stringify({ success: true, ...result }),
       { status: 200, headers: corsHeaders }

@@ -7,9 +7,12 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { createClient } from "npm:@supabase/supabase-js@2"
 import { getCorsHeaders } from '../_shared/cors.ts'
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
 if (!GEMINI_API_KEY) {
   console.error('GEMINI_API_KEY not found in environment variables')
@@ -224,6 +227,40 @@ Deno.serve(async (req) => {
 
     // Extract usageMetadata from the research result (if available)
     const usageMetadata = (result as any)?.__usageMetadata || null
+
+    // Fire-and-forget usage tracking
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const authHeader = req.headers.get('Authorization')
+        if (authHeader) {
+          const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+          // Extract user ID from JWT
+          const token = authHeader.replace('Bearer ', '')
+          const payloadB64 = token.split('.')[1]
+          const payload = JSON.parse(atob(payloadB64))
+          const userId = payload.sub
+
+          if (userId) {
+            supabase.rpc('log_interaction', {
+              p_user_id: userId,
+              p_action: 'research_guest',
+              p_module: 'studio',
+              p_model: 'gemini-2.5-flash',
+              p_tokens_in: usageMetadata?.promptTokenCount || 0,
+              p_tokens_out: usageMetadata?.candidatesTokenCount || 0,
+            }).then(() => {
+              console.log('[Deep Research] Logged interaction')
+            }).catch((err: Error) => {
+              console.warn('[Deep Research] Failed to log interaction:', err.message)
+            })
+          }
+        }
+      } catch (trackErr) {
+        console.warn('[Deep Research] Usage tracking error:', trackErr)
+      }
+    }
 
     // Return result
     return new Response(

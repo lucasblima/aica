@@ -768,6 +768,20 @@ serve(async (req) => {
       promptHash
     )
 
+    // Fire-and-forget usage tracking
+    supabase.rpc('log_interaction', {
+      p_user_id: user.id,
+      p_action: 'generate_daily_question',
+      p_module: 'journey',
+      p_model: GEMINI_MODEL,
+      p_tokens_in: 0,
+      p_tokens_out: 0,
+    }).then(() => {
+      log('INFO', 'Logged generate_daily_question interaction')
+    }).catch((err: Error) => {
+      log('WARN', 'Failed to log interaction', err.message)
+    })
+
     // Update context bank with inferred data
     currentStep = 'update_context'
     await updateContextBankAfterGeneration(supabase, user.id, storedCount, inferredContext)

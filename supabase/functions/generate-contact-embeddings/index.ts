@@ -353,6 +353,18 @@ serve(async (req: Request) => {
 
         result.contacts_processed++
 
+        // Fire-and-forget usage tracking per contact
+        supabase.rpc('log_interaction', {
+          p_user_id: insight.user_id,
+          p_action: 'text_embedding',
+          p_module: 'connections',
+          p_model: 'text-embedding-004',
+          p_tokens_in: 0,
+          p_tokens_out: 0,
+        }).catch((err: Error) => {
+          console.warn('[generate-contact-embeddings] Failed to log interaction:', err.message)
+        })
+
         // Rate limiting: delay between API calls
         await new Promise(resolve => setTimeout(resolve, 200))
 

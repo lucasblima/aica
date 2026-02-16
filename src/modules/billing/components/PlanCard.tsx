@@ -19,6 +19,8 @@ interface PlanCardProps {
   isPopular: boolean;
   onSubscribe: () => void;
   isLoading?: boolean;
+  onManageSubscription?: () => void;
+  isManageLoading?: boolean;
 }
 
 const PLAN_ICONS: Record<string, React.ReactNode> = {
@@ -27,7 +29,7 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
   max: <Crown className="w-5 h-5" />,
 };
 
-export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoading = false }: PlanCardProps) {
+export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoading = false, onManageSubscription, isManageLoading = false }: PlanCardProps) {
   const formatCredits = (credits: number): string => {
     if (credits >= 1000) return `${(credits / 1000).toFixed(credits % 1000 === 0 ? 0 : 1)}k`;
     return String(credits);
@@ -133,12 +135,23 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoadin
         {/* CTA */}
         <div className="mt-8">
           {isCurrentPlan ? (
-            <button
-              disabled
-              className="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-ceramic-text-secondary/8 text-ceramic-text-secondary/60 cursor-not-allowed transition-colors"
-            >
-              Plano Atual
-            </button>
+            <div className="space-y-2">
+              <button
+                disabled
+                className="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-ceramic-text-secondary/8 text-ceramic-text-secondary/60 cursor-not-allowed transition-colors"
+              >
+                Plano Atual
+              </button>
+              {plan.price_brl_monthly > 0 && onManageSubscription && (
+                <button
+                  onClick={onManageSubscription}
+                  disabled={isManageLoading}
+                  className="w-full text-xs text-ceramic-text-secondary hover:text-amber-600 transition-colors py-1 disabled:opacity-50"
+                >
+                  {isManageLoading ? 'Abrindo...' : 'Gerenciar assinatura'}
+                </button>
+              )}
+            </div>
           ) : (
             <button
               onClick={onSubscribe}

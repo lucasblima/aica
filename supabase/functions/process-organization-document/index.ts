@@ -522,6 +522,20 @@ Deno.serve(async (req) => {
       processingTimeMs,
     })
 
+    // Fire-and-forget usage tracking
+    supabase.rpc('log_interaction', {
+      p_user_id: user.id,
+      p_action: 'parse_statement',
+      p_module: 'grants',
+      p_model: 'gemini-2.5-flash',
+      p_tokens_in: 0,
+      p_tokens_out: 0,
+    }).then(() => {
+      log('INFO', 'Logged interaction')
+    }).catch((err: Error) => {
+      log('WARN', 'Failed to log interaction', err.message)
+    })
+
     const response: ProcessOrgDocumentResponse = {
       success: true,
       document_type: detectedType,
