@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle, LogOut, Loader2, Info, RefreshCw } from 'lucide-react';
+import { Calendar, CheckCircle, LogOut, Loader2, Info, RefreshCw, AlertTriangle } from 'lucide-react';
 import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '@/services/googleAuthService';
+import { hasCalendarWriteScope } from '@/services/googleCalendarTokenService';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('GoogleCalendarConnect');
@@ -19,19 +20,21 @@ export default function GoogleCalendarConnect({
     isTokenExpired = false
 }: GoogleCalendarConnectProps) {
     const [connected, setConnected] = useState(false);
+    const [missingCalendarScope, setMissingCalendarScope] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
     log.debug('Component rendered', {
         connected,
+        missingCalendarScope,
         loading,
         error,
         lastSyncTime,
         isSyncing
     });
 
-    // Verificar se já está conectado ao carregar
+    // Verificar se já está conectado e se tem escopo de Calendar
     useEffect(() => {
         log.debug('useEffect: Checking connection...');
         const checkConnection = async () => {
@@ -39,6 +42,14 @@ export default function GoogleCalendarConnect({
                 const isConnected = await isGoogleCalendarConnected();
                 log.debug('Connection status:', isConnected);
                 setConnected(isConnected);
+
+                if (isConnected) {
+                    const hasWrite = await hasCalendarWriteScope();
+                    setMissingCalendarScope(!hasWrite);
+                    if (!hasWrite) {
+                        log.warn('Calendar connected but missing calendar.events scope');
+                    }
+                }
             } catch (err) {
                 log.error('Erro ao verificar conexão:', err);
             }
@@ -148,7 +159,9 @@ export default function GoogleCalendarConnect({
                 <p className="text-sm text-[#948D82] leading-relaxed">
                     {isTokenExpired
                         ? 'Sessão expirada. Clique em Reconectar para continuar.'
-                        : 'Importe suas reuniões para a Timeline Líquida'
+                        : missingCalendarScope
+                            ? 'Permissão do Calendar não concedida. Clique em Reconectar para autorizar.'
+                            : 'Importe suas reuniões para a Timeline Líquida'
                     }
                 </p>
 
@@ -170,7 +183,7 @@ export default function GoogleCalendarConnect({
 
             {/* Seção de Ação */}
             <div className="flex-shrink-0 flex items-center gap-3">
-                {!connected || isTokenExpired ? (
+                {!connected || isTokenExpired || missingCalendarScope ? (
                     // Botão de Autorizar/Reconectar
                     <button
                         onClick={handleConnect}
@@ -183,11 +196,12 @@ export default function GoogleCalendarConnect({
                         {loading ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>{isTokenExpired ? 'Reconectando...' : 'Autorizando...'}</span>
+                                <span>{isTokenExpired || missingCalendarScope ? 'Reconectando...' : 'Autorizando...'}</span>
                             </>
                         ) : (
                             <>
-                                <span>{isTokenExpired ? 'Reconectar' : 'Autorizar Acesso'}</span>
+                                {missingCalendarScope && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                                <span>{isTokenExpired || missingCalendarScope ? 'Reconectar' : 'Autorizar Acesso'}</span>
                             </>
                         )}
                     </button>

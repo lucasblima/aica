@@ -36,28 +36,44 @@ const ALL_GOOGLE_SCOPES = [
 ];
 
 /**
- * Inicia o fluxo OAuth com Google para autorizar acesso ao Google Calendar
- * Após autorização, os tokens são salvos no banco de dados por usuário
+ * Inicia o fluxo OAuth com Google para autorizar acesso ao Google Calendar.
+ * Após autorização, os tokens são salvos no banco de dados por usuário.
+ *
+ * Se já existir um token, revoga-o primeiro para forçar o Google a
+ * re-exibir TODOS os escopos na tela de consentimento (evita o loop
+ * onde Google lembra que o usuário negou Calendar).
  */
 export async function connectGoogleCalendar(): Promise<void> {
     try {
-        // Debug logs para diagnosticar server_error
-        const redirectUrl = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
-        log.debug('[OAuth Debug] Iniciando OAuth...');
-        log.debug('[OAuth Debug] Redirect URL:', redirectUrl);
-        log.debug('[OAuth Debug] Window origin:', window.location.origin);
-        log.debug('[OAuth Debug] VITE_FRONTEND_URL:', import.meta.env.VITE_FRONTEND_URL);
-        log.debug('[connectGoogleCalendar] 🔐 Solicitando escopos OAuth:', ALL_GOOGLE_SCOPES);
-        log.debug('[connectGoogleCalendar] 🔑 Escopos concatenados:', ALL_GOOGLE_SCOPES.join(' '));
+        log.debug('[connectGoogleCalendar] Iniciando OAuth...');
+
+        // Revogar token existente para resetar decisões de escopo cacheadas pelo Google
+        try {
+            const existingTokens = await getGoogleCalendarTokens();
+            if (existingTokens?.access_token) {
+                log.debug('[connectGoogleCalendar] Revogando token existente para resetar escopos...');
+                await fetch('https://oauth2.googleapis.com/revoke', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ token: existingTokens.access_token }).toString(),
+                });
+            }
+        } catch (revokeErr) {
+            log.warn('[connectGoogleCalendar] Revogação do token falhou (prosseguindo):', revokeErr);
+        }
+
+        // Redirecionar de volta à página atual (não ao root) para UX contínua
+        const calendarRedirectUrl = window.location.origin + window.location.pathname;
+        log.debug('[connectGoogleCalendar] Redirect URL:', calendarRedirectUrl);
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: redirectUrl,
+                redirectTo: calendarRedirectUrl,
                 scopes: ALL_GOOGLE_SCOPES.join(' '),
                 queryParams: {
-                    access_type: 'offline', // Garante refresh token
-                    prompt: 'consent', // Força popup de consentimento
+                    access_type: 'offline',
+                    prompt: 'consent',
                 }
             }
         });
@@ -65,9 +81,6 @@ export async function connectGoogleCalendar(): Promise<void> {
         if (error) {
             throw new Error(`Erro OAuth: ${error.message}`);
         }
-
-        // Após o OAuth ser concluído com sucesso, a sessão será atualizada
-        // Use handleOAuthCallback() para processar os tokens
     } catch (error) {
         log.error('Erro ao conectar Google Calendar:', error);
         throw error;
@@ -77,15 +90,18 @@ export async function connectGoogleCalendar(): Promise<void> {
 /**
  * Processa o callback do OAuth e salva os tokens no banco de dados
  * Deve ser chamado após o redirecionamento do OAuth
+ *
+ * Verifica os escopos REALMENTE concedidos via tokeninfo endpoint
+ * para detectar quando o usuário não concedeu acesso ao Calendar.
  */
-export async function handleOAuthCallback(): Promise<void> {
+export async function handleOAuthCallback(): Promise<{ calendarScopeGranted: boolean }> {
     try {
-        log.debug('[handleOAuthCallback] 🔄 Iniciando processamento do callback OAuth...');
+        log.debug('[handleOAuthCallback] Iniciando processamento do callback OAuth...');
 
         // Obter a sessão atual (que agora contém o provider_token)
         const { data } = await supabase.auth.getSession();
 
-        log.debug('[handleOAuthCallback] 📋 Session data:', {
+        log.debug('[handleOAuthCallback] Session data:', {
             hasSession: !!data.session,
             hasProviderToken: !!data.session?.provider_token,
             hasProviderRefreshToken: !!data.session?.provider_refresh_token,
@@ -96,12 +112,12 @@ export async function handleOAuthCallback(): Promise<void> {
             throw new Error('Token do Google não encontrado na sessão');
         }
 
-        log.debug('[handleOAuthCallback] ✅ Provider token encontrado!');
+        log.debug('[handleOAuthCallback] Provider token encontrado!');
 
         // Obter informações do usuário Google (opcional, para melhor UX)
         let userInfo: any = {};
         try {
-            log.debug('[handleOAuthCallback] 🔍 Buscando informações do usuário Google...');
+            log.debug('[handleOAuthCallback] Buscando informações do usuário Google...');
             const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: {
                     'Authorization': `Bearer ${data.session.provider_token}`,
@@ -110,19 +126,42 @@ export async function handleOAuthCallback(): Promise<void> {
 
             if (userInfoResponse.ok) {
                 userInfo = await userInfoResponse.json();
-                log.debug('[handleOAuthCallback] ✅ Informações do usuário obtidas:', {
+                log.debug('[handleOAuthCallback] Informações do usuário obtidas:', {
                     email: userInfo.email,
                     name: userInfo.name,
                 });
             }
         } catch (err) {
-            log.warn('[handleOAuthCallback] ⚠️ Não foi possível obter informações do usuário Google:', err);
+            log.warn('[handleOAuthCallback] Não foi possível obter informações do usuário Google:', err);
         }
 
-        log.debug('[handleOAuthCallback] 💾 Salvando tokens no banco de dados...');
+        // Verificar escopos REALMENTE concedidos via tokeninfo
+        let actualScopes = ALL_GOOGLE_SCOPES; // fallback
+        let calendarScopeGranted = true;
+        try {
+            const tokenInfoResponse = await fetch(
+                `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${data.session.provider_token}`
+            );
+            if (tokenInfoResponse.ok) {
+                const tokenInfo = await tokenInfoResponse.json();
+                if (tokenInfo.scope) {
+                    actualScopes = (tokenInfo.scope as string).split(' ');
+                    calendarScopeGranted = actualScopes.some(
+                        (s: string) => s.includes('calendar.events') || s.includes('calendar')
+                    );
+                    log.debug('[handleOAuthCallback] Escopos reais concedidos:', {
+                        actualScopes,
+                        calendarScopeGranted,
+                    });
+                }
+            }
+        } catch (err) {
+            log.warn('[handleOAuthCallback] Não foi possível verificar escopos reais:', err);
+        }
 
-        // Salvar tokens no banco de dados associados ao usuário
-        // Include granted scopes so we can detect calendar.events vs readonly
+        log.debug('[handleOAuthCallback] Salvando tokens no banco de dados...');
+
+        // Salvar tokens com os escopos REALMENTE concedidos
         await saveGoogleCalendarTokens(
             data.session.provider_token,
             data.session.provider_refresh_token,
@@ -132,12 +171,13 @@ export async function handleOAuthCallback(): Promise<void> {
                 name: userInfo.name,
                 picture: userInfo.picture,
             },
-            ALL_GOOGLE_SCOPES // Save the scopes we requested
+            actualScopes // Salva escopos reais, não os solicitados
         );
 
-        log.debug('[handleOAuthCallback] ✅ Tokens salvos com sucesso!');
+        log.debug('[handleOAuthCallback] Tokens salvos com sucesso!', { calendarScopeGranted });
+        return { calendarScopeGranted };
     } catch (error) {
-        log.error('[handleOAuthCallback] ❌ Erro ao processar callback OAuth:', error);
+        log.error('[handleOAuthCallback] Erro ao processar callback OAuth:', error);
         throw error;
     }
 }
