@@ -3,6 +3,26 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import Stripe from "https://esm.sh/stripe@14.14.0"
 
 // ============================================================================
+// STRIPE SETUP — Required before checkout works
+// ============================================================================
+//
+// 1. Create products/prices in Stripe Dashboard (https://dashboard.stripe.com/products)
+//    - Product "AICA Pro" → recurring monthly R$39.90 → copy price ID (price_...)
+//    - Product "AICA Teams" → recurring monthly R$149.00 → copy price ID (price_...)
+//    - The "free" plan does NOT need a Stripe price ID.
+//
+// 2. Set the price IDs in the database:
+//    UPDATE pricing_plans SET stripe_price_id = 'price_XXXXX' WHERE id = 'pro';
+//    UPDATE pricing_plans SET stripe_price_id = 'price_YYYYY' WHERE id = 'teams';
+//
+// 3. Set Supabase secrets:
+//    supabase secrets set STRIPE_SECRET_KEY=sk_live_...
+//    supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+//
+// Without these, checkout returns: "plan has no Stripe price configured"
+// ============================================================================
+
+// ============================================================================
 // CORS CONFIGURATION
 // ============================================================================
 
