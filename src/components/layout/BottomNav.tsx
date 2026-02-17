@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ViewState } from '../types';
-import { LayoutGrid, Calendar, Sparkles, Network, Users } from 'lucide-react';
+import { LayoutGrid, Calendar, Sparkles, Network, Users, Globe } from 'lucide-react';
 
 interface BottomNavProps {
   currentView: ViewState;
@@ -13,12 +13,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange }) =
   const location = useLocation();
 
   const isOnPeopleRoute = location.pathname === '/people' || location.pathname === '/contacts';
+  const isOnGoogleRoute = location.pathname === '/google-hub';
 
-  const items: { view: ViewState | 'people'; icon: typeof LayoutGrid; label: string }[] = [
+  const items: { view: ViewState | 'people' | 'google'; icon: typeof LayoutGrid; label: string }[] = [
     { view: 'vida', icon: LayoutGrid, label: 'Vida' },
     { view: 'agenda', icon: Calendar, label: 'Agenda' },
     { view: 'journey', icon: Sparkles, label: 'Jornada' },
     { view: 'connections', icon: Network, label: 'Conexões' },
+    { view: 'google', icon: Globe, label: 'Google' },
     { view: 'people', icon: Users, label: 'Pessoas' },
   ];
 
@@ -27,12 +29,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onChange }) =
       <div className="pointer-events-auto">
         <div className="ceramic-card h-16 px-6 flex items-center gap-6 rounded-full shadow-2xl backdrop-blur-md bg-opacity-95">
           {items.map(({ view, icon: Icon, label }) => {
-            const isActive = view === 'people' ? isOnPeopleRoute : currentView === view;
+            const isActive = view === 'people' ? isOnPeopleRoute : view === 'google' ? isOnGoogleRoute : currentView === view;
 
             return (
               <button
                 key={view}
-                onClick={() => view === 'people' ? navigate('/contacts') : onChange(view)}
+                onClick={() => view === 'people' ? navigate('/contacts') : view === 'google' ? navigate('/google-hub') : onChange(view)}
                 className={`flex flex-col items-center gap-1 transition-all duration-300 ${
                   isActive
                     ? 'text-ceramic-text-primary scale-110'
