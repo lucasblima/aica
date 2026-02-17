@@ -4,7 +4,9 @@ import { motion, type Variants } from 'framer-motion';
 import { PageShell } from '@/components/ui';
 import { useGoogleScopes } from '@/hooks/useGoogleScopes';
 import { GmailSection } from '../components/GmailSection';
+import { ConversationSummarySection } from '../components/ConversationSummarySection';
 import { DriveSection } from '../components/DriveSection';
+import { CalendarSection } from '../components/CalendarSection';
 import { Loader2 } from 'lucide-react';
 
 const containerVariants: Variants = {
@@ -26,18 +28,20 @@ interface StatusPillProps {
     color: string;
     isLoading: boolean;
     onConnect?: () => Promise<void>;
+    onDisconnect?: () => Promise<void>;
 }
 
-function StatusPill({ label, connected, color, isLoading, onConnect }: StatusPillProps) {
-    const [connecting, setConnecting] = React.useState(false);
+function StatusPill({ label, connected, color, isLoading, onConnect, onDisconnect }: StatusPillProps) {
+    const [busy, setBusy] = React.useState(false);
 
-    const handleConnect = async () => {
-        if (!onConnect) return;
-        setConnecting(true);
+    const handleAction = async (action: () => Promise<void>) => {
+        setBusy(true);
         try {
-            await onConnect();
+            await action();
         } catch {
-            setConnecting(false);
+            // handled upstream
+        } finally {
+            setBusy(false);
         }
     };
 
@@ -52,24 +56,31 @@ function StatusPill({ label, connected, color, isLoading, onConnect }: StatusPil
 
     if (connected) {
         return (
-            <span
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+            <button
+                onClick={onDisconnect ? () => handleAction(onDisconnect) : undefined}
+                disabled={busy || !onDisconnect}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors hover:opacity-80"
                 style={{ backgroundColor: `${color}15`, color }}
+                title={onDisconnect ? `Desconectar ${label}` : undefined}
             >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                {busy ? (
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                ) : (
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                )}
                 {label}
-            </span>
+            </button>
         );
     }
 
     if (onConnect) {
         return (
             <button
-                onClick={handleConnect}
-                disabled={connecting}
+                onClick={() => handleAction(onConnect)}
+                disabled={busy}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-ceramic-border text-xs font-medium text-ceramic-text-secondary hover:bg-ceramic-cool transition-colors disabled:opacity-50"
             >
-                {connecting ? (
+                {busy ? (
                     <Loader2 className="w-2.5 h-2.5 animate-spin" />
                 ) : (
                     <span className="w-1.5 h-1.5 rounded-full border border-ceramic-text-secondary" />
@@ -96,6 +107,9 @@ export function GoogleHubPage() {
         isLoading,
         connectGmail,
         connectDrive,
+        disconnectGmail,
+        disconnectDrive,
+        disconnectCalendar,
     } = useGoogleScopes();
 
     return (
@@ -117,6 +131,7 @@ export function GoogleHubPage() {
                             connected={hasCalendar}
                             color="#EA4335"
                             isLoading={isLoading}
+                            onDisconnect={hasCalendar ? disconnectCalendar : undefined}
                         />
                         <StatusPill
                             label="Gmail"
@@ -124,6 +139,7 @@ export function GoogleHubPage() {
                             color="#4285F4"
                             isLoading={isLoading}
                             onConnect={!hasGmail ? connectGmail : undefined}
+                            onDisconnect={hasGmail ? disconnectGmail : undefined}
                         />
                         <StatusPill
                             label="Drive"
@@ -131,8 +147,17 @@ export function GoogleHubPage() {
                             color="#0F9D58"
                             isLoading={isLoading}
                             onConnect={!hasDrive ? connectDrive : undefined}
+                            onDisconnect={hasDrive ? disconnectDrive : undefined}
                         />
                     </div>
+                </motion.div>
+
+                {/* Calendar Section */}
+                <motion.div variants={itemVariants}>
+                    <CalendarSection
+                        isConnected={hasCalendar}
+                        onDisconnect={disconnectCalendar}
+                    />
                 </motion.div>
 
                 {/* Gmail Section */}
@@ -140,14 +165,23 @@ export function GoogleHubPage() {
                     <GmailSection
                         isConnected={hasGmail}
                         onConnect={connectGmail}
+                        onDisconnect={disconnectGmail}
                     />
                 </motion.div>
+
+                {/* Conversation Summary - only if Gmail connected */}
+                {hasGmail && (
+                    <motion.div variants={itemVariants}>
+                        <ConversationSummarySection />
+                    </motion.div>
+                )}
 
                 {/* Drive Section */}
                 <motion.div variants={itemVariants}>
                     <DriveSection
                         isConnected={hasDrive}
                         onConnect={connectDrive}
+                        onDisconnect={disconnectDrive}
                     />
                 </motion.div>
             </motion.div>
