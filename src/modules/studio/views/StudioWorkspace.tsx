@@ -18,7 +18,7 @@ import React from 'react';
 import { Mic2, Video, FileText, ArrowLeft } from 'lucide-react';
 import type { StudioWorkspaceProps, ProjectType } from '../types/studio';
 import { generateDossier, searchGuestProfile } from '../services/podcastAIService';
-import { PodcastWorkspace } from '../components/workspace';
+import { PodcastWorkspace, ArticleWorkspace, VideoWorkspace } from '../components/workspace';
 import { getProjectTypeConfig } from '../config/projectTypeConfigs';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -124,12 +124,18 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
       );
 
     case 'video':
-      // Future implementation
-      return <UnsupportedProjectType type="video" onBack={onBack} />;
+      return (
+        <div data-testid="studio-workspace">
+          <VideoWorkspace project={project} onBack={onBack} />
+        </div>
+      );
 
     case 'article':
-      // Future implementation
-      return <UnsupportedProjectType type="article" onBack={onBack} />;
+      return (
+        <div data-testid="studio-workspace">
+          <ArticleWorkspace project={project} onBack={onBack} />
+        </div>
+      );
 
     default:
       // Fallback for unknown types
