@@ -263,7 +263,7 @@ serve(async (req) => {
 
     // Send email via Resend
     const result = await sendEmailViaResend({
-      from: 'Aica Life OS <noreply@aica.app>',
+      from: 'Aica Life OS <noreply@aica.guru>',
       to: athleteEmail,
       subject: `${coachName} te convidou para acompanhar seus treinos na AICA`,
       html: emailHTML,

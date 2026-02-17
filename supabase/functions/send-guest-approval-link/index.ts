@@ -20,7 +20,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from '../_shared/cors.ts';
 
 const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY');
-const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@podcast.com';
+const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@aica.guru';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') || '',
