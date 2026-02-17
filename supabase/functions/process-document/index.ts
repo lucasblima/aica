@@ -23,6 +23,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // =============================================================================
 // ENVIRONMENT & CONFIGURATION
@@ -276,29 +277,6 @@ function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?:
   const timestamp = new Date().toISOString()
   const logData = data ? `: ${JSON.stringify(data)}` : ''
   console.log(`[${timestamp}] [${level}] [process-document] ${message}${logData}`)
-}
-
-// =============================================================================
-// CORS CONFIGURATION
-// =============================================================================
-
-const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://aica-staging-5562559893.southamerica-east1.run.app',
-]
-
-function getCorsHeaders(request: Request): Record<string, string> {
-  const origin = request.headers.get('origin') || ''
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '*'
-
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Credentials': 'true',
-    'Content-Type': 'application/json',
-  }
 }
 
 // =============================================================================
@@ -1108,6 +1086,7 @@ async function processDocument(
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
+  const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' }
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -1118,7 +1097,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response(
       JSON.stringify({ success: false, error: 'Method not allowed' }),
-      { status: 405, headers: corsHeaders }
+      { status: 405, headers: jsonHeaders }
     )
   }
 
@@ -1128,7 +1107,7 @@ Deno.serve(async (req) => {
       log('ERROR', 'GEMINI_API_KEY not configured')
       return new Response(
         JSON.stringify({ success: false, error: 'Server configuration error: API key missing' }),
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: jsonHeaders }
       )
     }
 
@@ -1137,7 +1116,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(
         JSON.stringify({ success: false, error: 'Authorization header required' }),
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: jsonHeaders }
       )
     }
 
@@ -1152,7 +1131,7 @@ Deno.serve(async (req) => {
       log('ERROR', 'Authentication failed', authError?.message)
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid or expired authentication token' }),
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: jsonHeaders }
       )
     }
 
@@ -1163,14 +1142,14 @@ Deno.serve(async (req) => {
     if (!request.storage_path) {
       return new Response(
         JSON.stringify({ success: false, error: 'storage_path is required' }),
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: jsonHeaders }
       )
     }
 
     if (!request.file_type || !['pdf', 'pptx', 'docx', 'image'].includes(request.file_type)) {
       return new Response(
         JSON.stringify({ success: false, error: 'file_type must be one of: pdf, pptx, docx, image' }),
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: jsonHeaders }
       )
     }
 
@@ -1178,7 +1157,7 @@ Deno.serve(async (req) => {
     if (request.source && !['web', 'whatsapp', 'email'].includes(request.source)) {
       return new Response(
         JSON.stringify({ success: false, error: 'source must be one of: web, whatsapp, email' }),
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: jsonHeaders }
       )
     }
 
@@ -1211,7 +1190,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, ...result }),
-      { status: 200, headers: corsHeaders }
+      { status: 200, headers: jsonHeaders }
     )
 
   } catch (error) {
@@ -1223,7 +1202,7 @@ Deno.serve(async (req) => {
         success: false,
         error: err.message || 'Internal server error',
       }),
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: jsonHeaders }
     )
   }
 })
