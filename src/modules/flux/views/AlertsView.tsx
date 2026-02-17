@@ -92,9 +92,10 @@ export default function AlertsView() {
           <div>
             <p className="text-xs text-ceramic-text-secondary mb-2 font-medium">Tipo</p>
             <div className="flex flex-wrap gap-2">
-              {(['all', 'health', 'motivation', 'absence', 'documents', 'custom'] as const).map((type) => {
+              {(['all', 'feedback_received', 'health', 'motivation', 'absence', 'documents', 'custom'] as const).map((type) => {
                 const typeLabels: Record<string, string> = {
                   all: 'Todos',
+                  feedback_received: 'Feedback',
                   health: 'Saude',
                   motivation: 'Motivacao',
                   absence: 'Ausencia',

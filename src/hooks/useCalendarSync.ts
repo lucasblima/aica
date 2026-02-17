@@ -8,7 +8,7 @@
 
 import { useState, useCallback } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
-import { syncEntityToGoogle, unsyncEntityFromGoogle, bulkSyncFluxSlots } from '@/services/calendarSyncService';
+import { syncEntityToGoogle, unsyncEntityFromGoogle, bulkSyncFluxSlots, bulkSyncAtlasTasks } from '@/services/calendarSyncService';
 import { connectGoogleCalendar, isGoogleCalendarConnected } from '@/services/googleAuthService';
 import type { SyncModule } from '@/services/calendarSyncTransforms';
 import type { GoogleCalendarEventInput } from '@/services/googleCalendarWriteService';
@@ -25,6 +25,7 @@ export interface UseCalendarSyncReturn {
   syncToGoogle: (module: SyncModule, entityId: string, eventData: GoogleCalendarEventInput | null) => Promise<void>;
   unsyncFromGoogle: (module: SyncModule, entityId: string) => Promise<void>;
   bulkSyncFlux: (microcycleId: string, microcycleStartDate: string) => Promise<void>;
+  bulkSyncAtlas: () => Promise<void>;
   isSyncing: boolean;
   syncStats: BulkSyncStats | null;
   scopeUpgradeNeeded: boolean;
@@ -105,6 +106,28 @@ export function useCalendarSync(): UseCalendarSyncReturn {
     }
   }, []);
 
+  const bulkSyncAtlas = useCallback(async () => {
+    const connected = await isGoogleCalendarConnected();
+    if (!connected) {
+      log.debug('[bulkSyncAtlas] Google Calendar not connected, skipping');
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncStats(null);
+    try {
+      const result = await bulkSyncAtlasTasks();
+      setSyncStats({ synced: result.synced, skipped: result.skipped, failed: result.failed });
+      if (result.scopeUpgradeNeeded) {
+        setScopeUpgradeNeeded(true);
+      }
+    } catch (error) {
+      log.error('[bulkSyncAtlas] Bulk sync failed (non-blocking):', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
   const requestScopeUpgrade = useCallback(() => {
     connectGoogleCalendar();
   }, []);
@@ -113,6 +136,7 @@ export function useCalendarSync(): UseCalendarSyncReturn {
     syncToGoogle,
     unsyncFromGoogle,
     bulkSyncFlux,
+    bulkSyncAtlas,
     isSyncing,
     syncStats,
     scopeUpgradeNeeded,

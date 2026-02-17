@@ -6,7 +6,7 @@
  * marking workouts as completed + leaving feedback.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
 import { useParQ } from '../hooks/useParQ';
@@ -15,6 +15,7 @@ import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
+import { createNamespacedLogger } from '@/lib/logger';
 import {
   Loader2,
   CheckCircle,
@@ -22,9 +23,149 @@ import {
   MessageSquare,
   Dumbbell,
   ArrowLeft,
+  Calendar,
 } from 'lucide-react';
 
+const log = createNamespacedLogger('AthletePortalView');
+
 const DAY_LABELS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+const WEEKDAY_LABELS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+
+/** Extended slot fields returned by RPC but not yet in MyAthleteProfile type */
+type SlotWithFeedback = {
+  rpe?: number | null;
+  completion_data?: {
+    rpe_actual?: number;
+    duration_actual?: number;
+    notes?: string;
+  } | null;
+};
+
+interface CoachBusyBlock {
+  start: string; // ISO 8601
+  end: string;   // ISO 8601
+}
+
+/** Compact weekly free/busy timeline for the coach */
+function CoachAvailabilityCard({
+  busyBlocks,
+  isLoading,
+  error,
+  weekStart,
+}: {
+  busyBlocks: CoachBusyBlock[];
+  isLoading: boolean;
+  error: string | null;
+  weekStart: Date;
+}) {
+  // Build 7 day columns (Mon-Sun), each with hour rows 6-22
+  const HOURS_START = 6;
+  const HOURS_END = 22;
+  const TOTAL_HOURS = HOURS_END - HOURS_START;
+
+  // Group busy blocks by day of week (0=Mon offset from weekStart)
+  const blocksByDay = useMemo(() => {
+    const days: CoachBusyBlock[][] = Array.from({ length: 7 }, () => []);
+    for (const block of busyBlocks) {
+      const blockDate = new Date(block.start);
+      const dayOffset = Math.floor(
+        (blockDate.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000)
+      );
+      if (dayOffset >= 0 && dayOffset < 7) {
+        days[dayOffset].push(block);
+      }
+    }
+    return days;
+  }, [busyBlocks, weekStart]);
+
+  if (isLoading) {
+    return (
+      <div className="ceramic-card p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
+          <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
+        </div>
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="w-5 h-5 text-ceramic-text-secondary animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="ceramic-card p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
+          <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
+        </div>
+        <p className="text-xs text-ceramic-text-secondary">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ceramic-card p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
+        <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
+      </div>
+      <p className="text-[10px] text-ceramic-text-secondary">
+        Cinza = ocupado &middot; Branco = disponivel
+      </p>
+
+      {/* Weekly grid */}
+      <div className="flex gap-1">
+        {/* Hour labels column */}
+        <div className="flex flex-col justify-between pt-5 pr-1" style={{ height: `${TOTAL_HOURS * 12 + 20}px` }}>
+          {[HOURS_START, HOURS_START + 4, HOURS_START + 8, HOURS_START + 12, HOURS_END].map((h) => (
+            <span key={h} className="text-[9px] text-ceramic-text-secondary leading-none">
+              {h}h
+            </span>
+          ))}
+        </div>
+
+        {/* Day columns */}
+        {WEEKDAY_LABELS_SHORT.map((label, dayIdx) => {
+          const dayBlocks = blocksByDay[dayIdx] || [];
+          return (
+            <div key={dayIdx} className="flex-1 flex flex-col items-center">
+              <span className="text-[10px] font-bold text-ceramic-text-secondary mb-1">{label}</span>
+              <div
+                className="w-full bg-white rounded relative border border-ceramic-border"
+                style={{ height: `${TOTAL_HOURS * 12}px` }}
+              >
+                {dayBlocks.map((block, blockIdx) => {
+                  const startDate = new Date(block.start);
+                  const endDate = new Date(block.end);
+                  const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+                  const endHour = endDate.getHours() + endDate.getMinutes() / 60;
+                  const clampedStart = Math.max(startHour, HOURS_START);
+                  const clampedEnd = Math.min(endHour, HOURS_END);
+                  if (clampedEnd <= clampedStart) return null;
+
+                  const topPct = ((clampedStart - HOURS_START) / TOTAL_HOURS) * 100;
+                  const heightPct = ((clampedEnd - clampedStart) / TOTAL_HOURS) * 100;
+
+                  return (
+                    <div
+                      key={blockIdx}
+                      className="absolute left-0 right-0 bg-ceramic-text-secondary/20 rounded-sm"
+                      style={{
+                        top: `${topPct}%`,
+                        height: `${heightPct}%`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function AthletePortalView() {
   const navigate = useNavigate();
@@ -32,7 +173,96 @@ export default function AthletePortalView() {
   const { profile, isLoading, error, isLinked, refetch } = useMyAthleteProfile();
   const [feedbackSlotId, setFeedbackSlotId] = useState<string | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackRpe, setFeedbackRpe] = useState<number>(5);
+  const [feedbackDuration, setFeedbackDuration] = useState<number>(0);
   const [updating, setUpdating] = useState<string | null>(null);
+
+  // Coach availability state
+  const [coachBusyBlocks, setCoachBusyBlocks] = useState<CoachBusyBlock[]>([]);
+  const [coachAvailLoading, setCoachAvailLoading] = useState(false);
+  const [coachAvailError, setCoachAvailError] = useState<string | null>(null);
+
+  // Week boundaries for coach availability (Mon-Sun)
+  const weekStart = useMemo(() => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun
+    const diff = day === 0 ? -6 : 1 - day; // offset to Monday
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  }, []);
+
+  const weekEnd = useMemo(() => {
+    const end = new Date(weekStart);
+    end.setDate(end.getDate() + 7);
+    return end;
+  }, [weekStart]);
+
+  // Fetch coach availability when profile loads
+  useEffect(() => {
+    if (!profile?.athlete_id) return;
+
+    let cancelled = false;
+
+    const fetchCoachAvailability = async () => {
+      setCoachAvailLoading(true);
+      setCoachAvailError(null);
+
+      try {
+        // Get coach's user_id from athlete record (RLS allows athlete to read own record)
+        const { data: athleteRow, error: athleteErr } = await supabase
+          .from('athletes')
+          .select('user_id')
+          .eq('id', profile.athlete_id)
+          .maybeSingle();
+
+        if (athleteErr || !athleteRow?.user_id) {
+          log.debug('Could not resolve coach user_id:', athleteErr);
+          if (!cancelled) setCoachAvailError('Coach nao encontrado');
+          return;
+        }
+
+        const { data: response, error: fnError } = await supabase.functions.invoke(
+          'fetch-coach-availability',
+          {
+            body: {
+              coachUserId: athleteRow.user_id,
+              startDate: weekStart.toISOString(),
+              endDate: weekEnd.toISOString(),
+            },
+          }
+        );
+
+        if (cancelled) return;
+
+        if (fnError) {
+          log.error('Error fetching coach availability:', fnError);
+          setCoachAvailError('Erro ao buscar agenda do coach');
+          return;
+        }
+
+        if (!response?.success) {
+          // Not necessarily an error — coach may not have calendar connected
+          log.debug('Coach availability not available:', response?.error);
+          setCoachAvailError(response?.error || 'Agenda do coach indisponivel');
+          return;
+        }
+
+        setCoachBusyBlocks(response.busySlots || []);
+      } catch (err) {
+        if (!cancelled) {
+          log.error('Coach availability error:', err);
+          setCoachAvailError('Erro ao carregar disponibilidade');
+        }
+      } finally {
+        if (!cancelled) setCoachAvailLoading(false);
+      }
+    };
+
+    fetchCoachAvailability();
+    return () => { cancelled = true; };
+  }, [profile?.athlete_id, weekStart, weekEnd]);
 
   // Show welcome screen on first visit or when ?welcome=true is present
   const welcomeParam = searchParams.get('welcome') === 'true';
@@ -57,17 +287,27 @@ export default function AthletePortalView() {
     }
   };
 
-  // Submit feedback
+  // Submit feedback with RPE + duration
   const submitFeedback = async (slotId: string) => {
-    if (!feedbackText.trim()) return;
+    if (!feedbackText.trim() && !feedbackRpe && !feedbackDuration) return;
     setUpdating(slotId);
     try {
       await supabase
         .from('workout_slots')
-        .update({ athlete_feedback: feedbackText.trim() })
+        .update({
+          athlete_feedback: feedbackText.trim() || null,
+          rpe: feedbackRpe,
+          completion_data: {
+            rpe_actual: feedbackRpe,
+            duration_actual: feedbackDuration || null,
+            notes: feedbackText.trim() || null,
+          },
+        })
         .eq('id', slotId);
       setFeedbackSlotId(null);
       setFeedbackText('');
+      setFeedbackRpe(5);
+      setFeedbackDuration(0);
       await refetch();
     } finally {
       setUpdating(null);
@@ -255,7 +495,9 @@ export default function AthletePortalView() {
                   Semana {weekNum}
                 </h2>
                 <div className="space-y-2">
-                  {slots.map((slot) => (
+                  {slots.map((baseSlot) => {
+                    const slot = baseSlot as typeof baseSlot & SlotWithFeedback;
+                    return (
                     <div
                       key={slot.id}
                       className={`ceramic-card p-4 transition-all ${
@@ -312,6 +554,11 @@ export default function AthletePortalView() {
                             } else {
                               setFeedbackSlotId(slot.id);
                               setFeedbackText(slot.athlete_feedback || '');
+                              setFeedbackRpe(slot.completion_data?.rpe_actual ?? slot.rpe ?? 5);
+                              setFeedbackDuration(
+                                slot.completion_data?.duration_actual ??
+                                slot.custom_duration ?? slot.template.duration ?? 0
+                              );
                             }
                           }}
                           className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
@@ -327,7 +574,78 @@ export default function AthletePortalView() {
 
                       {/* Feedback input (expanded) */}
                       {feedbackSlotId === slot.id && (
-                        <div className="mt-3 pt-3 border-t border-ceramic-text-secondary/10 space-y-2">
+                        <div className="mt-3 pt-3 border-t border-ceramic-text-secondary/10 space-y-3">
+                          {/* RPE Slider */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-xs font-bold text-ceramic-text-primary">
+                                Esforço percebido (RPE)
+                              </label>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                feedbackRpe <= 3
+                                  ? 'bg-ceramic-success/20 text-ceramic-success'
+                                  : feedbackRpe <= 6
+                                    ? 'bg-amber-500/20 text-amber-600'
+                                    : 'bg-ceramic-error/20 text-ceramic-error'
+                              }`}>
+                                {feedbackRpe}/10
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={1}
+                              max={10}
+                              step={1}
+                              value={feedbackRpe}
+                              onChange={(e) => setFeedbackRpe(Number(e.target.value))}
+                              className="w-full h-2 rounded-full appearance-none cursor-pointer accent-amber-500"
+                              style={{
+                                background: `linear-gradient(to right, #22c55e 0%, #22c55e 22%, #f59e0b 44%, #f59e0b 55%, #ef4444 77%, #ef4444 100%)`,
+                              }}
+                            />
+                            <div className="flex justify-between mt-0.5">
+                              <span className="text-[10px] text-ceramic-text-secondary">Muito fácil</span>
+                              <span className="text-[10px] text-ceramic-text-secondary">Moderado</span>
+                              <span className="text-[10px] text-ceramic-text-secondary">Máximo esforço</span>
+                            </div>
+                          </div>
+
+                          {/* Actual Duration */}
+                          <div>
+                            <label className="text-xs font-bold text-ceramic-text-primary mb-1 block">
+                              Duração real
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={0}
+                                max={600}
+                                value={feedbackDuration || ''}
+                                onChange={(e) => setFeedbackDuration(Number(e.target.value))}
+                                placeholder={String(slot.custom_duration || slot.template.duration || 0)}
+                                className="w-20 ceramic-inset px-3 py-1.5 rounded-lg text-sm text-ceramic-text-primary text-center focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                              />
+                              <span className="text-xs text-ceramic-text-secondary">min</span>
+                              {feedbackDuration > 0 && (slot.custom_duration || slot.template.duration) && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                  feedbackDuration > (slot.custom_duration || slot.template.duration)
+                                    ? 'bg-ceramic-info/20 text-ceramic-info'
+                                    : feedbackDuration < (slot.custom_duration || slot.template.duration)
+                                      ? 'bg-ceramic-warning/20 text-ceramic-warning'
+                                      : 'bg-ceramic-success/20 text-ceramic-success'
+                                }`}>
+                                  {feedbackDuration === (slot.custom_duration || slot.template.duration)
+                                    ? 'No tempo'
+                                    : feedbackDuration > (slot.custom_duration || slot.template.duration)
+                                      ? `+${feedbackDuration - (slot.custom_duration || slot.template.duration)}min`
+                                      : `${feedbackDuration - (slot.custom_duration || slot.template.duration)}min`
+                                  }
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Notes */}
                           <textarea
                             value={feedbackText}
                             onChange={(e) => setFeedbackText(e.target.value)}
@@ -344,7 +662,7 @@ export default function AthletePortalView() {
                             </button>
                             <button
                               onClick={() => submitFeedback(slot.id)}
-                              disabled={!feedbackText.trim() || updating === slot.id}
+                              disabled={updating === slot.id}
                               className="px-3 py-1.5 text-xs font-bold text-white bg-ceramic-accent hover:bg-ceramic-accent/90 disabled:bg-ceramic-text-secondary/20 disabled:cursor-not-allowed rounded-lg transition-colors"
                             >
                               {updating === slot.id ? 'Salvando...' : 'Salvar'}
@@ -353,7 +671,7 @@ export default function AthletePortalView() {
                         </div>
                       )}
                     </div>
-                  ))}
+                  ); })}
                 </div>
               </div>
             ))}
@@ -367,6 +685,16 @@ export default function AthletePortalView() {
           </div>
         </div>
       )}
+
+      {/* Coach Availability */}
+      <div className="px-6 mt-6">
+        <CoachAvailabilityCard
+          busyBlocks={coachBusyBlocks}
+          isLoading={coachAvailLoading}
+          error={coachAvailError}
+          weekStart={weekStart}
+        />
+      </div>
     </div>
   );
 }

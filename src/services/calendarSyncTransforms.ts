@@ -98,6 +98,7 @@ export interface AtlasTaskData {
   description?: string;
   scheduled_time?: string; // "HH:MM"
   due_date?: string;       // "YYYY-MM-DD"
+  estimated_duration?: number; // minutes
 }
 
 export function atlasTaskToGoogleEvent(task: AtlasTaskData): GoogleCalendarEventInput | null {
@@ -107,8 +108,9 @@ export function atlasTaskToGoogleEvent(task: AtlasTaskData): GoogleCalendarEvent
   const startHour = timeParts[0].padStart(2, '0');
   const startMin = (timeParts[1] || '00').padStart(2, '0');
 
+  const durationMin = task.estimated_duration || 60;
   const endDate = new Date(`${task.due_date}T${startHour}:${startMin}:00`);
-  endDate.setMinutes(endDate.getMinutes() + 60); // 1-hour default block
+  endDate.setMinutes(endDate.getMinutes() + durationMin);
   const endHour = endDate.getHours().toString().padStart(2, '0');
   const endMin = endDate.getMinutes().toString().padStart(2, '0');
 

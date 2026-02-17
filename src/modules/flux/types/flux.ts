@@ -60,7 +60,7 @@ export type PlanStatus = 'pending' | 'sent' | 'acknowledged';
 /**
  * Alert types by category
  */
-export type AlertType = 'health' | 'motivation' | 'absence' | 'documents' | 'custom';
+export type AlertType = 'health' | 'motivation' | 'absence' | 'documents' | 'feedback_received' | 'custom';
 
 /**
  * Alert severity levels

@@ -20,6 +20,9 @@ import { TaskEditDrawer } from '@/components/domain';
 import { ConfirmationModal } from '@/components/ui';
 import { EmptyQuadrantState } from '@/components/domain';
 import { createNamespacedLogger } from '@/lib/logger';
+import { syncEntityToGoogle, unsyncEntityFromGoogle } from '@/services/calendarSyncService';
+import { atlasTaskToGoogleEvent } from '@/services/calendarSyncTransforms';
+import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 
 const log = createNamespacedLogger('PriorityMatrix');
 
@@ -245,6 +248,29 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
             if (error) throw error;
 
             log.debug('Task updated:', taskId, updates);
+
+            // Re-sync to Google Calendar if task has scheduled_time (non-blocking)
+            const mergedTask = editingTask ? { ...editingTask, ...updates } : updates;
+            const scheduledTime = mergedTask.scheduled_time;
+            const dueDate = mergedTask.due_date;
+            if (scheduledTime && dueDate) {
+                isGoogleCalendarConnected().then((connected) => {
+                    if (!connected) return;
+                    const eventData = atlasTaskToGoogleEvent({
+                        id: taskId,
+                        title: (mergedTask.title as string) || '',
+                        description: mergedTask.description as string | undefined,
+                        scheduled_time: scheduledTime as string,
+                        due_date: dueDate as string,
+                    });
+                    if (eventData) {
+                        syncEntityToGoogle('atlas', taskId, eventData).catch((err) =>
+                            log.warn('Calendar sync failed for updated task:', err)
+                        );
+                    }
+                });
+            }
+
             onRefresh();
         } catch (error) {
             log.error('Error updating task:', { error });
@@ -275,6 +301,15 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
             if (error) throw error;
 
             log.debug('Task deleted:', deletingTask.id);
+
+            // Unsync from Google Calendar (non-blocking)
+            isGoogleCalendarConnected().then((connected) => {
+                if (!connected) return;
+                unsyncEntityFromGoogle('atlas', deletingTask.id).catch((err) =>
+                    log.warn('Calendar unsync failed for deleted task:', err)
+                );
+            });
+
             onRefresh();
             setIsDeleteModalOpen(false);
             setDeletingTask(null);

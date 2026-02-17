@@ -122,7 +122,7 @@ export function useCanvasCalendar(
   const toggleCoach = useCallback(() => setShowCoach((v) => !v), []);
   const toggleAthlete = useCallback(() => setShowAthlete((v) => !v), []);
 
-  // Check if athlete has connected Google Calendar and fetch their events
+  // Check if athlete has connected Google Calendar and fetch their busy slots
   const fetchAthleteCalendar = useCallback(async () => {
     if (!athleteId) {
       setAthleteCalendarConnected(false);
@@ -134,57 +134,70 @@ export function useCanvasCalendar(
       setAthleteLoading(true);
       setAthleteError(null);
 
-      // Look up athlete's auth_user_id from athletes table
-      const { data: athleteRecord, error: athleteError } = await supabase
-        .from('athletes')
-        .select('auth_user_id')
-        .eq('id', athleteId)
-        .maybeSingle();
+      // Use SECURITY DEFINER RPC to check athlete calendar connection (bypasses RLS safely)
+      const { data: isConnected, error: rpcError } = await supabase
+        .rpc('check_athlete_calendar_connected', { p_athlete_id: athleteId });
 
-      if (athleteError) {
-        log.error('Error fetching athlete:', athleteError);
+      if (rpcError) {
+        log.error('Error checking athlete calendar:', rpcError);
         setAthleteCalendarConnected(false);
         return;
       }
 
-      const authUserId = athleteRecord?.auth_user_id;
-      if (!authUserId) {
-        log.debug('Athlete has no auth_user_id, calendar not available');
-        setAthleteCalendarConnected(false);
-        return;
-      }
-
-      // Check if that user has google_calendar_tokens
-      const { data: tokenRecord, error: tokenError } = await supabase
-        .from('google_calendar_tokens')
-        .select('id')
-        .eq('user_id', authUserId)
-        .maybeSingle();
-
-      if (tokenError) {
-        log.error('Error checking athlete calendar tokens:', tokenError);
-        setAthleteCalendarConnected(false);
-        return;
-      }
-
-      if (!tokenRecord) {
+      if (!isConnected) {
         log.debug('Athlete has no Google Calendar connection');
         setAthleteCalendarConnected(false);
+        setAthleteEvents([]);
         return;
       }
 
       setAthleteCalendarConnected(true);
 
-      // We cannot directly fetch the athlete's calendar (we don't have their
-      // OAuth token). Instead we read cached events if a shared calendar or
-      // service-account approach is configured. For now, mark as connected
-      // but leave events empty — the coach sees the indicator that the
-      // athlete has a calendar.
-      //
-      // Future: use a backend Edge Function that uses the athlete's stored
-      // refresh_token to fetch events server-side and return them.
-      log.debug('Athlete calendar connected, but server-side fetch not yet implemented');
-      setAthleteEvents([]);
+      // Fetch athlete's busy slots via Edge Function (privacy-safe FreeBusy API)
+      const { data: response, error: fnError } = await supabase.functions.invoke(
+        'fetch-athlete-calendar',
+        {
+          body: {
+            athleteId,
+            startDate: weekStartDate.toISOString(),
+            endDate: weekEnd.toISOString(),
+          },
+        }
+      );
+
+      if (fnError) {
+        log.error('Error fetching athlete calendar:', fnError);
+        setAthleteError('Erro ao buscar agenda do atleta');
+        setAthleteEvents([]);
+        return;
+      }
+
+      if (!response?.success || !response.busySlots) {
+        log.warn('Athlete calendar fetch unsuccessful:', response?.error);
+        setAthleteEvents([]);
+        return;
+      }
+
+      // Map FreeBusy response to TimelineEvent[] for the existing eventsToBusySlots pipeline
+      const events: TimelineEvent[] = response.busySlots.map(
+        (slot: { start: string; end: string }, idx: number) => {
+          const startMs = new Date(slot.start).getTime();
+          const endMs = new Date(slot.end).getTime();
+          const durationMin = Math.round((endMs - startMs) / 60000);
+          return {
+            id: `athlete-busy-${idx}`,
+            title: 'Ocupado',
+            startTime: slot.start,
+            endTime: slot.end,
+            duration: durationMin,
+            isAllDay: false,
+            source: 'google_calendar' as const,
+          };
+        }
+      );
+
+      log.debug('Athlete calendar fetched:', { busySlots: response.busySlots.length, events: events.length });
+      setAthleteEvents(events);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error fetching athlete calendar';
       setAthleteError(msg);
@@ -192,7 +205,7 @@ export function useCanvasCalendar(
     } finally {
       setAthleteLoading(false);
     }
-  }, [athleteId]);
+  }, [athleteId, weekStartDate.getTime(), weekEnd.getTime()]);
 
   // Fetch athlete calendar on mount and when athleteId changes
   useEffect(() => {

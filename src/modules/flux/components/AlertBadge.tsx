@@ -8,7 +8,7 @@
 import React from 'react';
 import type { AlertBadgeProps } from '../types';
 import { SEVERITY_COLORS } from '../types';
-import { AlertCircle, Heart, Frown, UserX } from 'lucide-react';
+import { AlertCircle, Heart, Frown, UserX, MessageSquare } from 'lucide-react';
 
 export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps) {
   // Icon mapping by alert type
@@ -20,6 +20,8 @@ export function AlertBadge({ alert, compact = false, onClick }: AlertBadgeProps)
         return Frown;
       case 'absence':
         return UserX;
+      case 'feedback_received':
+        return MessageSquare;
       default:
         return AlertCircle;
     }

@@ -6,7 +6,7 @@
  * Entry point for the Flux module with modality filtering.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
 import { useAthletes } from '../hooks/useAthletes';
@@ -17,6 +17,7 @@ import { AthleteProfileService } from '../services/athleteProfileService';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
+import type { SlotFeedback } from '../components/AthleteCard';
 import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
 import { AthleteFormDrawer } from '../components/forms';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
@@ -102,6 +103,45 @@ export default function FluxDashboard() {
 
   // Invite toast state
   const [inviteToast, setInviteToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Athlete feedbacks from workout_slots
+  const [feedbacksByAthlete, setFeedbacksByAthlete] = useState<Record<string, SlotFeedback[]>>({});
+
+  useEffect(() => {
+    if (allAthletes.length === 0) return;
+    let cancelled = false;
+
+    const loadFeedbacks = async () => {
+      const athleteIds = allAthletes.map((a) => a.id);
+      const { data, error } = await supabase
+        .from('workout_slots')
+        .select('id, name, athlete_feedback, completed_at, rpe, athlete_id')
+        .in('athlete_id', athleteIds)
+        .not('athlete_feedback', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(100);
+
+      if (cancelled || error || !data) return;
+
+      const grouped: Record<string, SlotFeedback[]> = {};
+      for (const row of data) {
+        if (!grouped[row.athlete_id]) grouped[row.athlete_id] = [];
+        if (grouped[row.athlete_id].length < 3) {
+          grouped[row.athlete_id].push({
+            id: row.id,
+            name: row.name,
+            athlete_feedback: row.athlete_feedback,
+            completed_at: row.completed_at,
+            rpe: row.rpe,
+          });
+        }
+      }
+      setFeedbacksByAthlete(grouped);
+    };
+
+    loadFeedbacks();
+    return () => { cancelled = true; };
+  }, [allAthletes]);
 
   // Calculate modality counts
   const modalityCounts = useMemo(() => {
@@ -661,7 +701,7 @@ export default function FluxDashboard() {
         <div className="grid gap-4">
           {filteredAthletes.slice(0, 20).map((athlete) => {
             const athleteAlerts: any[] = [];
-            const athleteFeedbacks: any[] = [];
+            const athleteFeedbacks = feedbacksByAthlete[athlete.id] || [];
 
             return (
               <AthleteCard

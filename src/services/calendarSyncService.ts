@@ -19,6 +19,7 @@ import {
 } from './googleCalendarWriteService';
 import type { SyncModule } from './calendarSyncTransforms';
 import { fluxSlotToGoogleEvent, type FluxSlotData } from './calendarSyncTransforms';
+import { atlasTaskToGoogleEvent, type AtlasTaskData } from './calendarSyncTransforms';
 
 const log = createNamespacedLogger('CalendarSyncService');
 
@@ -270,6 +271,72 @@ export async function bulkSyncFluxSlots(
     return stats;
   } catch (error) {
     log.error('[bulkSyncFluxSlots] Error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Bulk sync all scheduled Atlas tasks to Google Calendar.
+ * Only syncs tasks with a scheduled_time that are not yet completed.
+ * Syncs sequentially to respect Google API rate limits (500 req/100s).
+ */
+export async function bulkSyncAtlasTasks(): Promise<{ synced: number; skipped: number; failed: number; scopeUpgradeNeeded: boolean }> {
+  const stats = { synced: 0, skipped: 0, failed: 0, scopeUpgradeNeeded: false };
+
+  try {
+    const userId = await getUserId();
+
+    const { data: tasks, error } = await supabase
+      .from('work_items')
+      .select('id, title, description, scheduled_time, due_date, estimated_duration')
+      .eq('user_id', userId)
+      .not('scheduled_time', 'is', null)
+      .is('completed_at', null);
+
+    if (error) {
+      log.error('[bulkSyncAtlasTasks] Error fetching tasks:', error);
+      throw error;
+    }
+
+    if (!tasks || tasks.length === 0) {
+      log.debug('[bulkSyncAtlasTasks] No scheduled tasks found');
+      return stats;
+    }
+
+    log.debug(`[bulkSyncAtlasTasks] Syncing ${tasks.length} tasks`);
+
+    for (const task of tasks) {
+      try {
+        const eventData = atlasTaskToGoogleEvent(task as AtlasTaskData);
+
+        if (!eventData) {
+          stats.skipped++;
+          continue;
+        }
+
+        const result = await syncEntityToGoogle('atlas', task.id, eventData);
+
+        if (result.scopeUpgradeNeeded) {
+          stats.scopeUpgradeNeeded = true;
+          stats.failed += tasks.length - stats.synced - stats.skipped;
+          break;
+        }
+
+        if (result.googleEventId) {
+          stats.synced++;
+        } else {
+          stats.skipped++;
+        }
+      } catch (taskError) {
+        log.error(`[bulkSyncAtlasTasks] Failed to sync task ${task.id}:`, taskError);
+        stats.failed++;
+      }
+    }
+
+    log.debug('[bulkSyncAtlasTasks] Complete:', stats);
+    return stats;
+  } catch (error) {
+    log.error('[bulkSyncAtlasTasks] Error:', error);
     throw error;
   }
 }

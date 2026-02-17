@@ -15,7 +15,17 @@ import { ConnectionStatusDot } from './ConnectionStatusDot';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
 import { User, AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check } from 'lucide-react';
 
-interface ExtendedAthleteCardProps extends AthleteCardProps {
+/** Lightweight feedback shape from workout_slots (not the orphaned Feedback interface) */
+export interface SlotFeedback {
+  id: string;
+  name: string;
+  athlete_feedback: string;
+  completed_at: string | null;
+  rpe: number | null;
+}
+
+interface ExtendedAthleteCardProps extends Omit<AthleteCardProps, 'recentFeedbacks'> {
+  recentFeedbacks?: SlotFeedback[];
   onWhatsAppClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -243,17 +253,17 @@ export function AthleteCard({
           </div>
 
           {/* Last Feedback */}
-          {recentFeedbacks.length > 0 && (
+          {recentFeedbacks.length > 0 && recentFeedbacks[0].completed_at && (
             <div className="flex items-center gap-2">
               <div className="ceramic-inset p-1.5">
                 <Calendar className="w-3.5 h-3.5 text-ceramic-text-secondary" />
               </div>
               <div>
                 <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wide">
-                  Ultimo
+                  Ultimo Feedback
                 </p>
                 <p className="text-xs font-bold text-ceramic-text-primary">
-                  {new Date(recentFeedbacks[0].created_at).toLocaleDateString('pt-BR', {
+                  {new Date(recentFeedbacks[0].completed_at).toLocaleDateString('pt-BR', {
                     day: 'numeric',
                     month: 'short',
                   })}
