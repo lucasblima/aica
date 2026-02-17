@@ -33,7 +33,7 @@ export function TermsOfServicePage() {
           Termos de Serviço
         </h1>
         <p className="text-sm text-[#5C554B] mb-8">
-          Última atualização: 13 de fevereiro de 2026
+          Última atualização: 17 de fevereiro de 2026
         </p>
 
         <div className="prose prose-slate max-w-none space-y-8">
@@ -159,14 +159,17 @@ export function TermsOfServicePage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Integrações de Terceiros</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica permite integração com serviços de terceiros, incluindo o Google Calendar:
+              A Aica permite integração com serviços de terceiros, incluindo Google Calendar, Gmail e Google Drive:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
               <li>Você é responsável por seus relacionamentos com esses provedores</li>
               <li>Não somos responsáveis pelos serviços ou políticas de terceiros</li>
               <li>Revise os termos e políticas dos serviços que você conecta</li>
               <li>Você pode revogar integrações a qualquer momento nas configurações</li>
-              <li>A integração com Google Calendar solicita apenas acesso de leitura (calendar.readonly) — seus eventos não são modificados</li>
+              <li>A integração com Google Calendar utiliza o escopo <code>calendar.events</code> para sincronização bidirecional — leitura e criação de eventos a partir de tarefas e compromissos</li>
+              <li>A integração com Gmail utiliza o escopo <code>gmail.readonly</code> — apenas leitura de mensagens, sem envio ou modificação</li>
+              <li>A integração com Google Drive utiliza o escopo <code>drive.readonly</code> — apenas leitura de arquivos, sem criação ou modificação</li>
+              <li>Gmail e Drive são integrações opcionais ativadas individualmente pelo usuário (consentimento incremental)</li>
               <li>O uso de dados do Google está em conformidade com a{' '}
                 <a
                   href="https://developers.google.com/terms/api-services-user-data-policy"

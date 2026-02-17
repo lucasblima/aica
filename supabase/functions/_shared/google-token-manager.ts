@@ -14,10 +14,7 @@ import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 // Scope short names → full Google scope URLs
 const SCOPE_MAP: Record<string, string> = {
   'gmail.readonly': 'https://www.googleapis.com/auth/gmail.readonly',
-  'gmail.send': 'https://www.googleapis.com/auth/gmail.send',
   'drive.readonly': 'https://www.googleapis.com/auth/drive.readonly',
-  'drive.file': 'https://www.googleapis.com/auth/drive.file',
-  'calendar': 'https://www.googleapis.com/auth/calendar',
   'calendar.readonly': 'https://www.googleapis.com/auth/calendar.readonly',
   'calendar.events': 'https://www.googleapis.com/auth/calendar.events',
 };

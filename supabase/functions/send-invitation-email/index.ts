@@ -295,7 +295,7 @@ serve(async (req) => {
 
     // Send email via Resend
     const emailPayload: ResendEmailPayload = {
-      from: 'Aica Life OS <noreply@aica.app>',
+      from: 'Aica Life OS <noreply@aica.guru>',
       to: to_email,
       subject: `${inviter_name} convidou você para ${space_name} no Aica`,
       html: emailHTML,

@@ -34,7 +34,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const MAX_IMPORTS_PER_DAY = 10;
 const MAX_ATTACHMENT_SIZE = 100 * 1024 * 1024; // 100MB
 const ALLOWED_EXTENSIONS = ['.txt', '.zip'];
-const FROM_EMAIL = 'AICA Import <noreply@aica.app>';
+const FROM_EMAIL = 'AICA Import <noreply@aica.guru>';
 
 // ============================================================================
 // CORS
