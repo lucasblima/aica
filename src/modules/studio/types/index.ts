@@ -32,6 +32,9 @@ export type {
   StudioActions,
   StudioContextValue,
 
+  // Project Type Config
+  ProjectTypeConfig,
+
   // Component Props
   StudioLibraryProps,
   StudioWizardProps,

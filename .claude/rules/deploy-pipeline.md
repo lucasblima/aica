@@ -1,8 +1,8 @@
 # Deploy Pipeline
 
-> **REGRA CRITICA:** Agentes Claude **NUNCA** devem executar `gcloud builds submit` ou qualquer comando de deploy automaticamente.
-> Deploy e uma acao **exclusiva do usuario**, feita manualmente apos testes locais.
+> **REGRA:** Claude pode executar `gcloud builds submit` **somente quando o usuario pedir explicitamente**.
 > Se o usuario pedir "deploy", SEMPRE assumir staging (a menos que diga "producao" explicitamente).
+> Antes de executar, garantir que `npm run build` passa sem erros.
 
 ## Pipeline Obrigatoria
 

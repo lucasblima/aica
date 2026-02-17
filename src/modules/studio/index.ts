@@ -14,6 +14,7 @@ export type {
   PodcastProjectMetadata,
   VideoProjectMetadata,
   ArticleProjectMetadata,
+  ProjectTypeConfig,
   StudioState,
   StudioAction,
   StudioActions,
@@ -26,6 +27,14 @@ export type {
 } from './types/studio';
 
 export { INITIAL_STUDIO_STATE } from './types/studio';
+
+// Config
+export {
+  PROJECT_TYPE_CONFIGS,
+  getProjectTypeConfig,
+  getAvailableProjectTypes,
+  getAllProjectTypes,
+} from './config/projectTypeConfigs';
 
 // Views
 export { StudioLibrary } from './views/StudioLibrary';

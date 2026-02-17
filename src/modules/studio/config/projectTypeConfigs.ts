@@ -1,0 +1,82 @@
+/**
+ * Project Type Configuration Registry
+ *
+ * Central registry that defines behavior, UI, and data mapping
+ * for each project type in Studio. Used by wizard, library, and
+ * workspace to adapt their behavior per project type.
+ */
+
+import type { ProjectType, ProjectTypeConfig } from '../types/studio';
+
+// ============================================
+// INDIVIDUAL CONFIGS
+// ============================================
+
+const PODCAST_CONFIG: ProjectTypeConfig = {
+  type: 'podcast',
+  label: 'Podcast',
+  iconName: 'Mic2',
+  description: 'Producao completa de episodios de podcast com pesquisa, pauta e gravacao',
+  color: 'amber',
+  requiredFields: ['title', 'guestName', 'theme'],
+  optionalFields: ['description', 'scheduledDate', 'scheduledTime', 'location', 'season'],
+  databaseTable: 'podcast_episodes',
+  parentTable: 'podcast_shows',
+  hasParentHierarchy: true,
+  stages: ['setup', 'research', 'pauta', 'production'],
+  comingSoon: false,
+};
+
+const VIDEO_CONFIG: ProjectTypeConfig = {
+  type: 'video',
+  label: 'Video',
+  iconName: 'Video',
+  description: 'Producao de videos com roteiro, filmagem e edicao',
+  color: 'blue',
+  requiredFields: ['title', 'theme'],
+  optionalFields: ['description', 'scheduledDate'],
+  databaseTable: 'video_projects',
+  hasParentHierarchy: false,
+  stages: ['script', 'filming', 'editing', 'review'],
+  comingSoon: true,
+};
+
+const ARTICLE_CONFIG: ProjectTypeConfig = {
+  type: 'article',
+  label: 'Artigo',
+  iconName: 'FileText',
+  description: 'Escrita de artigos com pesquisa, rascunho e revisao',
+  color: 'emerald',
+  requiredFields: ['title', 'theme'],
+  optionalFields: ['description', 'targetPublication'],
+  databaseTable: 'article_projects',
+  hasParentHierarchy: false,
+  stages: ['research', 'outline', 'draft', 'review'],
+  comingSoon: true,
+};
+
+// ============================================
+// REGISTRY
+// ============================================
+
+export const PROJECT_TYPE_CONFIGS: Record<ProjectType, ProjectTypeConfig> = {
+  podcast: PODCAST_CONFIG,
+  video: VIDEO_CONFIG,
+  article: ARTICLE_CONFIG,
+};
+
+// ============================================
+// ACCESSORS
+// ============================================
+
+export function getProjectTypeConfig(type: ProjectType): ProjectTypeConfig {
+  return PROJECT_TYPE_CONFIGS[type];
+}
+
+export function getAvailableProjectTypes(): ProjectTypeConfig[] {
+  return Object.values(PROJECT_TYPE_CONFIGS).filter(c => !c.comingSoon);
+}
+
+export function getAllProjectTypes(): ProjectTypeConfig[] {
+  return Object.values(PROJECT_TYPE_CONFIGS);
+}

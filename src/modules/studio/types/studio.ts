@@ -189,6 +189,29 @@ export interface StudioContextValue {
 }
 
 // ============================================
+// PROJECT TYPE CONFIG
+// ============================================
+
+/**
+ * Configuration for a project type in Studio.
+ * Used by wizard, library, and workspace to adapt per type.
+ */
+export interface ProjectTypeConfig {
+  type: ProjectType;
+  label: string;
+  iconName: string;
+  description: string;
+  color: string;
+  requiredFields: string[];
+  optionalFields: string[];
+  databaseTable: string;
+  parentTable?: string;
+  hasParentHierarchy: boolean;
+  stages: string[];
+  comingSoon: boolean;
+}
+
+// ============================================
 // COMPONENT PROPS
 // ============================================
 
@@ -209,6 +232,7 @@ export interface StudioLibraryProps {
 export interface StudioWizardProps {
   showId: string;
   userId: string;
+  projectType?: ProjectType;
   onComplete: (project: StudioProject) => void;
   onCancel: () => void;
 }
