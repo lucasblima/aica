@@ -130,7 +130,7 @@ export default function SetupStage() {
       // Call Gemini API via GeminiClient
       const geminiClient = GeminiClient.getInstance();
       const result = await geminiClient.call({
-        action: 'finance_chat', // Use finance_chat action which supports custom systemPrompt
+        action: 'chat_aica', // Use chat_aica action which supports custom systemPrompt
         payload: {
           message: messageContent,
           systemPrompt: `Você é um assistente especializado em sugerir temas para episódios de podcast.
@@ -144,7 +144,8 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
 
       // Parse the response - expecting array of strings
       let suggestions: string[] = [];
-      const responseText = result.result?.response || result.response;
+      const responseText = typeof result.result === 'string' ? result.result :
+        (result.result?.response || result.result?.text || JSON.stringify(result.result));
 
       if (Array.isArray(responseText)) {
         suggestions = responseText;
