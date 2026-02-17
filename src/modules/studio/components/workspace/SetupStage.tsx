@@ -666,16 +666,23 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               </div>
             )}
 
-            {/* AI Theme Suggestions - Loading State */}
+            {/* AI Theme Suggestions - Loading State (Skeleton) */}
             {setup.themeMode === 'auto' && isGeneratingThemes && (
-              <div className="p-4 bg-ceramic-info-bg border border-ceramic-info/30 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-ceramic-info" role="status" aria-label="Gerando sugestões" />
-                  <div>
-                    <p className="font-medium text-ceramic-primary">Gerando sugestões de tema...</p>
-                    <p className="text-sm text-ceramic-secondary">A IA está analisando as informações do convidado</p>
-                  </div>
+              <div className="space-y-3" role="status" aria-label="Gerando sugestoes de tema">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-ceramic-info animate-pulse" aria-hidden="true" />
+                  <p className="text-sm font-medium text-ceramic-secondary">Gerando sugestoes...</p>
                 </div>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="w-full px-4 py-3 bg-ceramic-base border-2 border-ceramic-border rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-ceramic-cool animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className={`h-4 bg-ceramic-cool animate-pulse rounded-lg ${i === 1 ? 'w-full' : i === 2 ? 'w-4/5' : 'w-3/5'}`} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

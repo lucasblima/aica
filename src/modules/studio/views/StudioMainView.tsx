@@ -10,7 +10,8 @@
  */
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStudio } from '../context/StudioContext';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabaseClient';
@@ -18,6 +19,31 @@ import type { StudioProject } from '../types/studio';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('StudioMainView');
+
+// Mode ordering for determining slide direction (lower index = earlier in flow)
+const MODE_ORDER: Record<string, number> = {
+  LIBRARY: 0,
+  SHOW_PAGE: 1,
+  WIZARD: 2,
+  WORKSPACE: 3,
+};
+
+const pageTransitionVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 60 : -60,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 30 },
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? -60 : 60,
+    opacity: 0,
+    transition: { duration: 0.2 },
+  }),
+};
 
 // Lazy load views for better performance
 const StudioLibrary = React.lazy(() => import('./StudioLibrary'));
@@ -74,6 +100,15 @@ export default function StudioMainView() {
 
   useTourAutoStart('studio-first-visit');  const { state, actions } = useStudio();
   const { user } = useAuth();
+
+  // Track previous mode for slide direction
+  const prevModeRef = useRef(state.mode);
+  const direction = (MODE_ORDER[state.mode] ?? 0) >= (MODE_ORDER[prevModeRef.current] ?? 0) ? 1 : -1;
+
+  // Update previous mode after computing direction
+  useEffect(() => {
+    prevModeRef.current = state.mode;
+  }, [state.mode]);
 
   // CRITICAL: ONLY ONE useEffect for initialization
   // This runs ONCE when component mounts
@@ -208,6 +243,10 @@ export default function StudioMainView() {
   }
 
   // Render based on current mode using SWITCH (NOT if-else!)
+  // Determine content based on mode
+  let content: React.ReactNode = null;
+  let modeKey = state.mode;
+
   switch (state.mode) {
     case 'WORKSPACE':
       // CRITICAL: Ensure currentProject exists before rendering
@@ -217,7 +256,7 @@ export default function StudioMainView() {
         return null;
       }
 
-      return (
+      content = (
         <React.Suspense fallback={<LoadingScreen />}>
           <StudioWorkspace
             project={state.currentProject}
@@ -225,6 +264,7 @@ export default function StudioMainView() {
           />
         </React.Suspense>
       );
+      break;
 
     case 'SHOW_PAGE':
       // CRITICAL: Show page requires showId and showTitle
@@ -234,7 +274,7 @@ export default function StudioMainView() {
         return null;
       }
 
-      return (
+      content = (
         <React.Suspense fallback={<LoadingScreen />}>
           <PodcastShowPage
             showId={state.currentShowId}
@@ -250,6 +290,7 @@ export default function StudioMainView() {
           />
         </React.Suspense>
       );
+      break;
 
     case 'WIZARD':
       // CRITICAL: Wizard requires showId for podcasts
@@ -258,7 +299,7 @@ export default function StudioMainView() {
         // For now, allow wizard to handle this case
       }
 
-      return (
+      content = (
         <React.Suspense fallback={<LoadingScreen />}>
           <StudioWizard
             showId={state.currentShowId || ''}
@@ -268,10 +309,12 @@ export default function StudioMainView() {
           />
         </React.Suspense>
       );
+      break;
 
     case 'LIBRARY':
     default:
-      return (
+      modeKey = 'LIBRARY';
+      content = (
         <React.Suspense fallback={<LoadingScreen />}>
           <StudioLibrary
             onSelectShow={handleSelectShow}
@@ -285,5 +328,22 @@ export default function StudioMainView() {
           />
         </React.Suspense>
       );
+      break;
   }
+
+  return (
+    <AnimatePresence mode="wait" custom={direction}>
+      <motion.div
+        key={modeKey}
+        custom={direction}
+        variants={pageTransitionVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        className="h-full w-full"
+      >
+        {content}
+      </motion.div>
+    </AnimatePresence>
+  );
 }
