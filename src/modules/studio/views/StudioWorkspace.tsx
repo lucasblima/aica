@@ -15,32 +15,71 @@
  */
 
 import React from 'react';
-import type { StudioWorkspaceProps } from '../types/studio';
+import { Mic2, Video, FileText, ArrowLeft } from 'lucide-react';
+import type { StudioWorkspaceProps, ProjectType } from '../types/studio';
 import { generateDossier, searchGuestProfile } from '../services/podcastAIService';
 import { PodcastWorkspace } from '../components/workspace';
+import { getProjectTypeConfig } from '../config/projectTypeConfigs';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('StudioWorkspace');
 
 /**
- * Unsupported project type fallback
+ * Unsupported project type fallback — config-aware with back navigation
  */
-function UnsupportedProjectType({ type }: { type: string }) {
+function UnsupportedProjectType({ type, onBack }: { type: string; onBack: () => void }) {
+  const KNOWN_TYPES: ProjectType[] = ['podcast', 'video', 'article'];
+  const config = KNOWN_TYPES.includes(type as ProjectType)
+    ? getProjectTypeConfig(type as ProjectType)
+    : null;
+
+  const ICON_MAP: Record<string, React.FC<{ className?: string }>> = { Mic2, Video, FileText };
+  const Icon = config ? (ICON_MAP[config.iconName] || FileText) : FileText;
+  const label = config?.label || type;
+  const description = config?.description || '';
+  const stages = config?.stages || [];
+
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    amber: { bg: 'bg-amber-100', text: 'text-amber-600' },
+    blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
+    emerald: { bg: 'bg-emerald-100', text: 'text-emerald-600' },
+  };
+  const colors = config ? (colorMap[config.color] || colorMap.amber) : colorMap.amber;
+
   return (
     <div className="flex items-center justify-center h-screen bg-ceramic-base">
       <div className="text-center max-w-md">
-        <div className="text-ceramic-warning mb-4">
-          <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+        <div className={`${colors.bg} w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6`}>
+          <Icon className={`w-10 h-10 ${colors.text}`} />
         </div>
-        <h2 className="text-2xl font-bold text-ceramic-text-primary mb-2">Tipo de Projeto Não Suportado</h2>
+        <h2 className="text-2xl font-bold text-ceramic-text-primary mb-2">{label}</h2>
         <p className="text-ceramic-text-secondary mb-4">
-          O tipo de projeto "{type}" ainda não está disponível.
+          {description || `O tipo "${type}" ainda nao esta disponivel.`}
         </p>
-        <p className="text-sm text-ceramic-text-secondary">
-          Em breve: Video, Article, e outros tipos de conteúdo.
+        {stages.length > 0 && (
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
+              Etapas planejadas
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {stages.map(stage => (
+                <span key={stage} className="px-3 py-1 rounded-full text-xs font-medium bg-ceramic-cool text-ceramic-text-secondary capitalize">
+                  {stage}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        <p className="text-sm text-ceramic-text-secondary mb-6">
+          Em breve disponivel no Estudio Aica.
         </p>
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-ceramic-cool text-ceramic-text-primary font-bold hover:bg-ceramic-border transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar para Biblioteca
+        </button>
       </div>
     </div>
   );
@@ -86,14 +125,14 @@ export default function StudioWorkspace({ project, onBack }: StudioWorkspaceProp
 
     case 'video':
       // Future implementation
-      return <UnsupportedProjectType type="video" />;
+      return <UnsupportedProjectType type="video" onBack={onBack} />;
 
     case 'article':
       // Future implementation
-      return <UnsupportedProjectType type="article" />;
+      return <UnsupportedProjectType type="article" onBack={onBack} />;
 
     default:
       // Fallback for unknown types
-      return <UnsupportedProjectType type={project.type} />;
+      return <UnsupportedProjectType type={project.type} onBack={onBack} />;
   }
 }

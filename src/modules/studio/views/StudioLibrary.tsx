@@ -7,6 +7,8 @@ import { CreatePodcastDialog } from '../components/CreatePodcastDialog';
 import { HeaderGlobal } from '@/components/layout';
 import type { StudioLibraryProps } from '../types/studio';
 import { createNamespacedLogger } from '@/lib/logger';
+import { getAllProjectTypes } from '../config/projectTypeConfigs';
+import { ProjectTypePreview } from '../components/ProjectTypePreview';
 
 const gridContainerVariants = {
   hidden: {},
@@ -286,6 +288,24 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
               <Plus className="w-5 h-5" />
               Criar Primeiro Podcast
             </button>
+          </div>
+        )}
+
+        {/* Content Types Section */}
+        {!loading && (
+          <div className="mt-10 mb-6">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-ceramic-text-secondary mb-4">
+              Tipos de Conteudo
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {getAllProjectTypes().map(config => (
+                <ProjectTypePreview
+                  key={config.type}
+                  config={config}
+                  disabled={config.comingSoon}
+                />
+              ))}
+            </div>
           </div>
         )}
       </main>

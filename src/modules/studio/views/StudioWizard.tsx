@@ -1,9 +1,9 @@
 /**
  * StudioWizard Component
  *
- * Single-step wizard for creating new podcast episodes in the Studio module.
- * Focuses on the 3 essentials (title, guest name, theme) with optional details
- * in a collapsible section.
+ * Generic wizard shell for creating new projects in the Studio module.
+ * Routes to the appropriate form component based on projectType.
+ * Currently supports podcast; video/article show a "coming soon" placeholder.
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -12,14 +12,11 @@ import {
   Sparkles,
   Loader2,
   AlertCircle,
-  Calendar,
-  MapPin,
-  User,
-  Hash,
-  ChevronDown
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import type { StudioWizardProps, StudioProject } from '../types/studio';
+import { getProjectTypeConfig } from '../config/projectTypeConfigs';
+import { PodcastWizardForm, ComingSoonForm } from '../components/wizard';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('StudioWizard');
@@ -57,13 +54,13 @@ const LOCATIONS = [
 export const StudioWizard: React.FC<StudioWizardProps> = ({
   showId,
   userId,
+  projectType = 'podcast',
   onComplete,
   onCancel
 }) => {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
-  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -78,9 +75,15 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
     season: '1'
   });
 
+  const config = getProjectTypeConfig(projectType);
+
   // ============================================================================
   // EVENT HANDLERS
   // ============================================================================
+
+  const handleFieldChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleCreate = async () => {
     if (!formData.title.trim()) {
@@ -202,11 +205,45 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
   // ============================================================================
 
   const canCreate =
+    projectType === 'podcast' &&
     formData.title.trim().length > 0 &&
     formData.guestName.trim().length > 0 &&
     formData.theme.trim().length > 0;
 
+  const isComingSoon = config.comingSoon;
+
   const inputClasses = "w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary placeholder-ceramic-text-secondary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all";
+
+  // ============================================================================
+  // RENDER FORM CONTENT
+  // ============================================================================
+
+  const renderFormContent = () => {
+    switch (projectType) {
+      case 'podcast':
+        return (
+          <PodcastWizardForm
+            formData={formData}
+            onChange={handleFieldChange}
+            inputClasses={inputClasses}
+          />
+        );
+      default:
+        return <ComingSoonForm typeConfig={config} />;
+    }
+  };
+
+  // ============================================================================
+  // HEADER LABELS
+  // ============================================================================
+
+  const headerTitle = projectType === 'podcast'
+    ? 'Novo Episodio'
+    : `Novo ${config.label}`;
+
+  const headerSubtitle = projectType === 'podcast'
+    ? 'Preencha os dados essenciais para criar seu episodio'
+    : config.description;
 
   // ============================================================================
   // RENDER
@@ -228,13 +265,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         <div className="h-1 bg-ceramic-cool relative">
           <motion.div
             role="progressbar"
-            aria-valuenow={canCreate ? 100 : 50}
+            aria-valuenow={canCreate ? 100 : (isComingSoon ? 0 : 50)}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label="Progresso do formulario"
             className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
             initial={{ width: '0%' }}
-            animate={{ width: canCreate ? '100%' : '50%' }}
+            animate={{ width: canCreate ? '100%' : (isComingSoon ? '0%' : '50%') }}
             transition={{ duration: 0.3 }}
           />
         </div>
@@ -249,213 +286,27 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
             {/* Header */}
             <div className="text-center space-y-2">
               <h2 id="wizard-title" className="text-3xl font-bold text-ceramic-text-primary">
-                Novo Episodio
+                {headerTitle}
               </h2>
               <p className="text-ceramic-text-secondary">
-                Preencha os dados essenciais para criar seu episodio
+                {headerSubtitle}
               </p>
             </div>
 
-            <div className="space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                  Titulo *
-                </label>
-                <input
-                  data-testid="episode-title"
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData(prev => ({ ...prev, title: e.target.value }))
-                  }
-                  placeholder="Ex: Conversa com Eduardo Paes"
-                  autoFocus
-                  className={inputClasses}
-                />
-              </div>
+            {/* Form Content — routed by projectType */}
+            {renderFormContent()}
 
-              {/* Guest Name */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                  <User className="w-3 h-3 inline mr-1" />
-                  Nome do Convidado *
-                </label>
-                <input
-                  data-testid="guest-name"
-                  type="text"
-                  value={formData.guestName}
-                  onChange={(e) =>
-                    setFormData(prev => ({ ...prev, guestName: e.target.value }))
-                  }
-                  placeholder="Ex: Joao Silva"
-                  className={inputClasses}
-                />
-              </div>
-
-              {/* Theme */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                  Tema *
-                </label>
-                <input
-                  type="text"
-                  value={formData.theme}
-                  onChange={(e) =>
-                    setFormData(prev => ({ ...prev, theme: e.target.value }))
-                  }
-                  placeholder="Ex: Politicas Publicas, Inovacao"
-                  className={inputClasses}
-                />
-              </div>
-
-              {/* Optional Details — Collapsible */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowOptionalDetails(!showOptionalDetails)}
-                  className="flex items-center gap-2 text-sm text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-                >
-                  <motion.div
-                    animate={{ rotate: showOptionalDetails ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </motion.div>
-                  Detalhes opcionais
-                </button>
-
-                <AnimatePresence>
-                  {showOptionalDetails && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="space-y-4 pt-4">
-                        {/* Description */}
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                            Descricao
-                          </label>
-                          <textarea
-                            data-testid="episode-description"
-                            value={formData.description}
-                            onChange={(e) =>
-                              setFormData(prev => ({
-                                ...prev,
-                                description: e.target.value
-                              }))
-                            }
-                            placeholder="Adicione detalhes sobre o episodio..."
-                            rows={3}
-                            className={`${inputClasses} resize-none`}
-                          />
-                        </div>
-
-                        {/* Scheduling Grid */}
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Date */}
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                              <Calendar className="w-3 h-3 inline mr-1" />
-                              Data
-                            </label>
-                            <input
-                              type="date"
-                              value={formData.scheduledDate}
-                              onChange={(e) =>
-                                setFormData(prev => ({
-                                  ...prev,
-                                  scheduledDate: e.target.value
-                                }))
-                              }
-                              className={inputClasses}
-                            />
-                          </div>
-
-                          {/* Time */}
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                              Hora
-                            </label>
-                            <input
-                              type="time"
-                              value={formData.scheduledTime}
-                              onChange={(e) =>
-                                setFormData(prev => ({
-                                  ...prev,
-                                  scheduledTime: e.target.value
-                                }))
-                              }
-                              className={inputClasses}
-                            />
-                          </div>
-
-                          {/* Location */}
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                              <MapPin className="w-3 h-3 inline mr-1" />
-                              Local
-                            </label>
-                            <select
-                              value={formData.location}
-                              onChange={(e) =>
-                                setFormData(prev => ({
-                                  ...prev,
-                                  location: e.target.value
-                                }))
-                              }
-                              className={inputClasses}
-                            >
-                              {LOCATIONS.map(loc => (
-                                <option key={loc} value={loc}>
-                                  {loc}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Season */}
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                              <Hash className="w-3 h-3 inline mr-1" />
-                              Temporada
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={formData.season}
-                              onChange={(e) =>
-                                setFormData(prev => ({
-                                  ...prev,
-                                  season: e.target.value
-                                }))
-                              }
-                              className={inputClasses}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-error/30 flex items-start gap-3"
-                >
-                  <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-ceramic-error">{error}</p>
-                </motion.div>
-              )}
-            </div>
+            {/* Error Message */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-error/30 flex items-start gap-3"
+              >
+                <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-ceramic-error">{error}</p>
+              </motion.div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">
