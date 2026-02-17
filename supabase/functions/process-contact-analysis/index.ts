@@ -328,12 +328,12 @@ serve(async (req: Request) => {
 
     if (analysisError) {
       console.error('[process-contact-analysis] Create analysis error:', analysisError)
-      // Refund credits on failure
-      await supabase.rpc('earn_credits', {
+      // Refund credits on failure (negative spend = credit addition)
+      await supabase.rpc('spend_credits', {
         p_user_id: user.id,
-        p_amount: creditCost,
-        p_type: 'admin_adjustment',
+        p_amount: -creditCost,
         p_reference_id: contactId,
+        p_reference_type: 'refund',
         p_metadata: { reason: 'Refund due to analysis creation failure' }
       })
       throw analysisError
