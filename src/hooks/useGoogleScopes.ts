@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { hasCalendarWriteScope, hasGmailScope, hasDriveScope } from '@/services/googleCalendarTokenService';
+import { hasCalendarWriteScope, hasGmailScope, hasDriveScope, removeScope } from '@/services/googleCalendarTokenService';
 import { connectGmail, connectDrive, disconnectGoogleCalendar, isGoogleCalendarConnected } from '@/services/googleAuthService';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -18,6 +18,9 @@ interface GoogleScopesState {
     connectGmail: () => Promise<void>;
     connectDrive: () => Promise<void>;
     disconnectAll: () => Promise<void>;
+    disconnectGmail: () => Promise<void>;
+    disconnectDrive: () => Promise<void>;
+    disconnectCalendar: () => Promise<void>;
     refresh: () => Promise<void>;
 }
 
@@ -74,6 +77,21 @@ export function useGoogleScopes(): GoogleScopesState {
         setHasDrive(false);
     }, []);
 
+    const handleDisconnectGmail = useCallback(async () => {
+        await removeScope('gmail');
+        setHasGmail(false);
+    }, []);
+
+    const handleDisconnectDrive = useCallback(async () => {
+        await removeScope('drive');
+        setHasDrive(false);
+    }, []);
+
+    const handleDisconnectCalendar = useCallback(async () => {
+        await removeScope('calendar');
+        setHasCalendar(false);
+    }, []);
+
     return {
         hasCalendar,
         hasGmail,
@@ -82,6 +100,9 @@ export function useGoogleScopes(): GoogleScopesState {
         connectGmail: handleConnectGmail,
         connectDrive: handleConnectDrive,
         disconnectAll: handleDisconnectAll,
+        disconnectGmail: handleDisconnectGmail,
+        disconnectDrive: handleDisconnectDrive,
+        disconnectCalendar: handleDisconnectCalendar,
         refresh: checkScopes,
     };
 }

@@ -760,6 +760,43 @@ export function getTokenRefreshState(): {
 }
 
 /**
+ * Remove a specific scope from the user's granted scopes in DB.
+ * Does NOT revoke the token — the backend will refuse to use the removed scope.
+ * If no scopes remain after removal, performs a full disconnect.
+ */
+export async function removeScope(scopeSubstring: string): Promise<void> {
+    try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) {
+            throw new Error('Usuário não autenticado');
+        }
+
+        const tokens = await getGoogleCalendarTokens();
+        if (!tokens?.scopes) return;
+
+        const updatedScopes = tokens.scopes.filter(
+            (s: string) => !s.includes(scopeSubstring)
+        );
+
+        // If no meaningful scopes remain, do a full disconnect
+        if (updatedScopes.length <= 1 && updatedScopes.every((s: string) => s.includes('userinfo'))) {
+            await disconnectGoogleCalendar();
+            return;
+        }
+
+        await supabase
+            .from('google_calendar_tokens')
+            .update({ scopes: updatedScopes })
+            .eq('user_id', session.session.user.id);
+
+        log.debug('Scope removed:', { removed: scopeSubstring, remaining: updatedScopes });
+    } catch (error) {
+        log.error('Error removing scope:', { error, scopeSubstring });
+        throw error;
+    }
+}
+
+/**
  * Check if the user has Gmail read scope granted.
  */
 export async function hasGmailScope(): Promise<boolean> {

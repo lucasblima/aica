@@ -15,11 +15,12 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion'
-import { X, Mail, Calendar, Shield, AlertTriangle, TrendingUp, Crown, Zap } from 'lucide-react'
+import { X, Mail, Calendar, Shield, AlertTriangle, TrendingUp, Crown, Zap, ExternalLink, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { DangerZone } from './DangerZone'
 import { EfficiencyFlowCard } from '../EfficiencyFlowCard'
 import { useUserPlan } from '@/hooks/useUserPlan'
+import { useGoogleScopes } from '@/hooks/useGoogleScopes'
 import { PAYMENTS_ENABLED } from '@/modules/billing/components/PlanCard'
 
 function PlanSection() {
@@ -65,6 +66,106 @@ function PlanSection() {
         <Crown className="w-4 h-4" />
         {isFree ? (PAYMENTS_ENABLED ? 'Fazer upgrade' : 'Ver planos') : (PAYMENTS_ENABLED ? 'Gerenciar plano' : 'Ver planos')}
       </button>
+    </div>
+  )
+}
+
+function ScopeStatusRow({ label, connected, color, onDisconnect, isDisconnecting }: {
+  label: string
+  connected: boolean
+  color: string
+  onDisconnect?: () => void
+  isDisconnecting?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center gap-2.5">
+        <span
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: connected ? color : '#9CA3AF' }}
+        />
+        <span className="text-sm text-ceramic-text-primary">{label}</span>
+      </div>
+      {connected && onDisconnect && (
+        <button
+          onClick={onDisconnect}
+          disabled={isDisconnecting}
+          className="text-xs text-ceramic-text-secondary hover:text-ceramic-error transition-colors disabled:opacity-50"
+        >
+          {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Desconectar'}
+        </button>
+      )}
+      {!connected && (
+        <span className="text-xs text-ceramic-text-secondary/60">Não conectado</span>
+      )}
+    </div>
+  )
+}
+
+function GoogleIntegrationsSection({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate()
+  const { hasCalendar, hasGmail, hasDrive, isLoading, disconnectAll } = useGoogleScopes()
+  const [isDisconnecting, setIsDisconnecting] = useState(false)
+
+  const anyConnected = hasCalendar || hasGmail || hasDrive
+
+  const handleDisconnectAll = async () => {
+    setIsDisconnecting(true)
+    try {
+      await disconnectAll()
+    } finally {
+      setIsDisconnecting(false)
+    }
+  }
+
+  const handleOpenGoogleHub = () => {
+    onClose()
+    navigate('/google-hub')
+  }
+
+  return (
+    <div className="ceramic-stats-tray space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          <h4 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+            Google
+          </h4>
+        </div>
+        <button
+          onClick={handleOpenGoogleHub}
+          className="text-xs text-ceramic-info hover:underline flex items-center gap-1"
+        >
+          Gerenciar <ExternalLink className="w-3 h-3" />
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="w-4 h-4 animate-spin text-ceramic-text-secondary" />
+        </div>
+      ) : (
+        <div className="divide-y divide-ceramic-border/40">
+          <ScopeStatusRow label="Calendar" connected={hasCalendar} color="#EA4335" />
+          <ScopeStatusRow label="Gmail" connected={hasGmail} color="#4285F4" />
+          <ScopeStatusRow label="Drive" connected={hasDrive} color="#0F9D58" />
+        </div>
+      )}
+
+      {anyConnected && (
+        <button
+          onClick={handleDisconnectAll}
+          disabled={isDisconnecting}
+          className="w-full text-xs text-ceramic-text-secondary hover:text-ceramic-error py-1.5 transition-colors disabled:opacity-50"
+        >
+          {isDisconnecting ? 'Desconectando...' : 'Desconectar tudo'}
+        </button>
+      )}
     </div>
   )
 }
@@ -260,6 +361,9 @@ export function ProfileDrawer({
 
                   {/* Plan Section */}
                   <PlanSection />
+
+                  {/* Google Integrations Section */}
+                  <GoogleIntegrationsSection onClose={onClose} />
 
                   {/* Data Sovereignty Section */}
                   <div className="pt-4">
