@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { listFiles, searchFiles, type DriveFile } from '@/services/driveService';
+import { listFiles, type DriveFile } from '@/services/driveService';
 import { hasDriveScope } from '@/services/googleCalendarTokenService';
 import { createNamespacedLogger } from '@/lib/logger';
 

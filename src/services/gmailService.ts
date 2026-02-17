@@ -15,33 +15,40 @@ const log = createNamespacedLogger('GmailService');
 // ============================================================================
 
 export interface GmailMessage {
-    message_id: string;
-    thread_id: string;
+    id: string;
+    threadId: string;
     subject: string;
     snippet: string;
     sender: string;
-    sender_email: string;
-    received_at: string;
+    senderEmail: string;
+    to: string;
+    cc: string;
+    date: string;
+    receivedAt: string | null;
     labels: string[];
-    is_read: boolean;
+    isRead: boolean;
+    isStarred: boolean;
+    hasAttachments: boolean;
 }
 
 export interface GmailThread {
-    thread_id: string;
+    id: string;
     messages: GmailMessage[];
 }
 
 interface GmailListResponse {
     success: boolean;
-    messages: GmailMessage[];
-    nextPageToken?: string;
+    data: {
+        messages: GmailMessage[];
+        nextPageToken: string | null;
+        resultSizeEstimate: number;
+    };
     error?: string;
 }
 
 interface GmailDetailResponse {
     success: boolean;
-    message?: GmailMessage;
-    thread?: GmailThread;
+    data: GmailMessage | GmailThread;
     error?: string;
 }
 
@@ -61,10 +68,12 @@ export async function listEmails(options?: {
     try {
         const { data, error } = await supabase.functions.invoke('gmail-proxy', {
             body: {
-                action: 'list',
-                query: options?.query,
-                maxResults: options?.maxResults ?? 20,
-                pageToken: options?.pageToken,
+                action: 'list_messages',
+                payload: {
+                    query: options?.query,
+                    maxResults: options?.maxResults ?? 20,
+                    pageToken: options?.pageToken,
+                },
             },
         });
 
@@ -80,8 +89,8 @@ export async function listEmails(options?: {
         }
 
         return {
-            messages: response.messages || [],
-            nextPageToken: response.nextPageToken,
+            messages: response.data?.messages || [],
+            nextPageToken: response.data?.nextPageToken ?? undefined,
         };
     } catch (err) {
         log.error('[listEmails] Exception:', { error: err });
@@ -96,8 +105,8 @@ export async function getEmail(messageId: string): Promise<GmailMessage | null> 
     try {
         const { data, error } = await supabase.functions.invoke('gmail-proxy', {
             body: {
-                action: 'get',
-                messageId,
+                action: 'get_message',
+                payload: { messageId },
             },
         });
 
@@ -107,7 +116,7 @@ export async function getEmail(messageId: string): Promise<GmailMessage | null> 
         }
 
         const response = data as GmailDetailResponse;
-        return response.success ? (response.message ?? null) : null;
+        return response.success ? (response.data as GmailMessage ?? null) : null;
     } catch (err) {
         log.error('[getEmail] Exception:', { error: err });
         return null;
@@ -122,7 +131,7 @@ export async function getThread(threadId: string): Promise<GmailThread | null> {
         const { data, error } = await supabase.functions.invoke('gmail-proxy', {
             body: {
                 action: 'get_thread',
-                threadId,
+                payload: { threadId },
             },
         });
 
@@ -132,7 +141,7 @@ export async function getThread(threadId: string): Promise<GmailThread | null> {
         }
 
         const response = data as GmailDetailResponse;
-        return response.success ? (response.thread ?? null) : null;
+        return response.success ? (response.data as GmailThread ?? null) : null;
     } catch (err) {
         log.error('[getThread] Exception:', { error: err });
         return null;
@@ -144,6 +153,28 @@ export async function getThread(threadId: string): Promise<GmailThread | null> {
  * Returns empty array if not connected.
  */
 export async function searchEmails(query: string): Promise<GmailMessage[]> {
-    const result = await listEmails({ query, maxResults: 20 });
-    return result.messages;
+    try {
+        const { data, error } = await supabase.functions.invoke('gmail-proxy', {
+            body: {
+                action: 'search',
+                payload: { query, maxResults: 20 },
+            },
+        });
+
+        if (error) {
+            log.error('[searchEmails] Edge Function error:', { error });
+            return [];
+        }
+
+        const response = data as GmailListResponse;
+        if (!response.success) {
+            log.warn('[searchEmails] API returned error:', response.error);
+            return [];
+        }
+
+        return response.data?.messages || [];
+    } catch (err) {
+        log.error('[searchEmails] Exception:', { error: err });
+        return [];
+    }
 }

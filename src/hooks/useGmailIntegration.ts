@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { listEmails, searchEmails, type GmailMessage } from '@/services/gmailService';
+import { listEmails, type GmailMessage } from '@/services/gmailService';
 import { hasGmailScope } from '@/services/googleCalendarTokenService';
 import { createNamespacedLogger } from '@/lib/logger';
 

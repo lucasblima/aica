@@ -15,27 +15,33 @@ const log = createNamespacedLogger('DriveService');
 // ============================================================================
 
 export interface DriveFile {
-    file_id: string;
+    id: string;
     name: string;
-    mime_type: string;
-    icon_link: string;
-    web_view_link: string;
-    modified_time: string;
-    size_bytes: number;
+    mimeType: string;
+    iconLink: string;
+    webViewLink: string;
+    thumbnailLink: string | null;
+    modifiedTime: string;
+    createdTime: string;
+    sizeBytes: number | null;
+    owners: Array<{ name: string; email: string }>;
     shared: boolean;
     starred: boolean;
+    parentFolderId: string | null;
 }
 
 interface DriveListResponse {
     success: boolean;
-    files: DriveFile[];
-    nextPageToken?: string;
+    data: {
+        files: DriveFile[];
+        nextPageToken: string | null;
+    };
     error?: string;
 }
 
 interface DriveDetailResponse {
     success: boolean;
-    file?: DriveFile;
+    data: DriveFile;
     error?: string;
 }
 
@@ -55,10 +61,12 @@ export async function listFiles(options?: {
     try {
         const { data, error } = await supabase.functions.invoke('drive-proxy', {
             body: {
-                action: 'list',
-                query: options?.query,
-                maxResults: options?.maxResults ?? 20,
-                pageToken: options?.pageToken,
+                action: 'list_files',
+                payload: {
+                    query: options?.query,
+                    maxResults: options?.maxResults ?? 20,
+                    pageToken: options?.pageToken,
+                },
             },
         });
 
@@ -74,8 +82,8 @@ export async function listFiles(options?: {
         }
 
         return {
-            files: response.files || [],
-            nextPageToken: response.nextPageToken,
+            files: response.data?.files || [],
+            nextPageToken: response.data?.nextPageToken ?? undefined,
         };
     } catch (err) {
         log.error('[listFiles] Exception:', { error: err });
@@ -90,8 +98,8 @@ export async function getFile(fileId: string): Promise<DriveFile | null> {
     try {
         const { data, error } = await supabase.functions.invoke('drive-proxy', {
             body: {
-                action: 'get',
-                fileId,
+                action: 'get_file',
+                payload: { fileId },
             },
         });
 
@@ -101,7 +109,7 @@ export async function getFile(fileId: string): Promise<DriveFile | null> {
         }
 
         const response = data as DriveDetailResponse;
-        return response.success ? (response.file ?? null) : null;
+        return response.success ? (response.data ?? null) : null;
     } catch (err) {
         log.error('[getFile] Exception:', { error: err });
         return null;
@@ -113,14 +121,58 @@ export async function getFile(fileId: string): Promise<DriveFile | null> {
  * Returns empty array if not connected.
  */
 export async function searchFiles(query: string): Promise<DriveFile[]> {
-    const result = await listFiles({ query, maxResults: 20 });
-    return result.files;
+    try {
+        const { data, error } = await supabase.functions.invoke('drive-proxy', {
+            body: {
+                action: 'search',
+                payload: { query, maxResults: 20 },
+            },
+        });
+
+        if (error) {
+            log.error('[searchFiles] Edge Function error:', { error });
+            return [];
+        }
+
+        const response = data as DriveListResponse;
+        if (!response.success) {
+            log.warn('[searchFiles] API returned error:', response.error);
+            return [];
+        }
+
+        return response.data?.files || [];
+    } catch (err) {
+        log.error('[searchFiles] Exception:', { error: err });
+        return [];
+    }
 }
 
 /**
  * Get recently modified files.
  */
 export async function getRecentFiles(maxResults: number = 10): Promise<DriveFile[]> {
-    const result = await listFiles({ maxResults });
-    return result.files;
+    try {
+        const { data, error } = await supabase.functions.invoke('drive-proxy', {
+            body: {
+                action: 'list_recent',
+                payload: { maxResults },
+            },
+        });
+
+        if (error) {
+            log.error('[getRecentFiles] Edge Function error:', { error });
+            return [];
+        }
+
+        const response = data as DriveListResponse;
+        if (!response.success) {
+            log.warn('[getRecentFiles] API returned error:', response.error);
+            return [];
+        }
+
+        return response.data?.files || [];
+    } catch (err) {
+        log.error('[getRecentFiles] Exception:', { error: err });
+        return [];
+    }
 }
