@@ -1,11 +1,26 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Plus, Mic2, FolderOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Plus, Mic2, FolderOpen, AlertCircle, FileEdit } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { HeaderGlobal } from '@/components/layout';
 import type { PodcastShow } from '../types/podcast';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('PodcastShowPage');
+
+const tabContentVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 30 },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    transition: { duration: 0.15 },
+  },
+};
 
 interface PodcastShowPageProps {
   showId: string;
@@ -53,6 +68,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [show, setShow] = useState<PodcastShow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortType>('newest');
 
@@ -64,6 +80,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
   const fetchShowData = async () => {
     try {
       setIsLoading(true);
+      setFetchError(null);
 
       // Fetch show details
       const { data: showData, error: showError } = await supabase
@@ -86,6 +103,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
       setEpisodes(episodesData || []);
     } catch (error) {
       log.error('Error fetching show data:', error);
+      setFetchError('Nao foi possivel carregar os dados do podcast. Verifique sua conexao e tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -130,11 +148,73 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
+        {/* Fetch Error Banner */}
+        <AnimatePresence>
+          {fetchError && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mx-6 mt-6 p-4 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-ceramic-error font-medium">{fetchError}</p>
+                <button
+                  onClick={() => { setFetchError(null); fetchShowData(); }}
+                  className="mt-2 text-sm text-ceramic-error hover:underline"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {isLoading ? (
-          <div className="p-6">
-            <div className="ceramic-card h-48 animate-pulse rounded-2xl" />
+          <div className="p-6 space-y-6">
+            {/* Granular header skeleton */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-start gap-6">
+                {/* Artwork placeholder */}
+                <div className="w-24 h-24 rounded-2xl bg-ceramic-cool animate-pulse flex-shrink-0" />
+                {/* Info lines */}
+                <div className="flex-1 space-y-3">
+                  <div className="h-6 bg-ceramic-cool animate-pulse rounded-lg w-2/3" />
+                  <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-full" />
+                  <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-4/5" />
+                  {/* Stat badges */}
+                  <div className="flex gap-4 mt-4">
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="space-y-1.5">
+                        <div className="h-3 bg-ceramic-cool animate-pulse rounded w-12" />
+                        <div className="h-6 bg-ceramic-cool animate-pulse rounded-lg w-10" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Action button placeholder */}
+                <div className="h-11 w-36 bg-ceramic-cool animate-pulse rounded-xl flex-shrink-0" />
+              </div>
+            </div>
+            {/* Tab bar skeleton */}
+            <div className="flex gap-6 border-b border-ceramic-border px-6">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-4 bg-ceramic-cool animate-pulse rounded w-20 mb-3" />
+              ))}
+            </div>
+            {/* Content area skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="rounded-2xl border border-ceramic-border p-4">
+                  <div className="aspect-video bg-ceramic-cool animate-pulse rounded-xl mb-3" />
+                  <div className="h-4 bg-ceramic-cool animate-pulse rounded-lg w-3/4 mb-2" />
+                  <div className="h-3 bg-ceramic-cool animate-pulse rounded-lg w-1/2" />
+                </div>
+              ))}
+            </div>
           </div>
-        ) : (
+        ) : !fetchError && (
           <>
             {/* Show Header */}
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 mx-6 mt-6 rounded-2xl p-6 mb-6 shadow-sm">
@@ -205,20 +285,30 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
 
             {/* Tab Content */}
             <div className="p-6">
-              {activeTab === 'episodes' && (
-                <EpisodesSection
-                  episodes={filteredEpisodes}
-                  filter={filter}
-                  sortBy={sortBy}
-                  onFilterChange={setFilter}
-                  onSortChange={setSortBy}
-                  onSelectEpisode={onSelectEpisode}
-                  onCreateNew={onCreateEpisode}
-                />
-              )}
-              {activeTab === 'drafts' && <DraftsSection episodes={episodes.filter(e => e.status === 'draft')} onSelectEpisode={onSelectEpisode} />}
-              {activeTab === 'files' && <FilesSection showId={showId} />}
-              {activeTab === 'settings' && <SettingsSection show={show} onRefresh={fetchShowData} />}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  variants={tabContentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  {activeTab === 'episodes' && (
+                    <EpisodesSection
+                      episodes={filteredEpisodes}
+                      filter={filter}
+                      sortBy={sortBy}
+                      onFilterChange={setFilter}
+                      onSortChange={setSortBy}
+                      onSelectEpisode={onSelectEpisode}
+                      onCreateNew={onCreateEpisode}
+                    />
+                  )}
+                  {activeTab === 'drafts' && <DraftsSection episodes={episodes.filter(e => e.status === 'draft')} onSelectEpisode={onSelectEpisode} />}
+                  {activeTab === 'files' && <FilesSection showId={showId} />}
+                  {activeTab === 'settings' && <SettingsSection show={show} onRefresh={fetchShowData} />}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </>
         )}
@@ -453,8 +543,14 @@ const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: strin
   <div>
     <h2 className="text-lg font-bold text-ceramic-text-primary mb-4">Rascunhos</h2>
     {episodes.length === 0 ? (
-      <div className="text-center py-12">
-        <p className="text-ceramic-text-secondary">Nenhum rascunho</p>
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 bg-ceramic-cool rounded-full flex items-center justify-center mb-4">
+          <FileEdit className="w-8 h-8 text-ceramic-text-secondary" />
+        </div>
+        <h3 className="text-lg font-medium text-ceramic-text-primary mb-1">Nenhum rascunho</h3>
+        <p className="text-sm text-ceramic-text-secondary mb-4">
+          Episodios salvos como rascunho aparecerao aqui
+        </p>
       </div>
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -467,13 +563,15 @@ const DraftsSection: React.FC<{ episodes: Episode[]; onSelectEpisode: (id: strin
 );
 
 const FilesSection: React.FC<{ showId: string }> = ({ showId }) => (
-  <div className="text-center py-12">
-    <div className="w-16 h-16 bg-ceramic-base rounded-full flex items-center justify-center mx-auto mb-4">
+  <div className="flex flex-col items-center justify-center py-12 text-center">
+    <div className="w-16 h-16 bg-ceramic-cool rounded-full flex items-center justify-center mb-4">
       <FolderOpen className="w-8 h-8 text-ceramic-text-secondary" />
     </div>
-    <h3 className="text-lg font-medium text-ceramic-text-primary">Arquivos do Podcast</h3>
-    <p className="text-ceramic-text-secondary mt-1">Em breve: gerencie logos, intros, musicas e assets</p>
-    <button className="mt-4 text-amber-600 hover:text-amber-700 font-medium transition-colors">
+    <h3 className="text-lg font-medium text-ceramic-text-primary mb-1">Arquivos do Podcast</h3>
+    <p className="text-sm text-ceramic-text-secondary mb-4">
+      Em breve: gerencie logos, intros, musicas e assets
+    </p>
+    <button className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors">
       Fazer upload
     </button>
   </div>

@@ -141,24 +141,25 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 p-3 rounded-lg hover:bg-ceramic-base group transition-colors bg-ceramic-surface border border-transparent hover:border-ceramic-border hover:scale-[1.01] transition-transform"
+      className="flex items-center gap-1 md:gap-2 p-2 md:p-3 rounded-lg hover:bg-ceramic-base group transition-colors bg-ceramic-surface border border-transparent hover:border-ceramic-border hover:scale-[1.01] transition-transform"
       role="listitem"
     >
+      {/* Drag handle — 44px touch target on mobile, always visible on touch */}
       <div
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-orange-500 rounded"
+        className="cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-orange-500 rounded flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-[28px] md:min-h-[28px] -ml-1 md:ml-0"
         tabIndex={0}
         role="button"
         aria-label={`Arrastar tópico: ${topic.text}`}
         onKeyDown={handleKeyDown}
       >
-        <GripVertical className="w-4 h-4 text-ceramic-tertiary opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+        <GripVertical className="w-5 h-5 md:w-4 md:h-4 text-ceramic-tertiary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" aria-hidden="true" />
       </div>
 
       <button
         onClick={() => onToggle(topic.id)}
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success ${topic.completed
+        className={`min-w-[44px] min-h-[44px] md:min-w-[28px] md:min-h-[28px] w-6 h-6 md:w-5 md:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success ${topic.completed
           ? 'bg-ceramic-success border-ceramic-success text-white'
           : 'border-ceramic-tertiary hover:border-ceramic-success'
         }`}
@@ -206,7 +207,7 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
 
       <button
         onClick={() => onDelete(topic.id)}
-        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-ceramic-error-bg transition-all focus:outline-none focus:opacity-100 focus:ring-2 focus:ring-ceramic-error"
+        className="min-w-[44px] min-h-[44px] md:min-w-[28px] md:min-h-[28px] p-2 md:p-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-ceramic-error-bg transition-all focus:outline-none focus:opacity-100 focus:ring-2 focus:ring-ceramic-error flex items-center justify-center flex-shrink-0"
         title="Remover tópico"
         aria-label={`Remover tópico: ${topic.text}`}
       >
@@ -419,25 +420,25 @@ export default function PautaStage() {
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-ceramic-base to-ceramic-surface">
       {/* Header */}
-      <div className="p-6 border-b border-ceramic-border">
-        <div className="flex items-start justify-between mb-4">
+      <div className="p-4 md:p-6 border-b border-ceramic-border">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
                 <FileText className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-ceramic-primary">
+                <h1 className="text-xl md:text-3xl font-bold text-ceramic-primary">
                   Pauta do Episódio
                 </h1>
-                <p className="text-sm text-ceramic-secondary">
+                <p className="text-xs md:text-sm text-ceramic-secondary">
                   {setup.guestName} • {setup.theme || 'Tema automático'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Version History Indicator */}
             {versions.length > 0 && (
               <div className="flex items-center gap-1 text-xs text-ceramic-success bg-ceramic-success-bg px-3 py-2 rounded-lg border border-ceramic-success/30">
@@ -445,12 +446,12 @@ export default function PautaStage() {
                 <span>{versions.length} versao{versions.length > 1 ? 'es' : ''}</span>
                 <button
                   onClick={() => setShowVersionHistory(!showVersionHistory)}
-                  className="ml-1 p-0.5 hover:bg-ceramic-success/10 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success"
+                  className="ml-1 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 md:p-0.5 flex items-center justify-center hover:bg-ceramic-success/10 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-success"
                   title="Ver historico de versoes"
                   aria-label="Ver historico de versoes da pauta"
                   aria-expanded={showVersionHistory}
                 >
-                  <ChevronDown className="w-3 h-3" aria-hidden="true" />
+                  <ChevronDown className="w-4 h-4 md:w-3 md:h-3" aria-hidden="true" />
                 </button>
               </div>
             )}
@@ -459,19 +460,19 @@ export default function PautaStage() {
             {pauta.topics.length > 0 && (
               <button
                 onClick={handleOpenTeleprompter}
-                className="px-4 py-2 rounded-lg bg-ceramic-primary text-white text-sm font-bold flex items-center gap-2 hover:bg-ceramic-primary/90 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ceramic-primary focus:ring-offset-2"
+                className="px-4 py-2.5 min-h-[44px] rounded-lg bg-ceramic-primary text-white text-sm font-bold flex items-center gap-2 hover:bg-ceramic-primary/90 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ceramic-primary focus:ring-offset-2"
                 title="Abrir teleprompter para praticar"
                 aria-label="Abrir teleprompter"
               >
                 <MonitorPlay className="w-4 h-4" aria-hidden="true" />
-                Teleprompter
+                <span className="hidden sm:inline">Teleprompter</span>
               </button>
             )}
 
             {/* AI Generator Button - Opens PautaGeneratorPanel */}
             <button
               onClick={() => setShowGeneratorPanel(true)}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-bold flex items-center gap-2 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              className="px-4 py-2.5 min-h-[44px] rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-bold flex items-center gap-2 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
               title="Gerar Pauta com IA (estilo NotebookLM)"
               aria-label={pauta.topics.length > 0 ? 'Regenerar pauta com IA' : 'Gerar pauta com IA'}
             >
@@ -656,7 +657,7 @@ export default function PautaStage() {
       </div>
 
       {/* Add Topic Form - Footer */}
-      <div className="p-6 border-t border-ceramic-border bg-ceramic-surface">
+      <div className="p-4 md:p-6 border-t border-ceramic-border bg-ceramic-surface">
         <div className="space-y-3">
           {/* Category Selector */}
           <div className="flex gap-2 flex-wrap" role="group" aria-label="Selecionar categoria do tópico">
@@ -664,7 +665,7 @@ export default function PautaStage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`px-3 py-2 min-h-[44px] md:py-1 md:min-h-0 rounded-full text-xs font-bold transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 ${
                   selectedCategory === cat.id
                     ? CATEGORY_COLORS[cat.id] || 'bg-ceramic-cool'
                     : 'bg-ceramic-border text-ceramic-secondary hover:bg-ceramic-surface border border-transparent'
@@ -686,13 +687,13 @@ export default function PautaStage() {
               value={newTopicText}
               onChange={(e) => setNewTopicText(e.target.value)}
               placeholder="Nova pergunta ou tópico..."
-              className="flex-1 px-4 py-3 rounded-xl bg-ceramic-border text-sm text-ceramic-primary placeholder-ceramic-tertiary border-none focus:ring-2 focus:ring-amber-400/50 outline-none shadow-inner"
+              className="flex-1 px-4 py-3 min-h-[44px] rounded-xl bg-ceramic-border text-sm text-ceramic-primary placeholder-ceramic-tertiary border-none focus:ring-2 focus:ring-amber-400/50 outline-none shadow-inner"
               aria-required="true"
             />
             <button
               type="submit"
               disabled={!newTopicText.trim()}
-              className="p-3 rounded-xl bg-ceramic-primary text-ceramic-base disabled:opacity-50 transition-all hover:scale-105 active:scale-95 font-bold focus:outline-none focus:ring-2 focus:ring-ceramic-primary focus:ring-offset-2"
+              className="min-w-[44px] min-h-[44px] p-3 rounded-xl bg-ceramic-primary text-ceramic-base disabled:opacity-50 transition-all hover:scale-105 active:scale-95 font-bold focus:outline-none focus:ring-2 focus:ring-ceramic-primary focus:ring-offset-2 flex items-center justify-center"
               title="Adicionar tópico (Enter)"
               aria-label="Adicionar novo tópico à pauta"
             >
@@ -707,7 +708,7 @@ export default function PautaStage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => actions.setStage('production')}
-            className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white font-bold rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:ring-offset-2"
+            className="w-full mt-4 px-6 py-3 min-h-[48px] bg-gradient-to-r from-ceramic-success to-ceramic-success/90 text-white font-bold rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-ceramic-success focus:ring-offset-2"
             aria-label="Ir para próxima etapa: Gravação"
           >
             Próximo: Gravação

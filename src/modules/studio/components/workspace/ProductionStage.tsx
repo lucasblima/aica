@@ -28,6 +28,7 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
 import { TeleprompterWindow } from '../TeleprompterWindow';
 import {
@@ -60,6 +61,7 @@ export default function ProductionStage() {
   // Local state for teleprompter and timer
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const topicsListRef = useRef<HTMLDivElement>(null);
 
@@ -109,21 +111,36 @@ export default function ProductionStage() {
 
   // Handle recording start
   const handleStartRecording = () => {
-    actions.startRecording();
+    try {
+      setRecordingError(null);
+      actions.startRecording();
+    } catch (error) {
+      setRecordingError('Nao foi possivel iniciar a gravacao. Verifique as permissoes do microfone e tente novamente.');
+    }
   };
 
   // Handle pause/resume
   const handleTogglePause = () => {
-    if (production.isPaused) {
-      actions.resumeRecording();
-    } else {
-      actions.pauseRecording();
+    try {
+      setRecordingError(null);
+      if (production.isPaused) {
+        actions.resumeRecording();
+      } else {
+        actions.pauseRecording();
+      }
+    } catch (error) {
+      setRecordingError('Erro ao alterar o estado da gravacao. Tente novamente.');
     }
   };
 
   // Handle stop recording
   const handleStopRecording = () => {
-    actions.stopRecording();
+    try {
+      setRecordingError(null);
+      actions.stopRecording();
+    } catch (error) {
+      setRecordingError('Erro ao finalizar a gravacao. Seus dados foram preservados.');
+    }
   };
 
   // Handle topic completion
@@ -224,6 +241,29 @@ export default function ProductionStage() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden flex flex-col p-8">
+          {/* Recording Error Banner */}
+          <AnimatePresence>
+            {recordingError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-6 p-4 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 flex items-start gap-3"
+              >
+                <AlertCircle className="w-5 h-5 text-ceramic-error flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-ceramic-error font-medium">{recordingError}</p>
+                  <button
+                    onClick={() => setRecordingError(null)}
+                    className="mt-2 text-sm text-ceramic-error hover:underline"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Central Control Area */}
           <div className="bg-ceramic-base rounded-lg shadow-sm p-12 mb-8 flex-none">
             {/* Timer Display with aria-live for screen readers */}
