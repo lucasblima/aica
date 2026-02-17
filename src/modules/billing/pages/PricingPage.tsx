@@ -6,7 +6,7 @@ import { PageShell } from '@/components/ui';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
-import { PlanCard } from '../components/PlanCard';
+import { PlanCard, PAYMENTS_ENABLED } from '../components/PlanCard';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -135,7 +135,7 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     question: 'Quais formas de pagamento sao aceitas?',
     answer:
-      'Cartao de credito (Visa, Mastercard, Elo, Amex) e Pix. Processamento seguro via Stripe.',
+      'Cartao de credito (Visa, Mastercard, Elo, Amex) e Pix. Processamento seguro via gateway certificado.',
   },
   {
     question: 'Posso cancelar minha assinatura?',
@@ -382,7 +382,7 @@ export function PricingPage() {
       {/* Footer */}
       <div className="text-center mt-16 pb-8">
         <p className="text-xs text-ceramic-text-secondary/60 leading-relaxed">
-          Precos em Reais (BRL). Cobranca mensal via Stripe.
+          Precos em Reais (BRL).{PAYMENTS_ENABLED ? ' Cobranca mensal segura.' : ' Planos pagos disponiveis em breve.'}
           <br />
           Cancelamento a qualquer momento, sem multa.
         </p>
