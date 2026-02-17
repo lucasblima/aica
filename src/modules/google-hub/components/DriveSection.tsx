@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { HardDrive, Search, RefreshCw, Loader2, ChevronDown, FileText, Image, Sheet, Presentation, File, ExternalLink, Star } from 'lucide-react';
+import { HardDrive, Search, RefreshCw, Loader2, ChevronDown, FileText, Image, Sheet, Presentation, File, ExternalLink, Star, Unlink } from 'lucide-react';
 import { useDriveIntegration } from '@/hooks/useDriveIntegration';
 import type { DriveFile } from '@/services/driveService';
 
@@ -124,9 +124,10 @@ function SkeletonRow() {
 interface DriveSectionProps {
     isConnected: boolean;
     onConnect: () => Promise<void>;
+    onDisconnect?: () => Promise<void>;
 }
 
-export function DriveSection({ isConnected, onConnect }: DriveSectionProps) {
+export function DriveSection({ isConnected, onConnect, onDisconnect }: DriveSectionProps) {
     const { files, isLoading, error, search, refresh, loadMore, hasMore } = useDriveIntegration();
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -167,14 +168,25 @@ export function DriveSection({ isConnected, onConnect }: DriveSectionProps) {
                         <HardDrive className="w-5 h-5 text-[#0F9D58]" />
                         <h2 className="text-lg font-semibold text-ceramic-text-primary">Drive</h2>
                     </div>
-                    <button
-                        onClick={refresh}
-                        disabled={isLoading}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-cool/70 transition-colors"
-                        title="Atualizar"
-                    >
-                        <RefreshCw className={`w-4 h-4 text-ceramic-text-secondary ${isLoading ? 'animate-spin' : ''}`} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={refresh}
+                            disabled={isLoading}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-cool/70 transition-colors"
+                            title="Atualizar"
+                        >
+                            <RefreshCw className={`w-4 h-4 text-ceramic-text-secondary ${isLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                        {onDisconnect && (
+                            <button
+                                onClick={onDisconnect}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-error/10 transition-colors"
+                                title="Desconectar Drive"
+                            >
+                                <Unlink className="w-4 h-4 text-ceramic-text-secondary hover:text-ceramic-error" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Search — frosted glass */}

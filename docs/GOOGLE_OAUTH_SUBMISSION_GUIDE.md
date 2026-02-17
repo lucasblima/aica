@@ -2,7 +2,7 @@
 
 **Projeto:** AICA - Life OS
 **Tipo:** Sensitive Scope Verification
-**Data de preparacao:** 13 de fevereiro de 2026
+**Data de preparacao:** 17 de fevereiro de 2026
 
 ---
 
@@ -27,31 +27,61 @@
 
 ## 2. Justificativas de Escopo (Scope Justifications)
 
-### Escopo 1: `https://www.googleapis.com/auth/calendar.readonly`
+### Escopo 1: `https://www.googleapis.com/auth/calendar.events`
 
 **Classificacao:** Sensitive
 
 **Justificativa (EN — para o formulario Google):**
 
-> My app uses `https://www.googleapis.com/auth/calendar.readonly` to display the user's Google Calendar events within the AICA Agenda module. This allows users to see their upcoming appointments, meetings, and commitments alongside their task management workflow, enabling them to detect scheduling conflicts and plan their day more effectively.
+> AICA uses `calendar.events` to provide bidirectional calendar synchronization within the Agenda module. Users can view their Google Calendar events alongside their AICA tasks, and AICA creates calendar events from scheduled tasks and workout sessions to keep everything in sync. This bidirectional sync is the core value proposition of the Agenda module — users manage their life in AICA and see it reflected in Google Calendar automatically.
 >
-> AICA is a read-only consumer of calendar data — it does NOT create, modify, or delete any calendar events. The `calendar.readonly` scope is the minimum necessary scope to read event data. No broader scope (such as `calendar` or `calendar.events`) is requested because AICA does not need write access.
->
-> Calendar data is stored securely in a PostgreSQL database with Row Level Security (RLS) policies ensuring each user can only access their own data. OAuth tokens are stored per-user in the database and can be revoked at any time through the app's settings.
+> Data accessed: event titles, descriptions, dates/times, attendees, and status. Events created by AICA are marked with extended properties for deduplication. OAuth tokens are stored per-user in a PostgreSQL database with Row Level Security (RLS). Users can disconnect at any time through the Google Hub page, which immediately revokes access and deletes stored tokens.
 
 **Justificativa (PT — referencia):**
 
-> A AICA usa o escopo `calendar.readonly` para exibir os eventos do Google Calendar do usuario no modulo Agenda. Isso permite que os usuarios vejam seus compromissos junto com suas tarefas, detectem conflitos de horario e planejem seu dia de forma mais eficaz. A AICA e consumidora somente-leitura — NAO cria, modifica ou exclui eventos. Tokens sao armazenados por usuario com RLS e podem ser revogados a qualquer momento.
+> A AICA usa `calendar.events` para sincronizacao bidirecional no modulo Agenda. Usuarios veem eventos do Google Calendar junto com tarefas AICA, e a AICA cria eventos a partir de tarefas e treinos agendados. Tokens armazenados por usuario com RLS, revogaveis a qualquer momento.
 
 ---
 
-### Escopo 2: `https://www.googleapis.com/auth/userinfo.email`
+### Escopo 2: `https://www.googleapis.com/auth/gmail.readonly`
+
+**Classificacao:** Sensitive
+
+**Justificativa (EN — para o formulario Google):**
+
+> AICA uses `gmail.readonly` to display a read-only overview of the user's email inbox within the Google Hub module. This allows users to quickly check their emails without switching applications, keeping them focused in their productivity workflow. AICA accesses only email metadata (subject, sender, date, labels, read status) and a short text snippet — it does NOT access full email bodies, attachments, or send emails on behalf of the user.
+>
+> Email metadata is cached temporarily (7-day retention with automatic cleanup) in a PostgreSQL database with Row Level Security. The Gmail integration requires separate incremental consent — it is not requested during initial login. Users can disconnect Gmail independently without affecting Calendar or Drive access.
+
+**Justificativa (PT — referencia):**
+
+> A AICA usa `gmail.readonly` para exibir uma visao somente-leitura da caixa de entrada no modulo Google Hub. Acessa apenas metadados (assunto, remetente, data, labels). NAO acessa conteudo completo, anexos ou envia emails. Cache temporario de 7 dias com limpeza automatica. Consentimento incremental separado, desconectavel independentemente.
+
+---
+
+### Escopo 3: `https://www.googleapis.com/auth/drive.readonly`
+
+**Classificacao:** Sensitive
+
+**Justificativa (EN — para o formulario Google):**
+
+> AICA uses `drive.readonly` to display a read-only file browser within the Google Hub module. This allows users to search and browse their Google Drive files without leaving the platform. AICA accesses file metadata (names, types, sizes, modification dates) and can extract text content from Google Workspace documents (Docs, Sheets, Slides) for quick reference, limited to 100KB per file. AICA does NOT create, modify, move, or delete any files.
+>
+> File metadata is cached temporarily (7-day retention with automatic cleanup) in a PostgreSQL database with Row Level Security. The Drive integration requires separate incremental consent — it is not requested during initial login. Users can disconnect Drive independently without affecting Calendar or Gmail access.
+
+**Justificativa (PT — referencia):**
+
+> A AICA usa `drive.readonly` para exibir um navegador de arquivos somente-leitura no Google Hub. Acessa metadados de arquivos e conteudo textual de documentos Workspace (limitado a 100KB). NAO cria, modifica, move ou exclui arquivos. Cache temporario de 7 dias. Consentimento incremental separado, desconectavel independentemente.
+
+---
+
+### Escopo 4: `https://www.googleapis.com/auth/userinfo.email`
 
 **Classificacao:** Non-sensitive (nao requer justificativa, mas incluir por completude)
 
 **Justificativa (EN):**
 
-> My app uses `https://www.googleapis.com/auth/userinfo.email` to identify the user's Google account email address when they connect their Google Calendar. This email is displayed in the app's settings to show which Google account is connected, allowing users to verify and manage their integration.
+> AICA uses `userinfo.email` to identify the user's Google account email address when they connect their Google services. This email is displayed in the app's Google Hub and profile settings to show which Google account is connected, allowing users to verify and manage their integrations.
 
 ---
 
@@ -59,15 +89,33 @@
 
 **EN (para o formulario):**
 
-> AICA (Life OS) is a personal life management platform that helps users organize their tasks, calendar, finances, personal growth, and professional projects in one place. The Google Calendar integration allows users to view their calendar events alongside their task management workflow, enabling better time planning and conflict detection. AICA only reads calendar data (read-only) and never modifies the user's calendar.
+> AICA (Life OS) is a personal life management platform that helps Brazilian users organize their tasks, calendar, finances, personal growth, and professional projects in one place. AICA integrates with Google services to enhance productivity: Google Calendar for bidirectional event sync with task management, Gmail for inbox overview without app-switching, and Google Drive for file browsing and search. Each integration uses the minimum necessary scope and requires separate user consent. Users can connect and disconnect each service independently through the Google Hub module.
 
 **PT (referencia):**
 
-> AICA (Life OS) e uma plataforma de gestao de vida pessoal que ajuda usuarios a organizar tarefas, calendario, financas, crescimento pessoal e projetos profissionais em um unico lugar. A integracao com Google Calendar permite visualizar eventos junto com o fluxo de gestao de tarefas, possibilitando melhor planejamento e deteccao de conflitos. A AICA apenas le dados do calendario (somente-leitura) e nunca modifica o calendario do usuario.
+> AICA (Life OS) e uma plataforma de gestao de vida pessoal para brasileiros. Integra com servicos Google: Calendar para sincronizacao bidirecional de eventos, Gmail para visao da caixa de entrada, e Drive para navegacao de arquivos. Cada integracao usa escopo minimo e requer consentimento separado. Usuarios conectam e desconectam cada servico independentemente.
 
 ---
 
-## 4. Credenciais de Teste
+## 4. Como os Escopos Serao Usados (How Will Scopes Be Used)
+
+Esta secao responde diretamente a pergunta do formulario Google.
+
+### calendar.events
+**Used for:** Bidirectional synchronization between AICA's task management system and the user's Google Calendar. AICA reads calendar events to display them in the Agenda module alongside tasks. AICA writes calendar events when the user creates scheduled tasks or workout sessions, so these appear on their Google Calendar. Events created by AICA are tagged with extended properties to prevent duplication during sync.
+
+### gmail.readonly
+**Used for:** Displaying a read-only email inbox overview in AICA's Google Hub module. Users can see their recent emails (subject, sender, date) and search their inbox without switching to Gmail. No email content is modified, sent, or deleted. Only metadata and short snippets are accessed.
+
+### drive.readonly
+**Used for:** Displaying a read-only file browser in AICA's Google Hub module. Users can browse and search their Google Drive files without leaving the platform. For Google Workspace documents, AICA can extract text content (up to 100KB) for quick reference. No files are created, modified, or deleted.
+
+### userinfo.email
+**Used for:** Identifying the connected Google account. The email is shown in the app's settings and Google Hub so users know which account is linked.
+
+---
+
+## 5. Credenciais de Teste
 
 ### Conta de Teste (criar manualmente)
 
@@ -84,6 +132,8 @@ Antes de submeter, a conta de teste deve ter:
 - [ ] 3-5 tarefas no Atlas (modulo de tarefas)
 - [ ] 2-3 momentos no Journey (modulo de autoconhecimento)
 - [ ] Google Calendar conectado com alguns eventos
+- [ ] Gmail conectado com emails visiveis no Google Hub
+- [ ] Drive conectado com arquivos visiveis no Google Hub
 - [ ] Pelo menos 1 pergunta diaria respondida
 
 ### Como Criar a Conta
@@ -93,90 +143,120 @@ Antes de submeter, a conta de teste deve ter:
 3. Completar onboarding
 4. Criar tarefas de exemplo
 5. Registrar momentos de exemplo
-6. Conectar Google Calendar (usando uma conta Google de teste)
+6. Conectar Google Calendar (login com conta Google de teste)
+7. No Google Hub, conectar Gmail (consentimento incremental)
+8. No Google Hub, conectar Drive (consentimento incremental)
 
 ---
 
-## 5. Video de Demonstracao (Roteiro)
+## 6. Video de Demonstracao (Roteiro)
 
 ### Requisitos Tecnicos
 
 | Requisito | Valor |
 |-----------|-------|
 | **Resolucao** | 1080p ou superior |
-| **Duracao** | 3-5 minutos |
+| **Duracao** | 5-7 minutos |
 | **Ferramenta** | OBS Studio ou Loom |
 | **Upload** | YouTube como "Nao listado" |
+| **Idioma** | Ingles (narrado ou com legendas) |
 
 ### Roteiro Detalhado
 
 **[0:00 - 0:30] Intro**
 - Mostrar homepage https://aica.guru
-- "This video demonstrates how AICA uses the Google Calendar integration"
+- "This video demonstrates how AICA uses Google Calendar, Gmail, and Drive integrations"
 - Mostrar barra de endereco com o dominio
 
-**[0:30 - 1:30] Fluxo OAuth**
-- Fazer login na plataforma
-- Ir para Settings/Configuracoes
-- Clicar em "Conectar Google Calendar"
+**[0:30 - 1:30] Login + Calendar OAuth**
+- Fazer login na plataforma (Google Sign-In)
 - **IMPORTANTE**: Pausar na consent screen do Google para mostrar:
   - Nome do app: "AICA - Life OS"
-  - Escopos solicitados (calendar.readonly, email)
+  - Escopos solicitados (calendar.events, email)
   - Link para Privacy Policy
 - Aceitar o consentimento
-- Mostrar mensagem de sucesso
+- Mostrar que o login foi bem-sucedido
 
-**[1:30 - 3:00] Uso Real dos Dados**
+**[1:30 - 2:30] Calendar em uso**
 - Navegar ate o modulo Agenda
-- Mostrar eventos do Google Calendar sincronizados
-- Demonstrar como os eventos aparecem na timeline
-- Mostrar detecao de conflitos (se houver)
-- Voltar para Settings e mostrar qual conta Google esta conectada
+- Mostrar eventos do Google Calendar sincronizados na timeline
+- Criar uma tarefa com data — mostrar que aparece no Google Calendar (sync bidirecional)
+- "AICA syncs tasks and calendar events bidirectionally"
 
-**[3:00 - 3:30] Seguranca e Privacidade**
+**[2:30 - 3:30] Gmail — Consentimento Incremental**
+- Navegar ate o Google Hub (/google-hub)
+- Mostrar que Gmail esta "Nao conectado"
+- Clicar em "Conectar Gmail"
+- **IMPORTANTE**: Pausar na consent screen para mostrar gmail.readonly
+- Aceitar o consentimento
+- Mostrar emails aparecendo na secao Gmail
+- Demonstrar busca de emails
+- "Gmail is read-only — AICA never sends, modifies, or deletes emails"
+
+**[3:30 - 4:30] Drive — Consentimento Incremental**
+- No Google Hub, mostrar que Drive esta "Nao conectado"
+- Clicar em "Conectar Drive"
+- **IMPORTANTE**: Pausar na consent screen para mostrar drive.readonly
+- Aceitar o consentimento
+- Mostrar arquivos aparecendo na secao Drive
+- Demonstrar busca de arquivos
+- "Drive is read-only — AICA never creates, modifies, or deletes files"
+
+**[4:30 - 5:30] Privacidade + Revogacao**
 - Mostrar a Privacy Policy (https://aica.guru/privacy)
-- Fazer scroll ate a secao 5 (Google Calendar API)
-- Destacar que e somente-leitura
+- Scroll ate secoes 5 (Calendar), 6 (Gmail), 7 (Drive), 8 (Google Compliance)
+- Voltar ao Google Hub
+- Desconectar Gmail (clicar no icone de desconectar na secao Gmail)
+- Desconectar Drive (clicar no icone de desconectar na secao Drive)
+- Desconectar Calendar (clicar no botao de desconectar na secao Calendar)
+- "Users can disconnect each service independently at any time"
 
-**[3:30 - 4:00] Revogacao**
-- Voltar para Settings
-- Clicar em "Desconectar Google Calendar"
-- Confirmar desconexao
-- Mostrar que os dados foram removidos
+**[5:30 - 6:00] Profile — Integrações**
+- Abrir perfil (Profile Drawer)
+- Mostrar secao "Google" com status de cada servico
+- Mostrar que tudo esta desconectado apos a revogacao
+- Mostrar link para Google Account permissions
 
-**[4:00 - 4:30] Encerramento**
-- "AICA only reads calendar data and never modifies the user's calendar"
-- "Users can revoke access at any time"
+**[6:00 - 6:30] Encerramento**
+- "AICA uses the minimum necessary scopes for each Google service"
+- "Each integration requires separate consent and can be revoked independently"
+- "Users can also revoke access at https://myaccount.google.com/permissions"
 - Mostrar URL: https://aica.guru
 
 ### Titulo do YouTube
 
 ```
-AICA - Life OS | Google Calendar Integration OAuth Demo
+AICA - Life OS | Google Calendar, Gmail & Drive Integration OAuth Demo
 ```
 
 ### Descricao do YouTube
 
 ```
-Demonstration of the OAuth flow for Google Calendar integration
-in the AICA platform.
+Demonstration of the OAuth flows for Google Calendar, Gmail, and Drive
+integration in the AICA platform.
 
 Website: https://aica.guru
 Privacy Policy: https://aica.guru/privacy
 Terms of Service: https://aica.guru/terms
 
 Scopes requested:
-- calendar.readonly (read-only access to calendar events)
-- userinfo.email (user email identification)
+- calendar.events (bidirectional calendar sync with task management)
+- gmail.readonly (read-only inbox overview)
+- drive.readonly (read-only file browsing)
+- userinfo.email (user identification)
 
-AICA does NOT modify, create, or delete calendar events.
+AICA uses incremental consent: Calendar scope is requested at login,
+Gmail and Drive scopes are requested separately only when the user
+chooses to connect those services.
+
+Each service can be disconnected independently at any time.
 
 Visibility: UNLISTED
 ```
 
 ---
 
-## 6. Checklist Pre-Submissao Final
+## 7. Checklist Pre-Submissao Final
 
 ### Infraestrutura
 - [x] Dominio proprio configurado (aica.guru)
@@ -184,20 +264,24 @@ Visibility: UNLISTED
 - [ ] Dominio verificado no Google Search Console (DNS TXT record)
 
 ### Codigo
-- [x] Escopos OAuth sao minimos (calendar.readonly + userinfo.email)
+- [x] Escopos OAuth corretos (calendar.events + gmail.readonly + drive.readonly + userinfo.email)
+- [x] Consentimento incremental implementado (Gmail/Drive separados do Calendar)
 - [x] Tratamento de erros OAuth implementado
-- [x] Dead code de escopos removido
+- [x] Disconnect por escopo implementado
+- [x] Google Hub com secoes Calendar, Gmail, Drive
 
 ### Paginas Publicas
 - [x] Homepage acessivel: https://aica.guru
-- [x] Privacy Policy atualizada: https://aica.guru/privacy (14 secoes)
-- [x] Terms of Service atualizado: https://aica.guru/terms (16 secoes)
+- [x] Privacy Policy atualizada: https://aica.guru/privacy (17 secoes)
+- [x] Terms of Service atualizado: https://aica.guru/terms
 
 ### Privacy Policy
-- [x] Secao 5 dedicada Google Calendar API (5 subsecoes)
-- [x] Escopos listados e explicados
+- [x] Secao 5: Google Calendar API (calendar.events)
+- [x] Secao 6: Gmail API (gmail.readonly)
+- [x] Secao 7: Google Drive API (drive.readonly)
+- [x] Secao 8: Conformidade Google (Limited Use)
 - [x] Link para Google API Services User Data Policy
-- [x] Data fixa de atualizacao (13/02/2026)
+- [x] Data de atualizacao (17/02/2026)
 - [x] Email de contato correto (contato@aica.guru)
 
 ### OAuth Consent Screen (Google Cloud Console)
@@ -208,25 +292,29 @@ Visibility: UNLISTED
 - [ ] Terms of Service URL: https://aica.guru/terms
 - [ ] Support email: contato@aica.guru
 - [ ] Authorized domains: aica.guru
+- [ ] Scopes: calendar.events, gmail.readonly, drive.readonly, userinfo.email
 
 ### Email
 - [x] Codigo unificado com contato@aica.guru
 - [ ] Email funcional configurado (Hostinger forwarding)
 
 ### Video de Demonstracao
-- [ ] Video gravado seguindo roteiro acima
+- [ ] Video gravado seguindo roteiro expandido (Calendar + Gmail + Drive)
 - [ ] Upload no YouTube como "Nao listado"
-- [ ] Consent screen claramente visivel no video
+- [ ] Consent screen claramente visivel para CADA escopo
 - [ ] Barra de endereco visivel com dominio
+- [ ] Demonstracao de revogacao por escopo
 
 ### Credenciais de Teste
 - [ ] Conta google-review@aica.guru criada
-- [ ] Dados de exemplo populados
+- [ ] Dados de exemplo populados (tarefas, momentos, pergunta diaria)
 - [ ] Google Calendar conectado na conta de teste
+- [ ] Gmail conectado na conta de teste
+- [ ] Drive conectado na conta de teste
 
 ---
 
-## 7. Passo a Passo da Submissao
+## 8. Passo a Passo da Submissao
 
 ### No Google Cloud Console
 
@@ -234,10 +322,11 @@ Visibility: UNLISTED
 2. Selecionar projeto `gen-lang-client-0948335762`
 3. Ir para "OAuth consent screen"
 4. Verificar todos os campos (secao 1 deste doc)
-5. Ir para "Scopes" → verificar que apenas calendar.readonly e userinfo.email estao listados
+5. Ir para "Scopes" → verificar que calendar.events, gmail.readonly, drive.readonly e userinfo.email estao listados
 6. Clicar em "Prepare for verification"
 7. Preencher:
    - Scope justifications (secao 2 deste doc)
+   - "How will scopes be used?" (secao 4 deste doc)
    - App description (secao 3 deste doc)
    - Video URL (YouTube unlisted)
    - Test account credentials
@@ -245,31 +334,42 @@ Visibility: UNLISTED
 
 ### Tempo de Revisao Esperado
 
-- **3-5 dias uteis** para escopo sensitive
+- **3-5 dias uteis** para escopos sensitive
 - Google pode pedir ajustes — manter email monitorado
 - Se aprovado, o app sai do modo "Testing" para "In production"
 
 ---
 
-## 8. Respostas para Perguntas Frequentes do Google
+## 9. Respostas para Perguntas Frequentes do Google
 
-### "Why does your app need calendar.readonly?"
+### "Why does your app need calendar.events (write access)?"
 
-> AICA needs calendar.readonly to display the user's Google Calendar events within the Agenda module. This enables users to view their appointments alongside tasks for better time management. AICA is strictly read-only and never modifies calendar data.
+> AICA needs calendar.events for bidirectional synchronization. When users create tasks with deadlines or schedule workout sessions in AICA, these are automatically synced to their Google Calendar so they see everything in one place. Events created by AICA are tagged with extended properties to prevent duplication. Users can also view their Google Calendar events within AICA's Agenda module.
 
-### "Why not use a narrower scope?"
+### "Why does your app need gmail.readonly?"
 
-> calendar.readonly is already the narrowest scope available for reading calendar events. There is no narrower scope that provides access to event data.
+> AICA uses gmail.readonly to display a read-only overview of the user's inbox within the Google Hub module. This allows users to quickly check their emails without switching applications, keeping them focused in their productivity workflow. AICA only accesses metadata (subject, sender, date, labels) and a short snippet — not full email bodies or attachments. No emails are ever sent, modified, or deleted.
+
+### "Why does your app need drive.readonly?"
+
+> AICA uses drive.readonly to display a read-only file browser in the Google Hub module. Users can search and browse their Google Drive files without leaving the platform. For Google Workspace documents, AICA extracts text content (limited to 100KB) for quick reference. No files are created, modified, moved, or deleted.
+
+### "Why not use narrower scopes?"
+
+> Each scope requested is the narrowest available for its use case:
+> - `calendar.events` is needed because AICA creates events (not just reads them). `calendar.readonly` would not support the bidirectional sync feature.
+> - `gmail.readonly` is the narrowest Gmail scope available for reading messages.
+> - `drive.readonly` is the narrowest Drive scope available for reading files.
 
 ### "How is user data stored?"
 
-> OAuth tokens are stored in a PostgreSQL database (Supabase) with Row Level Security (RLS) policies. Each user can only access their own tokens. Calendar event data is cached temporarily for display purposes. Users can disconnect at any time, which immediately deletes all stored tokens and cached data.
+> OAuth tokens are stored in a PostgreSQL database (Supabase) with Row Level Security (RLS) policies. Each user can only access their own tokens. Gmail and Drive metadata is cached temporarily (7-day retention with automatic daily cleanup). Calendar event data is fetched on-demand and not permanently stored. Users can disconnect each service at any time, which immediately removes stored tokens and cached data for that service.
 
 ### "How can users revoke access?"
 
-> Users can disconnect their Google Calendar at any time through the app's settings page. This action: (1) deletes the OAuth tokens from our database, (2) removes cached calendar data, and (3) the app's access is immediately revoked. Users can also revoke access via Google's security settings at https://myaccount.google.com/permissions.
+> Users can disconnect each Google service independently through AICA's Google Hub page. Each section (Calendar, Gmail, Drive) has a disconnect button. Disconnecting a service: (1) removes the scope from the user's token record, (2) clears any cached data for that service, and (3) prevents AICA from accessing that service until the user reconnects. Users can also revoke all access via Google's security settings at https://myaccount.google.com/permissions.
 
 ---
 
-*Documento preparado: 13/02/2026*
-*Referencia: docs/EPICS_GOOGLE_CLOUD_APPROVAL.md — EPICO 6*
+*Documento preparado: 17/02/2026*
+*Referencia: Issues #256, #271, #274, #275*

@@ -33,7 +33,7 @@ export function PrivacyPolicyPage() {
           Política de Privacidade
         </h1>
         <p className="text-sm text-[#5C554B] mb-8">
-          Última atualização: 13 de fevereiro de 2026
+          Última atualização: 17 de fevereiro de 2026
         </p>
 
         <div className="prose prose-slate max-w-none space-y-8">
@@ -117,10 +117,10 @@ export function PrivacyPolicyPage() {
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.1. Escopos de Acesso Solicitados</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Quando você conecta seu Google Calendar, solicitamos apenas os seguintes escopos mínimos:
+              Quando você conecta seu Google Calendar, solicitamos os seguintes escopos:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>calendar.readonly:</strong> Acesso somente leitura aos seus eventos de calendário. A Aica NÃO modifica, cria ou exclui eventos no seu calendário.</li>
+              <li><strong>calendar.events:</strong> Acesso de leitura e escrita aos seus eventos de calendário. A Aica sincroniza seus eventos de forma bidirecional: exibe seus compromissos no módulo Agenda e pode criar eventos a partir de tarefas e treinos agendados.</li>
               <li><strong>userinfo.email:</strong> Acesso ao seu endereço de e-mail Google para identificação da conta conectada.</li>
             </ul>
 
@@ -139,6 +139,7 @@ export function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
               <li>Exibir seus compromissos no módulo Agenda da Aica</li>
+              <li>Criar eventos no seu calendário a partir de tarefas e treinos agendados na plataforma</li>
               <li>Detectar conflitos de horário entre eventos</li>
               <li>Gerar insights de produtividade baseados na sua agenda</li>
             </ul>
@@ -157,9 +158,96 @@ export function PrivacyPolicyPage() {
               e o acesso ao seu calendário é imediatamente revogado.
             </p>
 
-            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">5.5. Conformidade com Políticas do Google</h3>
-            <p className="text-[#5C554B] leading-relaxed">
-              O uso dos dados do Google Calendar pela Aica está em conformidade com a{' '}
+          </section>
+
+          {/* Gmail API Integration */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Integração com Gmail API</h2>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A Aica oferece integração opcional com o Gmail para visualizar seus emails
+              dentro da plataforma. Esta integração requer consentimento adicional e pode ser
+              ativada ou desativada a qualquer momento.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.1. Escopo de Acesso</h3>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li><strong>gmail.readonly:</strong> Acesso somente leitura aos seus emails. A Aica NÃO envia, modifica ou exclui emails em seu nome.</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.2. Dados Acessados e Uso</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Os dados acessados do Gmail incluem apenas metadados:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li>Assunto, remetente e data de recebimento</li>
+              <li>Trecho resumido (snippet) do conteúdo</li>
+              <li>Labels (etiquetas) e status de leitura</li>
+              <li>Indicador de anexos (sem acesso ao conteúdo dos anexos)</li>
+            </ul>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Esses dados são utilizados exclusivamente para exibir uma visão geral da sua caixa de entrada
+              dentro do módulo Google Hub da Aica, permitindo consulta rápida sem alternar entre aplicativos.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.3. Cache Temporário</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Metadados de emails são armazenados em cache por até 7 dias para melhorar a performance.
+              O cache é limpo automaticamente e pode ser removido imediatamente ao desconectar o Gmail.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.4. Revogação de Acesso</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Você pode desconectar o Gmail a qualquer momento pelo módulo Google Hub.
+              Ao desconectar, o cache de metadados e os tokens de acesso são removidos imediatamente.
+            </p>
+          </section>
+
+          {/* Google Drive API Integration */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Integração com Google Drive API</h2>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              A Aica oferece integração opcional com o Google Drive para navegar e pesquisar
+              seus arquivos dentro da plataforma. Esta integração requer consentimento adicional.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.1. Escopo de Acesso</h3>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li><strong>drive.readonly:</strong> Acesso somente leitura aos seus arquivos no Google Drive. A Aica NÃO cria, modifica, move ou exclui arquivos.</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.2. Dados Acessados e Uso</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Os dados acessados do Google Drive incluem:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
+              <li>Nomes, tipos e tamanhos dos arquivos</li>
+              <li>Data de última modificação</li>
+              <li>Status de compartilhamento e favoritos</li>
+              <li>Conteúdo textual de documentos Google Workspace (Docs, Sheets, Slides) para referência rápida, limitado a 100KB por arquivo</li>
+            </ul>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Esses dados são utilizados exclusivamente para exibir seus arquivos dentro do módulo Google Hub
+              da Aica, permitindo busca e navegação rápida sem alternar entre aplicativos.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.3. Cache Temporário</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Metadados de arquivos são armazenados em cache por até 7 dias para melhorar a performance.
+              O cache é limpo automaticamente e pode ser removido imediatamente ao desconectar o Drive.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.4. Revogação de Acesso</h3>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              Você pode desconectar o Google Drive a qualquer momento pelo módulo Google Hub.
+              Ao desconectar, o cache de metadados e os tokens de acesso são removidos imediatamente.
+            </p>
+          </section>
+
+          {/* Google API Compliance (consolidated) */}
+          <section>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">8. Conformidade com Políticas do Google</h2>
+            <p className="text-[#5C554B] leading-relaxed mb-4">
+              O uso dos dados das APIs do Google (Calendar, Gmail e Drive) pela Aica está em conformidade com a{' '}
               <a
                 href="https://developers.google.com/terms/api-services-user-data-policy"
                 target="_blank"
@@ -168,14 +256,20 @@ export function PrivacyPolicyPage() {
               >
                 Google API Services User Data Policy
               </a>
-              , incluindo os requisitos de Limited Use. Os dados obtidos do Google Calendar não são
-              compartilhados com terceiros, não são usados para publicidade e não são vendidos.
+              , incluindo os requisitos de Limited Use:
             </p>
+            <ul className="list-disc list-inside space-y-2 text-[#5C554B]">
+              <li>Os dados obtidos das APIs do Google não são compartilhados com terceiros</li>
+              <li>Os dados não são usados para publicidade ou marketing</li>
+              <li>Os dados não são vendidos a terceiros</li>
+              <li>Os dados são usados exclusivamente para fornecer as funcionalidades descritas nesta política</li>
+              <li>Cada integração (Calendar, Gmail, Drive) requer consentimento explícito e pode ser revogada individualmente</li>
+            </ul>
           </section>
 
-          {/* Data Sharing */}
+          {/* Data Sharing — renumbered */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Compartilhamento de Dados</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">9. Compartilhamento de Dados</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Nós não vendemos suas informações pessoais. Podemos compartilhar seus dados apenas nas seguintes situações:
             </p>
@@ -189,7 +283,7 @@ export function PrivacyPolicyPage() {
 
           {/* Data Security */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Segurança dos Dados</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">10. Segurança dos Dados</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações:
             </p>
@@ -204,7 +298,7 @@ export function PrivacyPolicyPage() {
 
           {/* User Rights */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">8. Seus Direitos (LGPD)</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">11. Seus Direitos (LGPD)</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               De acordo com a LGPD, você tem os seguintes direitos:
             </p>
@@ -224,7 +318,7 @@ export function PrivacyPolicyPage() {
 
           {/* Data Retention */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">9. Retenção de Dados</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">12. Retenção de Dados</h2>
             <p className="text-[#5C554B] leading-relaxed">
               Mantemos suas informações pessoais pelo tempo necessário para cumprir os propósitos descritos
               nesta política, a menos que um período de retenção mais longo seja exigido ou permitido por lei.
@@ -235,7 +329,7 @@ export function PrivacyPolicyPage() {
 
           {/* Cookies */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">10. Cookies e Tecnologias Similares</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">13. Cookies e Tecnologias Similares</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Utilizamos cookies e tecnologias similares para melhorar sua experiência:
             </p>
@@ -251,7 +345,7 @@ export function PrivacyPolicyPage() {
 
           {/* Children Privacy */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">11. Privacidade de Menores</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">14. Privacidade de Menores</h2>
             <p className="text-[#5C554B] leading-relaxed">
               A Aica não é destinada a menores de 18 anos. Não coletamos intencionalmente informações pessoais
               de crianças e adolescentes. Se você é pai/mãe ou responsável e acredita que seu filho forneceu
@@ -261,7 +355,7 @@ export function PrivacyPolicyPage() {
 
           {/* International Transfers */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">12. Transferências Internacionais</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">15. Transferências Internacionais</h2>
             <p className="text-[#5C554B] leading-relaxed">
               Suas informações podem ser transferidas e mantidas em servidores localizados fora do Brasil.
               Quando isso ocorrer, garantimos que medidas de segurança adequadas estejam em vigor para proteger
@@ -271,7 +365,7 @@ export function PrivacyPolicyPage() {
 
           {/* Policy Changes */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">13. Alterações nesta Política</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">16. Alterações nesta Política</h2>
             <p className="text-[#5C554B] leading-relaxed">
               Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre alterações
               significativas através de um aviso destacado em nossa plataforma ou por e-mail. Recomendamos que
@@ -281,7 +375,7 @@ export function PrivacyPolicyPage() {
 
           {/* Contact */}
           <section>
-            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">14. Contato</h2>
+            <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">17. Contato</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
               Se você tiver dúvidas sobre esta Política de Privacidade ou sobre como tratamos seus dados pessoais,
               entre em contato conosco:

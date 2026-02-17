@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { Mail, Search, RefreshCw, Loader2, ChevronDown, Paperclip } from 'lucide-react';
+import { Mail, Search, RefreshCw, Loader2, ChevronDown, Paperclip, Unlink } from 'lucide-react';
 import { useGmailIntegration } from '@/hooks/useGmailIntegration';
 import type { GmailMessage } from '@/services/gmailService';
 
@@ -124,9 +124,10 @@ function SkeletonRow() {
 interface GmailSectionProps {
     isConnected: boolean;
     onConnect: () => Promise<void>;
+    onDisconnect?: () => Promise<void>;
 }
 
-export function GmailSection({ isConnected, onConnect }: GmailSectionProps) {
+export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSectionProps) {
     const { emails, isLoading, error, search, refresh, loadMore, hasMore } = useGmailIntegration();
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -167,14 +168,25 @@ export function GmailSection({ isConnected, onConnect }: GmailSectionProps) {
                         <Mail className="w-5 h-5 text-[#4285F4]" />
                         <h2 className="text-lg font-semibold text-ceramic-text-primary">Gmail</h2>
                     </div>
-                    <button
-                        onClick={refresh}
-                        disabled={isLoading}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-cool/70 transition-colors"
-                        title="Atualizar"
-                    >
-                        <RefreshCw className={`w-4 h-4 text-ceramic-text-secondary ${isLoading ? 'animate-spin' : ''}`} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={refresh}
+                            disabled={isLoading}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-cool/70 transition-colors"
+                            title="Atualizar"
+                        >
+                            <RefreshCw className={`w-4 h-4 text-ceramic-text-secondary ${isLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                        {onDisconnect && (
+                            <button
+                                onClick={onDisconnect}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-error/10 transition-colors"
+                                title="Desconectar Gmail"
+                            >
+                                <Unlink className="w-4 h-4 text-ceramic-text-secondary hover:text-ceramic-error" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Search — frosted glass */}
