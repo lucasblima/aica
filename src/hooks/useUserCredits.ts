@@ -94,7 +94,7 @@ export function useUserCredits(): UseUserCreditsReturn {
 
       // Fetch usage summary (monthly budget, usage, plan) and user_credits in parallel
       const [summaryResult, creditsResult] = await Promise.all([
-        supabase.rpc('get_usage_summary', { p_user_id: user.id }),
+        supabase.rpc('get_usage_summary', { p_user_id: user.id, p_days: 30 }),
         supabase
           .from('user_credits')
           .select('balance, lifetime_earned, last_daily_claim')
