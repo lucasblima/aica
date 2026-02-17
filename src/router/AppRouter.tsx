@@ -37,8 +37,6 @@ const JourneyFullScreen = lazy(() => import('../modules/journey/views/JourneyFul
 
 // Studio Module - Podcast production with FSM architecture
 const StudioMainView = lazy(() => import('../modules/studio/views/StudioMainView'));
-const GuestApprovalPage = lazy(() => import('../modules/podcast/views/GuestApprovalPage').then(m => ({ default: m.GuestApprovalPage })));
-
 // Finance Module - Heavy with charts and data processing
 const FinanceDashboard = lazy(() => import('../modules/finance/views/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
 const FinanceAgentView = lazy(() => import('../modules/finance/views/FinanceAgentView').then(m => ({ default: m.FinanceAgentView })));
@@ -80,6 +78,9 @@ const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m =
 const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingPage })));
 const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
+
+// Google Hub Module - Gmail + Drive integration
+const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ default: m.GoogleHubPage })));
 
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
@@ -618,12 +619,6 @@ export function AppRouter() {
          <XPNotificationProvider>
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-ceramic-base"><CeramicLoadingState variant="page" /></div>}>
                <Routes>
-               {/* Guest Approval Page - Public route for podcast guests */}
-               <Route
-                  path="/guest-approval/:episodeId/:approvalToken"
-                  element={<GuestApprovalPage />}
-               />
-
                {/* Landing Page - Official version (consolidated from V4) */}
                <Route
                   path="/landing"
@@ -745,6 +740,12 @@ export function AppRouter() {
                <Route
                   path="/profile"
                   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
+               />
+
+               {/* Google Hub - Protected */}
+               <Route
+                  path="/google-hub"
+                  element={<ProtectedRoute><GoogleHubPage /></ProtectedRoute>}
                />
 
                {/* Billing Module Routes - Protected */}

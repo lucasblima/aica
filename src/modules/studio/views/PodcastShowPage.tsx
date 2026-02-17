@@ -25,7 +25,7 @@ interface Episode {
   id: string;
   title: string;
   guest_name: string | null;
-  status: 'draft' | 'in_progress' | 'published';
+  status: 'draft' | 'planning' | 'in_progress' | 'in_production' | 'scheduled' | 'recorded' | 'editing' | 'published' | 'archived';
   created_at: string;
   updated_at: string;
   episode_theme: string | null;
@@ -67,7 +67,7 @@ export const PodcastShowPage: React.FC<PodcastShowPageProps> = ({
 
       // Fetch show details
       const { data: showData, error: showError } = await supabase
-        .from('podcast_shows')
+        .from('podcast_shows_with_stats')
         .select('*')
         .eq('id', showId)
         .single();
@@ -388,10 +388,16 @@ interface EpisodeCardProps {
 }
 
 const EpisodeCard: React.FC<EpisodeCardProps> = ({ episode, onClick }) => {
-  const statusConfig = {
+  const statusConfig: Record<Episode['status'], { bg: string; text: string; label: string }> = {
     draft: { bg: 'bg-ceramic-base', text: 'text-ceramic-text-secondary', label: 'Rascunho' },
+    planning: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Planejando' },
     in_progress: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Em progresso' },
+    in_production: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Produzindo' },
+    scheduled: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Agendado' },
+    recorded: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Gravado' },
+    editing: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'Editando' },
     published: { bg: 'bg-ceramic-success-bg', text: 'text-ceramic-success', label: 'Publicado' },
+    archived: { bg: 'bg-stone-100', text: 'text-stone-500', label: 'Arquivado' },
   };
 
   const status = statusConfig[episode.status];

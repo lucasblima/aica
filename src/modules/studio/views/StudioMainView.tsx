@@ -109,8 +109,12 @@ export default function StudioMainView() {
    * Transitions: LIBRARY -> WIZARD
    */
   const handleCreateNew = useCallback(() => {
-    actions.goToWizard();
-  }, [actions]);
+    if (state.currentShowId) {
+      actions.goToWizard();
+    } else {
+      actions.goToLibrary();
+    }
+  }, [actions, state.currentShowId]);
 
   /**
    * Handler for going back to library

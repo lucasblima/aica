@@ -78,7 +78,6 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
         .from('podcast_shows')
         .insert({
           name: title,
-          title: title,
           description,
           user_id: user.id
         })
@@ -95,7 +94,7 @@ export const StudioLibrary: React.FC<StudioLibraryProps> = ({
       loadShows();
 
       // Navigate to the newly created show page
-      onSelectShow(data.id, data.title);
+      onSelectShow(data.id, data.name);
 
       // Note: Don't call onCreateNew() here - let user manually click "Criar Episódio"
       // This ensures the show ID is properly set before opening the wizard
