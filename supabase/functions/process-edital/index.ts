@@ -4,7 +4,7 @@
  * Processes edital PDFs using Google File Search as the SINGLE source:
  * 1. Upload PDF to Google Files API (for File Search indexing)
  * 2. Wait for file to be ACTIVE (indexed)
- * 3. Use Gemini 2.0 Flash to extract structured data
+ * 3. Use Gemini 2.5 Flash to extract structured data
  * 4. Save reference in file_search_documents
  * 5. Return: gemini_file_name + structured data
  *
@@ -24,8 +24,8 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 
-// Model for structured extraction (use stable version)
-const GEMINI_MODEL = 'gemini-2.5-pro'
+// Model for structured extraction
+const GEMINI_MODEL = 'gemini-2.5-flash'
 
 // =============================================================================
 // CORS CONFIGURATION
@@ -34,8 +34,10 @@ const GEMINI_MODEL = 'gemini-2.5-pro'
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'https://aica.guru',
+  'https://dev.aica.guru',
   'https://aica-staging-5562559893.southamerica-east1.run.app',
-  'https://aica-life-os.web.app', // Production domain
+  'https://aica-life-os.web.app',
 ]
 
 function getCorsHeaders(request: Request): Record<string, string> {
@@ -113,6 +115,46 @@ function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?:
   const timestamp = new Date().toISOString()
   const logData = data ? `: ${JSON.stringify(data)}` : ''
   console.log(`[${timestamp}] [${level}] [process-edital] ${message}${logData}`)
+}
+
+/**
+ * Robust JSON extraction from Gemini responses.
+ * Strips code fences, preamble text, and trailing content.
+ */
+function extractJSON(text: string): unknown {
+  // 1. Strip code fences FIRST (most common issue)
+  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').replace(/```\s*$/g, '').trim()
+
+  // 2. Try direct parse
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    // continue to fallback strategies
+  }
+
+  // 3. Find JSON object boundaries
+  const firstBrace = cleaned.indexOf('{')
+  const lastBrace = cleaned.lastIndexOf('}')
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(cleaned.substring(firstBrace, lastBrace + 1))
+    } catch {
+      // continue
+    }
+  }
+
+  // 4. Find JSON array boundaries
+  const firstBracket = cleaned.indexOf('[')
+  const lastBracket = cleaned.lastIndexOf(']')
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    try {
+      return JSON.parse(cleaned.substring(firstBracket, lastBracket + 1))
+    } catch {
+      // continue
+    }
+  }
+
+  throw new Error(`Failed to extract JSON from response: ${cleaned.substring(0, 200)}`)
 }
 
 // =============================================================================
@@ -382,7 +424,7 @@ IMPORTANTE:
     generationConfig: {
       temperature: 0.1,  // Low temperature for structured extraction
       topP: 0.8,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 4096,
     },
   }
 
@@ -401,32 +443,45 @@ IMPORTANTE:
   }
 
   const result = await response.json()
-  let responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
-  // Clean JSON response (remove markdown code blocks if present)
-  responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+  // Check for blocked or empty responses
+  if (!result.candidates || result.candidates.length === 0) {
+    const blockReason = result.promptFeedback?.blockReason
+    log('ERROR', 'Gemini returned no candidates', { blockReason, promptFeedback: result.promptFeedback })
+    throw new Error(`Gemini returned no candidates${blockReason ? `: ${blockReason}` : ''}`)
+  }
+
+  const responseText = result.candidates[0]?.content?.parts?.[0]?.text || ''
+
+  if (!responseText) {
+    const finishReason = result.candidates[0]?.finishReason
+    log('ERROR', 'Gemini returned empty text', { finishReason })
+    throw new Error(`Gemini returned empty response (finishReason: ${finishReason})`)
+  }
+
+  log('DEBUG', 'Gemini response length', { length: responseText.length })
 
   try {
-    const parsed = JSON.parse(responseText)
+    const parsed = extractJSON(responseText) as Record<string, unknown>
 
     // Ensure required fields have defaults
     return {
-      title: parsed.title || 'Edital sem titulo',
-      funding_agency: parsed.funding_agency || 'Agencia nao identificada',
-      program_name: parsed.program_name,
-      edital_number: parsed.edital_number,
-      submission_deadline: parsed.submission_deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      submission_start: parsed.submission_start,
-      result_date: parsed.result_date,
-      min_funding: parsed.min_funding,
-      max_funding: parsed.max_funding,
-      counterpart_percentage: parsed.counterpart_percentage,
-      eligible_themes: parsed.eligible_themes || [],
-      eligibility_requirements: parsed.eligibility_requirements || [],
-      evaluation_criteria: parsed.evaluation_criteria || [],
-      form_fields: parsed.form_fields || getDefaultFormFields(),
-      external_system_url: parsed.external_system_url,
-      raw_text_preview: parsed.raw_text_preview?.substring(0, 2000),
+      title: (parsed.title as string) || 'Edital sem titulo',
+      funding_agency: (parsed.funding_agency as string) || 'Agencia nao identificada',
+      program_name: parsed.program_name as string | undefined,
+      edital_number: parsed.edital_number as string | undefined,
+      submission_deadline: (parsed.submission_deadline as string) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      submission_start: parsed.submission_start as string | undefined,
+      result_date: parsed.result_date as string | undefined,
+      min_funding: parsed.min_funding as number | undefined,
+      max_funding: parsed.max_funding as number | undefined,
+      counterpart_percentage: parsed.counterpart_percentage as number | undefined,
+      eligible_themes: (parsed.eligible_themes as string[]) || [],
+      eligibility_requirements: (parsed.eligibility_requirements as string[]) || [],
+      evaluation_criteria: (parsed.evaluation_criteria as EvaluationCriterion[]) || [],
+      form_fields: (parsed.form_fields as FormField[]) || getDefaultFormFields(),
+      external_system_url: parsed.external_system_url as string | undefined,
+      raw_text_preview: (parsed.raw_text_preview as string)?.substring(0, 2000),
     }
   } catch (parseError) {
     log('ERROR', 'Failed to parse Gemini response', { responseText: responseText.substring(0, 500) })
@@ -613,7 +668,7 @@ serve(async (req) => {
       p_user_id: user.id,
       p_action: 'parse_statement',
       p_module: 'grants',
-      p_model: 'gemini-2.5-flash',
+      p_model: GEMINI_MODEL,
       p_tokens_in: 0,
       p_tokens_out: 0,
     }).then(() => {
