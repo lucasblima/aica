@@ -76,9 +76,10 @@ const OnboardingFlow = lazy(() => import('../modules/onboarding').then(m => ({ d
 // Invite System - Public page for invite acceptance
 const InviteAcceptPage = lazy(() => import('../pages/InviteAcceptPage').then(m => ({ default: m.InviteAcceptPage })));
 
-// Billing Module - Pricing and usage dashboard
+// Billing Module - Pricing, usage, and subscription management
 const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default: m.PricingPage })));
 const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
+const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
 
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
@@ -754,6 +755,10 @@ export function AppRouter() {
                <Route
                   path="/usage"
                   element={<ProtectedRoute><UsageDashboardPage /></ProtectedRoute>}
+               />
+               <Route
+                  path="/manage-subscription"
+                  element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
                />
 
                {/* Main App - Authenticated users (root path only, ViewState-driven) */}

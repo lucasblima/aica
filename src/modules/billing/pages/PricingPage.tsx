@@ -7,6 +7,8 @@ import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPlan } from '@/hooks/useUserPlan';
 import { PlanCard, PAYMENTS_ENABLED } from '../components/PlanCard';
+import { PixPaymentModal } from '../components/PixPaymentModal';
+import type { PixData } from '../components/PixPaymentModal';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -198,6 +200,7 @@ export function PricingPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [manageLoading, setManageLoading] = useState(false);
+  const [pixModalData, setPixModalData] = useState<{ pixData: PixData; planName: string; value: number } | null>(null);
 
   const currentPlanId = userPlan.id;
 
@@ -218,7 +221,7 @@ export function PricingPage() {
       }
 
       const { data, error: fnError } = await supabase.functions.invoke(
-        'create-checkout-session',
+        'create-asaas-checkout',
         {
           body: { plan_id: planId },
           headers: {
@@ -233,62 +236,31 @@ export function PricingPage() {
         throw new Error(data.error);
       }
 
-      if (data?.checkout_url) {
+      // If PIX data is available, show the PIX modal
+      if (data?.pix_data?.copy_paste || data?.pix_data?.qr_code_base64) {
+        const planInfo = PLANS.find(p => p.id === planId);
+        setPixModalData({
+          pixData: data.pix_data,
+          planName: planInfo?.name || planId,
+          value: planInfo?.price_brl_monthly || 0,
+        });
+      } else if (data?.checkout_url) {
+        // Redirect to Asaas hosted checkout
         window.location.href = data.checkout_url;
       } else {
         throw new Error('Nao foi possivel criar a sessao de checkout.');
       }
     } catch (err) {
-      const raw =
+      const message =
         err instanceof Error ? err.message : 'Erro ao processar assinatura.';
-      const message = raw.includes('Stripe price configured')
-        ? 'Este plano ainda nao esta disponivel para compra. Tente novamente em breve.'
-        : raw;
       setError(message);
     } finally {
       setLoadingPlan(null);
     }
   };
 
-  const handleManageSubscription = async () => {
-    setError(null);
-    setManageLoading(true);
-
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-
-      if (!sessionData.session?.access_token) {
-        throw new Error('Sessao expirada. Faca login novamente.');
-      }
-
-      const { data, error: fnError } = await supabase.functions.invoke(
-        'create-portal-session',
-        {
-          body: { return_url: window.location.origin + '/pricing' },
-          headers: {
-            Authorization: `Bearer ${sessionData.session.access_token}`,
-          },
-        }
-      );
-
-      if (fnError) throw fnError;
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      if (data?.portal_url) {
-        window.location.href = data.portal_url;
-      } else {
-        throw new Error('Nao foi possivel abrir o portal de gerenciamento.');
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Erro ao abrir portal de gerenciamento.';
-      setError(message);
-    } finally {
-      setManageLoading(false);
-    }
+  const handleManageSubscription = () => {
+    navigate('/manage-subscription');
   };
 
   return (
@@ -382,11 +354,27 @@ export function PricingPage() {
       {/* Footer */}
       <div className="text-center mt-16 pb-8">
         <p className="text-xs text-ceramic-text-secondary/60 leading-relaxed">
-          Precos em Reais (BRL).{PAYMENTS_ENABLED ? ' Cobranca mensal segura.' : ' Planos pagos disponiveis em breve.'}
+          Precos em Reais (BRL).{PAYMENTS_ENABLED ? ' Cobranca mensal segura via PIX, cartao ou boleto.' : ' Planos pagos disponiveis em breve.'}
           <br />
           Cancelamento a qualquer momento, sem multa.
         </p>
       </div>
+
+      {/* PIX Payment Modal */}
+      {pixModalData && (
+        <PixPaymentModal
+          isOpen={!!pixModalData}
+          onClose={() => setPixModalData(null)}
+          pixData={pixModalData.pixData}
+          planName={pixModalData.planName}
+          value={pixModalData.value}
+          onPaymentConfirmed={() => {
+            setPixModalData(null);
+            // Refresh page to show updated plan
+            window.location.reload();
+          }}
+        />
+      )}
     </PageShell>
   );
 }

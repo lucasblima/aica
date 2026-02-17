@@ -45,6 +45,9 @@ export interface UserSubscription {
   currentPeriodEnd: string
   stripeSubscriptionId: string | null
   stripeCustomerId: string | null
+  asaasSubscriptionId: string | null
+  asaasCustomerId: string | null
+  paymentGateway: 'none' | 'stripe' | 'asaas'
   trialEnd: string | null
   cancelledAt: string | null
   cancelAtPeriodEnd: boolean
@@ -198,6 +201,9 @@ function mapSubscription(raw: Record<string, unknown>): UserSubscription {
     currentPeriodEnd: raw.current_period_end as string,
     stripeSubscriptionId: (raw.stripe_subscription_id as string) ?? null,
     stripeCustomerId: (raw.stripe_customer_id as string) ?? null,
+    asaasSubscriptionId: (raw.asaas_subscription_id as string) ?? null,
+    asaasCustomerId: (raw.asaas_customer_id as string) ?? null,
+    paymentGateway: (raw.payment_gateway as UserSubscription['paymentGateway']) ?? 'none',
     trialEnd: (raw.trial_end as string) ?? null,
     cancelledAt: (raw.cancelled_at as string) ?? null,
     cancelAtPeriodEnd: raw.cancel_at_period_end as boolean,

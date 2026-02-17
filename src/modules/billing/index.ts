@@ -12,6 +12,7 @@
 
 export { PricingPage } from './pages/PricingPage';
 export { UsageDashboardPage } from './pages/UsageDashboardPage';
+export { ManageSubscriptionPage } from './pages/ManageSubscriptionPage';
 
 // ============================================
 // COMPONENTS
@@ -19,3 +20,4 @@ export { UsageDashboardPage } from './pages/UsageDashboardPage';
 
 export { PlanCard } from './components/PlanCard';
 export { UsageStatsCard } from './components/UsageStatsCard';
+export { PixPaymentModal } from './components/PixPaymentModal';
