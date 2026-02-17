@@ -44,29 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | grep -q '^git checkout' && echo '\n📍 Branch switched!\n\nReminder:\n1. Update WORK_QUEUE.md status\n2. Run: git pull origin main (sync)\n3. Check active work: git log main..HEAD --oneline\n' || true"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "git diff --quiet HEAD 2>/dev/null; if [ $? -ne 0 ]; then echo 'UNCOMMITTED CHANGES DETECTED. Consider committing before ending the session. Changed files:'; git diff --name-only HEAD 2>/dev/null; fi; exit 0"
-          }
-        ]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npx tsc --noEmit --pretty 2>&1 | head -30; exit 0"
+            "command": "jq -r '.tool_input.command // empty' | grep -q '^git checkout' && echo '\n📍 Branch switched!\n\nReminder:\n1. Run: git pull origin main (sync)\n2. Check active work: git log main..HEAD --oneline\n3. Check issues: gh issue list --assignee @me\n' || true"
           }
         ]
       }
@@ -78,8 +56,7 @@
   },
   "permissions": {
     "allow": [
-      "Read(.claude/CLAUDE.md)",
-      "Read(.claude/WORK_QUEUE.md)"
+      "Read(.claude/CLAUDE.md)"
     ]
   },
   "teammateMode": "in-process"

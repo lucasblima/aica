@@ -22,7 +22,7 @@ const GOOGLE_CALENDAR_EXPIRY_KEY = 'google_calendar_token_expiry';
 const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
 
 /**
- * Google OAuth Scopes
+ * Google OAuth Scopes — Base set always requested
  *
  * - calendar.events: Read/write access to calendar events (bidirectional sync)
  * - userinfo.email: Get user email for identification
@@ -30,10 +30,26 @@ const GOOGLE_CALENDAR_CONNECTED_KEY = 'google_calendar_connected';
  * Note: Upgraded from calendar.readonly to calendar.events for bidirectional sync.
  * Existing users with readonly scope will be prompted to re-consent once.
  */
-const ALL_GOOGLE_SCOPES = [
+const BASE_GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/calendar.events', // Read + write calendar events
     'https://www.googleapis.com/auth/userinfo.email',  // Get user email
 ];
+
+/** Gmail scopes */
+export const GMAIL_SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly',  // Read emails
+];
+
+/** Google Drive scopes */
+export const DRIVE_SCOPES = [
+    'https://www.googleapis.com/auth/drive.readonly',  // Read files
+];
+
+/**
+ * Backward-compatible alias used internally.
+ * Same as BASE_GOOGLE_SCOPES — represents the minimum set always requested.
+ */
+const ALL_GOOGLE_SCOPES = BASE_GOOGLE_SCOPES;
 
 /**
  * Inicia o fluxo OAuth com Google para autorizar acesso ao Google Calendar.
@@ -85,6 +101,74 @@ export async function connectGoogleCalendar(): Promise<void> {
         log.error('Erro ao conectar Google Calendar:', error);
         throw error;
     }
+}
+
+/**
+ * Solicita escopos Google adicionais via OAuth incremental consent.
+ * Sempre inclui os escopos base + escopos já concedidos + novos escopos
+ * para evitar scope downgrade (Google revoking previously granted scopes).
+ */
+export async function requestGoogleScopes(additionalScopes: string[]): Promise<void> {
+    try {
+        log.debug('[requestGoogleScopes] Solicitando escopos adicionais:', additionalScopes);
+
+        // Get currently granted scopes from DB to prevent downgrade
+        const existingTokens = await getGoogleCalendarTokens();
+        const existingScopes = existingTokens?.scopes || [];
+
+        // Merge: base + existing + new (deduplicate)
+        const allScopes = [...new Set([...BASE_GOOGLE_SCOPES, ...existingScopes, ...additionalScopes])];
+        log.debug('[requestGoogleScopes] Escopos combinados:', allScopes);
+
+        // Revoke existing token to force Google to re-show consent screen
+        if (existingTokens?.access_token) {
+            try {
+                log.debug('[requestGoogleScopes] Revogando token existente para resetar escopos...');
+                await fetch('https://oauth2.googleapis.com/revoke', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ token: existingTokens.access_token }).toString(),
+                });
+            } catch (revokeErr) {
+                log.warn('[requestGoogleScopes] Revogacao do token falhou (prosseguindo):', revokeErr);
+            }
+        }
+
+        const redirectUrl = window.location.origin + window.location.pathname;
+
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: redirectUrl,
+                scopes: allScopes.join(' '),
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent',
+                }
+            }
+        });
+
+        if (error) {
+            throw new Error(`Erro OAuth: ${error.message}`);
+        }
+    } catch (error) {
+        log.error('Erro ao solicitar escopos Google:', error);
+        throw error;
+    }
+}
+
+/**
+ * Conecta Gmail (solicita escopo gmail.readonly + mantem escopos existentes)
+ */
+export async function connectGmail(): Promise<void> {
+    return requestGoogleScopes(GMAIL_SCOPES);
+}
+
+/**
+ * Conecta Google Drive (solicita escopo drive.readonly + mantem escopos existentes)
+ */
+export async function connectDrive(): Promise<void> {
+    return requestGoogleScopes(DRIVE_SCOPES);
 }
 
 /**
