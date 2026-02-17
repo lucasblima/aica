@@ -760,6 +760,38 @@ export function getTokenRefreshState(): {
 }
 
 /**
+ * Check if the user has Gmail read scope granted.
+ */
+export async function hasGmailScope(): Promise<boolean> {
+    try {
+        const tokens = await getGoogleCalendarTokens();
+        if (!tokens || !tokens.scopes) return false;
+        return tokens.scopes.some(
+            (s: string) => s.includes('gmail.readonly') || s.includes('gmail')
+        );
+    } catch (error) {
+        log.error('Error checking Gmail scope:', { error });
+        return false;
+    }
+}
+
+/**
+ * Check if the user has Google Drive read scope granted.
+ */
+export async function hasDriveScope(): Promise<boolean> {
+    try {
+        const tokens = await getGoogleCalendarTokens();
+        if (!tokens || !tokens.scopes) return false;
+        return tokens.scopes.some(
+            (s: string) => s.includes('drive.readonly') || s.includes('drive')
+        );
+    } catch (error) {
+        log.error('Error checking Drive scope:', { error });
+        return false;
+    }
+}
+
+/**
  * Check if the user has calendar write (calendar.events) scope.
  * Returns false if only calendar.readonly was granted.
  */
