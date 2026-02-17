@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom'
 import { DangerZone } from './DangerZone'
 import { EfficiencyFlowCard } from '../EfficiencyFlowCard'
 import { useUserPlan } from '@/hooks/useUserPlan'
+import { PAYMENTS_ENABLED } from '@/modules/billing/components/PlanCard'
 import { supabase } from '@/services/supabaseClient'
 import { createNamespacedLogger } from '@/lib/logger'
 
@@ -37,7 +38,7 @@ function PlanSection() {
   }
 
   const handleManagePlan = async () => {
-    if (isFree) {
+    if (isFree || !PAYMENTS_ENABLED) {
       navigate('/pricing')
       return
     }
@@ -101,7 +102,7 @@ function PlanSection() {
         ) : (
           <Crown className="w-4 h-4" />
         )}
-        {portalLoading ? 'Abrindo...' : isFree ? 'Fazer upgrade' : 'Gerenciar plano'}
+        {portalLoading ? 'Abrindo...' : isFree ? (PAYMENTS_ENABLED ? 'Fazer upgrade' : 'Ver planos') : (PAYMENTS_ENABLED ? 'Gerenciar plano' : 'Ver planos')}
       </button>
     </div>
   )

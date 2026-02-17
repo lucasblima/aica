@@ -1,5 +1,8 @@
 import React from 'react';
-import { Check, Loader2, Zap, Crown, Sparkles } from 'lucide-react';
+import { Check, Loader2, Zap, Crown, Sparkles, Clock } from 'lucide-react';
+
+// Feature flag — flip to true when payment gateway is ready (Asaas or Stripe)
+export const PAYMENTS_ENABLED = false;
 
 interface PricingPlan {
   id: string;
@@ -142,7 +145,7 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoadin
               >
                 Plano Atual
               </button>
-              {plan.price_brl_monthly > 0 && onManageSubscription && (
+              {PAYMENTS_ENABLED && plan.price_brl_monthly > 0 && onManageSubscription && (
                 <button
                   onClick={onManageSubscription}
                   disabled={isManageLoading}
@@ -152,6 +155,14 @@ export function PlanCard({ plan, isCurrentPlan, isPopular, onSubscribe, isLoadin
                 </button>
               )}
             </div>
+          ) : plan.price_brl_monthly > 0 && !PAYMENTS_ENABLED ? (
+            <button
+              disabled
+              className="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-ceramic-text-secondary/5 text-ceramic-text-secondary/50 cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              Disponivel em breve
+            </button>
           ) : (
             <button
               onClick={onSubscribe}
