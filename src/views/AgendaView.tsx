@@ -791,13 +791,20 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                 }}
                                 onTaskToggle={async (taskId) => {
                                     log.debug(' Task toggled:', taskId);
-                                    // TODO: Toggle task completion
                                     const { error } = await supabase
                                         .from('work_items')
                                         .update({ completed_at: new Date().toISOString() })
                                         .eq('id', taskId);
 
                                     if (!error) {
+                                        // Unsync completed task from Google Calendar (non-blocking)
+                                        isGoogleCalendarConnected().then((connected) => {
+                                            if (!connected) return;
+                                            unsyncEntityFromGoogle('atlas', taskId).catch((err) =>
+                                                log.warn('Calendar unsync failed for completed task:', err)
+                                            );
+                                        });
+
                                         loadAllTasks();
                                     }
                                 }}

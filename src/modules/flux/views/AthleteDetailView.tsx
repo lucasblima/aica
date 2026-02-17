@@ -11,8 +11,10 @@ import { useFlux } from '../context/FluxContext';
 import { AthleteService } from '../services/athleteService';
 import { ParQService } from '../services/parqService';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
+import { supabase } from '@/services/supabaseClient';
 import type { Athlete } from '../types';
 import type { ParQStatus, ParQResponse } from '../types/parq';
+import type { SlotFeedback } from '../components/AthleteCard';
 import { LevelBadge } from '../components/LevelBadge';
 import { ProgressionBar } from '../components/ProgressionBar';
 import { AlertBadge } from '../components/AlertBadge';
@@ -42,8 +44,8 @@ export default function AthleteDetailView() {
   const [parqStatus, setParqStatus] = useState<ParQStatus | null>(null);
   const [latestParQ, setLatestParQ] = useState<ParQResponse | null>(null);
   const [parqLoading, setParqLoading] = useState(false);
+  const [feedbacks, setFeedbacks] = useState<SlotFeedback[]>([]);
   const alerts: never[] = [];
-  const feedbacks: never[] = [];
   const activeBlock = null;
 
   const docs = useAthleteDocuments({ athleteId: athleteId || '' });
@@ -94,6 +96,28 @@ export default function AthleteDetailView() {
     loadParQ();
     return () => { cancelled = true; };
   }, [athleteId, athlete?.allow_parq_onboarding]);
+
+  // Load recent feedbacks from workout_slots
+  useEffect(() => {
+    if (!athleteId) return;
+    let cancelled = false;
+
+    const loadFeedbacks = async () => {
+      const { data, error } = await supabase
+        .from('workout_slots')
+        .select('id, name, athlete_feedback, completed_at, rpe')
+        .eq('athlete_id', athleteId)
+        .not('athlete_feedback', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(10);
+
+      if (cancelled || error || !data) return;
+      setFeedbacks(data as SlotFeedback[]);
+    };
+
+    loadFeedbacks();
+    return () => { cancelled = true; };
+  }, [athleteId]);
 
   // Handle back
   const handleBack = () => {
@@ -376,68 +400,44 @@ export default function AthleteDetailView() {
 
         {feedbacks.length > 0 ? (
           <div className="space-y-3">
-            {feedbacks.slice(0, 5).map((feedback) => (
-              <div key={feedback.id} className="ceramic-card p-4 space-y-3">
-                {/* Header */}
+            {feedbacks.slice(0, 5).map((fb) => (
+              <div key={fb.id} className="ceramic-card p-4 space-y-3">
+                {/* Header: slot name + date */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Activity className="w-4 h-4 text-ceramic-text-secondary" />
-                    <p className="text-xs text-ceramic-text-secondary">
-                      {new Date(feedback.created_at).toLocaleDateString('pt-BR', {
-                        day: 'numeric',
-                        month: 'long',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                    <p className="text-sm font-bold text-ceramic-text-primary">
+                      {fb.name}
                     </p>
                   </div>
-                  {feedback.completed_workout ? (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-ceramic-success/20 text-ceramic-success">
-                      Completo
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-ceramic-warning/20 text-ceramic-warning">
-                      Parcial
-                    </span>
+                  {fb.completed_at && (
+                    <p className="text-xs text-ceramic-text-secondary">
+                      {new Date(fb.completed_at).toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                      })}
+                    </p>
                   )}
                 </div>
 
-                {/* Message */}
+                {/* Athlete feedback text */}
                 <p className="text-sm text-ceramic-text-primary font-light">
-                  {feedback.raw_message}
+                  {fb.athlete_feedback}
                 </p>
 
-                {/* Metrics */}
-                <div className="flex items-center gap-4 text-xs pt-2 border-t border-ceramic-text-secondary/10">
-                  <div>
-                    <span className="text-ceramic-text-secondary">Volume:</span>{' '}
-                    <span className="font-bold text-ceramic-text-primary">
-                      {feedback.volume_pct}%
+                {/* RPE if available */}
+                {fb.rpe != null && (
+                  <div className="flex items-center gap-2 text-xs pt-2 border-t border-ceramic-text-secondary/10">
+                    <span className="text-ceramic-text-secondary">RPE:</span>
+                    <span className={`font-bold ${
+                      fb.rpe >= 8 ? 'text-ceramic-error' :
+                      fb.rpe >= 6 ? 'text-ceramic-warning' :
+                      'text-ceramic-success'
+                    }`}>
+                      {fb.rpe}/10
                     </span>
                   </div>
-                  <div>
-                    <span className="text-ceramic-text-secondary">Intensidade:</span>{' '}
-                    <span className="font-bold text-ceramic-text-primary">
-                      {feedback.intensity_pct}%
-                    </span>
-                  </div>
-                  {feedback.sentiment_score !== undefined && (
-                    <div>
-                      <span className="text-ceramic-text-secondary">Sentimento:</span>{' '}
-                      <span
-                        className={`font-bold ${
-                          feedback.sentiment_score > 0
-                            ? 'text-ceramic-success'
-                            : feedback.sentiment_score < 0
-                            ? 'text-ceramic-error'
-                            : 'text-ceramic-text-secondary'
-                        }`}
-                      >
-                        {feedback.sentiment_score > 0 ? '+' : ''}{feedback.sentiment_score.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             ))}
           </div>
