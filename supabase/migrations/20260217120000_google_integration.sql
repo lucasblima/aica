@@ -143,16 +143,16 @@ $$;
 -- 5. Schedule pg_cron cleanup (daily at 03:00 BRT = 06:00 UTC)
 -- ============================================================================
 
-DO $$
+DO $outer$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
     PERFORM cron.unschedule('cleanup-google-cache');
     PERFORM cron.schedule(
       'cleanup-google-cache',
       '0 6 * * *',
-      $$SELECT public.cleanup_google_cache(7)$$
+      'SELECT public.cleanup_google_cache(7)'
     );
   END IF;
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'pg_cron not available, skipping schedule: %', SQLERRM;
-END $$;
+END $outer$;
