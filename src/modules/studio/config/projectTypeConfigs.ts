@@ -55,6 +55,34 @@ const ARTICLE_CONFIG: ProjectTypeConfig = {
   comingSoon: true,
 };
 
+const NEWSLETTER_CONFIG: ProjectTypeConfig = {
+  type: 'newsletter',
+  label: 'Newsletter',
+  iconName: 'Mail',
+  description: 'Newsletters com curadoria e escrita assistida por IA',
+  color: 'violet',
+  requiredFields: ['title', 'theme'],
+  optionalFields: ['description', 'scheduledDate'],
+  databaseTable: 'studio_newsletters',
+  hasParentHierarchy: false,
+  stages: ['curate', 'write', 'design', 'review', 'send'],
+  comingSoon: true,
+};
+
+const CLIP_CONFIG: ProjectTypeConfig = {
+  type: 'clip',
+  label: 'Clip Social',
+  iconName: 'Scissors',
+  description: 'Clips curtos derivados de podcasts e videos para redes sociais',
+  color: 'pink',
+  requiredFields: ['title'],
+  optionalFields: ['platform', 'caption'],
+  databaseTable: 'studio_clips',
+  hasParentHierarchy: true,
+  stages: ['select', 'edit', 'caption', 'schedule'],
+  comingSoon: true,
+};
+
 // ============================================
 // REGISTRY
 // ============================================
@@ -63,6 +91,8 @@ export const PROJECT_TYPE_CONFIGS: Record<ProjectType, ProjectTypeConfig> = {
   podcast: PODCAST_CONFIG,
   video: VIDEO_CONFIG,
   article: ARTICLE_CONFIG,
+  newsletter: NEWSLETTER_CONFIG,
+  clip: CLIP_CONFIG,
 };
 
 // ============================================

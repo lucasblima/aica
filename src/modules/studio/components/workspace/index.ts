@@ -13,8 +13,10 @@
  * @module studio/components/workspace
  */
 
-// Main Workspace Container (Wave 6)
+// Main Workspace Containers (Wave 6 + Phase 2-3)
 export { default as PodcastWorkspace } from './PodcastWorkspace';
+export { default as ArticleWorkspace } from './ArticleWorkspace';
+export { default as VideoWorkspace } from './VideoWorkspace';
 
 // Workspace Layout Components (Wave 6)
 export { default as WorkspaceHeader } from './WorkspaceHeader';

@@ -37,7 +37,7 @@ export type StudioMode = 'LOADING' | 'LIBRARY' | 'SHOW_PAGE' | 'WIZARD' | 'WORKS
  * Types of projects supported by Studio.
  * Extensible for future content types.
  */
-export type ProjectType = 'podcast' | 'video' | 'article';
+export type ProjectType = 'podcast' | 'video' | 'article' | 'newsletter' | 'clip';
 
 /**
  * Generic project representation in Studio.
@@ -63,7 +63,9 @@ export interface StudioProject {
 export type ProjectMetadata =
   | PodcastProjectMetadata
   | VideoProjectMetadata
-  | ArticleProjectMetadata;
+  | ArticleProjectMetadata
+  | NewsletterProjectMetadata
+  | ClipProjectMetadata;
 
 export interface PodcastProjectMetadata {
   type: 'podcast';
@@ -84,6 +86,20 @@ export interface VideoProjectMetadata {
 export interface ArticleProjectMetadata {
   type: 'article';
   // Future extension
+}
+
+export interface NewsletterProjectMetadata {
+  type: 'newsletter';
+  subject?: string;
+  template?: string;
+  scheduledDate?: string;
+}
+
+export interface ClipProjectMetadata {
+  type: 'clip';
+  sourceProjectId?: string;
+  platform?: string;
+  caption?: string;
 }
 
 // ============================================
@@ -286,3 +302,158 @@ export const INITIAL_STUDIO_STATE: StudioState = {
   error: null,
   userId: null,
 };
+
+// ============================================================================
+// PHASE 1 — POST-PRODUCTION TYPES
+// ============================================================================
+
+export interface StudioTranscription {
+  id: string;
+  projectId: string;
+  content: string;
+  language: string;
+  durationSeconds: number;
+  speakers: { name: string; segments: { start: number; end: number; text: string }[] }[];
+  chapters: { title: string; startSeconds: number; endSeconds: number }[];
+  wordCount: number;
+  createdAt: Date;
+}
+
+export interface StudioShowNotes {
+  id: string;
+  projectId: string;
+  summary: string;
+  highlights: string[];
+  keyQuotes: string[];
+  seoDescription: string;
+  tags: string[];
+  createdAt: Date;
+}
+
+export interface StudioClip {
+  id: string;
+  projectId: string;
+  title: string;
+  startTimeSeconds: number;
+  endTimeSeconds: number;
+  transcriptSegment: string;
+  platform: string;
+  status: 'suggested' | 'draft' | 'approved' | 'published';
+  caption: string;
+  hashtags: string[];
+  thumbnailUrl?: string;
+  createdAt: Date;
+}
+
+export interface StudioAsset {
+  id: string;
+  userId: string;
+  projectId?: string;
+  assetType: 'audio' | 'video' | 'image' | 'document' | 'transcript';
+  fileUrl: string;
+  fileSize: number;
+  durationSeconds?: number;
+  metadata: Record<string, unknown>;
+  tags: string[];
+  createdAt: Date;
+}
+
+export interface StudioBrandKit {
+  id: string;
+  userId: string;
+  brandName: string;
+  logoUrl?: string;
+  colorPrimary: string;
+  colorSecondary: string;
+  fontHeading: string;
+  fontBody: string;
+  toneOfVoice?: string;
+  introAudioUrl?: string;
+  outroAudioUrl?: string;
+  createdAt: Date;
+}
+
+// ============================================================================
+// PHASE 2 — ARTICLE / NEWSLETTER TYPES
+// ============================================================================
+
+export interface StudioArticleDraft {
+  id: string;
+  projectId: string;
+  content: string;
+  outline: { heading: string; subpoints: string[]; targetWords: number }[];
+  wordCount: number;
+  seoScore?: number;
+  seoSuggestions: string[];
+  status: 'draft' | 'review' | 'approved' | 'published';
+  publishedUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface StudioNewsletter {
+  id: string;
+  projectId?: string;
+  subject: string;
+  content: string;
+  template: string;
+  scheduledAt?: Date;
+  sentAt?: Date;
+  recipientsCount: number;
+  openRate: number;
+  clickRate: number;
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+  createdAt: Date;
+}
+
+// ============================================================================
+// PHASE 4 — DISTRIBUTION TYPES
+// ============================================================================
+
+export interface ContentCalendarEntry {
+  id: string;
+  userId: string;
+  projectId?: string;
+  clipId?: string;
+  platform: 'spotify' | 'youtube' | 'instagram' | 'tiktok' | 'linkedin' | 'twitter' | 'newsletter' | 'blog';
+  scheduledAt: Date;
+  publishedAt?: Date;
+  status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed';
+  caption: string;
+  hashtags: string[];
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+}
+
+// ============================================================================
+// PHASE 5 — ANALYTICS + COLLABORATION TYPES
+// ============================================================================
+
+export interface StudioAnalyticsEntry {
+  id: string;
+  projectId?: string;
+  platform: string;
+  metricType: string;
+  metricValue: number;
+  recordedAt: Date;
+}
+
+export interface StudioTeamMember {
+  id: string;
+  memberEmail: string;
+  role: 'admin' | 'editor' | 'designer' | 'viewer';
+  invitedAt: Date;
+  acceptedAt?: Date;
+  status: 'pending' | 'active' | 'revoked';
+}
+
+export interface StudioComment {
+  id: string;
+  projectId: string;
+  assetId?: string;
+  content: string;
+  timestampSeconds?: number;
+  parentCommentId?: string;
+  resolved: boolean;
+  createdAt: Date;
+}

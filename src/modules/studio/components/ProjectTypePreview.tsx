@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic2, Video, FileText, Clock } from 'lucide-react';
+import { Mic2, Video, FileText, Mail, Scissors, Clock } from 'lucide-react';
 import type { ProjectTypeConfig } from '../types/studio';
 
 // Map iconName string to actual Lucide component
@@ -7,6 +7,8 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   Mic2: Mic2,
   Video: Video,
   FileText: FileText,
+  Mail: Mail,
+  Scissors: Scissors,
 };
 
 interface ProjectTypePreviewProps {
@@ -27,6 +29,8 @@ export const ProjectTypePreview: React.FC<ProjectTypePreviewProps> = ({
     amber: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
     blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
     emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+    violet: { bg: 'bg-violet-100', text: 'text-violet-600', border: 'border-violet-200' },
+    pink: { bg: 'bg-pink-100', text: 'text-pink-600', border: 'border-pink-200' },
   };
   const colors = colorMap[config.color] || colorMap.amber;
 

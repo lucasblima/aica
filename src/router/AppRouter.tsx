@@ -37,6 +37,8 @@ const JourneyFullScreen = lazy(() => import('../modules/journey/views/JourneyFul
 
 // Studio Module - Podcast production with FSM architecture
 const StudioMainView = lazy(() => import('../modules/studio/views/StudioMainView'));
+const ContentCalendarPage = lazy(() => import('../modules/studio/views/ContentCalendarPage'));
+const StudioAnalyticsPage = lazy(() => import('../modules/studio/views/StudioAnalyticsPage'));
 // Finance Module - Heavy with charts and data processing
 const FinanceDashboard = lazy(() => import('../modules/finance/views/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
 const FinanceAgentView = lazy(() => import('../modules/finance/views/FinanceAgentView').then(m => ({ default: m.FinanceAgentView })));
@@ -672,6 +674,28 @@ export function AppRouter() {
                            <StudioProvider>
                               <StudioMainView />
                            </StudioProvider>
+                        </ErrorBoundary>
+                     </ProtectedRoute>
+                  }
+               />
+
+               {/* Studio Calendar & Analytics Routes - Protected */}
+               <Route
+                  path="/studio/calendar"
+                  element={
+                     <ProtectedRoute>
+                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>
+                           <ContentCalendarPage />
+                        </ErrorBoundary>
+                     </ProtectedRoute>
+                  }
+               />
+               <Route
+                  path="/studio/analytics"
+                  element={
+                     <ProtectedRoute>
+                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>
+                           <StudioAnalyticsPage />
                         </ErrorBoundary>
                      </ProtectedRoute>
                   }
