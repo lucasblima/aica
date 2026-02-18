@@ -110,15 +110,26 @@ export function atlasTaskToGoogleEvent(task: AtlasTaskData): GoogleCalendarEvent
 
   // If scheduled_time is set, create a timed event; otherwise create an all-day event
   if (task.scheduled_time) {
-    const timeParts = task.scheduled_time.split(':');
-    const startHour = timeParts[0].padStart(2, '0');
-    const startMin = (timeParts[1] || '00').padStart(2, '0');
+    // scheduled_time can be HH:MM or a full timestamptz — normalize to HH:MM
+    let startHour: string;
+    let startMin: string;
+    if (task.scheduled_time.includes('T')) {
+      // Full timestamptz: extract local HH:MM
+      const d = new Date(task.scheduled_time);
+      startHour = d.getHours().toString().padStart(2, '0');
+      startMin = d.getMinutes().toString().padStart(2, '0');
+    } else {
+      const timeParts = task.scheduled_time.split(':');
+      startHour = timeParts[0].padStart(2, '0');
+      startMin = (timeParts[1] || '00').padStart(2, '0');
+    }
 
     const durationMin = task.estimated_duration || 60;
     const endDate = new Date(`${task.due_date}T${startHour}:${startMin}:00`);
     endDate.setMinutes(endDate.getMinutes() + durationMin);
     const endHour = endDate.getHours().toString().padStart(2, '0');
     const endMin = endDate.getMinutes().toString().padStart(2, '0');
+    const endDateStr = endDate.toISOString().split('T')[0];
 
     const tz = getUserTimezone();
 
@@ -126,7 +137,7 @@ export function atlasTaskToGoogleEvent(task: AtlasTaskData): GoogleCalendarEvent
       summary: `[Tarefa] ${task.title}`,
       description,
       start: { dateTime: `${task.due_date}T${startHour}:${startMin}:00`, timeZone: tz },
-      end: { dateTime: `${task.due_date}T${endHour}:${endMin}:00`, timeZone: tz },
+      end: { dateTime: `${endDateStr}T${endHour}:${endMin}:00`, timeZone: tz },
       colorId: CALENDAR_COLORS.atlas,
       extendedProperties: makeExtendedProperties('atlas', task.id),
     };

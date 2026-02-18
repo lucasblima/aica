@@ -425,7 +425,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     isToday: isTaskToday,
                     isTomorrow: isTaskTomorrow,
                     timeUntil: isTaskToday && timeHHMM ? calculateTimeUntil(startTime) : undefined,
-                    skipped: false
+                    skipped: false,
+                    isTask: true,
+                    isCompleted: !!task.completed_at,
                 };
             });
 
@@ -455,6 +457,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 .select(`
                     id,
                     title,
+                    description,
                     due_date,
                     priority_quadrant,
                     is_urgent,
@@ -463,6 +466,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     scheduled_time,
                     completed_at,
                     priority,
+                    task_type,
+                    checklist,
                     associations(name)
                 `)
                 .is('completed_at', null)
@@ -696,6 +701,25 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         }
     }, []);
 
+    // Handle task completion from NextTwoDaysView
+    const handleTaskComplete = async (taskId: string) => {
+        const { error } = await supabase
+            .from('work_items')
+            .update({ completed_at: new Date().toISOString() })
+            .eq('id', taskId);
+
+        if (!error) {
+            // Unsync completed task from Google Calendar (non-blocking)
+            isGoogleCalendarConnected().then((connected) => {
+                if (!connected) return;
+                unsyncEntityFromGoogle('atlas', taskId).catch((err) =>
+                    log.warn('Calendar unsync failed for completed task:', err)
+                );
+            });
+            loadAllTasks();
+        }
+    };
+
     const unscheduleTask = async (taskId: string, targetQuadrant: Quadrant) => {
         const task = timelineTasks.find(t => t.id === taskId);
         if (!task) return;
@@ -804,6 +828,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                             events={nextTwoDaysEvents}
                             onSkipEvent={handleSkipEvent}
                             onUnskipEvent={handleUnskipEvent}
+                            onTaskComplete={handleTaskComplete}
                         />
                     </section>
 
