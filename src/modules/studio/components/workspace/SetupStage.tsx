@@ -637,7 +637,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 htmlFor="episode-theme-input"
                 className="block text-sm font-medium text-ceramic-primary mb-2"
               >
-                Tema <span className="text-ceramic-error" aria-label="obrigatório">*</span>
+                Tema
               </label>
               <input
                 id="episode-theme-input"
@@ -893,8 +893,8 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
             <button
               type="button"
               onClick={() => actions.setStage('research')}
-              disabled={!setup.guestName || !setup.theme}
-              aria-label={!setup.guestName || !setup.theme ? 'Preencha nome do convidado e tema para continuar' : 'Ir para próxima etapa: Pesquisa'}
+              disabled={!setup.guestName}
+              aria-label={!setup.guestName ? 'Preencha o nome do convidado para continuar' : 'Ir para próxima etapa: Pesquisa'}
               className="px-6 py-3 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed disabled:border disabled:border-ceramic-border transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
             >
               <span>Próximo: Pesquisa</span>

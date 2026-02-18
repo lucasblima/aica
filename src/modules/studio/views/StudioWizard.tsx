@@ -101,7 +101,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
       const { data, error: fnError } = await supabase.functions.invoke('studio-deep-research', {
         body: {
           guestName: formData.guestName,
-          guestContext: formData.guestContext,
+          guestContext: formData.guestContext.trim() || formData.guestName.trim(),
           researchDepth: 'standard',
         },
       });
@@ -131,18 +131,6 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
       setError('Nome do convidado e obrigatorio');
       return;
     }
-    if (!formData.guestContext.trim()) {
-      setError('Contexto do convidado e obrigatorio');
-      return;
-    }
-    if (!formData.theme.trim()) {
-      setError('Tema e obrigatorio');
-      return;
-    }
-    if (!formData.title.trim()) {
-      setError('Titulo e obrigatorio');
-      return;
-    }
     if (!showId || showId.trim() === '') {
       setError('Erro: Podcast nao selecionado. Por favor, selecione um podcast primeiro.');
       return;
@@ -157,7 +145,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         .insert({
           show_id: showId,
           user_id: userId,
-          title: formData.title,
+          title: formData.title.trim() || `Episodio com ${formData.guestName.trim()}`,
           description: formData.description || null,
           guest_name: formData.guestName || null,
           episode_theme: formData.theme || null,
@@ -254,10 +242,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
 
   const canCreate =
     projectType === 'podcast' &&
-    formData.guestName.trim().length > 0 &&
-    formData.guestContext.trim().length > 0 &&
-    formData.theme.trim().length > 0 &&
-    formData.title.trim().length > 0;
+    formData.guestName.trim().length > 0;
 
   const isComingSoon = config.comingSoon;
 

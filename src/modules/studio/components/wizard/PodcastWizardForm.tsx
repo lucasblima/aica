@@ -108,7 +108,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
   // ==========================================================================
 
   const renderStep1 = () => {
-    const canResearch = formData.guestName.trim().length > 0 && formData.guestContext.trim().length > 0;
+    const canResearch = formData.guestName.trim().length > 0;
 
     return (
       <div className="space-y-4">
@@ -116,7 +116,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
             <User className="w-3 h-3 inline mr-1" />
-            Nome do Convidado *
+            Nome do Convidado
           </label>
           <input
             data-testid="guest-name"
@@ -132,7 +132,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
         {/* Guest Context */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-            Contexto do Convidado *
+            Contexto do Convidado (opcional)
           </label>
           <input
             data-testid="guest-context"
@@ -276,7 +276,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
         {/* Theme Selection */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-3">
-            Selecione um Tema *
+            Selecione um Tema
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {themes.map((theme) => (
@@ -323,7 +323,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
               className="overflow-hidden"
             >
               <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-3">
-                Selecione um Titulo *
+                Selecione um Titulo
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {selectedThemeTitles.map((title) => (
@@ -394,19 +394,17 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
           </div>
         )}
 
-        {/* Next button */}
-        {formData.theme.trim() && formData.title.trim() && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-2">
-            <button
-              type="button"
-              onClick={() => goToStep(4)}
-              className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-            >
-              Continuar
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
+        {/* Next button — always visible on step 3 */}
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => goToStep(4)}
+            className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          >
+            Continuar
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     );
   };
@@ -459,7 +457,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
           <>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                Tema *
+                Tema
               </label>
               <input
                 type="text"
@@ -471,7 +469,7 @@ export const PodcastWizardForm: React.FC<PodcastWizardFormProps> = ({
             </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-ceramic-text-primary mb-2">
-                Titulo *
+                Titulo
               </label>
               <input
                 data-testid="episode-title"

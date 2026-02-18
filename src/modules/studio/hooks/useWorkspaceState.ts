@@ -84,7 +84,7 @@ export function useWorkspaceState({
             // The actual biography comes from research.dossier.biography
             guestBio: '',
             phone: episode.guest_phone || '',
-            email: episode.guest_email || '',
+            email: '',
             theme: episode.episode_theme || '',
             themeMode: 'manual',
             season: episode.season || '',
