@@ -53,6 +53,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         'low': []
     });
     const [timelineTasks, setTimelineTasks] = useState<Task[]>([]);
+    const [allDueDateTasks, setAllDueDateTasks] = useState<any[]>([]);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -361,26 +362,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             }))
         });
 
-        const filtered = calendarEvents
+        // Google Calendar events in range
+        const calendarFiltered = calendarEvents
             .filter(event => {
                 const eventDate = new Date(event.startTime);
-                const isInRange = eventDate >= today && eventDate < threeDaysFromNow;
-                log.debug(' Evento:', event.title, {
-                    eventDate: eventDate.toISOString(),
-                    isInRange
-                });
-                return isInRange;
+                return eventDate >= today && eventDate < threeDaysFromNow;
             })
             .map(event => {
                 const eventDate = new Date(event.startTime);
                 const isToday = eventDate >= today && eventDate < tomorrow;
                 const isTomorrow = eventDate >= tomorrow && eventDate < dayAfterTomorrow;
-
-                log.debug(' Classificando evento:', event.title, {
-                    isToday,
-                    isTomorrow,
-                    eventDate: eventDate.toISOString()
-                });
 
                 return {
                     id: event.id,
@@ -395,7 +386,40 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     timeUntil: isToday ? calculateTimeUntil(event.startTime) : undefined,
                     skipped: skippedEvents.has(event.id)
                 };
+            });
+
+        // Tasks with due_date in the 3-day range
+        const todayStr = today.toISOString().split('T')[0];
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        const dayAfterStr = dayAfterTomorrow.toISOString().split('T')[0];
+
+        const taskEvents = allDueDateTasks
+            .filter(task => {
+                return task.due_date === todayStr || task.due_date === tomorrowStr || task.due_date === dayAfterStr;
             })
+            .map(task => {
+                const isTaskToday = task.due_date === todayStr;
+                const isTaskTomorrow = task.due_date === tomorrowStr;
+                const startTime = task.scheduled_time
+                    ? `${task.due_date}T${task.scheduled_time}:00`
+                    : `${task.due_date}T23:59:00`; // All-day tasks sort to end
+
+                return {
+                    id: `task-${task.id}`,
+                    title: `📋 ${task.title}`,
+                    startTime,
+                    endTime: startTime,
+                    description: task.description || undefined,
+                    location: undefined,
+                    category: 'Tarefa',
+                    isToday: isTaskToday,
+                    isTomorrow: isTaskTomorrow,
+                    timeUntil: isTaskToday && task.scheduled_time ? calculateTimeUntil(startTime) : undefined,
+                    skipped: false
+                };
+            });
+
+        const filtered = [...calendarFiltered, ...taskEvents]
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
         log.debug(' ✅ Eventos filtrados:', {
@@ -406,7 +430,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         });
 
         return filtered;
-    }, [calendarEvents, skippedEvents]);
+    }, [calendarEvents, skippedEvents, allDueDateTasks]);
 
     const loadAllTasks = async (forDate?: Date) => {
         try {
@@ -446,8 +470,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             const timeline: Task[] = [];
 
             data?.forEach((task: any) => {
-                // If task has a scheduled time for selected date, it goes to timeline
-                if (task.scheduled_time && task.due_date === dateStr) {
+                // If task has due_date matching selected date, it goes to timeline
+                if (task.due_date === dateStr) {
                     timeline.push(task);
                 } else {
                     // Otherwise it goes to matrix
@@ -468,6 +492,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
             setMatrixTasks(matrix);
             setTimelineTasks(timeline);
+            setAllDueDateTasks((data || []).filter((t: any) => t.due_date));
         } catch (error) {
             log.error(' Error loading tasks:', error);
         } finally {
