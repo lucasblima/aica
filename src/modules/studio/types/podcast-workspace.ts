@@ -299,6 +299,9 @@ export interface ResearchState {
 
   /** Error message if generation failed */
   error: string | null;
+
+  /** Deep research result (from wizard or manual deep research) */
+  deepResearch: import('../types/studio').DeepResearchResult | null;
 }
 
 /**
@@ -488,6 +491,9 @@ export interface WorkspaceActions {
 
   /** Regenerate existing dossier */
   regenerateDossier: () => Promise<void>;
+
+  /** Run deep research on the guest */
+  deepResearch: (depth?: 'quick' | 'standard' | 'deep') => Promise<void>;
 
   /** Add custom research source */
   addCustomSource: (source: WorkspaceCustomSource) => void;

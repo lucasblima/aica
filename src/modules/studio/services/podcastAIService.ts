@@ -11,7 +11,8 @@
  */
 
 import { GeminiClient } from '@/lib/gemini'
-import type { Dossier, WorkspaceCustomSource } from '../types'
+import { supabase } from '@/services/supabaseClient'
+import type { Dossier, WorkspaceCustomSource, DeepResearchResult } from '../types'
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('podcastAIService');
@@ -52,8 +53,23 @@ export interface GuestSearchResult {
 export async function generateDossier(
   guestName: string,
   theme?: string,
-  customSources?: WorkspaceCustomSource[]
+  customSources?: WorkspaceCustomSource[],
+  existingResearch?: DeepResearchResult
 ): Promise<Dossier> {
+  // If existingResearch provided, convert to Dossier format directly
+  if (existingResearch) {
+    log.debug('[podcastAIService] Converting existing deep research to dossier:', { guestName });
+    return {
+      guestName,
+      episodeTheme: theme || existingResearch.suggestedThemes[0] || 'Carreira & Atualidades',
+      biography: existingResearch.dossier.biography,
+      controversies: existingResearch.dossier.controversies,
+      suggestedTopics: existingResearch.suggestedThemes,
+      iceBreakers: existingResearch.dossier.iceBreakers,
+      technicalSheet: existingResearch.dossier.technicalSheet,
+    };
+  }
+
   try {
     log.debug('[podcastAIService] Generating dossier:', { guestName, theme, customSources })
 
@@ -246,4 +262,36 @@ export async function generateMoreIceBreakers(
     log.error('[podcastAIService] Error generating ice breakers:', error)
     return []
   }
+}
+
+/**
+ * Deep research a guest using Google Search Grounding + AI synthesis.
+ * Calls the studio-deep-research Edge Function.
+ *
+ * @param guestName - Guest name to research
+ * @param guestContext - Context about the guest (profession, company, etc.)
+ * @param researchDepth - Research depth level
+ * @returns Deep research result with dossier, sources, and suggestions
+ */
+export async function deepResearchGuest(
+  guestName: string,
+  guestContext: string,
+  researchDepth: 'quick' | 'standard' | 'deep' = 'standard'
+): Promise<DeepResearchResult> {
+  log.debug('[podcastAIService] Deep researching guest:', { guestName, guestContext, researchDepth });
+
+  const { data, error } = await supabase.functions.invoke('studio-deep-research', {
+    body: { guestName, guestContext, researchDepth }
+  });
+
+  if (error) throw new Error(error.message || 'Falha na pesquisa');
+  if (!data?.success) throw new Error(data?.error || 'Pesquisa nao retornou resultados');
+
+  log.debug('[podcastAIService] Deep research completed:', {
+    sourcesCount: data.data?.sources?.length,
+    themesCount: data.data?.suggestedThemes?.length,
+    depth: data.data?.researchDepth
+  });
+
+  return data.data;
 }

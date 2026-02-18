@@ -6,7 +6,7 @@
  * Currently supports podcast; video/article show a "coming soon" placeholder.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -14,7 +14,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
-import type { StudioWizardProps, StudioProject } from '../types/studio';
+import type { StudioWizardProps, StudioProject, DeepResearchResult } from '../types/studio';
 import { getProjectTypeConfig } from '../config/projectTypeConfigs';
 import { PodcastWizardForm, ComingSoonForm } from '../components/wizard';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -28,6 +28,7 @@ const log = createNamespacedLogger('StudioWizard');
 interface WizardFormData {
   title: string;
   guestName: string;
+  guestContext: string;
   theme: string;
   description: string;
   scheduledDate: string;
@@ -62,11 +63,18 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
+  // Multi-step state
+  const [currentStep, setCurrentStep] = useState(1);
+  const [researchResults, setResearchResults] = useState<DeepResearchResult | null>(null);
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchError, setResearchError] = useState<string | null>(null);
+
   const modalRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<WizardFormData>({
     title: '',
     guestName: '',
+    guestContext: '',
     theme: '',
     description: '',
     scheduledDate: '',
@@ -85,17 +93,54 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleCreate = async () => {
-    if (!formData.title.trim()) {
-      setError('Titulo e obrigatorio');
-      return;
+  const handleStartResearch = useCallback(async () => {
+    setIsResearching(true);
+    setResearchError(null);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('studio-deep-research', {
+        body: {
+          guestName: formData.guestName,
+          guestContext: formData.guestContext,
+          researchDepth: 'standard',
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message || 'Erro na pesquisa');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Pesquisa nao retornou resultados');
+      }
+
+      const result = data.result as DeepResearchResult;
+      setResearchResults(result);
+      setCurrentStep(3);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido na pesquisa';
+      setResearchError(message);
+      log.error('Deep research error:', err);
+    } finally {
+      setIsResearching(false);
     }
+  }, [formData.guestName, formData.guestContext]);
+
+  const handleCreate = async () => {
     if (!formData.guestName.trim()) {
       setError('Nome do convidado e obrigatorio');
       return;
     }
+    if (!formData.guestContext.trim()) {
+      setError('Contexto do convidado e obrigatorio');
+      return;
+    }
     if (!formData.theme.trim()) {
       setError('Tema e obrigatorio');
+      return;
+    }
+    if (!formData.title.trim()) {
+      setError('Titulo e obrigatorio');
       return;
     }
     if (!showId || showId.trim() === '') {
@@ -142,12 +187,14 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         metadata: {
           type: 'podcast',
           guestName: formData.guestName,
+          guestContext: formData.guestContext,
           episodeTheme: formData.theme,
           scheduledDate: formData.scheduledDate,
           scheduledTime: formData.scheduledTime,
           location: formData.location,
           season: formData.season,
-          recordingDuration: 0
+          recordingDuration: 0,
+          ...(researchResults ? { deepResearch: researchResults } : {}),
         }
       };
 
@@ -179,7 +226,8 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
       formData.title.trim() ||
       formData.description.trim() ||
       formData.theme.trim() ||
-      formData.guestName.trim()
+      formData.guestName.trim() ||
+      formData.guestContext.trim()
     );
   };
 
@@ -206,11 +254,16 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
 
   const canCreate =
     projectType === 'podcast' &&
-    formData.title.trim().length > 0 &&
     formData.guestName.trim().length > 0 &&
-    formData.theme.trim().length > 0;
+    formData.guestContext.trim().length > 0 &&
+    formData.theme.trim().length > 0 &&
+    formData.title.trim().length > 0;
 
   const isComingSoon = config.comingSoon;
+
+  const progressPercent = isComingSoon
+    ? 0
+    : (currentStep / 4) * 100;
 
   const inputClasses = "w-full px-4 py-3 rounded-xl bg-ceramic-base text-ceramic-text-primary placeholder-ceramic-text-secondary border-2 border-ceramic-border focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all";
 
@@ -225,6 +278,12 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
           <PodcastWizardForm
             formData={formData}
             onChange={handleFieldChange}
+            currentStep={currentStep}
+            onStepChange={setCurrentStep}
+            researchResults={researchResults}
+            onStartResearch={handleStartResearch}
+            isResearching={isResearching}
+            researchError={researchError}
             inputClasses={inputClasses}
           />
         );
@@ -237,13 +296,23 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
   // HEADER LABELS
   // ============================================================================
 
+  const stepLabels: Record<number, string> = {
+    1: 'Quem e o convidado?',
+    2: 'Pesquisando...',
+    3: 'Escolha tema e titulo',
+    4: 'Confirmar e criar',
+  };
+
   const headerTitle = projectType === 'podcast'
     ? 'Novo Episodio'
     : `Novo ${config.label}`;
 
   const headerSubtitle = projectType === 'podcast'
-    ? 'Preencha os dados essenciais para criar seu episodio'
+    ? stepLabels[currentStep] || ''
     : config.description;
+
+  // Hide bottom actions during loading step or when on step 1/3 (they have their own buttons)
+  const showBottomActions = projectType !== 'podcast' || currentStep === 4;
 
   // ============================================================================
   // RENDER
@@ -265,13 +334,13 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         <div className="h-1 bg-ceramic-cool relative">
           <motion.div
             role="progressbar"
-            aria-valuenow={canCreate ? 100 : (isComingSoon ? 0 : 50)}
+            aria-valuenow={progressPercent}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label="Progresso do formulario"
             className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
             initial={{ width: '0%' }}
-            animate={{ width: canCreate ? '100%' : (isComingSoon ? '0%' : '50%') }}
+            animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>
@@ -308,35 +377,50 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
               </motion.div>
             )}
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <button
-                data-testid="wizard-cancel-button"
-                onClick={handleCancel}
-                disabled={isCreatingProject}
-                className="flex-1 py-3 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-ceramic-base disabled:opacity-50 transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                data-testid="create-button"
-                onClick={handleCreate}
-                disabled={!canCreate || isCreatingProject}
-                className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-              >
-                {isCreatingProject ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Criando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Criar Episodio
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Actions — shown on step 4 (confirm) or non-podcast types */}
+            {showBottomActions && (
+              <div className="flex gap-3 pt-4">
+                <button
+                  data-testid="wizard-cancel-button"
+                  onClick={handleCancel}
+                  disabled={isCreatingProject}
+                  className="flex-1 py-3 px-6 rounded-xl text-ceramic-text-secondary font-bold hover:bg-ceramic-base disabled:opacity-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  data-testid="create-button"
+                  onClick={handleCreate}
+                  disabled={!canCreate || isCreatingProject}
+                  className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                >
+                  {isCreatingProject ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Criar Episodio
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Cancel link on steps 1-3 */}
+            {projectType === 'podcast' && !showBottomActions && (
+              <div className="text-center pt-2">
+                <button
+                  data-testid="wizard-cancel-button"
+                  onClick={handleCancel}
+                  className="text-sm text-ceramic-text-secondary hover:text-ceramic-error transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
           </motion.div>
         </div>
       </motion.div>

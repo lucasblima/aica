@@ -43,6 +43,9 @@ export type {
   // Helper Types
   StudioDataLoadResult,
   CreateProjectConfig,
+
+  // Deep Research
+  DeepResearchResult,
 } from './studio';
 
 export { INITIAL_STUDIO_STATE } from './studio';

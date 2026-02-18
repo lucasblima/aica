@@ -25,6 +25,7 @@ import type {
   TopicCategory,
   SavedPauta,
 } from '../types';
+import { deepResearchGuest } from '../services/podcastAIService';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('PodcastWorkspaceContext');
@@ -56,6 +57,7 @@ const initialResearchState: ResearchState = {
   isGenerating: false,
   lastGenerated: null,
   error: null,
+  deepResearch: null,
 };
 
 const initialPautaState: PautaState = {
@@ -573,6 +575,34 @@ export function PodcastWorkspaceProvider({
       } catch (error) {
         log.error('Error regenerating dossier:', error);
         dispatch({ type: 'SET_RESEARCH_ERROR', payload: 'Erro ao regerar dossier' });
+      }
+    },
+
+    deepResearch: async (depth: 'quick' | 'standard' | 'deep' = 'standard') => {
+      dispatch({ type: 'START_DOSSIER_GENERATION' });
+      try {
+        const { guestName, guestBio } = state.setup;
+        const result = await deepResearchGuest(guestName, guestBio || '', depth);
+
+        // Store deep research result and convert to dossier
+        dispatch({
+          type: 'UPDATE_RESEARCH',
+          payload: { deepResearch: result },
+        });
+
+        const dossier: Dossier = {
+          guestName,
+          episodeTheme: state.setup.theme || result.suggestedThemes[0] || 'Carreira & Atualidades',
+          biography: result.dossier.biography,
+          controversies: result.dossier.controversies,
+          suggestedTopics: result.suggestedThemes,
+          iceBreakers: result.dossier.iceBreakers,
+          technicalSheet: result.dossier.technicalSheet,
+        };
+        dispatch({ type: 'FINISH_DOSSIER_GENERATION', payload: dossier });
+      } catch (error: any) {
+        log.error('Error in deep research:', error);
+        dispatch({ type: 'SET_RESEARCH_ERROR', payload: error.message || 'Erro na pesquisa aprofundada' });
       }
     },
 
