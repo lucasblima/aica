@@ -451,7 +451,7 @@ export async function queryFileSearch(
     const duration = (Date.now() - startTime) / 1000;
     trackAIUsage({
       operation_type: 'file_search_query', // Matches ai_usage_analytics CHECK constraint
-      ai_model: 'gemini-2.0-flash-exp',
+      ai_model: 'gemini-2.5-flash',
       module_type: query.moduleType,
       module_id: query.moduleId,
       duration_seconds: duration,

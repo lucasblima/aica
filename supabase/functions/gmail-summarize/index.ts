@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { getGoogleTokenForUser } from "../_shared/google-token-manager.ts";
-import { GoogleGenAI } from "https://esm.sh/@google/genai@0.7.0";
 
 const TAG = '[gmail-summarize]';
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -194,7 +193,7 @@ serve(async (req) => {
     // 7. Build Gemini prompt
     const prompt = buildGeminiPrompt(contactName, contactEmail, formattedMessages.length, threads);
 
-    // 8. Call Gemini 2.5 Flash
+    // 8. Call Gemini 2.5 Flash via REST API (not SDK — avoids thinking token issues)
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     if (!geminiApiKey) {
       return new Response(
@@ -205,24 +204,40 @@ serve(async (req) => {
 
     console.log(TAG, `Calling Gemini with ${threads.length} threads, ${formattedMessages.length} messages`);
 
-    const genai = new GoogleGenAI({ apiKey: geminiApiKey });
-    const response = await genai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        maxOutputTokens: 4096,
-        temperature: 0.3,
-        // Disable thinking for structured JSON output — avoids thinking tokens
-        // contaminating the response text and breaking JSON extraction
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+    const geminiResponse = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 4096,
+        },
+        // Top-level thinkingConfig to disable thinking for structured JSON output
         thinkingConfig: { thinkingBudget: 0 },
-      },
+      }),
     });
 
-    let text = response.text || '';
-    console.log(TAG, `Gemini response length: ${text.length}, first 200 chars: ${text.substring(0, 200)}`);
+    if (!geminiResponse.ok) {
+      const errBody = await geminiResponse.text();
+      console.error(TAG, `Gemini API error (${geminiResponse.status}):`, errBody.substring(0, 500));
+      throw new Error(`Gemini API error: ${geminiResponse.status}`);
+    }
 
-    // Safety: strip any thinking tags that might leak through
-    text = text.replace(/<thinking>[\s\S]*?<\/thinking>/g, '').trim();
+    const geminiResult = await geminiResponse.json();
+    // Extract text from the non-thought parts only
+    const candidateParts = geminiResult.candidates?.[0]?.content?.parts || [];
+    let text = '';
+    for (const part of candidateParts) {
+      if (part.text && !part.thought) {
+        text += part.text;
+      }
+    }
+    text = text.trim();
+
+    const finishReason = geminiResult.candidates?.[0]?.finishReason;
+    console.log(TAG, `Gemini response length: ${text.length}, finishReason: ${finishReason}, first 200 chars: ${text.substring(0, 200)}`);
 
     // 9. Parse structured response
     let analysis: Record<string, unknown>;

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2, Calendar, Clock, X } from 'lucide-react';
+import { Plus, Loader2, Calendar, Clock, X, Sparkles, Check, XCircle } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
 import { processVoiceToTask, type ExtractedTaskData } from '@/services/taskExtractionService';
+import { suggestPriority, QUADRANT_MAP, type PrioritySuggestion } from '@/modules/atlas/services/atlasAIService';
 
 const log = createNamespacedLogger('TaskCreationQuickAdd');
 
@@ -35,6 +36,10 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
   const [previewIsUrgent, setPreviewIsUrgent] = useState(false);
   const [previewIsImportant, setPreviewIsImportant] = useState(false);
 
+  // AI suggestion state
+  const [aiSuggestion, setAiSuggestion] = useState<PrioritySuggestion | null>(null);
+  const [isAiSuggesting, setIsAiSuggesting] = useState(false);
+
   const resetAll = () => {
     setMode('closed');
     setTitle('');
@@ -47,6 +52,8 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     setPreviewDuration('');
     setPreviewIsUrgent(false);
     setPreviewIsImportant(false);
+    setAiSuggestion(null);
+    setIsAiSuggesting(false);
   };
 
   const fillPreview = (data: ExtractedTaskData) => {
@@ -58,6 +65,41 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     setPreviewIsUrgent(data.is_urgent);
     setPreviewIsImportant(data.is_important);
     setMode('preview');
+  };
+
+  const handleAiSuggest = async () => {
+    const taskTitle = previewTitle.trim() || title.trim();
+    if (!taskTitle) return;
+
+    setIsAiSuggesting(true);
+    setAiSuggestion(null);
+    setError(null);
+
+    try {
+      const suggestion = await suggestPriority(
+        taskTitle,
+        previewDescription.trim() || undefined,
+        previewDueDate || undefined
+      );
+      setAiSuggestion(suggestion);
+    } catch (err) {
+      log.error('AI suggest error:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao sugerir prioridade.');
+    } finally {
+      setIsAiSuggesting(false);
+    }
+  };
+
+  const acceptAiSuggestion = () => {
+    if (!aiSuggestion) return;
+    const mapped = QUADRANT_MAP[aiSuggestion.quadrant];
+    setPreviewIsUrgent(mapped.is_urgent);
+    setPreviewIsImportant(mapped.is_important);
+    setAiSuggestion(null);
+  };
+
+  const dismissAiSuggestion = () => {
+    setAiSuggestion(null);
   };
 
   const handleRecordingComplete = async (blob: Blob) => {
@@ -225,6 +267,20 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  if (title.trim()) {
+                    setPreviewTitle(title.trim());
+                    setMode('preview');
+                  }
+                }}
+                disabled={isLoading || !title.trim() || isTranscribing}
+                className="ceramic-card px-3 py-2.5 rounded-xl text-amber-500 hover:bg-amber-50 hover:scale-[1.02] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Expandir com detalhes e IA"
+              >
+                <Sparkles className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
                 onClick={resetAll}
                 disabled={isLoading || isTranscribing}
                 className="ceramic-inset px-4 py-2.5 rounded-xl text-sm font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors disabled:opacity-50"
@@ -314,8 +370,8 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
               </div>
             </div>
 
-            {/* Urgent / Important checkboxes */}
-            <div className="flex gap-4">
+            {/* Urgent / Important checkboxes + AI suggest */}
+            <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -336,7 +392,58 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 />
                 <span className="text-sm text-ceramic-text-primary">Importante</span>
               </label>
+              <button
+                type="button"
+                onClick={handleAiSuggest}
+                disabled={isLoading || isAiSuggesting || !previewTitle.trim()}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                title="IA sugere quadrante da Matriz de Eisenhower"
+              >
+                {isAiSuggesting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                {isAiSuggesting ? 'Analisando...' : 'IA sugerir'}
+              </button>
             </div>
+
+            {/* AI Suggestion result */}
+            {aiSuggestion && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl"
+              >
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-amber-700">
+                    {QUADRANT_MAP[aiSuggestion.quadrant].label}
+                    <span className="font-normal text-amber-600 ml-1">
+                      ({Math.round(aiSuggestion.confidence * 100)}%)
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-amber-600 truncate">{aiSuggestion.reasoning}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={acceptAiSuggestion}
+                  className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+                  title="Aceitar sugestao"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissAiSuggestion}
+                  className="p-1.5 rounded-lg text-amber-400 hover:text-amber-600 hover:bg-amber-100 transition-colors"
+                  title="Ignorar sugestao"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              </motion.div>
+            )}
 
             {error && (
               <motion.p

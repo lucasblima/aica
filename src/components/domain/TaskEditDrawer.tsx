@@ -14,13 +14,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
-import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText, FileText as FileTextIcon, ListChecks, Tag, Repeat } from 'lucide-react';
+import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText, FileText as FileTextIcon, ListChecks, Tag, Repeat, Sparkles, Loader2 } from 'lucide-react';
 import { Task } from '@/types';
 import { Accordion } from '@/components/ui';
 import { SubtaskList, Subtask } from '@/components/ui';
 import { RecurrencePicker } from '@/components/ui';
 import { TagInput } from '@/components/ui';
 import { createNamespacedLogger } from '@/lib/logger';
+import { decomposeTask, type TaskDecomposition } from '@/modules/atlas/services/atlasAIService';
 
 const log = createNamespacedLogger('TaskEditDrawer');
 
@@ -55,6 +56,9 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+
+    // AI decomposition state
+    const [isDecomposing, setIsDecomposing] = useState(false);
 
     // Swipe to dismiss (mobile)
     const y = useMotionValue(0);
@@ -173,6 +177,34 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
             handleCloseClick();
         } else if (e.key === 'Enter' && e.ctrlKey) {
             handleSave();
+        }
+    };
+
+    const handleAiDecompose = async () => {
+        if (!title.trim()) return;
+        setIsDecomposing(true);
+        try {
+            const result = await decomposeTask(
+                title.trim(),
+                description.trim() || undefined,
+                estimatedDuration ? Number(estimatedDuration) / 60 : undefined
+            );
+            // Convert AI subtasks to the UI Subtask format
+            const aiSubtasks: Subtask[] = result.subtasks.map((s, i) => ({
+                id: `ai-${Date.now()}-${i}`,
+                title: s.title,
+                completed: false,
+            }));
+            setSubtasks(prev => [...prev, ...aiSubtasks]);
+            // Update estimated duration with AI total if not set
+            if (!estimatedDuration && result.totalEstimate) {
+                const totalMin = result.subtasks.reduce((sum, s) => sum + s.estimatedMinutes, 0);
+                if (totalMin > 0) setEstimatedDuration(String(totalMin));
+            }
+        } catch (err) {
+            log.error('AI decompose error:', err);
+        } finally {
+            setIsDecomposing(false);
         }
     };
 
@@ -399,6 +431,19 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
                                             subtasks={subtasks}
                                             onChange={setSubtasks}
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={handleAiDecompose}
+                                            disabled={isDecomposing || !title.trim()}
+                                            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            {isDecomposing ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                                <Sparkles className="w-3.5 h-3.5" />
+                                            )}
+                                            {isDecomposing ? 'Decompondo...' : 'Decompor com IA'}
+                                        </button>
                                     </Accordion>
 
                                     {/* Tags */}

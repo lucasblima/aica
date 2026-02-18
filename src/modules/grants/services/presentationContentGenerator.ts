@@ -37,7 +37,7 @@ const MAX_RETRIES = 3; // Maximum retry attempts
 const RETRY_DELAY_MS = 1000; // Base delay between retries
 
 // Gemini model configuration
-const GEMINI_MODEL = 'gemini-2.0-flash-exp'; // Fast model for content generation
+const GEMINI_MODEL = 'gemini-2.5-flash'; // Fast model for content generation
 
 // =============================================================================
 // MAIN CONTENT GENERATION

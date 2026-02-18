@@ -306,7 +306,7 @@ Gere uma pergunta reflexiva e apropriada:
           // Track AI usage (non-blocking, fire-and-forget)
           trackAIUsage({
             operation_type: 'text_generation',
-            ai_model: result.model || 'gemini-2.0-flash',
+            ai_model: result.model || 'gemini-2.5-flash',
             input_tokens: result.usageMetadata?.promptTokenCount || 0,
             output_tokens: result.usageMetadata?.candidatesTokenCount || 0,
             module_type: 'journey',
@@ -500,7 +500,7 @@ export async function logDailyQuestionUsage(
     await supabase.from('gemini_api_logs').insert({
       user_id: userId,
       action: 'daily_question',
-      model: source === 'ai' ? 'gemini-2.0-flash' : 'fallback',
+      model: source === 'ai' ? 'gemini-2.5-flash' : 'fallback',
       tokens_used: 0, // Será preenchido pelo backend
       response_time_ms: responseTime,
       status: 'success',

@@ -432,7 +432,7 @@ Máximo 5 tags. Siga o padrão de tags em minúsculas com hífen.`
     // Track AI usage (non-blocking, fire-and-forget)
     trackAIUsage({
       operation_type: 'text_generation',
-      ai_model: response.model || 'gemini-2.0-flash',
+      ai_model: response.model || 'gemini-2.5-flash',
       input_tokens: response.usageMetadata?.promptTokenCount || 0,
       output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
       module_type: 'journey',
