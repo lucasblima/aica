@@ -16,6 +16,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 import { createNamespacedLogger } from '@/lib/logger';
+import { supabase } from '@/services/supabaseClient';
 
 const log = createNamespacedLogger('AgendaView');
 import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd } from '../components';
