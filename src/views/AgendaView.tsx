@@ -393,6 +393,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const tomorrowStr = tomorrow.toISOString().split('T')[0];
         const dayAfterStr = dayAfterTomorrow.toISOString().split('T')[0];
 
+        // Helper: extract HH:MM from timestamptz (e.g., "2026-02-19T12:00:00+00:00" → "12:00")
+        const extractTimeHHMM = (ts: string): string | null => {
+            try {
+                const d = new Date(ts);
+                if (isNaN(d.getTime())) return null;
+                return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+            } catch { return null; }
+        };
+
         const taskEvents = allDueDateTasks
             .filter(task => {
                 return task.due_date === todayStr || task.due_date === tomorrowStr || task.due_date === dayAfterStr;
@@ -400,8 +409,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             .map(task => {
                 const isTaskToday = task.due_date === todayStr;
                 const isTaskTomorrow = task.due_date === tomorrowStr;
-                const startTime = task.scheduled_time
-                    ? `${task.due_date}T${task.scheduled_time}:00`
+                const timeHHMM = task.scheduled_time ? extractTimeHHMM(task.scheduled_time) : null;
+                const startTime = timeHHMM
+                    ? `${task.due_date}T${timeHHMM}:00`
                     : `${task.due_date}T23:59:00`; // All-day tasks sort to end
 
                 return {
@@ -414,7 +424,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     category: 'Tarefa',
                     isToday: isTaskToday,
                     isTomorrow: isTaskTomorrow,
-                    timeUntil: isTaskToday && task.scheduled_time ? calculateTimeUntil(startTime) : undefined,
+                    timeUntil: isTaskToday && timeHHMM ? calculateTimeUntil(startTime) : undefined,
                     skipped: false
                 };
             });

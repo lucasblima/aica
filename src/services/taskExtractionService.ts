@@ -62,8 +62,12 @@ export async function extractTaskFromVoice(transcription: string): Promise<Extra
 
 /**
  * Full pipeline: audio blob → transcription → structured task data
+ * @param onStage - optional callback to report pipeline progress ('extracting')
  */
-export async function processVoiceToTask(audioBlob: Blob): Promise<{
+export async function processVoiceToTask(
+  audioBlob: Blob,
+  onStage?: (stage: 'extracting') => void,
+): Promise<{
   transcription: string
   extractedTask: ExtractedTaskData
 }> {
@@ -74,6 +78,7 @@ export async function processVoiceToTask(audioBlob: Blob): Promise<{
     throw new Error('Nao foi possivel transcrever o audio. Tente novamente.')
   }
 
+  onStage?.('extracting')
   const extractedTask = await extractTaskFromVoice(transcription)
 
   log.debug('Voice-to-task pipeline complete', { title: extractedTask.title })

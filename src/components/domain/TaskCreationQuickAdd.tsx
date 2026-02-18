@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2, Calendar, Clock, X, Sparkles, Check, XCircle, CheckCircle2 } from 'lucide-react';
+import { Plus, Loader2, Calendar, Clock, X, Sparkles, Check, XCircle, CheckCircle2, Mic, Brain, Save } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
@@ -13,6 +13,15 @@ import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 const log = createNamespacedLogger('TaskCreationQuickAdd');
 
 type Mode = 'closed' | 'input' | 'preview';
+
+/** Processing pipeline stages for voice-to-task */
+type ProcessingStage = 'transcribing' | 'extracting' | 'creating' | null;
+
+const STAGE_CONFIG: Record<Exclude<ProcessingStage, null>, { icon: React.ElementType; label: string; color: string }> = {
+  transcribing: { icon: Mic, label: 'Transcrevendo audio...', color: 'text-blue-500' },
+  extracting: { icon: Brain, label: 'Extraindo dados da tarefa...', color: 'text-purple-500' },
+  creating: { icon: Save, label: 'Criando tarefa...', color: 'text-amber-500' },
+};
 
 interface TaskCreationQuickAddProps {
   userId: string;
@@ -45,8 +54,12 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
   const [aiSuggestion, setAiSuggestion] = useState<PrioritySuggestion | null>(null);
   const [isAiSuggesting, setIsAiSuggesting] = useState(false);
 
+  // Voice processing pipeline feedback
+  const [processingStage, setProcessingStage] = useState<ProcessingStage>(null);
+
   // Auto-create success feedback
   const [autoCreatedTitle, setAutoCreatedTitle] = useState<string | null>(null);
+  const [autoCreatedDetails, setAutoCreatedDetails] = useState<string | null>(null);
 
   const resetAll = useCallback(() => {
     setMode('closed');
@@ -115,13 +128,17 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
   const handleRecordingComplete = async (blob: Blob) => {
     setIsTranscribing(true);
     setError(null);
+    setProcessingStage('transcribing');
 
     try {
-      const { transcription: text, extractedTask } = await processVoiceToTask(blob);
+      const { transcription: text, extractedTask } = await processVoiceToTask(blob, (stage) => {
+        if (stage === 'extracting') setProcessingStage('extracting');
+      });
       setTranscription(text);
 
       // Auto-create: voice input creates task immediately
       if (extractedTask.title) {
+        setProcessingStage('creating');
         log.debug('Auto-creating task from voice:', extractedTask);
         await createTask({
           title: extractedTask.title,
@@ -133,9 +150,18 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
           is_urgent: extractedTask.is_urgent,
           is_important: extractedTask.is_important,
         });
-        // Show brief success flash
+
+        // Build details string for success flash
+        const details: string[] = [];
+        if (extractedTask.due_date) {
+          const [, m, d] = extractedTask.due_date.split('-');
+          details.push(`${d}/${m}`);
+        }
+        if (extractedTask.scheduled_time) details.push(extractedTask.scheduled_time);
+
         setAutoCreatedTitle(extractedTask.title);
-        setTimeout(() => setAutoCreatedTitle(null), 3000);
+        setAutoCreatedDetails(details.length > 0 ? details.join(' as ') : null);
+        setTimeout(() => { setAutoCreatedTitle(null); setAutoCreatedDetails(null); }, 4000);
       } else {
         // Fallback to preview if no title extracted
         fillPreview(extractedTask);
@@ -145,6 +171,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
       setError(err instanceof Error ? err.message : 'Erro ao processar audio.');
     } finally {
       setIsTranscribing(false);
+      setProcessingStage(null);
     }
   };
 
@@ -250,15 +277,23 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
       <AnimatePresence>
         {autoCreatedTitle && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex items-center gap-2 p-3 mb-3 bg-green-50 border border-green-200 rounded-xl"
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="flex items-center gap-2.5 p-3 mb-3 bg-green-50 border border-green-200 rounded-xl"
           >
-            <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-            <span className="text-sm text-green-700 font-medium truncate">
-              Tarefa criada: {autoCreatedTitle}
-            </span>
+            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-green-700 font-bold truncate">
+                {autoCreatedTitle}
+              </p>
+              {autoCreatedDetails && (
+                <p className="text-xs text-green-600 mt-0.5">
+                  Agendada para {autoCreatedDetails}
+                </p>
+              )}
+            </div>
+            <span className="text-[10px] text-green-500 font-medium uppercase tracking-wide shrink-0">Criada</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -302,18 +337,55 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 disabled={isLoading || isTranscribing}
                 maxLength={500}
               />
-              {isTranscribing ? (
-                <div className="flex items-center gap-2 px-3 py-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-ceramic-accent" />
-                  <span className="text-xs text-ceramic-text-secondary whitespace-nowrap">Processando...</span>
-                </div>
-              ) : (
+              {!isTranscribing && (
                 <AudioRecorder
                   onRecordingComplete={handleRecordingComplete}
                   disabled={isLoading}
                 />
               )}
             </div>
+
+            {/* Voice processing pipeline indicator */}
+            <AnimatePresence>
+              {processingStage && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex items-center gap-3 p-3 bg-ceramic-base/80 rounded-xl border border-ceramic-text-secondary/10">
+                    {/* Pipeline steps */}
+                    {(['transcribing', 'extracting', 'creating'] as const).map((stage, idx) => {
+                      const config = STAGE_CONFIG[stage];
+                      const Icon = config.icon;
+                      const isActive = stage === processingStage;
+                      const isDone = (['transcribing', 'extracting', 'creating'] as const).indexOf(processingStage) > idx;
+
+                      return (
+                        <React.Fragment key={stage}>
+                          {idx > 0 && (
+                            <div className={`h-px flex-1 max-w-[20px] transition-colors duration-300 ${isDone ? 'bg-green-400' : 'bg-ceramic-text-secondary/20'}`} />
+                          )}
+                          <div className={`flex items-center gap-1.5 transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : isDone ? 'opacity-60 scale-95' : 'opacity-30 scale-95'}`}>
+                            {isActive ? (
+                              <Loader2 className={`w-4 h-4 animate-spin ${config.color}`} />
+                            ) : isDone ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <Icon className="w-4 h-4 text-ceramic-text-secondary/40" />
+                            )}
+                            <span className={`text-[11px] font-medium whitespace-nowrap ${isActive ? config.color : isDone ? 'text-green-600' : 'text-ceramic-text-secondary/40'}`}>
+                              {isActive ? config.label : isDone ? 'Pronto' : stage === 'transcribing' ? 'Transcrever' : stage === 'extracting' ? 'Extrair' : 'Criar'}
+                            </span>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {error && (
               <motion.p
@@ -325,47 +397,49 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
               </motion.p>
             )}
 
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={isLoading || !title.trim() || isTranscribing}
-                className="flex-1 ceramic-card px-4 py-2.5 rounded-xl text-sm font-bold text-ceramic-accent hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Criando...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Criar
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (title.trim()) {
-                    setPreviewTitle(title.trim());
-                    setMode('preview');
-                  }
-                }}
-                disabled={isLoading || !title.trim() || isTranscribing}
-                className="ceramic-card px-3 py-2.5 rounded-xl text-amber-500 hover:bg-amber-50 hover:scale-[1.02] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Expandir com detalhes e IA"
-              >
-                <Sparkles className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={resetAll}
-                disabled={isLoading || isTranscribing}
-                className="ceramic-inset px-4 py-2.5 rounded-xl text-sm font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-            </div>
+            {!isTranscribing && (
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isLoading || !title.trim()}
+                  className="flex-1 ceramic-card px-4 py-2.5 rounded-xl text-sm font-bold text-ceramic-accent hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Criar
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (title.trim()) {
+                      setPreviewTitle(title.trim());
+                      setMode('preview');
+                    }
+                  }}
+                  disabled={isLoading || !title.trim()}
+                  className="ceramic-card px-3 py-2.5 rounded-xl text-amber-500 hover:bg-amber-50 hover:scale-[1.02] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Expandir com detalhes e IA"
+                >
+                  <Sparkles className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  disabled={isLoading}
+                  className="ceramic-inset px-4 py-2.5 rounded-xl text-sm font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
           </motion.form>
         )}
 
