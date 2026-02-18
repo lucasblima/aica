@@ -14,12 +14,15 @@ interface EventWithCategory {
   isTomorrow: boolean;
   timeUntil?: string; // "1h 33min" ou "Agora"
   skipped?: boolean;
+  isTask?: boolean;
+  isCompleted?: boolean;
 }
 
 interface NextTwoDaysViewProps {
   events: EventWithCategory[];
   onSkipEvent: (eventId: string) => void;
   onUnskipEvent: (eventId: string) => void;
+  onTaskComplete?: (taskId: string) => void;
 }
 
 // Detectar categoria do evento baseado no título e descrição
@@ -81,7 +84,8 @@ const sectionVariants = {
 export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   events,
   onSkipEvent,
-  onUnskipEvent
+  onUnskipEvent,
+  onTaskComplete
 }) => {
   const [timeUntilMap, setTimeUntilMap] = useState<Record<string, string>>({});
 
@@ -137,13 +141,13 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     return (
       <motion.div
         key={event.id}
-        className={`ceramic-tile p-4 ${event.skipped ? 'opacity-50' : ''}`}
+        className={`ceramic-tile p-4 ${event.skipped || event.isCompleted ? 'opacity-50' : ''}`}
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.05 }}
       >
         {/* Countdown Badge - Above main content */}
-        {event.isToday && timeUntil && !event.skipped && !isPast && (
+        {event.isToday && timeUntil && !event.skipped && !event.isCompleted && !isPast && (
           <div className="flex items-center gap-2 mb-3 pb-3 border-b border-ceramic-text-secondary/10">
             <Clock className="w-3.5 h-3.5 text-ceramic-accent animate-pulse" />
             <span className="text-xs font-black text-ceramic-accent uppercase tracking-wide">
@@ -153,7 +157,22 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         )}
 
         {/* Layout horizontal: Horário | Título | Ação */}
-        <div className="flex items-baseline gap-4">
+        <div className="flex items-center gap-4">
+          {/* Task completion checkbox */}
+          {event.isTask && onTaskComplete && (
+            <button
+              onClick={() => onTaskComplete(event.id.replace('task-', ''))}
+              className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                event.isCompleted
+                  ? 'bg-ceramic-accent border-ceramic-accent'
+                  : 'border-ceramic-text-secondary/30 hover:border-ceramic-accent hover:scale-110'
+              }`}
+              title={event.isCompleted ? 'Concluida' : 'Marcar como concluida'}
+            >
+              {event.isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
+            </button>
+          )}
+
           {/* Horário - Destaque principal, âncora visual */}
           <span className="text-lg font-black text-ceramic-text-primary flex-shrink-0 tabular-nums">
             {formatTime(event.startTime)}
@@ -161,13 +180,13 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
 
           {/* Título do evento */}
           <h4 className={`text-base font-medium text-ceramic-text-primary flex-1 truncate ${
-            event.skipped ? 'line-through text-ceramic-text-secondary' : ''
+            event.skipped || event.isCompleted ? 'line-through text-ceramic-text-secondary' : ''
           }`}>
             {event.title}
           </h4>
 
-          {/* Action Button - Compact */}
-          {event.isToday && !isPast && (
+          {/* Action Button - Compact (only for calendar events, not tasks) */}
+          {!event.isTask && event.isToday && !isPast && (
             <div className="flex-shrink-0">
               {event.skipped ? (
                 <button
@@ -181,7 +200,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
                 <button
                   onClick={() => onSkipEvent(event.id)}
                   className="ceramic-concave px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
-                  title="Não vou"
+                  title="Nao vou"
                 >
                   <X className="w-4 h-4 text-ceramic-error" />
                 </button>
@@ -204,7 +223,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         {event.skipped && (
           <div className="flex items-center gap-1.5 mt-2 pl-[calc(theme(spacing.4)+4ch)]">
             <AlertCircle className="w-3 h-3 text-ceramic-error/60 flex-shrink-0" />
-            <span className="text-xs text-ceramic-error font-medium">Não foi</span>
+            <span className="text-xs text-ceramic-error font-medium">Nao foi</span>
           </div>
         )}
       </motion.div>
