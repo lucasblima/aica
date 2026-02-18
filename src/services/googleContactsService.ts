@@ -6,6 +6,7 @@
 
 import { supabase } from './supabaseClient';
 import { getValidAccessToken } from './googleCalendarTokenService';
+import { findOrCreateContact, enrichContactFromGoogle } from './platformContactService';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('GoogleContactsService');
@@ -210,6 +211,142 @@ export async function syncGoogleContacts(): Promise<SyncReport> {
     report.duration = Date.now() - startTime;
     report.errors++;
     report.errorDetails.push(`Sync failed: ${String(error)}`);
+    throw error;
+  }
+}
+
+/**
+ * Sync Google Contacts to the unified platform_contacts table
+ * Runs in parallel with the existing syncGoogleContacts() which targets contact_network
+ */
+export async function syncGoogleContactsToPlatform(): Promise<SyncReport> {
+  const startTime = Date.now();
+  const report: SyncReport = {
+    total: 0,
+    created: 0,
+    updated: 0,
+    errors: 0,
+    errorDetails: [],
+    duration: 0,
+  };
+
+  try {
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) {
+      throw new Error('No Google access token available. Please authorize Google Contacts.');
+    }
+
+    // Fetch Google Contacts with pagination
+    let allPeople: GooglePerson[] = [];
+    let pageToken: string | undefined;
+    let pageCount = 0;
+
+    do {
+      try {
+        const url = new URL('https://people.googleapis.com/v1/people/me/connections');
+        url.searchParams.set('pageSize', '1000');
+        url.searchParams.set('personFields', 'names,emailAddresses,phoneNumbers,photos');
+        if (pageToken) {
+          url.searchParams.set('pageToken', pageToken);
+        }
+
+        const response = await fetch(url.toString(), {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          report.errorDetails.push(
+            `Page ${pageCount}: ${error.error?.message || response.statusText}`
+          );
+          report.errors++;
+          break;
+        }
+
+        const data = await response.json();
+        allPeople.push(...(data.connections || []));
+        pageToken = data.nextPageToken;
+        pageCount++;
+
+        log.debug(
+          `[googleContactsService] Platform sync fetched page ${pageCount}: ${(data.connections || []).length} contacts`
+        );
+      } catch (pageError) {
+        log.error('[googleContactsService] Platform sync page fetch error:', { error: pageError });
+        report.errorDetails.push(`Page fetch error: ${String(pageError)}`);
+        report.errors++;
+        break;
+      }
+    } while (pageToken);
+
+    report.total = allPeople.length;
+    log.debug(`[googleContactsService] Platform sync total contacts: ${report.total}`);
+
+    // Process each contact into platform_contacts
+    for (const person of allPeople) {
+      try {
+        const email = person.emailAddresses?.[0]?.value;
+        const phone = person.phoneNumbers?.[0]?.value;
+        const name = person.names?.[0]?.displayName;
+        const photo = person.photos?.[0]?.url;
+        const resourceName = person.resourceName;
+
+        // Skip if no name or contact info
+        if (!name || (!email && !phone)) {
+          continue;
+        }
+
+        // Find or create the contact in platform_contacts
+        const { data: contact, error: findError } = await findOrCreateContact(
+          name,
+          email,
+          phone,
+          'manual',
+          { google_resource_name: resourceName }
+        );
+
+        if (findError || !contact) {
+          report.errorDetails.push(`findOrCreate ${name}: ${findError || 'No data returned'}`);
+          report.errors++;
+          continue;
+        }
+
+        // Enrich with Google-specific data
+        const { error: enrichError } = await enrichContactFromGoogle(
+          contact.id,
+          resourceName,
+          photo
+        );
+
+        if (enrichError) {
+          report.errorDetails.push(`enrich ${name}: ${enrichError}`);
+          report.errors++;
+          continue;
+        }
+
+        // Determine if this was a new create or update based on whether
+        // the contact already had a google_resource_name
+        if (contact.google_resource_name) {
+          report.updated++;
+        } else {
+          report.created++;
+        }
+      } catch (contactError) {
+        log.error('[googleContactsService] Platform sync contact error:', { error: contactError });
+        report.errorDetails.push(`Contact processing error: ${String(contactError)}`);
+        report.errors++;
+      }
+    }
+
+    report.duration = Date.now() - startTime;
+    log.debug('[googleContactsService] Platform sync complete:', report);
+
+    return report;
+  } catch (error) {
+    log.error('[googleContactsService] Platform sync failed:', { error });
+    report.duration = Date.now() - startTime;
+    report.errors++;
+    report.errorDetails.push(`Platform sync failed: ${String(error)}`);
     throw error;
   }
 }

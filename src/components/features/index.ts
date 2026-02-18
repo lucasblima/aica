@@ -16,6 +16,7 @@ export { default as ContactCard } from './ContactCard';
 export { ContactCardGrid } from './ContactCardGrid';
 // prettier-ignore
 export { default as ContactDetailModal } from './ContactDetailModal';
+export { ContactProfileDrawer } from './ContactProfileDrawer';
 export { ContactProfileView } from './ContactProfileView';
 // Aica Processing Components
 export { CreditBalanceWidget } from './CreditBalanceWidget';

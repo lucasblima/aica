@@ -104,6 +104,9 @@ export interface Athlete {
   invitation_sent_at?: string; // When invite email was sent
   invitation_email_status?: 'none' | 'sent' | 'delivered' | 'bounced' | 'failed';
 
+  // Platform contacts bridge
+  platform_contact_id?: string; // FK to platform_contacts — unified contact
+
   // Health documentation configuration (set by coach)
   requires_cardio_exam?: boolean; // Cardiological exam required
   requires_clearance_cert?: boolean; // Physical activity clearance certificate required

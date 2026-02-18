@@ -22,6 +22,9 @@ export interface PlatformContact {
   linked_at: string | null;
   invitation_sent_at: string | null;
   metadata: Record<string, any>;
+  google_resource_name: string | null;
+  last_synced_at: string | null;
+  sync_source: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -137,6 +140,59 @@ export async function getMyContactProfiles(): Promise<{
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     log.error('getMyContactProfiles error:', message);
+    return { data: null, error: message };
+  }
+}
+
+/** Enrich an existing platform contact with Google Contacts data */
+export async function enrichContactFromGoogle(
+  contactId: string,
+  googleResourceName: string,
+  avatarUrl?: string | null
+): Promise<{ data: PlatformContact | null; error: string | null }> {
+  try {
+    const updates: Record<string, any> = {
+      google_resource_name: googleResourceName,
+      last_synced_at: new Date().toISOString(),
+      sync_source: 'google',
+      updated_at: new Date().toISOString(),
+    };
+
+    // Only set avatar_url if provided and contact doesn't already have one
+    if (avatarUrl) {
+      // Fetch current contact to check existing avatar
+      const { data: current, error: fetchError } = await supabase
+        .from('platform_contacts')
+        .select('avatar_url')
+        .eq('id', contactId)
+        .single();
+
+      if (fetchError) {
+        log.error('enrichContactFromGoogle fetch error:', fetchError);
+        return { data: null, error: fetchError.message };
+      }
+
+      if (!current?.avatar_url) {
+        updates.avatar_url = avatarUrl;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('platform_contacts')
+      .update(updates)
+      .eq('id', contactId)
+      .select()
+      .single();
+
+    if (error) {
+      log.error('enrichContactFromGoogle update error:', error);
+      return { data: null, error: error.message };
+    }
+
+    return { data: data as PlatformContact, error: null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    log.error('enrichContactFromGoogle error:', message);
     return { data: null, error: message };
   }
 }
