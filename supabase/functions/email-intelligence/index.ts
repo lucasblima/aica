@@ -232,8 +232,12 @@ Retorne APENAS JSON valido no formato array:
 
 Responda APENAS com JSON valido, sem texto adicional.`;
 
+  // Debug object returned to frontend for diagnostics
+  const _debug: Record<string, unknown> = { version: 4, userId, messagesFound: messages.length };
+
   const geminiResult = await callGemini(geminiApiKey, prompt);
-  console.log(TAG, `Gemini raw response length: ${geminiResult.length}, first 200 chars:`, geminiResult.substring(0, 200));
+  _debug.geminiResponseLength = geminiResult.length;
+  _debug.geminiFirst200 = geminiResult.substring(0, 200);
 
   let categorized: Array<{
     message_id: string;
@@ -246,16 +250,19 @@ Responda APENAS com JSON valido, sem texto adicional.`;
   try {
     categorized = extractJSON(geminiResult) as typeof categorized;
     if (!Array.isArray(categorized)) {
-      console.warn(TAG, 'Parsed result is not an array, wrapping:', typeof categorized);
+      _debug.parseIssue = `Not an array: ${typeof categorized}`;
       categorized = [];
     }
   } catch (parseErr) {
-    console.error(TAG, 'Failed to parse categorization JSON:', parseErr);
-    console.error(TAG, 'Raw response was:', geminiResult.substring(0, 500));
-    return { categorized: 0, categories: {}, error: 'Failed to parse AI response' };
+    _debug.parseError = String(parseErr);
+    _debug.geminiRaw500 = geminiResult.substring(0, 500);
+    return { categorized: 0, categories: {}, error: 'Failed to parse AI response', _debug };
   }
 
-  console.log(TAG, `Parsed ${categorized.length} categorized items`);
+  _debug.parsedCount = categorized.length;
+  if (categorized.length > 0) {
+    _debug.sampleBefore = { category: categorized[0].category, confidence: categorized[0].confidence, message_id: categorized[0].message_id };
+  }
 
   // Normalize categories to match CHECK constraint (lowercase, valid values only)
   const VALID_CATEGORIES = new Set(['actionable', 'informational', 'newsletter', 'receipt', 'personal', 'notification']);
@@ -273,15 +280,21 @@ Responda APENAS com JSON valido, sem texto adicional.`;
     'alerts': 'notification',
   };
 
+  const normalizations: string[] = [];
   for (const item of categorized) {
     const original = item.category;
     item.category = (item.category || '').toLowerCase().trim();
     if (!VALID_CATEGORIES.has(item.category)) {
       item.category = CATEGORY_MAP[item.category] || 'informational';
-      console.warn(TAG, `Normalized category "${original}" → "${item.category}"`);
+      normalizations.push(`${original} → ${item.category}`);
     }
     // Clamp confidence to valid NUMERIC(3,2) range
     item.confidence = Math.min(Math.max(Number(item.confidence) || 0, 0), 9.99);
+  }
+  _debug.normalizations = normalizations;
+
+  if (categorized.length > 0) {
+    _debug.sampleAfter = { category: categorized[0].category, confidence: categorized[0].confidence, message_id: categorized[0].message_id };
   }
 
   // Build payload for RPC upsert
@@ -293,7 +306,7 @@ Responda APENAS com JSON valido, sem texto adicional.`;
     extracted_contacts: item.contacts || [],
   }));
 
-  console.log(TAG, `Upserting ${payload.length} items via RPC. Sample:`, JSON.stringify(payload[0]));
+  _debug.payloadLength = payload.length;
 
   // Use the RPC for atomic upsert (SECURITY DEFINER, handles conflicts)
   const { data: upsertCount, error: rpcError } = await supabaseAdmin.rpc('upsert_email_categories', {
@@ -302,9 +315,10 @@ Responda APENAS com JSON valido, sem texto adicional.`;
   });
 
   if (rpcError) {
-    console.error(TAG, 'RPC upsert_email_categories FAILED:', rpcError.message, rpcError.details, rpcError.hint);
+    _debug.rpcError = { message: rpcError.message, details: rpcError.details, hint: rpcError.hint, code: rpcError.code };
     // Fallback: try direct upserts one by one for debugging
     let directSuccess = 0;
+    const directErrors: string[] = [];
     for (const item of payload) {
       const { error: upsertError } = await supabaseAdmin
         .from('gmail_email_categories')
@@ -319,14 +333,14 @@ Responda APENAS com JSON valido, sem texto adicional.`;
         }, { onConflict: 'user_id,message_id' });
 
       if (upsertError) {
-        console.error(TAG, `Direct upsert FAILED for ${item.message_id}:`, upsertError.message, upsertError.code, upsertError.details);
+        directErrors.push(`${item.message_id}: ${upsertError.message} (${upsertError.code})`);
       } else {
         directSuccess++;
       }
     }
-    console.log(TAG, `Fallback direct upsert: ${directSuccess}/${payload.length} succeeded`);
+    _debug.fallbackResult = { success: directSuccess, total: payload.length, errors: directErrors.slice(0, 5) };
   } else {
-    console.log(TAG, `RPC upsert_email_categories SUCCESS: ${upsertCount} rows upserted`);
+    _debug.rpcResult = { upsertCount };
   }
 
   // Build category summary
@@ -335,7 +349,7 @@ Responda APENAS com JSON valido, sem texto adicional.`;
     categories[item.category] = (categories[item.category] || 0) + 1;
   }
 
-  return { categorized: categorized.length, categories };
+  return { categorized: categorized.length, categories, _debug };
 }
 
 // ============================================================================
