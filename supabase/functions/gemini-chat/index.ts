@@ -759,9 +759,16 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
 
   let finalSystemPrompt = systemPrompt || defaultSystemPrompt
 
-  // Inject user context into system prompt
+  // Inject date context (always) and user data context (when available)
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+  const dayOfWeek = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][now.getDay()]
+  const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
+
+  finalSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${today} (${dayOfWeek})\n- Amanha: ${tomorrow}\n- Horario: ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} (BRT)`
+
   if (userContext) {
-    finalSystemPrompt += `\n\n## Dados Reais do Usuario\n${userContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- Se o usuario perguntar algo que os dados respondem, USE-OS\n- Nunca diga que nao tem acesso aos dados — voce TEM os dados acima\n- Se nao tiver dados suficientes para responder, sugira acoes concretas`
+    finalSystemPrompt += `\n\n## Dados Reais do Usuario\n${userContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- Se o usuario perguntar sobre "amanha", "hoje", "essa semana", use a data acima para filtrar\n- NUNCA pergunte qual e a data atual — voce JA SABE a data (veja acima)\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Liste dados em formato organizado (bullet points) quando houver multiplos itens\n- Se nao tiver dados suficientes para responder, sugira acoes concretas`
   }
 
   const chatHistory = history?.map((msg: any) => ({
