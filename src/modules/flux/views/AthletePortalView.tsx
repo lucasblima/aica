@@ -248,6 +248,18 @@ export default function AthletePortalView() {
   const [feedbackDuration, setFeedbackDuration] = useState<number>(0);
   const [updating, setUpdating] = useState<string | null>(null);
 
+  // PAR-Q hooks — must be called unconditionally (Rules of Hooks)
+  const parq = useParQ({
+    athleteId: profile?.athlete_id || '',
+    filledByRole: 'athlete',
+  });
+
+  const docs = useAthleteDocuments({
+    athleteId: profile?.athlete_id || '',
+  });
+
+  const [parqCompleted, setParqCompleted] = useState(false);
+
   // Coach availability state
   const [coachBusyBlocks, setCoachBusyBlocks] = useState<CoachBusyBlock[]>([]);
   const [coachAvailLoading, setCoachAvailLoading] = useState(false);
@@ -421,17 +433,6 @@ export default function AthletePortalView() {
   const parqRequired = profile?.allow_parq_onboarding === true;
   const parqCleared = profile?.parq_clearance_status === 'cleared' ||
     profile?.parq_clearance_status === 'cleared_with_restrictions';
-
-  const parq = useParQ({
-    athleteId: profile?.athlete_id || '',
-    filledByRole: 'athlete',
-  });
-
-  const docs = useAthleteDocuments({
-    athleteId: profile?.athlete_id || '',
-  });
-
-  const [parqCompleted, setParqCompleted] = useState(false);
 
   if (profile && parqRequired && !parqCleared && !parqCompleted) {
     return (
