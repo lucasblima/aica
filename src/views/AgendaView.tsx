@@ -95,8 +95,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const { events: fluxEvents } = useFluxAgendaEvents();
 
     // Merge Google Calendar + Flux workout events
+    // Filter out AICA-originated events from Google Calendar that already appear in fluxEvents
+    // (prevents duplicates when a workout slot is synced to Google Calendar then read back)
     const calendarEvents = useMemo(() => {
-        return [...googleCalendarEvents, ...fluxEvents].sort((a, b) =>
+        const externalGoogleEvents = googleCalendarEvents.filter(e => !e.aicaModule);
+        return [...externalGoogleEvents, ...fluxEvents].sort((a, b) =>
             a.startTime.localeCompare(b.startTime)
         );
     }, [googleCalendarEvents, fluxEvents]);

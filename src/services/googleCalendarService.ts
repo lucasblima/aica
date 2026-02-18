@@ -216,6 +216,10 @@ export interface TimelineEvent {
     isAllDay: boolean;
     source: 'google_calendar' | 'flux_workout';
     color?: string;
+    /** If this event was created by AICA, which module originated it (flux, atlas, studio, grants) */
+    aicaModule?: string;
+    /** If this event was created by AICA, the entity ID it maps to */
+    aicaEntityId?: string;
 }
 
 export function transformGoogleEvent(event: GoogleCalendarEvent): TimelineEvent {
@@ -233,6 +237,10 @@ export function transformGoogleEvent(event: GoogleCalendarEvent): TimelineEvent 
 
     const attendeeEmails = event.attendees?.map(a => a.email) || [];
 
+    // Detect AICA-originated events via extendedProperties
+    const aicaModule = event.extendedProperties?.private?.aica_module;
+    const aicaEntityId = event.extendedProperties?.private?.aica_entity_id;
+
     return {
         id: `google-${event.id}`,
         title: event.summary,
@@ -244,6 +252,8 @@ export function transformGoogleEvent(event: GoogleCalendarEvent): TimelineEvent 
         organizer: event.organizer?.email,
         isAllDay,
         source: 'google_calendar',
+        aicaModule,
+        aicaEntityId,
     };
 }
 
