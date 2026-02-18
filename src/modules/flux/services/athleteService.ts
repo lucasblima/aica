@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/services/supabaseClient';
+import { findOrCreateContact } from '@/services/platformContactService';
 import type { Athlete, AthleteStatus, AthleteLevel, TrainingModality, MyAthleteProfile } from '../types/flux';
 
 export interface CreateAthleteInput {
@@ -122,12 +123,29 @@ export class AthleteService {
         return { data: null, error: new Error('User not authenticated') };
       }
 
+      // 1. Create/find platform contact (non-blocking on failure)
+      let platformContactId: string | null = null;
+      try {
+        const { data: contact } = await findOrCreateContact(
+          input.name,
+          input.email || null,
+          input.phone || null,
+          'flux',
+          { modality: input.modality, level: input.level }
+        );
+        platformContactId = contact?.id || null;
+      } catch (err) {
+        console.warn('[AthleteService] Platform contact sync failed (non-blocking):', err);
+      }
+
+      // 2. Create athlete with platform_contact_id
       const { data, error } = await supabase
         .from('athletes')
         .insert({
           ...input,
           user_id: userData.user.id,
           status: input.status || 'active',
+          platform_contact_id: platformContactId,
         })
         .select()
         .single();
@@ -312,10 +330,29 @@ export class AthleteService {
         return { data: null, error: new Error('User not authenticated') };
       }
 
-      const athletesWithUser = athletes.map((a) => ({
+      // Pre-create platform contacts (best-effort, non-blocking on individual failures)
+      const contactIds: (string | null)[] = await Promise.all(
+        athletes.map(async (a) => {
+          try {
+            const { data: contact } = await findOrCreateContact(
+              a.name,
+              a.email || null,
+              a.phone || null,
+              'flux',
+              { modality: a.modality, level: a.level }
+            );
+            return contact?.id || null;
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const athletesWithUser = athletes.map((a, i) => ({
         ...a,
         user_id: userData.user.id,
         status: a.status || 'active',
+        platform_contact_id: contactIds[i],
       }));
 
       const { data, error } = await supabase

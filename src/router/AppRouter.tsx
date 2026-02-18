@@ -64,6 +64,9 @@ const AthletePortalView = lazy(() => import('../modules/flux/views/AthletePortal
 // Guest Portal - Read-only episode view for podcast guests
 const GuestPortalView = lazy(() => import('../modules/studio/views/GuestPortalView').then(m => ({ default: m.default })));
 
+// Platform Contacts - Unified contact management across modules
+const ContactsPage = lazy(() => import('../views/ContactsPage').then(m => ({ default: m.default })));
+
 // Flow Module - Intelligent training prescription system (5 screens)
 const TemplateLibraryView = lazy(() => import('../modules/flux/views/TemplateLibraryView').then(m => ({ default: m.default })));
 const MicrocycleEditorView = lazy(() => import('../modules/flux/views/MicrocycleEditorView').then(m => ({ default: m.default })));
@@ -726,6 +729,9 @@ export function AppRouter() {
 
                {/* Guest Portal - Read-only episode view for podcast guests */}
                <Route path="/meu-episodio" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Episodio" />}><GuestPortalView /></ErrorBoundary></ProtectedRoute>} />
+
+               {/* Platform Contacts - Unified contact management */}
+               <Route path="/contatos" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Contatos" />}><ContactsPage /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Contacts Module Routes - Protected */}
                <Route

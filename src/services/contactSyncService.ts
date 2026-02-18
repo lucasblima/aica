@@ -5,7 +5,7 @@
  */
 
 import { supabase } from './supabaseClient';
-import { syncGoogleContacts, SyncReport as GoogleSyncReport } from './googleContactsService';
+import { syncGoogleContacts, syncGoogleContactsToPlatform, SyncReport as GoogleSyncReport } from './googleContactsService';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ContactSyncService');
@@ -26,6 +26,7 @@ export interface FullSyncReport {
     merged: number;
     errors: number;
   };
+  platformContacts: GoogleSyncReport;
   overallStatus: 'success' | 'partial' | 'failed';
   totalDuration: number;
 }
@@ -55,6 +56,14 @@ export async function fullSync(): Promise<FullSyncReport> {
       duplicatesFound: 0,
       merged: 0,
       errors: 0,
+    },
+    platformContacts: {
+      total: 0,
+      created: 0,
+      updated: 0,
+      errors: 0,
+      errorDetails: [],
+      duration: 0,
     },
     overallStatus: 'success',
     totalDuration: 0,
@@ -94,11 +103,22 @@ export async function fullSync(): Promise<FullSyncReport> {
       report.overallStatus = 'partial';
     }
 
+    // Step 4: Sync Google Contacts to platform_contacts (unified table)
+    try {
+      report.platformContacts = await syncGoogleContactsToPlatform();
+      log.debug('[contactSyncService] Platform contacts sync complete:', report.platformContacts);
+    } catch (error) {
+      log.error('[contactSyncService] Platform contacts sync failed:', { error: error });
+      report.platformContacts.errors++;
+      report.overallStatus = 'partial';
+    }
+
     // Overall status
     if (
       report.google.errors === 0 &&
       report.whatsapp.errors === 0 &&
-      report.deduplication.errors === 0
+      report.deduplication.errors === 0 &&
+      report.platformContacts.errors === 0
     ) {
       report.overallStatus = 'success';
     }
