@@ -114,7 +114,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
         throw new Error(data?.error || 'Pesquisa nao retornou resultados');
       }
 
-      const result = data.result as DeepResearchResult;
+      const result = data.data as DeepResearchResult;
       setResearchResults(result);
       setCurrentStep(3);
     } catch (err) {
