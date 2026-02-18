@@ -6,7 +6,7 @@
  * marking workouts as completed + leaving feedback.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
 import { useParQ } from '../hooks/useParQ';
@@ -15,6 +15,8 @@ import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
+import { ZONE_CONFIGS } from '../types/series';
+import type { ExerciseStructureV2, WorkoutSeries, IntensityZone } from '../types/series';
 import { createNamespacedLogger } from '@/lib/logger';
 import {
   Loader2,
@@ -24,6 +26,7 @@ import {
   Dumbbell,
   ArrowLeft,
   Calendar,
+  Clock,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -167,6 +170,74 @@ function CoachAvailabilityCard({
   );
 }
 
+/** Render a single series line for athlete view */
+function SeriesLine({ series }: { series: WorkoutSeries }) {
+  const reps = series.repetitions ?? 1;
+  const repsStr = reps > 1 ? `${reps}x` : '';
+  const zone = 'zone' in series ? (series as { zone: IntensityZone }).zone : null;
+  const zoneConfig = zone ? ZONE_CONFIGS[zone] : null;
+
+  let workStr = '';
+  if ('distance_meters' in series && series.distance_meters) {
+    workStr = `${series.distance_meters}m`;
+  } else if ('work_value' in series && series.work_value) {
+    if (series.work_unit === 'minutes') workStr = `${series.work_value}min`;
+    else if (series.work_unit === 'seconds') workStr = `${series.work_value}s`;
+    else workStr = `${series.work_value}m`;
+  } else if ('reps' in series && series.reps) {
+    const load = (series as { load_kg?: number }).load_kg;
+    workStr = `${series.reps} rep${load ? ` @ ${load}kg` : ''}`;
+  }
+
+  const restMin = series.rest_minutes ?? 0;
+  const restSec = series.rest_seconds ?? 0;
+  const hasRest = restMin > 0 || restSec > 0;
+
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      {zone && zoneConfig && (
+        <span className={`inline-block w-2 h-2 rounded-full ${zoneConfig.bgColor}`} />
+      )}
+      <span className="text-ceramic-text-primary font-medium">
+        {repsStr}{workStr}
+      </span>
+      {zone && (
+        <span className="text-ceramic-text-secondary">{zone}</span>
+      )}
+      {hasRest && (
+        <span className="text-ceramic-text-secondary">
+          (int. {restMin > 0 ? `${restMin}min` : ''}{restSec > 0 ? `${restSec}s` : ''})
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Render exercise structure (warmup + series + cooldown) */
+function ExerciseStructureDisplay({ structure }: { structure: ExerciseStructureV2 }) {
+  if (!structure?.series?.length && !structure?.warmup && !structure?.cooldown) {
+    return null;
+  }
+
+  return (
+    <div className="mt-2 space-y-1.5 pl-8">
+      {structure.warmup && (
+        <p className="text-[11px] text-ceramic-text-secondary italic">
+          Aq: {structure.warmup}
+        </p>
+      )}
+      {structure.series?.map((s, i) => (
+        <SeriesLine key={s.id || i} series={s} />
+      ))}
+      {structure.cooldown && (
+        <p className="text-[11px] text-ceramic-text-secondary italic">
+          Des: {structure.cooldown}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function AthletePortalView() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -277,7 +348,7 @@ export default function AthletePortalView() {
       await supabase
         .from('workout_slots')
         .update({
-          is_completed: !currentlyCompleted,
+          completed: !currentlyCompleted,
           completed_at: !currentlyCompleted ? new Date().toISOString() : null,
         })
         .eq('id', slotId);
@@ -462,9 +533,16 @@ export default function AthletePortalView() {
           {micro && (
             <div className="space-y-2 pt-3 border-t border-ceramic-text-secondary/10">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-ceramic-text-primary">
-                  {micro.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-ceramic-text-primary">
+                    {micro.name}
+                  </p>
+                  {micro.status === 'draft' && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">
+                      Pendente
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs text-ceramic-text-secondary">
                   Semana {micro.current_week}/3
                 </span>
@@ -483,6 +561,18 @@ export default function AthletePortalView() {
           )}
         </div>
       </div>
+
+      {/* Draft microcycle notice */}
+      {micro?.status === 'draft' && (
+        <div className="px-6 mb-4">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
+            <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-amber-700 leading-relaxed">
+              Este plano de treino esta sendo preparado pelo seu coach e pode sofrer alteracoes.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Workout Slots */}
       {micro ? (
@@ -541,10 +631,13 @@ export default function AthletePortalView() {
                           )}
                         </div>
 
-                        {/* Duration */}
-                        <span className="text-xs text-ceramic-text-secondary flex-shrink-0">
-                          {slot.custom_duration || slot.template.duration}min
-                        </span>
+                        {/* Duration + Intensity */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <Clock className="w-3 h-3 text-ceramic-text-secondary" />
+                          <span className="text-xs text-ceramic-text-secondary">
+                            {slot.custom_duration || slot.template.duration}min
+                          </span>
+                        </div>
 
                         {/* Feedback toggle */}
                         <button
@@ -571,6 +664,14 @@ export default function AthletePortalView() {
                           <MessageSquare className="w-4 h-4" />
                         </button>
                       </div>
+
+                      {/* Exercise structure details */}
+                      {slot.exercise_structure &&
+                        (slot.exercise_structure as unknown as ExerciseStructureV2)?.series?.length > 0 && (
+                        <ExerciseStructureDisplay
+                          structure={slot.exercise_structure as unknown as ExerciseStructureV2}
+                        />
+                      )}
 
                       {/* Feedback input (expanded) */}
                       {feedbackSlotId === slot.id && (
@@ -678,9 +779,13 @@ export default function AthletePortalView() {
         </div>
       ) : (
         <div className="px-6">
-          <div className="ceramic-inset p-8 text-center">
-            <p className="text-sm text-ceramic-text-secondary">
-              Nenhum microciclo ativo no momento. Seu coach irá prescrever em breve.
+          <div className="ceramic-inset p-8 text-center space-y-3">
+            <Dumbbell className="w-10 h-10 text-ceramic-text-secondary/40 mx-auto" />
+            <p className="text-sm font-medium text-ceramic-text-primary">
+              Nenhum treino prescrito ainda
+            </p>
+            <p className="text-xs text-ceramic-text-secondary leading-relaxed">
+              Seu coach ainda nao prescreveu treinos. Fique tranquilo, voce sera notificado quando houver novidades!
             </p>
           </div>
         </div>
