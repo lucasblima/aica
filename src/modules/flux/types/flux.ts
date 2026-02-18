@@ -307,6 +307,7 @@ export interface MyAthleteProfile {
       athlete_feedback: string | null;
       custom_duration: number | null;
       custom_notes: string | null;
+      exercise_structure: Record<string, unknown> | null;
       template: {
         id: string;
         name: string;
