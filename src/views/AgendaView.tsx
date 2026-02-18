@@ -29,8 +29,7 @@ import { Task, Quadrant } from '../../types';
 // import { AtlasTask } from '../modules/atlas/types/plane';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
-// TODO: Re-enable onboarding tour after app functionality is stable
-// import { useTourAutoStart } from '../hooks/useTourAutoStart';
+import { useTourAutoStart } from '../hooks/useTourAutoStart';
 import { TimelineEvent } from '../services/googleCalendarService';
 import { connectGoogleCalendar, disconnectGoogleCalendar, isGoogleCalendarConnected } from '../services/googleAuthService';
 import { notificationService } from '../services/notificationService';
@@ -44,8 +43,7 @@ interface AgendaViewProps {
 }
 
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
-    // TODO: Re-enable onboarding tour after app functionality is stable
-    // useTourAutoStart('atlas-first-visit');
+    useTourAutoStart('atlas-first-visit');
 
     const [matrixTasks, setMatrixTasks] = useState<Record<Quadrant, Task[]>>({
         'urgent-important': [],

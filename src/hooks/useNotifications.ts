@@ -12,7 +12,7 @@
  * - Manual trigger processing
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -72,7 +72,7 @@ export function useNotifications(): UseNotificationsReturn {
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   // ============================================================================
   // FETCH NOTIFICATIONS
@@ -270,9 +270,17 @@ export function useNotifications(): UseNotificationsReturn {
   // ============================================================================
 
   useEffect(() => {
+    let cancelled = false;
+
     const setupSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || cancelled) return;
+
+      // Clean up any previous channel before creating a new one
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
 
       // Subscribe to changes in scheduled_notifications
       const newChannel = supabase
@@ -280,33 +288,51 @@ export function useNotifications(): UseNotificationsReturn {
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
             table: 'scheduled_notifications',
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            log.debug('[useNotifications] Real-time update:', { event: payload.eventType });
-
-            // Refresh notifications on any change
+            log.debug('[useNotifications] New notification:', { event: payload.eventType });
+            fetchNotifications();
+            fetchStats();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'scheduled_notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            log.debug('[useNotifications] Notification updated:', { event: payload.eventType });
             fetchNotifications();
             fetchStats();
           }
         )
         .subscribe();
 
-      setChannel(newChannel);
+      if (!cancelled) {
+        channelRef.current = newChannel;
+      } else {
+        newChannel.unsubscribe();
+      }
     };
 
     setupSubscription();
 
-    // Cleanup subscription on unmount
+    // Cleanup subscription on unmount — uses ref to avoid stale closure
     return () => {
-      if (channel) {
-        channel.unsubscribe();
+      cancelled = true;
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
       }
     };
-  }, []); // Only setup once
+  }, [fetchNotifications, fetchStats]);
 
   // ============================================================================
   // INITIAL FETCH

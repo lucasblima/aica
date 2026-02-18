@@ -139,8 +139,7 @@ interface JourneyFullScreenProps {
 }
 
 export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
-  // TODO: Re-enable tour when Journey module is fully functional
-  // useTourAutoStart('journey-first-visit');
+  useTourAutoStart('journey-first-visit');
 
   // Debug: Log when component mounts
   React.useEffect(() => {
