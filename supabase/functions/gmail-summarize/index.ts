@@ -212,10 +212,17 @@ serve(async (req) => {
       config: {
         maxOutputTokens: 4096,
         temperature: 0.3,
+        // Disable thinking for structured JSON output — avoids thinking tokens
+        // contaminating the response text and breaking JSON extraction
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
 
-    const text = response.text || '';
+    let text = response.text || '';
+    console.log(TAG, `Gemini response length: ${text.length}, first 200 chars: ${text.substring(0, 200)}`);
+
+    // Safety: strip any thinking tags that might leak through
+    text = text.replace(/<thinking>[\s\S]*?<\/thinking>/g, '').trim();
 
     // 9. Parse structured response
     let analysis: Record<string, unknown>;
@@ -224,12 +231,17 @@ serve(async (req) => {
     } catch (parseErr) {
       console.error(TAG, 'Failed to parse Gemini JSON response:', parseErr);
       console.error(TAG, 'Raw response (first 500 chars):', text.substring(0, 500));
-      // Return a basic summary from the raw text
+      // Generate a meaningful fallback instead of raw model text
+      const subjectList = threads
+        .slice(0, 5)
+        .map(t => t.subject)
+        .filter(s => s && s !== '(Sem assunto)')
+        .join(', ');
       analysis = {
-        summary: text.substring(0, 500),
+        summary: `Foram encontrados ${formattedMessages.length} emails com ${contactName} em ${threads.length} conversas${subjectList ? `, incluindo: ${subjectList}` : ''}. A analise detalhada nao pode ser gerada neste momento.`,
         topics: [],
         actionItems: [],
-        sentiment: { overall: 'neutral', trend: 'stable', description: 'Erro ao processar analise estruturada' },
+        sentiment: { overall: 'neutral', trend: 'stable', description: 'Analise pendente' },
         timeline: [],
       };
     }
@@ -307,14 +319,19 @@ function buildDateRange(messages: Array<Record<string, unknown>>): { first: stri
 }
 
 function extractJSON(text: string): unknown {
-  // Strip code fences first
-  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').replace(/```\s*$/g, '');
-  // Try to find JSON object
+  // 1. Strip thinking tags (Gemini 2.5 may include them)
+  let cleaned = text.replace(/<thinking>[\s\S]*?<\/thinking>/g, '');
+  // 2. Strip code fences
+  cleaned = cleaned.replace(/```(?:json)?\s*\n?/g, '').replace(/```\s*$/g, '');
+  // 3. Strip any preamble text before the JSON
+  cleaned = cleaned.trim();
+  // 4. Find JSON object
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
-  if (start !== -1 && end > start) {
-    cleaned = cleaned.substring(start, end + 1);
+  if (start === -1 || end <= start) {
+    throw new Error(`No JSON object found in response (length=${text.length})`);
   }
+  cleaned = cleaned.substring(start, end + 1);
   return JSON.parse(cleaned);
 }
 
