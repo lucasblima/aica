@@ -542,23 +542,242 @@ async function handleWhatsAppSentiment(genAI: GoogleGenerativeAI, payload: Whats
   return parsed as WhatsAppSentimentResult
 }
 
-async function handleLegacyChat(genAI: GoogleGenerativeAI, request: ChatRequest): Promise<{ response: string; success: boolean }> {
-  const { message, context, history, systemPrompt } = request
+async function buildUserContext(supabaseAdmin: any, userId: string, module: string): Promise<string> {
+  const contextParts: string[] = []
+
+  try {
+    // Always fetch basic stats for coordinator context
+    if (module === 'atlas' || module === 'coordinator') {
+      const { data: tasks } = await supabaseAdmin
+        .from('work_items')
+        .select('id, title, status, priority, is_urgent, is_important, due_date, scheduled_time, task_type, checklist')
+        .eq('user_id', userId)
+        .neq('status', 'done')
+        .eq('archived', false)
+        .order('due_date', { ascending: true, nullsFirst: false })
+        .limit(20)
+
+      if (tasks?.length) {
+        contextParts.push(`### Tarefas Abertas (${tasks.length})`)
+        tasks.forEach(t => {
+          const urgImp = [t.is_urgent && 'URGENTE', t.is_important && 'IMPORTANTE'].filter(Boolean).join(', ')
+          const due = t.due_date ? ` | Prazo: ${t.due_date}` : ''
+          const time = t.scheduled_time ? ` às ${t.scheduled_time}` : ''
+          const type = t.task_type && t.task_type !== 'task' ? ` [${t.task_type}]` : ''
+          contextParts.push(`- ${t.title}${type} (${t.status}${urgImp ? ' | ' + urgImp : ''}${due}${time})`)
+        })
+      } else {
+        contextParts.push('### Tarefas: Nenhuma tarefa aberta')
+      }
+    }
+
+    if (module === 'journey' || module === 'coordinator') {
+      const { data: moments } = await supabaseAdmin
+        .from('moments')
+        .select('content, emotion, created_at, tags, sentiment_data')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(7)
+
+      if (moments?.length) {
+        contextParts.push(`\n### Momentos Recentes (${moments.length})`)
+        moments.forEach(m => {
+          const date = new Date(m.created_at).toLocaleDateString('pt-BR')
+          const sentiment = m.sentiment_data?.sentiment || 'não analisado'
+          contextParts.push(`- [${date}] ${m.emotion || '?'} | ${m.content?.substring(0, 100)}... (${sentiment})`)
+        })
+      }
+    }
+
+    if (module === 'finance' || module === 'coordinator') {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      const { data: transactions } = await supabaseAdmin
+        .from('finance_transactions')
+        .select('description, amount, type, category, date')
+        .eq('user_id', userId)
+        .gte('date', thirtyDaysAgo.split('T')[0])
+        .order('date', { ascending: false })
+        .limit(30)
+
+      if (transactions?.length) {
+        const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount), 0)
+        const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0)
+        contextParts.push(`\n### Finanças (últimos 30 dias)`)
+        contextParts.push(`- Receitas: R$ ${income.toFixed(2)}`)
+        contextParts.push(`- Despesas: R$ ${expense.toFixed(2)}`)
+        contextParts.push(`- Saldo período: R$ ${(income - expense).toFixed(2)}`)
+        contextParts.push(`- ${transactions.length} transações`)
+
+        // Top 5 most recent for detail
+        if (module === 'finance') {
+          contextParts.push(`\nÚltimas transações:`)
+          transactions.slice(0, 10).forEach(t => {
+            contextParts.push(`- ${t.date}: ${t.description} (R$ ${t.amount.toFixed(2)}, ${t.category || 'sem categoria'})`)
+          })
+        }
+      }
+    }
+
+    if (module === 'connections') {
+      const { data: spaces } = await supabaseAdmin
+        .from('connection_spaces')
+        .select('id, name, archetype, description')
+        .eq('user_id', userId)
+        .limit(10)
+
+      if (spaces?.length) {
+        contextParts.push(`\n### Espaços de Conexão (${spaces.length})`)
+        for (const space of spaces) {
+          const { count } = await supabaseAdmin
+            .from('connection_members')
+            .select('id', { count: 'exact', head: true })
+            .eq('space_id', space.id)
+          contextParts.push(`- ${space.name} (${space.archetype}) — ${count || 0} membros`)
+        }
+      }
+    }
+
+    if (module === 'studio') {
+      const { data: shows } = await supabaseAdmin
+        .from('podcast_shows')
+        .select('id, name, description')
+        .eq('user_id', userId)
+        .limit(5)
+
+      if (shows?.length) {
+        contextParts.push(`\n### Podcasts (${shows.length})`)
+        for (const show of shows) {
+          const { data: episodes } = await supabaseAdmin
+            .from('podcast_episodes')
+            .select('title, status, guest_name')
+            .eq('show_id', show.id)
+            .order('created_at', { ascending: false })
+            .limit(5)
+
+          contextParts.push(`- ${show.name}: ${episodes?.length || 0} episódios recentes`)
+          episodes?.forEach(ep => {
+            contextParts.push(`  · ${ep.title} (${ep.status})${ep.guest_name ? ' — Convidado: ' + ep.guest_name : ''}`)
+          })
+        }
+      }
+    }
+
+    if (module === 'flux') {
+      const { data: athletes } = await supabaseAdmin
+        .from('athletes')
+        .select('id, name, modality, status')
+        .eq('coach_id', userId)
+        .eq('status', 'active')
+        .limit(10)
+
+      if (athletes?.length) {
+        contextParts.push(`\n### Atletas Ativos (${athletes.length})`)
+        athletes.forEach(a => {
+          contextParts.push(`- ${a.name} (${a.modality || 'geral'})`)
+        })
+
+        // Get active workout blocks
+        const athleteIds = athletes.map(a => a.id)
+        const { data: blocks } = await supabaseAdmin
+          .from('workout_blocks')
+          .select('athlete_id, name, start_date, end_date, status')
+          .in('athlete_id', athleteIds)
+          .eq('status', 'active')
+          .limit(10)
+
+        if (blocks?.length) {
+          contextParts.push(`\nBlocos de Treino Ativos:`)
+          blocks.forEach(b => {
+            const athlete = athletes.find(a => a.id === b.athlete_id)
+            contextParts.push(`- ${athlete?.name}: ${b.name} (${b.start_date} a ${b.end_date})`)
+          })
+        }
+      }
+    }
+
+    if (module === 'agenda' || module === 'coordinator') {
+      const today = new Date().toISOString().split('T')[0]
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const { data: events } = await supabaseAdmin
+        .from('calendar_events')
+        .select('title, start_time, end_time, location, description')
+        .eq('user_id', userId)
+        .gte('start_time', today)
+        .lte('start_time', nextWeek)
+        .order('start_time', { ascending: true })
+        .limit(15)
+
+      if (events?.length) {
+        contextParts.push(`\n### Agenda (próximos 7 dias — ${events.length} eventos)`)
+        events.forEach(e => {
+          const date = new Date(e.start_time).toLocaleDateString('pt-BR')
+          const time = new Date(e.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          contextParts.push(`- [${date} ${time}] ${e.title}${e.location ? ' @ ' + e.location : ''}`)
+        })
+      }
+    }
+
+  } catch (error) {
+    console.warn('[buildUserContext] Partial failure:', (error as Error).message)
+    contextParts.push('\n(Alguns dados não puderam ser carregados)')
+  }
+
+  if (contextParts.length === 0) {
+    return ''
+  }
+
+  return contextParts.join('\n')
+}
+
+async function handleLegacyChat(
+  genAI: GoogleGenerativeAI,
+  request: ChatRequest & { module?: string },
+  supabaseAdmin?: any,
+  userId?: string | null
+): Promise<{ response: string; success: boolean }> {
+  const { message, context, history, systemPrompt, module } = request as any
   if (!message) throw new Error('Mensagem e obrigatoria')
 
-  const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: 0.7, topP: 0.95, topK: 40, maxOutputTokens: 2048 } })
-  const defaultSystemPrompt = `Voce e um assistente financeiro inteligente. Responda em portugues brasileiro.`
-  const finalSystemPrompt = systemPrompt || defaultSystemPrompt
-  const chatHistory = history?.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.content }] })) || []
+  // Build user context if we have userId and supabaseAdmin
+  let userContext = ''
+  if (userId && supabaseAdmin && module) {
+    try {
+      userContext = await buildUserContext(supabaseAdmin, userId, module)
+    } catch (e) {
+      console.warn('[handleLegacyChat] Failed to build user context:', (e as Error).message)
+    }
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: { temperature: 0.7, topP: 0.95, topK: 40, maxOutputTokens: 4096 },
+  })
+
+  const defaultSystemPrompt = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
+Voce ajuda o usuario com produtividade, organizacao e bem-estar.
+Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
+
+  let finalSystemPrompt = systemPrompt || defaultSystemPrompt
+
+  // Inject user context into system prompt
+  if (userContext) {
+    finalSystemPrompt += `\n\n## Dados Reais do Usuario\n${userContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS e especificas\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- Se o usuario perguntar algo que os dados respondem, USE-OS\n- Nunca diga que nao tem acesso aos dados — voce TEM os dados acima\n- Se nao tiver dados suficientes para responder, sugira acoes concretas`
+  }
+
+  const chatHistory = history?.map((msg: any) => ({
+    role: msg.role === 'user' ? 'user' : 'model',
+    parts: [{ text: msg.content }],
+  })) || []
+
   let finalMessage = message
   if (context) finalMessage = `Contexto:\n${context}\n\nPergunta: ${message}`
 
   const chat = model.startChat({
     history: [
       { role: 'user', parts: [{ text: `Sistema: ${finalSystemPrompt}` }] },
-      { role: 'model', parts: [{ text: 'Entendido!' }] },
-      ...chatHistory
-    ]
+      { role: 'model', parts: [{ text: 'Entendido! Tenho acesso aos seus dados e vou dar respostas personalizadas.' }] },
+      ...chatHistory,
+    ],
   })
 
   const result = await chat.sendMessage(finalMessage)
@@ -1782,10 +2001,19 @@ serve(async (req) => {
           result = await handleGeneratePautaOutline(genAI, payload as PautaOutlinePayload)
           break
         case 'chat_aica':
-        case 'finance_chat':
-          const chatResult = await handleLegacyChat(genAI, { message: payload?.message, context: payload?.context, history: payload?.history, systemPrompt: payload?.systemPrompt })
+        case 'finance_chat': {
+          const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+          const chatResult = await handleLegacyChat(
+            genAI,
+            { message: payload?.message, context: payload?.context, history: payload?.history, systemPrompt: payload?.systemPrompt, module: payload?.module },
+            supabaseAdmin,
+            userId
+          )
           result = chatResult
           break
+        }
         case 'analyze_content_realtime':
           result = await handleAnalyzeContentRealtime(genAI, payload)
           break
