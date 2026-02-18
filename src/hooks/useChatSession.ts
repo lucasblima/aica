@@ -203,6 +203,7 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
           message: trimmed,
           history,
           systemPrompt,
+          module: classification.module || 'coordinator',
         },
       })
 
@@ -286,6 +287,7 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
           message: lastUserMsg.content,
           history,
           systemPrompt,
+          module: serverResult.module || 'coordinator',
         },
       })
 
