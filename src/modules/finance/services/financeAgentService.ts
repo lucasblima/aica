@@ -231,7 +231,7 @@ Use estas informacoes para responder as perguntas do usuario sobre suas financas
           session_id: sessionId,
           role: 'assistant',
           content: assistantMessage,
-          model_used: 'gemini-2.0-flash', // Updated to match backend
+          model_used: 'gemini-2.5-flash', // Updated to match backend
           response_time_ms: responseTimeMs,
         },
       ]

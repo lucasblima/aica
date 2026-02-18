@@ -16,6 +16,7 @@ import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
 import { BudgetView } from './BudgetView';
 import { FinanceSearchPanel } from '../components/FinanceSearchPanel';
+import { MonthlyDigestCard } from '../components/MonthlyDigestCard';
 import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown } from '../services/financeService';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
@@ -522,6 +523,11 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             onSuccess={handleUploadComplete}
             onClose={() => setShowCSVUpload(false)}
           />
+        )}
+
+        {/* Monthly Digest — AI Insights */}
+        {summary && summary.transactionCount > 0 && (
+          <MonthlyDigestCard userId={userId} />
         )}
 
         {/* Summary Section */}

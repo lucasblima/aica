@@ -22,6 +22,10 @@ export { AutomationService } from './automationService';
 export { AutomationEngineService } from './automationEngineService';
 
 
+// AI services
+export { FluxAIService } from './fluxAIService';
+export type { LoadAnalysisResult, LoadSuggestion, LoadAdjustmentAI, RecoveryResult, WeeklySummaryResult } from './fluxAIService';
+
 // Utility services
 export { IntensityCalculatorService } from './intensityCalculatorService';
 export { LevelingEngineService } from './levelingEngineService';

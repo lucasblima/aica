@@ -17,6 +17,7 @@ export { financeService } from './services/financeService';
 export { pdfProcessingService, PDFProcessingService } from './services/pdfProcessingService';
 export { financeAgentService, FinanceAgentService } from './services/financeAgentService';
 export { statementService } from './services/statementService';
+export { getMonthlyDigest, clearDigestCache } from './services/financeDigestService';
 
 // =====================================================
 // Components
@@ -26,6 +27,7 @@ export { StatementUpload } from './components/StatementUpload';
 export { AgentChat } from './components/FinanceAgent/AgentChat';
 export { ExpenseChart } from './components/Charts/ExpenseChart';
 export { IncomeVsExpense } from './components/Charts/IncomeVsExpense';
+export { MonthlyDigestCard } from './components/MonthlyDigestCard';
 
 // =====================================================
 // Views
