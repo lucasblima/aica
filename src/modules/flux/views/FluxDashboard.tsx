@@ -77,7 +77,7 @@ export default function FluxDashboard() {
   const { actions } = useFlux();
 
   // Fetch real athletes with adherence from Supabase
-  const { athletes: allAthletes, isLoading, error } = useAthletes();
+  const { athletes: allAthletes, isLoading, error, refresh } = useAthletes();
 
   // Realtime activity notifications
   const { notifications, dismissNotification } = useAthleteActivity();
@@ -394,9 +394,12 @@ export default function FluxDashboard() {
 
       console.log('Atleta excluído com sucesso:', athleteToDelete.id);
 
-      // Close modal and reset state (list auto-updates via real-time subscription)
+      // Close modal and reset state
       setDeleteModalOpen(false);
       setAthleteToDelete(null);
+
+      // Explicit refresh as fallback (real-time subscription may have timing issues)
+      await refresh();
     } catch (error) {
       console.error('Error deleting athlete:', error);
       throw error;
@@ -496,33 +499,20 @@ export default function FluxDashboard() {
           </button>
 
           <button
-            onClick={() => navigate('/flux/intensity')}
-            className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
+            onClick={() => navigate('/meu-treino')}
+            className="ceramic-card p-3 hover:scale-[1.02] transition-all group col-span-2"
           >
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center justify-center gap-3">
               <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
-                <span className="text-xl">⚡</span>
+                <span className="text-xl">🏃</span>
               </div>
-              <p className="text-xs font-bold text-ceramic-text-primary text-center">Intensidade</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/flux/leveling')}
-            className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="ceramic-inset p-2 group-hover:bg-white/50 transition-colors">
-                <span className="text-xl">📊</span>
-              </div>
-              <p className="text-xs font-bold text-ceramic-text-primary text-center">Nivelamento</p>
+              <p className="text-xs font-bold text-ceramic-text-primary text-center">Meus Treinos</p>
             </div>
           </button>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {/* Active Athletes */}
+        <div className="mb-6">
           <div className="ceramic-card p-4 space-y-2">
             <div className="flex items-center gap-2">
               <div className="ceramic-inset p-2">
@@ -534,21 +524,6 @@ export default function FluxDashboard() {
             </div>
             <p className="text-2xl font-bold text-ceramic-text-primary">
               {activeAthletes}
-            </p>
-          </div>
-
-          {/* Avg Adherence */}
-          <div className="ceramic-card p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="ceramic-inset p-2">
-                <TrendingUp className="w-4 h-4 text-ceramic-success" />
-              </div>
-              <p className="text-[10px] text-ceramic-text-secondary font-medium uppercase tracking-wider">
-                Consistência Média
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-ceramic-success">
-              {Math.round(avgConsistency)}%
             </p>
           </div>
         </div>

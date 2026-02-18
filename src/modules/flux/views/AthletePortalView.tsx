@@ -368,8 +368,41 @@ export default function AthletePortalView() {
   const parqCleared =
     profile.parq_clearance_status === 'cleared' ||
     profile.parq_clearance_status === 'cleared_with_restrictions';
+  const parqBlocked = profile.parq_clearance_status === 'blocked';
 
-  if (parqRequired && !parqCleared && !parqCompleted) {
+  // If PAR-Q answered with "Yes" to critical questions and status is blocked,
+  // show a blocked message — athlete cannot access workouts until medical clearance
+  if (parqRequired && parqBlocked && !parqCompleted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base px-6">
+        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-sm text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-ceramic-error/10 flex items-center justify-center mx-auto">
+            <Dumbbell className="w-8 h-8 text-ceramic-error" />
+          </div>
+          <h1 className="text-xl font-black text-ceramic-text-primary">
+            Liberacao Medica Necessaria
+          </h1>
+          <p className="text-sm text-ceramic-text-secondary leading-relaxed">
+            Suas respostas no questionario PAR-Q+ indicaram condicoes que requerem
+            liberacao medica antes de iniciar os treinos. Seu coach foi notificado.
+          </p>
+          <p className="text-xs text-ceramic-text-secondary">
+            Envie o atestado medico pelo portal ou entre em contato com seu coach.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 mx-auto px-4 py-2 bg-white rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // PAR-Q not yet filled — show wizard
+  if (parqRequired && !parqCleared && !parqBlocked && !parqCompleted) {
     return (
       <ParQWizard
         athleteName={profile.athlete_name}
