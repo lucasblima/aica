@@ -1,55 +1,46 @@
 /**
- * AthletePortalView — read-only training portal for athletes
+ * AthletePortalView -- read-only training portal for athletes
  *
  * Route: /meu-treino
- * Shows the athlete's active microcycle, weekly plan, and allows
- * marking workouts as completed + leaving feedback.
+ * Shows the athlete's active microcycle with a weekly calendar layout,
+ * workout cards with accordion expand, and coach availability.
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, type Variants } from 'framer-motion';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
 import { useParQ } from '../hooks/useParQ';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
+import { ProgressTimeline, WorkoutCard } from '../components/athlete';
+import type { FeedbackData } from '../components/athlete';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
-import { ZONE_CONFIGS } from '../types/series';
-import type { ExerciseStructureV2, WorkoutSeries, IntensityZone } from '../types/series';
 import { createNamespacedLogger } from '@/lib/logger';
 import {
   Loader2,
-  CheckCircle,
-  Circle,
-  MessageSquare,
   Dumbbell,
   ArrowLeft,
   Calendar,
   Clock,
+  Leaf,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
 
-const DAY_LABELS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+const DAY_NAMES = ['', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
+const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const WEEKDAY_LABELS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 
-/** Extended slot fields returned by RPC but not yet in MyAthleteProfile type */
-type SlotWithFeedback = {
-  rpe?: number | null;
-  completion_data?: {
-    rpe_actual?: number;
-    duration_actual?: number;
-    notes?: string;
-  } | null;
-};
-
 interface CoachBusyBlock {
-  start: string; // ISO 8601
-  end: string;   // ISO 8601
+  start: string;
+  end: string;
 }
 
-/** Compact weekly free/busy timeline for the coach */
+// ─── Coach Availability Card (kept inline) ─────────────────────────
+
 function CoachAvailabilityCard({
   busyBlocks,
   isLoading,
@@ -61,12 +52,10 @@ function CoachAvailabilityCard({
   error: string | null;
   weekStart: Date;
 }) {
-  // Build 7 day columns (Mon-Sun), each with hour rows 6-22
   const HOURS_START = 6;
   const HOURS_END = 22;
   const TOTAL_HOURS = HOURS_END - HOURS_START;
 
-  // Group busy blocks by day of week (0=Mon offset from weekStart)
   const blocksByDay = useMemo(() => {
     const days: CoachBusyBlock[][] = Array.from({ length: 7 }, () => []);
     for (const block of busyBlocks) {
@@ -83,7 +72,7 @@ function CoachAvailabilityCard({
 
   if (isLoading) {
     return (
-      <div className="ceramic-card p-5 space-y-3">
+      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
           <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
@@ -97,7 +86,7 @@ function CoachAvailabilityCard({
 
   if (error) {
     return (
-      <div className="ceramic-card p-5 space-y-3">
+      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
           <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
@@ -108,7 +97,7 @@ function CoachAvailabilityCard({
   }
 
   return (
-    <div className="ceramic-card p-5 space-y-3">
+    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
       <div className="flex items-center gap-2">
         <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
         <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
@@ -117,10 +106,11 @@ function CoachAvailabilityCard({
         Cinza = ocupado &middot; Branco = disponivel
       </p>
 
-      {/* Weekly grid */}
       <div className="flex gap-1">
-        {/* Hour labels column */}
-        <div className="flex flex-col justify-between pt-5 pr-1" style={{ height: `${TOTAL_HOURS * 12 + 20}px` }}>
+        <div
+          className="flex flex-col justify-between pt-5 pr-1"
+          style={{ height: `${TOTAL_HOURS * 12 + 20}px` }}
+        >
           {[HOURS_START, HOURS_START + 4, HOURS_START + 8, HOURS_START + 12, HOURS_END].map((h) => (
             <span key={h} className="text-[9px] text-ceramic-text-secondary leading-none">
               {h}h
@@ -128,7 +118,6 @@ function CoachAvailabilityCard({
           ))}
         </div>
 
-        {/* Day columns */}
         {WEEKDAY_LABELS_SHORT.map((label, dayIdx) => {
           const dayBlocks = blocksByDay[dayIdx] || [];
           return (
@@ -154,10 +143,7 @@ function CoachAvailabilityCard({
                     <div
                       key={blockIdx}
                       className="absolute left-0 right-0 bg-ceramic-text-secondary/20 rounded-sm"
-                      style={{
-                        top: `${topPct}%`,
-                        height: `${heightPct}%`,
-                      }}
+                      style={{ top: `${topPct}%`, height: `${heightPct}%` }}
                     />
                   );
                 })}
@@ -170,106 +156,49 @@ function CoachAvailabilityCard({
   );
 }
 
-/** Render a single series line for athlete view */
-function SeriesLine({ series }: { series: WorkoutSeries }) {
-  const reps = series.repetitions ?? 1;
-  const repsStr = reps > 1 ? `${reps}x` : '';
-  const zone = 'zone' in series ? (series as { zone: IntensityZone }).zone : null;
-  const zoneConfig = zone ? ZONE_CONFIGS[zone] : null;
+// ─── Stagger animation variants ────────────────────────────────────
 
-  let workStr = '';
-  if ('distance_meters' in series && series.distance_meters) {
-    workStr = `${series.distance_meters}m`;
-  } else if ('work_value' in series && series.work_value) {
-    if (series.work_unit === 'minutes') workStr = `${series.work_value}min`;
-    else if (series.work_unit === 'seconds') workStr = `${series.work_value}s`;
-    else workStr = `${series.work_value}m`;
-  } else if ('reps' in series && series.reps) {
-    const load = (series as { load_kg?: number }).load_kg;
-    workStr = `${series.reps} rep${load ? ` @ ${load}kg` : ''}`;
-  }
+const sectionVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+  }),
+};
 
-  const restMin = series.rest_minutes ?? 0;
-  const restSec = series.rest_seconds ?? 0;
-  const hasRest = restMin > 0 || restSec > 0;
-
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      {zone && zoneConfig && (
-        <span className={`inline-block w-2 h-2 rounded-full ${zoneConfig.bgColor}`} />
-      )}
-      <span className="text-ceramic-text-primary font-medium">
-        {repsStr}{workStr}
-      </span>
-      {zone && (
-        <span className="text-ceramic-text-secondary">{zone}</span>
-      )}
-      {hasRest && (
-        <span className="text-ceramic-text-secondary">
-          (int. {restMin > 0 ? `${restMin}min` : ''}{restSec > 0 ? `${restSec}s` : ''})
-        </span>
-      )}
-    </div>
-  );
-}
-
-/** Render exercise structure (warmup + series + cooldown) */
-function ExerciseStructureDisplay({ structure }: { structure: ExerciseStructureV2 }) {
-  if (!structure?.series?.length && !structure?.warmup && !structure?.cooldown) {
-    return null;
-  }
-
-  return (
-    <div className="mt-2 space-y-1.5 pl-8">
-      {structure.warmup && (
-        <p className="text-[11px] text-ceramic-text-secondary italic">
-          Aq: {structure.warmup}
-        </p>
-      )}
-      {structure.series?.map((s, i) => (
-        <SeriesLine key={s.id || i} series={s} />
-      ))}
-      {structure.cooldown && (
-        <p className="text-[11px] text-ceramic-text-secondary italic">
-          Des: {structure.cooldown}
-        </p>
-      )}
-    </div>
-  );
-}
+// ─── Main View ─────────────────────────────────────────────────────
 
 export default function AthletePortalView() {
+  // ============ ALL HOOKS (unconditional) ============
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile, isLoading, error, isLinked, refetch } = useMyAthleteProfile();
-  const [feedbackSlotId, setFeedbackSlotId] = useState<string | null>(null);
-  const [feedbackText, setFeedbackText] = useState('');
-  const [feedbackRpe, setFeedbackRpe] = useState<number>(5);
-  const [feedbackDuration, setFeedbackDuration] = useState<number>(0);
+
+  // PAR-Q hooks (unconditional!)
+  const parq = useParQ({ athleteId: profile?.athlete_id || '', filledByRole: 'athlete' });
+  const docs = useAthleteDocuments({ athleteId: profile?.athlete_id || '' });
+  const [parqCompleted, setParqCompleted] = useState(false);
+
+  // UI state
+  const [expandedSlotId, setExpandedSlotId] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  // PAR-Q hooks — must be called unconditionally (Rules of Hooks)
-  const parq = useParQ({
-    athleteId: profile?.athlete_id || '',
-    filledByRole: 'athlete',
-  });
-
-  const docs = useAthleteDocuments({
-    athleteId: profile?.athlete_id || '',
-  });
-
-  const [parqCompleted, setParqCompleted] = useState(false);
+  // Welcome state
+  const welcomeParam = searchParams.get('welcome') === 'true';
+  const [showWelcome, setShowWelcome] = useState(
+    () => welcomeParam || !AthleteWelcome.hasBeenShown()
+  );
 
   // Coach availability state
   const [coachBusyBlocks, setCoachBusyBlocks] = useState<CoachBusyBlock[]>([]);
   const [coachAvailLoading, setCoachAvailLoading] = useState(false);
   const [coachAvailError, setCoachAvailError] = useState<string | null>(null);
 
-  // Week boundaries for coach availability (Mon-Sun)
   const weekStart = useMemo(() => {
     const now = new Date();
-    const day = now.getDay(); // 0=Sun
-    const diff = day === 0 ? -6 : 1 - day; // offset to Monday
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
     const monday = new Date(now);
     monday.setDate(now.getDate() + diff);
     monday.setHours(0, 0, 0, 0);
@@ -285,15 +214,12 @@ export default function AthletePortalView() {
   // Fetch coach availability when profile loads
   useEffect(() => {
     if (!profile?.athlete_id) return;
-
     let cancelled = false;
 
     const fetchCoachAvailability = async () => {
       setCoachAvailLoading(true);
       setCoachAvailError(null);
-
       try {
-        // Get coach's user_id from athlete record (RLS allows athlete to read own record)
         const { data: athleteRow, error: athleteErr } = await supabase
           .from('athletes')
           .select('user_id')
@@ -326,7 +252,6 @@ export default function AthletePortalView() {
         }
 
         if (!response?.success) {
-          // Not necessarily an error — coach may not have calendar connected
           log.debug('Coach availability not available:', response?.error);
           setCoachAvailError(response?.error || 'Agenda do coach indisponivel');
           return;
@@ -347,14 +272,13 @@ export default function AthletePortalView() {
     return () => { cancelled = true; };
   }, [profile?.athlete_id, weekStart, weekEnd]);
 
-  // Show welcome screen on first visit or when ?welcome=true is present
-  const welcomeParam = searchParams.get('welcome') === 'true';
-  const [showWelcome, setShowWelcome] = useState(
-    () => welcomeParam || !AthleteWelcome.hasBeenShown()
-  );
+  // ============ HANDLERS ============
 
-  // Toggle workout completion
-  const toggleCompleted = async (slotId: string, currentlyCompleted: boolean) => {
+  const toggleExpand = (slotId: string) => {
+    setExpandedSlotId(prev => (prev === slotId ? null : slotId));
+  };
+
+  const handleToggleComplete = async (slotId: string, currentlyCompleted: boolean) => {
     setUpdating(slotId);
     try {
       await supabase
@@ -370,34 +294,45 @@ export default function AthletePortalView() {
     }
   };
 
-  // Submit feedback with RPE + duration
-  const submitFeedback = async (slotId: string) => {
-    if (!feedbackText.trim() && !feedbackRpe && !feedbackDuration) return;
+  const handleSubmitFeedback = async (slotId: string, data: FeedbackData) => {
     setUpdating(slotId);
     try {
       await supabase
         .from('workout_slots')
         .update({
-          athlete_feedback: feedbackText.trim() || null,
-          rpe: feedbackRpe,
+          athlete_feedback: data.notes || null,
+          rpe: data.rpe,
           completion_data: {
-            rpe_actual: feedbackRpe,
-            duration_actual: feedbackDuration || null,
-            notes: feedbackText.trim() || null,
+            rpe_actual: data.rpe,
+            duration_actual: data.duration || null,
+            notes: data.notes || null,
           },
         })
         .eq('id', slotId);
-      setFeedbackSlotId(null);
-      setFeedbackText('');
-      setFeedbackRpe(5);
-      setFeedbackDuration(0);
       await refetch();
     } finally {
       setUpdating(null);
     }
   };
 
-  // Loading
+  const handleReschedule = async (slotId: string, newDay: number, newTime: string) => {
+    setUpdating(slotId);
+    try {
+      await supabase
+        .from('workout_slots')
+        .update({
+          day_of_week: newDay,
+          start_time: newTime,
+        })
+        .eq('id', slotId);
+      await refetch();
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  // ============ EARLY RETURNS ============
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base">
@@ -407,19 +342,18 @@ export default function AthletePortalView() {
     );
   }
 
-  // Error or not linked
   if (error || !isLinked || !profile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base px-6">
-        <div className="ceramic-card p-8 max-w-sm text-center space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-sm text-center space-y-4">
           <Dumbbell className="w-12 h-12 text-ceramic-text-secondary mx-auto" />
           <h1 className="text-xl font-black text-ceramic-text-primary">Meu Treino</h1>
           <p className="text-sm text-ceramic-text-secondary">
-            {error || 'Nenhum treino vinculado à sua conta. Peça ao seu coach para adicionar seu email no cadastro.'}
+            {error || 'Nenhum treino vinculado a sua conta. Peca ao seu coach para adicionar seu email no cadastro.'}
           </p>
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 mx-auto px-4 py-2 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
+            className="flex items-center gap-2 mx-auto px-4 py-2 bg-white rounded-xl shadow-sm text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar
@@ -429,12 +363,13 @@ export default function AthletePortalView() {
     );
   }
 
-  // PAR-Q gate: show wizard if PAR-Q onboarding is required but not completed
-  const parqRequired = profile?.allow_parq_onboarding === true;
-  const parqCleared = profile?.parq_clearance_status === 'cleared' ||
-    profile?.parq_clearance_status === 'cleared_with_restrictions';
+  // PAR-Q gate
+  const parqRequired = profile.allow_parq_onboarding === true;
+  const parqCleared =
+    profile.parq_clearance_status === 'cleared' ||
+    profile.parq_clearance_status === 'cleared_with_restrictions';
 
-  if (profile && parqRequired && !parqCleared && !parqCompleted) {
+  if (parqRequired && !parqCleared && !parqCompleted) {
     return (
       <ParQWizard
         athleteName={profile.athlete_name}
@@ -466,14 +401,13 @@ export default function AthletePortalView() {
     );
   }
 
-  // Athlete welcome onboarding screen
+  // Welcome onboarding
   if (showWelcome) {
     return (
       <AthleteWelcome
         profile={profile}
         onStartTraining={() => {
           setShowWelcome(false);
-          // Remove ?welcome=true from URL without triggering navigation
           if (welcomeParam) {
             searchParams.delete('welcome');
             setSearchParams(searchParams, { replace: true });
@@ -487,37 +421,68 @@ export default function AthletePortalView() {
     );
   }
 
+  // ============ DATA PROCESSING ============
+
   const micro = profile.active_microcycle;
   const modalityConfig = MODALITY_CONFIG[profile.modality];
   const completionPct = micro
     ? Math.round((micro.completed_slots / Math.max(micro.total_slots, 1)) * 100)
     : 0;
 
-  // Group slots by week
-  const slotsByWeek: Record<number, typeof micro extends null ? never : NonNullable<typeof micro>['slots']> = {};
-  if (micro?.slots) {
-    for (const slot of micro.slots) {
-      if (!slotsByWeek[slot.week_number]) slotsByWeek[slot.week_number] = [];
-      slotsByWeek[slot.week_number].push(slot);
-    }
+  // Build weeks for ProgressTimeline
+  const weeks = micro
+    ? [1, 2, 3].map((wk) => ({
+        weekNumber: wk,
+        focus: (micro as Record<string, unknown>)[`week_${wk}_focus`] as string || '',
+        totalSlots: micro.slots?.filter((s) => s.week_number === wk).length || 0,
+        completedSlots: micro.slots?.filter((s) => s.week_number === wk && s.is_completed).length || 0,
+      }))
+    : [];
+
+  // Current week slots grouped by day_of_week
+  const currentWeekSlots = micro?.slots?.filter((s) => s.week_number === (micro.current_week || 1)) || [];
+  const slotsByDay = new Map<number, typeof currentWeekSlots>();
+  for (const slot of currentWeekSlots) {
+    const existing = slotsByDay.get(slot.day_of_week) || [];
+    existing.push(slot);
+    slotsByDay.set(slot.day_of_week, existing);
   }
 
+  // Compute actual dates from microcycle start_date
+  const getDateForDay = (dayOfWeek: number): Date | null => {
+    if (!micro?.start_date) return null;
+    const start = new Date(micro.start_date);
+    const currentWeekOffset = ((micro.current_week || 1) - 1) * 7;
+    const dayOffset = dayOfWeek - 1; // Mon=1 -> offset 0
+    const date = new Date(start);
+    date.setDate(start.getDate() + currentWeekOffset + dayOffset);
+    return date;
+  };
+
+  // ============ RENDER ============
+
   return (
-    <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-16">
+    <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-24">
       {/* Header */}
-      <div className="pt-8 px-6 pb-4">
+      <header className="pt-6 px-5 pb-2">
         <button
           onClick={() => navigate('/')}
           className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
         >
-          <div className="w-8 h-8 ceramic-inset flex items-center justify-center">
-            <ArrowLeft className="w-4 h-4" />
-          </div>
-          <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
         </button>
+      </header>
 
-        {/* Profile Card */}
-        <div className="ceramic-card p-5 space-y-3">
+      {/* Profile Card */}
+      <motion.section
+        className="px-5 mb-4"
+        custom={0}
+        initial="hidden"
+        animate="visible"
+        variants={sectionVariants}
+      >
+        <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{modalityConfig?.icon || '🏋️'}</span>
             <div className="flex-1 min-w-0">
@@ -530,257 +495,132 @@ export default function AthletePortalView() {
             </div>
           </div>
 
-          {/* Microcycle Progress */}
           {micro && (
-            <div className="space-y-2 pt-3 border-t border-ceramic-text-secondary/10">
+            <div className="space-y-2 pt-3 border-t border-ceramic-border/30">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-ceramic-text-primary">
-                    {micro.name}
-                  </p>
-                  {micro.status === 'draft' && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">
-                      Pendente
-                    </span>
-                  )}
-                </div>
                 <span className="text-xs text-ceramic-text-secondary">
                   Semana {micro.current_week}/3
                 </span>
+                <span className="text-xs font-bold text-ceramic-text-primary">
+                  {completionPct}%
+                </span>
               </div>
-              {/* Progress bar */}
-              <div className="h-2 bg-ceramic-cool rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-ceramic-success rounded-full transition-all duration-500"
-                  style={{ width: `${completionPct}%` }}
+              <div className="h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-amber-400 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${completionPct}%` }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
                 />
               </div>
-              <p className="text-xs text-ceramic-text-secondary text-right">
-                {micro.completed_slots}/{micro.total_slots} treinos · {completionPct}%
+              <p className="text-[10px] text-ceramic-text-secondary text-right">
+                {micro.completed_slots}/{micro.total_slots} treinos
               </p>
             </div>
           )}
         </div>
-      </div>
+      </motion.section>
 
-      {/* Draft microcycle notice */}
+      {/* Progress Timeline */}
+      {micro && (
+        <motion.section
+          className="px-5 mb-6"
+          custom={1}
+          initial="hidden"
+          animate="visible"
+          variants={sectionVariants}
+        >
+          <ProgressTimeline
+            weeks={weeks}
+            currentWeek={micro.current_week || 1}
+            microcycleName={micro.name}
+            status={micro.status}
+          />
+        </motion.section>
+      )}
+
+      {/* Draft Notice */}
       {micro?.status === 'draft' && (
-        <div className="px-6 mb-4">
+        <motion.div
+          className="px-5 mb-4"
+          custom={2}
+          initial="hidden"
+          animate="visible"
+          variants={sectionVariants}
+        >
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
             <Clock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-amber-700 leading-relaxed">
               Este plano de treino esta sendo preparado pelo seu coach e pode sofrer alteracoes.
             </p>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Workout Slots */}
+      {/* Weekly Calendar */}
       {micro ? (
-        <div className="px-6 space-y-6">
-          {Object.entries(slotsByWeek)
-            .sort(([a], [b]) => Number(a) - Number(b))
-            .map(([weekNum, slots]) => (
-              <div key={weekNum}>
-                <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-3">
-                  Semana {weekNum}
-                </h2>
-                <div className="space-y-2">
-                  {slots.map((baseSlot) => {
-                    const slot = baseSlot as typeof baseSlot & SlotWithFeedback;
-                    return (
-                    <div
-                      key={slot.id}
-                      className={`ceramic-card p-4 transition-all ${
-                        slot.is_completed ? 'opacity-70' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Toggle button */}
-                        <button
-                          onClick={() => toggleCompleted(slot.id, slot.is_completed)}
-                          disabled={updating === slot.id}
-                          className="flex-shrink-0"
-                        >
-                          {updating === slot.id ? (
-                            <Loader2 className="w-5 h-5 text-ceramic-text-secondary animate-spin" />
-                          ) : slot.is_completed ? (
-                            <CheckCircle className="w-5 h-5 text-ceramic-success" />
-                          ) : (
-                            <Circle className="w-5 h-5 text-ceramic-text-secondary" />
-                          )}
-                        </button>
+        <motion.section
+          className="px-5 space-y-1"
+          custom={3}
+          initial="hidden"
+          animate="visible"
+          variants={sectionVariants}
+        >
+          {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+            const daySlots = slotsByDay.get(day) || [];
+            const date = getDateForDay(day);
 
-                        {/* Day label */}
-                        <span className="text-xs font-bold text-ceramic-text-secondary w-8">
-                          {DAY_LABELS[slot.day_of_week] || '—'}
-                        </span>
-
-                        {/* Workout info */}
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-bold truncate ${
-                            slot.is_completed
-                              ? 'text-ceramic-text-secondary line-through'
-                              : 'text-ceramic-text-primary'
-                          }`}>
-                            {slot.template.name}
-                          </p>
-                          {slot.custom_notes && (
-                            <p className="text-xs text-ceramic-text-secondary truncate">
-                              {slot.custom_notes}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Duration + Intensity */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <Clock className="w-3 h-3 text-ceramic-text-secondary" />
-                          <span className="text-xs text-ceramic-text-secondary">
-                            {slot.custom_duration || slot.template.duration}min
-                          </span>
-                        </div>
-
-                        {/* Feedback toggle */}
-                        <button
-                          onClick={() => {
-                            if (feedbackSlotId === slot.id) {
-                              setFeedbackSlotId(null);
-                            } else {
-                              setFeedbackSlotId(slot.id);
-                              setFeedbackText(slot.athlete_feedback || '');
-                              setFeedbackRpe(slot.completion_data?.rpe_actual ?? slot.rpe ?? 5);
-                              setFeedbackDuration(
-                                slot.completion_data?.duration_actual ??
-                                slot.custom_duration ?? slot.template.duration ?? 0
-                              );
-                            }
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
-                            slot.athlete_feedback
-                              ? 'text-ceramic-info bg-ceramic-info/10'
-                              : 'text-ceramic-text-secondary hover:bg-ceramic-cool'
-                          }`}
-                          title="Feedback"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Exercise structure details */}
-                      {slot.exercise_structure &&
-                        (slot.exercise_structure as unknown as ExerciseStructureV2)?.series?.length > 0 && (
-                        <ExerciseStructureDisplay
-                          structure={slot.exercise_structure as unknown as ExerciseStructureV2}
-                        />
-                      )}
-
-                      {/* Feedback input (expanded) */}
-                      {feedbackSlotId === slot.id && (
-                        <div className="mt-3 pt-3 border-t border-ceramic-text-secondary/10 space-y-3">
-                          {/* RPE Slider */}
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <label className="text-xs font-bold text-ceramic-text-primary">
-                                Esforço percebido (RPE)
-                              </label>
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                                feedbackRpe <= 3
-                                  ? 'bg-ceramic-success/20 text-ceramic-success'
-                                  : feedbackRpe <= 6
-                                    ? 'bg-amber-500/20 text-amber-600'
-                                    : 'bg-ceramic-error/20 text-ceramic-error'
-                              }`}>
-                                {feedbackRpe}/10
-                              </span>
-                            </div>
-                            <input
-                              type="range"
-                              min={1}
-                              max={10}
-                              step={1}
-                              value={feedbackRpe}
-                              onChange={(e) => setFeedbackRpe(Number(e.target.value))}
-                              className="w-full h-2 rounded-full appearance-none cursor-pointer accent-amber-500"
-                              style={{
-                                background: `linear-gradient(to right, #22c55e 0%, #22c55e 22%, #f59e0b 44%, #f59e0b 55%, #ef4444 77%, #ef4444 100%)`,
-                              }}
-                            />
-                            <div className="flex justify-between mt-0.5">
-                              <span className="text-[10px] text-ceramic-text-secondary">Muito fácil</span>
-                              <span className="text-[10px] text-ceramic-text-secondary">Moderado</span>
-                              <span className="text-[10px] text-ceramic-text-secondary">Máximo esforço</span>
-                            </div>
-                          </div>
-
-                          {/* Actual Duration */}
-                          <div>
-                            <label className="text-xs font-bold text-ceramic-text-primary mb-1 block">
-                              Duração real
-                            </label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="number"
-                                min={0}
-                                max={600}
-                                value={feedbackDuration || ''}
-                                onChange={(e) => setFeedbackDuration(Number(e.target.value))}
-                                placeholder={String(slot.custom_duration || slot.template.duration || 0)}
-                                className="w-20 ceramic-inset px-3 py-1.5 rounded-lg text-sm text-ceramic-text-primary text-center focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-                              />
-                              <span className="text-xs text-ceramic-text-secondary">min</span>
-                              {feedbackDuration > 0 && (slot.custom_duration || slot.template.duration) && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                  feedbackDuration > (slot.custom_duration || slot.template.duration)
-                                    ? 'bg-ceramic-info/20 text-ceramic-info'
-                                    : feedbackDuration < (slot.custom_duration || slot.template.duration)
-                                      ? 'bg-ceramic-warning/20 text-ceramic-warning'
-                                      : 'bg-ceramic-success/20 text-ceramic-success'
-                                }`}>
-                                  {feedbackDuration === (slot.custom_duration || slot.template.duration)
-                                    ? 'No tempo'
-                                    : feedbackDuration > (slot.custom_duration || slot.template.duration)
-                                      ? `+${feedbackDuration - (slot.custom_duration || slot.template.duration)}min`
-                                      : `${feedbackDuration - (slot.custom_duration || slot.template.duration)}min`
-                                  }
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Notes */}
-                          <textarea
-                            value={feedbackText}
-                            onChange={(e) => setFeedbackText(e.target.value)}
-                            placeholder="Como foi o treino? Sensações, dificuldades..."
-                            className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none"
-                            rows={2}
-                          />
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => setFeedbackSlotId(null)}
-                              className="px-3 py-1.5 text-xs text-ceramic-text-secondary hover:bg-ceramic-cool rounded-lg transition-colors"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              onClick={() => submitFeedback(slot.id)}
-                              disabled={updating === slot.id}
-                              className="px-3 py-1.5 text-xs font-bold text-white bg-ceramic-accent hover:bg-ceramic-accent/90 disabled:bg-ceramic-text-secondary/20 disabled:cursor-not-allowed rounded-lg transition-colors"
-                            >
-                              {updating === slot.id ? 'Salvando...' : 'Salvar'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ); })}
+            return (
+              <div key={day}>
+                {/* Day Header */}
+                <div className="flex items-center gap-2 py-3">
+                  <span className="text-xs font-black text-ceramic-text-primary uppercase">
+                    {DAY_NAMES[day]}
+                  </span>
+                  {date && (
+                    <span className="text-xs text-ceramic-text-secondary">
+                      {date.getDate()} {MONTH_NAMES[date.getMonth()]}
+                    </span>
+                  )}
                 </div>
+
+                {daySlots.length > 0 ? (
+                  <div className="space-y-2">
+                    {daySlots.map((slot) => (
+                      <WorkoutCard
+                        key={slot.id}
+                        slot={slot}
+                        isExpanded={expandedSlotId === slot.id}
+                        onToggleExpand={() => toggleExpand(slot.id)}
+                        onToggleComplete={handleToggleComplete}
+                        onSubmitFeedback={handleSubmitFeedback}
+                        onReschedule={handleReschedule}
+                        isUpdating={updating === slot.id}
+                        modality={profile.modality}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 py-3 px-4 rounded-xl bg-ceramic-cool/50">
+                    <Leaf className="w-4 h-4 text-green-400" />
+                    <span className="text-xs text-ceramic-text-secondary italic">
+                      Descanso
+                    </span>
+                  </div>
+                )}
               </div>
-            ))}
-        </div>
+            );
+          })}
+        </motion.section>
       ) : (
-        <div className="px-6">
-          <div className="ceramic-inset p-8 text-center space-y-3">
+        <motion.section
+          className="px-5"
+          custom={3}
+          initial="hidden"
+          animate="visible"
+          variants={sectionVariants}
+        >
+          <div className="bg-ceramic-cool/50 rounded-2xl p-8 text-center space-y-3">
             <Dumbbell className="w-10 h-10 text-ceramic-text-secondary/40 mx-auto" />
             <p className="text-sm font-medium text-ceramic-text-primary">
               Nenhum treino prescrito ainda
@@ -789,18 +629,24 @@ export default function AthletePortalView() {
               Seu coach ainda nao prescreveu treinos. Fique tranquilo, voce sera notificado quando houver novidades!
             </p>
           </div>
-        </div>
+        </motion.section>
       )}
 
       {/* Coach Availability */}
-      <div className="px-6 mt-6">
+      <motion.section
+        className="px-5 mt-8"
+        custom={4}
+        initial="hidden"
+        animate="visible"
+        variants={sectionVariants}
+      >
         <CoachAvailabilityCard
           busyBlocks={coachBusyBlocks}
           isLoading={coachAvailLoading}
           error={coachAvailError}
           weekStart={weekStart}
         />
-      </div>
+      </motion.section>
     </div>
   );
 }
