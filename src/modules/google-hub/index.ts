@@ -7,3 +7,4 @@
  */
 
 export { GoogleHubPage } from './pages/GoogleHubPage';
+export { GoogleContextPanel } from './components/GoogleContextPanel';

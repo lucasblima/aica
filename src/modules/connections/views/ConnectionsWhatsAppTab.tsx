@@ -13,7 +13,7 @@
  * Evolution API removed — all data comes from manual export import.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload,
@@ -43,6 +43,7 @@ import {
   WhatsAppExportUpload,
   ContactDetailSheet,
 } from '../components/whatsapp';
+import { GoogleContextPanel } from '@/modules/google-hub/components/GoogleContextPanel';
 import { deleteContacts } from '@/services/contactNetworkService';
 import { useContactDossier } from '../hooks/useContactDossier';
 import { useConversationThreads } from '../hooks/useConversationThreads';
@@ -653,9 +654,28 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
     </div>
   );
 
+  // Build context for Google Contextual Search from imported contacts
+  const googleContextPeople = useMemo(
+    () => importedContacts
+      .slice(0, 10)
+      .map(c => c.whatsapp_name || c.name)
+      .filter(Boolean),
+    [importedContacts]
+  );
+
   // ── Intelligence Tab ──
   const renderIntelligenceTab = () => (
     <div className="space-y-6">
+      {/* Google Contextual Search */}
+      <GoogleContextPanel
+        module="connections"
+        context={{
+          people: googleContextPeople,
+          keywords: ['whatsapp', 'conversa', 'contato'],
+        }}
+        compact
+      />
+
       {/* Entity Inbox */}
       <EntityInbox
         entities={entities}
