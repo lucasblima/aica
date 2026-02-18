@@ -186,6 +186,26 @@ serve(async (req) => {
         break;
       }
 
+      case 'get_message_body': {
+        const messageId = payload.messageId as string;
+        if (!messageId) throw new Error('messageId is required');
+
+        const res = await fetch(
+          `${GMAIL_API}/messages/${messageId}?format=full`,
+          { headers: googleHeaders }
+        );
+        if (!res.ok) throw await buildGmailError(res);
+
+        const msgData = await res.json();
+        const { text: bodyText, contentType } = extractBodyFromPayload(msgData.payload);
+
+        result = {
+          body: bodyText,
+          content_type: contentType,
+        };
+        break;
+      }
+
       case 'list_labels': {
         const res = await fetch(`${GMAIL_API}/labels`, { headers: googleHeaders });
         if (!res.ok) throw await buildGmailError(res);
@@ -271,6 +291,58 @@ function hasAttachmentParts(payload: Record<string, unknown> | undefined): boole
     const filename = p.filename as string;
     return filename && filename.length > 0;
   });
+}
+
+function extractBodyFromPayload(payload: Record<string, unknown> | undefined): { text: string; contentType: 'text/html' | 'text/plain' } {
+  if (!payload) return { text: '', contentType: 'text/plain' };
+
+  // Single-part message
+  const body = payload.body as Record<string, unknown> | undefined;
+  if (body?.data) {
+    const mimeType = (payload.mimeType as string) || 'text/plain';
+    return {
+      text: decodeBase64Url(body.data as string),
+      contentType: mimeType === 'text/html' ? 'text/html' : 'text/plain',
+    };
+  }
+
+  // Multi-part message — prefer text/html, fallback to text/plain
+  const parts = (payload.parts as Array<Record<string, unknown>>) || [];
+  let plainText = '';
+  let htmlText = '';
+
+  for (const part of parts) {
+    const mimeType = part.mimeType as string;
+    const partBody = part.body as Record<string, unknown> | undefined;
+
+    if (mimeType === 'text/plain' && partBody?.data) {
+      plainText = decodeBase64Url(partBody.data as string);
+    } else if (mimeType === 'text/html' && partBody?.data) {
+      htmlText = decodeBase64Url(partBody.data as string);
+    }
+
+    // Recurse into nested parts (e.g. multipart/alternative inside multipart/mixed)
+    if (part.parts) {
+      const nested = extractBodyFromPayload(part as Record<string, unknown>);
+      if (nested.text) {
+        if (nested.contentType === 'text/html' && !htmlText) htmlText = nested.text;
+        else if (!plainText) plainText = nested.text;
+      }
+    }
+  }
+
+  if (htmlText) return { text: htmlText, contentType: 'text/html' };
+  if (plainText) return { text: plainText, contentType: 'text/plain' };
+  return { text: '', contentType: 'text/plain' };
+}
+
+function decodeBase64Url(data: string): string {
+  const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  try {
+    return atob(base64);
+  } catch {
+    return '';
+  }
 }
 
 async function buildGmailError(res: Response): Promise<Error> {

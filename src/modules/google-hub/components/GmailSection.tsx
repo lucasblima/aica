@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { Mail, Search, RefreshCw, Loader2, ChevronDown, Paperclip, Unlink } from 'lucide-react';
+import {
+    Mail, Search, RefreshCw, Loader2, ChevronDown, Paperclip, Unlink,
+    Sparkles, Check, X, ArrowRight,
+} from 'lucide-react';
 import { useGmailIntegration } from '@/hooks/useGmailIntegration';
+import { useEmailCategories } from '../hooks/useEmailCategories';
+import { useEmailTaskExtraction } from '../hooks/useEmailTaskExtraction';
+import { EmailCategoryBadge } from './EmailCategoryBadge';
 import type { GmailMessage } from '@/services/gmailService';
+import type { EmailCategory } from '../types';
 
 // --- Helpers ---
 
@@ -40,6 +47,18 @@ function senderDisplay(email: GmailMessage): string {
     return email.senderEmail || 'Desconhecido';
 }
 
+// --- Category tab config ---
+
+const CATEGORY_TABS: Array<{ key: EmailCategory | null; label: string }> = [
+    { key: null, label: 'Todos' },
+    { key: 'actionable', label: 'Acao' },
+    { key: 'informational', label: 'Info' },
+    { key: 'newsletter', label: 'Newsletter' },
+    { key: 'receipt', label: 'Recibo' },
+    { key: 'personal', label: 'Pessoal' },
+    { key: 'notification', label: 'Notificacao' },
+];
+
 // --- Animation variants ---
 
 const listVariants: Variants = {
@@ -57,7 +76,13 @@ const rowVariants: Variants = {
 
 // --- Components ---
 
-function EmailRow({ email }: { email: GmailMessage }) {
+interface EmailRowProps {
+    email: GmailMessage;
+    category?: EmailCategory;
+    confidence?: number;
+}
+
+function EmailRow({ email, category, confidence }: EmailRowProps) {
     const name = senderDisplay(email);
     const color = avatarColor(name);
     const isUnread = !email.isRead;
@@ -80,9 +105,14 @@ function EmailRow({ email }: { email: GmailMessage }) {
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-2">
-                    <span className={`text-sm truncate ${isUnread ? 'font-semibold text-ceramic-text-primary' : 'text-ceramic-text-primary'}`}>
-                        {name}
-                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`text-sm truncate ${isUnread ? 'font-semibold text-ceramic-text-primary' : 'text-ceramic-text-primary'}`}>
+                            {name}
+                        </span>
+                        {category && (
+                            <EmailCategoryBadge category={category} confidence={confidence} size="sm" />
+                        )}
+                    </div>
                     <span className="text-[11px] text-ceramic-text-secondary whitespace-nowrap flex-shrink-0 tabular-nums">
                         {relativeTime(email.receivedAt || email.date)}
                     </span>
@@ -129,8 +159,25 @@ interface GmailSectionProps {
 
 export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSectionProps) {
     const { emails, isLoading, error, search, refresh, loadMore, hasMore } = useGmailIntegration();
+    const {
+        categories,
+        categorizing,
+        selectedCategory,
+        categorize,
+        setSelectedCategory,
+        getCounts,
+        hasCategorized,
+    } = useEmailCategories();
+    const {
+        pendingTasks,
+        acceptTask,
+        dismissTask,
+    } = useEmailTaskExtraction();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [acceptingId, setAcceptingId] = useState<string | null>(null);
+    const [dismissingId, setDismissingId] = useState<string | null>(null);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -139,6 +186,28 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
         await search(searchQuery.trim());
         setIsSearching(false);
     };
+
+    const handleAcceptTask = async (taskId: string) => {
+        setAcceptingId(taskId);
+        await acceptTask(taskId);
+        setAcceptingId(null);
+    };
+
+    const handleDismissTask = async (taskId: string) => {
+        setDismissingId(taskId);
+        await dismissTask(taskId);
+        setDismissingId(null);
+    };
+
+    // Filter emails by selected category
+    const filteredEmails = selectedCategory
+        ? emails.filter(email => {
+            const cat = categories.get(email.id);
+            return cat?.category === selectedCategory;
+        })
+        : emails;
+
+    const counts = getCounts();
 
     if (!isConnected) {
         return (
@@ -170,6 +239,19 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                     </div>
                     <div className="flex items-center gap-1">
                         <button
+                            onClick={categorize}
+                            disabled={categorizing || isLoading}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                            title="Categorizar emails com IA"
+                        >
+                            {categorizing ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                                <Sparkles className="w-3.5 h-3.5" />
+                            )}
+                            Categorizar com IA
+                        </button>
+                        <button
                             onClick={refresh}
                             disabled={isLoading}
                             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-cool/70 transition-colors"
@@ -189,6 +271,38 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                     </div>
                 </div>
 
+                {/* Category tab bar */}
+                {hasCategorized && (
+                    <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
+                        {CATEGORY_TABS.map(({ key, label }) => {
+                            const isActive = selectedCategory === key;
+                            const count = key ? counts[key] ?? 0 : categories.size;
+                            return (
+                                <button
+                                    key={key ?? 'all'}
+                                    onClick={() => setSelectedCategory(key)}
+                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${
+                                        isActive
+                                            ? 'bg-amber-500 text-white'
+                                            : 'bg-ceramic-cool/70 text-ceramic-text-secondary hover:bg-ceramic-cool'
+                                    }`}
+                                >
+                                    {label}
+                                    {count > 0 && (
+                                        <span className={`text-[10px] px-1 py-0.5 rounded-full min-w-[18px] text-center ${
+                                            isActive
+                                                ? 'bg-white/20 text-white'
+                                                : 'bg-ceramic-border/50 text-ceramic-text-secondary'
+                                        }`}>
+                                            {count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
                 {/* Search — frosted glass */}
                 <form onSubmit={handleSearch} className="relative mb-4">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ceramic-text-secondary/60" />
@@ -205,6 +319,61 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                 </form>
             </div>
 
+            {/* Extracted tasks panel */}
+            {pendingTasks.length > 0 && (
+                <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-200/60">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-amber-600" />
+                        <span className="text-xs font-semibold text-amber-800">
+                            Tarefas extraidas ({pendingTasks.length})
+                        </span>
+                    </div>
+                    <div className="space-y-2">
+                        {pendingTasks.slice(0, 5).map(task => (
+                            <div key={task.id} className="flex items-start gap-2 text-sm">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-ceramic-text-primary truncate">{task.task_description}</p>
+                                    {task.source_subject && (
+                                        <p className="text-[11px] text-ceramic-text-secondary truncate">
+                                            de: {task.source_sender ?? 'desconhecido'} — {task.source_subject}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                    <button
+                                        onClick={() => handleAcceptTask(task.id)}
+                                        disabled={acceptingId === task.id}
+                                        className="inline-flex items-center gap-0.5 px-2 py-1 text-[11px] font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-md transition-colors disabled:opacity-50"
+                                        title="Criar no Atlas"
+                                    >
+                                        {acceptingId === task.id ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <ArrowRight className="w-3 h-3" />
+                                                Atlas
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => handleDismissTask(task.id)}
+                                        disabled={dismissingId === task.id}
+                                        className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-ceramic-error/10 transition-colors disabled:opacity-50"
+                                        title="Descartar"
+                                    >
+                                        {dismissingId === task.id ? (
+                                            <Loader2 className="w-3 h-3 animate-spin text-ceramic-text-secondary" />
+                                        ) : (
+                                            <X className="w-3 h-3 text-ceramic-text-secondary hover:text-ceramic-error" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Email list */}
             <div className="max-h-[420px] overflow-y-auto -mx-1">
                 {isLoading && emails.length === 0 ? (
@@ -218,9 +387,11 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                     <div className="py-12 text-center">
                         <p className="text-sm text-ceramic-error">{error}</p>
                     </div>
-                ) : emails.length === 0 ? (
+                ) : filteredEmails.length === 0 ? (
                     <div className="py-12 text-center">
-                        <p className="text-sm text-ceramic-text-secondary">Nenhum email encontrado</p>
+                        <p className="text-sm text-ceramic-text-secondary">
+                            {selectedCategory ? 'Nenhum email nesta categoria' : 'Nenhum email encontrado'}
+                        </p>
                     </div>
                 ) : (
                     <motion.div
@@ -229,15 +400,23 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                         animate="visible"
                         className="divide-y divide-ceramic-border/30"
                     >
-                        {emails.map((email) => (
-                            <EmailRow key={email.id} email={email} />
-                        ))}
+                        {filteredEmails.map((email) => {
+                            const catData = categories.get(email.id);
+                            return (
+                                <EmailRow
+                                    key={email.id}
+                                    email={email}
+                                    category={catData?.category}
+                                    confidence={catData?.confidence}
+                                />
+                            );
+                        })}
                     </motion.div>
                 )}
             </div>
 
             {/* Load more */}
-            {hasMore && (
+            {hasMore && !selectedCategory && (
                 <div className="pt-3 text-center">
                     <button
                         onClick={loadMore}
