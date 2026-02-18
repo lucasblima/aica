@@ -630,6 +630,21 @@ A partir da transcricao abaixo, extraia os seguintes campos:
 - due_date: data no formato YYYY-MM-DD (resolva datas relativas como "amanha", "segunda", "semana que vem" a partir da data de hoje)
 - scheduled_time: horario no formato HH:MM se mencionado (ex: "meio dia" → "12:00", "tres da tarde" → "15:00", "oito horas" → "08:00"). Omitir se nenhum horario for mencionado.
 - estimated_duration: duracao estimada em minutos (1-480)
+- task_type: "task" | "list" | "event" — classifique o tipo:
+  * "event": encontros, almocos, jantares, reunioes, compromissos com horario marcado ou com outras pessoas
+  * "list": listas de compras, itens enumerados separados por virgula ou "e", multiplos itens a fazer/comprar
+  * "task": qualquer outra tarefa simples (padrao)
+- checklist_items: array de strings com os itens da lista (SOMENTE quando task_type = "list"). Cada item deve ser curto e claro.
+
+Exemplos:
+Input: "Almoco com Rodrigo amanha meio dia"
+Output: {"title":"Almoco com Rodrigo","due_date":"${new Date(Date.now() + 86400000).toISOString().split('T')[0]}","scheduled_time":"12:00","task_type":"event","priority":"medium","is_urgent":false,"is_important":true}
+
+Input: "Comprar leite, pao e ovos"
+Output: {"title":"Lista de compras","task_type":"list","checklist_items":["Leite","Pao","Ovos"],"priority":"medium","is_urgent":false,"is_important":false}
+
+Input: "Preparar apresentacao do projeto"
+Output: {"title":"Preparar apresentacao do projeto","task_type":"task","priority":"medium","is_urgent":false,"is_important":true,"estimated_duration":120}
 
 Transcricao: "${transcription}"
 

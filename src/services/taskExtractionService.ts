@@ -21,6 +21,8 @@ export interface ExtractedTaskData {
   due_date?: string          // YYYY-MM-DD
   scheduled_time?: string    // HH:MM (e.g. "12:00", "15:30")
   estimated_duration?: number // minutes
+  task_type?: 'task' | 'list' | 'event'
+  checklist_items?: string[]  // raw items from AI
 }
 
 /**
@@ -47,6 +49,10 @@ export async function extractTaskFromVoice(transcription: string): Promise<Extra
       estimated_duration: data.estimated_duration && data.estimated_duration >= 1 && data.estimated_duration <= 480
         ? data.estimated_duration
         : undefined,
+      task_type: ['task', 'list', 'event'].includes(data.task_type) ? data.task_type : 'task',
+      checklist_items: Array.isArray(data.checklist_items)
+        ? data.checklist_items.filter((s: any) => typeof s === 'string' && s.trim()).map((s: string) => s.trim()).slice(0, 20)
+        : undefined,
     }
   } catch (err) {
     log.error('Failed to extract task from voice:', err)
@@ -56,6 +62,7 @@ export async function extractTaskFromVoice(transcription: string): Promise<Extra
       priority: 'medium',
       is_urgent: false,
       is_important: false,
+      task_type: 'task',
     }
   }
 }
