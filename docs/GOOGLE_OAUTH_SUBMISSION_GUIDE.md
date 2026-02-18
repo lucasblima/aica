@@ -117,35 +117,32 @@ Esta secao responde diretamente a pergunta do formulario Google.
 
 ## 5. Credenciais de Teste
 
-### Conta de Teste (criar manualmente)
+### Conta de Teste
+
+A AICA usa exclusivamente Google OAuth para login. O reviewer usara a conta Google do desenvolvedor:
 
 | Campo | Valor |
 |-------|-------|
-| **Email** | google-review@aica.guru |
-| **Senha** | (definir ao criar) |
-| **Nota** | Conta com dados de exemplo pre-populados |
+| **Email** | lucasboscacci@gmail.com |
+| **Login** | Via Google OAuth (botao "Entrar com Google") |
+| **Nota** | Conta do desenvolvedor com dados reais populados |
 
-### Dados de Exemplo para Popular
+### Dados que o Reviewer Vera
 
-Antes de submeter, a conta de teste deve ter:
+A conta ja contem dados reais:
 
-- [ ] 3-5 tarefas no Atlas (modulo de tarefas)
-- [ ] 2-3 momentos no Journey (modulo de autoconhecimento)
-- [ ] Google Calendar conectado com alguns eventos
-- [ ] Gmail conectado com emails visiveis no Google Hub
-- [ ] Drive conectado com arquivos visiveis no Google Hub
-- [ ] Pelo menos 1 pergunta diaria respondida
+- Tarefas no Atlas (modulo de tarefas)
+- Momentos no Journey (modulo de autoconhecimento)
+- Google Calendar conectado com eventos reais
+- Gmail conectado com emails visiveis no Google Hub
+- Drive conectado com arquivos visiveis no Google Hub
 
-### Como Criar a Conta
+### Preparacao Pre-Submissao
 
-1. Acessar https://aica.guru
-2. Criar conta com email `google-review@aica.guru`
-3. Completar onboarding
-4. Criar tarefas de exemplo
-5. Registrar momentos de exemplo
-6. Conectar Google Calendar (login com conta Google de teste)
-7. No Google Hub, conectar Gmail (consentimento incremental)
-8. No Google Hub, conectar Drive (consentimento incremental)
+1. Acessar https://aica.guru e logar com `lucasboscacci@gmail.com`
+2. Verificar que Calendar, Gmail e Drive estao conectados no Google Hub
+3. Verificar que dados aparecem corretamente em cada secao
+4. Se algum escopo estiver desconectado, reconectar via Google Hub
 
 ---
 
@@ -306,11 +303,10 @@ Visibility: UNLISTED
 - [ ] Demonstracao de revogacao por escopo
 
 ### Credenciais de Teste
-- [ ] Conta google-review@aica.guru criada
-- [ ] Dados de exemplo populados (tarefas, momentos, pergunta diaria)
-- [ ] Google Calendar conectado na conta de teste
-- [ ] Gmail conectado na conta de teste
-- [ ] Drive conectado na conta de teste
+- [ ] Conta lucasboscacci@gmail.com logada na AICA com dados populados
+- [ ] Google Calendar conectado e visivel no Google Hub
+- [ ] Gmail conectado e visivel no Google Hub
+- [ ] Drive conectado e visivel no Google Hub
 
 ---
 
@@ -329,7 +325,7 @@ Visibility: UNLISTED
    - "How will scopes be used?" (secao 4 deste doc)
    - App description (secao 3 deste doc)
    - Video URL (YouTube unlisted)
-   - Test account credentials
+   - Test account: lucasboscacci@gmail.com (login via Google OAuth)
 8. Submeter
 
 ### Tempo de Revisao Esperado
