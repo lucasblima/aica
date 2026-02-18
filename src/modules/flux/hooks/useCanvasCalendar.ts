@@ -212,12 +212,19 @@ export function useCanvasCalendar(
     fetchAthleteCalendar();
   }, [fetchAthleteCalendar]);
 
+  // Filter out AICA-originated events from coach calendar to avoid duplication
+  // (workout slots already render as cards on the grid — no need to also show them as busy overlays)
+  const externalCoachEvents = useMemo(
+    () => coachEvents.filter((e) => !e.aicaModule),
+    [coachEvents]
+  );
+
   // Compute combined busy slots from visible calendars
   const busySlots = useMemo<BusySlot[]>(() => {
     const slots: BusySlot[] = [];
 
-    if (showCoach && coachEvents.length > 0) {
-      slots.push(...eventsToBusySlots(coachEvents, 'coach', weekStartDate, weekEnd));
+    if (showCoach && externalCoachEvents.length > 0) {
+      slots.push(...eventsToBusySlots(externalCoachEvents, 'coach', weekStartDate, weekEnd));
     }
 
     if (showAthlete && athleteEvents.length > 0) {
@@ -229,7 +236,7 @@ export function useCanvasCalendar(
       if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
       return a.startTime.localeCompare(b.startTime);
     });
-  }, [coachEvents, athleteEvents, showCoach, showAthlete, weekStartDate, weekEnd]);
+  }, [externalCoachEvents, athleteEvents, showCoach, showAthlete, weekStartDate, weekEnd]);
 
   // Combined refresh
   const refresh = useCallback(async () => {
