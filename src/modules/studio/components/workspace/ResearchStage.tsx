@@ -40,6 +40,8 @@ import {
   StopCircle,
   PanelLeftOpen,
   PanelLeftClose,
+  Search,
+  ExternalLink,
 } from 'lucide-react';
 import type { WorkspaceCustomSource } from '@/modules/studio/types';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -139,11 +141,20 @@ export default function ResearchStage() {
   };
 
   const handleGenerateDossier = async () => {
+    // If deep research already exists from wizard, use it to generate the dossier
+    if (research.deepResearch && !research.dossier) {
+      await actions.deepResearch('standard');
+      return;
+    }
     await actions.generateDossier();
   };
 
   const handleRegenerateDossier = async () => {
     await actions.regenerateDossier();
+  };
+
+  const handleDeepResearch = async () => {
+    await actions.deepResearch('deep');
   };
 
   const handleSendChatMessage = async () => {
@@ -235,6 +246,28 @@ export default function ResearchStage() {
                     <>
                       <RefreshCw className="w-5 h-5" aria-hidden="true" />
                       <span>Regenerar</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {research.dossier && (
+                <button
+                  onClick={handleDeepResearch}
+                  disabled={research.isGenerating}
+                  className="w-full px-4 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:bg-ceramic-cool disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  aria-label={research.isGenerating ? 'Pesquisando...' : 'Aprofundar pesquisa com Google Search'}
+                  aria-busy={research.isGenerating}
+                >
+                  {research.isGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                      <span>Pesquisando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-5 h-5" aria-hidden="true" />
+                      <span>Aprofundar Pesquisa</span>
                     </>
                   )}
                 </button>
@@ -354,7 +387,48 @@ export default function ResearchStage() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Dossier Content */}
           <div className="flex-1 overflow-y-auto">
-            {!research.dossier ? (
+            {/* Deep Research Banner */}
+          {research.deepResearch && research.dossier && (
+            <div className="mx-4 md:mx-8 mt-4 p-4 rounded-xl bg-indigo-50 border border-indigo-200">
+              <div className="flex items-start gap-3">
+                <Search className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-indigo-800">
+                    Pesquisa realizada durante criacao do episodio
+                  </p>
+                  <p className="text-xs text-indigo-600 mt-1">
+                    Profundidade: {research.deepResearch.researchDepth === 'deep' ? 'Profunda' : research.deepResearch.researchDepth === 'standard' ? 'Padrao' : 'Rapida'}
+                    {research.deepResearch.researchTimestamp && (
+                      <> &middot; {new Date(research.deepResearch.researchTimestamp).toLocaleString('pt-BR')}</>
+                    )}
+                  </p>
+                  {research.deepResearch.sources && research.deepResearch.sources.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-semibold text-indigo-700 mb-2">
+                        Fontes ({research.deepResearch.sources.length})
+                      </p>
+                      <div className="space-y-1">
+                        {research.deepResearch.sources.map((source, idx) => (
+                          <a
+                            key={idx}
+                            href={source.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 hover:underline truncate"
+                          >
+                            <ExternalLink className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                            <span className="truncate">{source.title || source.url}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!research.dossier ? (
               research.isGenerating ? (
                 /* Dossier generating skeleton */
                 <div className="p-4 md:p-8 max-w-3xl" role="status" aria-label="Gerando dossier">
@@ -389,9 +463,14 @@ export default function ResearchStage() {
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center py-12">
                     <Sparkles className="w-16 h-16 text-ceramic-text-tertiary mx-auto mb-4" aria-hidden="true" />
-                    <h3 className="text-lg font-semibold text-ceramic-primary mb-2">Dossier nao gerado</h3>
+                    <h3 className="text-lg font-semibold text-ceramic-primary mb-2">
+                      {research.deepResearch ? 'Pesquisa pronta para gerar dossier' : 'Dossier nao gerado'}
+                    </h3>
                     <p className="text-ceramic-secondary max-w-sm">
-                      Clique em Gerar Dossier para comecar
+                      {research.deepResearch
+                        ? 'Pesquisa realizada no wizard. Clique em Gerar Dossier para transformar em dossier completo.'
+                        : 'Clique em Gerar Dossier para comecar'
+                      }
                     </p>
                   </div>
                 </div>

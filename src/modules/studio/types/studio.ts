@@ -76,6 +76,8 @@ export interface PodcastProjectMetadata {
   location?: string;
   season?: string;
   recordingDuration?: number;
+  deepResearch?: DeepResearchResult;
+  guestContext?: string;
 }
 
 export interface VideoProjectMetadata {
@@ -302,6 +304,34 @@ export const INITIAL_STUDIO_STATE: StudioState = {
   error: null,
   userId: null,
 };
+
+// ============================================================================
+// DEEP RESEARCH RESULT (AI Guest Research)
+// ============================================================================
+
+export interface DeepResearchResult {
+  dossier: {
+    biography: string;
+    technicalSheet: {
+      fullName?: string;
+      profession?: string;
+      company?: string;
+      education?: { degree: string; institution: string; year?: string }[];
+      careerHighlights?: { title: string; organization: string; period?: string }[];
+      socialMedia?: { platform: string; handle: string }[];
+      keyFacts?: string[];
+    };
+    controversies: string[];
+    iceBreakers: string[];
+    suggestedQuestions: { theme: string; questions: string[] }[];
+  };
+  suggestedThemes: string[];
+  suggestedTitles: Record<string, string[]>;
+  sources: { title: string; url: string }[];
+  researchTimestamp: string;
+  researchDepth: string;
+  recentAppearances?: string;
+}
 
 // ============================================================================
 // PHASE 1 — POST-PRODUCTION TYPES
