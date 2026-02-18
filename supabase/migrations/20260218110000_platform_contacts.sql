@@ -69,23 +69,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_platform_contacts_owner_email_unique ON pu
 ALTER TABLE public.platform_contacts ENABLE ROW LEVEL SECURITY;
 
 -- Owner can read all their contacts
+DROP POLICY IF EXISTS "owner_select_contacts" ON public.platform_contacts;
 CREATE POLICY "owner_select_contacts" ON public.platform_contacts
   FOR SELECT USING (auth.uid() = owner_id);
 
 -- Owner can insert contacts
+DROP POLICY IF EXISTS "owner_insert_contacts" ON public.platform_contacts;
 CREATE POLICY "owner_insert_contacts" ON public.platform_contacts
   FOR INSERT WITH CHECK (auth.uid() = owner_id);
 
 -- Owner can update their contacts
+DROP POLICY IF EXISTS "owner_update_contacts" ON public.platform_contacts;
 CREATE POLICY "owner_update_contacts" ON public.platform_contacts
   FOR UPDATE USING (auth.uid() = owner_id)
   WITH CHECK (auth.uid() = owner_id);
 
 -- Owner can delete their contacts
+DROP POLICY IF EXISTS "owner_delete_contacts" ON public.platform_contacts;
 CREATE POLICY "owner_delete_contacts" ON public.platform_contacts
   FOR DELETE USING (auth.uid() = owner_id);
 
 -- Linked user (contact who signed up) can see their own contact record
+DROP POLICY IF EXISTS "linked_user_select_self" ON public.platform_contacts;
 CREATE POLICY "linked_user_select_self" ON public.platform_contacts
   FOR SELECT USING (auth.uid() = auth_user_id);
 
@@ -292,6 +297,7 @@ CREATE INDEX IF NOT EXISTS idx_episodes_guest_contact ON public.podcast_episodes
 -- 10. RLS: Guest can see episodes where they are the guest
 -- =====================
 
+DROP POLICY IF EXISTS "guest_select_own_episodes" ON public.podcast_episodes;
 CREATE POLICY "guest_select_own_episodes" ON public.podcast_episodes
   FOR SELECT USING (
     EXISTS (
