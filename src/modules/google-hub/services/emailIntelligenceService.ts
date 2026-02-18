@@ -31,7 +31,13 @@ export async function categorizeInbox(limit = 20): Promise<{ categorized: number
 
     if (!data?.success) {
       log.warn('[categorizeInbox] API error:', data?.error);
+      if (data?._debug) log.warn('[categorizeInbox] Debug:', data._debug);
       return { categorized: 0, error: data?.error || 'Erro na categorizacao' };
+    }
+
+    // Log debug info from Edge Function for diagnostics
+    if (data?._debug) {
+      log.info('[categorizeInbox] EF debug:', data._debug);
     }
 
     return { categorized: data.categorized ?? 0 };
