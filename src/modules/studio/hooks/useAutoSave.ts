@@ -27,7 +27,7 @@ interface UseAutoSaveOptions {
  *
  * Razões:
  * - TIME/DATE/INTEGER/BOOLEAN não aceitam string vazia
- * - Campos com CHECK constraints (ex: guest_email) não aceitam string vazia
+ * - Campos com CHECK constraints não aceitam string vazia
  * - É mais seguro converter tudo para null do que listar cada campo problemático
  */
 function sanitizePayload(data: Record<string, any>): Record<string, any> {
@@ -95,8 +95,8 @@ export function useAutoSave({
         // Setup fields (only fields that exist in podcast_episodes)
         guest_name: currentState.setup.guestName,
         guest_reference: currentState.setup.guestReference,
-        guest_phone: currentState.setup.phone,
-        guest_email: currentState.setup.email,
+        // Note: guest_phone and guest_email columns may not exist on remote DB
+        // (migration 20251210000000 not applied). Omitted to avoid PGRST204 error.
         episode_theme: currentState.setup.theme, // Added: migration 20251221
         scheduled_time: currentState.setup.scheduledTime,
 
