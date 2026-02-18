@@ -347,6 +347,7 @@ Foque nas consultas MAIS RELEVANTES para o contexto do modulo.`;
     config: {
       maxOutputTokens: 4096,
       temperature: 0.3,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
@@ -554,6 +555,7 @@ Retorne APENAS JSON valido:
     config: {
       maxOutputTokens: 4096,
       temperature: 0.2,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
@@ -627,14 +629,18 @@ Retorne APENAS JSON valido:
 // ============================================================================
 
 function extractJSON(text: string): unknown {
-  // Strip code fences first
-  let cleaned = text.replace(/```(?:json)?\s*\n?/g, '').replace(/```\s*$/g, '');
-  // Find JSON object
+  // 1. Strip thinking tags (Gemini 2.5 may include them)
+  let cleaned = text.replace(/<thinking>[\s\S]*?<\/thinking>/g, '');
+  // 2. Strip code fences
+  cleaned = cleaned.replace(/```(?:json)?\s*\n?/g, '').replace(/```\s*$/g, '');
+  cleaned = cleaned.trim();
+  // 3. Find JSON object
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
-  if (start !== -1 && end > start) {
-    cleaned = cleaned.substring(start, end + 1);
+  if (start === -1 || end <= start) {
+    throw new Error(`No JSON object found in response (length=${text.length})`);
   }
+  cleaned = cleaned.substring(start, end + 1);
   return JSON.parse(cleaned);
 }
 
