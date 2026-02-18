@@ -249,19 +249,19 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
 
             log.debug('Task updated:', taskId, updates);
 
-            // Re-sync to Google Calendar if task has scheduled_time (non-blocking)
+            // Re-sync to Google Calendar if task has due_date (non-blocking)
             const mergedTask = editingTask ? { ...editingTask, ...updates } : updates;
-            const scheduledTime = mergedTask.scheduled_time;
             const dueDate = mergedTask.due_date;
-            if (scheduledTime && dueDate) {
+            if (dueDate) {
                 isGoogleCalendarConnected().then((connected) => {
                     if (!connected) return;
                     const eventData = atlasTaskToGoogleEvent({
                         id: taskId,
                         title: (mergedTask.title as string) || '',
                         description: mergedTask.description as string | undefined,
-                        scheduled_time: scheduledTime as string,
+                        scheduled_time: mergedTask.scheduled_time as string | undefined,
                         due_date: dueDate as string,
+                        estimated_duration: mergedTask.estimated_duration as number | undefined,
                     });
                     if (eventData) {
                         syncEntityToGoogle('atlas', taskId, eventData).catch((err) =>
