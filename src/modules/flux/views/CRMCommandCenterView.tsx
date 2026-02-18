@@ -191,9 +191,31 @@ export default function CRMCommandCenterView() {
                   <h3 className="text-base font-bold text-ceramic-text-primary mb-1">
                     {athlete.name}
                   </h3>
-                  <p className="text-xs text-ceramic-text-secondary mb-2">
+                  <p className="text-xs text-ceramic-text-secondary mb-3">
                     {athlete.level} · {modalityConfig?.label}
                   </p>
+
+                  {/* Per-athlete adherence bar */}
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] uppercase tracking-wide text-ceramic-text-secondary font-medium">Adesão</span>
+                      <span className={`text-xs font-bold ${
+                        (athlete.adherence_rate ?? 0) >= 80 ? 'text-ceramic-success' :
+                        (athlete.adherence_rate ?? 0) >= 60 ? 'text-amber-500' : 'text-ceramic-error'
+                      }`}>
+                        {athlete.adherence_rate ?? 0}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          (athlete.adherence_rate ?? 0) >= 80 ? 'bg-ceramic-success' :
+                          (athlete.adherence_rate ?? 0) >= 60 ? 'bg-amber-500' : 'bg-ceramic-error'
+                        }`}
+                        style={{ width: `${Math.min(athlete.adherence_rate ?? 0, 100)}%` }}
+                      />
+                    </div>
+                  </div>
 
                   <button
                     onClick={(e) => {
