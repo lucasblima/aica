@@ -61,7 +61,9 @@ serve(async (req) => {
     }
 
     // 3. Get Google token
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
     const tokenResult = await getGoogleTokenForUser(user.id, 'gmail.readonly', supabaseAdmin);
 
     if (tokenResult.error) {
@@ -231,6 +233,8 @@ Retorne APENAS JSON valido no formato array:
 Responda APENAS com JSON valido, sem texto adicional.`;
 
   const geminiResult = await callGemini(geminiApiKey, prompt);
+  console.log(TAG, `Gemini raw response length: ${geminiResult.length}, first 200 chars:`, geminiResult.substring(0, 200));
+
   let categorized: Array<{
     message_id: string;
     category: string;
@@ -242,30 +246,87 @@ Responda APENAS com JSON valido, sem texto adicional.`;
   try {
     categorized = extractJSON(geminiResult) as typeof categorized;
     if (!Array.isArray(categorized)) {
+      console.warn(TAG, 'Parsed result is not an array, wrapping:', typeof categorized);
       categorized = [];
     }
   } catch (parseErr) {
     console.error(TAG, 'Failed to parse categorization JSON:', parseErr);
+    console.error(TAG, 'Raw response was:', geminiResult.substring(0, 500));
     return { categorized: 0, categories: {}, error: 'Failed to parse AI response' };
   }
 
-  // Upsert results into gmail_email_categories
-  for (const item of categorized) {
-    const { error: upsertError } = await supabaseAdmin
-      .from('gmail_email_categories')
-      .upsert({
-        user_id: userId,
-        message_id: item.message_id,
-        category: item.category,
-        confidence: item.confidence,
-        extracted_tasks: item.tasks || [],
-        extracted_contacts: item.contacts || [],
-        processed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,message_id' });
+  console.log(TAG, `Parsed ${categorized.length} categorized items`);
 
-    if (upsertError) {
-      console.error(TAG, `Upsert failed for message ${item.message_id}:`, upsertError.message);
+  // Normalize categories to match CHECK constraint (lowercase, valid values only)
+  const VALID_CATEGORIES = new Set(['actionable', 'informational', 'newsletter', 'receipt', 'personal', 'notification']);
+  const CATEGORY_MAP: Record<string, string> = {
+    'promotional': 'newsletter',
+    'promo': 'newsletter',
+    'marketing': 'newsletter',
+    'spam': 'notification',
+    'social': 'personal',
+    'update': 'informational',
+    'updates': 'informational',
+    'transactional': 'receipt',
+    'finance': 'receipt',
+    'alert': 'notification',
+    'alerts': 'notification',
+  };
+
+  for (const item of categorized) {
+    const original = item.category;
+    item.category = (item.category || '').toLowerCase().trim();
+    if (!VALID_CATEGORIES.has(item.category)) {
+      item.category = CATEGORY_MAP[item.category] || 'informational';
+      console.warn(TAG, `Normalized category "${original}" → "${item.category}"`);
     }
+    // Clamp confidence to valid NUMERIC(3,2) range
+    item.confidence = Math.min(Math.max(Number(item.confidence) || 0, 0), 9.99);
+  }
+
+  // Build payload for RPC upsert
+  const payload = categorized.map(item => ({
+    message_id: item.message_id,
+    category: item.category,
+    confidence: item.confidence,
+    extracted_tasks: item.tasks || [],
+    extracted_contacts: item.contacts || [],
+  }));
+
+  console.log(TAG, `Upserting ${payload.length} items via RPC. Sample:`, JSON.stringify(payload[0]));
+
+  // Use the RPC for atomic upsert (SECURITY DEFINER, handles conflicts)
+  const { data: upsertCount, error: rpcError } = await supabaseAdmin.rpc('upsert_email_categories', {
+    p_user_id: userId,
+    p_categories: payload,
+  });
+
+  if (rpcError) {
+    console.error(TAG, 'RPC upsert_email_categories FAILED:', rpcError.message, rpcError.details, rpcError.hint);
+    // Fallback: try direct upserts one by one for debugging
+    let directSuccess = 0;
+    for (const item of payload) {
+      const { error: upsertError } = await supabaseAdmin
+        .from('gmail_email_categories')
+        .upsert({
+          user_id: userId,
+          message_id: item.message_id,
+          category: item.category,
+          confidence: item.confidence,
+          extracted_tasks: item.extracted_tasks,
+          extracted_contacts: item.extracted_contacts,
+          processed_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,message_id' });
+
+      if (upsertError) {
+        console.error(TAG, `Direct upsert FAILED for ${item.message_id}:`, upsertError.message, upsertError.code, upsertError.details);
+      } else {
+        directSuccess++;
+      }
+    }
+    console.log(TAG, `Fallback direct upsert: ${directSuccess}/${payload.length} succeeded`);
+  } else {
+    console.log(TAG, `RPC upsert_email_categories SUCCESS: ${upsertCount} rows upserted`);
   }
 
   // Build category summary
