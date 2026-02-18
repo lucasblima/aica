@@ -258,9 +258,9 @@ Responda APENAS com JSON valido, sem texto adicional.`;
         message_id: item.message_id,
         category: item.category,
         confidence: item.confidence,
-        ai_tasks: item.tasks || [],
-        ai_contacts: item.contacts || [],
-        categorized_at: new Date().toISOString(),
+        extracted_tasks: item.tasks || [],
+        extracted_contacts: item.contacts || [],
+        processed_at: new Date().toISOString(),
       }, { onConflict: 'user_id,message_id' });
 
     if (upsertError) {
@@ -355,11 +355,18 @@ Responda APENAS com JSON valido, sem texto adicional.`;
           allTasks.push({ message_id: messageId, ...task });
 
           // Insert into email_extracted_tasks
+          // Get subject and sender for context
+          const msgHeaders = msgData.payload?.headers || [];
+          const msgSubject = msgHeaders.find((h: { name: string }) => h.name.toLowerCase() === 'subject')?.value || '';
+          const msgSender = msgHeaders.find((h: { name: string }) => h.name.toLowerCase() === 'from')?.value || '';
+
           const { error: insertError } = await supabaseAdmin
             .from('email_extracted_tasks')
             .insert({
               user_id: userId,
-              message_id: messageId,
+              source_message_id: messageId,
+              source_subject: msgSubject,
+              source_sender: msgSender,
               task_description: task.task_description,
               due_date: task.due_date || null,
               priority: task.priority || 'medium',
