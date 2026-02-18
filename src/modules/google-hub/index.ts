@@ -9,6 +9,7 @@
 export { GoogleHubPage } from './pages/GoogleHubPage';
 export { GoogleContextPanel } from './components/GoogleContextPanel';
 export { EmailCategoryBadge } from './components/EmailCategoryBadge';
+export { EmailDetailSheet } from './components/EmailDetailSheet';
 export { useEmailCategories } from './hooks/useEmailCategories';
 export { useEmailTaskExtraction } from './hooks/useEmailTaskExtraction';
 export type {

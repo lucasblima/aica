@@ -26,6 +26,7 @@ interface UseEmailCategoriesReturn {
   setSelectedCategory: (category: EmailCategory | null) => void;
   getCounts: () => Record<EmailCategory, number>;
   hasCategorized: boolean;
+  lastCategorizedCount: number | null;
 }
 
 const ALL_CATEGORIES: EmailCategory[] = [
@@ -38,6 +39,7 @@ export function useEmailCategories(): UseEmailCategoriesReturn {
   const [categorizing, setCategorizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<EmailCategory | null>(null);
+  const [lastCategorizedCount, setLastCategorizedCount] = useState<number | null>(null);
 
   const fetchCategorized = useCallback(async (category?: EmailCategory) => {
     const hasScope = await hasGmailScope();
@@ -66,13 +68,16 @@ export function useEmailCategories(): UseEmailCategoriesReturn {
   }, [fetchCategorized]);
 
   const categorize = useCallback(async () => {
+    console.log('[useEmailCategories] categorize CALLED');
     setCategorizing(true);
     setError(null);
+    setLastCategorizedCount(null);
     try {
       const result = await categorizeInbox(20);
       if (result.error) {
         setError(result.error);
       } else {
+        setLastCategorizedCount(result.categorized);
         // Refresh from DB after categorization
         await fetchCategorized(selectedCategory ?? undefined);
       }
@@ -110,5 +115,6 @@ export function useEmailCategories(): UseEmailCategoriesReturn {
     setSelectedCategory,
     getCounts,
     hasCategorized,
+    lastCategorizedCount,
   };
 }

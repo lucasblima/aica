@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { motion, type Variants } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import {
     Mail, Search, RefreshCw, Loader2, ChevronDown, Paperclip, Unlink,
-    Sparkles, Check, X, ArrowRight,
+    Sparkles, Check, X, ArrowRight, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import { useGmailIntegration } from '@/hooks/useGmailIntegration';
 import { useEmailCategories } from '../hooks/useEmailCategories';
 import { useEmailTaskExtraction } from '../hooks/useEmailTaskExtraction';
+import { extractTasksFromEmails } from '../services/emailIntelligenceService';
 import { EmailCategoryBadge } from './EmailCategoryBadge';
+import { EmailDetailSheet } from './EmailDetailSheet';
 import type { GmailMessage } from '@/services/gmailService';
 import type { EmailCategory } from '../types';
 
@@ -80,9 +82,10 @@ interface EmailRowProps {
     email: GmailMessage;
     category?: EmailCategory;
     confidence?: number;
+    onClick?: () => void;
 }
 
-function EmailRow({ email, category, confidence }: EmailRowProps) {
+function EmailRow({ email, category, confidence, onClick }: EmailRowProps) {
     const name = senderDisplay(email);
     const color = avatarColor(name);
     const isUnread = !email.isRead;
@@ -93,6 +96,7 @@ function EmailRow({ email, category, confidence }: EmailRowProps) {
             whileHover={{ x: 4 }}
             transition={{ duration: 0.15 }}
             className="flex items-start gap-3 px-1 py-3 cursor-pointer"
+            onClick={onClick}
         >
             <div
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -162,11 +166,13 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
     const {
         categories,
         categorizing,
+        error: categorizeError,
         selectedCategory,
         categorize,
         setSelectedCategory,
         getCounts,
         hasCategorized,
+        lastCategorizedCount,
     } = useEmailCategories();
     const {
         pendingTasks,
@@ -178,6 +184,17 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
     const [isSearching, setIsSearching] = useState(false);
     const [acceptingId, setAcceptingId] = useState<string | null>(null);
     const [dismissingId, setDismissingId] = useState<string | null>(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [selectedEmail, setSelectedEmail] = useState<GmailMessage | null>(null);
+
+    // Auto-show and auto-fade success banner
+    useEffect(() => {
+        if (lastCategorizedCount !== null && !categorizing) {
+            setShowSuccess(true);
+            const timer = setTimeout(() => setShowSuccess(false), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [lastCategorizedCount, categorizing]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -198,6 +215,10 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
         await dismissTask(taskId);
         setDismissingId(null);
     };
+
+    const handleExtractTasksFromSheet = useCallback(async (messageId: string) => {
+        await extractTasksFromEmails([messageId]);
+    }, []);
 
     // Filter emails by selected category
     const filteredEmails = selectedCategory
@@ -270,6 +291,66 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                         )}
                     </div>
                 </div>
+
+                {/* Categorization status banners */}
+                <AnimatePresence>
+                    {categorizing && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-3 overflow-hidden"
+                        >
+                            <div className="flex items-center gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200/60 rounded-xl">
+                                <Loader2 className="w-4 h-4 text-amber-600 animate-spin flex-shrink-0" />
+                                <span className="text-sm font-medium text-amber-800">
+                                    Categorizando emails com IA...
+                                </span>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {categorizeError && !categorizing && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-3 overflow-hidden"
+                        >
+                            <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-red-50 border border-red-200/60 rounded-xl">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                    <span className="text-sm text-red-700 truncate">{categorizeError}</span>
+                                </div>
+                                <button
+                                    onClick={categorize}
+                                    className="text-xs font-medium text-red-600 hover:text-red-800 whitespace-nowrap px-2 py-1 rounded-md hover:bg-red-100 transition-colors"
+                                >
+                                    Tentar novamente
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {showSuccess && !categorizing && !categorizeError && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-3 overflow-hidden"
+                        >
+                            <div className="flex items-center gap-2 px-3 py-2.5 bg-emerald-50 border border-emerald-200/60 rounded-xl">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                <span className="text-sm font-medium text-emerald-800">
+                                    {lastCategorizedCount === 0
+                                        ? 'Nenhum email novo para categorizar'
+                                        : `${lastCategorizedCount} email${lastCategorizedCount === 1 ? '' : 's'} categorizado${lastCategorizedCount === 1 ? '' : 's'}!`
+                                    }
+                                </span>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Category tab bar */}
                 {hasCategorized && (
@@ -408,6 +489,7 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                                     email={email}
                                     category={catData?.category}
                                     confidence={catData?.confidence}
+                                    onClick={() => setSelectedEmail(email)}
                                 />
                             );
                         })}
@@ -428,6 +510,15 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                     </button>
                 </div>
             )}
+
+            {/* Email detail sheet */}
+            <EmailDetailSheet
+                email={selectedEmail}
+                category={selectedEmail ? categories.get(selectedEmail.id)?.category : undefined}
+                confidence={selectedEmail ? categories.get(selectedEmail.id)?.confidence : undefined}
+                onClose={() => setSelectedEmail(null)}
+                onExtractTasks={handleExtractTasksFromSheet}
+            />
         </div>
     );
 }

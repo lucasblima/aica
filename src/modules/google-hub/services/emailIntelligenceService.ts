@@ -24,6 +24,8 @@ export async function categorizeInbox(limit = 20): Promise<{ categorized: number
       body: { action: 'categorize_batch', limit },
     });
 
+    console.log('[categorizeInbox] Response:', JSON.stringify({ data, error }));
+
     if (error) {
       log.error('[categorizeInbox] Edge Function error:', { error });
       return { categorized: 0, error: error.message };
@@ -99,7 +101,7 @@ export async function enrichContactFromEmails(contactEmail: string): Promise<Con
 export async function getMessageBody(messageId: string): Promise<string | null> {
   try {
     const { data, error } = await supabase.functions.invoke('gmail-proxy', {
-      body: { action: 'get_message_body', message_id: messageId },
+      body: { action: 'get_message_body', payload: { messageId } },
     });
 
     if (error) {
@@ -107,7 +109,31 @@ export async function getMessageBody(messageId: string): Promise<string | null> 
       return null;
     }
 
-    return data?.success ? (data.body ?? null) : null;
+    if (!data?.success) return null;
+
+    const bodyText = data.data?.body ?? null;
+    if (!bodyText) return null;
+
+    // Strip HTML if content type is text/html
+    if (data.data?.content_type === 'text/html') {
+      return bodyText
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    return bodyText;
   } catch (err) {
     log.error('[getMessageBody] Exception:', { error: err });
     return null;
