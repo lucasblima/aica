@@ -6,6 +6,9 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
 import { processVoiceToTask, type ExtractedTaskData } from '@/services/taskExtractionService';
 import { suggestPriority, QUADRANT_MAP, type PrioritySuggestion } from '@/modules/atlas/services/atlasAIService';
+import { syncEntityToGoogle } from '@/services/calendarSyncService';
+import { atlasTaskToGoogleEvent } from '@/services/calendarSyncTransforms';
+import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 
 const log = createNamespacedLogger('TaskCreationQuickAdd');
 
@@ -152,7 +155,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     setError(null);
 
     try {
-      const { error: insertError } = await supabase
+      const { data: newTask, error: insertError } = await supabase
         .from('work_items')
         .insert({
           user_id: userId,
@@ -165,12 +168,33 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
           priority: data.priority || 'medium',
           due_date: data.due_date || null,
           estimated_duration: data.estimated_duration || null,
-        });
+        })
+        .select('id, title, description, due_date, estimated_duration')
+        .single();
 
       if (insertError) {
         log.error('Insert error:', insertError);
         setError('Erro ao criar tarefa. Tente novamente.');
         return;
+      }
+
+      // Sync to Google Calendar (non-blocking, fire-and-forget)
+      if (newTask?.due_date) {
+        isGoogleCalendarConnected().then((connected) => {
+          if (!connected) return;
+          const eventData = atlasTaskToGoogleEvent({
+            id: newTask.id,
+            title: newTask.title,
+            description: newTask.description || undefined,
+            due_date: newTask.due_date,
+            estimated_duration: newTask.estimated_duration || undefined,
+          });
+          if (eventData) {
+            syncEntityToGoogle('atlas', newTask.id, eventData).catch((err) =>
+              log.warn('Calendar sync failed for new task:', err)
+            );
+          }
+        });
       }
 
       resetAll();
