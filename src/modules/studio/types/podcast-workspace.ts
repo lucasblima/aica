@@ -250,6 +250,9 @@ export interface SetupState {
    */
   guestBio: string;
 
+  /** Platform contact ID (from platform_contacts table) */
+  guestContactId: string | null;
+
   /** Contact information */
   phone: string;
   email: string;

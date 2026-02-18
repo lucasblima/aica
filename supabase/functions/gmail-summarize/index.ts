@@ -20,6 +20,7 @@ interface ThreadGroup {
   subject: string;
   messages: Array<{
     from: string;
+    to: string;
     date: string;
     snippet: string;
   }>;
@@ -73,7 +74,7 @@ serve(async (req) => {
 
     const contactEmail = payload.contactEmail;
     const contactName = payload.contactName || contactEmail;
-    const maxMessages = Math.min(payload.maxMessages || 50, 50);
+    const maxMessages = Math.min(payload.maxMessages || 150, 200);
 
     if (!contactEmail) {
       return new Response(
@@ -99,19 +100,34 @@ serve(async (req) => {
     };
 
     // 4. Search Gmail for messages with this contact
-    const query = `from:${contactEmail} OR to:${contactEmail}`;
-    const params = new URLSearchParams({
-      q: query,
-      maxResults: String(maxMessages),
-    });
+    // Use {from:X to:X} grouping syntax for precise header matching (not body text)
+    const query = `{from:${contactEmail} to:${contactEmail} cc:${contactEmail} bcc:${contactEmail}}`;
+    console.log(TAG, `Step 4: Searching Gmail for "${query}" (max ${maxMessages})`);
 
-    console.log(TAG, `Searching Gmail for "${query}" (max ${maxMessages})`);
+    // Paginate through all results up to maxMessages
+    let messageRefs: Array<{ id: string }> = [];
+    let pageToken: string | undefined;
+    while (messageRefs.length < maxMessages) {
+      const params = new URLSearchParams({
+        q: query,
+        maxResults: String(Math.min(100, maxMessages - messageRefs.length)),
+      });
+      if (pageToken) params.set('pageToken', pageToken);
 
-    const listRes = await fetch(`${GMAIL_API}/messages?${params}`, { headers: googleHeaders });
-    if (!listRes.ok) throw await buildGmailError(listRes);
+      const listRes = await fetch(`${GMAIL_API}/messages?${params}`, { headers: googleHeaders });
+      if (!listRes.ok) {
+        const gmailErr = await buildGmailError(listRes);
+        console.error(TAG, 'Gmail list failed:', gmailErr.message);
+        throw gmailErr;
+      }
 
-    const listData = await listRes.json();
-    const messageRefs = listData.messages || [];
+      const listData = await listRes.json();
+      const batch = listData.messages || [];
+      messageRefs = messageRefs.concat(batch);
+      pageToken = listData.nextPageToken;
+      if (!pageToken || batch.length === 0) break;
+    }
+    console.log(TAG, `Step 4b: Total message refs collected: ${messageRefs.length}`);
 
     if (messageRefs.length === 0) {
       return new Response(
@@ -134,20 +150,37 @@ serve(async (req) => {
     }
 
     // 5. Fetch metadata for each message
-    console.log(TAG, `Found ${messageRefs.length} messages, fetching metadata...`);
+    console.log(TAG, `Step 5: Found ${messageRefs.length} messages, fetching metadata...`);
 
-    const detailed = await Promise.all(
-      messageRefs.map(async (m: { id: string }) => {
-        const res = await fetch(
-          `${GMAIL_API}/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date&metadataHeaders=To`,
-          { headers: googleHeaders }
-        );
-        if (!res.ok) return { id: m.id, error: true };
-        return await res.json();
-      })
-    );
+    // Batch in groups of 20 to avoid rate limiting
+    const BATCH_SIZE = 20;
+    const detailed: Array<Record<string, unknown>> = [];
+    for (let i = 0; i < messageRefs.length; i += BATCH_SIZE) {
+      const batch = messageRefs.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(
+        batch.map(async (m: { id: string }) => {
+          const res = await fetch(
+            `${GMAIL_API}/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date&metadataHeaders=To&metadataHeaders=Cc`,
+            { headers: googleHeaders }
+          );
+          if (!res.ok) return { id: m.id, error: true };
+          return await res.json();
+        })
+      );
+      detailed.push(...results);
+    }
 
-    const formattedMessages = detailed.map(formatMessageMetadata).filter(m => m && !m.error);
+    const allFormatted = detailed.map(formatMessageMetadata).filter(m => m && !m.error);
+
+    // Post-filter: only keep messages where contactEmail appears in From, To, or Cc
+    const contactLower = contactEmail.toLowerCase();
+    const formattedMessages = allFormatted.filter(m => {
+      const from = String(m.senderEmail || m.sender || '').toLowerCase();
+      const to = String(m.to || '').toLowerCase();
+      const cc = String(m.cc || '').toLowerCase();
+      return from.includes(contactLower) || to.includes(contactLower) || cc.includes(contactLower);
+    });
+    console.log(TAG, `Step 5b: ${allFormatted.length} messages fetched, ${formattedMessages.length} match contact "${contactEmail}" (${allFormatted.length - formattedMessages.length} filtered out)`);
 
     if (formattedMessages.length < 3) {
       return new Response(
@@ -183,6 +216,7 @@ serve(async (req) => {
       }
       threadMap.get(tid)!.messages.push({
         from: msg.sender || '',
+        to: msg.to || '',
         date: msg.date || '',
         snippet: msg.snippet || '',
       });
@@ -202,27 +236,26 @@ serve(async (req) => {
       );
     }
 
-    console.log(TAG, `Calling Gemini with ${threads.length} threads, ${formattedMessages.length} messages`);
+    console.log(TAG, `Step 8: Calling Gemini with ${threads.length} threads, ${formattedMessages.length} messages, prompt length: ${prompt.length}`);
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+    const geminiBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 4096,
+      },
+    };
     const geminiResponse = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 4096,
-        },
-        // Top-level thinkingConfig to disable thinking for structured JSON output
-        thinkingConfig: { thinkingBudget: 0 },
-      }),
+      body: JSON.stringify(geminiBody),
     });
 
     if (!geminiResponse.ok) {
       const errBody = await geminiResponse.text();
       console.error(TAG, `Gemini API error (${geminiResponse.status}):`, errBody.substring(0, 500));
-      throw new Error(`Gemini API error: ${geminiResponse.status}`);
+      throw new Error(`Gemini API error: ${geminiResponse.status} — ${errBody.substring(0, 200)}`);
     }
 
     const geminiResult = await geminiResponse.json();
@@ -284,8 +317,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error(TAG, 'Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
+    const stack = error instanceof Error ? error.stack : '';
+    console.error(TAG, 'Error:', message);
+    console.error(TAG, 'Stack:', stack);
     return new Response(
       JSON.stringify({ success: false, error: message }),
       { status: 500, headers: jsonHeaders }
@@ -313,6 +348,7 @@ function formatMessageMetadata(msg: Record<string, unknown>) {
     sender: fromRaw,
     senderEmail: extractEmail(fromRaw),
     to: getHeader('To'),
+    cc: getHeader('Cc'),
     date: getHeader('Date'),
     receivedAt: msg.internalDate ? new Date(Number(msg.internalDate)).toISOString() : null,
   };
@@ -359,13 +395,16 @@ function buildGeminiPrompt(
   const threadsSummary = threads
     .map((t, i) => {
       const msgs = t.messages
-        .map(m => `    - De: ${m.from} | Data: ${m.date}\n      Trecho: ${m.snippet}`)
+        .map(m => `    - De: ${m.from} | Para: ${m.to} | Data: ${m.date}\n      Trecho: ${m.snippet}`)
         .join('\n');
       return `  Thread ${i + 1}: "${t.subject}"\n${msgs}`;
     })
     .join('\n\n');
 
-  return `Voce e um assistente que analisa conversas de email. Analise as conversas abaixo entre o usuario e o contato "${contactName}" (${contactEmail}).
+  return `Voce e um assistente que analisa conversas de email.
+
+TAREFA: Analise TODAS as conversas abaixo entre o usuario e o contato "${contactName}" (${contactEmail}).
+Todos os emails listados envolvem este contato como remetente, destinatario ou CC.
 
 Total de emails: ${totalEmails}
 Total de threads: ${threads.length}
@@ -375,32 +414,22 @@ ${threadsSummary}
 === FIM DAS CONVERSAS ===
 
 Analise estas conversas e retorne um JSON estruturado com:
-1. "summary": Resumo geral em 2-3 paragrafos sobre o relacionamento e comunicacao com este contato
+1. "summary": Resumo geral em 2-3 paragrafos sobre o relacionamento e comunicacao com este contato. Mencione os principais temas, frequencia e tom da comunicacao.
 2. "topics": Array de topicos discutidos, cada um com { "topic": string, "count": number, "lastMentioned": "YYYY-MM-DD", "sentiment": "positive"|"neutral"|"negative" }
 3. "actionItems": Array de itens pendentes ou acoes mencionadas, cada um com { "item": string, "date": "YYYY-MM-DD", "status": "pending"|"done"|"unclear" }
 4. "sentiment": Objeto com { "overall": "positive"|"neutral"|"negative", "trend": "improving"|"stable"|"declining", "description": string descrevendo o tom geral }
 5. "timeline": Array de periodos com resumo, cada um com { "period": "YYYY-MM", "summary": string curto, "sentiment": "positive"|"neutral"|"negative" }
 
-Exemplo de formato esperado:
-{
-  "summary": "Comunicacao frequente focada em projetos de tecnologia...",
-  "topics": [
-    { "topic": "Projeto X", "count": 5, "lastMentioned": "2026-02-10", "sentiment": "positive" }
-  ],
-  "actionItems": [
-    { "item": "Enviar proposta revisada", "date": "2026-02-15", "status": "pending" }
-  ],
-  "sentiment": {
-    "overall": "positive",
-    "trend": "stable",
-    "description": "Comunicacao cordial e profissional"
-  },
-  "timeline": [
-    { "period": "2026-02", "summary": "Discussoes sobre deadline do projeto", "sentiment": "neutral" }
-  ]
-}
+IMPORTANTE: Foque na analise do conteudo disponivel nos trechos. Mesmo que os trechos sejam curtos, extraia o maximo de informacao possivel sobre os assuntos discutidos.
 
-Responda APENAS com JSON valido, sem texto adicional.`;
+Responda APENAS com JSON valido, sem texto adicional. Exemplo de formato:
+{
+  "summary": "Comunicacao frequente focada em projetos...",
+  "topics": [{ "topic": "Projeto X", "count": 5, "lastMentioned": "2026-02-10", "sentiment": "positive" }],
+  "actionItems": [{ "item": "Enviar proposta", "date": "2026-02-15", "status": "pending" }],
+  "sentiment": { "overall": "positive", "trend": "stable", "description": "Comunicacao cordial" },
+  "timeline": [{ "period": "2026-02", "summary": "Discussoes sobre deadline", "sentiment": "neutral" }]
+}`;
 }
 
 async function buildGmailError(res: Response): Promise<Error> {

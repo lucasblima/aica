@@ -286,12 +286,13 @@ export async function bulkSyncAtlasTasks(): Promise<{ synced: number; skipped: n
   try {
     const userId = await getUserId();
 
+    // Fetch tasks that have scheduled_time OR due_date (supports timed + all-day events)
     const { data: tasks, error } = await supabase
       .from('work_items')
       .select('id, title, description, scheduled_time, due_date, estimated_duration')
       .eq('user_id', userId)
-      .not('scheduled_time', 'is', null)
-      .is('completed_at', null);
+      .is('completed_at', null)
+      .or('scheduled_time.not.is.null,due_date.not.is.null');
 
     if (error) {
       log.error('[bulkSyncAtlasTasks] Error fetching tasks:', error);
@@ -299,7 +300,7 @@ export async function bulkSyncAtlasTasks(): Promise<{ synced: number; skipped: n
     }
 
     if (!tasks || tasks.length === 0) {
-      log.debug('[bulkSyncAtlasTasks] No scheduled tasks found');
+      log.debug('[bulkSyncAtlasTasks] No syncable tasks found');
       return stats;
     }
 

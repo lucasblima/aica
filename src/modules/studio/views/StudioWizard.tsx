@@ -35,6 +35,7 @@ interface WizardFormData {
   scheduledTime: string;
   location: string;
   season: string;
+  guestContactId: string | null;
 }
 
 // ============================================================================
@@ -80,7 +81,8 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
     scheduledDate: '',
     scheduledTime: '',
     location: LOCATIONS[0],
-    season: '1'
+    season: '1',
+    guestContactId: null,
   });
 
   const config = getProjectTypeConfig(projectType);
@@ -148,6 +150,7 @@ export const StudioWizard: React.FC<StudioWizardProps> = ({
           title: formData.title.trim() || `Episodio com ${formData.guestName.trim()}`,
           description: formData.description || null,
           guest_name: formData.guestName || null,
+          guest_contact_id: formData.guestContactId || null,
           episode_theme: formData.theme || null,
           status: 'draft',
           scheduled_date: formData.scheduledDate || null,

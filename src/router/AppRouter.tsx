@@ -61,6 +61,9 @@ const FluxAlertsView = lazy(() => import('../modules/flux').then(m => ({ default
 // Athlete Portal - Read-only training view for athletes
 const AthletePortalView = lazy(() => import('../modules/flux/views/AthletePortalView').then(m => ({ default: m.default })));
 
+// Guest Portal - Read-only episode view for podcast guests
+const GuestPortalView = lazy(() => import('../modules/studio/views/GuestPortalView').then(m => ({ default: m.default })));
+
 // Flow Module - Intelligent training prescription system (5 screens)
 const TemplateLibraryView = lazy(() => import('../modules/flux/views/TemplateLibraryView').then(m => ({ default: m.default })));
 const MicrocycleEditorView = lazy(() => import('../modules/flux/views/MicrocycleEditorView').then(m => ({ default: m.default })));
@@ -720,6 +723,9 @@ export function AppRouter() {
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
                <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
+
+               {/* Guest Portal - Read-only episode view for podcast guests */}
+               <Route path="/meu-episodio" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Episodio" />}><GuestPortalView /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Contacts Module Routes - Protected */}
                <Route

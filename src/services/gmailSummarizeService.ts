@@ -67,7 +67,12 @@ export async function summarizeContact(
         },
     });
 
-    if (error) throw new Error(error.message || 'Erro ao gerar resumo');
+    if (error) {
+        // FunctionsHttpError wraps the response — try to extract real error
+        const body = typeof data === 'object' && data !== null ? data : {};
+        const realError = body?.error || error.message || 'Erro ao gerar resumo';
+        throw new Error(realError);
+    }
     if (!data?.success) throw new Error(data?.error || 'Erro ao gerar resumo');
     return data.data as ConversationSummary;
 }

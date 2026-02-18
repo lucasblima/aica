@@ -98,6 +98,7 @@ export function useAutoSave({
         // Note: guest_phone and guest_email columns may not exist on remote DB
         // (migration 20251210000000 not applied). Omitted to avoid PGRST204 error.
         episode_theme: currentState.setup.theme, // Added: migration 20251221
+        guest_contact_id: currentState.setup.guestContactId || null,
         scheduled_time: currentState.setup.scheduledTime,
 
         // Production fields
