@@ -78,8 +78,8 @@ export async function connectGoogleCalendar(): Promise<void> {
             log.warn('[connectGoogleCalendar] Revogação do token falhou (prosseguindo):', revokeErr);
         }
 
-        // Redirecionar de volta à página atual (não ao root) para UX contínua
-        const calendarRedirectUrl = window.location.origin + window.location.pathname;
+        // Redirect back to current origin (Supabase redirect URL allowlist must include this origin)
+        const calendarRedirectUrl = window.location.origin + '/google-hub';
         log.debug('[connectGoogleCalendar] Redirect URL:', calendarRedirectUrl);
 
         const { error } = await supabase.auth.signInWithOAuth({
@@ -134,7 +134,7 @@ export async function requestGoogleScopes(additionalScopes: string[]): Promise<v
             }
         }
 
-        const redirectUrl = window.location.origin + window.location.pathname;
+        const redirectUrl = window.location.origin + '/google-hub';
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
