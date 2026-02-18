@@ -39,6 +39,7 @@ const initialSetupState: SetupState = {
   guestName: '',
   guestReference: '',
   guestBio: '',
+  guestContactId: null,
   phone: '',
   email: '',
   theme: '',

@@ -13,10 +13,11 @@
  * @module studio/components/workspace
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
 import { User, Users, UserCircle, Sparkles, Calendar, MapPin, Clock, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { searchGuestProfile } from '@/services/podcastProductionService';
+import { findOrCreateContact } from '@/services/platformContactService';
 import { GeminiClient } from '@/lib/gemini/client';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -34,6 +35,36 @@ export default function SetupStage() {
   const [isGeneratingThemes, setIsGeneratingThemes] = useState(false);
   const [themeError, setThemeError] = useState<string | null>(null);
   const hasGeneratedRef = useRef(false);
+
+  // Sync guest to platform_contacts (find or create)
+  const syncGuestContact = useCallback(async () => {
+    if (!setup.guestName.trim()) return;
+
+    try {
+      const { data, error } = await findOrCreateContact(
+        setup.guestName.trim(),
+        setup.email?.trim() || null,
+        setup.phone?.trim() || null,
+        'studio',
+        {
+          guestType: setup.guestType,
+          guestReference: setup.guestReference || undefined,
+        }
+      );
+
+      if (error) {
+        log.error('Failed to sync guest contact:', error);
+        return;
+      }
+
+      if (data?.id && data.id !== setup.guestContactId) {
+        actions.updateSetup({ guestContactId: data.id });
+        log.debug('Guest synced to platform_contacts:', data.id);
+      }
+    } catch (err) {
+      log.error('Error syncing guest contact:', err);
+    }
+  }, [setup.guestName, setup.email, setup.phone, setup.guestType, setup.guestReference, setup.guestContactId, actions]);
 
   // Handle guest type selection
   const handleGuestTypeSelect = (type: 'public_figure' | 'common_person') => {
@@ -892,7 +923,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
           <div className="flex justify-end space-x-4">
             <button
               type="button"
-              onClick={() => actions.setStage('research')}
+              onClick={() => { syncGuestContact(); actions.setStage('research'); }}
               disabled={!setup.guestName}
               aria-label={!setup.guestName ? 'Preencha o nome do convidado para continuar' : 'Ir para próxima etapa: Pesquisa'}
               className="px-6 py-3 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed disabled:border disabled:border-ceramic-border transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
