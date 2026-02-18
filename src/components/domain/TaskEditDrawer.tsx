@@ -40,11 +40,25 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
     onSave,
     onCancel
 }) => {
+    // Extract HH:MM from a timestamptz string (e.g. "2026-02-18T12:00:00+00:00" → "12:00")
+    const extractTimeFromTimestamp = (ts?: string): string => {
+        if (!ts) return '';
+        // If already HH:MM format, return as-is
+        if (/^\d{2}:\d{2}$/.test(ts)) return ts;
+        try {
+            const d = new Date(ts);
+            if (isNaN(d.getTime())) return ts;
+            return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        } catch {
+            return ts;
+        }
+    };
+
     // Form state - Core Fields
     const [title, setTitle] = useState(initialData.title);
     const [dueDate, setDueDate] = useState(initialData.due_date || '');
     const [estimatedDuration, setEstimatedDuration] = useState(initialData.estimated_duration?.toString() || '');
-    const [scheduledTime, setScheduledTime] = useState(initialData.scheduled_time || '');
+    const [scheduledTime, setScheduledTime] = useState(extractTimeFromTimestamp(initialData.scheduled_time));
 
     // Form state - Advanced Fields
     const [description, setDescription] = useState(initialData.description || '');
@@ -68,7 +82,7 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
         setTitle(initialData.title);
         setDueDate(initialData.due_date || '');
         setEstimatedDuration(initialData.estimated_duration?.toString() || '');
-        setScheduledTime(initialData.scheduled_time || '');
+        setScheduledTime(extractTimeFromTimestamp(initialData.scheduled_time));
         setDescription(initialData.description || '');
         setTags(initialData.tags || []);
         setRecurrenceRule(initialData.recurrence_rule || undefined);
@@ -83,7 +97,7 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
             title !== initialData.title ||
             dueDate !== (initialData.due_date || '') ||
             estimatedDuration !== (initialData.estimated_duration?.toString() || '') ||
-            scheduledTime !== (initialData.scheduled_time || '') ||
+            scheduledTime !== extractTimeFromTimestamp(initialData.scheduled_time) ||
             description !== (initialData.description || '') ||
             JSON.stringify(tags) !== JSON.stringify(initialData.tags || []) ||
             recurrenceRule !== (initialData.recurrence_rule || undefined);
@@ -136,11 +150,18 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
 
         setIsSaving(true);
         try {
+            // Build full ISO timestamp from date + time for scheduled_time
+            let scheduledTimestamp: string | undefined;
+            if (scheduledTime) {
+                const baseDate = dueDate || new Date().toISOString().split('T')[0];
+                scheduledTimestamp = `${baseDate}T${scheduledTime}:00`;
+            }
+
             const updates: Partial<Task> = {
                 title: title.trim(),
                 due_date: dueDate || undefined,
                 estimated_duration: estimatedDuration ? Number(estimatedDuration) : undefined,
-                scheduled_time: scheduledTime || undefined,
+                scheduled_time: scheduledTimestamp,
                 description: description.trim() || undefined,
                 tags: tags.length > 0 ? tags : undefined,
                 recurrence_rule: recurrenceRule || undefined,
