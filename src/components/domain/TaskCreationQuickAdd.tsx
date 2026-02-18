@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Loader2, Calendar, Clock, X, Sparkles, Check, XCircle } from 'lucide-react';
+import { Plus, Loader2, Calendar, Clock, X, Sparkles, Check, XCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
@@ -39,11 +39,16 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
   const [previewIsUrgent, setPreviewIsUrgent] = useState(false);
   const [previewIsImportant, setPreviewIsImportant] = useState(false);
 
+  const [previewScheduledTime, setPreviewScheduledTime] = useState('');
+
   // AI suggestion state
   const [aiSuggestion, setAiSuggestion] = useState<PrioritySuggestion | null>(null);
   const [isAiSuggesting, setIsAiSuggesting] = useState(false);
 
-  const resetAll = () => {
+  // Auto-create success feedback
+  const [autoCreatedTitle, setAutoCreatedTitle] = useState<string | null>(null);
+
+  const resetAll = useCallback(() => {
     setMode('closed');
     setTitle('');
     setError(null);
@@ -52,18 +57,20 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     setPreviewDescription('');
     setPreviewPriority('medium');
     setPreviewDueDate('');
+    setPreviewScheduledTime('');
     setPreviewDuration('');
     setPreviewIsUrgent(false);
     setPreviewIsImportant(false);
     setAiSuggestion(null);
     setIsAiSuggesting(false);
-  };
+  }, []);
 
   const fillPreview = (data: ExtractedTaskData) => {
     setPreviewTitle(data.title);
     setPreviewDescription(data.description || '');
     setPreviewPriority(data.priority);
     setPreviewDueDate(data.due_date || '');
+    setPreviewScheduledTime(data.scheduled_time || '');
     setPreviewDuration(data.estimated_duration?.toString() || '');
     setPreviewIsUrgent(data.is_urgent);
     setPreviewIsImportant(data.is_important);
@@ -112,7 +119,27 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     try {
       const { transcription: text, extractedTask } = await processVoiceToTask(blob);
       setTranscription(text);
-      fillPreview(extractedTask);
+
+      // Auto-create: voice input creates task immediately
+      if (extractedTask.title) {
+        log.debug('Auto-creating task from voice:', extractedTask);
+        await createTask({
+          title: extractedTask.title,
+          description: extractedTask.description,
+          priority: extractedTask.priority,
+          due_date: extractedTask.due_date,
+          scheduled_time: extractedTask.scheduled_time,
+          estimated_duration: extractedTask.estimated_duration,
+          is_urgent: extractedTask.is_urgent,
+          is_important: extractedTask.is_important,
+        });
+        // Show brief success flash
+        setAutoCreatedTitle(extractedTask.title);
+        setTimeout(() => setAutoCreatedTitle(null), 3000);
+      } else {
+        // Fallback to preview if no title extracted
+        fillPreview(extractedTask);
+      }
     } catch (err) {
       log.error('Voice-to-task error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao processar audio.');
@@ -136,6 +163,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
       description: previewDescription.trim() || undefined,
       priority: previewPriority,
       due_date: previewDueDate || undefined,
+      scheduled_time: previewScheduledTime || undefined,
       estimated_duration: previewDuration ? parseInt(previewDuration) : undefined,
       is_urgent: previewIsUrgent,
       is_important: previewIsImportant,
@@ -147,6 +175,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     description?: string;
     priority?: string;
     due_date?: string;
+    scheduled_time?: string;
     estimated_duration?: number;
     is_urgent?: boolean;
     is_important?: boolean;
@@ -155,6 +184,12 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     setError(null);
 
     try {
+      // Build full timestamptz from due_date + scheduled_time
+      let scheduledTimestamp: string | null = null;
+      if (data.scheduled_time && data.due_date) {
+        scheduledTimestamp = `${data.due_date}T${data.scheduled_time}:00`;
+      }
+
       const { data: newTask, error: insertError } = await supabase
         .from('work_items')
         .insert({
@@ -167,9 +202,10 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
           status: 'todo',
           priority: data.priority || 'medium',
           due_date: data.due_date || null,
+          scheduled_time: scheduledTimestamp,
           estimated_duration: data.estimated_duration || null,
         })
-        .select('id, title, description, due_date, estimated_duration')
+        .select('id, title, description, due_date, scheduled_time, estimated_duration')
         .single();
 
       if (insertError) {
@@ -186,6 +222,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
             id: newTask.id,
             title: newTask.title,
             description: newTask.description || undefined,
+            scheduled_time: newTask.scheduled_time || undefined,
             due_date: newTask.due_date,
             estimated_duration: newTask.estimated_duration || undefined,
           });
@@ -209,6 +246,23 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
 
   return (
     <div className="ceramic-card p-4 rounded-2xl">
+      {/* Auto-create success flash */}
+      <AnimatePresence>
+        {autoCreatedTitle && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-2 p-3 mb-3 bg-green-50 border border-green-200 rounded-xl"
+          >
+            <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+            <span className="text-sm text-green-700 font-medium truncate">
+              Tarefa criada: {autoCreatedTitle}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {mode === 'closed' && (
           <motion.button
@@ -379,8 +433,18 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
                 />
               </div>
 
-              <div className="flex items-center gap-1 min-w-[100px] px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
+              <div className="flex items-center gap-1 min-w-[110px] px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
                 <Clock className="w-4 h-4 text-ceramic-text-secondary shrink-0" />
+                <input
+                  type="time"
+                  value={previewScheduledTime}
+                  onChange={(e) => setPreviewScheduledTime(e.target.value)}
+                  className="w-full bg-transparent text-sm text-ceramic-text-primary focus:outline-none"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="flex items-center gap-1 min-w-[80px] px-3 py-2 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl">
                 <input
                   type="number"
                   value={previewDuration}

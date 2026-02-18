@@ -613,8 +613,7 @@ async function handleExtractTaskFromVoice(genAI: GoogleGenerativeAI, payload: { 
     model: MODELS.fast,
     generationConfig: {
       temperature: 0.2,
-      responseMimeType: 'application/json',
-      maxOutputTokens: 500,
+      maxOutputTokens: 4096,
     },
   })
 
@@ -629,11 +628,12 @@ A partir da transcricao abaixo, extraia os seguintes campos:
 - is_urgent: true se a tarefa precisa ser feita logo (prazo proximo ou linguagem urgente)
 - is_important: true se a tarefa tem impacto significativo
 - due_date: data no formato YYYY-MM-DD (resolva datas relativas como "amanha", "segunda", "semana que vem" a partir da data de hoje)
+- scheduled_time: horario no formato HH:MM se mencionado (ex: "meio dia" → "12:00", "tres da tarde" → "15:00", "oito horas" → "08:00"). Omitir se nenhum horario for mencionado.
 - estimated_duration: duracao estimada em minutos (1-480)
 
 Transcricao: "${transcription}"
 
-Retorne APENAS o JSON com os campos acima. Campos opcionais podem ser omitidos.`
+Responda APENAS com JSON valido. Campos opcionais podem ser omitidos.`
 
   const result = await model.generateContent(prompt)
   const text = result.response.text()

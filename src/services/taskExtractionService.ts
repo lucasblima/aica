@@ -19,6 +19,7 @@ export interface ExtractedTaskData {
   is_urgent: boolean
   is_important: boolean
   due_date?: string          // YYYY-MM-DD
+  scheduled_time?: string    // HH:MM (e.g. "12:00", "15:30")
   estimated_duration?: number // minutes
 }
 
@@ -42,6 +43,7 @@ export async function extractTaskFromVoice(transcription: string): Promise<Extra
       is_urgent: Boolean(data.is_urgent),
       is_important: Boolean(data.is_important),
       due_date: data.due_date && /^\d{4}-\d{2}-\d{2}$/.test(data.due_date) ? data.due_date : undefined,
+      scheduled_time: data.scheduled_time && /^\d{2}:\d{2}$/.test(data.scheduled_time) ? data.scheduled_time : undefined,
       estimated_duration: data.estimated_duration && data.estimated_duration >= 1 && data.estimated_duration <= 480
         ? data.estimated_duration
         : undefined,
