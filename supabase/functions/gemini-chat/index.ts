@@ -544,11 +544,12 @@ async function handleWhatsAppSentiment(genAI: GoogleGenerativeAI, payload: Whats
 
 async function buildUserContext(supabaseAdmin: any, userId: string, module: string): Promise<string> {
   const contextParts: string[] = []
+  console.log(`[buildUserContext] Starting for userId=${userId}, module=${module}`)
 
   try {
     // Always fetch basic stats for coordinator context
     if (module === 'atlas' || module === 'coordinator') {
-      const { data: tasks } = await supabaseAdmin
+      const { data: tasks, error: tasksError } = await supabaseAdmin
         .from('work_items')
         .select('id, title, status, priority, is_urgent, is_important, due_date, scheduled_time, task_type, checklist')
         .eq('user_id', userId)
@@ -557,6 +558,7 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
         .order('due_date', { ascending: true, nullsFirst: false })
         .limit(20)
 
+      console.log(`[buildUserContext] tasks query: count=${tasks?.length || 0}, error=${tasksError?.message || 'none'}`)
       if (tasks?.length) {
         contextParts.push(`### Tarefas Abertas (${tasks.length})`)
         tasks.forEach(t => {
@@ -735,17 +737,24 @@ async function handleLegacyChat(
   supabaseAdmin?: any,
   userId?: string | null
 ): Promise<{ response: string; success: boolean }> {
-  const { message, context, history, systemPrompt, module } = request as any
+  const { message, context, history, systemPrompt, module: rawModule } = request as any
   if (!message) throw new Error('Mensagem e obrigatoria')
+
+  // Default to 'coordinator' if module not provided (backward compat with old frontend)
+  const module = rawModule || 'coordinator'
 
   // Build user context if we have userId and supabaseAdmin
   let userContext = ''
+  console.log(`[handleLegacyChat] userId=${userId}, hasSupabaseAdmin=${!!supabaseAdmin}, module=${module} (raw=${rawModule})`)
   if (userId && supabaseAdmin && module) {
     try {
       userContext = await buildUserContext(supabaseAdmin, userId, module)
+      console.log(`[handleLegacyChat] userContext length=${userContext.length}, preview=${userContext.substring(0, 200)}`)
     } catch (e) {
       console.warn('[handleLegacyChat] Failed to build user context:', (e as Error).message)
     }
+  } else {
+    console.warn(`[handleLegacyChat] SKIPPED context build - missing: userId=${!!userId}, supabaseAdmin=${!!supabaseAdmin}, module=${!!module}`)
   }
 
   const model = genAI.getGenerativeModel({
