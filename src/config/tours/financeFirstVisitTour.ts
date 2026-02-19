@@ -8,7 +8,7 @@ export const financeFirstVisitTour: TourConfig = {
   key: 'finance-first-visit',
   name: 'Finance Budget & Tracking',
   module: 'finance',
-  autoStart: true,
+  autoStart: false,
   steps: [
     {
       target: '[data-tour="finance-header"]',

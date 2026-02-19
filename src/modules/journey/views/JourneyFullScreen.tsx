@@ -399,7 +399,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 </div>
               )
             })() : (
-              <div className="flex items-center gap-3 animate-pulse">
+              <div className="flex items-center gap-3 animate-pulse" data-tour="consciousness-points">
                 <div className="w-8 h-8 bg-[#E0DDD5] rounded-full" />
                 <div className="flex flex-col gap-1.5">
                   <div className="h-4 w-20 bg-[#E0DDD5] rounded" />
@@ -463,7 +463,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
               {/* Daily Question */}
-              <div>
+              <div data-tour="daily-question">
                 {isLoadingQuestion ? (
                   <DailyQuestionSkeleton />
                 ) : question ? (

@@ -8,7 +8,7 @@ export const atlasFirstVisitTour: TourConfig = {
   key: 'atlas-first-visit',
   name: 'Atlas Task Management',
   module: 'atlas',
-  autoStart: true,
+  autoStart: false,
   steps: [
     {
       target: '[data-tour="atlas-header"]',

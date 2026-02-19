@@ -8,7 +8,7 @@ export const grantsFirstVisitTour: TourConfig = {
   key: 'grants-first-visit',
   name: 'Grants Discovery & Tracking',
   module: 'grants',
-  autoStart: true,
+  autoStart: false,
   steps: [
     {
       target: '[data-tour="grants-header"]',
