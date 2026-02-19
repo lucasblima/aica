@@ -57,9 +57,11 @@ serve(async (req) => {
       );
     }
 
-    // 3. Get Google token
+    // 3. Get Google token — use gmail.modify for write actions, gmail.readonly for read-only
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const tokenResult = await getGoogleTokenForUser(user.id, 'gmail.readonly', supabaseAdmin);
+    const writeActions = ['modify_labels', 'trash_message', 'archive_message', 'mark_read', 'mark_unread'];
+    const requiredScope = writeActions.includes(action) ? 'gmail.modify' : 'gmail.readonly';
+    const tokenResult = await getGoogleTokenForUser(user.id, requiredScope, supabaseAdmin);
 
     if (tokenResult.error) {
       return new Response(
@@ -220,6 +222,83 @@ serve(async (req) => {
             messagesUnread: l.messagesUnread,
           })),
         };
+        break;
+      }
+
+      case 'modify_labels': {
+        const messageId = payload.messageId as string;
+        if (!messageId) throw new Error('messageId is required');
+        const addLabelIds = (payload.addLabelIds as string[]) || [];
+        const removeLabelIds = (payload.removeLabelIds as string[]) || [];
+
+        const res = await fetch(`${GMAIL_API}/messages/${messageId}/modify`, {
+          method: 'POST',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addLabelIds, removeLabelIds }),
+        });
+        if (!res.ok) throw await buildGmailError(res);
+
+        result = await res.json();
+        break;
+      }
+
+      case 'trash_message': {
+        const messageId = payload.messageId as string;
+        if (!messageId) throw new Error('messageId is required');
+
+        const res = await fetch(`${GMAIL_API}/messages/${messageId}/trash`, {
+          method: 'POST',
+          headers: googleHeaders,
+        });
+        if (!res.ok) throw await buildGmailError(res);
+
+        result = await res.json();
+        break;
+      }
+
+      case 'archive_message': {
+        const messageId = payload.messageId as string;
+        if (!messageId) throw new Error('messageId is required');
+
+        // Archive = remove INBOX label
+        const res = await fetch(`${GMAIL_API}/messages/${messageId}/modify`, {
+          method: 'POST',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ removeLabelIds: ['INBOX'] }),
+        });
+        if (!res.ok) throw await buildGmailError(res);
+
+        result = await res.json();
+        break;
+      }
+
+      case 'mark_read': {
+        const messageId = payload.messageId as string;
+        if (!messageId) throw new Error('messageId is required');
+
+        const res = await fetch(`${GMAIL_API}/messages/${messageId}/modify`, {
+          method: 'POST',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
+        });
+        if (!res.ok) throw await buildGmailError(res);
+
+        result = await res.json();
+        break;
+      }
+
+      case 'mark_unread': {
+        const messageId = payload.messageId as string;
+        if (!messageId) throw new Error('messageId is required');
+
+        const res = await fetch(`${GMAIL_API}/messages/${messageId}/modify`, {
+          method: 'POST',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addLabelIds: ['UNREAD'] }),
+        });
+        if (!res.ok) throw await buildGmailError(res);
+
+        result = await res.json();
         break;
       }
 

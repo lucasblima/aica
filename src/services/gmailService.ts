@@ -178,3 +178,72 @@ export async function searchEmails(query: string): Promise<GmailMessage[]> {
         return [];
     }
 }
+
+// ============================================================================
+// WRITE ACTIONS (require gmail.modify scope)
+// ============================================================================
+
+interface GmailActionResponse {
+    success: boolean;
+    data?: unknown;
+    error?: string;
+}
+
+async function gmailAction(action: string, payload: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { data, error } = await supabase.functions.invoke('gmail-proxy', {
+            body: { action, payload },
+        });
+
+        if (error) {
+            log.error(`[${action}] Edge Function error:`, { error });
+            return { success: false, error: String(error) };
+        }
+
+        const response = data as GmailActionResponse;
+        if (!response.success) {
+            log.warn(`[${action}] API returned error:`, response.error);
+            return { success: false, error: response.error };
+        }
+
+        return { success: true };
+    } catch (err) {
+        log.error(`[${action}] Exception:`, { error: err });
+        return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+}
+
+/**
+ * Move a message to trash.
+ */
+export async function trashMessage(messageId: string) {
+    return gmailAction('trash_message', { messageId });
+}
+
+/**
+ * Archive a message (remove from inbox).
+ */
+export async function archiveMessage(messageId: string) {
+    return gmailAction('archive_message', { messageId });
+}
+
+/**
+ * Add/remove labels from a message.
+ */
+export async function modifyLabels(messageId: string, addLabelIds: string[], removeLabelIds: string[]) {
+    return gmailAction('modify_labels', { messageId, addLabelIds, removeLabelIds });
+}
+
+/**
+ * Mark a message as read.
+ */
+export async function markAsRead(messageId: string) {
+    return gmailAction('mark_read', { messageId });
+}
+
+/**
+ * Mark a message as unread.
+ */
+export async function markAsUnread(messageId: string) {
+    return gmailAction('mark_unread', { messageId });
+}

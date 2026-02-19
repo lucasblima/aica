@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Search, Plus, User, Users, X, Loader2, Mic, Dumbbell, Globe, Award, PenLine } from 'lucide-react';
+import { Search, Plus, User, Users, X, Loader2, Mic, Dumbbell, Globe, Award, PenLine, Mail } from 'lucide-react';
 import { usePlatformContacts } from '@/hooks/usePlatformContact';
 import { findOrCreateContact } from '@/services/platformContactService';
 import type { PlatformContact } from '@/services/platformContactService';
@@ -24,6 +24,7 @@ const MODULE_CONFIG: Record<SourceModule, { label: string; color: string; bg: st
   connections: { label: 'Connections', color: 'text-blue-700', bg: 'bg-blue-50', icon: <Globe className="w-3.5 h-3.5" /> },
   grants: { label: 'Grants', color: 'text-emerald-700', bg: 'bg-emerald-50', icon: <Award className="w-3.5 h-3.5" /> },
   manual: { label: 'Manual', color: 'text-ceramic-text-secondary', bg: 'bg-ceramic-cool', icon: <PenLine className="w-3.5 h-3.5" /> },
+  email: { label: 'Email', color: 'text-red-700', bg: 'bg-red-50', icon: <Mail className="w-3.5 h-3.5" /> },
 };
 
 const STATUS_CONFIG: Record<InvitationStatus, { label: string; color: string; bg: string }> = {
@@ -39,6 +40,7 @@ const MODULE_FILTER_OPTIONS: { value: SourceModule | 'all'; label: string }[] = 
   { value: 'flux', label: 'Flux' },
   { value: 'connections', label: 'Connections' },
   { value: 'grants', label: 'Grants' },
+  { value: 'email', label: 'Email' },
   { value: 'manual', label: 'Manual' },
 ];
 

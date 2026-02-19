@@ -176,3 +176,65 @@ export async function getRecentFiles(maxResults: number = 10): Promise<DriveFile
         return [];
     }
 }
+
+// ============================================================================
+// WRITE ACTIONS (require full drive scope)
+// ============================================================================
+
+interface DriveActionResponse {
+    success: boolean;
+    data?: unknown;
+    error?: string;
+}
+
+async function driveAction(action: string, payload: Record<string, unknown>): Promise<{ success: boolean; error?: string; data?: unknown }> {
+    try {
+        const { data, error } = await supabase.functions.invoke('drive-proxy', {
+            body: { action, payload },
+        });
+
+        if (error) {
+            log.error(`[${action}] Edge Function error:`, { error });
+            return { success: false, error: String(error) };
+        }
+
+        const response = data as DriveActionResponse;
+        if (!response.success) {
+            log.warn(`[${action}] API returned error:`, response.error);
+            return { success: false, error: response.error };
+        }
+
+        return { success: true, data: response.data };
+    } catch (err) {
+        log.error(`[${action}] Exception:`, { error: err });
+        return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+}
+
+/**
+ * Move a file to trash.
+ */
+export async function trashFile(fileId: string) {
+    return driveAction('trash_file', { fileId });
+}
+
+/**
+ * Move a file to a different folder.
+ */
+export async function moveFile(fileId: string, targetFolderId: string) {
+    return driveAction('move_file', { fileId, targetFolderId });
+}
+
+/**
+ * Rename a file.
+ */
+export async function renameFile(fileId: string, newName: string) {
+    return driveAction('rename_file', { fileId, newName });
+}
+
+/**
+ * Create a new folder.
+ */
+export async function createFolder(name: string, parentId?: string) {
+    return driveAction('create_folder', { name, parentId });
+}

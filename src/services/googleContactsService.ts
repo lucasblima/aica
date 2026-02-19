@@ -133,6 +133,9 @@ export async function syncGoogleContacts(): Promise<SyncReport> {
     report.total = allPeople.length;
     log.debug(`[googleContactsService] Total contacts fetched: ${report.total}`);
 
+    // Get current user's email to exclude self-contacts
+    const currentUserEmail = user?.email?.toLowerCase();
+
     // Process each contact
     for (const person of allPeople) {
       try {
@@ -143,6 +146,11 @@ export async function syncGoogleContacts(): Promise<SyncReport> {
 
         // Skip if no name or contact info
         if (!name || (!email && !phone)) {
+          continue;
+        }
+
+        // Skip self-contacts: don't add the user as their own contact
+        if (email && currentUserEmail && email.toLowerCase() === currentUserEmail) {
           continue;
         }
 
@@ -282,6 +290,10 @@ export async function syncGoogleContactsToPlatform(): Promise<SyncReport> {
     report.total = allPeople.length;
     log.debug(`[googleContactsService] Platform sync total contacts: ${report.total}`);
 
+    // Get current user's email to exclude self-contacts
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserEmail = user?.email?.toLowerCase();
+
     // Process each contact into platform_contacts
     for (const person of allPeople) {
       try {
@@ -293,6 +305,11 @@ export async function syncGoogleContactsToPlatform(): Promise<SyncReport> {
 
         // Skip if no name or contact info
         if (!name || (!email && !phone)) {
+          continue;
+        }
+
+        // Skip self-contacts: don't add the user as their own contact
+        if (email && currentUserEmail && email.toLowerCase() === currentUserEmail) {
           continue;
         }
 

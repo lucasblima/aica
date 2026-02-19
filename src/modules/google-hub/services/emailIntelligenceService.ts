@@ -6,8 +6,9 @@
  */
 
 import { supabase } from '@/services/supabaseClient';
+import { findOrCreateContact } from '@/services/platformContactService';
 import { createNamespacedLogger } from '@/lib/logger';
-import type { EmailCategory, CategorizedEmail, ExtractedTask, ContactEnrichment } from '../types';
+import type { EmailCategory, CategorizedEmail, ExtractedTask, ContactEnrichment, ExtractedContact } from '../types';
 
 const log = createNamespacedLogger('EmailIntelligenceService');
 
@@ -243,5 +244,91 @@ export async function dismissTask(taskId: string): Promise<boolean> {
   } catch (err) {
     log.error('[dismissTask] Exception:', { error: err });
     return false;
+  }
+}
+
+// ============================================================================
+// Email → Platform Contacts Pipeline
+// ============================================================================
+
+/**
+ * Sync extracted contacts from gmail_email_categories into platform_contacts.
+ * Reads unique contacts from categorized emails and creates platform contacts
+ * with source_module='email'. Self-contacts are filtered by findOrCreateContact.
+ *
+ * Returns the number of new contacts created.
+ */
+export async function syncExtractedContactsToPlatform(): Promise<{
+  synced: number;
+  skipped: number;
+  error?: string;
+}> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { synced: 0, skipped: 0, error: 'Not authenticated' };
+
+    // Fetch all categorized emails that have extracted_contacts
+    const { data: rows, error: queryError } = await supabase
+      .from('gmail_email_categories')
+      .select('extracted_contacts')
+      .eq('user_id', user.id)
+      .not('extracted_contacts', 'eq', '[]');
+
+    if (queryError) {
+      log.error('[syncExtractedContactsToPlatform] Query error:', { error: queryError });
+      return { synced: 0, skipped: 0, error: queryError.message };
+    }
+
+    if (!rows || rows.length === 0) {
+      return { synced: 0, skipped: 0 };
+    }
+
+    // Collect unique contacts by email (lowercase)
+    const uniqueContacts = new Map<string, ExtractedContact>();
+    for (const row of rows) {
+      const contacts = (row.extracted_contacts ?? []) as ExtractedContact[];
+      for (const contact of contacts) {
+        if (contact.email) {
+          const key = contact.email.toLowerCase().trim();
+          if (!uniqueContacts.has(key)) {
+            uniqueContacts.set(key, contact);
+          }
+        }
+      }
+    }
+
+    let synced = 0;
+    let skipped = 0;
+
+    for (const [, contact] of uniqueContacts) {
+      const displayName = contact.name || contact.email;
+      const { data, error: createError } = await findOrCreateContact(
+        displayName,
+        contact.email,
+        null,
+        'email',
+        { discovered_from: 'email_intelligence' }
+      );
+
+      if (createError) {
+        log.warn('[syncExtractedContactsToPlatform] Error for', contact.email, createError);
+        skipped++;
+        continue;
+      }
+
+      // findOrCreateContact returns null for self-contacts (self-exclusion)
+      if (!data) {
+        skipped++;
+        continue;
+      }
+
+      synced++;
+    }
+
+    log.debug(`[syncExtractedContactsToPlatform] Done: synced=${synced}, skipped=${skipped}`);
+    return { synced, skipped };
+  } catch (err) {
+    log.error('[syncExtractedContactsToPlatform] Exception:', { error: err });
+    return { synced: 0, skipped: 0, error: err instanceof Error ? err.message : 'Erro inesperado' };
   }
 }

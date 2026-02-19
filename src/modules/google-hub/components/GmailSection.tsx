@@ -3,11 +3,13 @@ import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import {
     Mail, Search, RefreshCw, Loader2, ChevronDown, Paperclip, Unlink,
     Sparkles, Check, X, ArrowRight, AlertCircle, CheckCircle2,
+    Archive, Trash2, MailOpen, MailCheck, Users,
 } from 'lucide-react';
 import { useGmailIntegration } from '@/hooks/useGmailIntegration';
 import { useEmailCategories } from '../hooks/useEmailCategories';
 import { useEmailTaskExtraction } from '../hooks/useEmailTaskExtraction';
-import { extractTasksFromEmails } from '../services/emailIntelligenceService';
+import { extractTasksFromEmails, syncExtractedContactsToPlatform } from '../services/emailIntelligenceService';
+import { archiveMessage, trashMessage, markAsRead, markAsUnread } from '@/services/gmailService';
 import { EmailCategoryBadge } from './EmailCategoryBadge';
 import { EmailDetailSheet } from './EmailDetailSheet';
 import type { GmailMessage } from '@/services/gmailService';
@@ -83,19 +85,22 @@ interface EmailRowProps {
     category?: EmailCategory;
     confidence?: number;
     onClick?: () => void;
+    onAction?: (messageId: string, action: 'archive' | 'trash' | 'read' | 'unread') => void;
+    actionLoading?: string | null;
 }
 
-function EmailRow({ email, category, confidence, onClick }: EmailRowProps) {
+function EmailRow({ email, category, confidence, onClick, onAction, actionLoading }: EmailRowProps) {
     const name = senderDisplay(email);
     const color = avatarColor(name);
     const isUnread = !email.isRead;
+    const isThisLoading = actionLoading === email.id;
 
     return (
         <motion.div
             variants={rowVariants}
             whileHover={{ x: 4 }}
             transition={{ duration: 0.15 }}
-            className="flex items-start gap-3 px-1 py-3 cursor-pointer"
+            className="flex items-start gap-3 px-1 py-3 cursor-pointer group"
             onClick={onClick}
         >
             <div
@@ -133,6 +138,43 @@ function EmailRow({ email, category, confidence, onClick }: EmailRowProps) {
                     {email.snippet}
                 </p>
             </div>
+
+            {/* Quick actions — visible on hover */}
+            {onAction && (
+                <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 mt-1">
+                    {isThisLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 text-ceramic-text-secondary animate-spin" />
+                    ) : (
+                        <>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onAction(email.id, 'archive'); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-ceramic-cool/80 transition-colors"
+                                title="Arquivar"
+                            >
+                                <Archive className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onAction(email.id, 'trash'); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-ceramic-error/10 transition-colors"
+                                title="Excluir"
+                            >
+                                <Trash2 className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onAction(email.id, isUnread ? 'read' : 'unread'); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-ceramic-cool/80 transition-colors"
+                                title={isUnread ? 'Marcar como lido' : 'Marcar como nao lido'}
+                            >
+                                {isUnread ? (
+                                    <MailOpen className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                                ) : (
+                                    <MailCheck className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                                )}
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
         </motion.div>
     );
 }
@@ -186,12 +228,25 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
     const [dismissingId, setDismissingId] = useState<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [selectedEmail, setSelectedEmail] = useState<GmailMessage | null>(null);
+    const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+    const [contactSyncResult, setContactSyncResult] = useState<{ synced: number } | null>(null);
 
-    // Auto-show and auto-fade success banner
+    // Auto-show and auto-fade success banner + trigger contact sync
     useEffect(() => {
         if (lastCategorizedCount !== null && !categorizing) {
             setShowSuccess(true);
             const timer = setTimeout(() => setShowSuccess(false), 5000);
+
+            // Sync extracted contacts to platform_contacts in background
+            if (lastCategorizedCount > 0) {
+                syncExtractedContactsToPlatform().then((result) => {
+                    if (result.synced > 0) {
+                        setContactSyncResult({ synced: result.synced });
+                        setTimeout(() => setContactSyncResult(null), 5000);
+                    }
+                });
+            }
+
             return () => clearTimeout(timer);
         }
     }, [lastCategorizedCount, categorizing]);
@@ -219,6 +274,33 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
     const handleExtractTasksFromSheet = useCallback(async (messageId: string) => {
         await extractTasksFromEmails([messageId]);
     }, []);
+
+    const handleEmailAction = useCallback(async (messageId: string, action: 'archive' | 'trash' | 'read' | 'unread') => {
+        setActionLoadingId(messageId);
+        try {
+            let result;
+            switch (action) {
+                case 'archive':
+                    result = await archiveMessage(messageId);
+                    break;
+                case 'trash':
+                    result = await trashMessage(messageId);
+                    break;
+                case 'read':
+                    result = await markAsRead(messageId);
+                    break;
+                case 'unread':
+                    result = await markAsUnread(messageId);
+                    break;
+            }
+            if (result.success) {
+                // Refresh the list to reflect changes
+                await refresh();
+            }
+        } finally {
+            setActionLoadingId(null);
+        }
+    }, [refresh]);
 
     // Filter emails by selected category
     const filteredEmails = selectedCategory
@@ -346,6 +428,22 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                                         ? 'Nenhum email novo para categorizar'
                                         : `${lastCategorizedCount} email${lastCategorizedCount === 1 ? '' : 's'} categorizado${lastCategorizedCount === 1 ? '' : 's'}!`
                                     }
+                                </span>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {contactSyncResult && contactSyncResult.synced > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-3 overflow-hidden"
+                        >
+                            <div className="flex items-center gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200/60 rounded-xl">
+                                <Users className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                <span className="text-sm font-medium text-blue-800">
+                                    {contactSyncResult.synced} novo{contactSyncResult.synced === 1 ? '' : 's'} contato{contactSyncResult.synced === 1 ? '' : 's'} identificado{contactSyncResult.synced === 1 ? '' : 's'}
                                 </span>
                             </div>
                         </motion.div>
@@ -490,6 +588,8 @@ export function GmailSection({ isConnected, onConnect, onDisconnect }: GmailSect
                                     category={catData?.category}
                                     confidence={catData?.confidence}
                                     onClick={() => setSelectedEmail(email)}
+                                    onAction={handleEmailAction}
+                                    actionLoading={actionLoadingId}
                                 />
                             );
                         })}
