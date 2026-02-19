@@ -39,7 +39,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         name: initialData.name,
         description: initialData.description,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
-        coach_notes: (initialData as any).coach_notes || '',
+        coach_notes: initialData.coach_notes || '',
       };
     }
 
@@ -72,7 +72,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         name: initialData.name,
         description: initialData.description,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
-        coach_notes: (initialData as any).coach_notes || '',
+        coach_notes: initialData.coach_notes || '',
       });
       setErrors({});
       setTouched(new Set());
@@ -90,7 +90,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   }, [formData]);
 
   // Field validation
-  const validateField = useCallback((name: keyof TemplateFormState, value: any): string | null => {
+  const validateField = useCallback((name: keyof TemplateFormState, value: TemplateFormState[keyof TemplateFormState]): string | null => {
     switch (name) {
       case 'modality':
         if (!value) {
@@ -152,7 +152,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   }, [formData, validateField]);
 
   // Handle field change
-  const handleChange = useCallback((name: keyof TemplateFormState, value: any) => {
+  const handleChange = useCallback((name: keyof TemplateFormState, value: TemplateFormState[keyof TemplateFormState]) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -179,7 +179,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   }, [formData, validateField]);
 
   // Handle submit
-  const handleSubmit = useCallback(async (): Promise<{ success: boolean; data?: WorkoutTemplate; error?: any }> => {
+  const handleSubmit = useCallback(async (): Promise<{ success: boolean; data?: WorkoutTemplate; error?: unknown }> => {
     const allFields = new Set(Object.keys(formData));
     setTouched(allFields);
 

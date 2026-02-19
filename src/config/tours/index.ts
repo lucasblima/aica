@@ -13,6 +13,7 @@ import { studioFirstVisitTour } from './studioFirstVisitTour';
 import { financeFirstVisitTour } from './financeFirstVisitTour';
 import { grantsFirstVisitTour } from './grantsFirstVisitTour';
 import { gamificationIntroTour } from './gamificationIntroTour';
+import { fluxFirstVisitTour } from './fluxFirstVisitTour';
 
 /**
  * All available tours
@@ -25,6 +26,7 @@ export const allTours: TourConfig[] = [
   financeFirstVisitTour,
   grantsFirstVisitTour,
   gamificationIntroTour,
+  fluxFirstVisitTour,
 ];
 
 /**
@@ -55,4 +57,5 @@ export {
   financeFirstVisitTour,
   grantsFirstVisitTour,
   gamificationIntroTour,
+  fluxFirstVisitTour,
 };
