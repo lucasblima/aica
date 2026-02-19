@@ -354,7 +354,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
               <Wand2 className="w-5 h-5 text-white" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="pauta-generator-title" className="text-xl font-bold text-ceramic-primary">
+              <h2 id="pauta-generator-title" className="text-xl font-bold text-ceramic-text-primary">
                 Gerador de Pauta com IA
               </h2>
               <p className="text-sm text-ceramic-secondary">
@@ -378,20 +378,20 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
             <div className="space-y-6">
               {/* Guest Info Summary */}
               <div className="p-4 rounded-xl bg-ceramic-base border border-ceramic-border">
-                <h3 className="text-sm font-semibold text-ceramic-primary mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-ceramic-text-primary mb-3 flex items-center gap-2">
                   <FileText className="w-4 h-4" aria-hidden="true" />
                   Informacoes do Convidado
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-ceramic-tertiary">Nome:</span>
-                    <span className="ml-2 font-medium text-ceramic-primary">
+                    <span className="ml-2 font-medium text-ceramic-text-primary">
                       {setup.guestName || 'Nao informado'}
                     </span>
                   </div>
                   <div>
                     <span className="text-ceramic-tertiary">Tema:</span>
-                    <span className="ml-2 font-medium text-ceramic-primary">
+                    <span className="ml-2 font-medium text-ceramic-text-primary">
                       {setup.theme || 'Automatico'}
                     </span>
                   </div>
@@ -406,7 +406,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
 
               {/* Duration Selector */}
               <div>
-                <label htmlFor="duration" className="block text-sm font-semibold text-ceramic-primary mb-2 flex items-center gap-2">
+                <label htmlFor="duration" className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center gap-2">
                   <Clock className="w-4 h-4" aria-hidden="true" />
                   Duracao Estimada
                 </label>
@@ -429,7 +429,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
 
               {/* Tone Selector */}
               <div>
-                <label className="block text-sm font-semibold text-ceramic-primary mb-2">
+                <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
                   Tom da Entrevista
                 </label>
                 <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Selecionar tom">
@@ -453,7 +453,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
 
               {/* Depth Selector */}
               <div>
-                <label className="block text-sm font-semibold text-ceramic-primary mb-2">
+                <label className="block text-sm font-semibold text-ceramic-text-primary mb-2">
                   Profundidade da Pesquisa
                 </label>
                 <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Selecionar profundidade">
@@ -486,7 +486,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
               <div>
                 <button
                   onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                  className="flex items-center gap-2 text-sm text-ceramic-secondary hover:text-ceramic-primary transition-colors"
+                  className="flex items-center gap-2 text-sm text-ceramic-secondary hover:text-ceramic-text-primary transition-colors"
                   aria-expanded={showAdvancedOptions}
                 >
                   {showAdvancedOptions ? (
@@ -507,7 +507,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                     >
                       <div className="mt-4 space-y-4">
                         <div>
-                          <label htmlFor="additional-context" className="block text-sm font-medium text-ceramic-primary mb-2">
+                          <label htmlFor="additional-context" className="block text-sm font-medium text-ceramic-text-primary mb-2">
                             Contexto Adicional (opcional)
                           </label>
                           <textarea
@@ -568,15 +568,15 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
               {/* Metadata */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border text-center">
-                  <div className="text-2xl font-bold text-ceramic-primary">{generatedPauta.estimatedDuration}</div>
+                  <div className="text-2xl font-bold text-ceramic-text-primary">{generatedPauta.estimatedDuration}</div>
                   <div className="text-xs text-ceramic-tertiary">minutos</div>
                 </div>
                 <div className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border text-center">
-                  <div className="text-2xl font-bold text-ceramic-primary">{editedQuestions.length}</div>
+                  <div className="text-2xl font-bold text-ceramic-text-primary">{editedQuestions.length}</div>
                   <div className="text-xs text-ceramic-tertiary">perguntas</div>
                 </div>
                 <div className="p-3 rounded-lg bg-ceramic-base border border-ceramic-border text-center">
-                  <div className="text-2xl font-bold text-ceramic-primary">{generatedPauta.confidenceScore}%</div>
+                  <div className="text-2xl font-bold text-ceramic-text-primary">{generatedPauta.confidenceScore}%</div>
                   <div className="text-xs text-ceramic-tertiary">confianca</div>
                 </div>
               </div>
@@ -588,7 +588,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                   className="w-full flex items-center justify-between p-3 rounded-lg bg-ceramic-base hover:bg-ceramic-border transition-colors"
                   aria-expanded={expandedSections.has('questions')}
                 >
-                  <span className="font-semibold text-ceramic-primary flex items-center gap-2">
+                  <span className="font-semibold text-ceramic-text-primary flex items-center gap-2">
                     <FileText className="w-4 h-4" aria-hidden="true" />
                     Perguntas ({editedQuestions.length})
                   </span>
@@ -642,7 +642,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                                           </button>
                                           <button
                                             onClick={handleCancelEdit}
-                                            className="px-3 py-1 text-xs bg-ceramic-border text-ceramic-primary rounded-lg hover:bg-ceramic-surface"
+                                            className="px-3 py-1 text-xs bg-ceramic-border text-ceramic-text-primary rounded-lg hover:bg-ceramic-surface"
                                           >
                                             Cancelar
                                           </button>
@@ -650,7 +650,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                                       </div>
                                     ) : (
                                       <>
-                                        <span className="flex-1 text-sm text-ceramic-primary">{q.text}</span>
+                                        <span className="flex-1 text-sm text-ceramic-text-primary">{q.text}</span>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                           <button
                                             onClick={() => handleEditQuestion(q.id)}
@@ -764,7 +764,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-t border-ceramic-border bg-ceramic-base">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-ceramic-secondary hover:text-ceramic-primary transition-colors font-medium"
+            className="px-4 py-2 text-ceramic-secondary hover:text-ceramic-text-primary transition-colors font-medium"
           >
             Cancelar
           </button>
@@ -777,7 +777,7 @@ export const PautaGeneratorPanel: React.FC<PautaGeneratorPanelProps> = ({
                   setEditedQuestions([]);
                   setError(null);
                 }}
-                className="px-4 py-2 rounded-lg bg-ceramic-border text-ceramic-primary hover:bg-ceramic-surface transition-colors font-medium flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-ceramic-border text-ceramic-text-primary hover:bg-ceramic-surface transition-colors font-medium flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" aria-hidden="true" />
                 Regenerar

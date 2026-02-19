@@ -31,7 +31,7 @@
  *
  * Design System: Ceramic Design System
  * - Background: bg-ceramic-base, bg-ceramic-surface
- * - Text: text-ceramic-primary, text-ceramic-secondary
+ * - Text: text-ceramic-text-primary, text-ceramic-secondary
  * - Loading spinner: border-orange-500
  * - Error state: red-500
  *
@@ -90,7 +90,7 @@ class StageErrorBoundary extends Component<StageErrorBoundaryProps, StageErrorBo
           <div className="text-center max-w-md">
             <div className="p-4 rounded-xl bg-ceramic-error/10 border border-ceramic-error/30 mb-6">
               <AlertCircle className="w-10 h-10 text-ceramic-error mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-ceramic-primary mb-2">
+              <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
                 Erro ao renderizar estagio
               </h3>
               <p className="text-sm text-ceramic-secondary">
@@ -186,7 +186,7 @@ function WorkspaceContent({ onBack }: { onBack: () => void }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-ceramic-primary mb-2">Erro ao Carregar</h2>
+          <h2 className="text-2xl font-bold text-ceramic-text-primary mb-2">Erro ao Carregar</h2>
           <p className="text-ceramic-secondary mb-4">{state.error}</p>
           <button
             onClick={onBack}
@@ -332,7 +332,7 @@ function PodcastWorkspaceInner({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-ceramic-primary mb-2">Erro ao Carregar</h2>
+          <h2 className="text-2xl font-bold text-ceramic-text-primary mb-2">Erro ao Carregar</h2>
           <p className="text-ceramic-secondary mb-4">{loadError}</p>
           <div className="flex items-center justify-center gap-3">
             <button

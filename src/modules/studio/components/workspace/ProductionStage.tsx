@@ -18,7 +18,7 @@
  *
  * Design System: Ceramic Design System
  * - Surface: bg-ceramic-surface, bg-white
- * - Text: text-ceramic-primary, text-ceramic-secondary
+ * - Text: text-ceramic-text-primary, text-ceramic-secondary
  * - Borders: border-ceramic-border
  * - Interactive: bg-ceramic-danger (recording), bg-ceramic-warning (paused)
  * - Spacing: Ceramic spacing scale
@@ -215,7 +215,7 @@ export default function ProductionStage() {
                 <div className="p-2 bg-orange-100 rounded-lg">
                   <Mic className="w-6 h-6 text-orange-600" />
                 </div>
-                <h1 className="text-3xl font-bold text-ceramic-primary">Gravação do Episódio</h1>
+                <h1 className="text-3xl font-bold text-ceramic-text-primary">Gravação do Episódio</h1>
               </div>
               <p className="text-ceramic-secondary">
                 {setup.guestName && `Convidado: ${setup.guestName}`}
@@ -271,7 +271,7 @@ export default function ProductionStage() {
               <div className="inline-flex items-center space-x-4 p-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border-2 border-orange-200 mb-6">
                 <Clock className="w-8 h-8 text-orange-600" aria-hidden="true" />
                 <div
-                  className="font-mono text-5xl font-bold text-ceramic-primary tracking-tight"
+                  className="font-mono text-5xl font-bold text-ceramic-text-primary tracking-tight"
                   role="timer"
                   aria-live="polite"
                   aria-atomic="true"
@@ -380,7 +380,7 @@ export default function ProductionStage() {
             <div className="bg-ceramic-base rounded-lg shadow-sm overflow-hidden flex flex-col flex-1">
               {/* Topics Header */}
               <div className="px-6 py-4 border-b border-ceramic-border bg-ceramic-surface">
-                <h2 className="font-bold text-lg text-ceramic-primary flex items-center space-x-2">
+                <h2 className="font-bold text-lg text-ceramic-text-primary flex items-center space-x-2">
                   <ChevronDown className="w-5 h-5 text-orange-500" aria-hidden="true" />
                   <span>Tópicos da Pauta</span>
                 </h2>
@@ -439,7 +439,7 @@ export default function ProductionStage() {
                               className={`text-lg font-bold ${
                                 topic.completed
                                   ? 'line-through text-ceramic-text-secondary'
-                                  : 'text-ceramic-primary'
+                                  : 'text-ceramic-text-primary'
                               }`}
                             >
                               {topic.text}

@@ -207,7 +207,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
     >
       {/* Header */}
       <div className="text-center space-y-2 mb-6">
-        <h2 className="text-2xl font-semibold text-ceramic-primary">
+        <h2 className="text-2xl font-semibold text-ceramic-text-primary">
           Dados do Convidado
         </h2>
         <p className="text-sm text-ceramic-secondary">
@@ -220,7 +220,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
         <div>
           <label
             htmlFor="guest-name-input"
-            className="block text-sm font-medium text-ceramic-primary mb-1"
+            className="block text-sm font-medium text-ceramic-text-primary mb-1"
           >
             Nome Completo <span className="text-ceramic-error" aria-label="obrigatório">*</span>
           </label>
@@ -243,8 +243,8 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               aria-invalid={!!(errors.name && touched.name)}
               aria-describedby={errors.name && touched.name ? 'guest-name-error' : undefined}
               className={`
-                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary
-                focus:ring-2 focus:ring-ceramic-primary focus:border-transparent
+                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary
+                focus:ring-2 focus:ring-ceramic-accent focus:border-transparent
                 ${
                   errors.name && touched.name
                     ? 'border-ceramic-error'
@@ -277,7 +277,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
         <div>
           <label
             htmlFor="guest-email-input"
-            className="block text-sm font-medium text-ceramic-primary mb-1"
+            className="block text-sm font-medium text-ceramic-text-primary mb-1"
           >
             Email <span className="text-ceramic-error" aria-label="obrigatório">*</span>
           </label>
@@ -300,8 +300,8 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               aria-invalid={!!(errors.email && touched.email)}
               aria-describedby={errors.email && touched.email ? 'guest-email-error' : undefined}
               className={`
-                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary
-                focus:ring-2 focus:ring-ceramic-primary focus:border-transparent
+                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary
+                focus:ring-2 focus:ring-ceramic-accent focus:border-transparent
                 ${
                   errors.email && touched.email
                     ? 'border-ceramic-error'
@@ -334,7 +334,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
         <div>
           <label
             htmlFor="guest-phone-input"
-            className="block text-sm font-medium text-ceramic-primary mb-1"
+            className="block text-sm font-medium text-ceramic-text-primary mb-1"
           >
             Telefone/WhatsApp <span className="text-ceramic-error" aria-label="obrigatório">*</span>
           </label>
@@ -357,8 +357,8 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               aria-invalid={!!(errors.phone && touched.phone)}
               aria-describedby={errors.phone && touched.phone ? 'guest-phone-error' : undefined}
               className={`
-                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary
-                focus:ring-2 focus:ring-ceramic-primary focus:border-transparent
+                w-full pl-10 pr-10 py-2 border rounded-lg bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary
+                focus:ring-2 focus:ring-ceramic-accent focus:border-transparent
                 ${
                   errors.phone && touched.phone
                     ? 'border-ceramic-error'

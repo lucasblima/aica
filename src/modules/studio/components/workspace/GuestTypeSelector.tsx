@@ -56,7 +56,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
     <div className={`space-y-4 ${className}`} data-testid="guest-type-selector">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold text-ceramic-primary">
+        <h2 className="text-2xl font-semibold text-ceramic-text-primary">
           Quem é seu convidado?
         </h2>
         <p className="text-sm text-ceramic-secondary">
@@ -78,11 +78,11 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
           aria-label="Figura Pública - Pessoas conhecidas publicamente com busca automática via Wikipedia, notícias e redes sociais"
           className={`
             relative p-6 rounded-xl border-2 transition-all
-            focus:outline-none focus:ring-4 focus:ring-ceramic-primary/30
+            focus:outline-none focus:ring-4 focus:ring-ceramic-accent/30
             ${
               selectedType === 'public_figure'
-                ? 'border-ceramic-primary bg-ceramic-accent shadow-lg'
-                : 'border-ceramic-border bg-ceramic-base hover:border-ceramic-primary/50 hover:shadow-md'
+                ? 'border-ceramic-accent bg-ceramic-accent shadow-lg'
+                : 'border-ceramic-border bg-ceramic-base hover:border-ceramic-accent/50 hover:shadow-md'
             }
           `}
           whileHover={{ scale: 1.02 }}
@@ -122,7 +122,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-ceramic-primary">
+              <h3 className="text-lg font-semibold text-ceramic-text-primary">
                 Figura Pública
               </h3>
               <p className="text-sm text-ceramic-secondary mt-1">
@@ -194,7 +194,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-ceramic-primary">
+              <h3 className="text-lg font-semibold text-ceramic-text-primary">
                 Contato Direto
               </h3>
               <p className="text-sm text-ceramic-secondary mt-1">

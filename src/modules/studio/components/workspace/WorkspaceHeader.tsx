@@ -20,7 +20,7 @@
  *
  * Design System: Ceramic Design System
  * - Surface: bg-white
- * - Text: text-ceramic-primary, text-ceramic-secondary
+ * - Text: text-ceramic-text-primary, text-ceramic-secondary
  * - Borders: border-ceramic-border
  * - Interactive: hover states with ceramic colors
  *
@@ -75,7 +75,7 @@ export default function WorkspaceHeader({
         <div className="flex items-center space-x-4">
           <button
             onClick={onBack}
-            className="flex items-center space-x-2 text-ceramic-secondary hover:text-ceramic-primary transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded-lg px-2 py-1"
+            className="flex items-center space-x-2 text-ceramic-secondary hover:text-ceramic-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded-lg px-2 py-1"
             aria-label="Voltar ao dashboard do estúdio"
           >
             <ArrowLeft className="w-5 h-5" aria-hidden="true" />
@@ -85,7 +85,7 @@ export default function WorkspaceHeader({
           <div className="flex items-center space-x-2 text-sm">
             <span className="text-ceramic-secondary">{showTitle}</span>
             <span className="text-ceramic-border">/</span>
-            <span className="font-semibold text-ceramic-primary">
+            <span className="font-semibold text-ceramic-text-primary">
               {episodeTitle || 'Novo Episódio'}
             </span>
           </div>

@@ -42,8 +42,11 @@ import {
   PanelLeftClose,
   Search,
   ExternalLink,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import type { WorkspaceCustomSource } from '@/modules/studio/types';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ResearchStage');
@@ -72,6 +75,11 @@ export default function ResearchStage() {
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [isProcessingSources, setIsProcessingSources] = useState(false);
   const [chatInput, setChatInput] = useState('');
+
+  // Voice input for chat
+  const voiceChat = useSpeechRecognition({
+    onResult: (text) => setChatInput((prev) => (prev + ' ' + text).trim()),
+  });
 
   // Build context for Gemini Live chat
   const geminiContext = useMemo<GeminiLiveContext>(() => {
@@ -190,12 +198,12 @@ export default function ResearchStage() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-3">
             <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-orange-500" aria-hidden="true" />
-            <h1 className="text-xl md:text-3xl font-bold text-ceramic-primary">Pesquisa do Convidado</h1>
+            <h1 className="text-xl md:text-3xl font-bold text-ceramic-text-primary">Pesquisa do Convidado</h1>
           </div>
           {/* Mobile sidebar toggle */}
           <button
             onClick={() => setShowSidebar(!showSidebar)}
-            className="md:hidden p-2.5 rounded-lg bg-ceramic-surface-secondary text-ceramic-primary hover:bg-ceramic-cool transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="md:hidden p-2.5 rounded-lg bg-ceramic-surface-secondary text-ceramic-text-primary hover:bg-ceramic-cool transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
             aria-label={showSidebar ? 'Fechar painel lateral' : 'Abrir painel lateral'}
             aria-expanded={showSidebar}
           >
@@ -284,7 +292,7 @@ export default function ResearchStage() {
 
               <button
                 onClick={() => setShowSourcesModal(true)}
-                className="w-full px-4 py-3 bg-ceramic-surface-secondary text-ceramic-primary rounded-lg hover:bg-ceramic-cool transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                className="w-full px-4 py-3 bg-ceramic-surface-secondary text-ceramic-text-primary rounded-lg hover:bg-ceramic-cool transition-colors inline-flex items-center justify-center space-x-2 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                 aria-label="Adicionar fontes personalizadas de pesquisa"
               >
                 <Plus className="w-5 h-5" aria-hidden="true" />
@@ -323,7 +331,7 @@ export default function ResearchStage() {
                 className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === 'bio'
                     ? 'border-orange-500 text-orange-600 bg-ceramic-surface'
-                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-primary'
+                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-text-primary'
                 }`}
               >
                 <FileText className="w-4 h-4 inline mr-2" aria-hidden="true" />
@@ -337,7 +345,7 @@ export default function ResearchStage() {
                 className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === 'ficha'
                     ? 'border-orange-500 text-orange-600 bg-ceramic-surface'
-                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-primary'
+                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-text-primary'
                 }`}
               >
                 <FileText className="w-4 h-4 inline mr-2" aria-hidden="true" />
@@ -351,7 +359,7 @@ export default function ResearchStage() {
                 className={`flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === 'noticias'
                     ? 'border-orange-500 text-orange-600 bg-ceramic-surface'
-                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-primary'
+                    : 'border-transparent text-ceramic-secondary hover:text-ceramic-text-primary'
                 }`}
               >
                 <Newspaper className="w-4 h-4 inline mr-2" aria-hidden="true" />
@@ -363,7 +371,7 @@ export default function ResearchStage() {
           {/* Custom Sources List */}
           {research.customSources.length > 0 && (
             <div className="p-4 border-b border-ceramic-border">
-              <h4 className="text-sm font-semibold text-ceramic-primary mb-3">
+              <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3">
                 Fontes ({research.customSources.length})
               </h4>
               <div className="space-y-2" role="list" aria-label="Fontes personalizadas">
@@ -374,7 +382,7 @@ export default function ResearchStage() {
                         {source.type === 'url' && <LinkIcon className="w-3 h-3 text-ceramic-info flex-shrink-0" aria-hidden="true" />}
                         {source.type === 'file' && <Upload className="w-3 h-3 text-ceramic-success flex-shrink-0" aria-hidden="true" />}
                         {source.type === 'text' && <FileText className="w-3 h-3 text-ceramic-text-secondary flex-shrink-0" aria-hidden="true" />}
-                        <span className="font-medium text-ceramic-primary truncate">{source.label || ensureString(source.content).substring(0, 30)}</span>
+                        <span className="font-medium text-ceramic-text-primary truncate">{source.label || ensureString(source.content).substring(0, 30)}</span>
                       </div>
                       <span className="text-ceramic-tertiary">{source.type === 'url' ? 'URL' : source.type === 'file' ? 'Arquivo' : 'Texto'}</span>
                     </div>
@@ -472,7 +480,7 @@ export default function ResearchStage() {
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center py-12">
                     <Sparkles className="w-16 h-16 text-ceramic-text-tertiary mx-auto mb-4" aria-hidden="true" />
-                    <h3 className="text-lg font-semibold text-ceramic-primary mb-2">
+                    <h3 className="text-lg font-semibold text-ceramic-text-primary mb-2">
                       {research.deepResearch ? 'Pesquisa pronta para gerar dossier' : 'Dossier nao gerado'}
                     </h3>
                     <p className="text-ceramic-secondary max-w-sm">
@@ -489,8 +497,8 @@ export default function ResearchStage() {
                 {/* Biography Tab */}
                 {activeTab === 'bio' && (
                   <div className="max-w-3xl" role="tabpanel" id="bio-panel" aria-labelledby="bio-tab">
-                    <h2 className="text-2xl font-bold text-ceramic-primary mb-4">Biografia</h2>
-                    <p className="text-ceramic-primary whitespace-pre-wrap leading-relaxed">
+                    <h2 className="text-2xl font-bold text-ceramic-text-primary mb-4">Biografia</h2>
+                    <p className="text-ceramic-text-primary whitespace-pre-wrap leading-relaxed">
                       {research.dossier.biography}
                     </p>
                   </div>
@@ -499,18 +507,18 @@ export default function ResearchStage() {
                 {/* Technical Sheet Tab */}
                 {activeTab === 'ficha' && (
                   <div className="max-w-3xl" role="tabpanel" id="ficha-panel" aria-labelledby="ficha-tab">
-                    <h2 className="text-2xl font-bold text-ceramic-primary mb-6">Ficha Técnica</h2>
+                    <h2 className="text-2xl font-bold text-ceramic-text-primary mb-6">Ficha Técnica</h2>
                     {research.dossier.technicalSheet ? (
                       <div className="space-y-6">
                         {research.dossier.technicalSheet.fullName && (
                           <div>
-                            <h3 className="text-sm font-semibold text-ceramic-primary mb-2">Nome Completo</h3>
+                            <h3 className="text-sm font-semibold text-ceramic-text-primary mb-2">Nome Completo</h3>
                             <p className="text-ceramic-secondary">{research.dossier.technicalSheet.fullName}</p>
                           </div>
                         )}
                         {research.dossier.technicalSheet.education && research.dossier.technicalSheet.education.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-semibold text-ceramic-primary mb-3">Educação</h3>
+                            <h3 className="text-sm font-semibold text-ceramic-text-primary mb-3">Educação</h3>
                             <ul className="space-y-2">
                               {research.dossier.technicalSheet.education.map((edu, idx) => (
                                 <li key={idx} className="text-ceramic-secondary">
@@ -522,7 +530,7 @@ export default function ResearchStage() {
                         )}
                         {research.dossier.technicalSheet.careerHighlights && research.dossier.technicalSheet.careerHighlights.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-semibold text-ceramic-primary mb-3">Carreira</h3>
+                            <h3 className="text-sm font-semibold text-ceramic-text-primary mb-3">Carreira</h3>
                             <ul className="space-y-2">
                               {research.dossier.technicalSheet.careerHighlights.map((career, idx) => (
                                 <li key={idx} className="text-ceramic-secondary">
@@ -534,7 +542,7 @@ export default function ResearchStage() {
                         )}
                         {research.dossier.technicalSheet.keyFacts && research.dossier.technicalSheet.keyFacts.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-semibold text-ceramic-primary mb-3">Fatos</h3>
+                            <h3 className="text-sm font-semibold text-ceramic-text-primary mb-3">Fatos</h3>
                             <ul className="space-y-2">
                               {research.dossier.technicalSheet.keyFacts.map((fact, idx) => (
                                 <li key={idx} className="text-ceramic-secondary flex items-start gap-2">
@@ -557,14 +565,14 @@ export default function ResearchStage() {
                 {/* News & Controversies Tab */}
                 {activeTab === 'noticias' && (
                   <div className="max-w-3xl" role="tabpanel" id="noticias-panel" aria-labelledby="noticias-tab">
-                    <h2 className="text-2xl font-bold text-ceramic-primary mb-6">Notícias & Controvérsias</h2>
+                    <h2 className="text-2xl font-bold text-ceramic-text-primary mb-6">Notícias & Controvérsias</h2>
                     {research.dossier.controversies && research.dossier.controversies.length > 0 && (
                       <div className="mb-8">
-                        <h3 className="text-lg font-semibold text-ceramic-primary mb-4">Controvérsias</h3>
+                        <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Controvérsias</h3>
                         <div className="space-y-3">
                           {research.dossier.controversies.map((controversy, idx) => (
                             <div key={idx} className="p-4 bg-ceramic-error-bg border border-ceramic-error/30 rounded-lg">
-                              <p className="text-ceramic-primary">{controversy}</p>
+                              <p className="text-ceramic-text-primary">{controversy}</p>
                             </div>
                           ))}
                         </div>
@@ -572,11 +580,11 @@ export default function ResearchStage() {
                     )}
                     {research.dossier.iceBreakers && research.dossier.iceBreakers.length > 0 && (
                       <div>
-                        <h3 className="text-lg font-semibold text-ceramic-primary mb-4">Quebra-Gelo</h3>
+                        <h3 className="text-lg font-semibold text-ceramic-text-primary mb-4">Quebra-Gelo</h3>
                         <div className="space-y-3">
                           {research.dossier.iceBreakers.map((breaker, idx) => (
                             <div key={idx} className="p-4 bg-ceramic-info-bg border border-ceramic-info/30 rounded-lg">
-                              <p className="text-ceramic-primary">{breaker}</p>
+                              <p className="text-ceramic-text-primary">{breaker}</p>
                             </div>
                           ))}
                         </div>
@@ -594,7 +602,7 @@ export default function ResearchStage() {
             <div className="flex items-center justify-between px-4 py-2 border-b border-ceramic-border bg-ceramic-base">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-orange-500" aria-hidden="true" />
-                <span className="text-sm font-medium text-ceramic-primary">Chat com IA</span>
+                <span className="text-sm font-medium text-ceramic-text-primary">Chat com IA</span>
               </div>
               <div className="flex items-center gap-2">
                 {/* Connection indicator */}
@@ -669,7 +677,7 @@ export default function ResearchStage() {
                       className={`max-w-[80%] px-4 py-2 rounded-lg ${
                         msg.role === 'user'
                           ? 'bg-orange-500 text-white'
-                          : 'bg-ceramic-surface-secondary text-ceramic-primary'
+                          : 'bg-ceramic-surface-secondary text-ceramic-text-primary'
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -680,7 +688,7 @@ export default function ResearchStage() {
                 {/* Streaming response */}
                 {currentResponse && (
                   <div className="flex justify-start">
-                    <div className="max-w-[80%] px-4 py-2 rounded-lg bg-ceramic-surface-secondary text-ceramic-primary">
+                    <div className="max-w-[80%] px-4 py-2 rounded-lg bg-ceramic-surface-secondary text-ceramic-text-primary">
                       <p className="text-sm whitespace-pre-wrap">{currentResponse}</p>
                       <span className="inline-block w-1.5 h-4 bg-orange-500 animate-pulse ml-0.5" aria-hidden="true" />
                     </div>
@@ -690,7 +698,7 @@ export default function ResearchStage() {
                 {/* Loading indicator (when streaming hasn't started yet) */}
                 {isChatLoading && !currentResponse && (
                   <div className="flex justify-start">
-                    <div className="bg-ceramic-surface-secondary text-ceramic-primary px-4 py-2 rounded-lg flex items-center gap-2">
+                    <div className="bg-ceramic-surface-secondary text-ceramic-text-primary px-4 py-2 rounded-lg flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                       <span className="text-sm text-ceramic-secondary">Pensando...</span>
                     </div>
@@ -712,6 +720,24 @@ export default function ResearchStage() {
                     disabled={isChatLoading}
                     aria-required="true"
                   />
+                  {voiceChat.isSupported && !isChatLoading && (
+                    <button
+                      type="button"
+                      onClick={voiceChat.toggle}
+                      className={`min-w-[44px] min-h-[44px] px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        voiceChat.isListening
+                          ? 'bg-ceramic-error text-white animate-pulse focus:ring-ceramic-error'
+                          : 'bg-ceramic-cool text-ceramic-text-secondary hover:text-ceramic-accent focus:ring-orange-500'
+                      }`}
+                      aria-label={voiceChat.isListening ? 'Parar ditado por voz' : 'Ditar pergunta por voz'}
+                    >
+                      {voiceChat.isListening ? (
+                        <MicOff className="w-5 h-5" aria-hidden="true" />
+                      ) : (
+                        <Mic className="w-5 h-5" aria-hidden="true" />
+                      )}
+                    </button>
+                  )}
                   {isChatLoading ? (
                     <button
                       type="button"
@@ -748,7 +774,7 @@ export default function ResearchStage() {
         >
           <div className="bg-ceramic-surface rounded-lg shadow-xl max-w-md w-full mx-4 max-h-96 overflow-y-auto">
             <div className="sticky top-0 bg-ceramic-surface border-b border-ceramic-border p-6 flex items-center justify-between">
-              <h2 id="sources-modal-title" className="text-lg font-bold text-ceramic-primary">Adicionar Fontes</h2>
+              <h2 id="sources-modal-title" className="text-lg font-bold text-ceramic-text-primary">Adicionar Fontes</h2>
               <button
                 onClick={() => {
                   setShowSourcesModal(false);
@@ -764,7 +790,7 @@ export default function ResearchStage() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label htmlFor="source-text" className="block text-sm font-medium text-ceramic-primary mb-2">Texto</label>
+                <label htmlFor="source-text" className="block text-sm font-medium text-ceramic-text-primary mb-2">Texto</label>
                 <textarea
                   id="source-text"
                   value={sourceText}
@@ -775,7 +801,7 @@ export default function ResearchStage() {
                 />
               </div>
               <div>
-                <label htmlFor="source-url" className="block text-sm font-medium text-ceramic-primary mb-2">URL</label>
+                <label htmlFor="source-url" className="block text-sm font-medium text-ceramic-text-primary mb-2">URL</label>
                 <input
                   id="source-url"
                   type="url"
@@ -786,7 +812,7 @@ export default function ResearchStage() {
                 />
               </div>
               <div>
-                <label htmlFor="source-file" className="block text-sm font-medium text-ceramic-primary mb-2">Arquivo</label>
+                <label htmlFor="source-file" className="block text-sm font-medium text-ceramic-text-primary mb-2">Arquivo</label>
                 <input
                   id="source-file"
                   type="file"
@@ -821,7 +847,7 @@ export default function ResearchStage() {
                   setSourceUrl('');
                   setSourceFile(null);
                 }}
-                className="w-full px-4 py-2 border border-ceramic-border text-ceramic-primary rounded-lg hover:bg-ceramic-base transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                className="w-full px-4 py-2 border border-ceramic-border text-ceramic-text-primary rounded-lg hover:bg-ceramic-base transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
               >
                 Fechar
               </button>

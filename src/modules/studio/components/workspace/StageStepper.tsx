@@ -23,7 +23,7 @@
  *
  * Design System: Ceramic Design System
  * - Surface: bg-white
- * - Text: text-ceramic-primary, text-ceramic-secondary
+ * - Text: text-ceramic-text-primary, text-ceramic-secondary
  * - Borders: border-ceramic-border
  * - Active: bg-orange-50, text-orange-600
  * - Interactive: hover:bg-ceramic-base
@@ -90,7 +90,7 @@ export default function StageStepper({
                   relative flex items-center space-x-3 px-4 py-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
                   ${isActive
                     ? 'bg-orange-50 text-orange-600 shadow-sm'
-                    : 'text-ceramic-secondary hover:bg-ceramic-base hover:text-ceramic-primary'
+                    : 'text-ceramic-secondary hover:bg-ceramic-base hover:text-ceramic-text-primary'
                   }
                 `}
               >
@@ -107,7 +107,7 @@ export default function StageStepper({
 
                 {/* Label */}
                 <span className={`font-medium whitespace-nowrap ${
-                  isActive ? 'text-orange-600' : 'text-ceramic-primary'
+                  isActive ? 'text-orange-600' : 'text-ceramic-text-primary'
                 }`}>
                   {/* Full label on desktop */}
                   <span className="hidden md:inline">{stage.label}</span>

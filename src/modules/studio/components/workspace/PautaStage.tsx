@@ -189,7 +189,7 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
       ) : (
         <span
           onClick={() => setIsEditing(true)}
-          className={`text-sm flex-1 cursor-text ${topic.completed ? 'line-through text-ceramic-tertiary' : 'text-ceramic-primary'
+          className={`text-sm flex-1 cursor-text ${topic.completed ? 'line-through text-ceramic-tertiary' : 'text-ceramic-text-primary'
           }`}
           role="button"
           tabIndex={0}
@@ -428,7 +428,7 @@ export default function PautaStage() {
                 <FileText className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-xl md:text-3xl font-bold text-ceramic-primary">
+                <h1 className="text-xl md:text-3xl font-bold text-ceramic-text-primary">
                   Pauta do Episódio
                 </h1>
                 <p className="text-xs md:text-sm text-ceramic-secondary">
@@ -568,7 +568,7 @@ export default function PautaStage() {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-8 h-8 text-amber-500" aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-bold text-ceramic-primary mb-2">
+              <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
                 Nenhum tópico criado
               </h3>
               <p className="text-sm text-ceramic-secondary mb-6">
@@ -646,7 +646,7 @@ export default function PautaStage() {
               {activeDragId ? (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-ceramic-surface shadow-xl border border-amber-200 opacity-90 cursor-grabbing">
                   <GripVertical className="w-4 h-4 text-ceramic-tertiary" aria-hidden="true" />
-                  <span className="text-sm text-ceramic-primary font-bold">
+                  <span className="text-sm text-ceramic-text-primary font-bold">
                     {pauta.topics.find(t => t.id === activeDragId)?.text}
                   </span>
                 </div>
@@ -687,7 +687,7 @@ export default function PautaStage() {
               value={newTopicText}
               onChange={(e) => setNewTopicText(e.target.value)}
               placeholder="Nova pergunta ou tópico..."
-              className="flex-1 px-4 py-3 min-h-[44px] rounded-xl bg-ceramic-border text-sm text-ceramic-primary placeholder-ceramic-tertiary border-none focus:ring-2 focus:ring-amber-400/50 outline-none shadow-inner"
+              className="flex-1 px-4 py-3 min-h-[44px] rounded-xl bg-ceramic-border text-sm text-ceramic-text-primary placeholder-ceramic-tertiary border-none focus:ring-2 focus:ring-amber-400/50 outline-none shadow-inner"
               aria-required="true"
             />
             <button
