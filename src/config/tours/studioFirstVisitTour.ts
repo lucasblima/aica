@@ -8,7 +8,7 @@ export const studioFirstVisitTour: TourConfig = {
   key: 'studio-first-visit',
   name: 'Studio Podcast Production',
   module: 'studio',
-  autoStart: true,
+  autoStart: false,
   steps: [
     {
       target: '[data-tour="studio-header"]',

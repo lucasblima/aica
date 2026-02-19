@@ -157,6 +157,7 @@ export function QuickCapture({
       animate={{ opacity: 1, y: 0 }}
       onSubmit={handleSubmit}
       className={`ceramic-card ${compact ? 'p-4 space-y-3' : 'p-6 space-y-4'}`}
+      data-tour="quick-capture"
     >
       {/* Header */}
       <div className="flex items-center justify-between">

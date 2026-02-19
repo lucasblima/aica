@@ -8,7 +8,7 @@ export const journeyFirstVisitTour: TourConfig = {
   key: 'journey-first-visit',
   name: 'Journey Consciousness & Moments',
   module: 'journey',
-  autoStart: true,
+  autoStart: false,
   steps: [
     {
       target: '[data-tour="journey-header"]',
@@ -17,40 +17,28 @@ export const journeyFirstVisitTour: TourConfig = {
       placement: 'bottom',
     },
     {
-      target: '[data-tour="consciousness-score"]',
-      content:
-        'Seu score de Consciência reflete o nível de auto-conhecimento e crescimento pessoal. Aumenta com reflexão e ações intencionais.',
-      placement: 'right',
-    },
-    {
       target: '[data-tour="consciousness-points"]',
       content:
-        'Você ganha Pontos de Consciência ao registrar momentos, refletir sobre experiências e completar jornadas de crescimento.',
-      placement: 'left',
+        'Seus Pontos de Consciência (CP) refletem seu nível de auto-conhecimento. Aumentam com reflexões, momentos registrados e perguntas respondidas.',
+      placement: 'bottom',
+    },
+    {
+      target: '[data-tour="quick-capture"]',
+      content:
+        'Capture um novo momento aqui. Escreva ou grave áudio — a IA analisa e gera tags e insights automaticamente.',
+      placement: 'bottom',
+    },
+    {
+      target: '[data-tour="daily-question"]',
+      content:
+        'Todo dia uma pergunta de reflexão personalizada. Responder rende Pontos de Consciência e ajuda a IA a te conhecer melhor.',
+      placement: 'right',
     },
     {
       target: '[data-tour="moments-timeline"]',
       content:
-        'Sua timeline de momentos captura memórias importantes. Você pode adicionar notas, emoções e aprendizados de cada experiência.',
-      placement: 'center',
-    },
-    {
-      target: '[data-tour="add-moment-button"]',
-      content:
-        'Clique para registrar um novo momento. Capture emoções, insights e o contexto do que você está vivendo agora.',
+        'Sua timeline unificada mostra momentos, perguntas respondidas e reflexões. Use as abas para ver Insights, buscar ou iniciar entrevistas.',
       placement: 'top',
-    },
-    {
-      target: '[data-tour="emotion-picker"]',
-      content:
-        'Registre suas emoções atuais. Isso ajuda você a entender padrões emocionais e gatilhos ao longo do tempo.',
-      placement: 'right',
-    },
-    {
-      target: '[data-tour="growth-insights"]',
-      content:
-        'Insights gerados por IA analisam seus momentos e sugerem áreas de crescimento e padrões interessantes na sua jornada.',
-      placement: 'left',
     },
   ],
 };

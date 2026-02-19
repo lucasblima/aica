@@ -8,7 +8,7 @@ export const fluxFirstVisitTour: TourConfig = {
   key: 'flux-first-visit',
   name: 'Flux Training Management',
   module: 'flux',
-  autoStart: true,
+  autoStart: false,
   steps: [
     {
       target: '[data-tour="flux-header"]',
