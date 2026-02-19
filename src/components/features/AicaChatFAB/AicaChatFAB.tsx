@@ -6,7 +6,7 @@
  * Displays agent routing indicators and supports reclassification.
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, RefreshCw, Zap } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -16,6 +16,9 @@ import { useUserStats } from '@/hooks/useUserStats'
 import { calculateTrustLevel, getTrustLevelLabel } from '@/lib/agents/trustLevel'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
 import type { AgentModule } from '@/lib/agents/types'
+import { ChatActionButtons } from './ChatActionButtons'
+import { executeChatAction } from '@/services/chatActionService'
+import type { ChatAction } from '@/types/chatActions'
 import './AicaChatFAB.css'
 
 const AGENT_LABELS: Record<AgentModule | 'coordinator', string> = {
@@ -116,6 +119,13 @@ export function AicaChatFAB({
     createNewSession()
     setTimeout(() => inputRef.current?.focus(), 100)
   }
+
+  const handleExecuteAction = useCallback(async (action: ChatAction) => {
+    const result = await executeChatAction(action)
+    if (!result.success) {
+      throw new Error(result.error || 'Erro ao executar acao')
+    }
+  }, [])
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr)
@@ -286,6 +296,14 @@ export function AicaChatFAB({
                       <p>{msg.content}</p>
                     )}
                   </div>
+
+                  {/* Action buttons on last assistant message */}
+                  {isLastAssistantMessage(msg, idx) && msg.actions && msg.actions.length > 0 && (
+                    <ChatActionButtons
+                      actions={msg.actions}
+                      onExecute={handleExecuteAction}
+                    />
+                  )}
 
                   {/* Agent badge for assistant messages */}
                   {msg.role === 'assistant' && msg.agent && (

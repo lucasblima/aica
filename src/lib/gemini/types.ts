@@ -108,6 +108,9 @@ export type GeminiAction =
   | 'execute_step'
   | 'get_plan'
 
+  // Chat Action Buttons
+  | 'execute_chat_action'
+
 /**
  * Request base para chamadas ao Gemini
  */
