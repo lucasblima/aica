@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, MapPin, X, Check, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, X, Check, AlertCircle, ListChecks } from 'lucide-react';
 
 interface EventWithCategory {
   id: string;
@@ -16,6 +16,7 @@ interface EventWithCategory {
   skipped?: boolean;
   isTask?: boolean;
   isCompleted?: boolean;
+  checklist?: Array<{ text: string; done: boolean }> | null;
 }
 
 interface NextTwoDaysViewProps {
@@ -178,12 +179,20 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
             {formatTime(event.startTime)}
           </span>
 
-          {/* Título do evento */}
-          <h4 className={`text-base font-medium text-ceramic-text-primary flex-1 truncate ${
-            event.skipped || event.isCompleted ? 'line-through text-ceramic-text-secondary' : ''
-          }`}>
-            {event.title}
-          </h4>
+          {/* Título + checklist progress */}
+          <div className="flex-1 min-w-0">
+            <h4 className={`text-base font-medium text-ceramic-text-primary truncate ${
+              event.skipped || event.isCompleted ? 'line-through text-ceramic-text-secondary' : ''
+            }`}>
+              {event.title}
+            </h4>
+            {event.checklist && event.checklist.length > 0 && (
+              <span className="inline-flex items-center gap-1 mt-0.5 text-xs text-ceramic-text-secondary">
+                <ListChecks className="w-3 h-3" />
+                {event.checklist.filter(i => i.done).length}/{event.checklist.length}
+              </span>
+            )}
+          </div>
 
           {/* Action Button - Compact (only for calendar events, not tasks) */}
           {!event.isTask && event.isToday && !isPast && (
