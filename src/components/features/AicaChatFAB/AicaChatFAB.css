@@ -681,6 +681,61 @@
 }
 
 /* ============================================================================
+   CHAT ACTION BUTTONS
+   ============================================================================ */
+
+.aica-fab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 0 2px;
+}
+
+.aica-fab-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.aica-fab-action-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.aica-fab-action-btn--loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.aica-fab-action-btn--success {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.aica-fab-action-btn--error {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.aica-fab-action-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ============================================================================
    DARK MODE
    ============================================================================ */
 
@@ -847,5 +902,28 @@
     background: rgba(245, 158, 11, 0.15);
     border-color: rgba(245, 158, 11, 0.3);
     color: #fbbf24;
+  }
+
+  .aica-fab-action-btn {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+  }
+
+  .aica-fab-action-btn:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.25);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+
+  .aica-fab-action-btn--success {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.35);
+    color: #4ade80;
+  }
+
+  .aica-fab-action-btn--error {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #f87171;
   }
 }

@@ -15,6 +15,7 @@ import { getAgentPrompt, hasAgent } from '@/lib/agents'
 import type { AgentModule } from '@/lib/agents/types'
 import type { TrustLevel } from '@/lib/agents/trustLevel'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
+import type { ChatAction } from '@/types/chatActions'
 
 export interface DisplayMessage {
   id: string
@@ -23,6 +24,7 @@ export interface DisplayMessage {
   created_at: string
   agent?: AgentModule | 'coordinator'
   classification?: IntentResult
+  actions?: ChatAction[]
 }
 
 export interface UseChatSessionReturn {
@@ -213,6 +215,11 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
         'Desculpe, nao consegui gerar uma resposta.'
       const finalText = typeof responseText === 'string' ? responseText : JSON.stringify(responseText)
 
+      // Parse suggested actions from response
+      const responseActions: ChatAction[] = Array.isArray(response?.result?.actions)
+        ? response.result.actions
+        : []
+
       // Save assistant message to DB
       const savedAssistantMsg = await chatService.saveMessage({
         sessionId: currentSession.id,
@@ -228,6 +235,7 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
         ...chatMsgToDisplay(savedAssistantMsg),
         agent: classification.module,
         classification,
+        actions: responseActions,
       }])
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao conectar com a Aica'

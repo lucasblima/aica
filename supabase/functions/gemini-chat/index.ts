@@ -311,6 +311,29 @@ interface GuestProfile {
 }
 
 // ============================================================================
+// CHAT ACTION TYPES
+// ============================================================================
+
+interface ChatAction {
+  id: string
+  type: string
+  label: string
+  icon: string
+  module: string
+  params: Record<string, any>
+}
+
+interface UserContextResult {
+  contextString: string
+  rawData: {
+    tasks: any[]
+    moments: any[]
+    transactions: any[]
+    events: any[]
+  }
+}
+
+// ============================================================================
 // MODEL CONFIGURATION
 // ============================================================================
 
@@ -542,8 +565,9 @@ async function handleWhatsAppSentiment(genAI: GoogleGenerativeAI, payload: Whats
   return parsed as WhatsAppSentimentResult
 }
 
-async function buildUserContext(supabaseAdmin: any, userId: string, module: string): Promise<string> {
+async function buildUserContext(supabaseAdmin: any, userId: string, module: string): Promise<UserContextResult> {
   const contextParts: string[] = []
+  const rawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
   console.log(`[buildUserContext] Starting for userId=${userId}, module=${module}`)
 
   try {
@@ -560,6 +584,7 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
 
       console.log(`[buildUserContext] tasks query: count=${tasks?.length || 0}, error=${tasksError?.message || 'none'}`)
       if (tasks?.length) {
+        rawData.tasks = tasks
         contextParts.push(`### Tarefas Abertas (${tasks.length})`)
         tasks.forEach(t => {
           const urgImp = [t.is_urgent && 'URGENTE', t.is_important && 'IMPORTANTE'].filter(Boolean).join(', ')
@@ -582,6 +607,7 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
         .limit(7)
 
       if (moments?.length) {
+        rawData.moments = moments
         contextParts.push(`\n### Momentos Recentes (${moments.length})`)
         moments.forEach(m => {
           const date = new Date(m.created_at).toLocaleDateString('pt-BR')
@@ -602,6 +628,7 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
         .limit(30)
 
       if (transactions?.length) {
+        rawData.transactions = transactions
         const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Math.abs(t.amount), 0)
         const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0)
         contextParts.push(`\n### Finanças (últimos 30 dias)`)
@@ -710,6 +737,7 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
         .limit(15)
 
       if (events?.length) {
+        rawData.events = events
         contextParts.push(`\n### Agenda (próximos 7 dias — ${events.length} eventos)`)
         events.forEach(e => {
           const date = new Date(e.start_time).toLocaleDateString('pt-BR')
@@ -724,11 +752,137 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
     contextParts.push('\n(Alguns dados não puderam ser carregados)')
   }
 
-  if (contextParts.length === 0) {
-    return ''
+  const contextString = contextParts.length === 0 ? '' : contextParts.join('\n')
+  return { contextString, rawData }
+}
+
+// ============================================================================
+// SUGGESTED ACTIONS GENERATOR (pure function, no async)
+// ============================================================================
+
+function generateSuggestedActions(message: string, rawData: UserContextResult['rawData']): ChatAction[] {
+  const actions: ChatAction[] = []
+  const msg = message.toLowerCase()
+  const today = new Date().toISOString().split('T')[0]
+
+  // Keyword groups
+  const completeKeywords = ['concluir', 'terminar', 'feita', 'pronta', 'finalizar', 'completar', 'terminei', 'fiz', 'concluida', 'concluido']
+  const startKeywords = ['comecar', 'iniciar', 'start', 'comecei', 'vou fazer', 'vou comecar']
+  const priorityKeywords = ['prioridade', 'urgente', 'importante', 'priorizar', 'urgencia']
+  const rescheduleKeywords = ['reagendar', 'adiar', 'mudar data', 'postergar', 'remarcar']
+  const momentKeywords = ['momento', 'reflexao', 'registrar', 'sentimento', 'diario', 'como me sinto', 'estou sentindo']
+
+  // Find overdue tasks
+  const overdueTasks = rawData.tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done')
+
+  // Complete task
+  if (completeKeywords.some(k => msg.includes(k)) && rawData.tasks.length > 0) {
+    // Try to find a task matching keywords from the message
+    const openTasks = rawData.tasks.filter(t => t.status !== 'done')
+    const matchedTask = openTasks.find(t => {
+      const titleLower = t.title.toLowerCase()
+      // Check if any word from the message (4+ chars) matches part of the task title
+      const msgWords = msg.split(/\s+/).filter(w => w.length >= 4)
+      return msgWords.some(w => titleLower.includes(w))
+    }) || openTasks[0]
+
+    if (matchedTask) {
+      actions.push({
+        id: `complete_task_${matchedTask.id}`,
+        type: 'complete_task',
+        label: `Concluir "${matchedTask.title.substring(0, 30)}${matchedTask.title.length > 30 ? '...' : ''}"`,
+        icon: 'CheckCircle',
+        module: 'atlas',
+        params: { task_id: matchedTask.id },
+      })
+    }
   }
 
-  return contextParts.join('\n')
+  // Start task
+  if (startKeywords.some(k => msg.includes(k)) && rawData.tasks.length > 0) {
+    const todoTasks = rawData.tasks.filter(t => t.status === 'todo' || t.status === 'backlog')
+    const matchedTask = todoTasks.find(t => {
+      const titleLower = t.title.toLowerCase()
+      const msgWords = msg.split(/\s+/).filter(w => w.length >= 4)
+      return msgWords.some(w => titleLower.includes(w))
+    }) || todoTasks[0]
+
+    if (matchedTask && !actions.some(a => a.type === 'complete_task' && a.params.task_id === matchedTask.id)) {
+      actions.push({
+        id: `start_task_${matchedTask.id}`,
+        type: 'start_task',
+        label: `Iniciar "${matchedTask.title.substring(0, 30)}${matchedTask.title.length > 30 ? '...' : ''}"`,
+        icon: 'Play',
+        module: 'atlas',
+        params: { task_id: matchedTask.id },
+      })
+    }
+  }
+
+  // Update priority
+  if (priorityKeywords.some(k => msg.includes(k)) && rawData.tasks.length > 0) {
+    const openTasks = rawData.tasks.filter(t => t.status !== 'done')
+    const matchedTask = openTasks.find(t => {
+      const titleLower = t.title.toLowerCase()
+      const msgWords = msg.split(/\s+/).filter(w => w.length >= 4)
+      return msgWords.some(w => titleLower.includes(w))
+    }) || openTasks[0]
+
+    if (matchedTask && !actions.some(a => a.params.task_id === matchedTask.id)) {
+      actions.push({
+        id: `update_priority_${matchedTask.id}`,
+        type: 'update_priority',
+        label: `Priorizar "${matchedTask.title.substring(0, 30)}${matchedTask.title.length > 30 ? '...' : ''}"`,
+        icon: 'Star',
+        module: 'atlas',
+        params: { task_id: matchedTask.id, is_urgent: true, is_important: true },
+      })
+    }
+  }
+
+  // Reschedule overdue tasks
+  if (rescheduleKeywords.some(k => msg.includes(k)) && overdueTasks.length > 0) {
+    const target = overdueTasks[0]
+    if (!actions.some(a => a.params.task_id === target.id)) {
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+      actions.push({
+        id: `reschedule_task_${target.id}`,
+        type: 'reschedule_task',
+        label: `Reagendar "${target.title.substring(0, 30)}${target.title.length > 30 ? '...' : ''}"`,
+        icon: 'Calendar',
+        module: 'atlas',
+        params: { task_id: target.id, new_date: tomorrow },
+      })
+    }
+  }
+
+  // Create moment
+  if (momentKeywords.some(k => msg.includes(k))) {
+    actions.push({
+      id: `create_moment_${Date.now()}`,
+      type: 'create_moment',
+      label: 'Registrar momento',
+      icon: 'PenLine',
+      module: 'journey',
+      params: { content: message.substring(0, 500), emotion: 'thoughtful', type: 'reflection' },
+    })
+  }
+
+  // Fallback: if overdue tasks exist and no actions matched yet, suggest reschedule
+  if (actions.length === 0 && overdueTasks.length > 0) {
+    const target = overdueTasks[0]
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+    actions.push({
+      id: `reschedule_task_${target.id}`,
+      type: 'reschedule_task',
+      label: `Reagendar "${target.title.substring(0, 30)}${target.title.length > 30 ? '...' : ''}" (atrasada)`,
+      icon: 'Calendar',
+      module: 'atlas',
+      params: { task_id: target.id, new_date: tomorrow },
+    })
+  }
+
+  return actions.slice(0, 3)
 }
 
 async function handleLegacyChat(
@@ -736,7 +890,7 @@ async function handleLegacyChat(
   request: ChatRequest & { module?: string },
   supabaseAdmin?: any,
   userId?: string | null
-): Promise<{ response: string; success: boolean }> {
+): Promise<{ response: string; actions: ChatAction[]; success: boolean }> {
   const { message, context, history, systemPrompt, module: rawModule } = request as any
   if (!message) throw new Error('Mensagem e obrigatoria')
 
@@ -745,10 +899,13 @@ async function handleLegacyChat(
 
   // Build user context if we have userId and supabaseAdmin
   let userContext = ''
+  let rawData: UserContextResult['rawData'] = { tasks: [], moments: [], transactions: [], events: [] }
   console.log(`[handleLegacyChat] userId=${userId}, hasSupabaseAdmin=${!!supabaseAdmin}, module=${module} (raw=${rawModule})`)
   if (userId && supabaseAdmin && module) {
     try {
-      userContext = await buildUserContext(supabaseAdmin, userId, module)
+      const contextResult = await buildUserContext(supabaseAdmin, userId, module)
+      userContext = contextResult.contextString
+      rawData = contextResult.rawData
       console.log(`[handleLegacyChat] userContext length=${userContext.length}, preview=${userContext.substring(0, 200)}`)
     } catch (e) {
       console.warn('[handleLegacyChat] Failed to build user context:', (e as Error).message)
@@ -797,7 +954,12 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
   })
 
   const result = await chat.sendMessage(finalMessage)
-  return { response: result.response.text(), success: true }
+
+  // Generate suggested actions based on message content and user data
+  const actions = generateSuggestedActions(message, rawData)
+  console.log(`[handleLegacyChat] Generated ${actions.length} suggested actions`)
+
+  return { response: result.response.text(), actions, success: true }
 }
 
 async function handleAnalyzeContentRealtime(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
@@ -1953,6 +2115,110 @@ Retorne APENAS JSON válido:
 }
 
 // ============================================================================
+// EXECUTE CHAT ACTION HANDLER
+// ============================================================================
+
+const ALLOWED_ACTION_TYPES = ['complete_task', 'start_task', 'update_priority', 'reschedule_task', 'create_moment'] as const
+
+async function handleExecuteChatAction(
+  supabaseAdmin: any,
+  userId: string,
+  payload: { action_type: string; params: Record<string, any> }
+): Promise<{ success: boolean; action_type: string; result?: any; error?: string }> {
+  const { action_type, params } = payload
+
+  if (!action_type || !ALLOWED_ACTION_TYPES.includes(action_type as any)) {
+    return { success: false, action_type: action_type || 'unknown', error: `Tipo de acao invalido: ${action_type}` }
+  }
+
+  if (!params || typeof params !== 'object') {
+    return { success: false, action_type, error: 'Parametros invalidos' }
+  }
+
+  try {
+    switch (action_type) {
+      case 'complete_task': {
+        if (!params.task_id) return { success: false, action_type, error: 'task_id e obrigatorio' }
+        const { data, error } = await supabaseAdmin
+          .from('work_items')
+          .update({ status: 'done', updated_at: new Date().toISOString() })
+          .eq('id', params.task_id)
+          .eq('user_id', userId)
+          .select('id, title, status')
+          .single()
+        if (error) return { success: false, action_type, error: error.message }
+        return { success: true, action_type, result: data }
+      }
+
+      case 'start_task': {
+        if (!params.task_id) return { success: false, action_type, error: 'task_id e obrigatorio' }
+        const { data, error } = await supabaseAdmin
+          .from('work_items')
+          .update({ status: 'in_progress', updated_at: new Date().toISOString() })
+          .eq('id', params.task_id)
+          .eq('user_id', userId)
+          .select('id, title, status')
+          .single()
+        if (error) return { success: false, action_type, error: error.message }
+        return { success: true, action_type, result: data }
+      }
+
+      case 'update_priority': {
+        if (!params.task_id) return { success: false, action_type, error: 'task_id e obrigatorio' }
+        const updateData: Record<string, any> = { updated_at: new Date().toISOString() }
+        if (params.is_urgent !== undefined) updateData.is_urgent = Boolean(params.is_urgent)
+        if (params.is_important !== undefined) updateData.is_important = Boolean(params.is_important)
+        const { data, error } = await supabaseAdmin
+          .from('work_items')
+          .update(updateData)
+          .eq('id', params.task_id)
+          .eq('user_id', userId)
+          .select('id, title, is_urgent, is_important')
+          .single()
+        if (error) return { success: false, action_type, error: error.message }
+        return { success: true, action_type, result: data }
+      }
+
+      case 'reschedule_task': {
+        if (!params.task_id) return { success: false, action_type, error: 'task_id e obrigatorio' }
+        if (!params.new_date) return { success: false, action_type, error: 'new_date e obrigatorio' }
+        const { data, error } = await supabaseAdmin
+          .from('work_items')
+          .update({ due_date: params.new_date, updated_at: new Date().toISOString() })
+          .eq('id', params.task_id)
+          .eq('user_id', userId)
+          .select('id, title, due_date')
+          .single()
+        if (error) return { success: false, action_type, error: error.message }
+        return { success: true, action_type, result: data }
+      }
+
+      case 'create_moment': {
+        if (!params.content) return { success: false, action_type, error: 'content e obrigatorio' }
+        const { data, error } = await supabaseAdmin
+          .from('moments')
+          .insert({
+            user_id: userId,
+            content: params.content,
+            emotion: params.emotion || 'neutral',
+            type: params.type || 'reflection',
+          })
+          .select('id, content, emotion')
+          .single()
+        if (error) return { success: false, action_type, error: error.message }
+        return { success: true, action_type, result: data }
+      }
+
+      default:
+        return { success: false, action_type, error: `Tipo de acao nao implementado: ${action_type}` }
+    }
+  } catch (error) {
+    console.error(`[execute_chat_action] Error executing ${action_type}:`, (error as Error).message)
+    return { success: false, action_type, error: (error as Error).message }
+  }
+}
+
+// ============================================================================
 // MAIN SERVER
 // ============================================================================
 
@@ -2094,6 +2360,16 @@ serve(async (req) => {
         case 'classify_intent':
           result = await handleClassifyIntent(payload, GEMINI_API_KEY)
           break
+        case 'execute_chat_action': {
+          if (!userId) {
+            return new Response(JSON.stringify({ error: 'Autenticacao necessaria', success: false }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          }
+          const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+          result = await handleExecuteChatAction(supabaseAdmin, userId, payload as { action_type: string; params: Record<string, any> })
+          break
+        }
         default:
           return new Response(JSON.stringify({ error: `Action desconhecida: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
