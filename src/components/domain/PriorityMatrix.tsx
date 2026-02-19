@@ -13,7 +13,7 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Sparkles, Calendar, Clock, Edit2, Trash2, Filter } from 'lucide-react';
+import { GripVertical, Sparkles, Calendar, Clock, Edit2, Trash2, Filter, Check } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { Task, Quadrant } from '@/types';
 import { TaskEditDrawer } from '@/components/domain';
@@ -83,8 +83,9 @@ const DroppableQuadrant: React.FC<{
     isLoading: boolean;
     onEditTask: (task: Task) => void;
     onDeleteTask: (task: Task) => void;
+    onCompleteTask: (task: Task) => void;
     children?: React.ReactNode;
-}> = ({ quadrant, tasks, isLoading, onEditTask, onDeleteTask, children }) => {
+}> = ({ quadrant, tasks, isLoading, onEditTask, onDeleteTask, onCompleteTask, children }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: quadrant.id,
     });
@@ -128,7 +129,7 @@ const DroppableQuadrant: React.FC<{
                     <EmptyQuadrantState quadrantType={quadrant.id} />
                 ) : (
                     tasks.map(task => (
-                        <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} />
+                        <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} onComplete={onCompleteTask} />
                     ))
                 )}
             </SortableContext>
@@ -137,7 +138,7 @@ const DroppableQuadrant: React.FC<{
 };
 
 // Sortable Task Card Component
-const TaskCard: React.FC<{ task: Task; isDragging?: boolean; onEdit: (task: Task) => void; onDelete: (task: Task) => void }> = ({ task, isDragging, onEdit, onDelete }) => {
+const TaskCard: React.FC<{ task: Task; isDragging?: boolean; onEdit: (task: Task) => void; onDelete: (task: Task) => void; onComplete: (task: Task) => void }> = ({ task, isDragging, onEdit, onDelete, onComplete }) => {
     const {
         attributes,
         listeners,
@@ -161,6 +162,17 @@ const TaskCard: React.FC<{ task: Task; isDragging?: boolean; onEdit: (task: Task
             className="ceramic-card p-3 mb-2 group hover:scale-[1.02] transition-all bg-[#F7F6F4] border-l-4 border-amber-400 shadow-sm"
         >
             <div className="flex items-start gap-2">
+                {/* Complete checkbox */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onComplete(task);
+                    }}
+                    className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-ceramic-text-secondary/30 hover:border-ceramic-accent hover:scale-110 flex items-center justify-center transition-all"
+                    title="Concluir tarefa"
+                >
+                    <Check className="w-3 h-3 text-transparent group-hover:text-ceramic-accent/40 transition-colors" />
+                </button>
                 <div className="cursor-move" {...attributes} {...listeners}>
                     <GripVertical className="w-4 h-4 text-ceramic-text-secondary mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
@@ -325,6 +337,31 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
         setDeletingTask(null);
     };
 
+    const handleCompleteTask = async (task: Task) => {
+        try {
+            const { error } = await supabase
+                .from('work_items')
+                .update({ completed_at: new Date().toISOString() })
+                .eq('id', task.id);
+
+            if (error) throw error;
+
+            log.debug('Task completed:', task.id);
+
+            // Unsync from Google Calendar (non-blocking)
+            isGoogleCalendarConnected().then((connected) => {
+                if (!connected) return;
+                unsyncEntityFromGoogle('atlas', task.id).catch((err) =>
+                    log.warn('Calendar unsync failed for completed task:', err)
+                );
+            });
+
+            onRefresh();
+        } catch (error) {
+            log.error('Error completing task:', { error });
+        }
+    };
+
     // Extract unique associations from tasks
     const uniqueAssociations = React.useMemo(() => {
         const allTasks = Object.values(tasks).flat();
@@ -480,6 +517,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                         isLoading={isLoading}
                         onEditTask={handleEditTask}
                         onDeleteTask={handleDeleteTask}
+                        onCompleteTask={handleCompleteTask}
                     />
                 ))}
             </div>
