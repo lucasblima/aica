@@ -50,6 +50,7 @@ interface MicrocycleGridProps {
   workoutsByWeek: Record<number, WeekWorkout[]>; // week 1-3 -> workouts
   calendarEvents?: BusySlot[];
   currentWeek: number; // Which week is "active" (1-3)
+  startWeekOffset?: number; // Absolute week number of first week (for periodization labels)
   onWorkoutClick?: (workoutId: string) => void;
   onDropWorkout?: (weekNumber: number, dayOfWeek: number, templateData: string) => void;
   onWeekClick?: (weekNumber: number) => void;
@@ -67,6 +68,18 @@ const WEEK_LABELS: Record<number, string> = {
   2: 'Progressao',
   3: 'Recuperacao',
 };
+
+/**
+ * Periodization context helper.
+ * Business rules: Microciclo = 1 week, Mesociclo = 4 weeks, Macrociclo = 12 weeks
+ * Given an absolute week number (1-based from training start), returns context labels.
+ */
+function getPeriodizationLabel(absoluteWeek: number): string {
+  const mesocycleNum = Math.ceil(absoluteWeek / 4);
+  const weekInMesocycle = ((absoluteWeek - 1) % 4) + 1;
+  const macrocycleNum = Math.ceil(absoluteWeek / 12);
+  return `Semana ${weekInMesocycle} / Mesociclo ${mesocycleNum}`;
+}
 
 const MODALITY_PILL_STYLES: Record<WeekWorkout['modality'], { bg: string; text: string }> = {
   swimming: { bg: 'rgba(96,165,250,0.15)', text: '#1e3a5f' },
@@ -224,6 +237,7 @@ const MiniDayCell: React.FC<MiniDayCellProps> = ({
 
 interface WeekStripProps {
   weekNumber: number;
+  absoluteWeek?: number; // Absolute week number for periodization labels
   workouts: WeekWorkout[];
   calendarEvents: BusySlot[];
   isCurrent: boolean;
@@ -234,6 +248,7 @@ interface WeekStripProps {
 
 const WeekStrip: React.FC<WeekStripProps> = ({
   weekNumber,
+  absoluteWeek,
   workouts,
   calendarEvents,
   isCurrent,
@@ -295,6 +310,11 @@ const WeekStrip: React.FC<WeekStripProps> = ({
           <span className="text-[10px] font-medium text-ceramic-text-tertiary uppercase tracking-wider">
             {label}
           </span>
+          {absoluteWeek && (
+            <span className="text-[9px] font-medium text-ceramic-text-tertiary">
+              ({getPeriodizationLabel(absoluteWeek)})
+            </span>
+          )}
           {isCurrent && (
             <span className="px-1.5 py-0.5 rounded-md bg-[#7B8FA2]/15 text-[9px] font-bold text-[#5F7185] uppercase">
               Atual
@@ -350,6 +370,7 @@ export const MicrocycleGrid: React.FC<MicrocycleGridProps> = ({
   workoutsByWeek,
   calendarEvents = [],
   currentWeek,
+  startWeekOffset = 1,
   onWorkoutClick,
   onDropWorkout,
   onWeekClick,
@@ -389,6 +410,7 @@ export const MicrocycleGrid: React.FC<MicrocycleGridProps> = ({
           <WeekStrip
             key={weekNum}
             weekNumber={weekNum}
+            absoluteWeek={startWeekOffset + weekNum - 1}
             workouts={workoutsByWeek[weekNum] || []}
             calendarEvents={calendarEvents}
             isCurrent={weekNum === currentWeek}

@@ -32,6 +32,7 @@ interface ParQCoachViewProps {
   onReviewDocument: (docId: string, status: 'approved' | 'rejected', notes?: string) => Promise<boolean>;
   onViewDocument: (doc: AthleteDocument) => Promise<string | null>;
   onUploadDocument: (input: any) => Promise<any>;
+  /** @deprecated Coach should never fill PAR-Q. Kept for API compat but not rendered. */
   onFillParQ?: () => void;
   isUploading?: boolean;
 }
@@ -98,16 +99,8 @@ export function ParQCoachView({
           <div className="space-y-3">
             <p className="text-sm text-ceramic-text-secondary">
               {athleteName} ainda não preencheu o questionário PAR-Q+.
+              O atleta deve preencher o PAR-Q pelo portal do atleta.
             </p>
-            {onFillParQ && (
-              <button
-                onClick={onFillParQ}
-                className="flex items-center gap-2 px-4 py-2 bg-ceramic-accent hover:bg-ceramic-accent/90 text-white text-sm font-bold rounded-lg transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Preencher PAR-Q (Coach)
-              </button>
-            )}
           </div>
         ) : (
           <div className="space-y-2 text-xs text-ceramic-text-secondary">

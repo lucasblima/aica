@@ -6,7 +6,7 @@
  * Name/description are editable in edit mode but not shown in create mode.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { WorkoutTemplateService } from '../../services/workoutTemplateService';
 import type { WorkoutTemplate, TrainingModality } from '../../types/flow';
 import type {
@@ -20,6 +20,7 @@ export interface TemplateFormState {
   name?: string; // Editable in edit mode, auto-generated in create
   description?: string; // Editable in edit mode, auto-generated in create
   exercise_structure?: ExerciseStructureV2;
+  coach_notes?: string; // Free-text notes from the coach
 }
 
 type FormErrors = Partial<Record<keyof TemplateFormState, string>>;
@@ -38,6 +39,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         name: initialData.name,
         description: initialData.description,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
+        coach_notes: (initialData as any).coach_notes || '',
       };
     }
 
@@ -48,6 +50,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         series: [],
         cooldown: '',
       },
+      coach_notes: '',
     };
   });
 
@@ -56,14 +59,20 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
+  // Track whether to skip the next formData change for dirty tracking.
+  // This prevents initialData load from marking the form as dirty.
+  const skipNextDirty = useRef(true);
+
   // Sync form state when initialData changes (async load for edit mode)
   useEffect(() => {
     if (initialData) {
+      skipNextDirty.current = true;
       setFormData({
         modality: initialData.modality,
         name: initialData.name,
         description: initialData.description,
         exercise_structure: initialData.exercise_structure as ExerciseStructureV2,
+        coach_notes: (initialData as any).coach_notes || '',
       });
       setErrors({});
       setTouched(new Set());
@@ -71,8 +80,12 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
     }
   }, [initialData]);
 
-  // Track dirty state
+  // Track dirty state — skip changes caused by initial load or initialData sync
   useEffect(() => {
+    if (skipNextDirty.current) {
+      skipNextDirty.current = false;
+      return;
+    }
     setIsDirty(true);
   }, [formData]);
 
@@ -109,11 +122,11 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
           }
         }
 
-        if (value.warmup && value.warmup.length > 280) {
-          return 'Aquecimento deve ter no máximo 280 caracteres';
+        if (value.warmup && value.warmup.length > 140) {
+          return 'Aquecimento deve ter no máximo 140 caracteres';
         }
-        if (value.cooldown && value.cooldown.length > 280) {
-          return 'Desaquecimento deve ter no máximo 280 caracteres';
+        if (value.cooldown && value.cooldown.length > 140) {
+          return 'Desaquecimento deve ter no máximo 140 caracteres';
         }
 
         return null;
@@ -194,14 +207,16 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         exercise_structure: formData.exercise_structure,
       };
 
+      const extras = { coach_notes: formData.coach_notes };
+
       let result;
       if (initialData) {
         result = await WorkoutTemplateService.updateTemplateV2({
           id: initialData.id,
           ...payload,
-        });
+        }, extras);
       } else {
-        result = await WorkoutTemplateService.createTemplateV2(payload);
+        result = await WorkoutTemplateService.createTemplateV2(payload, extras);
       }
 
       if (result.error) {
@@ -233,6 +248,7 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         series: [],
         cooldown: '',
       },
+      coach_notes: '',
     });
     setErrors({});
     setTouched(new Set());

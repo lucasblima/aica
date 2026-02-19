@@ -120,6 +120,14 @@ export interface Athlete {
   current_block_id?: string; // Reference to active workout block
   last_performance_test?: string; // Date of last FTP/CSS/Pace test (ISO 8601)
 
+  // Athlete profile calculator fields
+  weight_kg?: number;
+  height_cm?: number;
+  birth_date?: string; // ISO date
+  practiced_modalities?: string[];
+  practice_duration_months?: number;
+  training_zones?: Record<string, unknown>;
+
   created_at: string;
   updated_at: string;
 }

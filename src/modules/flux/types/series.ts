@@ -180,6 +180,9 @@ export interface WorkoutTemplateV2 {
   // Exercise Details
   exercise_structure?: ExerciseStructureV2;
 
+  // Coach notes
+  coach_notes?: string;
+
   // Metadata
   created_at: string;
   updated_at: string;
@@ -195,6 +198,7 @@ export interface CreateWorkoutTemplateV2Input {
   modality: TrainingModality;
   category: WorkoutCategorySimplified;
   exercise_structure?: ExerciseStructureV2;
+  coach_notes?: string;
 }
 
 /**

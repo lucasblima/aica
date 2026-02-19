@@ -13,6 +13,7 @@ import { ParQService } from '../services/parqService';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { supabase } from '@/services/supabaseClient';
 import type { Athlete } from '../types';
+import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { ParQStatus, ParQResponse } from '../types/parq';
 import type { SlotFeedback } from '../components/AthleteCard';
 import { LevelBadge } from '../components/LevelBadge';
@@ -32,6 +33,10 @@ import {
   Zap,
   TrendingUp,
   Loader2,
+  Scale,
+  Ruler,
+  Calculator,
+  Save,
 } from 'lucide-react';
 
 export default function AthleteDetailView() {
@@ -47,6 +52,17 @@ export default function AthleteDetailView() {
   const [feedbacks, setFeedbacks] = useState<SlotFeedback[]>([]);
   const alerts: never[] = [];
   const activeBlock = null;
+
+  // Athlete profile calculator state
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    weight_kg: '',
+    height_cm: '',
+    birth_date: '',
+    practiced_modalities: [] as string[],
+    practice_duration_months: '',
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
 
   const docs = useAthleteDocuments({ athleteId: athleteId || '' });
 
@@ -71,6 +87,18 @@ export default function AthleteDetailView() {
     loadAthlete();
     return () => { cancelled = true; };
   }, [athleteId]);
+
+  // Populate profile form when athlete loads
+  useEffect(() => {
+    if (!athlete) return;
+    setProfileForm({
+      weight_kg: athlete.weight_kg?.toString() || '',
+      height_cm: athlete.height_cm?.toString() || '',
+      birth_date: athlete.birth_date || '',
+      practiced_modalities: athlete.practiced_modalities || [],
+      practice_duration_months: athlete.practice_duration_months?.toString() || '',
+    });
+  }, [athlete]);
 
   // Load PAR-Q data when athlete has PAR-Q enabled
   useEffect(() => {
@@ -118,6 +146,66 @@ export default function AthleteDetailView() {
     loadFeedbacks();
     return () => { cancelled = true; };
   }, [athleteId]);
+
+  // Athlete profile calculator: BMI
+  const calcBMI = () => {
+    const w = parseFloat(profileForm.weight_kg);
+    const h = parseFloat(profileForm.height_cm);
+    if (!w || !h || h === 0) return null;
+    return (w / Math.pow(h / 100, 2)).toFixed(1);
+  };
+
+  const calcAge = () => {
+    if (!profileForm.birth_date) return null;
+    const birth = new Date(profileForm.birth_date);
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const m = now.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+    return age;
+  };
+
+  const getBmiCategory = (bmi: number): { label: string; color: string } => {
+    if (bmi < 18.5) return { label: 'Abaixo do peso', color: 'text-ceramic-warning' };
+    if (bmi < 25) return { label: 'Normal', color: 'text-ceramic-success' };
+    if (bmi < 30) return { label: 'Sobrepeso', color: 'text-ceramic-warning' };
+    return { label: 'Obesidade', color: 'text-ceramic-error' };
+  };
+
+  const handleProfileSave = async () => {
+    if (!athleteId) return;
+    setProfileSaving(true);
+    try {
+      const { error } = await AthleteService.updateAthlete({
+        id: athleteId,
+        weight_kg: profileForm.weight_kg ? parseFloat(profileForm.weight_kg) : undefined,
+        height_cm: profileForm.height_cm ? parseFloat(profileForm.height_cm) : undefined,
+        birth_date: profileForm.birth_date || undefined,
+        practiced_modalities: profileForm.practiced_modalities,
+        practice_duration_months: profileForm.practice_duration_months
+          ? parseInt(profileForm.practice_duration_months, 10)
+          : undefined,
+      });
+      if (error) {
+        console.error('Error saving profile:', error);
+      } else {
+        // Reload athlete data
+        const { data } = await AthleteService.getAthleteById(athleteId);
+        if (data) setAthlete(data);
+      }
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handleModalityToggle = (mod: string) => {
+    setProfileForm(prev => ({
+      ...prev,
+      practiced_modalities: prev.practiced_modalities.includes(mod)
+        ? prev.practiced_modalities.filter(m => m !== mod)
+        : [...prev.practiced_modalities, mod],
+    }));
+  };
 
   // Handle back
   const handleBack = () => {
@@ -255,11 +343,214 @@ export default function AthleteDetailView() {
             onReviewDocument={docs.reviewDocument}
             onViewDocument={async (doc) => docs.getDocumentUrl(doc)}
             onUploadDocument={(input) => docs.uploadDocument(input)}
-            onFillParQ={() => navigate(`/flux/parq/${athleteId}`)}
             isUploading={docs.isUploading}
           />
         </div>
       )}
+
+      {/* Athlete Profile Calculator */}
+      <div className="px-6 mb-6">
+        <div className="ceramic-card overflow-hidden">
+          <button
+            onClick={() => setProfileOpen(!profileOpen)}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="ceramic-inset p-2">
+                <Calculator className="w-5 h-5 text-ceramic-text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-ceramic-text-primary">Perfil Fisico</p>
+                <p className="text-xs text-ceramic-text-secondary">
+                  Peso, altura, IMC e modalidades
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {calcBMI() && (
+                <span className="text-xs font-bold text-ceramic-info bg-ceramic-info/10 px-2 py-0.5 rounded">
+                  IMC {calcBMI()}
+                </span>
+              )}
+              <span className={`text-ceramic-text-secondary transition-transform ${profileOpen ? 'rotate-180' : ''}`}>
+                ▾
+              </span>
+            </div>
+          </button>
+
+          {profileOpen && (
+            <div className="p-4 pt-0 space-y-4">
+              {/* Weight + Height row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
+                    Peso (kg)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={profileForm.weight_kg}
+                      onChange={(e) => setProfileForm(prev => ({ ...prev, weight_kg: e.target.value }))}
+                      placeholder="75.0"
+                      className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
+                    Altura (cm)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Ruler className="w-4 h-4 text-ceramic-text-secondary flex-shrink-0" />
+                    <input
+                      type="number"
+                      step="1"
+                      value={profileForm.height_cm}
+                      onChange={(e) => setProfileForm(prev => ({ ...prev, height_cm: e.target.value }))}
+                      placeholder="175"
+                      className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* BMI result */}
+              {calcBMI() && (
+                <div className="ceramic-inset p-3 rounded-lg flex items-center justify-between">
+                  <div>
+                    <span className="text-xs text-ceramic-text-secondary">IMC</span>
+                    <span className="text-lg font-black text-ceramic-text-primary ml-2">{calcBMI()}</span>
+                  </div>
+                  <span className={`text-xs font-bold ${getBmiCategory(parseFloat(calcBMI()!)).color}`}>
+                    {getBmiCategory(parseFloat(calcBMI()!)).label}
+                  </span>
+                </div>
+              )}
+
+              {/* Birth date + Age */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
+                    Data de Nascimento
+                  </label>
+                  <input
+                    type="date"
+                    value={profileForm.birth_date}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, birth_date: e.target.value }))}
+                    className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
+                    Idade
+                  </label>
+                  <div className="ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary">
+                    {calcAge() != null ? `${calcAge()} anos` : '--'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Practice duration */}
+              <div>
+                <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-1.5">
+                  Tempo de Pratica (meses)
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  value={profileForm.practice_duration_months}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, practice_duration_months: e.target.value }))}
+                  placeholder="Ex: 24"
+                  className="w-full ceramic-inset px-3 py-2 rounded-lg text-sm text-ceramic-text-primary placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+                />
+              </div>
+
+              {/* Practiced Modalities */}
+              <div>
+                <label className="block text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider mb-2">
+                  Modalidades Praticadas
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {TRAINING_MODALITIES.map((mod) => {
+                    const config = MODALITY_CONFIG[mod];
+                    const isSelected = profileForm.practiced_modalities.includes(mod);
+                    return (
+                      <button
+                        key={mod}
+                        type="button"
+                        onClick={() => handleModalityToggle(mod)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          isSelected
+                            ? 'bg-ceramic-success/15 text-ceramic-success border border-ceramic-success/30'
+                            : 'ceramic-inset text-ceramic-text-secondary hover:bg-white/50'
+                        }`}
+                      >
+                        <span>{config.icon}</span>
+                        <span>{config.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Training Zone Recommendations */}
+              {calcAge() && profileForm.practiced_modalities.length > 0 && (
+                <div className="ceramic-inset p-3 rounded-lg space-y-2">
+                  <p className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
+                    Zonas de Treino Recomendadas
+                  </p>
+                  {(() => {
+                    const age = calcAge()!;
+                    const maxHR = 220 - age;
+                    return (
+                      <div className="grid grid-cols-5 gap-1 text-center">
+                        {[
+                          { zone: 'Z1', pct: '50-60%', hr: `${Math.round(maxHR * 0.5)}-${Math.round(maxHR * 0.6)}`, color: 'bg-blue-100 text-blue-700' },
+                          { zone: 'Z2', pct: '60-70%', hr: `${Math.round(maxHR * 0.6)}-${Math.round(maxHR * 0.7)}`, color: 'bg-green-100 text-green-700' },
+                          { zone: 'Z3', pct: '70-80%', hr: `${Math.round(maxHR * 0.7)}-${Math.round(maxHR * 0.8)}`, color: 'bg-yellow-100 text-yellow-700' },
+                          { zone: 'Z4', pct: '80-90%', hr: `${Math.round(maxHR * 0.8)}-${Math.round(maxHR * 0.9)}`, color: 'bg-orange-100 text-orange-700' },
+                          { zone: 'Z5', pct: '90-100%', hr: `${Math.round(maxHR * 0.9)}-${maxHR}`, color: 'bg-red-100 text-red-700' },
+                        ].map(z => (
+                          <div key={z.zone} className={`${z.color} rounded-lg p-2`}>
+                            <p className="text-[10px] font-black">{z.zone}</p>
+                            <p className="text-[9px]">{z.pct}</p>
+                            <p className="text-[9px] font-bold">{z.hr} bpm</p>
+                          </div>
+                        ))
+                      }
+                      </div>
+                    );
+                  })()}
+                  <p className="text-[10px] text-ceramic-text-secondary">
+                    FC Max estimada (220 - idade): {220 - calcAge()!} bpm
+                  </p>
+                </div>
+              )}
+
+              {/* Save Button */}
+              <button
+                onClick={handleProfileSave}
+                disabled={profileSaving}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ceramic-accent hover:bg-ceramic-accent/90 disabled:bg-ceramic-text-secondary/20 disabled:cursor-not-allowed text-white font-bold rounded-lg text-sm transition-all"
+              >
+                {profileSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Salvar Perfil Fisico
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Canvas Access - Always visible */}
       <div className="px-6 mb-6">

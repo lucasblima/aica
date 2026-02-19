@@ -59,27 +59,30 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
 
       {/* Drawer */}
       <div
-        className="fixed right-0 top-0 h-full w-96 bg-white border-l border-stone-200 shadow-2xl z-50 flex flex-col animate-slide-in-right"
+        className="fixed right-0 top-0 h-full w-96 bg-ceramic-base border-l border-ceramic-text-secondary/10 shadow-2xl z-50 flex flex-col animate-slide-in-right"
         style={{
           animation: 'slideInRight 0.3s ease-out',
         }}
       >
         {/* Header */}
-        <div className="p-6 border-b border-stone-200">
+        <div className="p-6 border-b border-ceramic-text-secondary/10">
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1">
               <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-1">
-                Editando Treino
+                {formData.id ? 'Editando Treino' : 'Novo Treino'}
               </p>
               <h2 className="text-xl font-bold text-ceramic-text-primary">
-                {formData.name}
+                {formData.name || 'Sem nome'}
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="ceramic-inset p-2 hover:bg-stone-100 transition-colors"
+              className="p-2 rounded-[10px] hover:bg-ceramic-text-secondary/10 transition-colors"
+              style={{
+                boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
+              }}
             >
-              <X className="w-5 h-5 text-stone-600" />
+              <X className="w-5 h-5 text-ceramic-text-secondary" />
             </button>
           </div>
         </div>
@@ -215,25 +218,32 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
             <textarea
               value={formData.notes || ''}
               onChange={(e) => updateField('notes', e.target.value)}
-              className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ceramic-info resize-none"
+              className="w-full px-3 py-2 rounded-[10px] text-sm text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-400/40 resize-none"
+              style={{
+                boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
+              }}
               rows={6}
-              placeholder="Instruções específicas, dicas técnicas, ajustes personalizados..."
+              placeholder="Instrucoes especificas, dicas tecnicas, ajustes personalizados..."
             />
           </Section>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-stone-200 bg-stone-50">
+        <div className="p-6 border-t border-ceramic-text-secondary/10">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
+              className="flex-1 py-3 rounded-[14px] text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
+              style={{
+                background: '#F0EFE9',
+                boxShadow: '3px 3px 8px rgba(163,158,145,0.12), -3px -3px 8px rgba(255,255,255,0.9)',
+              }}
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-ceramic-success hover:bg-ceramic-success/90 text-white rounded-lg text-sm font-bold transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-[14px] text-sm font-bold transition-colors"
             >
               <Save className="w-4 h-4" />
               Salvar
@@ -296,13 +306,16 @@ const InputField: React.FC<InputFieldProps> = ({
   placeholder,
 }) => (
   <div>
-    <label className="block text-xs font-semibold text-stone-700 mb-1.5">{label}</label>
+    <label className="block text-xs font-semibold text-ceramic-text-secondary mb-1.5">{label}</label>
     <input
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ceramic-info"
+      className="w-full px-3 py-2 rounded-[10px] text-sm text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+      style={{
+        boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
+      }}
     />
   </div>
 );
@@ -316,11 +329,14 @@ interface SelectFieldProps {
 
 const SelectField: React.FC<SelectFieldProps> = ({ label, value, onChange, options }) => (
   <div>
-    <label className="block text-xs font-semibold text-stone-700 mb-1.5">{label}</label>
+    <label className="block text-xs font-semibold text-ceramic-text-secondary mb-1.5">{label}</label>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ceramic-info"
+      className="w-full px-3 py-2 rounded-[10px] text-sm text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+      style={{
+        boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
+      }}
     >
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>

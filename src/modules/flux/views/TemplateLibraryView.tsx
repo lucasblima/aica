@@ -10,7 +10,6 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Search,
   Plus,
-  Filter,
   Star,
   Copy,
   Edit2,
@@ -19,7 +18,6 @@ import {
   X,
   ArrowLeft,
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
 import { useWorkoutTemplates } from '../hooks';
 import TemplateFormDrawer from '../components/forms/TemplateFormDrawer';
@@ -33,11 +31,11 @@ import type { ExerciseStructureV2 } from '../types/series';
 import { MODALITY_CONFIG } from '../types/flux';
 
 const ZONE_LABELS: Record<string, string> = {
-  z1: 'Z1 - Recuperação',
-  z2: 'Z2 - Base',
-  z3: 'Z3 - Tempo',
-  z4: 'Z4 - Limiar',
-  z5: 'Z5 - VO2max',
+  z1: 'Zona 1 (50-60%)',
+  z2: 'Zona 2 (60-70%)',
+  z3: 'Zona 3 (70-80%)',
+  z4: 'Zona 4 (80-90%)',
+  z5: 'Zona 5 (90-100%)',
 };
 
 const INTENSITY_LABELS: Record<string, string> = {
@@ -98,7 +96,6 @@ export default function TemplateLibraryView() {
   // Local state
   const [filteredTemplates, setFilteredTemplates] = useState<WorkoutTemplate[]>([]);
   const [filters, setFilters] = useState<TemplateFilters>({});
-  const [showFilters, setShowFilters] = useState(false);
   const [draggedTemplate, setDraggedTemplate] = useState<WorkoutTemplate | null>(null);
   const [isModalOpen, setModalOpen] = useState(mode !== 'list');
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
@@ -140,10 +137,22 @@ export default function TemplateLibraryView() {
   };
 
   const handleModalSave = (template: WorkoutTemplate) => {
-    // Real-time hook will auto-update, but refresh for immediate feedback
+    // Optimistic update — immediately reflect the saved template in the grid
+    setFilteredTemplates((prev) => {
+      const exists = prev.some((t) => t.id === template.id);
+      if (exists) {
+        // Edit: replace existing template
+        return prev.map((t) => (t.id === template.id ? template : t));
+      }
+      // Create: prepend new template
+      return [template, ...prev];
+    });
+
+    // Also refresh from DB to ensure consistency with real-time subscription
     refresh();
-    // Close modal and navigate back
-    handleModalClose();
+    // Do NOT call handleModalClose() here — the drawer shows a success message
+    // for 1 second, then calls onClose (which maps to handleModalClose).
+    // Calling it here causes a double-close + premature navigation.
   };
 
   const applyFilters = () => {
@@ -190,8 +199,23 @@ export default function TemplateLibraryView() {
   };
 
   const handleToggleFavorite = async (template: WorkoutTemplate) => {
-    await WorkoutTemplateService.toggleFavorite(template.id, !template.is_favorite);
-    // Real-time hook will update automatically
+    const newFavorite = !template.is_favorite;
+
+    // Optimistic update — reflect change immediately in UI
+    setFilteredTemplates((prev) =>
+      prev.map((t) => (t.id === template.id ? { ...t, is_favorite: newFavorite } : t))
+    );
+
+    const { error: toggleError } = await WorkoutTemplateService.toggleFavorite(template.id, newFavorite);
+    if (toggleError) {
+      console.error('[TemplateLibraryView] Favorite toggle failed, reverting:', toggleError);
+      // Revert optimistic update on failure
+      setFilteredTemplates((prev) =>
+        prev.map((t) => (t.id === template.id ? { ...t, is_favorite: template.is_favorite } : t))
+      );
+    }
+    // Also refresh from DB to ensure consistency
+    refresh();
   };
 
   const handleDuplicate = async (template: WorkoutTemplate) => {
@@ -253,116 +277,94 @@ export default function TemplateLibraryView() {
           </button>
         </div>
 
-        {/* Search + Filter Toggle */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ceramic-text-secondary" />
-            <input
-              type="text"
-              placeholder="Buscar templates..."
-              value={filters.search || ''}
-              onChange={(e) => handleFilterChange('search', e.target.value || undefined)}
-              className="w-full pl-12 pr-4 py-3 bg-white/50 rounded-lg border border-ceramic-text-secondary/20 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
-            />
-          </div>
-
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${
-              showFilters
-                ? 'bg-ceramic-accent text-white'
-                : 'bg-white/50 text-ceramic-text-primary hover:bg-white/80'
-            }`}
-          >
-            <Filter className="w-5 h-5" />
-            <span className="font-medium">Filtros</span>
-            {activeFiltersCount > 0 && (
-              <span className="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-xs font-bold">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="mt-4 p-4 ceramic-card space-y-4">
-            {/* Modality Filter */}
-            <div>
-              <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-2">
-                Modalidade
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(['swimming', 'running', 'cycling', 'strength', 'walking'] as TrainingModality[]).map(
-                  (modality) => (
-                    <button
-                      key={modality}
-                      onClick={() => handleFilterChange('modality', modality)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                        filters.modality === modality
-                          ? 'bg-ceramic-accent text-white'
-                          : 'ceramic-inset hover:bg-white/50'
-                      }`}
-                    >
-                      <span>{MODALITY_CONFIG[modality]?.icon}</span>
-                      <span className="text-sm font-medium">
-                        {MODALITY_CONFIG[modality]?.label}
-                      </span>
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-
-
-            {/* Zone Filter */}
-            <div>
-              <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-2">
-                Zona
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(ZONE_LABELS).map(([zone, label]) => (
+        {/* Filters (always visible) */}
+        <div className="space-y-4 mb-4">
+          {/* Modality Filter */}
+          <div>
+            <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-2">
+              Modalidade
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(['swimming', 'running', 'cycling', 'strength', 'walking'] as TrainingModality[]).map(
+                (modality) => (
                   <button
-                    key={zone}
-                    onClick={() => handleFilterChange('intensity', zone as WorkoutIntensity)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      filters.intensity === zone
+                    key={modality}
+                    onClick={() => handleFilterChange('modality', modality)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      filters.modality === modality
                         ? 'bg-ceramic-accent text-white'
                         : 'ceramic-inset hover:bg-white/50'
                     }`}
                   >
-                    {label}
+                    <span>{MODALITY_CONFIG[modality]?.icon}</span>
+                    <span className="text-sm font-medium">
+                      {MODALITY_CONFIG[modality]?.label}
+                    </span>
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Favorites Toggle */}
-            <div className="flex items-center justify-between pt-2 border-t border-ceramic-text-secondary/10">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filters.favorites_only || false}
-                  onChange={(e) => handleFilterChange('favorites_only', e.target.checked || undefined)}
-                  className="w-4 h-4 rounded border-ceramic-text-secondary/20"
-                />
-                <span className="text-sm font-medium text-ceramic-text-primary">
-                  Apenas favoritos
-                </span>
-              </label>
-
-              {activeFiltersCount > 0 && (
-                <button
-                  onClick={handleClearFilters}
-                  className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                  Limpar filtros
-                </button>
+                )
               )}
             </div>
           </div>
-        )}
+
+          {/* Zone Filter */}
+          <div>
+            <p className="text-xs text-ceramic-text-secondary font-medium uppercase tracking-wider mb-2">
+              Zona
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(ZONE_LABELS).map(([zone, label]) => (
+                <button
+                  key={zone}
+                  onClick={() => handleFilterChange('intensity', zone as WorkoutIntensity)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    filters.intensity === zone
+                      ? 'bg-ceramic-accent text-white'
+                      : 'ceramic-inset hover:bg-white/50'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Favorites Toggle + Clear */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.favorites_only || false}
+                onChange={(e) => handleFilterChange('favorites_only', e.target.checked || undefined)}
+                className="w-4 h-4 rounded border-ceramic-text-secondary/20"
+              />
+              <span className="text-sm font-medium text-ceramic-text-primary">
+                Apenas favoritos
+              </span>
+            </label>
+
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={handleClearFilters}
+                className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+              >
+                <X className="w-3 h-3" />
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ceramic-text-secondary" />
+          <input
+            type="text"
+            placeholder="Buscar exercícios..."
+            value={filters.search || ''}
+            onChange={(e) => handleFilterChange('search', e.target.value || undefined)}
+            className="w-full pl-12 pr-4 py-3 bg-white/50 rounded-lg border border-ceramic-text-secondary/20 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50"
+          />
+        </div>
       </div>
 
       {/* Templates Grid */}
@@ -588,7 +590,7 @@ function TemplateCard({
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 ceramic-inset hover:bg-white/50 rounded-lg transition-colors"
           >
             <Copy className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-            <span className="text-xs font-medium text-ceramic-text-primary">Duplicar</span>
+            <span className="text-xs font-medium text-ceramic-text-primary" title="Cria um novo template com base neste">Criar a partir deste</span>
           </button>
 
           <button

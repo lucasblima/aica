@@ -16,11 +16,14 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  ArrowRight,
   Calculator,
   Calendar,
   CalendarCheck,
   CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   EyeOff,
   Loader2,
@@ -418,7 +421,7 @@ const RealTemplateLibrary: React.FC<RealTemplateLibraryProps> = ({
   }, [templates, selectedCategory]);
 
   return (
-    <div className="w-80 h-full bg-ceramic-base border-r border-ceramic-text-secondary/10 flex flex-col">
+    <div className="w-full h-full bg-ceramic-base flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-ceramic-text-secondary/10">
         <div className="flex items-center gap-3 mb-3">
@@ -435,7 +438,7 @@ const RealTemplateLibrary: React.FC<RealTemplateLibraryProps> = ({
               Biblioteca
             </p>
             <h3 className="text-lg font-bold text-ceramic-text-primary capitalize">
-              {modality}
+              {MODALITY_PT_LABELS[modality] || modality}
             </h3>
           </div>
         </div>
@@ -558,6 +561,14 @@ const RealTemplateLibrary: React.FC<RealTemplateLibraryProps> = ({
 // Helper: Transform WorkoutSlot to WeekWorkout
 // ============================================
 
+const MODALITY_PT_LABELS: Record<string, string> = {
+  swimming: 'Natacao',
+  running: 'Corrida',
+  cycling: 'Ciclismo',
+  strength: 'Musculacao',
+  walking: 'Caminhada',
+};
+
 function slotToWeekWorkout(slot: WorkoutSlot): WeekWorkout {
   return {
     id: slot.id,
@@ -567,7 +578,7 @@ function slotToWeekWorkout(slot: WorkoutSlot): WeekWorkout {
     duration: slot.duration,
     intensity: slot.intensity as 'low' | 'medium' | 'high',
     modality: slot.modality as WeekWorkout['modality'],
-    type: slot.modality?.substring(0, 3).toUpperCase(),
+    type: MODALITY_PT_LABELS[slot.modality] || slot.modality,
     templateId: slot.template_id,
   };
 }
@@ -579,7 +590,7 @@ function slotToWorkoutBlockData(slot: WorkoutSlot): WorkoutBlockData {
     duration: slot.duration,
     intensity: slot.intensity as 'low' | 'medium' | 'high',
     modality: slot.modality as WorkoutBlockData['modality'],
-    type: slot.modality?.substring(0, 3).toUpperCase(),
+    type: MODALITY_PT_LABELS[slot.modality] || slot.modality,
     notes: slot.coach_notes,
   };
 }
@@ -596,9 +607,11 @@ export default function CanvasEditorView() {
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('weekly');
   const [currentWeek, setCurrentWeek] = useState(1);
+  const [libraryModality, setLibraryModality] = useState<string | null>(null); // null = use athlete's default
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutBlockData | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [pendingSlotTarget, setPendingSlotTarget] = useState<{ dayOfWeek: number; startTime: string } | null>(null);
   const [calSyncState, setCalSyncState] = useState<SyncState>('disconnected');
 
   // Calendar sync hook
@@ -645,6 +658,7 @@ export default function CanvasEditorView() {
     weekWorkouts: weekWorkoutData,
     activeMicrocycle,
     isLoading: workoutsLoading,
+    createSlot,
     createSlotFromTemplate,
     updateSlot,
     deleteSlot,
@@ -791,15 +805,54 @@ export default function CanvasEditorView() {
 
   const handleSaveWorkout = useCallback(
     async (updated: WorkoutBlockData) => {
-      await updateSlot({
-        id: updated.id,
-        name: updated.name,
-        duration: updated.duration,
-        intensity: updated.intensity,
-        coach_notes: updated.notes,
-      });
+      if (!updated.id && pendingSlotTarget) {
+        // Creating a new workout from empty slot click
+        await createSlot({
+          week_number: currentWeek,
+          day_of_week: pendingSlotTarget.dayOfWeek,
+          start_time: pendingSlotTarget.startTime,
+          name: updated.name || 'Novo treino',
+          duration: updated.duration,
+          intensity: updated.intensity,
+          modality: updated.modality || athlete?.modality || 'running',
+        });
+        setPendingSlotTarget(null);
+      } else {
+        await updateSlot({
+          id: updated.id,
+          name: updated.name,
+          duration: updated.duration,
+          intensity: updated.intensity,
+          coach_notes: updated.notes,
+        });
+      }
     },
-    [updateSlot]
+    [updateSlot, createSlot, pendingSlotTarget, currentWeek, athlete?.modality]
+  );
+
+  const handleDeleteWorkout = useCallback(
+    async (workoutId: string) => {
+      await deleteSlot(workoutId);
+    },
+    [deleteSlot]
+  );
+
+  const handleEmptySlotClick = useCallback(
+    (dayOfWeek: number, startTime: string) => {
+      // Open editor with a new empty workout pre-filled with the time slot
+      setSelectedWorkout({
+        id: '',
+        name: '',
+        duration: 60,
+        intensity: 'medium',
+        modality: (athlete?.modality as WorkoutBlockData['modality']) || 'running',
+        type: MODALITY_PT_LABELS[athlete?.modality || 'running'] || 'Corrida',
+      });
+      setIsEditorOpen(true);
+      // Store the target day/time for creation
+      setPendingSlotTarget({ dayOfWeek, startTime });
+    },
+    [athlete?.modality]
   );
 
   const handleWeekClick = useCallback((weekNumber: number) => {
@@ -906,10 +959,10 @@ export default function CanvasEditorView() {
                 {athlete?.name}
               </h1>
               <p className="text-sm text-ceramic-text-secondary mt-0.5">
-                Semana {currentWeek} de 3
+                Semana {currentWeek} / Microciclo
                 {activeMicrocycle && ` · ${activeMicrocycle.name || 'Microciclo'}`}
                 {' · '}
-                {athlete?.modality}
+                {MODALITY_PT_LABELS[athlete?.modality || ''] || athlete?.modality}
               </p>
             </div>
           </div>
@@ -943,7 +996,7 @@ export default function CanvasEditorView() {
             {/* Week Navigator (weekly view only) */}
             {viewMode === 'weekly' && (
               <div
-                className="flex items-center gap-2 px-4 py-2 rounded-[14px]"
+                className="flex items-center gap-1 px-3 py-2 rounded-[14px]"
                 style={{
                   background: '#F0EFE9',
                   boxShadow: '3px 3px 8px rgba(163,158,145,0.12), -3px -3px 8px rgba(255,255,255,0.9)',
@@ -956,11 +1009,12 @@ export default function CanvasEditorView() {
                   style={{
                     boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
                   }}
+                  title="Semana anterior"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm font-bold text-ceramic-text-primary px-2">
-                  S{currentWeek}
+                <span className="text-sm font-bold text-ceramic-text-primary px-3 min-w-[100px] text-center">
+                  Semana {currentWeek} / 3
                 </span>
                 <button
                   onClick={() => setCurrentWeek((w) => Math.min(3, w + 1))}
@@ -969,8 +1023,9 @@ export default function CanvasEditorView() {
                   style={{
                     boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
                   }}
+                  title="Proxima semana"
                 >
-                  <CalendarDays className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -1005,12 +1060,50 @@ export default function CanvasEditorView() {
 
       {/* Main Content: 3-Column Layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar: Template Library */}
+        {/* Left Sidebar: Modality Tabs + Template Library */}
         {athlete && (
-          <RealTemplateLibrary
-            modality={athlete.modality}
-            onTemplateSelect={handleTemplateSelect}
-          />
+          <div className="flex flex-col w-80 h-full border-r border-ceramic-text-secondary/10">
+            {/* Modality Selector */}
+            <div className="px-3 py-2 border-b border-ceramic-text-secondary/10 bg-ceramic-base flex-shrink-0">
+              <p className="text-[9px] text-ceramic-text-tertiary font-medium uppercase tracking-wider mb-1.5">
+                Modalidade
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {[
+                  { key: athlete.modality, icon: MODALITY_ICONS[athlete.modality] || '🏃', label: MODALITY_PT_LABELS[athlete.modality] || athlete.modality },
+                  ...Object.entries(MODALITY_ICONS)
+                    .filter(([k]) => k !== athlete.modality)
+                    .map(([k, icon]) => ({ key: k, icon, label: MODALITY_PT_LABELS[k] || k })),
+                ].map(({ key, icon, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setLibraryModality(key === athlete.modality ? null : key)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      (libraryModality || athlete.modality) === key
+                        ? 'bg-ceramic-base text-ceramic-text-primary'
+                        : 'text-ceramic-text-tertiary hover:text-ceramic-text-secondary'
+                    }`}
+                    style={
+                      (libraryModality || athlete.modality) === key
+                        ? { boxShadow: '2px 2px 5px rgba(163,158,145,0.12), -2px -2px 5px rgba(255,255,255,0.9)' }
+                        : {}
+                    }
+                    title={label}
+                  >
+                    <span className="text-xs">{icon}</span>
+                    <span className="uppercase tracking-wider">{label.substring(0, 3)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Template Library */}
+            <div className="flex-1 overflow-hidden">
+              <RealTemplateLibrary
+                modality={libraryModality || athlete.modality}
+                onTemplateSelect={handleTemplateSelect}
+              />
+            </div>
+          </div>
         )}
 
         {/* Center: Grid View */}
@@ -1030,6 +1123,8 @@ export default function CanvasEditorView() {
                   workouts={gridWorkouts}
                   calendarEvents={busySlots}
                   onWorkoutClick={handleWorkoutClick}
+                  onWorkoutDelete={handleDeleteWorkout}
+                  onEmptySlotClick={handleEmptySlotClick}
                   onDropWorkout={handleDropWorkout}
                   onReorderWorkout={handleReorderWorkout}
                   startDate={weekStartDate}
@@ -1087,6 +1182,7 @@ export default function CanvasEditorView() {
           onClose={() => {
             setIsEditorOpen(false);
             setSelectedWorkout(null);
+            setPendingSlotTarget(null);
           }}
           onSave={handleSaveWorkout}
         />

@@ -54,6 +54,8 @@ export default function TemplateFormDrawer({
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [warmupCharCount, setWarmupCharCount] = useState(0);
   const [cooldownCharCount, setCooldownCharCount] = useState(0);
+  const [descCharCount, setDescCharCount] = useState(0);
+  const [coachNotesCharCount, setCoachNotesCharCount] = useState(0);
 
   const y = useMotionValue(0);
 
@@ -69,6 +71,11 @@ export default function TemplateFormDrawer({
     setWarmupCharCount(formData.exercise_structure?.warmup?.length || 0);
     setCooldownCharCount(formData.exercise_structure?.cooldown?.length || 0);
   }, [formData.exercise_structure?.warmup, formData.exercise_structure?.cooldown]);
+
+  useEffect(() => {
+    setDescCharCount(formData.description?.length || 0);
+    setCoachNotesCharCount(formData.coach_notes?.length || 0);
+  }, [formData.description, formData.coach_notes]);
 
   const handleCloseClick = () => {
     if (isDirty) {
@@ -106,7 +113,7 @@ export default function TemplateFormDrawer({
   };
 
   const handleWarmupChange = (value: string) => {
-    if (value.length <= 280) {
+    if (value.length <= 140) {
       handleChange('exercise_structure', {
         ...formData.exercise_structure,
         warmup: value,
@@ -117,13 +124,25 @@ export default function TemplateFormDrawer({
   };
 
   const handleCooldownChange = (value: string) => {
-    if (value.length <= 280) {
+    if (value.length <= 140) {
       handleChange('exercise_structure', {
         ...formData.exercise_structure,
         warmup: formData.exercise_structure?.warmup || '',
         series: formData.exercise_structure?.series || [],
         cooldown: value,
       });
+    }
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    if (value.length <= 280) {
+      handleChange('description', value);
+    }
+  };
+
+  const handleCoachNotesChange = (value: string) => {
+    if (value.length <= 500) {
+      handleChange('coach_notes', value);
     }
   };
 
@@ -250,9 +269,9 @@ export default function TemplateFormDrawer({
 
                 {/* Name & Description (edit mode only) */}
                 {mode === 'edit' && (
-                  <div className="space-y-3 p-3 ceramic-inset rounded-lg">
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">
+                      <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
                         Nome do Exercício
                       </label>
                       <input
@@ -264,16 +283,19 @@ export default function TemplateFormDrawer({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-ceramic-text-secondary mb-1">
+                      <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
                         Descrição
                       </label>
-                      <input
-                        type="text"
+                      <textarea
                         value={formData.description || ''}
-                        onChange={(e) => handleChange('description', e.target.value)}
+                        onChange={(e) => handleDescriptionChange(e.target.value)}
                         placeholder="Gerada automaticamente ao salvar"
-                        className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 text-sm"
+                        rows={2}
+                        className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
                       />
+                      <span className="text-xs text-ceramic-text-secondary">
+                        {descCharCount}/280
+                      </span>
                     </div>
                   </div>
                 )}
@@ -291,7 +313,7 @@ export default function TemplateFormDrawer({
                     className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
                   />
                   <span className="text-xs text-ceramic-text-secondary">
-                    {warmupCharCount}/280
+                    {warmupCharCount}/140
                   </span>
                 </div>
 
@@ -323,7 +345,7 @@ export default function TemplateFormDrawer({
                     className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
                   />
                   <span className="text-xs text-ceramic-text-secondary">
-                    {cooldownCharCount}/280
+                    {cooldownCharCount}/140
                   </span>
                 </div>
 
@@ -331,6 +353,23 @@ export default function TemplateFormDrawer({
                 {formData.exercise_structure?.series && formData.exercise_structure.series.length > 0 && (
                   <TimelineVisual series={formData.exercise_structure.series} />
                 )}
+
+                {/* Coach Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-ceramic-text-primary mb-1">
+                    Notas do Coach <span className="text-ceramic-text-secondary text-xs">(opcional)</span>
+                  </label>
+                  <textarea
+                    value={formData.coach_notes || ''}
+                    onChange={(e) => handleCoachNotesChange(e.target.value)}
+                    placeholder="Observações, orientações ou lembretes para este exercício..."
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-ceramic-text-secondary/20 bg-white/50 text-ceramic-text-primary placeholder:text-ceramic-text-secondary focus:outline-none focus:ring-2 focus:ring-ceramic-accent/50 resize-none text-sm"
+                  />
+                  <span className="text-xs text-ceramic-text-secondary">
+                    {coachNotesCharCount}/500
+                  </span>
+                </div>
               </div>
             </form>
 

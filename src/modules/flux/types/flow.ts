@@ -142,6 +142,9 @@ export interface WorkoutTemplate {
   is_public?: boolean;
   is_favorite?: boolean;
 
+  // Coach notes
+  coach_notes?: string;
+
   // Metadata
   created_at: string;
   updated_at: string;
@@ -166,6 +169,7 @@ export interface CreateWorkoutTemplateInput {
   tags?: string[];
   level?: AthleteLevel[];
   is_public?: boolean;
+  coach_notes?: string;
 }
 
 /**
