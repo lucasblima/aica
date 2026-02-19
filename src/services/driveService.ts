@@ -177,6 +177,42 @@ export async function getRecentFiles(maxResults: number = 10): Promise<DriveFile
     }
 }
 
+/**
+ * Get text content of a file (Google Docs → text, Sheets → CSV, text files → raw).
+ * Returns null if the file type is not supported for text extraction.
+ */
+export async function getFileContent(fileId: string): Promise<{
+    content: string;
+    name: string;
+    mimeType: string;
+    truncated: boolean;
+} | null> {
+    try {
+        const { data, error } = await supabase.functions.invoke('drive-proxy', {
+            body: {
+                action: 'get_content',
+                payload: { fileId },
+            },
+        });
+
+        if (error) {
+            log.error('[getFileContent] Edge Function error:', { error });
+            return null;
+        }
+
+        const response = data as { success: boolean; data?: { content: string; name: string; mimeType: string; truncated: boolean }; error?: string };
+        if (!response.success || !response.data) {
+            log.warn('[getFileContent] API returned error:', response.error);
+            return null;
+        }
+
+        return response.data;
+    } catch (err) {
+        log.error('[getFileContent] Exception:', { error: err });
+        return null;
+    }
+}
+
 // ============================================================================
 // WRITE ACTIONS (require full drive scope)
 // ============================================================================

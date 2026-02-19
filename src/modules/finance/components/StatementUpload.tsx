@@ -556,9 +556,10 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
                             className="ceramic-inset px-3 py-2 text-xs text-ceramic-text-primary focus:outline-none disabled:opacity-50"
                           >
                             <option value="">Ano</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
-                            <option value="2023">2023</option>
+                            {Array.from({ length: 4 }, (_, i) => {
+                              const year = new Date().getFullYear() - i;
+                              return <option key={year} value={String(year)}>{year}</option>;
+                            })}
                           </select>
                         </div>
                       </div>
