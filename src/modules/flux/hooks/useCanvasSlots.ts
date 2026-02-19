@@ -11,6 +11,9 @@ import { MicrocycleService } from '../services/microcycleService';
 import { syncEntityToGoogle, unsyncEntityFromGoogle } from '@/services/calendarSyncService';
 import { fluxSlotToGoogleEvent } from '@/services/calendarSyncTransforms';
 import { isGoogleCalendarConnected } from '@/services/googleAuthService';
+import { addXP, FLUX_XP_REWARDS } from '@/services/gamificationService';
+import { supabase } from '@/services/supabaseClient';
+import { createTrainingMoment } from '../services/fluxJourneyBridge';
 import type {
   Microcycle,
   WorkoutSlot,
@@ -244,11 +247,30 @@ export function useCanvasSlots({
 
       if (data) {
         setSlots((prev) => prev.map((s) => (s.id === data.id ? data : s)));
+
+        // Award XP for supervising workout (non-blocking)
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) addXP(user.id, FLUX_XP_REWARDS.workout_supervised).catch(() => {});
+        });
+
+        // Bridge: create Journey moment for coach (non-blocking)
+        supabase
+          .from('athletes')
+          .select('id, name, modality, status, user_id')
+          .eq('id', athleteId)
+          .single()
+          .then(({ data: athlete }) => {
+            if (athlete) {
+              createTrainingMoment(data, athlete as any).catch((e) =>
+                log.warn('Journey bridge error (non-blocking):', e)
+              );
+            }
+          });
       }
 
       return data;
     },
-    [setSlots, setError]
+    [athleteId, setSlots, setError]
   );
 
   return {

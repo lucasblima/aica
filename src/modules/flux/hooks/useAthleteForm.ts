@@ -21,7 +21,7 @@ import type {
   ModalityLevel,
   AthleteLevel,
 } from '../types/flux';
-import { AthleteProfileService } from '../services/athleteProfileService';
+import { AthleteProfileService } from '../services/AthleteProfileService';
 
 // ============================================
 // TYPES

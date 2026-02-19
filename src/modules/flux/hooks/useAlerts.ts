@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
+import { addXP, FLUX_XP_REWARDS } from '@/services/gamificationService';
 import type { Alert } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -267,6 +268,12 @@ export function useAlerts(): UseAlertsReturn {
         a.id === alertId ? { ...a, acknowledged_at: new Date().toISOString() } : a
       )
     );
+
+    // Award XP for resolving alert (non-blocking)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      addXP(user.id, FLUX_XP_REWARDS.alert_resolved).catch(() => {});
+    }
   }, []);
 
   return {

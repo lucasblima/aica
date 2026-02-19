@@ -35,7 +35,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { MicrocycleService } from '../services/microcycleService';
-import { AthleteProfileService } from '../services/athleteProfileService';
+import { AthleteProfileService } from '../services/AthleteProfileService';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
 import { AutomationService } from '../services/automationService';
 import { ScheduleWhatsAppModal } from '../components/ScheduleWhatsAppModal';
@@ -53,6 +53,7 @@ import type {
   ScheduledWorkout,
 } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
+import { useFluxGamification } from '../hooks/useFluxGamification';
 
 const WEEK_FOCUS_LABELS: Record<MicrocycleWeekFocus, string> = {
   volume: 'Volume',
@@ -73,6 +74,7 @@ const DAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 export default function MicrocycleEditorView() {
   const navigate = useNavigate();
   const { microcycleId } = useParams<{ microcycleId: string }>();
+  const { trackMicrocycleCompleted } = useFluxGamification();
 
   // State
   const [microcycle, setMicrocycle] = useState<Microcycle | null>(null);
@@ -202,15 +204,15 @@ export default function MicrocycleEditorView() {
 
     // Load athlete
     if (data.athlete_id) {
-      const { data: athleteData } = await AthleteProfileService.getProfileByAthleteId(
+      const { data: athleteData } = await AthleteProfileService.getProfilesByAthleteId(
         data.athlete_id
       );
-      if (athleteData) {
-        setAthlete(athleteData);
+      if (athleteData && athleteData.length > 0) {
+        setAthlete(athleteData[0] as unknown as FlowAthleteProfile);
 
         // Load templates for athlete's modality
         const { data: templatesData } = await WorkoutTemplateService.getTemplates({
-          modality: athleteData.modality,
+          modality: athleteData[0].modality,
         });
         if (templatesData) {
           setTemplates(templatesData);
@@ -256,6 +258,8 @@ export default function MicrocycleEditorView() {
     const { error } = await MicrocycleService.activateMicrocycle(microcycle.id);
 
     if (!error) {
+      // Award XP for completing the microcycle cycle (non-blocking)
+      trackMicrocycleCompleted().catch(() => {});
       navigate(`/flux/athlete/${microcycle.athlete_id}`);
     }
   };

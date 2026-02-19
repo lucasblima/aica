@@ -16,7 +16,7 @@ export { MicrocycleService } from './microcycleService';
 export { WorkoutSlotService } from './workoutSlotService';
 export type { CreateWorkoutSlotInput, UpdateWorkoutSlotInput } from './workoutSlotService';
 
-export { AthleteProfileService } from './athleteProfileService';
+export { AthleteProfileService } from './AthleteProfileService';
 
 export { AutomationService } from './automationService';
 export { AutomationEngineService } from './automationEngineService';
@@ -37,3 +37,17 @@ export type { PublishWorkoutParams, PublishWorkoutResult } from './fluxWhatsAppS
 // Utility services
 export { IntensityCalculatorService } from './intensityCalculatorService';
 export { LevelingEngineService } from './levelingEngineService';
+
+// Performance tests
+export { PerformanceTestService } from './performanceTestService';
+export type {
+  PerformanceTest,
+  PerformanceTestType,
+  PerformanceTestUnit,
+  CreatePerformanceTestInput,
+  UpdatePerformanceTestInput,
+} from './performanceTestService';
+
+// Cross-module bridges
+export { createTrainingMoment, recordWorkoutCompletion } from './fluxJourneyBridge';
+export { createMicrocycleTask, completeMicrocycleTask } from './fluxAtlasBridge';

@@ -39,7 +39,7 @@ export default function SeriesEditor({ modality, series, onChange }: SeriesEdito
   };
 
   const handleUpdateSeries = (id: string, updates: Partial<WorkoutSeries>) => {
-    onChange(series.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    onChange(series.map((s) => (s.id === id ? { ...s, ...updates } as WorkoutSeries : s)));
   };
 
   if (!modality) {

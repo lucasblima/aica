@@ -65,12 +65,16 @@ BEGIN
     target_phone,
     attempt_number,
     status,
+    started_at,
+    completed_at,
     evolution_response
   ) VALUES (
     NEW.user_id,
     'in_app',
     1,
     'success',
+    now(),
+    now(),
     jsonb_build_object(
       'channel', 'in_app',
       'source', 'flux_alert',

@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calculator } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IntensityCalculatorService } from '../services/intensityCalculatorService';
-import { AthleteProfileService } from '../services/athleteProfileService';
+import { AthleteProfileService } from '../services/AthleteProfileService';
 import type { FlowAthleteProfile, IntensityCalculation } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
 
@@ -46,9 +46,9 @@ export default function IntensityCalculatorView() {
   const loadAthlete = async () => {
     if (!athleteId) return;
 
-    const { data } = await AthleteProfileService.getProfileByAthleteId(athleteId);
-    if (data) {
-      setProfile(data);
+    const { data } = await AthleteProfileService.getProfilesByAthleteId(athleteId);
+    if (data && data.length > 0) {
+      setProfile(data[0] as unknown as FlowAthleteProfile);
     }
     setLoading(false);
   };

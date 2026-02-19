@@ -108,12 +108,13 @@ export const MODULE_AGENT_CONFIGS: Record<Exclude<AgentModule, 'coordinator'>, M
     displayName: 'Flux',
     accentColor: 'text-orange-500',
     accentBg: 'bg-orange-500',
-    welcomeMessage: `Ola! Sou o assistente do **Flux**, seu modulo de treinamento.\n\nPosso ajudar com:\n- Planejar blocos de treino\n- Analisar performance dos atletas\n- Sugerir ajustes de carga\n- Monitorar alertas`,
+    welcomeMessage: `Ola! Sou o assistente do **Flux**, seu modulo de treinamento.\n\nPosso ajudar com:\n- Planejar blocos de treino\n- Recomendar exercicios da sua biblioteca\n- Analisar performance dos atletas\n- Sugerir ajustes de carga\n- Monitorar alertas`,
     placeholder: 'Pergunte sobre treinos...',
     suggestedPrompts: [
-      { label: 'Planejar treino', prompt: 'Me ajude a planejar o proximo bloco de treino.' },
+      { label: 'Recomendar exercicios', prompt: 'Recomende exercicios da minha biblioteca para um atleta iniciante de natacao.' },
+      { label: 'Planejar treino', prompt: 'Me ajude a planejar o proximo bloco de treino com base nos meus templates.' },
       { label: 'Analisar performance', prompt: 'Como esta a performance dos meus atletas esta semana?' },
-      { label: 'Alertas ativos', prompt: 'Quais alertas de treino preciso atender?' },
+      { label: 'Ajustar carga', prompt: 'Sugira ajustes de carga para o microciclo ativo.' },
     ],
   },
 

@@ -17,6 +17,9 @@ import type {
 // WORKOUT TEMPLATES (15 templates across modalities)
 // ============================================
 
+// Mock data uses legacy V1 exercise_structure shapes (sets, distance, intervals, etc.)
+// which don't match the V2 ExerciseStructureV2 type (warmup, series, cooldown).
+// Using type assertion since this is purely mock/demo data.
 export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
   // SWIMMING TEMPLATES
   {
@@ -33,7 +36,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       reps: 100,
       rest: 15,
       description: '8x100m crawl com foco em técnica',
-    },
+    } as any,
     css_percentage: 70,
     rpe: 5,
     tags: ['técnica', 'crawl', 'iniciante'],
@@ -57,7 +60,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       distance: 3000,
       target_time: 3600,
       description: '3000m contínuo em ritmo aeróbico',
-    },
+    } as any,
     css_percentage: 85,
     rpe: 6,
     tags: ['aeróbico', 'resistência', 'longo'],
@@ -82,7 +85,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
         { duration: 50, intensity: 95, rest: 10, repetitions: 20 },
       ],
       description: '20x50m @ 95% CSS com 10s rest',
-    },
+    } as any,
     css_percentage: 95,
     rpe: 8,
     tags: ['limiar', 'intervalado', 'velocidade'],
@@ -108,7 +111,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       distance: 16000,
       target_time: 5400,
       description: '16km em ritmo Z2 (conversação)',
-    },
+    } as any,
     pace_zone: 'Z2',
     rpe: 5,
     tags: ['longo', 'aeróbico', 'base'],
@@ -130,7 +133,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
     intensity: 'medium',
     exercise_structure: {
       description: 'Alternância: 3min rápido + 2min fácil x 8 repetições',
-    },
+    } as any,
     pace_zone: 'Z3',
     rpe: 7,
     tags: ['fartlek', 'variado', 'ritmo'],
@@ -155,7 +158,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
         { duration: 1000, intensity: 95, rest: 90, repetitions: 6 },
       ],
       description: '6x1km @ ritmo limiar com 90s trote recuperação',
-    },
+    } as any,
     pace_zone: 'Z4',
     rpe: 9,
     tags: ['limiar', 'intervalado', 'velocidade'],
@@ -181,7 +184,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       distance: 40000,
       target_time: 5400,
       description: '40km em ritmo Z2 (65-75% FTP)',
-    },
+    } as any,
     ftp_percentage: 70,
     rpe: 4,
     tags: ['base', 'aeróbico', 'endurance'],
@@ -206,7 +209,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
         { duration: 600, intensity: 90, rest: 300, repetitions: 3 },
       ],
       description: '3x10min @ 90% FTP com 5min Z2 recuperação',
-    },
+    } as any,
     ftp_percentage: 90,
     rpe: 7,
     tags: ['sweet spot', 'potência', 'intervalado'],
@@ -231,7 +234,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
         { duration: 300, intensity: 110, rest: 300, repetitions: 5 },
       ],
       description: '5x5min @ 110% FTP com 5min Z1 recuperação',
-    },
+    } as any,
     ftp_percentage: 110,
     rpe: 9,
     tags: ['VO2', 'intervalado', 'potência máxima'],
@@ -259,7 +262,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       rest: 60,
       description: '3x12 - Agachamento, Supino, Remada, Desenvolvimento',
       equipment: ['barra', 'anilhas', 'banco'],
-    },
+    } as any,
     rpe: 6,
     tags: ['fullbody', 'iniciante', 'força'],
     level: ['iniciante_1', 'iniciante_2', 'iniciante_3'],
@@ -284,7 +287,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       rest: 180,
       description: '5x5 - Agachamento Livre, Levantamento Terra, Afundo Búlgaro',
       equipment: ['barra', 'anilhas', 'rack'],
-    },
+    } as any,
     rpe: 9,
     tags: ['lower', 'potência', 'força máxima'],
     level: ['intermediario_3', 'avancado'],
@@ -307,7 +310,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
     intensity: 'low',
     exercise_structure: {
       description: 'Mobilidade articular + ativação core + alongamento dinâmico',
-    },
+    } as any,
     rpe: 3,
     tags: ['warmup', 'mobilidade', 'ativação'],
     level: ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
@@ -328,7 +331,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
     intensity: 'low',
     exercise_structure: {
       description: 'Caminhada leve + alongamento estático dos principais grupos musculares',
-    },
+    } as any,
     rpe: 2,
     tags: ['cooldown', 'alongamento', 'recuperação'],
     level: ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
@@ -353,7 +356,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       distance: 1500,
       target_time: 1800,
       description: '1500m técnico em ritmo suave',
-    },
+    } as any,
     css_percentage: 60,
     rpe: 3,
     tags: ['recuperação', 'ativo', 'técnica'],
@@ -377,7 +380,7 @@ export const MOCK_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
     intensity: 'high',
     exercise_structure: {
       description: 'Aquecimento + 20min máximo esforço sustentado + desaquecimento',
-    },
+    } as any,
     ftp_percentage: 105,
     rpe: 10,
     tags: ['teste', 'FTP', 'avaliação'],

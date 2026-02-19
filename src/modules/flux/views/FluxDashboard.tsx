@@ -13,7 +13,7 @@ import { useAthletes } from '../hooks/useAthletes';
 import { useAthleteActivity } from '../hooks/useAthleteActivity';
 import { AthleteService, CreateAthleteInput } from '../services/athleteService';
 import { supabase } from '@/services/supabaseClient';
-import { AthleteProfileService } from '../services/athleteProfileService';
+import { AthleteProfileService } from '../services/AthleteProfileService';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel, Alert, ModalityLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
@@ -27,6 +27,7 @@ import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown,
 import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
 import { useModuleAgent } from '@/hooks/useModuleAgent';
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
+import { useFluxGamification } from '../hooks/useFluxGamification';
 
 // Sort options
 type SortOrder = 'none' | 'asc' | 'desc';
@@ -91,6 +92,9 @@ export default function FluxDashboard() {
 
   // Workout templates count for Biblioteca button
   const { templates } = useWorkoutTemplates();
+
+  // Gamification tracking
+  const { trackAthleteCreated } = useFluxGamification();
 
   // Filter and sort states
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
@@ -335,6 +339,9 @@ export default function FluxDashboard() {
 
         athleteId = data.id;
         console.log('Atleta criado com sucesso:', data);
+
+        // Award gamification XP for athlete creation (non-blocking)
+        trackAthleteCreated().catch(() => {});
       }
 
       // Sync athlete profiles for all selected modalities

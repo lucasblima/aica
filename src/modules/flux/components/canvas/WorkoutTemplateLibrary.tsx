@@ -22,7 +22,9 @@ interface WorkoutTemplateLibraryProps {
 const CATEGORY_LABELS: Record<ExerciseCategory, { label: string; icon: string; color: string }> = {
   warmup: { label: 'Aquecimento', icon: '🔥', color: 'bg-amber-50 border-amber-200 text-amber-700' },
   main: { label: 'Principal', icon: '💪', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+  technique: { label: 'Técnica', icon: '🎯', color: 'bg-violet-50 border-violet-200 text-violet-700' },
   cooldown: { label: 'Desaquecimento', icon: '❄️', color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
+  dryland: { label: 'Dryland', icon: '🏋️', color: 'bg-stone-50 border-stone-200 text-stone-700' },
 };
 
 const INTENSITY_COLORS = {

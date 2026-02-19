@@ -12,7 +12,7 @@ import { Calendar, CheckCircle2, TrendingUp } from 'lucide-react';
 export function ProgressionBar({
   currentWeek,
   totalWeeks = 12,
-  consistencyRate,
+  adherenceRate,
   completedWorkouts,
   totalWorkouts,
 }: ProgressionBarProps) {
@@ -25,7 +25,7 @@ export function ProgressionBar({
     return 'text-ceramic-error';
   };
 
-  const consistencyColorClass = getConsistênciaColor(consistencyRate);
+  const consistencyColorClass = getConsistênciaColor(adherenceRate);
 
   return (
     <div className="ceramic-card p-4 space-y-4">
@@ -51,7 +51,7 @@ export function ProgressionBar({
             Adesao
           </p>
           <p className={`text-2xl font-bold ${consistencyColorClass}`}>
-            {consistencyRate}%
+            {adherenceRate}%
           </p>
         </div>
       </div>

@@ -83,7 +83,7 @@ export type { TemplateFormState } from './components/forms';
 
 export { WorkoutTemplateService } from './services/workoutTemplateService';
 export { MicrocycleService } from './services/microcycleService';
-export { AthleteProfileService } from './services/athleteProfileService';
+export { AthleteProfileService } from './services/AthleteProfileService';
 export { AutomationService } from './services/automationService';
 export { IntensityCalculatorService } from './services/intensityCalculatorService';
 export { LevelingEngineService } from './services/levelingEngineService';
