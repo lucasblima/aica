@@ -62,7 +62,9 @@ export async function generateDossier(
     return {
       guestName,
       episodeTheme: theme || existingResearch.suggestedThemes[0] || 'Carreira & Atualidades',
-      biography: existingResearch.dossier.biography,
+      biography: typeof existingResearch.dossier.biography === 'string'
+        ? existingResearch.dossier.biography
+        : JSON.stringify(existingResearch.dossier.biography || ''),
       controversies: existingResearch.dossier.controversies,
       suggestedTopics: existingResearch.suggestedThemes,
       iceBreakers: existingResearch.dossier.iceBreakers,
@@ -95,7 +97,9 @@ export async function generateDossier(
     const dossier: Dossier = {
       guestName,
       episodeTheme: finalTheme,
-      biography: data.biography || 'Não foi possível gerar o dossiê automaticamente.',
+      biography: typeof data.biography === 'string'
+        ? data.biography
+        : (data.biography ? JSON.stringify(data.biography) : 'Não foi possível gerar o dossiê automaticamente.'),
       controversies: data.controversies || [],
       suggestedTopics: data.suggestedTopics || [],
       iceBreakers: data.iceBreakers || [],
