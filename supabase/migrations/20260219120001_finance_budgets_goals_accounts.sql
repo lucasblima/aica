@@ -23,6 +23,13 @@ CREATE TABLE IF NOT EXISTS public.finance_budgets (
 
 ALTER TABLE public.finance_budgets ENABLE ROW LEVEL SECURITY;
 
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can view own budgets" ON public.finance_budgets;
+  DROP POLICY IF EXISTS "Users can insert own budgets" ON public.finance_budgets;
+  DROP POLICY IF EXISTS "Users can update own budgets" ON public.finance_budgets;
+  DROP POLICY IF EXISTS "Users can delete own budgets" ON public.finance_budgets;
+END $$;
+
 CREATE POLICY "Users can view own budgets"
   ON public.finance_budgets FOR SELECT
   USING (auth.uid() = user_id);
@@ -64,6 +71,13 @@ CREATE TABLE IF NOT EXISTS public.finance_goals (
 
 ALTER TABLE public.finance_goals ENABLE ROW LEVEL SECURITY;
 
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can view own goals" ON public.finance_goals;
+  DROP POLICY IF EXISTS "Users can insert own goals" ON public.finance_goals;
+  DROP POLICY IF EXISTS "Users can update own goals" ON public.finance_goals;
+  DROP POLICY IF EXISTS "Users can delete own goals" ON public.finance_goals;
+END $$;
+
 CREATE POLICY "Users can view own goals"
   ON public.finance_goals FOR SELECT
   USING (auth.uid() = user_id);
@@ -104,6 +118,13 @@ CREATE TABLE IF NOT EXISTS public.finance_accounts (
 );
 
 ALTER TABLE public.finance_accounts ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can view own accounts" ON public.finance_accounts;
+  DROP POLICY IF EXISTS "Users can insert own accounts" ON public.finance_accounts;
+  DROP POLICY IF EXISTS "Users can update own accounts" ON public.finance_accounts;
+  DROP POLICY IF EXISTS "Users can delete own accounts" ON public.finance_accounts;
+END $$;
 
 CREATE POLICY "Users can view own accounts"
   ON public.finance_accounts FOR SELECT
