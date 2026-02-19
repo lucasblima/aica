@@ -1994,16 +1994,16 @@ async function handleParseStatement(genAI: GoogleGenerativeAI, payload: ParseSta
       temperature: 0.3,
       topP: 0.8,
       topK: 40,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 4096,
     },
   })
 
-  const prompt = `Voce e um assistente especializado em extrair dados de extratos bancarios.
+  const prompt = `Voce e um assistente especializado em extrair dados de extratos bancarios brasileiros.
 
 Analise o texto e extraia as informacoes em formato JSON:
 
 {
-  "bankName": "nome do banco",
+  "bankName": "nome do banco (ex: Nubank, Inter, Itau, Bradesco, Santander, C6 Bank)",
   "accountType": "checking|savings|credit_card|investment|other",
   "periodStart": "YYYY-MM-DD",
   "periodEnd": "YYYY-MM-DD",
@@ -2013,32 +2013,29 @@ Analise o texto e extraia as informacoes em formato JSON:
   "transactions": [
     {
       "date": "YYYY-MM-DD",
-      "description": "descricao",
+      "description": "descricao limpa sem caracteres especiais",
       "amount": numero (positivo=receita, negativo=despesa),
       "type": "income|expense",
-      "category": "food|transport|housing|health|education|entertainment|shopping|bills|salary|investment|other"
+      "category": "food|transport|housing|health|education|entertainment|shopping|bills|salary|investment|transfer|other"
     }
   ]
 }
 
-IMPORTANTE:
+REGRAS:
 - Despesas devem ser NEGATIVAS
 - Receitas devem ser POSITIVAS
 - Categorias em ingles
-- Retorne APENAS o JSON
+- Detecte o banco pelo cabecalho, logo ou formato do extrato
+- PIX recebidos sao "income", PIX enviados sao "expense"
+- Retorne APENAS o JSON, sem explicacao
 
 TEXTO:
-${rawText.substring(0, 10000)}`
+${rawText.substring(0, 15000)}`
 
   const result = await model.generateContent(prompt)
   const text = result.response.text()
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/)?.[0]
-  if (!jsonMatch) {
-    throw new Error('Nao foi possivel extrair JSON da resposta')
-  }
-
-  const data = JSON.parse(jsonMatch)
+  const data = extractJSON(text)
   return {
     ...data,
     __usageMetadata: result.response.usageMetadata

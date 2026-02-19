@@ -1,18 +1,14 @@
 /**
  * PDF Processing Service
  *
- * Refatorado para usar Edge Functions para AI parsing
- * - Secure backend AI calls via Supabase Edge Functions
- * - Client-side PDF extraction using PDF.js
- * - Falls back to Python server for complex processing
+ * Client-side PDF text extraction (PDF.js) + AI parsing (Gemini via Edge Function).
+ * No Python server dependency — all processing is browser + Edge Function.
  */
 
 import * as pdfjsLib from 'pdfjs-dist'
 import { createNamespacedLogger } from '@/lib/logger'
-import { PDF_EXTRACTOR_URL } from '@/config/api'
 
 const log = createNamespacedLogger('PDFProcessing')
-import { supabase } from '@/services/supabaseClient'
 import * as EdgeFunctionService from '@/services/edgeFunctionService'
 import type {
   PDFExtractionResult,
@@ -25,6 +21,27 @@ import type {
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
 // =====================================================
+// Progress Callback Types
+// =====================================================
+
+export type PDFProcessingStage =
+  | 'extracting_text'
+  | 'detecting_bank'
+  | 'ai_parsing'
+  | 'categorizing'
+  | 'complete'
+  | 'error'
+
+export interface PDFProgressUpdate {
+  stage: PDFProcessingStage
+  message: string
+  detail?: string
+  progress: number // 0-100
+}
+
+export type OnProgressCallback = (update: PDFProgressUpdate) => void
+
+// =====================================================
 // PDF Processing Service
 // =====================================================
 
@@ -33,8 +50,18 @@ export class PDFProcessingService {
    * Extract text from PDF using PDF.js (client-side)
    * This ensures the raw PDF never leaves the browser until ready for backend processing
    */
-  async extractTextFromPDF(file: File): Promise<PDFExtractionResult> {
+  async extractTextFromPDF(
+    file: File,
+    onProgress?: OnProgressCallback
+  ): Promise<PDFExtractionResult> {
     try {
+      onProgress?.({
+        stage: 'extracting_text',
+        message: 'Extraindo texto do PDF...',
+        detail: file.name,
+        progress: 10,
+      })
+
       const arrayBuffer = await file.arrayBuffer()
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
 
@@ -48,6 +75,13 @@ export class PDFProcessingService {
           .map((item: { str?: string }) => item.str || '')
           .join(' ')
         fullText += pageText + '\n\n'
+
+        onProgress?.({
+          stage: 'extracting_text',
+          message: `Lendo página ${i} de ${pageCount}...`,
+          detail: `${Math.round((fullText.length / 1024))} KB de texto extraído`,
+          progress: 10 + Math.round((i / pageCount) * 20),
+        })
       }
 
       return {
@@ -57,98 +91,85 @@ export class PDFProcessingService {
       }
     } catch (error) {
       log.error('[PDFProcessingService] PDF extraction failed:', error)
+      onProgress?.({
+        stage: 'error',
+        message: 'Falha ao extrair texto do PDF',
+        progress: 0,
+      })
       throw new Error('Falha ao extrair texto do PDF. Verifique se o arquivo não está corrompido.')
     }
   }
 
   /**
-   * Process PDF file through Python backend using /extract endpoint
+   * Process PDF file: extract text with PDF.js → parse with Gemini Edge Function
    *
-   * This method:
-   * 1. Sends PDF as FormData to Python server /extract endpoint
-   * 2. Returns extracted text and structured data
-   *
-   * Benefits:
-   * - Uses correct Python server endpoint (/extract)
-   * - No timeout limits (can process large PDFs)
-   * - Handles file upload correctly
+   * @param file - PDF file to process
+   * @param _userId - User ID (kept for API compatibility)
+   * @param onProgress - Optional callback for progressive UI updates
    */
-  async processPDFFile(file: File, userId: string): Promise<ParsedStatement> {
-    try {
-      // Check if Python server is available
-      const healthCheck = await fetch(`${PDF_EXTRACTOR_URL}/health`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(2000)
-      }).catch(() => null)
+  async processPDFFile(
+    file: File,
+    _userId: string,
+    onProgress?: OnProgressCallback
+  ): Promise<ParsedStatement> {
+    // Step 1: Extract text from PDF client-side
+    const extraction = await this.extractTextFromPDF(file, onProgress)
 
-      if (!healthCheck || !healthCheck.ok) {
-        // Fallback to client-side processing
-        log.warn('[PDFProcessingService] Python server not available, using client-side fallback')
-        const extraction = await this.extractTextFromPDF(file)
-        return await this.parseStatementWithGeminiFallback(extraction.rawText)
-      }
-
-      // Send PDF to Python server /extract endpoint
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await fetch(`${PDF_EXTRACTOR_URL}/extract`, {
-        method: 'POST',
-        headers: {
-          'X-User-Id': userId
-        },
-        body: formData
+    if (!extraction.rawText || extraction.rawText.length < 50) {
+      onProgress?.({
+        stage: 'error',
+        message: 'PDF parece estar vazio ou protegido',
+        progress: 0,
       })
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(`Falha no servidor: ${error.error || response.statusText}`)
-      }
-
-      const data = await response.json()
-
-      // Parse the extracted text with Gemini fallback
-      // Python server returns markdown or raw_text, not "text"
-      const textToParse = data.text || data.markdown || data.raw_text
-
-      if (textToParse) {
-        log.debug('[PDFProcessingService] Parsing extracted text with Gemini fallback...')
-        return await this.parseStatementWithGeminiFallback(textToParse)
-      }
-
-      throw new Error('Servidor não retornou texto extraído (text, markdown, ou raw_text)')
-
-    } catch (error) {
-      log.error('[PDFProcessingService] PDF processing failed:', error)
-      // Fallback to client-side if server fails
-      const extraction = await this.extractTextFromPDF(file)
-      return await this.parseStatementWithGeminiFallback(extraction.rawText)
+      throw new Error('PDF não contém texto suficiente. Verifique se não é um PDF de imagem (escaneado).')
     }
-  }
 
-  /**
-   * Parse statement using extracted text (legacy method)
-   *
-   * @deprecated Use processPDFFile instead for better security
-   * This method is kept for backwards compatibility and always uses Gemini fallback
-   */
-  async parseStatementWithAI(rawText: string): Promise<ParsedStatement> {
-    log.warn(
-      '[PDFProcessingService] parseStatementWithAI is deprecated. Use processPDFFile instead.'
-    )
+    // Step 2: Detect bank from text (quick local heuristic)
+    onProgress?.({
+      stage: 'detecting_bank',
+      message: 'Identificando banco e formato...',
+      detail: `${extraction.pageCount} página(s), ${Math.round(extraction.rawText.length / 1024)} KB`,
+      progress: 35,
+    })
 
-    // Always use Gemini fallback for this deprecated method
-    // The new processPDFFile method handles Python server integration properly
-    return await this.parseStatementWithGeminiFallback(rawText)
+    const bankHint = this.detectBankFromText(extraction.rawText)
+    if (bankHint) {
+      onProgress?.({
+        stage: 'detecting_bank',
+        message: `Banco detectado: ${bankHint}`,
+        detail: 'Enviando para análise com IA...',
+        progress: 40,
+      })
+    }
+
+    // Step 3: Parse with Gemini via Edge Function
+    onProgress?.({
+      stage: 'ai_parsing',
+      message: 'IA analisando transações...',
+      detail: 'Gemini está interpretando o extrato',
+      progress: 50,
+    })
+
+    const parsed = await this.parseStatementWithGeminiFallback(extraction.rawText, onProgress)
+
+    // Step 4: Done
+    onProgress?.({
+      stage: 'complete',
+      message: 'Extrato processado!',
+      detail: `${parsed.transactions.length} transações encontradas`,
+      progress: 100,
+    })
+
+    return parsed
   }
 
   /**
    * Parse statement using Gemini via Edge Function (secure backend call)
-   *
-   * @param rawText - Extracted text from PDF
-   * @returns Parsed statement data
    */
-  async parseStatementWithGeminiFallback(rawText: string): Promise<ParsedStatement> {
+  async parseStatementWithGeminiFallback(
+    rawText: string,
+    onProgress?: OnProgressCallback
+  ): Promise<ParsedStatement> {
     try {
       log.debug('[PDFProcessingService] Calling Edge Function for AI parsing...')
 
@@ -158,6 +179,13 @@ export class PDFProcessingService {
         log.error('[PDFProcessingService] Edge Function returned invalid data:', parsed)
         throw new Error('Não foi possível extrair dados válidos da resposta')
       }
+
+      onProgress?.({
+        stage: 'categorizing',
+        message: 'Categorizando transações...',
+        detail: `${(parsed.transactions || []).length} transações identificadas`,
+        progress: 85,
+      })
 
       // Normalize data
       return {
@@ -173,74 +201,49 @@ export class PDFProcessingService {
           description: t.description,
           amount: Number(t.amount),
           type: t.type,
-          balance: 0, // Will be calculated
+          balance: 0,
           suggestedCategory: t.category || 'other'
         })),
-        piiSanitized: false // Direct Gemini parsing doesn't sanitize PII
+        piiSanitized: false
       }
     } catch (error) {
-      log.error('[PDFProcessingService] Gemini fallback parsing failed:', error)
+      log.error('[PDFProcessingService] Gemini parsing failed:', error)
+      onProgress?.({
+        stage: 'error',
+        message: 'Falha ao processar extrato com IA',
+        detail: error instanceof Error ? error.message : 'Erro desconhecido',
+        progress: 0,
+      })
       throw new Error('Falha ao processar extrato com IA. Tente novamente.')
     }
   }
 
   /**
-   * Convert Python server response to ParsedStatement format
+   * Quick local heuristic to detect bank from PDF text
    */
-  private convertToParsedStatement(
-    transactions: any[],
-    piiStats?: any
-  ): ParsedStatement {
-    if (!Array.isArray(transactions) || transactions.length === 0) {
-      throw new Error('Nenhuma transação encontrada no PDF')
+  private detectBankFromText(text: string): string | null {
+    const lower = text.toLowerCase()
+    const bankPatterns: [RegExp, string][] = [
+      [/nubank|nu pagamentos/i, 'Nubank'],
+      [/banco inter|inter s\.?a/i, 'Banco Inter'],
+      [/itaú|itau unibanco/i, 'Itaú'],
+      [/bradesco/i, 'Bradesco'],
+      [/santander/i, 'Santander'],
+      [/banco do brasil|bb s\.?a/i, 'Banco do Brasil'],
+      [/caixa econ[oô]mica|cef/i, 'Caixa'],
+      [/c6 bank|c6 s\.?a/i, 'C6 Bank'],
+      [/btg pactual/i, 'BTG Pactual'],
+      [/xp investimentos|xp s\.?a/i, 'XP'],
+      [/neon/i, 'Neon'],
+      [/next/i, 'Next'],
+      [/picpay/i, 'PicPay'],
+      [/mercado pago/i, 'Mercado Pago'],
+    ]
+
+    for (const [pattern, name] of bankPatterns) {
+      if (pattern.test(lower)) return name
     }
-
-    // Extract metadata from transactions
-    const dates = transactions
-      .map(t => new Date(t.date))
-      .filter(d => !isNaN(d.getTime()))
-      .sort((a, b) => a.getTime() - b.getTime())
-
-    const periodStart = dates[0]?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0]
-    const periodEnd = dates[dates.length - 1]?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0]
-
-    // Determine account type from transaction patterns
-    const accountType = this.inferAccountType(transactions)
-
-    // Calculate balances
-    let runningBalance = 0
-    const normalizedTransactions: ParsedTransaction[] = transactions.map(t => {
-      const amount = Number(t.amount) || 0
-      const type = t.type === 'credit' ? 'income' : 'expense'
-
-      // Update running balance
-      runningBalance += type === 'income' ? Math.abs(amount) : -Math.abs(amount)
-
-      return {
-        date: t.date || periodStart,
-        description: t.description || 'Sem descrição',
-        amount: type === 'income' ? Math.abs(amount) : -Math.abs(amount),
-        type,
-        balance: t.balance !== undefined ? Number(t.balance) : runningBalance,
-        suggestedCategory: t.category || 'other'
-      }
-    })
-
-    const openingBalance = normalizedTransactions[0]?.balance || 0
-    const closingBalance = normalizedTransactions[normalizedTransactions.length - 1]?.balance || runningBalance
-
-    return {
-      bankName: 'Banco Desconhecido', // Python server doesn't extract bank name yet
-      accountType,
-      periodStart,
-      periodEnd,
-      openingBalance,
-      closingBalance,
-      currency: 'BRL',
-      transactions: normalizedTransactions,
-      piiSanitized: piiStats ? true : undefined,
-      piiStats: piiStats || undefined
-    }
+    return null
   }
 
   /**
@@ -261,24 +264,7 @@ export class PDFProcessingService {
       return 'investment'
     }
 
-    return 'checking' // Default to checking account
-  }
-
-  /**
-   * Convert File to base64 string
-   */
-  private async fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const base64 = reader.result as string
-        // Remove data URL prefix if present
-        const base64Data = base64.includes(',') ? base64.split(',')[1] : base64
-        resolve(base64Data)
-      }
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
+    return 'checking'
   }
 
   /**
@@ -299,7 +285,7 @@ export class PDFProcessingService {
       `**Período:** ${data.periodStart} a ${data.periodEnd}`,
       `**Tipo de Conta:** ${this.getAccountTypeLabel(data.accountType)}`,
       `**Moeda:** ${data.currency}`,
-      data.piiSanitized ? '**PII Sanitizado:** ✅ Sim (conforme LGPD)' : '',
+      data.piiSanitized ? '**PII Sanitizado:** Sim (conforme LGPD)' : '',
       '',
       '## Resumo',
       '',

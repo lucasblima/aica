@@ -9,7 +9,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
 
 const log = createNamespacedLogger('StatementUpload');
-import { pdfProcessingService } from '../services/pdfProcessingService';
+import { pdfProcessingService, type PDFProgressUpdate } from '../services/pdfProcessingService';
 import { statementService } from '../services/statementService';
 import { addXP, awardAchievement } from '../../../services/gamificationService';
 import type { UploadProgress, FinanceStatement } from '../types';
@@ -109,6 +109,8 @@ interface FileWithMetadata {
   statementId?: string;
   analyzed: boolean;
   processingStage?: string; // Added for message rotation
+  analysisProgress?: PDFProgressUpdate | null; // Progressive analysis feedback
+  transactionCount?: number; // Extracted transaction count for display
 }
 
 // =====================================================
@@ -219,13 +221,23 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
       const fileWithMeta = newFiles[i];
 
       try {
-        // Extract and parse PDF with AI
-        const parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId);
+        // Progressive callback — updates UI in real-time as stages complete
+        const onProgress = (update: PDFProgressUpdate) => {
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.file === fileWithMeta.file
+                ? { ...f, analysisProgress: update }
+                : f
+            )
+          );
+        };
+
+        // Extract and parse PDF with AI (now with progressive feedback)
+        const parsed = await pdfProcessingService.processPDFFile(fileWithMeta.file, userId, onProgress);
 
         // Extract month and year from periodStart (format: YYYY-MM-DD)
-        // Parse manually to avoid timezone issues
         const [yearStr, monthStr] = parsed.periodStart.split('-');
-        const month = monthStr;  // Already in format "01" to "12"
+        const month = monthStr;
         const year = yearStr;
 
         // Update metadata in state
@@ -238,6 +250,8 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
                   month,
                   year,
                   analyzed: true,
+                  analysisProgress: null,
+                  transactionCount: parsed.transactions?.length || 0,
                 }
               : f
           )
@@ -248,7 +262,7 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
         setFiles((prev) =>
           prev.map((f) =>
             f.file === fileWithMeta.file
-              ? { ...f, analyzed: false }
+              ? { ...f, analyzed: false, analysisProgress: null }
               : f
           )
         );
@@ -504,20 +518,52 @@ export const StatementUpload: React.FC<StatementUploadProps> = ({
                 {!fileWithMeta.progress && (
                   <>
                     {isAnalyzing && !fileWithMeta.analyzed ? (
-                      <div className="flex items-center gap-2 py-3">
-                        <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
-                        <p className="text-xs font-medium text-ceramic-text-secondary">
-                          Analisando extrato com IA...
-                        </p>
+                      <div className="space-y-2 py-2">
+                        {/* Progressive analysis feedback */}
+                        {fileWithMeta.analysisProgress ? (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 text-ceramic-accent animate-spin flex-shrink-0" />
+                              <p className="text-xs font-medium text-ceramic-text-primary transition-all duration-300">
+                                {fileWithMeta.analysisProgress.message}
+                              </p>
+                            </div>
+                            {fileWithMeta.analysisProgress.detail && (
+                              <p className="text-[10px] text-ceramic-text-secondary ml-6">
+                                {fileWithMeta.analysisProgress.detail}
+                              </p>
+                            )}
+                            <div className="ceramic-trough p-1 rounded-full">
+                              <div
+                                className="h-1.5 rounded-full bg-ceramic-accent transition-all duration-700 ease-out"
+                                style={{ width: `${fileWithMeta.analysisProgress.progress}%` }}
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 text-ceramic-info animate-spin" />
+                            <p className="text-xs font-medium text-ceramic-text-secondary">
+                              Aguardando processamento...
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-2">
                         {fileWithMeta.analyzed && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <CheckCircle className="w-4 h-4 text-ceramic-success" />
-                            <p className="text-xs font-medium text-ceramic-success">
-                              Metadados extraídos automaticamente
-                            </p>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-ceramic-success" />
+                              <p className="text-xs font-medium text-ceramic-success">
+                                Metadados extraídos automaticamente
+                              </p>
+                            </div>
+                            {fileWithMeta.transactionCount != null && fileWithMeta.transactionCount > 0 && (
+                              <span className="text-[10px] font-bold text-ceramic-accent bg-ceramic-accent/10 px-2 py-0.5 rounded-full">
+                                {fileWithMeta.transactionCount} transações
+                              </span>
+                            )}
                           </div>
                         )}
                         <div className="grid grid-cols-3 gap-2">
