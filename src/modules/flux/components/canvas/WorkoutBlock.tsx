@@ -39,6 +39,15 @@ const MODALITY_COLORS: Record<TrainingModality, string> = {
   running: 'bg-orange-400',
   cycling: 'bg-emerald-400',
   strength: 'bg-purple-400',
+  walking: 'bg-sky-400',
+};
+
+const MODALITY_LABELS: Record<TrainingModality, string> = {
+  swimming: 'Natacao',
+  running: 'Corrida',
+  cycling: 'Ciclismo',
+  strength: 'Musculacao',
+  walking: 'Caminhada',
 };
 
 const INTENSITY_LABELS: Record<WorkoutIntensity, string> = {
@@ -77,7 +86,7 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-stone-500">
           <Activity size={12} className="text-stone-400" />
-          {workout.type || workout.modality.toUpperCase()}
+          {MODALITY_LABELS[workout.modality] || workout.modality}
         </span>
         <GripVertical
           size={14}
@@ -133,12 +142,10 @@ const CompactCard: React.FC<CompactCardProps> = ({ workout, onClick, accentColor
       onClick={onClick}
       className="relative flex flex-col gap-1.5 rounded-lg border border-stone-200 bg-white p-2.5 shadow-sm transition-all hover:border-stone-300 hover:shadow-md cursor-pointer"
     >
-      {/* Type Badge */}
-      {workout.type && (
-        <span className="text-[9px] font-bold uppercase tracking-wider text-stone-500">
-          {workout.type}
-        </span>
-      )}
+      {/* Modality Badge */}
+      <span className="text-[9px] font-bold uppercase tracking-wider text-stone-500">
+        {MODALITY_LABELS[workout.modality] || workout.modality}
+      </span>
 
       {/* Name */}
       <h5 className="text-xs font-semibold text-stone-900 leading-tight line-clamp-2">

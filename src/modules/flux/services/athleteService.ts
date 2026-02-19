@@ -28,6 +28,13 @@ export interface UpdateAthleteInput extends Partial<CreateAthleteInput> {
   id: string;
   current_block_id?: string;
   last_performance_test?: string;
+  // Athlete profile calculator fields
+  weight_kg?: number;
+  height_cm?: number;
+  birth_date?: string;
+  practiced_modalities?: string[];
+  practice_duration_months?: number;
+  training_zones?: Record<string, unknown>;
 }
 
 export class AthleteService {

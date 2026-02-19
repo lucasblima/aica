@@ -334,7 +334,8 @@ export class WorkoutTemplateService {
    * Create template using V2 structure (warmup/series/cooldown)
    */
   static async createTemplateV2(
-    input: CreateWorkoutTemplateV2Input
+    input: CreateWorkoutTemplateV2Input,
+    extras?: { coach_notes?: string }
   ): Promise<{ data: WorkoutTemplate | null; error: any }> {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -350,18 +351,24 @@ export class WorkoutTemplateService {
         ? this.deriveIntensityFromSeries(input.exercise_structure.series)
         : 'medium';
 
+      const insertData: Record<string, any> = {
+        user_id: userData.user.id,
+        name: input.name,
+        description: input.description || null,
+        modality: input.modality,
+        category: input.category || 'main',
+        duration,
+        intensity,
+        exercise_structure: input.exercise_structure,
+      };
+
+      if (extras?.coach_notes !== undefined) {
+        insertData.coach_notes = extras.coach_notes || null;
+      }
+
       const { data, error } = await supabase
         .from('workout_templates')
-        .insert({
-          user_id: userData.user.id,
-          name: input.name,
-          description: input.description || null,
-          modality: input.modality,
-          category: input.category || 'main',
-          duration,
-          intensity,
-          exercise_structure: input.exercise_structure,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -376,7 +383,8 @@ export class WorkoutTemplateService {
    * Update template using V2 structure
    */
   static async updateTemplateV2(
-    input: UpdateWorkoutTemplateV2Input
+    input: UpdateWorkoutTemplateV2Input,
+    extras?: { coach_notes?: string }
   ): Promise<{ data: WorkoutTemplate | null; error: any }> {
     try {
       const { id, ...updates } = input;
@@ -390,6 +398,10 @@ export class WorkoutTemplateService {
       if (updates.exercise_structure?.series) {
         dbUpdates.duration = calculateTotalDuration(updates.exercise_structure.series);
         dbUpdates.intensity = this.deriveIntensityFromSeries(updates.exercise_structure.series);
+      }
+
+      if (extras?.coach_notes !== undefined) {
+        dbUpdates.coach_notes = extras.coach_notes || null;
       }
 
       const { data, error } = await supabase

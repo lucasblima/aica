@@ -9,7 +9,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, GripVertical } from 'lucide-react';
+import { Calendar, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { springHover } from '@/lib/animations/ceramic-motion';
 
 // ============================================
@@ -42,6 +42,8 @@ interface WeeklyGridProps {
   workouts: WeekWorkout[];
   calendarEvents?: BusySlot[];
   onWorkoutClick?: (workoutId: string) => void;
+  onWorkoutDelete?: (workoutId: string) => void;
+  onEmptySlotClick?: (dayOfWeek: number, startTime: string) => void;
   onDropWorkout?: (dayOfWeek: number, startTime: string, templateData: string) => void;
   onReorderWorkout?: (workoutId: string, fromDay: number, toDay: number, toTime: string) => void;
   startDate?: Date;
@@ -82,10 +84,14 @@ const INTENSITY_DOTS: Record<string, string> = {
   high: 'bg-[#9B4D3A]',
 };
 
+const WEEK_FOCUS_LABELS: Record<number, string> = {
+  1: 'Base',
+  2: 'Progressao',
+  3: 'Recuperacao',
+};
+
 const PHASE_LABEL = (weekNumber: number): string => {
-  if (weekNumber <= 4) return 'Base Aerobica';
-  if (weekNumber <= 8) return 'Intensidade Moderada';
-  return 'Alta Performance';
+  return WEEK_FOCUS_LABELS[weekNumber] || `Semana ${weekNumber}`;
 };
 
 // ============================================
@@ -156,9 +162,10 @@ const WeeklyGridSkeleton: React.FC = () => (
 interface PositionedWorkoutCardProps {
   workout: WeekWorkout;
   onClick?: () => void;
+  onDelete?: () => void;
 }
 
-const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, onClick }) => {
+const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, onClick, onDelete }) => {
   const colors = MODALITY_COLORS[workout.modality] || MODALITY_COLORS.running;
   const top = workout.start_time ? timeToY(workout.start_time) : 0;
   const height = durationToHeight(workout.duration);
@@ -168,6 +175,7 @@ const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, 
     <motion.div
       layout
       layoutId={`workout-${workout.id}`}
+      data-workout-card
       draggable
       onDragStart={(e: any) => {
         // Store workout ID for reorder
@@ -202,10 +210,24 @@ const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, 
           >
             {workout.name}
           </h5>
-          <GripVertical
-            size={10}
-            className="text-ceramic-text-tertiary/30 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5"
-          />
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-ceramic-error/20"
+                title="Remover treino"
+              >
+                <Trash2 size={9} className="text-ceramic-error" />
+              </button>
+            )}
+            <GripVertical
+              size={10}
+              className="text-ceramic-text-tertiary/30 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
+            />
+          </div>
         </div>
         <div className="flex items-center gap-1.5">
           {workout.start_time && (
@@ -274,6 +296,8 @@ interface DayColumnProps {
   onDrop: (startTime: string, templateData: string) => void;
   onReorder: (workoutId: string, fromDay: number, startTime: string) => void;
   onWorkoutClick?: (workoutId: string) => void;
+  onWorkoutDelete?: (workoutId: string) => void;
+  onEmptySlotClick?: (startTime: string) => void;
   onHighlight: (time: string | null) => void;
 }
 
@@ -287,6 +311,8 @@ const DayColumn: React.FC<DayColumnProps> = ({
   onDrop,
   onReorder,
   onWorkoutClick,
+  onWorkoutDelete,
+  onEmptySlotClick,
   onHighlight,
 }) => {
   const columnRef = useRef<HTMLDivElement>(null);
@@ -373,6 +399,12 @@ const DayColumn: React.FC<DayColumnProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onDoubleClick={(e) => {
+          // Only trigger if clicking empty space (not on a workout card)
+          if ((e.target as HTMLElement).closest('[data-workout-card]')) return;
+          const time = getTimeFromEvent(e as any);
+          onEmptySlotClick?.(time);
+        }}
         className="relative border-r border-ceramic-text-secondary/5"
         style={{ height: `${TOTAL_HEIGHT}px` }}
       >
@@ -421,6 +453,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
               key={workout.id}
               workout={workout}
               onClick={() => onWorkoutClick?.(workout.id)}
+              onDelete={onWorkoutDelete ? () => onWorkoutDelete(workout.id) : undefined}
             />
           ))}
         </AnimatePresence>
@@ -438,6 +471,8 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
   workouts,
   calendarEvents = [],
   onWorkoutClick,
+  onWorkoutDelete,
+  onEmptySlotClick,
   onDropWorkout,
   onReorderWorkout,
   startDate,
@@ -551,6 +586,8 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
                   onReorderWorkout?.(workoutId, fromDay, day.number, startTime)
                 }
                 onWorkoutClick={onWorkoutClick}
+                onWorkoutDelete={onWorkoutDelete}
+                onEmptySlotClick={onEmptySlotClick ? (time) => onEmptySlotClick(day.number, time) : undefined}
                 onHighlight={(time) =>
                   setHighlightedSlots((prev) => ({ ...prev, [day.number]: time }))
                 }
