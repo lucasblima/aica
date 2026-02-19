@@ -167,8 +167,8 @@ export function TermsOfServicePage() {
               <li>Revise os termos e políticas dos serviços que você conecta</li>
               <li>Você pode revogar integrações a qualquer momento nas configurações</li>
               <li>A integração com Google Calendar utiliza o escopo <code>calendar.events</code> para sincronização bidirecional — leitura e criação de eventos a partir de tarefas e compromissos</li>
-              <li>A integração com Gmail utiliza o escopo <code>gmail.readonly</code> — apenas leitura de mensagens, sem envio ou modificação</li>
-              <li>A integração com Google Drive utiliza o escopo <code>drive.readonly</code> — apenas leitura de arquivos, sem criação ou modificação</li>
+              <li>A integração com Gmail utiliza o escopo <code>gmail.modify</code> — leitura e organização de mensagens (arquivar, etiquetar, marcar como lido, mover para lixeira), sem envio de emails</li>
+              <li>A integração com Google Drive utiliza o escopo <code>drive</code> — leitura e organização de arquivos (renomear, mover, enviar para lixeira, criar pastas)</li>
               <li>Gmail e Drive são integrações opcionais ativadas individualmente pelo usuário (consentimento incremental)</li>
               <li>O uso de dados do Google está em conformidade com a{' '}
                 <a
