@@ -19,7 +19,8 @@ import {
   ChevronUp,
   File,
   Calendar,
-  HardDrive
+  HardDrive,
+  PlusCircle
 } from 'lucide-react';
 import {
   listGrantsDocuments,
@@ -34,6 +35,8 @@ const log = createNamespacedLogger('UploadedDocumentsManager');
 interface UploadedDocumentsManagerProps {
   /** Callback when a document is selected */
   onSelectDocument?: (document: FileSearchDocument) => void;
+  /** Callback to create an edital from an existing document */
+  onCreateEditalFromDocument?: (document: FileSearchDocument) => void;
   /** Whether to show in collapsed mode initially */
   defaultCollapsed?: boolean;
   /** Maximum height before scrolling */
@@ -42,6 +45,7 @@ interface UploadedDocumentsManagerProps {
 
 export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> = ({
   onSelectDocument,
+  onCreateEditalFromDocument,
   defaultCollapsed = true,
   maxHeight = '400px'
 }) => {
@@ -356,18 +360,33 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
                           </p>
                         </div>
 
-                        {/* Delete Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(doc.id);
-                          }}
-                          disabled={isDeleting}
-                          className="ceramic-concave p-2 hover:scale-105 transition-transform flex-shrink-0 disabled:opacity-50"
-                          title="Deletar documento"
-                        >
-                          <Trash2 className="w-4 h-4 text-ceramic-error" />
-                        </button>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {onCreateEditalFromDocument && doc.indexing_status === 'completed' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onCreateEditalFromDocument(doc);
+                              }}
+                              className="ceramic-concave px-3 py-2 hover:scale-105 transition-transform flex items-center gap-1.5 text-xs font-bold text-ceramic-accent"
+                              title="Criar edital a partir deste documento"
+                            >
+                              <PlusCircle className="w-4 h-4" />
+                              <span className="hidden sm:inline">Criar Edital</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(doc.id);
+                            }}
+                            disabled={isDeleting}
+                            className="ceramic-concave p-2 hover:scale-105 transition-transform disabled:opacity-50"
+                            title="Deletar documento"
+                          >
+                            <Trash2 className="w-4 h-4 text-ceramic-error" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

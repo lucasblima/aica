@@ -16,6 +16,7 @@ import { EditalProjectWorkspace } from '../components/workspace/EditalProjectWor
 import { ApprovedProjectModal } from '../components/ApprovedProjectModal';
 import { OrganizationWizard } from '../components/wizard';
 import { UploadedDocumentsManager } from '../components/UploadedDocumentsManager';
+import type { FileSearchDocument } from '../services/fileSearchDocumentService';
 import {
   createOpportunity,
   listOpportunities,
@@ -78,6 +79,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [isApprovedProjectModalOpen, setIsApprovedProjectModalOpen] = useState(false);
   const [isOrganizationWizardOpen, setIsOrganizationWizardOpen] = useState(false);
+  const [existingDocumentForWizard, setExistingDocumentForWizard] = useState<FileSearchDocument | null>(null);
 
   // Data state
   const [opportunities, setOpportunities] = useState<OpportunityWithCount[]>([]);
@@ -177,6 +179,14 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       log.error('Error loading project details:', error);
       setIsLoading(false);
     }
+  };
+
+  /**
+   * Handle creating edital from an existing uploaded document
+   */
+  const handleCreateEditalFromDocument = (doc: FileSearchDocument) => {
+    setExistingDocumentForWizard(doc);
+    setIsSetupModalOpen(true);
   };
 
   /**
@@ -773,6 +783,7 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
               <UploadedDocumentsManager
                 defaultCollapsed={true}
                 maxHeight="300px"
+                onCreateEditalFromDocument={handleCreateEditalFromDocument}
               />
             </div>
 
@@ -954,8 +965,12 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       {/* Setup Wizard */}
       <EditalSetupWizard
         isOpen={isSetupModalOpen}
-        onClose={() => setIsSetupModalOpen(false)}
+        onClose={() => {
+          setIsSetupModalOpen(false);
+          setExistingDocumentForWizard(null);
+        }}
         onSave={handleCreateOpportunity}
+        existingDocument={existingDocumentForWizard}
       />
 
       {/* Approved Project Modal */}

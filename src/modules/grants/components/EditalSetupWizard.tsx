@@ -12,9 +12,10 @@ import React, { useState } from 'react';
 import { X, ArrowLeft, ArrowRight, Check, Sparkles, Loader2, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFUploadZone } from './PDFUploadZone';
-import { processEdital, type ProcessEditalResponse, type AnalyzedEditalData } from '@/services/edgeFunctionService';
+import { processEdital, reprocessEdital, type ProcessEditalResponse, type AnalyzedEditalData } from '@/services/edgeFunctionService';
 import { parseFormFieldsFromText } from '../services/grantAIService';
 import type { CreateOpportunityPayload } from '../types';
+import type { FileSearchDocument } from '../services/fileSearchDocumentService';
 
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -24,6 +25,8 @@ interface EditalSetupWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (payload: CreateOpportunityPayload) => Promise<void>;
+  /** When provided, wizard skips upload and re-processes this existing document */
+  existingDocument?: FileSearchDocument | null;
 }
 
 type WizardStep = 'upload' | 'review' | 'form_fields';
@@ -31,7 +34,8 @@ type WizardStep = 'upload' | 'review' | 'form_fields';
 export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
   isOpen,
   onClose,
-  onSave
+  onSave,
+  existingDocument
 }) => {
   const [currentStep, setCurrentStep] = useState<WizardStep>('upload');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -43,6 +47,51 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
   const [formFieldsText, setFormFieldsText] = useState('');
   const [parsedFields, setParsedFields] = useState<any[]>([]);
   const [isParsing, setIsParsing] = useState(false);
+
+  /**
+   * Auto-process existing document when wizard opens with existingDocument
+   */
+  React.useEffect(() => {
+    if (isOpen && existingDocument && !processedEdital && !isProcessing) {
+      handleReprocessExisting(existingDocument);
+    }
+  }, [isOpen, existingDocument]);
+
+  /**
+   * Re-process an existing document from Google Files (skip upload)
+   */
+  const handleReprocessExisting = async (doc: FileSearchDocument) => {
+    try {
+      setIsProcessing(true);
+      setError(null);
+      setCurrentStep('upload'); // Show processing state on upload step
+
+      log.info('Re-processing existing document', {
+        documentId: doc.id,
+        geminiFileName: doc.gemini_file_name,
+        originalFilename: doc.original_filename,
+      });
+
+      const result = await reprocessEdital(
+        doc.gemini_file_name,
+        doc.id,
+        doc.original_filename
+      );
+
+      log.info('Existing document re-processed', {
+        title: result.analyzed_data.title,
+        processingTimeMs: result.processing_time_ms,
+      });
+
+      setProcessedEdital(result);
+      setCurrentStep('review');
+      setIsProcessing(false);
+    } catch (err) {
+      log.error('Error re-processing existing document:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao reprocessar documento');
+      setIsProcessing(false);
+    }
+  };
 
   /**
    * Handle PDF upload and analysis
@@ -171,6 +220,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
     setFormFieldsText('');
     setParsedFields([]);
     setError(null);
+    setIsProcessing(false);
   };
 
   if (!isOpen) return null;
@@ -268,12 +318,28 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
               >
-                <PDFUploadZone
-                  onFileSelected={handleFileSelected}
-                  isProcessing={isProcessing}
-                  error={error}
-                  success={false}
-                />
+                {existingDocument && isProcessing ? (
+                  /* Re-processing existing document */
+                  <div className="ceramic-card p-8 rounded-xl text-center">
+                    <Loader2 className="w-12 h-12 animate-spin mx-auto text-ceramic-accent mb-4" />
+                    <h3 className="text-lg font-bold text-ceramic-text-primary mb-2">
+                      Analisando documento existente...
+                    </h3>
+                    <p className="text-sm text-ceramic-text-secondary">
+                      {existingDocument.original_filename}
+                    </p>
+                    <p className="text-xs text-ceramic-text-tertiary mt-2">
+                      Extraindo informacoes estruturadas com IA
+                    </p>
+                  </div>
+                ) : (
+                  <PDFUploadZone
+                    onFileSelected={handleFileSelected}
+                    isProcessing={isProcessing}
+                    error={error}
+                    success={false}
+                  />
+                )}
 
                 {error && (
                   <div className="mt-4 ceramic-card p-4 rounded-xl bg-ceramic-error-bg border border-ceramic-border">
