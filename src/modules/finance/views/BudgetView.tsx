@@ -1,18 +1,19 @@
 /**
  * Budget View - Jony Ive Style
  *
- * Minimalista, focado em orçamento por categorias
- * Filosofia: "Simplicity is the ultimate sophistication"
+ * Minimalista, focado em orcamento por categorias.
+ * Now backed by finance_budgets table via budgetService.
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Pencil, Check, X } from 'lucide-react';
 
 const log = createNamespacedLogger('BudgetView');
 import { statementService } from '../services/statementService';
+import { getBudgetSummary, upsertBudget } from '../services/budgetService';
 import { supabase } from '../../../services/supabaseClient';
-import type { FinanceStatement, FinanceTransaction } from '../types';
+import type { FinanceStatement, FinanceTransaction, BudgetSummaryRow } from '../types';
 
 // =====================================================
 // Types
@@ -30,22 +31,34 @@ interface CategoryBudget {
   spent: number;
   budget: number;
   color: string;
+  fromDb: boolean;
 }
 
 // =====================================================
-// Constants - Categorias com Orçamentos Default
+// Constants - Categorias com Orcamentos Default
 // =====================================================
 
 const CATEGORY_CONFIG: Record<string, { icon: string; label: string; defaultBudget: number; color: string }> = {
-  housing: { icon: '🏠', label: 'Moradia', defaultBudget: 1500, color: '#6366f1' },
-  food: { icon: '🍽️', label: 'Alimentação', defaultBudget: 800, color: '#f59e0b' },
-  transport: { icon: '🚗', label: 'Transporte', defaultBudget: 400, color: '#10b981' },
-  health: { icon: '💊', label: 'Saúde', defaultBudget: 300, color: '#ec4899' },
-  education: { icon: '📚', label: 'Educação', defaultBudget: 200, color: '#3b82f6' },
-  entertainment: { icon: '🎬', label: 'Lazer', defaultBudget: 200, color: '#8b5cf6' },
-  shopping: { icon: '🛍️', label: 'Compras', defaultBudget: 300, color: '#f97316' },
-  other: { icon: '📦', label: 'Outros', defaultBudget: 150, color: '#6b7280' },
+  housing: { icon: '\uD83C\uDFE0', label: 'Moradia', defaultBudget: 1500, color: '#6366f1' },
+  food: { icon: '\uD83C\uDF7D\uFE0F', label: 'Alimentacao', defaultBudget: 800, color: '#f59e0b' },
+  transport: { icon: '\uD83D\uDE97', label: 'Transporte', defaultBudget: 400, color: '#10b981' },
+  health: { icon: '\uD83D\uDC8A', label: 'Saude', defaultBudget: 300, color: '#ec4899' },
+  education: { icon: '\uD83D\uDCDA', label: 'Educacao', defaultBudget: 200, color: '#3b82f6' },
+  entertainment: { icon: '\uD83C\uDFAC', label: 'Lazer', defaultBudget: 200, color: '#8b5cf6' },
+  shopping: { icon: '\uD83D\uDECD\uFE0F', label: 'Compras', defaultBudget: 300, color: '#f97316' },
+  other: { icon: '\uD83D\uDCE6', label: 'Outros', defaultBudget: 150, color: '#6b7280' },
 };
+
+// =====================================================
+// Helpers
+// =====================================================
+
+function getProgressColorClass(percentage: number): string {
+  if (percentage > 100) return 'from-ceramic-error to-ceramic-error/80';
+  if (percentage > 80) return 'from-ceramic-accent to-ceramic-accent/80';
+  if (percentage > 60) return 'from-ceramic-warning to-ceramic-warning/80';
+  return 'from-ceramic-success to-ceramic-success/80';
+}
 
 // =====================================================
 // Component
@@ -55,9 +68,15 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [statements, setStatements] = useState<FinanceStatement[]>([]);
+  const [dbBudgetSummary, setDbBudgetSummary] = useState<BudgetSummaryRow[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  // Inline budget editing state
+  const [editingBudget, setEditingBudget] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [savingBudget, setSavingBudget] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -73,21 +92,23 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       const firstDayStr = firstDay.toISOString().split('T')[0];
       const lastDayStr = lastDay.toISOString().split('T')[0];
 
-      // Fetch transactions for the selected month
-      const { data: txData, error: txError } = await supabase
-        .from('finance_transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('transaction_date', firstDayStr)
-        .lte('transaction_date', lastDayStr);
+      // Fetch transactions for the selected month + budget summary from DB
+      const [txResult, statementsData, budgetData] = await Promise.all([
+        supabase
+          .from('finance_transactions')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('transaction_date', firstDayStr)
+          .lte('transaction_date', lastDayStr),
+        statementService.getStatements(userId),
+        getBudgetSummary(userId, selectedMonth, selectedYear).catch(() => []),
+      ]);
 
-      if (txError) throw txError;
+      if (txResult.error) throw txResult.error;
 
-      // Fetch statements
-      const statementsData = await statementService.getStatements(userId);
-
-      setTransactions(txData || []);
+      setTransactions(txResult.data || []);
       setStatements(statementsData);
+      setDbBudgetSummary(budgetData);
     } catch (error) {
       log.error('Error loading budget data:', error);
     } finally {
@@ -115,23 +136,64 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
     }
   };
 
-  // Calculate category spending for selected month
+  // Handle saving an inline budget edit
+  const handleSaveBudget = async (category: string) => {
+    const amount = parseFloat(editAmount);
+    if (isNaN(amount) || amount < 0) return;
+
+    try {
+      setSavingBudget(true);
+      await upsertBudget(userId, category, amount, selectedMonth, selectedYear);
+      setEditingBudget(null);
+      setEditAmount('');
+      await loadData();
+    } catch (error) {
+      log.error('Error saving budget:', error);
+    } finally {
+      setSavingBudget(false);
+    }
+  };
+
+  const startEditing = (category: string, currentBudget: number) => {
+    setEditingBudget(category);
+    setEditAmount(currentBudget.toString());
+  };
+
+  const cancelEditing = () => {
+    setEditingBudget(null);
+    setEditAmount('');
+  };
+
+  // Calculate category spending for selected month, merging DB budgets with defaults
   const budgetCategories: CategoryBudget[] = useMemo(() => {
+    // Build a map of DB budget data keyed by category
+    const dbMap = new Map<string, BudgetSummaryRow>();
+    dbBudgetSummary.forEach((row) => {
+      dbMap.set(row.category, row);
+    });
+
     return Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-      const spent = transactions
-        .filter(t => t.type === 'expense' && t.category === key)
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+      const dbRow = dbMap.get(key);
+
+      const spent = dbRow
+        ? dbRow.spent
+        : transactions
+            .filter(t => t.type === 'expense' && t.category === key)
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const budget = dbRow ? dbRow.budget_amount : config.defaultBudget;
 
       return {
         category: key,
         icon: config.icon,
         label: config.label,
         spent,
-        budget: config.defaultBudget,
+        budget,
         color: config.color,
+        fromDb: !!dbRow,
       };
     });
-  }, [transactions]);
+  }, [transactions, dbBudgetSummary]);
 
   // Calculate month balance (income - expenses)
   const monthIncome = transactions
@@ -189,7 +251,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             <button
               onClick={goToPreviousMonth}
               className="w-12 h-12 rounded-full hover:bg-ceramic-base flex items-center justify-center transition-colors"
-              aria-label="Mês anterior"
+              aria-label="Mes anterior"
             >
               <ChevronLeft className="w-6 h-6 text-ceramic-text-secondary" />
             </button>
@@ -201,7 +263,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             <button
               onClick={goToNextMonth}
               className="w-12 h-12 rounded-full hover:bg-ceramic-base flex items-center justify-center transition-colors"
-              aria-label="Próximo mês"
+              aria-label="Proximo mes"
             >
               <ChevronRight className="w-6 h-6 text-ceramic-text-secondary" />
             </button>
@@ -248,7 +310,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           <div className="max-w-md mx-auto">
             <div className="h-1 bg-ceramic-cool rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80 transition-all duration-1000 ease-out"
+                className={`h-full bg-gradient-to-r ${getProgressColorClass((totalSpent / totalBudget) * 100)} transition-all duration-1000 ease-out`}
                 style={{ width: `${Math.min((totalSpent / totalBudget) * 100, 100)}%` }}
               />
             </div>
@@ -271,9 +333,10 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-10 md:py-20">
         <div className="space-y-8">
           {budgetCategories.map((cat) => {
-            const percentage = (cat.spent / cat.budget) * 100;
+            const percentage = cat.budget > 0 ? (cat.spent / cat.budget) * 100 : 0;
             const isOverBudget = percentage > 100;
             const isWarning = percentage > 80 && !isOverBudget;
+            const isEditing = editingBudget === cat.category;
 
             return (
               <div
@@ -294,14 +357,60 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                         minimumFractionDigits: 0,
                       }).format(cat.spent)}
                     </p>
-                    <p className="text-sm text-ceramic-text-secondary mt-1">
-                      de{' '}
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                        minimumFractionDigits: 0,
-                      }).format(cat.budget)}
-                    </p>
+
+                    {/* Budget amount — clickable for editing */}
+                    {isEditing ? (
+                      <div className="flex items-center gap-2 mt-1 justify-end">
+                        <span className="text-xs text-ceramic-text-secondary">de R$</span>
+                        <input
+                          type="number"
+                          value={editAmount}
+                          onChange={(e) => setEditAmount(e.target.value)}
+                          className="w-24 text-sm text-right ceramic-inset px-2 py-1 rounded text-ceramic-text-primary focus:outline-none focus:ring-1 focus:ring-ceramic-accent"
+                          min="0"
+                          step="50"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveBudget(cat.category);
+                            if (e.key === 'Escape') cancelEditing();
+                          }}
+                        />
+                        <button
+                          onClick={() => handleSaveBudget(cat.category)}
+                          disabled={savingBudget}
+                          className="p-1 rounded hover:bg-ceramic-success/10 transition-colors"
+                          title="Salvar"
+                        >
+                          <Check className="w-4 h-4 text-ceramic-success" />
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="p-1 rounded hover:bg-ceramic-cool transition-colors"
+                          title="Cancelar"
+                        >
+                          <X className="w-4 h-4 text-ceramic-text-secondary" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => startEditing(cat.category, cat.budget)}
+                        className="group/edit flex items-center gap-1 mt-1 justify-end hover:opacity-80 transition-opacity"
+                        title="Clique para editar orcamento"
+                      >
+                        <p className="text-sm text-ceramic-text-secondary">
+                          de{' '}
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                            minimumFractionDigits: 0,
+                          }).format(cat.budget)}
+                        </p>
+                        <Pencil className="w-3 h-3 text-ceramic-text-secondary opacity-0 group-hover:opacity-50 group-hover/edit:opacity-100 transition-opacity" />
+                        {!cat.fromDb && (
+                          <span className="text-[9px] text-ceramic-text-secondary/50">(padrao)</span>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -309,13 +418,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 <div className="mb-4">
                   <div className="h-3 bg-ceramic-cool rounded-full overflow-hidden">
                     <div
-                      className={`h-full transition-all duration-500 ease-out ${
-                        isOverBudget
-                          ? 'bg-gradient-to-r from-ceramic-error to-ceramic-error/80'
-                          : isWarning
-                          ? 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80'
-                          : 'bg-gradient-to-r from-ceramic-warning to-ceramic-warning/80'
-                      }`}
+                      className={`h-full transition-all duration-500 ease-out bg-gradient-to-r ${getProgressColorClass(percentage)}`}
                       style={{ width: `${Math.min(percentage, 100)}%` }}
                     />
                   </div>
@@ -324,13 +427,13 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 {/* Alerts */}
                 {isOverBudget && (
                   <div className="flex items-start gap-3 p-4 bg-ceramic-error/10 rounded-2xl border border-ceramic-error/20">
-                    <span className="text-xl">⚠️</span>
+                    <span className="text-xl">{'\u26A0\uFE0F'}</span>
                     <div>
                       <p className="text-sm font-medium text-ceramic-error">
-                        Você ultrapassou o orçamento desta categoria
+                        Voce ultrapassou o orcamento desta categoria
                       </p>
                       <p className="text-xs text-ceramic-error mt-1">
-                        {percentage.toFixed(0)}% do orçamento usado
+                        {percentage.toFixed(0)}% do orcamento usado
                       </p>
                     </div>
                   </div>
@@ -338,11 +441,21 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
 
                 {isWarning && !isOverBudget && (
                   <div className="flex items-start gap-3 p-4 bg-ceramic-warning/10 rounded-2xl border border-ceramic-warning/20">
-                    <span className="text-xl">💡</span>
+                    <span className="text-xl">{'\uD83D\uDCA1'}</span>
                     <p className="text-sm text-ceramic-warning">
-                      Você já gastou {percentage.toFixed(0)}% do orçamento desta categoria
+                      Voce ja gastou {percentage.toFixed(0)}% do orcamento desta categoria
                     </p>
                   </div>
+                )}
+
+                {/* "Definir orcamento" for categories with spending but no DB budget */}
+                {!cat.fromDb && cat.spent > 0 && !isEditing && (
+                  <button
+                    onClick={() => startEditing(cat.category, cat.budget)}
+                    className="mt-3 text-xs text-ceramic-accent hover:text-amber-600 transition-colors font-medium"
+                  >
+                    Definir orcamento personalizado
+                  </button>
                 )}
 
                 {/* Transactions List - Expandable */}
@@ -358,7 +471,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                         <ChevronDown className="w-4 h-4" />
                       )}
                       <span>
-                        {expandedCategory === cat.category ? 'Ocultar' : 'Ver'} lançamentos (
+                        {expandedCategory === cat.category ? 'Ocultar' : 'Ver'} lancamentos (
                         {transactions.filter(t => t.type === 'expense' && t.category === cat.category).length})
                       </span>
                     </button>
@@ -414,7 +527,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       {/* Debug Panel - only in development */}
       {import.meta.env.DEV && <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="ceramic-card p-8">
-          <h2 className="text-xl font-bold text-ceramic-text-primary mb-4">🔍 Auditoria de Saldo - {monthName}</h2>
+          <h2 className="text-xl font-bold text-ceramic-text-primary mb-4">Auditoria de Saldo - {monthName}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* Receitas */}
@@ -427,7 +540,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 }).format(monthIncome)}
               </p>
               <p className="text-xs text-ceramic-text-secondary mt-1">
-                {transactions.filter(t => t.type === 'income').length} lançamento(s)
+                {transactions.filter(t => t.type === 'income').length} lancamento(s)
               </p>
             </div>
 
@@ -441,7 +554,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                 }).format(monthExpenses)}
               </p>
               <p className="text-xs text-ceramic-text-secondary mt-1">
-                {transactions.filter(t => t.type === 'expense').length} lançamento(s)
+                {transactions.filter(t => t.type === 'expense').length} lancamento(s)
               </p>
             </div>
 
@@ -460,9 +573,9 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             </div>
           </div>
 
-          {/* Fórmula Visual */}
+          {/* Formula Visual */}
           <div className="ceramic-tray p-4">
-            <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-3">Cálculo:</p>
+            <p className="text-xs uppercase tracking-wider text-ceramic-text-secondary mb-3">Calculo:</p>
             <div className="flex items-center gap-3 text-sm font-mono">
               <span className="text-ceramic-success font-bold">
                 R$ {monthIncome.toFixed(2)}
@@ -518,10 +631,10 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
               {Math.abs(monthExpenses - budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)) > 0.01 && (
                 <div className="mt-3 p-3 bg-ceramic-error/10 rounded-lg border border-ceramic-error/20">
                   <p className="text-xs text-ceramic-error font-medium">
-                    ⚠️ Discrepância: Total de despesas não bate com soma das categorias!
+                    Discrepancia: Total de despesas nao bate com soma das categorias!
                   </p>
                   <p className="text-xs text-ceramic-error mt-1">
-                    Diferença: R$ {Math.abs(monthExpenses - budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)).toFixed(2)}
+                    Diferenca: R$ {Math.abs(monthExpenses - budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)).toFixed(2)}
                   </p>
                 </div>
               )}
@@ -533,7 +646,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       {/* Income Transactions Section */}
       {monthIncome > 0 && (
         <div className="max-w-4xl mx-auto px-6 py-10">
-          <h2 className="text-2xl font-medium text-ceramic-text-primary mb-6">Receitas do Mês</h2>
+          <h2 className="text-2xl font-medium text-ceramic-text-primary mb-6">Receitas do Mes</h2>
           <div className="ceramic-card p-8">
             <div className="space-y-2">
               {transactions
@@ -578,11 +691,11 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
         </div>
       )}
 
-      {/* Insights Section — only show when there are transactions */}
+      {/* Insights Section -- only show when there are transactions */}
       {transactions.length > 0 && (
         <div className="max-w-4xl mx-auto px-6 pb-20">
           <div className="space-y-6">
-            <h2 className="text-2xl font-medium text-ceramic-text-primary mb-8">Insights do Mês</h2>
+            <h2 className="text-2xl font-medium text-ceramic-text-primary mb-8">Insights do Mes</h2>
 
             {/* Top category insight */}
             {(() => {
@@ -600,7 +713,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                       <p className="text-ceramic-text-secondary leading-relaxed">
                         <span className="font-medium text-ceramic-text-primary">{topCategory.label}</span> representa{' '}
                         <span className="font-medium text-ceramic-text-primary">{pct}%</span> das suas despesas
-                        este mês, totalizando{' '}
+                        este mes, totalizando{' '}
                         <span className="font-medium text-ceramic-text-primary">
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(topCategory.spent)}
                         </span>.
@@ -615,17 +728,17 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             {budgetCategories.some(c => c.spent > c.budget) && (
               <div className="bg-gradient-to-br from-ceramic-error/10 to-transparent p-8 rounded-3xl border border-ceramic-error/20">
                 <div className="flex gap-6">
-                  <div className="text-5xl">⚠️</div>
+                  <div className="text-5xl">{'\u26A0\uFE0F'}</div>
                   <div>
-                    <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Orçamento Excedido</h4>
+                    <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Orcamento Excedido</h4>
                     <p className="text-ceramic-text-secondary leading-relaxed">
                       {budgetCategories
                         .filter(c => c.spent > c.budget)
                         .map(c => c.label)
                         .join(', ')}{' '}
                       {budgetCategories.filter(c => c.spent > c.budget).length === 1
-                        ? 'ultrapassou o orçamento definido'
-                        : 'ultrapassaram os orçamentos definidos'}.
+                        ? 'ultrapassou o orcamento definido'
+                        : 'ultrapassaram os orcamentos definidos'}.
                       Considere revisar seus gastos nestas categorias.
                     </p>
                   </div>
@@ -637,7 +750,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             {monthBalance > 0 && (
               <div className="bg-gradient-to-br from-ceramic-success/10 to-transparent p-8 rounded-3xl border border-ceramic-success/20">
                 <div className="flex gap-6">
-                  <div className="text-5xl">📊</div>
+                  <div className="text-5xl">{'\uD83D\uDCCA'}</div>
                   <div>
                     <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Saldo Positivo</h4>
                     <p className="text-ceramic-text-secondary leading-relaxed">
@@ -645,7 +758,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
                       <span className="font-medium text-ceramic-success">
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthBalance)}
                       </span>{' '}
-                      este mês. Continue assim!
+                      este mes. Continue assim!
                     </p>
                   </div>
                 </div>

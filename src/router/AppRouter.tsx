@@ -41,8 +41,6 @@ const ContentCalendarPage = lazy(() => import('../modules/studio/views/ContentCa
 const StudioAnalyticsPage = lazy(() => import('../modules/studio/views/StudioAnalyticsPage'));
 // Finance Module - Heavy with charts and data processing
 const FinanceDashboard = lazy(() => import('../modules/finance/views/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
-const FinanceAgentView = lazy(() => import('../modules/finance/views/FinanceAgentView').then(m => ({ default: m.FinanceAgentView })));
-
 // Grants Module - Document processing intensive
 const GrantsModuleView = lazy(() => import('../modules/grants/views/GrantsModuleView').then(m => ({ default: m.GrantsModuleView })));
 const PresentationDemo = lazy(() => import('../modules/grants/components/presentation/PresentationDemo').then(m => ({ default: m.PresentationDemo })));
@@ -469,18 +467,7 @@ export function AppRouter() {
       userId ? (
          <FinanceDashboard
             userId={userId}
-            onNavigateToAgent={() => setCurrentView('finance_agent')}
             onBack={() => setCurrentView('vida')}
-         />
-      ) : null
-   );
-
-   // ==================== FINANCE AGENT VIEW ====================
-   const renderFinanceAgent = () => (
-      userId ? (
-         <FinanceAgentView
-            userId={userId}
-            onBack={() => setCurrentView('finance')}
          />
       ) : null
    );
@@ -501,7 +488,7 @@ export function AppRouter() {
 
       // Define focused modes where global nav should be hidden (Contextual Descent)
       const focusedModes: ViewState[] = [
-         'association_detail', 'finance', 'finance_agent', 'grants', 'ai-cost', 'file-search-analytics',
+         'association_detail', 'finance', 'grants', 'ai-cost', 'file-search-analytics',
          'studio',
          // Life Area Modules
          'health', 'education', 'legal', 'professional'
@@ -528,7 +515,6 @@ export function AppRouter() {
             {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>{renderStudio()}</ErrorBoundary></motion.div>}
             {currentView === 'association_detail' && <motion.div key="association_detail" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderAssociationDetail()}</motion.div>}
             {currentView === 'finance' && <motion.div key="finance" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Finance" />}>{renderFinance()}</ErrorBoundary></motion.div>}
-            {currentView === 'finance_agent' && <motion.div key="finance_agent" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Finance" />}>{renderFinanceAgent()}</ErrorBoundary></motion.div>}
             {currentView === 'journey' && <motion.div key="journey" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Journey" />}>{renderJourney()}</ErrorBoundary></motion.div>}
             {currentView === 'grants' && (
                <motion.div key="grants" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">

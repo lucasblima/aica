@@ -24,7 +24,6 @@ export { getMonthlyDigest, clearDigestCache } from './services/financeDigestServ
 // =====================================================
 export { FinanceCard } from './components/FinanceCard';
 export { StatementUpload } from './components/StatementUpload';
-export { AgentChat } from './components/FinanceAgent/AgentChat';
 export { ExpenseChart } from './components/Charts/ExpenseChart';
 export { IncomeVsExpense } from './components/Charts/IncomeVsExpense';
 export { MonthlyDigestCard } from './components/MonthlyDigestCard';
@@ -33,11 +32,9 @@ export { MonthlyDigestCard } from './components/MonthlyDigestCard';
 // Views
 // =====================================================
 export { FinanceDashboard } from './views/FinanceDashboard';
-export { FinanceAgentView } from './views/FinanceAgentView';
 
 // =====================================================
 // Hooks
 // =====================================================
 export { useFinanceStatements } from './hooks/useFinanceStatements';
-export { useFinanceAgent } from './hooks/useFinanceAgent';
 export { useTransactions } from './hooks/useTransactions';
