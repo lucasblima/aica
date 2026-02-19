@@ -11,6 +11,7 @@ export interface ChatSession {
   id: string
   user_id: string
   title: string | null
+  module: string | null
   is_archived: boolean
   created_at: string
   updated_at: string
@@ -58,11 +59,36 @@ export const chatService = {
       .from('chat_sessions')
       .select('*')
       .eq('is_archived', false)
+      .is('module', null)
       .order('updated_at', { ascending: false })
       .limit(limit)
 
     if (error) throw error
     return data || []
+  },
+
+  async getModuleSessions(module: string, limit = 20): Promise<ChatSession[]> {
+    const { data, error } = await supabase
+      .from('chat_sessions')
+      .select('*')
+      .eq('is_archived', false)
+      .eq('module', module)
+      .order('updated_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  },
+
+  async createModuleSession(userId: string, module: string, title?: string): Promise<ChatSession> {
+    const { data, error } = await supabase
+      .from('chat_sessions')
+      .insert({ user_id: userId, title: title || null, module })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
   },
 
   async getSessionMessages(sessionId: string, limit = 50): Promise<ChatMessage[]> {

@@ -1,15 +1,15 @@
 /**
  * ModuleAgentChat — Reusable AI Agent Chat for any AICA module
  *
- * Uses the centralized useAgentChat hook which routes through
- * gemini-chat Edge Function via GeminiClient.
+ * Now uses useModuleChatSession for persistent chat history
+ * stored in chat_sessions/chat_messages (Supabase).
  *
  * Each module configures its own display name, icon, and suggested prompts.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Loader2, X } from 'lucide-react';
-import { useAgentChat } from '@/hooks/useAgentChat';
+import { Send, Sparkles, Loader2, X, Clock, Plus, ChevronLeft, Trash2 } from 'lucide-react';
+import { useModuleChatSession } from '@/hooks/useModuleChatSession';
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown';
 import type { AgentModule } from '@/lib/agents';
 
@@ -49,6 +49,22 @@ export interface ModuleAgentChatProps {
 }
 
 // =====================================================
+// Helper: relative date formatter
+// =====================================================
+
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Ontem';
+  if (diffDays < 7) return `${diffDays} dias atras`;
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+}
+
+// =====================================================
 // Component
 // =====================================================
 
@@ -66,16 +82,24 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
   onClose,
 }) => {
   const {
-    sendMessage: sendAgentMessage,
-    isLoading,
+    session,
+    sessions,
     messages,
-    clearMessages,
-  } = useAgentChat(module);
+    isLoading,
+    error,
+    sendMessage,
+    createNewSession,
+    switchSession,
+    archiveSession,
+    showSessions,
+    setShowSessions,
+  } = useModuleChatSession(module);
 
   const [input, setInput] = useState('');
-  const [showWelcome, setShowWelcome] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isNewConversation = messages.length === 0;
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -89,18 +113,11 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
     }
   }, [isOpen]);
 
-  // Hide welcome after first message
-  useEffect(() => {
-    if (messages.length > 0) {
-      setShowWelcome(false);
-    }
-  }, [messages.length]);
-
   const handleSend = async (content: string) => {
     if (!content.trim() || isLoading) return;
     setInput('');
     try {
-      await sendAgentMessage(content.trim(), undefined, moduleData);
+      await sendMessage(content.trim(), moduleData);
     } catch {
       // Error is handled by the hook
     }
@@ -118,8 +135,7 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
   };
 
   const handleNewSession = () => {
-    clearMessages();
-    setShowWelcome(true);
+    createNewSession();
   };
 
   if (!isOpen) return null;
@@ -133,26 +149,47 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
         <div className="flex-shrink-0 px-4 py-3 border-b border-ceramic-border bg-ceramic-base/80 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-full ${accentBg}/10 flex items-center justify-center`}>
-                {icon || <Sparkles className={`w-5 h-5 ${accentColor}`} />}
-              </div>
+              {showSessions ? (
+                <button
+                  onClick={() => setShowSessions(false)}
+                  className="p-1.5 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors rounded-lg hover:bg-ceramic-cool"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              ) : (
+                <div className={`w-9 h-9 rounded-full ${accentBg}/10 flex items-center justify-center`}>
+                  {icon || <Sparkles className={`w-5 h-5 ${accentColor}`} />}
+                </div>
+              )}
               <div>
                 <h3 className="text-sm font-semibold text-ceramic-text-primary">
-                  Agente {displayName}
+                  {showSessions ? 'Historico' : `Agente ${displayName}`}
                 </h3>
-                <p className="text-xs text-ceramic-text-secondary">Assistente IA</p>
+                <p className="text-xs text-ceramic-text-secondary">
+                  {showSessions
+                    ? `${sessions.length} conversa${sessions.length !== 1 ? 's' : ''}`
+                    : 'Assistente IA'
+                  }
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1">
-              {messages.length > 0 && (
+              {!showSessions && sessions.length > 0 && (
+                <button
+                  onClick={() => setShowSessions(true)}
+                  className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors rounded-lg hover:bg-ceramic-cool"
+                  title="Historico de conversas"
+                >
+                  <Clock className="w-4 h-4" />
+                </button>
+              )}
+              {!showSessions && (
                 <button
                   onClick={handleNewSession}
                   className="p-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors rounded-lg hover:bg-ceramic-cool"
                   title="Nova conversa"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <Plus className="w-4 h-4" />
                 </button>
               )}
               <button
@@ -165,117 +202,191 @@ export const ModuleAgentChat: React.FC<ModuleAgentChatProps> = ({
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {/* Welcome message */}
-          {showWelcome && messages.length === 0 && (
-            <div className="flex justify-start">
-              <div className="max-w-[85%] p-3 ceramic-card rounded-2xl rounded-bl-md">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className={`w-3.5 h-3.5 ${accentColor}`} />
-                  <span className={`text-xs font-medium ${accentColor}`}>
-                    {displayName}
-                  </span>
-                </div>
-                <div
-                  className="text-sm leading-relaxed text-ceramic-text-primary"
-                  dangerouslySetInnerHTML={{
-                    __html: formatMarkdownToHTML(welcomeMessage || defaultWelcome),
-                  }}
-                />
+        {/* Session History Sidebar */}
+        {showSessions ? (
+          <div className="flex-1 overflow-y-auto">
+            {sessions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-ceramic-text-secondary px-6">
+                <Clock className="w-8 h-8 mb-2 opacity-40" />
+                <p className="text-sm">Nenhuma conversa salva</p>
               </div>
-            </div>
-          )}
-
-          {/* Chat messages */}
-          {messages.map((message, index) => (
-            <div
-              key={`${message.timestamp}-${index}`}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`
-                  max-w-[85%] p-3 rounded-2xl
-                  ${message.role === 'user'
-                    ? `${accentBg} text-white rounded-br-md`
-                    : 'ceramic-card rounded-bl-md'
-                  }
-                `}
-              >
-                {message.role === 'assistant' && (
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Sparkles className={`w-3.5 h-3.5 ${accentColor}`} />
-                    <span className={`text-xs font-medium ${accentColor}`}>
-                      {displayName}
-                    </span>
+            ) : (
+              <div className="py-2">
+                {sessions.map((s) => (
+                  <div
+                    key={s.id}
+                    className={`group flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-ceramic-cool transition-colors ${
+                      session?.id === s.id ? 'bg-ceramic-cool' : ''
+                    }`}
+                    onClick={() => switchSession(s.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ceramic-text-primary truncate">
+                        {s.title || 'Conversa sem titulo'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-ceramic-text-secondary">
+                          {formatRelativeDate(s.updated_at)}
+                        </span>
+                        {s.message_count != null && s.message_count > 0 && (
+                          <span className="text-xs text-ceramic-text-secondary">
+                            · {s.message_count} msg
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        archiveSession(s.id);
+                      }}
+                      className="p-1.5 text-ceramic-text-secondary hover:text-ceramic-error opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-ceramic-cool"
+                      title="Arquivar conversa"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                )}
-                <div
-                  className={`text-sm leading-relaxed ${
-                    message.role === 'user' ? 'text-white' : 'text-ceramic-text-primary'
-                  }`}
-                  dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(message.content) }}
-                />
+                ))}
               </div>
+            )}
+            {/* New conversation button at bottom of sidebar */}
+            <div className="px-4 py-3 border-t border-ceramic-border">
+              <button
+                onClick={() => {
+                  handleNewSession();
+                  setShowSessions(false);
+                }}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 ${accentBg} text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity`}
+              >
+                <Plus className="w-4 h-4" />
+                Nova conversa
+              </button>
             </div>
-          ))}
+          </div>
+        ) : (
+          <>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* Welcome message */}
+              {isNewConversation && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] p-3 ceramic-card rounded-2xl rounded-bl-md">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className={`w-3.5 h-3.5 ${accentColor}`} />
+                      <span className={`text-xs font-medium ${accentColor}`}>
+                        {displayName}
+                      </span>
+                    </div>
+                    <div
+                      className="text-sm leading-relaxed text-ceramic-text-primary"
+                      dangerouslySetInnerHTML={{
+                        __html: formatMarkdownToHTML(welcomeMessage || defaultWelcome),
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="ceramic-card p-3 rounded-2xl rounded-bl-md">
-                <div className="flex items-center gap-2">
-                  <Loader2 className={`w-4 h-4 ${accentColor} animate-spin`} />
-                  <span className="text-sm text-ceramic-text-secondary">Pensando...</span>
+              {/* Chat messages */}
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`
+                      max-w-[85%] p-3 rounded-2xl
+                      ${message.role === 'user'
+                        ? `${accentBg} text-white rounded-br-md`
+                        : 'ceramic-card rounded-bl-md'
+                      }
+                    `}
+                  >
+                    {message.role === 'assistant' && (
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Sparkles className={`w-3.5 h-3.5 ${accentColor}`} />
+                        <span className={`text-xs font-medium ${accentColor}`}>
+                          {displayName}
+                        </span>
+                      </div>
+                    )}
+                    <div
+                      className={`text-sm leading-relaxed ${
+                        message.role === 'user' ? 'text-white' : 'text-ceramic-text-primary'
+                      }`}
+                      dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(message.content) }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="ceramic-card p-3 rounded-2xl rounded-bl-md">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className={`w-4 h-4 ${accentColor} animate-spin`} />
+                      <span className="text-sm text-ceramic-text-secondary">Pensando...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error message */}
+              {error && (
+                <div className="flex justify-center">
+                  <p className="text-xs text-ceramic-error bg-ceramic-error/10 px-3 py-1.5 rounded-full">
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Suggested prompts — show only for new conversations */}
+            {isNewConversation && suggestedPrompts.length > 0 && (
+              <div className="px-4 pb-2">
+                <div className="flex flex-wrap gap-2">
+                  {suggestedPrompts.map((sp, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestedPrompt(sp.prompt)}
+                      disabled={isLoading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 ceramic-card text-xs font-medium text-ceramic-text-primary hover:scale-[1.02] transition-transform disabled:opacity-50"
+                    >
+                      {sp.icon}
+                      {sp.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Suggested prompts — show only before first user message */}
-        {showWelcome && messages.length === 0 && suggestedPrompts.length > 0 && (
-          <div className="px-4 pb-2">
-            <div className="flex flex-wrap gap-2">
-              {suggestedPrompts.map((sp, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSuggestedPrompt(sp.prompt)}
+            {/* Input */}
+            <div className="flex-shrink-0 p-3 border-t border-ceramic-border">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={placeholder || `Pergunte ao ${displayName}...`}
                   disabled={isLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 ceramic-card text-xs font-medium text-ceramic-text-primary hover:scale-[1.02] transition-transform disabled:opacity-50"
+                  className="flex-1 px-3 py-2.5 ceramic-inset rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:opacity-50"
+                />
+                <button
+                  onClick={() => handleSend(input)}
+                  disabled={!input.trim() || isLoading}
+                  className={`p-2.5 ${accentBg} text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {sp.icon}
-                  {sp.label}
+                  <Send className="w-4 h-4" />
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
-
-        {/* Input */}
-        <div className="flex-shrink-0 p-3 border-t border-ceramic-border">
-          <div className="flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={placeholder || `Pergunte ao ${displayName}...`}
-              disabled={isLoading}
-              className="flex-1 px-3 py-2.5 ceramic-inset rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:opacity-50"
-            />
-            <button
-              onClick={() => handleSend(input)}
-              disabled={!input.trim() || isLoading}
-              className={`p-2.5 ${accentBg} text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
