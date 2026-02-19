@@ -3,6 +3,37 @@
 -- in-app notifications when new alerts are inserted in the alerts table.
 
 -- ============================================================================
+-- 0. ENSURE notification_templates TABLE EXISTS
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS notification_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_key TEXT NOT NULL UNIQUE,
+  template_name TEXT NOT NULL,
+  template_description TEXT,
+  message_template TEXT NOT NULL,
+  required_variables TEXT[],
+  sample_variables JSONB,
+  notification_type TEXT NOT NULL,
+  default_priority INTEGER DEFAULT 5,
+  is_system BOOLEAN DEFAULT false,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE notification_templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "System templates visible to all" ON notification_templates
+  FOR SELECT USING (is_system = true)
+  ;
+
+CREATE POLICY "Users manage own templates" ON notification_templates
+  FOR ALL USING (auth.uid() = user_id)
+  ;
+
+-- ============================================================================
 -- 1. INSERT FLUX NOTIFICATION TEMPLATES
 -- ============================================================================
 
