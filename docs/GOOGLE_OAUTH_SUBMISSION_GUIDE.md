@@ -43,35 +43,35 @@
 
 ---
 
-### Escopo 2: `https://www.googleapis.com/auth/gmail.readonly`
+### Escopo 2: `https://www.googleapis.com/auth/gmail.modify`
 
 **Classificacao:** Sensitive
 
 **Justificativa (EN — para o formulario Google):**
 
-> AICA uses `gmail.readonly` to display a read-only overview of the user's email inbox within the Google Hub module. This allows users to quickly check their emails without switching applications, keeping them focused in their productivity workflow. AICA accesses only email metadata (subject, sender, date, labels, read status) and a short text snippet — it does NOT access full email bodies, attachments, or send emails on behalf of the user.
+> AICA uses `gmail.modify` to provide inbox management within the Google Hub module. Users can view their email inbox, and organize messages by archiving, trashing, and toggling read/unread status — all without leaving the platform. AICA accesses email metadata (subject, sender, date, labels, read status) and a short text snippet. It does NOT send emails on behalf of the user or access full email bodies or attachments.
 >
-> Email metadata is cached temporarily (7-day retention with automatic cleanup) in a PostgreSQL database with Row Level Security. The Gmail integration requires separate incremental consent — it is not requested during initial login. Users can disconnect Gmail independently without affecting Calendar or Drive access.
+> The `gmail.modify` scope is the narrowest scope that supports both reading and organizing messages. `gmail.readonly` would not allow users to archive, trash, or change label/read status. Email metadata is cached temporarily (7-day retention with automatic cleanup) in a PostgreSQL database with Row Level Security. The Gmail integration requires separate incremental consent — it is not requested during initial login. Users can disconnect Gmail independently without affecting Calendar or Drive access.
 
 **Justificativa (PT — referencia):**
 
-> A AICA usa `gmail.readonly` para exibir uma visao somente-leitura da caixa de entrada no modulo Google Hub. Acessa apenas metadados (assunto, remetente, data, labels). NAO acessa conteudo completo, anexos ou envia emails. Cache temporario de 7 dias com limpeza automatica. Consentimento incremental separado, desconectavel independentemente.
+> A AICA usa `gmail.modify` para gerenciamento da caixa de entrada no modulo Google Hub. Usuarios visualizam emails e organizam mensagens (arquivar, lixeira, marcar lido/nao-lido) sem sair da plataforma. Acessa metadados (assunto, remetente, data, labels). NAO envia emails ou acessa conteudo completo/anexos. `gmail.modify` e o escopo mais restrito que permite leitura + organizacao. Cache temporario de 7 dias. Consentimento incremental separado, desconectavel independentemente.
 
 ---
 
-### Escopo 3: `https://www.googleapis.com/auth/drive.readonly`
+### Escopo 3: `https://www.googleapis.com/auth/drive`
 
 **Classificacao:** Sensitive
 
 **Justificativa (EN — para o formulario Google):**
 
-> AICA uses `drive.readonly` to display a read-only file browser within the Google Hub module. This allows users to search and browse their Google Drive files without leaving the platform. AICA accesses file metadata (names, types, sizes, modification dates) and can extract text content from Google Workspace documents (Docs, Sheets, Slides) for quick reference, limited to 100KB per file. AICA does NOT create, modify, move, or delete any files.
+> AICA uses `drive` to provide file management within the Google Hub module. Users can browse and search their Google Drive files, and organize them by renaming, moving to folders, creating folders, and trashing files — all without leaving the platform. AICA accesses file metadata (names, types, sizes, modification dates) and can extract text content from Google Workspace documents (Docs, Sheets, Slides) for quick reference, limited to 100KB per file. AICA does NOT permanently delete files — trashed files can be recovered from Drive's trash.
 >
-> File metadata is cached temporarily (7-day retention with automatic cleanup) in a PostgreSQL database with Row Level Security. The Drive integration requires separate incremental consent — it is not requested during initial login. Users can disconnect Drive independently without affecting Calendar or Gmail access.
+> The `drive` scope is needed because `drive.readonly` does not allow organizational actions (rename, move, trash, create folder). File metadata is cached temporarily (7-day retention with automatic cleanup) in a PostgreSQL database with Row Level Security. The Drive integration requires separate incremental consent — it is not requested during initial login. Users can disconnect Drive independently without affecting Calendar or Gmail access.
 
 **Justificativa (PT — referencia):**
 
-> A AICA usa `drive.readonly` para exibir um navegador de arquivos somente-leitura no Google Hub. Acessa metadados de arquivos e conteudo textual de documentos Workspace (limitado a 100KB). NAO cria, modifica, move ou exclui arquivos. Cache temporario de 7 dias. Consentimento incremental separado, desconectavel independentemente.
+> A AICA usa `drive` para gerenciamento de arquivos no Google Hub. Usuarios navegam, buscam e organizam arquivos (renomear, mover, criar pastas, enviar para lixeira) sem sair da plataforma. Acessa metadados e conteudo textual de documentos Workspace (limitado a 100KB). NAO exclui arquivos permanentemente. `drive` e necessario porque `drive.readonly` nao permite acoes organizacionais. Cache temporario de 7 dias. Consentimento incremental separado, desconectavel independentemente.
 
 ---
 
@@ -89,11 +89,11 @@
 
 **EN (para o formulario):**
 
-> AICA (Life OS) is a personal life management platform that helps Brazilian users organize their tasks, calendar, finances, personal growth, and professional projects in one place. AICA integrates with Google services to enhance productivity: Google Calendar for bidirectional event sync with task management, Gmail for inbox overview without app-switching, and Google Drive for file browsing and search. Each integration uses the minimum necessary scope and requires separate user consent. Users can connect and disconnect each service independently through the Google Hub module.
+> AICA (Life OS) is a personal life management platform that helps Brazilian users organize their tasks, calendar, finances, personal growth, and professional projects in one place. AICA integrates with Google services to enhance productivity: Google Calendar for bidirectional event sync with task management, Gmail for inbox management (view, archive, trash, mark read/unread) without app-switching, and Google Drive for file management (browse, rename, move, create folders, trash) without leaving the platform. Each integration uses the minimum necessary scope and requires separate user consent. Users can connect and disconnect each service independently through the Google Hub module.
 
 **PT (referencia):**
 
-> AICA (Life OS) e uma plataforma de gestao de vida pessoal para brasileiros. Integra com servicos Google: Calendar para sincronizacao bidirecional de eventos, Gmail para visao da caixa de entrada, e Drive para navegacao de arquivos. Cada integracao usa escopo minimo e requer consentimento separado. Usuarios conectam e desconectam cada servico independentemente.
+> AICA (Life OS) e uma plataforma de gestao de vida pessoal para brasileiros. Integra com servicos Google: Calendar para sincronizacao bidirecional de eventos, Gmail para gerenciamento da caixa de entrada (visualizar, arquivar, lixeira, marcar lido/nao-lido), e Drive para gerenciamento de arquivos (navegar, renomear, mover, criar pastas, lixeira). Cada integracao usa escopo minimo e requer consentimento separado. Usuarios conectam e desconectam cada servico independentemente.
 
 ---
 
@@ -104,11 +104,11 @@ Esta secao responde diretamente a pergunta do formulario Google.
 ### calendar.events
 **Used for:** Bidirectional synchronization between AICA's task management system and the user's Google Calendar. AICA reads calendar events to display them in the Agenda module alongside tasks. AICA writes calendar events when the user creates scheduled tasks or workout sessions, so these appear on their Google Calendar. Events created by AICA are tagged with extended properties to prevent duplication during sync.
 
-### gmail.readonly
-**Used for:** Displaying a read-only email inbox overview in AICA's Google Hub module. Users can see their recent emails (subject, sender, date) and search their inbox without switching to Gmail. No email content is modified, sent, or deleted. Only metadata and short snippets are accessed.
+### gmail.modify
+**Used for:** Inbox management in AICA's Google Hub module. Users can see their recent emails (subject, sender, date), search their inbox, and organize messages by archiving, trashing, and toggling read/unread status — without switching to Gmail. AICA never sends emails on behalf of the user. Only metadata and short snippets are read; full email bodies and attachments are not accessed.
 
-### drive.readonly
-**Used for:** Displaying a read-only file browser in AICA's Google Hub module. Users can browse and search their Google Drive files without leaving the platform. For Google Workspace documents, AICA can extract text content (up to 100KB) for quick reference. No files are created, modified, or deleted.
+### drive
+**Used for:** File management in AICA's Google Hub module. Users can browse and search their Google Drive files, and organize them by renaming, moving to folders, creating new folders, and trashing files — without leaving the platform. For Google Workspace documents, AICA can extract text content (up to 100KB) for quick reference. Trashed files can be recovered from Drive's trash; AICA never permanently deletes files.
 
 ### userinfo.email
 **Used for:** Identifying the connected Google account. The email is shown in the app's settings and Google Hub so users know which account is linked.
@@ -184,20 +184,20 @@ A conta ja contem dados reais:
 - Navegar ate o Google Hub (/google-hub)
 - Mostrar que Gmail esta "Nao conectado"
 - Clicar em "Conectar Gmail"
-- **IMPORTANTE**: Pausar na consent screen para mostrar gmail.readonly
+- **IMPORTANTE**: Pausar na consent screen para mostrar gmail.modify
 - Aceitar o consentimento
 - Mostrar emails aparecendo na secao Gmail
 - Demonstrar busca de emails
-- "Gmail is read-only — AICA never sends, modifies, or deletes emails"
+- "AICA lets users organize their inbox — archive, trash, mark read/unread — but never sends emails"
 
 **[3:30 - 4:30] Drive — Consentimento Incremental**
 - No Google Hub, mostrar que Drive esta "Nao conectado"
 - Clicar em "Conectar Drive"
-- **IMPORTANTE**: Pausar na consent screen para mostrar drive.readonly
+- **IMPORTANTE**: Pausar na consent screen para mostrar drive
 - Aceitar o consentimento
 - Mostrar arquivos aparecendo na secao Drive
-- Demonstrar busca de arquivos
-- "Drive is read-only — AICA never creates, modifies, or deletes files"
+- Demonstrar busca de arquivos e acoes organizacionais (renomear, mover, criar pasta)
+- "AICA lets users organize their Drive — rename, move, create folders, trash — but never permanently deletes files"
 
 **[4:30 - 5:30] Privacidade + Revogacao**
 - Mostrar a Privacy Policy (https://aica.guru/privacy)
@@ -238,8 +238,8 @@ Terms of Service: https://aica.guru/terms
 
 Scopes requested:
 - calendar.events (bidirectional calendar sync with task management)
-- gmail.readonly (read-only inbox overview)
-- drive.readonly (read-only file browsing)
+- gmail.modify (inbox management — read, archive, trash, mark read/unread)
+- drive (file management — browse, rename, move, create folders, trash)
 - userinfo.email (user identification)
 
 AICA uses incremental consent: Calendar scope is requested at login,
@@ -261,7 +261,7 @@ Visibility: UNLISTED
 - [ ] Dominio verificado no Google Search Console (DNS TXT record)
 
 ### Codigo
-- [x] Escopos OAuth corretos (calendar.events + gmail.readonly + drive.readonly + userinfo.email)
+- [x] Escopos OAuth corretos (calendar.events + gmail.modify + drive + userinfo.email)
 - [x] Consentimento incremental implementado (Gmail/Drive separados do Calendar)
 - [x] Tratamento de erros OAuth implementado
 - [x] Disconnect por escopo implementado
@@ -274,8 +274,8 @@ Visibility: UNLISTED
 
 ### Privacy Policy
 - [x] Secao 5: Google Calendar API (calendar.events)
-- [x] Secao 6: Gmail API (gmail.readonly)
-- [x] Secao 7: Google Drive API (drive.readonly)
+- [x] Secao 6: Gmail API (gmail.modify)
+- [x] Secao 7: Google Drive API (drive)
 - [x] Secao 8: Conformidade Google (Limited Use)
 - [x] Link para Google API Services User Data Policy
 - [x] Data de atualizacao (17/02/2026)
@@ -289,7 +289,7 @@ Visibility: UNLISTED
 - [ ] Terms of Service URL: https://aica.guru/terms
 - [ ] Support email: contato@aica.guru
 - [ ] Authorized domains: aica.guru
-- [ ] Scopes: calendar.events, gmail.readonly, drive.readonly, userinfo.email
+- [ ] Scopes: calendar.events, gmail.modify, drive, userinfo.email
 
 ### Email
 - [x] Codigo unificado com contato@aica.guru
@@ -318,7 +318,7 @@ Visibility: UNLISTED
 2. Selecionar projeto `gen-lang-client-0948335762`
 3. Ir para "OAuth consent screen"
 4. Verificar todos os campos (secao 1 deste doc)
-5. Ir para "Scopes" → verificar que calendar.events, gmail.readonly, drive.readonly e userinfo.email estao listados
+5. Ir para "Scopes" → verificar que calendar.events, gmail.modify, drive e userinfo.email estao listados
 6. Clicar em "Prepare for verification"
 7. Preencher:
    - Scope justifications (secao 2 deste doc)
@@ -342,20 +342,20 @@ Visibility: UNLISTED
 
 > AICA needs calendar.events for bidirectional synchronization. When users create tasks with deadlines or schedule workout sessions in AICA, these are automatically synced to their Google Calendar so they see everything in one place. Events created by AICA are tagged with extended properties to prevent duplication. Users can also view their Google Calendar events within AICA's Agenda module.
 
-### "Why does your app need gmail.readonly?"
+### "Why does your app need gmail.modify?"
 
-> AICA uses gmail.readonly to display a read-only overview of the user's inbox within the Google Hub module. This allows users to quickly check their emails without switching applications, keeping them focused in their productivity workflow. AICA only accesses metadata (subject, sender, date, labels) and a short snippet — not full email bodies or attachments. No emails are ever sent, modified, or deleted.
+> AICA uses gmail.modify to provide inbox management within the Google Hub module. Users can view their emails, and organize messages by archiving, trashing, and toggling read/unread status — all without leaving the platform. AICA only accesses metadata (subject, sender, date, labels) and a short snippet — not full email bodies or attachments. AICA never sends emails on behalf of the user. `gmail.modify` is the narrowest scope that supports both reading and organizing messages.
 
-### "Why does your app need drive.readonly?"
+### "Why does your app need the drive scope?"
 
-> AICA uses drive.readonly to display a read-only file browser in the Google Hub module. Users can search and browse their Google Drive files without leaving the platform. For Google Workspace documents, AICA extracts text content (limited to 100KB) for quick reference. No files are created, modified, moved, or deleted.
+> AICA uses the `drive` scope to provide file management within the Google Hub module. Users can browse and search their Drive files, and organize them by renaming, moving to folders, creating new folders, and trashing files — all without leaving the platform. For Google Workspace documents, AICA extracts text content (limited to 100KB) for quick reference. AICA never permanently deletes files — trashed files can be recovered. The `drive` scope is needed because `drive.readonly` does not allow organizational actions.
 
 ### "Why not use narrower scopes?"
 
 > Each scope requested is the narrowest available for its use case:
 > - `calendar.events` is needed because AICA creates events (not just reads them). `calendar.readonly` would not support the bidirectional sync feature.
-> - `gmail.readonly` is the narrowest Gmail scope available for reading messages.
-> - `drive.readonly` is the narrowest Drive scope available for reading files.
+> - `gmail.modify` is the narrowest Gmail scope that supports both reading and organizing messages (archive, trash, mark read/unread). `gmail.readonly` would not allow inbox management.
+> - `drive` is the narrowest Drive scope that supports both reading and organizing files (rename, move, create folders, trash). `drive.readonly` would not allow file management.
 
 ### "How is user data stored?"
 
@@ -367,5 +367,5 @@ Visibility: UNLISTED
 
 ---
 
-*Documento preparado: 17/02/2026*
+*Documento preparado: 17/02/2026 | Atualizado: 19/02/2026 (scopes expandidos: gmail.modify, drive)*
 *Referencia: Issues #256, #271, #274, #275*

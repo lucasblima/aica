@@ -78,12 +78,12 @@ export function useGoogleScopes(): GoogleScopesState {
     }, []);
 
     const handleDisconnectGmail = useCallback(async () => {
-        await removeScope('gmail.readonly');
+        await removeScope('gmail');
         setHasGmail(false);
     }, []);
 
     const handleDisconnectDrive = useCallback(async () => {
-        await removeScope('drive.readonly');
+        await removeScope('drive');
         setHasDrive(false);
     }, []);
 

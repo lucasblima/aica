@@ -164,29 +164,30 @@ export function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">6. Integração com Gmail API</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica oferece integração opcional com o Gmail para visualizar seus emails
+              A Aica oferece integração opcional com o Gmail para visualizar e organizar seus emails
               dentro da plataforma. Esta integração requer consentimento adicional e pode ser
               ativada ou desativada a qualquer momento.
             </p>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.1. Escopo de Acesso</h3>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>gmail.readonly:</strong> Acesso somente leitura aos seus emails. A Aica NÃO envia, modifica ou exclui emails em seu nome.</li>
+              <li><strong>gmail.modify:</strong> Acesso de leitura e organização dos seus emails. A Aica pode ler, arquivar, mover para lixeira, marcar como lido/não lido e gerenciar etiquetas. A Aica NÃO envia emails em seu nome nem acessa rascunhos.</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.2. Dados Acessados e Uso</h3>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Os dados acessados do Gmail incluem apenas metadados:
+              Os dados acessados do Gmail incluem:
             </p>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
               <li>Assunto, remetente e data de recebimento</li>
               <li>Trecho resumido (snippet) do conteúdo</li>
               <li>Labels (etiquetas) e status de leitura</li>
               <li>Indicador de anexos (sem acesso ao conteúdo dos anexos)</li>
+              <li>Ações de organização: arquivar, mover para lixeira, marcar como lido/não lido, gerenciar etiquetas</li>
             </ul>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Esses dados são utilizados exclusivamente para exibir uma visão geral da sua caixa de entrada
-              dentro do módulo Google Hub da Aica, permitindo consulta rápida sem alternar entre aplicativos.
+              Esses dados são utilizados para exibir e organizar sua caixa de entrada
+              dentro do módulo Google Hub da Aica, permitindo gestão rápida sem alternar entre aplicativos.
             </p>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">6.3. Cache Temporário</h3>
@@ -206,13 +207,13 @@ export function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-[#2B1B17] mb-4">7. Integração com Google Drive API</h2>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              A Aica oferece integração opcional com o Google Drive para navegar e pesquisar
+              A Aica oferece integração opcional com o Google Drive para navegar, pesquisar e organizar
               seus arquivos dentro da plataforma. Esta integração requer consentimento adicional.
             </p>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.1. Escopo de Acesso</h3>
             <ul className="list-disc list-inside space-y-2 text-[#5C554B] mb-4">
-              <li><strong>drive.readonly:</strong> Acesso somente leitura aos seus arquivos no Google Drive. A Aica NÃO cria, modifica, move ou exclui arquivos.</li>
+              <li><strong>drive:</strong> Acesso de leitura e organização dos seus arquivos no Google Drive. A Aica pode listar, pesquisar, renomear, mover e enviar arquivos para a lixeira. A Aica também pode criar pastas para organização.</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.2. Dados Acessados e Uso</h3>
@@ -224,10 +225,11 @@ export function PrivacyPolicyPage() {
               <li>Data de última modificação</li>
               <li>Status de compartilhamento e favoritos</li>
               <li>Conteúdo textual de documentos Google Workspace (Docs, Sheets, Slides) para referência rápida, limitado a 100KB por arquivo</li>
+              <li>Ações de organização: renomear, mover entre pastas, enviar para lixeira, criar pastas</li>
             </ul>
             <p className="text-[#5C554B] leading-relaxed mb-4">
-              Esses dados são utilizados exclusivamente para exibir seus arquivos dentro do módulo Google Hub
-              da Aica, permitindo busca e navegação rápida sem alternar entre aplicativos.
+              Esses dados são utilizados para exibir e organizar seus arquivos dentro do módulo Google Hub
+              da Aica, permitindo gestão rápida sem alternar entre aplicativos.
             </p>
 
             <h3 className="text-xl font-semibold text-[#2B1B17] mb-3">7.3. Cache Temporário</h3>
