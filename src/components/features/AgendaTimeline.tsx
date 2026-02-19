@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, Circle, Clock, MapPin } from 'lucide-react';
+import { Check, Circle, Clock, ListChecks, MapPin } from 'lucide-react';
 
 interface TimelineEvent {
   id: string;
@@ -11,6 +11,7 @@ interface TimelineEvent {
   isCompleted?: boolean;
   color?: string;
   location?: string;
+  checklist?: Array<{ text: string; done: boolean }> | null;
 }
 
 interface AgendaTimelineProps {
@@ -150,6 +151,12 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
                 }`}>
                   {item.title}
                 </h4>
+                {item.checklist && item.checklist.length > 0 && (
+                  <span className="inline-flex items-center gap-1 mt-0.5 text-xs text-ceramic-text-secondary">
+                    <ListChecks className="w-3 h-3" />
+                    {item.checklist.filter(i => i.done).length}/{item.checklist.length}
+                  </span>
+                )}
 
                 {/* Local (se houver) */}
                 {item.location && (

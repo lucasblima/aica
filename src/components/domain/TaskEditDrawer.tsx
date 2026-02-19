@@ -14,7 +14,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
-import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText, FileText as FileTextIcon, ListChecks, Tag, Repeat, Sparkles, Loader2 } from 'lucide-react';
+import { X, Save, Calendar, Clock, Link2, AlertCircle, FileText, FileText as FileTextIcon, ListChecks, Tag, Repeat, Sparkles, Loader2, Check, Plus } from 'lucide-react';
 import { Task } from '@/types';
 import { Accordion } from '@/components/ui';
 import { SubtaskList, Subtask } from '@/components/ui';
@@ -66,6 +66,10 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
     const [tags, setTags] = useState<string[]>(initialData.tags || []);
     const [recurrenceRule, setRecurrenceRule] = useState(initialData.recurrence_rule || undefined);
 
+    // Checklist state (for task_type === 'list')
+    const [checklist, setChecklist] = useState<Array<{ text: string; done: boolean }>>(initialData.checklist || []);
+    const [newChecklistItemText, setNewChecklistItemText] = useState('');
+
     // UI state
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSaving, setIsSaving] = useState(false);
@@ -86,6 +90,8 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
         setDescription(initialData.description || '');
         setTags(initialData.tags || []);
         setRecurrenceRule(initialData.recurrence_rule || undefined);
+        setChecklist(initialData.checklist || []);
+        setNewChecklistItemText('');
         setSubtasks([]); // Will be loaded from DB
         setErrors({});
         setIsDirty(false);
@@ -100,10 +106,11 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
             scheduledTime !== extractTimeFromTimestamp(initialData.scheduled_time) ||
             description !== (initialData.description || '') ||
             JSON.stringify(tags) !== JSON.stringify(initialData.tags || []) ||
+            JSON.stringify(checklist) !== JSON.stringify(initialData.checklist || []) ||
             recurrenceRule !== (initialData.recurrence_rule || undefined);
 
         setIsDirty(hasChanges);
-    }, [title, dueDate, estimatedDuration, scheduledTime, description, tags, recurrenceRule, initialData]);
+    }, [title, dueDate, estimatedDuration, scheduledTime, description, tags, checklist, recurrenceRule, initialData]);
 
     // Validate form
     const validateForm = (): boolean => {
@@ -165,6 +172,7 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
                 description: description.trim() || undefined,
                 tags: tags.length > 0 ? tags : undefined,
                 recurrence_rule: recurrenceRule || undefined,
+                checklist: checklist.length > 0 ? checklist : null,
             };
 
             await onSave(taskId, updates);
@@ -466,6 +474,78 @@ export const TaskEditDrawer: React.FC<TaskEditDrawerProps> = ({
                                             {isDecomposing ? 'Decompondo...' : 'Decompor com IA'}
                                         </button>
                                     </Accordion>
+
+                                    {/* Checklist (for task_type 'list') */}
+                                    {(initialData.task_type === 'list' || checklist.length > 0) && (
+                                        <Accordion
+                                            title={`Checklist${checklist.length > 0 ? ` (${checklist.filter(i => i.done).length}/${checklist.length})` : ''}`}
+                                            icon={ListChecks}
+                                            defaultExpanded={true}
+                                            id="accordion-checklist"
+                                        >
+                                            <div className="space-y-2">
+                                                {checklist.map((item, idx) => (
+                                                    <div key={idx} className="flex items-center gap-2 ceramic-inset p-2.5 rounded-lg group">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setChecklist(prev => prev.map((it, i) => i === idx ? { ...it, done: !it.done } : it))}
+                                                            className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                                                item.done ? 'bg-ceramic-accent border-ceramic-accent' : 'border-ceramic-text-secondary/30 hover:border-ceramic-accent'
+                                                            }`}
+                                                        >
+                                                            {item.done && <Check className="w-3 h-3 text-white" />}
+                                                        </button>
+                                                        <input
+                                                            type="text"
+                                                            value={item.text}
+                                                            onChange={(e) => setChecklist(prev => prev.map((it, i) => i === idx ? { ...it, text: e.target.value } : it))}
+                                                            className={`flex-1 bg-transparent text-sm font-medium outline-none ${
+                                                                item.done ? 'text-ceramic-text-secondary line-through' : 'text-ceramic-text-primary'
+                                                            }`}
+                                                            maxLength={200}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setChecklist(prev => prev.filter((_, i) => i !== idx))}
+                                                            className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-ceramic-text-secondary hover:text-red-500"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={newChecklistItemText}
+                                                        onChange={(e) => setNewChecklistItemText(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && newChecklistItemText.trim()) {
+                                                                e.preventDefault();
+                                                                setChecklist(prev => [...prev, { text: newChecklistItemText.trim(), done: false }]);
+                                                                setNewChecklistItemText('');
+                                                            }
+                                                        }}
+                                                        placeholder="+ Adicionar item (Enter)"
+                                                        className="flex-1 ceramic-inset px-3 py-2 rounded-lg text-sm placeholder-ceramic-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                                                        maxLength={200}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (newChecklistItemText.trim()) {
+                                                                setChecklist(prev => [...prev, { text: newChecklistItemText.trim(), done: false }]);
+                                                                setNewChecklistItemText('');
+                                                            }
+                                                        }}
+                                                        disabled={!newChecklistItemText.trim()}
+                                                        className="flex-shrink-0 ceramic-concave p-2 hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <Plus className="w-4 h-4 text-ceramic-text-primary" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </Accordion>
+                                    )}
 
                                     {/* Tags */}
                                     <Accordion

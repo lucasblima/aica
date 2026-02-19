@@ -311,7 +311,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             startTime: `${dateStr}T${task.scheduled_time}:00`,
             endTime: undefined,
             type: 'task' as const,
-            isCompleted: !!task.completed_at
+            isCompleted: !!task.completed_at,
+            checklist: task.checklist || null
         }));
 
         const combinedRest = [...restTimeline, ...todayTasks].sort((a, b) =>
@@ -428,6 +429,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     skipped: false,
                     isTask: true,
                     isCompleted: !!task.completed_at,
+                    checklist: task.checklist || null,
                 };
             });
 
