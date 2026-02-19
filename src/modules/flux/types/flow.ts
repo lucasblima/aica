@@ -13,9 +13,6 @@ import type { TrainingModality } from './flux';
 import type {
   ExerciseStructureV2,
   WorkoutCategorySimplified,
-  WorkoutTemplateV2,
-  CreateWorkoutTemplateV2Input,
-  UpdateWorkoutTemplateV2Input,
 } from './series';
 
 // ============================================================================
@@ -23,8 +20,8 @@ import type {
 // ============================================================================
 
 /**
- * @deprecated Use WorkoutCategorySimplified from series.ts instead
- * V2 removes 'recovery' and 'test' categories
+ * Full workout category including legacy values still present in DB rows.
+ * For new templates, prefer WorkoutCategorySimplified ('warmup' | 'main' | 'cooldown').
  */
 export type WorkoutCategory = 'warmup' | 'main' | 'cooldown' | 'recovery' | 'test';
 export type WorkoutIntensity = 'low' | 'medium' | 'high' | 'z1' | 'z2' | 'z3' | 'z4' | 'z5';
@@ -70,40 +67,7 @@ export type CoachMessageTriggerType =
 // EXERCISE STRUCTURE TYPES
 // ============================================================================
 
-/**
- * @deprecated Use ExerciseStructureV2 from series.ts instead
- * V2 uses unified series structure with warmup/series/cooldown
- */
-export interface IntervalSet {
-  duration: number; // seconds or meters
-  intensity: number; // percentage or pace
-  rest: number; // seconds
-  repetitions: number;
-}
-
-/**
- * @deprecated Use ExerciseStructureV2 from series.ts instead
- * V2 uses unified series structure with warmup/series/cooldown
- */
-export interface ExerciseStructure {
-  // Strength/Circuit format
-  sets?: number;
-  reps?: number;
-  rest?: number; // seconds between sets
-
-  // Interval format (running, swimming, cycling)
-  intervals?: IntervalSet[];
-
-  // Continuous format
-  distance?: number; // meters
-  target_time?: number; // seconds
-
-  // Notes
-  description?: string;
-  equipment?: string[];
-}
-
-// Re-export V2 as the preferred structure
+// V2 exercise structure is the canonical type — import from series.ts
 export type { ExerciseStructureV2 } from './series';
 
 // ============================================================================
@@ -111,9 +75,11 @@ export type { ExerciseStructureV2 } from './series';
 // ============================================================================
 
 /**
- * @deprecated Use WorkoutTemplateV2 from series.ts instead
- * V2 removes: duration, intensity, ftp_percentage, pace_zone, css_percentage, rpe, tags, level, is_public, is_favorite
- * V2 uses: simplified category (3 options), ExerciseStructureV2 with series
+ * Workout template as stored in the database (full row shape).
+ * Includes legacy fields (duration, intensity, ftp_percentage, etc.)
+ * that are auto-derived by the V2 creation path.
+ *
+ * For creating/updating templates, use CreateWorkoutTemplateV2Input / UpdateWorkoutTemplateV2Input.
  */
 export interface WorkoutTemplate {
   id: string;
@@ -128,9 +94,9 @@ export interface WorkoutTemplate {
   // Exercise Details
   duration: number; // minutes
   intensity: WorkoutIntensity;
-  exercise_structure?: ExerciseStructure;
+  exercise_structure?: ExerciseStructureV2;
 
-  // Intensity Zones (modality-specific)
+  // Intensity Zones (modality-specific, auto-derived from series)
   ftp_percentage?: number; // cycling (50-120%)
   pace_zone?: PaceZone; // running
   css_percentage?: number; // swimming (60-110%)
@@ -151,35 +117,7 @@ export interface WorkoutTemplate {
   usage_count: number;
 }
 
-/**
- * @deprecated Use CreateWorkoutTemplateV2Input from series.ts instead
- */
-export interface CreateWorkoutTemplateInput {
-  name: string;
-  description?: string;
-  category: WorkoutCategory;
-  modality: TrainingModality;
-  duration: number;
-  intensity: WorkoutIntensity;
-  exercise_structure?: ExerciseStructure;
-  ftp_percentage?: number;
-  pace_zone?: PaceZone;
-  css_percentage?: number;
-  rpe?: number;
-  tags?: string[];
-  level?: AthleteLevel[];
-  is_public?: boolean;
-  coach_notes?: string;
-}
-
-/**
- * @deprecated Use UpdateWorkoutTemplateV2Input from series.ts instead
- */
-export interface UpdateWorkoutTemplateInput extends Partial<CreateWorkoutTemplateInput> {
-  id: string;
-}
-
-// Re-export V2 types as preferred
+// Re-export V2 input and category types from series.ts
 export type {
   WorkoutTemplateV2,
   CreateWorkoutTemplateV2Input,
@@ -260,7 +198,7 @@ export interface WorkoutSlot {
   duration: number;
   intensity: WorkoutIntensity;
   modality: TrainingModality;
-  exercise_structure?: ExerciseStructure;
+  exercise_structure?: ExerciseStructureV2;
 
   // Intensity Overrides
   ftp_percentage?: number;
@@ -296,7 +234,7 @@ export interface CreateWorkoutSlotInput {
   duration: number;
   intensity: WorkoutIntensity;
   modality: TrainingModality;
-  exercise_structure?: ExerciseStructure;
+  exercise_structure?: ExerciseStructureV2;
   ftp_percentage?: number;
   pace_zone?: PaceZone;
   css_percentage?: number;

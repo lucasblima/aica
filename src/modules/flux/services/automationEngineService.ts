@@ -318,21 +318,165 @@ export class AutomationEngineService {
   }
 
   /**
-   * Placeholder implementations for other triggers
-   * TODO: Implement these based on requirements
+   * Check if any workout was completed recently
    */
   private static async checkWorkoutCompleted(
     automation: WorkoutAutomation
   ): Promise<TriggerEvaluationResult> {
-    // Check if any workout was completed in last 5 minutes
-    return { shouldTrigger: false, reason: 'Not implemented yet' };
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+      // Find workout slots completed recently, joined with microcycles to get athlete info
+      const { data: completedSlots, error } = await supabase
+        .from('workout_slots')
+        .select('*, microcycles!inner(athlete_id, athlete_profiles!inner(*))')
+        .eq('user_id', automation.user_id)
+        .eq('completed', true)
+        .gte('updated_at', fiveMinutesAgo);
+
+      if (error) throw error;
+
+      if (!completedSlots || completedSlots.length === 0) {
+        return { shouldTrigger: false, reason: 'No recently completed workouts' };
+      }
+
+      // Extract unique athletes from completed slots
+      const athleteMap = new Map<string, any>();
+      for (const slot of completedSlots) {
+        const mc = slot.microcycles as any;
+        const profile = mc?.athlete_profiles;
+        if (profile) {
+          athleteMap.set(mc.athlete_id, profile);
+        }
+      }
+
+      let athletes = Array.from(athleteMap.values());
+
+      // Apply athlete filter if set
+      if (automation.applies_to_athletes && automation.applies_to_athletes.length > 0) {
+        athletes = athletes.filter((a: any) =>
+          automation.applies_to_athletes!.includes(a.athlete_id || a.id)
+        );
+      }
+
+      if (automation.applies_to_modality && automation.applies_to_modality.length > 0) {
+        athletes = athletes.filter((a: any) =>
+          automation.applies_to_modality!.includes(a.modality)
+        );
+      }
+
+      if (automation.applies_to_level && automation.applies_to_level.length > 0) {
+        athletes = athletes.filter((a: any) =>
+          automation.applies_to_level!.includes(a.level)
+        );
+      }
+
+      if (athletes.length > 0) {
+        return {
+          shouldTrigger: true,
+          context: { athletes, completedSlots },
+        };
+      }
+
+      return { shouldTrigger: false, reason: 'No matching athletes with completed workouts' };
+    } catch (error) {
+      log.error('Error checking workout completed:', error);
+      return { shouldTrigger: false, reason: 'Error evaluating trigger' };
+    }
   }
 
   private static async checkWorkoutMissed(
     automation: WorkoutAutomation
   ): Promise<TriggerEvaluationResult> {
-    // Check if scheduled workout was missed (past scheduled time + no completion)
-    return { shouldTrigger: false, reason: 'Not implemented yet' };
+    try {
+      // Find active microcycles for this coach
+      const { data: microcycles, error: mcError } = await supabase
+        .from('microcycles')
+        .select('*, athlete_profiles!inner(*)')
+        .eq('user_id', automation.user_id)
+        .eq('status', 'active');
+
+      if (mcError) throw mcError;
+      if (!microcycles || microcycles.length === 0) {
+        return { shouldTrigger: false, reason: 'No active microcycles' };
+      }
+
+      const missedAthletes: any[] = [];
+
+      for (const mc of microcycles) {
+        // Calculate which slots should already be completed based on current date
+        const startDate = new Date(mc.start_date);
+        const now = new Date();
+        const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysSinceStart < 0) continue; // Microcycle hasn't started yet
+
+        // Get incomplete workout slots for this microcycle that are in the past
+        const { data: missedSlots, error: slotError } = await supabase
+          .from('workout_slots')
+          .select('*')
+          .eq('microcycle_id', mc.id)
+          .eq('completed', false);
+
+        if (slotError) {
+          log.error(`Error fetching slots for microcycle ${mc.id}:`, slotError);
+          continue;
+        }
+
+        if (!missedSlots) continue;
+
+        // Check which slots are in the past based on week_number and day_of_week
+        const pastSlots = missedSlots.filter((slot: any) => {
+          const slotDayOffset = ((slot.week_number - 1) * 7) + (slot.day_of_week - 1);
+          return slotDayOffset < daysSinceStart;
+        });
+
+        if (pastSlots.length > 0) {
+          const profile = (mc as any).athlete_profiles;
+          if (profile) {
+            missedAthletes.push({
+              ...profile,
+              missed_count: pastSlots.length,
+            });
+          }
+        }
+      }
+
+      // Apply athlete filter if set
+      let filtered = missedAthletes;
+      if (automation.applies_to_athletes && automation.applies_to_athletes.length > 0) {
+        filtered = filtered.filter((a: any) =>
+          automation.applies_to_athletes!.includes(a.athlete_id || a.id)
+        );
+      }
+
+      if (automation.applies_to_modality && automation.applies_to_modality.length > 0) {
+        filtered = filtered.filter((a: any) =>
+          automation.applies_to_modality!.includes(a.modality)
+        );
+      }
+
+      if (automation.applies_to_level && automation.applies_to_level.length > 0) {
+        filtered = filtered.filter((a: any) =>
+          automation.applies_to_level!.includes(a.level)
+        );
+      }
+
+      if (filtered.length > 0) {
+        return {
+          shouldTrigger: true,
+          context: {
+            athletes: filtered,
+            reason: `${filtered.length} athlete(s) with missed workouts`,
+          },
+        };
+      }
+
+      return { shouldTrigger: false, reason: 'No athletes with missed workouts' };
+    } catch (error) {
+      log.error('Error checking workout missed:', error);
+      return { shouldTrigger: false, reason: 'Error evaluating trigger' };
+    }
   }
 
   private static async checkWeeklySummary(
@@ -350,8 +494,32 @@ export class AutomationEngineService {
   private static async checkAthleteJoins(
     automation: WorkoutAutomation
   ): Promise<TriggerEvaluationResult> {
-    // Check if new athlete was added in last 5 minutes
-    return { shouldTrigger: false, reason: 'Not implemented yet' };
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+      const { data: newAthletes, error } = await supabase
+        .from('athletes')
+        .select('*')
+        .eq('user_id', automation.user_id)
+        .gte('created_at', fiveMinutesAgo);
+
+      if (error) throw error;
+
+      if (newAthletes && newAthletes.length > 0) {
+        return {
+          shouldTrigger: true,
+          context: {
+            athletes: newAthletes,
+            reason: `${newAthletes.length} new athlete(s) joined`,
+          },
+        };
+      }
+
+      return { shouldTrigger: false, reason: 'No new athletes in last 5 minutes' };
+    } catch (error) {
+      log.error('Error checking athlete joins:', error);
+      return { shouldTrigger: false, reason: 'Error evaluating trigger' };
+    }
   }
 
   // ============================================================================
@@ -457,29 +625,164 @@ export class AutomationEngineService {
   }
 
   /**
-   * Placeholder implementations for other actions
+   * Send email notification to coach about athlete via notification system
    */
   private static async executeSendEmail(
     automation: WorkoutAutomation,
     context?: Record<string, any>
   ): Promise<string> {
-    // TODO: Implement email sending
-    throw new Error('Email sending not implemented yet');
+    const athletes = context?.athletes || context?.microcycles?.map((m: any) => m.athlete_profiles);
+
+    if (!athletes || athletes.length === 0) {
+      throw new Error('No target athletes found for email');
+    }
+
+    const reason = context?.reason || `Automação "${automation.name}" disparada`;
+    let emailsScheduled = 0;
+
+    for (const athlete of athletes) {
+      try {
+        const athleteName = athlete.name || 'Atleta';
+
+        await supabase.from('scheduled_notifications').insert({
+          user_id: automation.user_id,
+          recipient_id: automation.user_id, // Coach receives the email
+          channel: 'email',
+          title: `Flux: ${automation.name}`,
+          body: `Atleta ${athleteName} — ${reason}`,
+          action_url: `/flux/athlete/${athlete.athlete_id || athlete.id}`,
+          send_at: new Date().toISOString(),
+          status: 'pending',
+        });
+
+        emailsScheduled++;
+      } catch (error) {
+        log.error(`Error scheduling email for athlete ${athlete.name}:`, error);
+      }
+    }
+
+    return `Scheduled ${emailsScheduled} email notification(s) to coach`;
   }
 
   private static async executeAdjustWorkout(
     automation: WorkoutAutomation,
     context?: Record<string, any>
   ): Promise<string> {
-    // TODO: Implement workout adjustment logic
-    throw new Error('Workout adjustment not implemented yet');
+    const adjustmentPct = automation.action_config?.adjustment_percentage || -10;
+    const athletes = context?.athletes || [];
+
+    if (athletes.length === 0) {
+      throw new Error('No target athletes found for workout adjustment');
+    }
+
+    let slotsAdjusted = 0;
+
+    for (const athlete of athletes) {
+      try {
+        // Find the athlete's active microcycle
+        const { data: activeMc, error: mcError } = await supabase
+          .from('microcycles')
+          .select('id')
+          .eq('user_id', automation.user_id)
+          .eq('athlete_id', athlete.athlete_id || athlete.id)
+          .eq('status', 'active')
+          .limit(1)
+          .single();
+
+        if (mcError || !activeMc) continue;
+
+        // Get incomplete workout slots for this microcycle
+        const { data: slots, error: slotError } = await supabase
+          .from('workout_slots')
+          .select('id, duration, rpe, ftp_percentage, css_percentage')
+          .eq('microcycle_id', activeMc.id)
+          .eq('completed', false);
+
+        if (slotError || !slots || slots.length === 0) continue;
+
+        // Apply percentage adjustment to each incomplete slot
+        const multiplier = 1 + (adjustmentPct / 100);
+
+        for (const slot of slots) {
+          const updates: Record<string, any> = {};
+
+          if (slot.duration) {
+            updates.duration = Math.round(slot.duration * multiplier);
+          }
+          if (slot.rpe) {
+            updates.rpe = Math.max(1, Math.min(10, Math.round(slot.rpe * multiplier)));
+          }
+          if (slot.ftp_percentage) {
+            updates.ftp_percentage = Math.round(slot.ftp_percentage * multiplier);
+          }
+          if (slot.css_percentage) {
+            updates.css_percentage = Math.round(slot.css_percentage * multiplier);
+          }
+
+          if (Object.keys(updates).length > 0) {
+            updates.coach_notes = `[Auto] Intensidade ajustada em ${adjustmentPct}% pela automação "${automation.name}"`;
+
+            const { error: updateError } = await supabase
+              .from('workout_slots')
+              .update(updates)
+              .eq('id', slot.id);
+
+            if (!updateError) slotsAdjusted++;
+          }
+        }
+      } catch (error) {
+        log.error(`Error adjusting workouts for athlete ${athlete.name}:`, error);
+      }
+    }
+
+    return `Adjusted ${slotsAdjusted} workout slot(s) by ${adjustmentPct}%`;
   }
 
   private static async executeSendNotification(
     automation: WorkoutAutomation,
     context?: Record<string, any>
   ): Promise<string> {
-    // TODO: Implement in-app notification
-    throw new Error('In-app notification not implemented yet');
+    const athletes = context?.athletes || context?.microcycles?.map((m: any) => m.athlete_profiles);
+
+    if (!athletes || athletes.length === 0) {
+      throw new Error('No target athletes found for notification');
+    }
+
+    const triggerTitles: Record<string, string> = {
+      microcycle_starts: 'Novo Microciclo Iniciado',
+      workout_completed: 'Treino Concluído',
+      workout_missed: 'Treino Perdido',
+      consistency_drops: 'Alerta de Consistência',
+      weekly_summary: 'Resumo Semanal',
+      athlete_joins: 'Novo Atleta',
+      trial_expiring: 'Trial Expirando',
+    };
+
+    const title = triggerTitles[automation.trigger_type] || `Automação: ${automation.name}`;
+    const reason = context?.reason || automation.name;
+    let notificationsCreated = 0;
+
+    for (const athlete of athletes) {
+      try {
+        const athleteName = athlete.name || 'Atleta';
+
+        await supabase.from('scheduled_notifications').insert({
+          user_id: automation.user_id,
+          recipient_id: automation.user_id, // Coach receives the notification
+          channel: 'in_app',
+          title,
+          body: `${athleteName} — ${reason}`,
+          action_url: `/flux/athlete/${athlete.athlete_id || athlete.id}`,
+          send_at: new Date().toISOString(),
+          status: 'pending',
+        });
+
+        notificationsCreated++;
+      } catch (error) {
+        log.error(`Error creating notification for athlete ${athlete.name}:`, error);
+      }
+    }
+
+    return `Created ${notificationsCreated} in-app notification(s)`;
   }
 }
