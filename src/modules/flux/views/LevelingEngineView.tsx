@@ -10,7 +10,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-re
 import { useNavigate } from 'react-router-dom';
 import { LevelingEngineService } from '../services/levelingEngineService';
 import { AthleteProfileService } from '../services/AthleteProfileService';
-import type { LevelingRecommendation, FlowAthleteProfile } from '../types/flow';
+import type { LevelingRecommendation, FlowAthleteProfile, AthleteLevel } from '../types/flow';
 
 export default function LevelingEngineView() {
   const navigate = useNavigate();
@@ -90,14 +90,10 @@ export default function LevelingEngineView() {
             if (!profile) return null;
 
             const needsChange = rec.current_level !== rec.recommended_level;
+            const levelOrder: AthleteLevel[] = ['iniciante', 'intermediario', 'avancado'];
             const isUpgrade =
               needsChange &&
-              ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'].indexOf(
-                rec.recommended_level
-              ) >
-                ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'].indexOf(
-                  rec.current_level
-                );
+              levelOrder.indexOf(rec.recommended_level) > levelOrder.indexOf(rec.current_level);
 
             return (
               <div

@@ -151,11 +151,7 @@ export function useAthleteForm({
           if (profiles && profiles.length > 0) {
             const modalityLevels: ModalityLevel[] = profiles.map((profile) => ({
               modality: profile.modality,
-              level: profile.level.startsWith('iniciante')
-                ? 'iniciante'
-                : profile.level.startsWith('intermediario')
-                  ? 'intermediario'
-                  : 'avancado',
+              level: profile.level as ModalityLevel['level'],
             }));
 
             setFormData((prev) => ({ ...prev, modalityLevels }));
@@ -268,11 +264,7 @@ export function useAthleteForm({
           email: formData.email.trim() || undefined,
           phone: formData.phone.trim(),
           modality: formData.modalityLevels[0].modality,
-          level: (formData.modalityLevels[0].level === 'iniciante'
-            ? 'iniciante_1'
-            : formData.modalityLevels[0].level === 'intermediario'
-              ? 'intermediario_1'
-              : 'avancado') as AthleteLevel,
+          level: formData.modalityLevels[0].level as AthleteLevel,
           status: 'active',
           requires_cardio_exam: formData.requires_cardio_exam,
           requires_clearance_cert: formData.requires_clearance_cert,

@@ -28,14 +28,7 @@ export type WorkoutCategory = 'warmup' | 'main' | 'cooldown' | 'recovery' | 'tes
 export type WorkoutIntensity = 'low' | 'medium' | 'high' | 'z1' | 'z2' | 'z3' | 'z4' | 'z5';
 export type MicrocycleWeekFocus = 'volume' | 'intensity' | 'recovery' | 'test';
 export type MicrocycleStatus = 'draft' | 'active' | 'completed' | 'archived';
-export type AthleteLevel =
-  | 'iniciante_1'
-  | 'iniciante_2'
-  | 'iniciante_3'
-  | 'intermediario_1'
-  | 'intermediario_2'
-  | 'intermediario_3'
-  | 'avancado';
+export type AthleteLevel = 'iniciante' | 'intermediario' | 'avancado';
 export type AthleteStatus = 'active' | 'trial' | 'paused' | 'churned';
 export type PaceZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5';
 export type SendMethod = 'whatsapp' | 'email' | 'app_notification';

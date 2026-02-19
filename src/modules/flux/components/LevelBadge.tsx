@@ -13,26 +13,13 @@ import { Award } from 'lucide-react';
 export function LevelBadge({ level, size = 'md' }: LevelBadgeProps) {
   // Color mapping by level category
   const getLevelColor = () => {
-    if (level.startsWith('iniciante')) {
-      return {
-        bg: 'bg-ceramic-info/20',
-        text: 'text-ceramic-info',
-        icon: 'text-ceramic-info',
-      };
+    if (level === 'iniciante') {
+      return { bg: 'bg-ceramic-info/20', text: 'text-ceramic-info', icon: 'text-ceramic-info' };
     }
-    if (level.startsWith('intermediario')) {
-      return {
-        bg: 'bg-ceramic-warning/20',
-        text: 'text-ceramic-warning',
-        icon: 'text-ceramic-warning',
-      };
+    if (level === 'intermediario') {
+      return { bg: 'bg-ceramic-warning/20', text: 'text-ceramic-warning', icon: 'text-ceramic-warning' };
     }
-    // avancado
-    return {
-      bg: 'bg-ceramic-accent/20',
-      text: 'text-ceramic-accent',
-      icon: 'text-ceramic-accent',
-    };
+    return { bg: 'bg-ceramic-accent/20', text: 'text-ceramic-accent', icon: 'text-ceramic-accent' };
   };
 
   const colors = getLevelColor();
