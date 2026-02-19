@@ -115,7 +115,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
         disabled={disabled || weekWorkouts.length === 0}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-md transition-all ${
           disabled || weekWorkouts.length === 0
-            ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+            ? 'bg-ceramic-border text-ceramic-text-secondary cursor-not-allowed'
             : 'bg-green-500 hover:bg-green-600 text-white hover:scale-105'
         }`}
       >
@@ -133,17 +133,17 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
           />
 
           {/* Modal */}
-          <div className="fixed inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-full max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden">
+          <div className="fixed inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-full max-w-lg bg-ceramic-base rounded-2xl shadow-2xl z-50 overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-stone-200 bg-green-50">
+            <div className="p-6 border-b border-ceramic-border bg-green-50">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="bg-green-500 p-3 rounded-xl">
                     <Send className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-stone-900">Enviar por WhatsApp</h2>
-                    <p className="text-sm text-stone-600 mt-0.5">
+                    <h2 className="text-xl font-bold text-ceramic-text-primary">Enviar por WhatsApp</h2>
+                    <p className="text-sm text-ceramic-text-secondary mt-0.5">
                       Para {athleteName} • {athletePhone}
                     </p>
                   </div>
@@ -151,9 +151,9 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                 {!isSending && (
                   <button
                     onClick={() => setIsModalOpen(false)}
-                    className="ceramic-inset p-2 hover:bg-stone-100 transition-colors"
+                    className="ceramic-inset p-2 hover:bg-ceramic-cool transition-colors"
                   >
-                    <X className="w-5 h-5 text-stone-600" />
+                    <X className="w-5 h-5 text-ceramic-text-secondary" />
                   </button>
                 )}
               </div>
@@ -163,11 +163,11 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
             <div className="p-6 space-y-5">
               {/* Message Preview */}
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-2 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-ceramic-text-primary mb-2 uppercase tracking-wider">
                   Prévia da Mensagem
                 </label>
                 <div className="ceramic-inset p-4 rounded-xl max-h-64 overflow-y-auto">
-                  <pre className="text-xs text-stone-700 whitespace-pre-wrap font-sans">
+                  <pre className="text-xs text-ceramic-text-primary whitespace-pre-wrap font-sans">
                     {messagePreview}
                   </pre>
                 </div>
@@ -175,7 +175,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
 
               {/* Send Options */}
               <div className="space-y-3">
-                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-ceramic-text-primary uppercase tracking-wider">
                   Opções de Envio
                 </label>
 
@@ -190,9 +190,9 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-bold text-stone-900">Enviar Agora</span>
+                      <span className="text-sm font-bold text-ceramic-text-primary">Enviar Agora</span>
                     </div>
-                    <p className="text-xs text-stone-500 mt-0.5">Mensagem será enviada imediatamente</p>
+                    <p className="text-xs text-ceramic-text-secondary mt-0.5">Mensagem será enviada imediatamente</p>
                   </div>
                 </label>
 
@@ -207,9 +207,9 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-amber-600" />
-                      <span className="text-sm font-bold text-stone-900">Agendar para Domingo 18h</span>
+                      <span className="text-sm font-bold text-ceramic-text-primary">Agendar para Domingo 18h</span>
                     </div>
-                    <p className="text-xs text-stone-500 mt-0.5">
+                    <p className="text-xs text-ceramic-text-secondary mt-0.5">
                       Envio automático no fim de semana
                     </p>
                   </div>
@@ -218,7 +218,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-stone-200 bg-stone-50">
+            <div className="p-6 border-t border-ceramic-border bg-ceramic-cool">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setIsModalOpen(false)}

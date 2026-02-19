@@ -705,20 +705,20 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
           contextParts.push(`- ${a.name} (${a.modality || 'geral'})`)
         })
 
-        // Get active workout blocks
+        // Get active microcycles
         const athleteIds = athletes.map(a => a.id)
-        const { data: blocks } = await supabaseAdmin
-          .from('workout_blocks')
+        const { data: microcycles } = await supabaseAdmin
+          .from('microcycles')
           .select('athlete_id, name, start_date, end_date, status')
           .in('athlete_id', athleteIds)
           .eq('status', 'active')
           .limit(10)
 
-        if (blocks?.length) {
-          contextParts.push(`\nBlocos de Treino Ativos:`)
-          blocks.forEach(b => {
-            const athlete = athletes.find(a => a.id === b.athlete_id)
-            contextParts.push(`- ${athlete?.name}: ${b.name} (${b.start_date} a ${b.end_date})`)
+        if (microcycles?.length) {
+          contextParts.push(`\nMicrociclos Ativos:`)
+          microcycles.forEach(m => {
+            const athlete = athletes.find(a => a.id === m.athlete_id)
+            contextParts.push(`- ${athlete?.name}: ${m.name} (${m.start_date} a ${m.end_date})`)
           })
         }
       }
@@ -1988,13 +1988,18 @@ Use formato ISO (YYYY-MM-DD). Retorne APENAS o JSON.`
 async function handleParseStatement(genAI: GoogleGenerativeAI, payload: ParseStatementPayload): Promise<any> {
   const { rawText } = payload
 
+  console.log(`[parse_statement] Starting. rawText length: ${rawText?.length || 0}`)
+
+  // Use gemini-2.5-flash with HIGH maxOutputTokens — thinking tokens are included
+  // in the budget, and bank statements can produce large JSON (100+ transactions).
+  // Previously 4096 caused truncated JSON → extractJSON failure → 500.
   const model = genAI.getGenerativeModel({
     model: MODELS.fast,
     generationConfig: {
       temperature: 0.3,
       topP: 0.8,
       topK: 40,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 65536,
     },
   })
 
@@ -2032,13 +2037,46 @@ REGRAS:
 TEXTO:
 ${rawText.substring(0, 15000)}`
 
-  const result = await model.generateContent(prompt)
-  const text = result.response.text()
+  try {
+    const result = await model.generateContent(prompt)
+    const response = result.response
+    const usageMetadata = response.usageMetadata
 
-  const data = extractJSON(text)
-  return {
-    ...data,
-    __usageMetadata: result.response.usageMetadata
+    console.log(`[parse_statement] Gemini response received. Usage:`, JSON.stringify(usageMetadata))
+
+    // Check for blocked/empty response
+    const candidates = response.candidates
+    if (!candidates || candidates.length === 0) {
+      console.error(`[parse_statement] No candidates in response. finishReason may be safety block.`)
+      throw new Error('Gemini retornou resposta vazia — possivelmente bloqueado por filtro de seguranca.')
+    }
+
+    const finishReason = candidates[0].finishReason
+    console.log(`[parse_statement] finishReason: ${finishReason}`)
+
+    if (finishReason === 'MAX_TOKENS') {
+      console.warn(`[parse_statement] Response truncated by MAX_TOKENS. Usage: ${JSON.stringify(usageMetadata)}`)
+    }
+
+    const text = response.text()
+    console.log(`[parse_statement] Response text length: ${text?.length || 0}`)
+
+    if (!text || text.trim().length === 0) {
+      throw new Error('Gemini retornou texto vazio para parse_statement.')
+    }
+
+    const data = extractJSON(text)
+    console.log(`[parse_statement] JSON parsed successfully. Transactions: ${data?.transactions?.length || 0}`)
+
+    return {
+      ...data,
+      __usageMetadata: usageMetadata
+    }
+  } catch (err) {
+    const error = err as Error
+    console.error(`[parse_statement] FAILED:`, error.message)
+    console.error(`[parse_statement] Stack:`, error.stack)
+    throw error
   }
 }
 

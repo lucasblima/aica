@@ -204,7 +204,7 @@ export function WorkoutCard({
 
   return (
     <div
-      className={`bg-white rounded-2xl shadow-sm transition-all ${
+      className={`bg-ceramic-base rounded-2xl shadow-sm transition-all ${
         slot.is_completed ? 'opacity-60' : ''
       }`}
     >

@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import type { ParQResponse, AthleteDocument, ParQStatus } from '../../types/parq';
+import type { ParQResponse, AthleteDocument, ParQStatus, UploadDocumentInput } from '../../types/parq';
 import { ParQStatusBadge } from './ParQStatusBadge';
 import { MedicalDocumentUpload } from './MedicalDocumentUpload';
 import { PARQ_CLASSIC_QUESTIONS, PARQ_FOLLOWUP_CATEGORIES, DOCUMENT_TYPE_LABELS } from './ParQQuestionConstants';
@@ -31,7 +31,7 @@ interface ParQCoachViewProps {
   isLoadingStatus?: boolean;
   onReviewDocument: (docId: string, status: 'approved' | 'rejected', notes?: string) => Promise<boolean>;
   onViewDocument: (doc: AthleteDocument) => Promise<string | null>;
-  onUploadDocument: (input: any) => Promise<any>;
+  onUploadDocument: (input: Omit<UploadDocumentInput, 'athlete_id'>) => Promise<AthleteDocument | null>;
   /** @deprecated Coach should never fill PAR-Q. Kept for API compat but not rendered. */
   onFillParQ?: () => void;
   isUploading?: boolean;

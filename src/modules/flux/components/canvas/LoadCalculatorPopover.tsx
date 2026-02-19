@@ -172,9 +172,9 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
       <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
 
       {/* Modal */}
-      <div className="fixed inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-full max-w-2xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden">
+      <div className="fixed inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-full max-w-2xl bg-ceramic-base rounded-2xl shadow-2xl z-50 overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-stone-200 bg-gradient-to-r from-ceramic-info/10 to-ceramic-success/10">
+        <div className="p-6 border-b border-ceramic-border bg-gradient-to-r from-ceramic-info/10 to-ceramic-success/10">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="ceramic-card p-3">
@@ -205,9 +205,9 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="ceramic-inset p-2 hover:bg-stone-100 transition-colors"
+              className="ceramic-inset p-2 hover:bg-ceramic-cool transition-colors"
             >
-              <X className="w-5 h-5 text-stone-600" />
+              <X className="w-5 h-5 text-ceramic-text-secondary" />
             </button>
           </div>
         </div>
@@ -239,7 +239,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
           {/* Load Level Bar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-stone-700">Nivel de Carga</span>
+              <span className="text-sm font-semibold text-ceramic-text-primary">Nivel de Carga</span>
               <span
                 className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                   displayMetrics.loadLevel === 'overload'
@@ -262,7 +262,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
             </div>
 
             {/* Visual Load Bar */}
-            <div className="h-4 bg-stone-100 rounded-full overflow-hidden">
+            <div className="h-4 bg-ceramic-cool rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all rounded-full ${
                   displayMetrics.loadLevel === 'overload'
@@ -288,7 +288,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
               />
             </div>
 
-            <div className="flex justify-between mt-1 text-[10px] text-stone-500">
+            <div className="flex justify-between mt-1 text-[10px] text-ceramic-text-secondary">
               <span>Baixa</span>
               <span>Moderada</span>
               <span>Alta</span>
@@ -317,7 +317,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
             </div>
             <ul className="space-y-2">
               {displaySuggestions.map((sug, idx) => (
-                <li key={idx} className="text-sm text-stone-700 flex items-start gap-2">
+                <li key={idx} className="text-sm text-ceramic-text-primary flex items-start gap-2">
                   <span className="text-lg leading-none">
                     {sug.type === 'warning' ? '\u26A0\uFE0F' : sug.type === 'success' ? '\u2705' : '\u2139\uFE0F'}
                   </span>
@@ -326,7 +326,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
               ))}
             </ul>
             {aiError && (
-              <p className="text-xs text-stone-500 mt-3 italic">
+              <p className="text-xs text-ceramic-text-secondary mt-3 italic">
                 Analise local (IA indisponivel: {aiError})
               </p>
             )}
@@ -334,7 +334,7 @@ export const LoadCalculatorPopover: React.FC<LoadCalculatorPopoverProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-stone-200 bg-stone-50">
+        <div className="p-6 border-t border-ceramic-border bg-ceramic-cool">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}

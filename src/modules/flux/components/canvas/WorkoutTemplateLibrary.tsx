@@ -48,9 +48,9 @@ export const WorkoutTemplateLibrary: React.FC<WorkoutTemplateLibraryProps> = ({
   const modalityConfig = MODALITY_CONFIG[modality];
 
   return (
-    <div className="w-80 h-full bg-ceramic-base border-r border-stone-200 flex flex-col">
+    <div className="w-80 h-full bg-ceramic-base border-r border-ceramic-border flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-stone-200">
+      <div className="p-4 border-b border-ceramic-border">
         <div className="flex items-center gap-3 mb-3">
           <div className="ceramic-inset p-2">
             <span className="text-xl">{modalityConfig.icon}</span>
@@ -117,7 +117,7 @@ export const WorkoutTemplateLibrary: React.FC<WorkoutTemplateLibraryProps> = ({
       </div>
 
       {/* Footer Stats */}
-      <div className="p-4 border-t border-stone-200 bg-white">
+      <div className="p-4 border-t border-ceramic-border bg-ceramic-base">
         <div className="flex items-center justify-between text-xs text-ceramic-text-secondary">
           <span className="font-medium">{templates.length} template(s)</span>
           <span className="flex items-center gap-1">
@@ -144,7 +144,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, modalityColor, on
   return (
     <div
       onClick={onClick}
-      className="group relative flex flex-col gap-2 rounded-lg border border-stone-200 bg-white p-3 shadow-sm transition-all hover:border-stone-300 hover:shadow-md cursor-grab active:cursor-grabbing"
+      className="group relative flex flex-col gap-2 rounded-lg border border-ceramic-border bg-ceramic-base p-3 shadow-sm transition-all hover:border-ceramic-border hover:shadow-md cursor-grab active:cursor-grabbing"
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = 'copy';
@@ -154,20 +154,20 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, modalityColor, on
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-          <Activity size={12} className="text-stone-400" />
+        <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-ceramic-text-secondary">
+          <Activity size={12} className="text-ceramic-text-secondary" />
           {template.category}
         </span>
-        <GripVertical size={14} className="text-stone-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <GripVertical size={14} className="text-ceramic-border opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
       {/* Title */}
       <div>
-        <h4 className="font-semibold text-stone-900 text-sm leading-tight mb-1">
+        <h4 className="font-semibold text-ceramic-text-primary text-sm leading-tight mb-1">
           {template.name}
         </h4>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-stone-500">
+          <span className="text-xs text-ceramic-text-secondary">
             {template.duration} min
           </span>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${INTENSITY_COLORS[template.intensity]}`}>
@@ -178,7 +178,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, modalityColor, on
 
       {/* Technical Details (if available) */}
       {template.sets && (
-        <div className="text-xs text-stone-500 pt-2 border-t border-stone-100">
+        <div className="text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-border/50">
           {template.sets}x {template.reps}
           {template.rest && template.rest !== '0' && ` • ${template.rest} rest`}
         </div>

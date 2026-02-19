@@ -467,7 +467,7 @@ export default function FluxDashboard() {
           <span className="text-xs font-bold uppercase tracking-wider">Voltar</span>
         </button>
 
-        <div className="flex items-center gap-4 mb-6">
+        <div data-tour="flux-header" className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 ceramic-card flex items-center justify-center">
             <span className="text-3xl">🏋️</span>
           </div>
@@ -482,7 +482,7 @@ export default function FluxDashboard() {
         </div>
 
         {/* Quick Access Buttons - Flow Module Tools */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div data-tour="flux-quick-tools" className="grid grid-cols-2 gap-2 mb-4">
           <button
             onClick={() => navigate('/flux/templates')}
             className="ceramic-card p-3 hover:scale-[1.02] transition-all group"
@@ -548,7 +548,7 @@ export default function FluxDashboard() {
         </div>
 
         {/* Filters Section */}
-        <div className="space-y-4 mb-4">
+        <div data-tour="flux-filters" className="space-y-4 mb-4">
           {/* Modality Filter Tabs */}
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -683,6 +683,7 @@ export default function FluxDashboard() {
 
             {/* New Athlete Button */}
             <button
+              data-tour="flux-add-athlete"
               onClick={() => setAthleteModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 ceramic-card hover:scale-105 transition-transform"
             >
@@ -692,7 +693,7 @@ export default function FluxDashboard() {
           </div>
         </div>
 
-        <div className="grid gap-4">
+        <div data-tour="flux-athletes-grid" className="grid gap-4">
           {filteredAthletes.slice(0, 20).map((athlete) => {
             const athleteAlerts: any[] = [];
             const athleteFeedbacks = feedbacksByAthlete[athlete.id] || [];

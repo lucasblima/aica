@@ -177,11 +177,12 @@ const PositionedWorkoutCard: React.FC<PositionedWorkoutCardProps> = ({ workout, 
       layoutId={`workout-${workout.id}`}
       data-workout-card
       draggable
-      onDragStart={(e: any) => {
-        // Store workout ID for reorder
-        if (e.dataTransfer) {
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('workoutReorder', JSON.stringify({
+      onDragStart={(e: MouseEvent | TouchEvent | PointerEvent) => {
+        // Store workout ID for reorder (native HTML5 drag via draggable attr)
+        const de = e as unknown as DragEvent;
+        if (de.dataTransfer) {
+          de.dataTransfer.effectAllowed = 'move';
+          de.dataTransfer.setData('workoutReorder', JSON.stringify({
             id: workout.id,
             fromDay: workout.day_of_week,
           }));
@@ -317,7 +318,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
 }) => {
   const columnRef = useRef<HTMLDivElement>(null);
 
-  const getTimeFromEvent = useCallback((e: React.DragEvent): string => {
+  const getTimeFromEvent = useCallback((e: { clientY: number }): string => {
     if (!columnRef.current) return '09:00';
     const rect = columnRef.current.getBoundingClientRect();
     const y = e.clientY - rect.top + columnRef.current.scrollTop;
@@ -402,7 +403,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
         onDoubleClick={(e) => {
           // Only trigger if clicking empty space (not on a workout card)
           if ((e.target as HTMLElement).closest('[data-workout-card]')) return;
-          const time = getTimeFromEvent(e as any);
+          const time = getTimeFromEvent(e);
           onEmptySlotClick?.(time);
         }}
         className="relative border-r border-ceramic-text-secondary/5"

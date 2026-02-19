@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import type { MedicalDocumentType, UploadDocumentInput } from '../../types/parq';
+import type { MedicalDocumentType, UploadDocumentInput, AthleteDocument } from '../../types/parq';
 import {
   DOCUMENT_TYPE_LABELS,
   ACCEPTED_MIME_TYPES,
@@ -24,7 +24,7 @@ import {
 interface MedicalDocumentUploadProps {
   athleteId: string;
   parqResponseId?: string;
-  onUpload: (input: Omit<UploadDocumentInput, 'athlete_id'>) => Promise<any>;
+  onUpload: (input: Omit<UploadDocumentInput, 'athlete_id'>) => Promise<AthleteDocument | null>;
   isUploading?: boolean;
 }
 

@@ -30,7 +30,7 @@ export interface TourConfig {
   steps: TourStep[];
   autoStart?: boolean; // Whether to auto-start on first visit
   autoStartDelay?: number; // Delay in ms before auto-starting (default: 500)
-  module?: 'atlas' | 'journey' | 'studio' | 'finance' | 'grants' | 'connections' | 'general';
+  module?: 'atlas' | 'journey' | 'studio' | 'finance' | 'grants' | 'connections' | 'flux' | 'general';
   onComplete?: () => void;
   onSkip?: () => void;
 }

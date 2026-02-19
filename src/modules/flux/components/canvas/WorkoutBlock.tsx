@@ -83,31 +83,31 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
       onClick={onClick}
       draggable
       onDragStart={handleDragStart}
-      className="group relative flex flex-col gap-2 rounded-lg border border-stone-200 bg-white p-3 shadow-sm transition-all hover:border-stone-300 hover:shadow-md cursor-grab active:cursor-grabbing"
+      className="group relative flex flex-col gap-2 rounded-lg border border-ceramic-border bg-ceramic-base p-3 shadow-sm transition-all hover:border-ceramic-border hover:shadow-md cursor-grab active:cursor-grabbing"
     >
       {/* Header: Type + Grip */}
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-stone-500">
-          <Activity size={12} className="text-stone-400" />
+        <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ceramic-text-secondary">
+          <Activity size={12} className="text-ceramic-text-secondary" />
           {MODALITY_LABELS[workout.modality] || workout.modality}
         </span>
         <GripVertical
           size={14}
-          className="text-stone-300 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="text-ceramic-border opacity-0 group-hover:opacity-100 transition-opacity"
         />
       </div>
 
       {/* Title */}
       <div>
-        <h4 className="font-medium text-stone-900">{workout.name}</h4>
-        <p className="text-sm text-stone-500 mt-0.5">
+        <h4 className="font-medium text-ceramic-text-primary">{workout.name}</h4>
+        <p className="text-sm text-ceramic-text-secondary mt-0.5">
           {workout.duration} min • Int: {INTENSITY_LABELS[workout.intensity]}
         </p>
       </div>
 
       {/* Technical Details (if available) */}
       {workout.sets && workout.reps && (
-        <div className="text-xs text-stone-500 pt-2 border-t border-stone-100">
+        <div className="text-xs text-ceramic-text-secondary pt-2 border-t border-ceramic-border/50">
           {workout.sets}x {workout.reps}
           {workout.rest && workout.rest !== '0' && ` • ${workout.rest} rest`}
         </div>
@@ -115,7 +115,7 @@ export const WorkoutBlock: React.FC<WorkoutBlockProps> = ({
 
       {/* Notes Preview (if available) */}
       {workout.notes && (
-        <div className="text-xs text-stone-600 italic pt-2 border-t border-stone-100 line-clamp-2">
+        <div className="text-xs text-ceramic-text-secondary italic pt-2 border-t border-ceramic-border/50 line-clamp-2">
           {workout.notes}
         </div>
       )}
@@ -143,23 +143,23 @@ const CompactCard: React.FC<CompactCardProps> = ({ workout, onClick, accentColor
   return (
     <div
       onClick={onClick}
-      className="relative flex flex-col gap-1.5 rounded-lg border border-stone-200 bg-white p-2.5 shadow-sm transition-all hover:border-stone-300 hover:shadow-md cursor-pointer"
+      className="relative flex flex-col gap-1.5 rounded-lg border border-ceramic-border bg-ceramic-base p-2.5 shadow-sm transition-all hover:border-ceramic-border hover:shadow-md cursor-pointer"
     >
       {/* Modality Badge */}
-      <span className="text-[9px] font-bold uppercase tracking-wider text-stone-500">
+      <span className="text-[9px] font-bold uppercase tracking-wider text-ceramic-text-secondary">
         {MODALITY_LABELS[workout.modality] || workout.modality}
       </span>
 
       {/* Name */}
-      <h5 className="text-xs font-semibold text-stone-900 leading-tight line-clamp-2">
+      <h5 className="text-xs font-semibold text-ceramic-text-primary leading-tight line-clamp-2">
         {workout.name}
       </h5>
 
       {/* Duration + Intensity */}
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-stone-500">{workout.duration} min</span>
-        <span className="text-[9px] text-stone-400">•</span>
-        <span className="text-[10px] text-stone-500">{INTENSITY_LABELS[workout.intensity]}</span>
+        <span className="text-[10px] text-ceramic-text-secondary">{workout.duration} min</span>
+        <span className="text-[9px] text-ceramic-text-secondary">•</span>
+        <span className="text-[10px] text-ceramic-text-secondary">{INTENSITY_LABELS[workout.intensity]}</span>
       </div>
 
       {/* Accent Line (modality color) */}

@@ -87,7 +87,6 @@ export type ViewState =
   | 'association_detail'
   | 'podcast'
   | 'finance'
-  | 'finance_agent'
   | 'journey'
   | 'grants'
   | 'ai-cost'

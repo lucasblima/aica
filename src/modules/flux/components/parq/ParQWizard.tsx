@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import type { ParQWizardStep, FollowUpCategory, ParQRiskLevel } from '../../types/parq';
+import type { ParQWizardStep, FollowUpCategory, ParQRiskLevel, UploadDocumentInput, AthleteDocument } from '../../types/parq';
 import { PARQ_CLASSIC_QUESTIONS, PARQ_FOLLOWUP_CATEGORIES } from './ParQQuestionConstants';
 import { ParQStatusBadge } from './ParQStatusBadge';
 import { MedicalDocumentUpload } from './MedicalDocumentUpload';
@@ -51,7 +51,7 @@ interface ParQWizardProps {
   submitParQ: () => Promise<boolean>;
   onComplete: () => void;
   // Document upload
-  onUploadDocument?: (input: any) => Promise<any>;
+  onUploadDocument?: (input: Omit<UploadDocumentInput, 'athlete_id'>) => Promise<AthleteDocument | null>;
   isUploading?: boolean;
 }
 
