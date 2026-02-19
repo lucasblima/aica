@@ -18,41 +18,17 @@ export class LevelingEngineService {
   // ============================================================================
 
   private static readonly LEVEL_THRESHOLDS = {
-    iniciante_1: {
+    iniciante: {
       min_consistency: 0,
       min_weekly_volume: 0, // minutes
-      max_weekly_volume: 180, // 3 hours
+      max_weekly_volume: 420, // 7 hours
       min_weeks_active: 0,
     },
-    iniciante_2: {
-      min_consistency: 50,
-      min_weekly_volume: 120, // 2 hours
-      max_weekly_volume: 300, // 5 hours
-      min_weeks_active: 4,
-    },
-    iniciante_3: {
-      min_consistency: 60,
-      min_weekly_volume: 180, // 3 hours
-      max_weekly_volume: 420, // 7 hours
-      min_weeks_active: 8,
-    },
-    intermediario_1: {
+    intermediario: {
       min_consistency: 70,
       min_weekly_volume: 240, // 4 hours
-      max_weekly_volume: 540, // 9 hours
-      min_weeks_active: 12,
-    },
-    intermediario_2: {
-      min_consistency: 75,
-      min_weekly_volume: 300, // 5 hours
-      max_weekly_volume: 660, // 11 hours
-      min_weeks_active: 20,
-    },
-    intermediario_3: {
-      min_consistency: 80,
-      min_weekly_volume: 360, // 6 hours
       max_weekly_volume: 780, // 13 hours
-      min_weeks_active: 32,
+      min_weeks_active: 12,
     },
     avancado: {
       min_consistency: 85,
@@ -63,12 +39,8 @@ export class LevelingEngineService {
   };
 
   private static readonly LEVEL_ORDER: AthleteLevel[] = [
-    'iniciante_1',
-    'iniciante_2',
-    'iniciante_3',
-    'intermediario_1',
-    'intermediario_2',
-    'intermediario_3',
+    'iniciante',
+    'intermediario',
     'avancado',
   ];
 
@@ -158,7 +130,7 @@ export class LevelingEngineService {
       }
     }
 
-    return 'iniciante_1'; // Default fallback
+    return 'iniciante'; // Default fallback
   }
 
   /**
@@ -310,22 +282,14 @@ export class LevelingEngineService {
     thresholds: typeof LevelingEngineService.LEVEL_THRESHOLDS[AthleteLevel];
   } {
     const labels: Record<AthleteLevel, string> = {
-      iniciante_1: 'Iniciante I',
-      iniciante_2: 'Iniciante II',
-      iniciante_3: 'Iniciante III',
-      intermediario_1: 'Intermediário I',
-      intermediario_2: 'Intermediário II',
-      intermediario_3: 'Intermediário III',
+      iniciante: 'Iniciante',
+      intermediario: 'Intermediário',
       avancado: 'Avançado',
     };
 
     const descriptions: Record<AthleteLevel, string> = {
-      iniciante_1: '0-4 semanas de treino. Foco em consistência básica.',
-      iniciante_2: '1-2 meses de treino. Construindo base aeróbica.',
-      iniciante_3: '2-3 meses de treino. Incremento de volume gradual.',
-      intermediario_1: '3-5 meses de treino. Introdução de intensidade estruturada.',
-      intermediario_2: '5-8 meses de treino. Treinos polarizados e periodização.',
-      intermediario_3: '8-12 meses de treino. Alto volume e intensidade controlada.',
+      iniciante: 'Até 3 meses de treino. Foco em consistência e base aeróbica.',
+      intermediario: '3-12 meses de treino. Intensidade estruturada e periodização.',
       avancado: '12+ meses de treino. Periodização avançada e competição.',
     };
 

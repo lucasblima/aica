@@ -47,11 +47,7 @@ const LAST_NAMES = [
   'Reis', 'Sales', 'Medeiros', 'Nogueira', 'Peixoto', 'Cavalcanti',
 ];
 
-const LEVELS: AthleteLevel[] = [
-  'iniciante_1', 'iniciante_2', 'iniciante_3',
-  'intermediario_1', 'intermediario_2', 'intermediario_3',
-  'avancado',
-];
+const LEVELS: AthleteLevel[] = ['iniciante', 'intermediario', 'avancado'];
 
 const STATUSES: AthleteStatus[] = ['active', 'paused', 'trial', 'churned'];
 const STATUS_WEIGHTS = [70, 10, 15, 5]; // 70% active, etc.
@@ -128,18 +124,18 @@ function generateAthletes(count: number): Athlete[] {
 
       if (modality === 'cycling') {
         // FTP: 150-350W (varies by level)
-        const baseFtp = level.includes('avancado') ? 300 : level.includes('intermediario') ? 250 : 200;
+        const baseFtp = level === 'avancado' ? 300 : level === 'intermediario' ? 250 : 200;
         ftp = Math.floor(baseFtp + (random() - 0.5) * 100);
       } else if (modality === 'running') {
         // Pace: 4:00-6:30/km (faster for advanced)
-        const basePaceSeconds = level.includes('avancado') ? 240 : level.includes('intermediario') ? 300 : 360;
+        const basePaceSeconds = level === 'avancado' ? 240 : level === 'intermediario' ? 300 : 360;
         const paceSeconds = Math.floor(basePaceSeconds + (random() - 0.5) * 60);
         const minutes = Math.floor(paceSeconds / 60);
         const seconds = paceSeconds % 60;
         pace_threshold = `${minutes}:${seconds.toString().padStart(2, '0')}/km`;
       } else if (modality === 'swimming') {
         // CSS: 1:20-2:10/100m (faster for advanced)
-        const baseCssSeconds = level.includes('avancado') ? 85 : level.includes('intermediario') ? 105 : 120;
+        const baseCssSeconds = level === 'avancado' ? 85 : level === 'intermediario' ? 105 : 120;
         const cssSeconds = Math.floor(baseCssSeconds + (random() - 0.5) * 20);
         const minutes = Math.floor(cssSeconds / 60);
         const seconds = cssSeconds % 60;
@@ -184,7 +180,7 @@ export const MOCK_ATHLETES: Athlete[] = generateAthletes(312);
 export const MOCK_ATHLETES_WITH_METRICS: AthleteWithMetrics[] = MOCK_ATHLETES.map((athlete) => {
   const isActive = athlete.status === 'active';
   const baseAdherence = isActive ? 75 : 40;
-  const levelBonus = athlete.level.includes('avancado') ? 15 : athlete.level.includes('intermediario') ? 10 : 0;
+  const levelBonus = athlete.level === 'avancado' ? 15 : athlete.level === 'intermediario' ? 10 : 0;
   const consistency_rate = Math.min(95, baseAdherence + levelBonus + random() * 10);
 
   // ~5% of athletes have alerts
@@ -582,7 +578,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     default_sets: 1,
     default_reps: '400m',
     default_rest: '0',
-    level_range: ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
+    level_range: ['iniciante', 'intermediario', 'avancado'],
     tags: ['aquecimento', 'livre'],
   },
   {
@@ -594,7 +590,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     default_sets: 8,
     default_reps: '100m',
     default_rest: '20s',
-    level_range: ['intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
+    level_range: ['intermediario', 'avancado'],
     tags: ['crawl', 'aerobico'],
   },
   {
@@ -606,7 +602,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     default_sets: 10,
     default_reps: '50m',
     default_rest: '60s',
-    level_range: ['intermediario_3', 'avancado'],
+    level_range: ['avancado'],
     tags: ['velocidade', 'sprint'],
   },
   {
@@ -618,7 +614,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     default_sets: 1,
     default_reps: '2km',
     default_rest: '0',
-    level_range: ['iniciante_1', 'iniciante_2', 'iniciante_3', 'intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
+    level_range: ['iniciante', 'intermediario', 'avancado'],
     tags: ['aquecimento', 'corrida'],
   },
   {
@@ -630,7 +626,7 @@ export const MOCK_EXERCISES: Exercise[] = [
     default_sets: 6,
     default_reps: '400m',
     default_rest: '90s',
-    level_range: ['intermediario_1', 'intermediario_2', 'intermediario_3', 'avancado'],
+    level_range: ['intermediario', 'avancado'],
     tags: ['intervalado', 'corrida'],
   },
 ];

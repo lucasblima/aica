@@ -11,22 +11,12 @@
 // ============================================
 
 /**
- * Athlete progression levels (7 total)
+ * Athlete progression levels (3 categories)
  */
-export type AthleteLevel =
-  | 'iniciante_1'
-  | 'iniciante_2'
-  | 'iniciante_3'
-  | 'intermediario_1'
-  | 'intermediario_2'
-  | 'intermediario_3'
-  | 'avancado';
+export type AthleteLevel = 'iniciante' | 'intermediario' | 'avancado';
 
-/**
- * Simplified athlete levels (3 categories)
- * Used for modality-specific level assignment
- */
-export type SimpleAthleteLevel = 'iniciante' | 'intermediario' | 'avancado';
+/** @deprecated Use AthleteLevel directly */
+export type SimpleAthleteLevel = AthleteLevel;
 
 /**
  * Modality with associated level
@@ -475,23 +465,13 @@ export const INITIAL_FLUX_STATE: FluxState = {
  * Level display names in Portuguese
  */
 export const LEVEL_LABELS: Record<AthleteLevel, string> = {
-  iniciante_1: 'Iniciante I',
-  iniciante_2: 'Iniciante II',
-  iniciante_3: 'Iniciante III',
-  intermediario_1: 'Intermediario I',
-  intermediario_2: 'Intermediario II',
-  intermediario_3: 'Intermediario III',
-  avancado: 'Avancado',
-};
-
-/**
- * Simplified level display names
- */
-export const SIMPLE_LEVEL_LABELS: Record<SimpleAthleteLevel, string> = {
   iniciante: 'Iniciante',
   intermediario: 'Intermediário',
   avancado: 'Avançado',
 };
+
+/** @deprecated Use LEVEL_LABELS directly */
+export const SIMPLE_LEVEL_LABELS = LEVEL_LABELS;
 
 /**
  * Status display configuration

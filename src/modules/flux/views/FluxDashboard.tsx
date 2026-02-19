@@ -37,9 +37,9 @@ type LevelCategory = 'all' | 'iniciante' | 'intermediario' | 'avancado';
 
 const LEVEL_CATEGORIES: { id: LevelCategory; label: string; icon: string; levels: AthleteLevel[] }[] = [
   { id: 'all', label: 'Todos', icon: '🎯', levels: [] },
-  { id: 'iniciante', label: 'Iniciante', icon: '🌱', levels: ['iniciante_1', 'iniciante_2', 'iniciante_3'] },
-  { id: 'intermediario', label: 'Intermediario', icon: '🌿', levels: ['intermediario_1', 'intermediario_2', 'intermediario_3'] },
-  { id: 'avancado', label: 'Avancado', icon: '🌳', levels: ['avancado'] },
+  { id: 'iniciante', label: 'Iniciante', icon: '🌱', levels: ['iniciante'] },
+  { id: 'intermediario', label: 'Intermediário', icon: '🌿', levels: ['intermediario'] },
+  { id: 'avancado', label: 'Avançado', icon: '🌳', levels: ['avancado'] },
 ];
 
 // Modality filter tab component
@@ -184,8 +184,8 @@ export default function FluxDashboard() {
     };
 
     for (const athlete of allAthletes) {
-      if (athlete.level.startsWith('iniciante')) counts.iniciante++;
-      else if (athlete.level.startsWith('intermediario')) counts.intermediario++;
+      if (athlete.level === 'iniciante') counts.iniciante++;
+      else if (athlete.level === 'intermediario') counts.intermediario++;
       else if (athlete.level === 'avancado') counts.avancado++;
     }
 
