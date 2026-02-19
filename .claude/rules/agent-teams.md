@@ -1,8 +1,15 @@
-# Agent Teams — Default Working Mode
+# Agent Teams — User-Approved Working Mode
 
-## When to Create a Team
+## CRITICAL: Always Ask Before Creating a Team
 
-**ALWAYS create an Agent Team** when the task involves ANY of these:
+**NEVER auto-create an Agent Team.** Always ask the user first via `AskUserQuestion`.
+
+When the task appears to benefit from a team (2+ files, decisions, new features, cross-layer work), **suggest** team composition and ask the user to confirm. Include:
+- Brief rationale for why a team would help
+- Suggested composition (roles + agent types)
+- Option to work solo instead
+
+**Recommend a team** when the task involves ANY of these:
 - 2+ files to modify
 - Decisions between approaches (architecture, library, pattern)
 - New features (even small ones — design + implement + review)
@@ -11,24 +18,25 @@
 - Database changes + frontend changes (cross-layer)
 - Any task the user describes with multiple steps
 
-**Work solo ONLY when:**
+**Recommend solo** when:
 - Single-line or few-line fix (typo, obvious bug, config tweak)
 - Pure research question (no code changes)
-- The user explicitly says "nao precisa de time" or similar
 
-When in doubt, **create a team**. The cost of coordination is lower than the cost of missing perspectives.
+But in ALL cases, **the user decides**. Never assume.
 
-## Workflow: Clarify → Plan → Team → Execute
+## Workflow: Name → Clarify → Ask Team → Execute → PR → Review
 
 ```
+0. NAME    — Suggest session name, wait for approval
 1. CLARIFY — Ask about information gaps (see clarification-first.md)
-2. PLAN   — Design team composition based on clarified scope
-3. TEAM   — Create team, assign tasks, set dependencies
-4. EXECUTE — Teammates work in parallel, lead synthesizes
-5. REVIEW  — Lead validates all work before reporting to user
+2. ASK     — Ask user if they want Agent Team activated (MANDATORY)
+3. EXECUTE — Team or solo, based on user decision
+4. PR      — Create Pull Request on feature branch (see session-protocol.md)
+5. REVIEW  — Read PR comments, address them, mark resolved
+6. MERGE   — Only after PR review is clean
 ```
 
-**NEVER skip step 1.** Always clarify before creating the team.
+**NEVER skip steps 0, 1, or 2.** The user must explicitly approve the team.
 
 ## Team Composition Patterns (AICA-Specific)
 
