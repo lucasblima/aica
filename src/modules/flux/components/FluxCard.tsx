@@ -5,10 +5,11 @@
  * Acts as an entry point to the Flux training management module.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Users } from 'lucide-react';
+import { ChevronRight, Users, Calendar, TrendingUp } from 'lucide-react';
 import { useAthletes } from '../hooks/useAthletes';
+import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
 import type { TrainingModality } from '../types';
 
@@ -55,6 +56,59 @@ export function FluxCard({ compact = false }: FluxCardProps) {
   }, [athletes]);
 
   const totalAthletes = athletes.length;
+
+  // Aggregate stats: workouts this week + active microcycle progress
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState(0);
+  const [activeMicrocycleWeek, setActiveMicrocycleWeek] = useState<{ current: number; total: number } | null>(null);
+
+  useEffect(() => {
+    if (athletes.length === 0) return;
+    let cancelled = false;
+
+    const fetchStats = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+
+      // Workout slots completed this week
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0=Sun
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + mondayOffset);
+      monday.setHours(0, 0, 0, 0);
+
+      const { count } = await supabase
+        .from('workout_slots')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('completed', true)
+        .gte('completed_at', monday.toISOString());
+
+      if (!cancelled) setWeeklyWorkouts(count ?? 0);
+
+      // Active microcycle progress (most recent active one)
+      const { data: mcData } = await supabase
+        .from('microcycles')
+        .select('start_date, end_date')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('start_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!cancelled && mcData) {
+        const start = new Date(mcData.start_date);
+        const end = new Date(mcData.end_date);
+        const totalWeeks = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+        const elapsed = Math.ceil((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        const currentWeek = Math.max(1, Math.min(elapsed, totalWeeks));
+        setActiveMicrocycleWeek({ current: currentWeek, total: totalWeeks });
+      }
+    };
+
+    fetchStats();
+    return () => { cancelled = true; };
+  }, [athletes]);
 
   // Handle navigation
   const handleClick = () => {
@@ -130,6 +184,24 @@ export function FluxCard({ compact = false }: FluxCardProps) {
             })}
             {totalAthletes === 0 && <span>Nenhum atleta</span>}
           </div>
+
+          {/* Quick stats row */}
+          {totalAthletes > 0 && (
+            <div className="flex items-center gap-3 mt-1.5 text-[10px] text-ceramic-text-secondary">
+              {weeklyWorkouts > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <Calendar className="w-3 h-3" />
+                  {weeklyWorkouts} treino{weeklyWorkouts !== 1 ? 's' : ''} na semana
+                </span>
+              )}
+              {activeMicrocycleWeek && (
+                <span className="flex items-center gap-0.5">
+                  <TrendingUp className="w-3 h-3" />
+                  Sem {activeMicrocycleWeek.current}/{activeMicrocycleWeek.total}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -182,6 +254,24 @@ export function FluxCard({ compact = false }: FluxCardProps) {
             );
           })}
         </div>
+
+        {/* Weekly Stats */}
+        {totalAthletes > 0 && (weeklyWorkouts > 0 || activeMicrocycleWeek) && (
+          <div className="flex items-center gap-4 mb-3 text-xs text-ceramic-text-secondary">
+            {weeklyWorkouts > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-ceramic-info" />
+                <span>{weeklyWorkouts} treino{weeklyWorkouts !== 1 ? 's' : ''} esta semana</span>
+              </div>
+            )}
+            {activeMicrocycleWeek && (
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-ceramic-success" />
+                <span>Semana {activeMicrocycleWeek.current}/{activeMicrocycleWeek.total}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center gap-2 text-xs text-ceramic-text-secondary font-medium group-hover:translate-x-1 transition-transform mt-auto">

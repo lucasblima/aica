@@ -592,6 +592,9 @@ function slotToWorkoutBlockData(slot: WorkoutSlot): WorkoutBlockData {
     modality: slot.modality as WorkoutBlockData['modality'],
     type: MODALITY_PT_LABELS[slot.modality] || slot.modality,
     notes: slot.coach_notes,
+    ftp_percentage: slot.ftp_percentage,
+    pace_zone: slot.pace_zone,
+    css_percentage: slot.css_percentage,
   };
 }
 
@@ -824,6 +827,9 @@ export default function CanvasEditorView() {
           duration: updated.duration,
           intensity: updated.intensity,
           coach_notes: updated.notes,
+          ftp_percentage: updated.ftp_percentage,
+          pace_zone: updated.pace_zone,
+          css_percentage: updated.css_percentage,
         });
       }
     },

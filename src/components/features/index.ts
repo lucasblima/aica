@@ -60,4 +60,7 @@ export { InviteShareCard } from './InviteShareCard';
 export { LifeCouncilCard } from './LifeCouncilCard';
 export { PatternsSummary } from './PatternsSummary';
 
+// Module Agent Chat — Reusable AI agent interface
+export { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig, MODULE_AGENT_CONFIGS } from './ModuleAgentChat';
+
 

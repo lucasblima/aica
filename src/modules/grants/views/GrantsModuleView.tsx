@@ -5,6 +5,8 @@
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useState, useEffect } from 'react';
+import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
+import { useModuleAgent } from '@/hooks/useModuleAgent';
 import { ArrowLeft, Archive, ArchiveRestore, Trash2, MoreVertical, Building2 } from 'lucide-react';
 import { EditalSetupWizard } from '../components/EditalSetupWizard';
 import { EditalDetailView } from '../components/EditalDetailView';
@@ -64,9 +66,12 @@ interface GrantsModuleViewProps {
 }
 
 /* data-tour markers: grants-header, opportunities-list, opportunity-filter, edital-parser, opportunity-detail, saved-opportunities, application-tracking, ai-briefing */
+const grantsAgentConfig = getModuleAgentConfig('captacao')!;
+
 export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) => {
   // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
   useTourAutoStart('grants-first-visit');
+  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
   // View state
   const [currentView, setCurrentView] = useState<ModuleView>('dashboard');
@@ -957,9 +962,9 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       <ApprovedProjectModal
         isOpen={isApprovedProjectModalOpen}
         onClose={() => setIsApprovedProjectModalOpen(false)}
-        onSave={async (data) => {
-          // TODO: Implementar criação de projeto aprovado via lei de incentivo
-          // Por enquanto apenas fecha o modal e recarrega dados
+        onSave={async (_data) => {
+          // Criação de projeto aprovado via lei de incentivo ainda não implementada no backend.
+          // Recarrega dados após fechar o modal para refletir quaisquer mudanças futuras.
           loadOpportunitiesData();
         }}
       />
@@ -967,17 +972,31 @@ export const GrantsModuleView: React.FC<GrantsModuleViewProps> = ({ onBack }) =>
       {/* Organization Wizard Modal */}
       {isOrganizationWizardOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl my-8">
+          <div className="w-full max-w-4xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto rounded-2xl">
             <OrganizationWizard
               onComplete={() => {
                 setIsOrganizationWizardOpen(false);
-                // TODO: Refresh organizations list when implemented
+                loadOpportunitiesData();
               }}
               onClose={() => setIsOrganizationWizardOpen(false)}
             />
           </div>
         </div>
       )}
+
+      {/* Module Agent */}
+      <ModuleAgentFAB onClick={openAgent} accentBg={grantsAgentConfig.accentBg} label="Agente Captacao" />
+      <ModuleAgentChat
+        isOpen={isAgentOpen}
+        onClose={closeAgent}
+        module={grantsAgentConfig.module}
+        displayName={grantsAgentConfig.displayName}
+        accentColor={grantsAgentConfig.accentColor}
+        accentBg={grantsAgentConfig.accentBg}
+        suggestedPrompts={grantsAgentConfig.suggestedPrompts}
+        welcomeMessage={grantsAgentConfig.welcomeMessage}
+        placeholder={grantsAgentConfig.placeholder}
+      />
     </>
   );
 };

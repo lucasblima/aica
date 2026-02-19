@@ -15,6 +15,8 @@ import { WeeklySummaryCard } from '../components/insights/WeeklySummaryCard'
 import { DailyQuestionCard } from '../components/insights/DailyQuestionCard'
 import { PatternDashboard } from '../components/insights/PatternDashboard'
 import { LifeCouncilCard, PatternsSummary } from '@/components/features'
+import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat'
+import { useModuleAgent } from '@/hooks/useModuleAgent'
 import { useLifeCouncil } from '@/hooks/useLifeCouncil'
 import { useUserPatterns } from '@/hooks/useUserPatterns'
 
@@ -138,8 +140,11 @@ interface JourneyFullScreenProps {
   onBack?: () => void;
 }
 
+const journeyAgentConfig = getModuleAgentConfig('journey')!;
+
 export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   useTourAutoStart('journey-first-visit');
+  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
   // Debug: Log when component mounts
   React.useEffect(() => {
@@ -642,6 +647,20 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
           />
         )}
       </AnimatePresence>
+
+      {/* Module Agent */}
+      <ModuleAgentFAB onClick={openAgent} accentBg={journeyAgentConfig.accentBg} label="Agente Journey" />
+      <ModuleAgentChat
+        isOpen={isAgentOpen}
+        onClose={closeAgent}
+        module={journeyAgentConfig.module}
+        displayName={journeyAgentConfig.displayName}
+        accentColor={journeyAgentConfig.accentColor}
+        accentBg={journeyAgentConfig.accentBg}
+        suggestedPrompts={journeyAgentConfig.suggestedPrompts}
+        welcomeMessage={journeyAgentConfig.welcomeMessage}
+        placeholder={journeyAgentConfig.placeholder}
+      />
     </div>
   )
 }

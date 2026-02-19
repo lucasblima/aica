@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Activity, Target, MessageSquare } from 'lucide-react';
+import { X, Save, Activity, Target, MessageSquare, Loader2, CheckCircle } from 'lucide-react';
 import type { WorkoutBlockData } from './WorkoutBlock';
 import type { WorkoutIntensity } from '../../mockData/workoutTemplates';
 
@@ -16,7 +16,7 @@ interface WorkoutBlockEditorProps {
   workout: WorkoutBlockData | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updated: WorkoutBlockData) => void;
+  onSave: (updated: WorkoutBlockData) => void | Promise<void>;
 }
 
 export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
@@ -26,20 +26,36 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
   onSave,
 }) => {
   const [formData, setFormData] = useState<WorkoutBlockData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   // Sync form data when workout changes
   useEffect(() => {
     if (workout) {
       setFormData(workout);
+      setSaveStatus('idle');
     }
   }, [workout]);
 
   if (!isOpen || !formData) return null;
 
-  const handleSave = () => {
-    console.log('Saving workout:', formData);
-    onSave(formData);
-    onClose();
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveStatus('idle');
+    try {
+      await onSave(formData);
+      setSaveStatus('success');
+      setTimeout(() => {
+        onClose();
+        setSaveStatus('idle');
+      }, 600);
+    } catch (err) {
+      console.error('Error saving workout:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const updateField = <K extends keyof WorkoutBlockData>(
@@ -149,17 +165,22 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
               {/* Show different inputs based on modality */}
               {formData.modality === 'cycling' && (
                 <div className="ceramic-inset p-4 rounded-lg">
-                  <label className="block text-xs font-semibold text-stone-700 mb-2">
+                  <label className="block text-xs font-semibold text-ceramic-text-secondary mb-2">
                     FTP Target (%)
                   </label>
                   <input
                     type="number"
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ceramic-info"
+                    value={formData.ftp_percentage ?? ''}
+                    onChange={(e) => updateField('ftp_percentage', e.target.value ? parseInt(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 rounded-[10px] text-sm text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    style={{
+                      boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
+                    }}
                     placeholder="Ex: 85 (para 85% do FTP)"
                     min="0"
                     max="150"
                   />
-                  <p className="text-xs text-stone-500 mt-1">
+                  <p className="text-xs text-ceramic-text-secondary mt-1">
                     Percentual do FTP (Functional Threshold Power)
                   </p>
                 </div>
@@ -167,19 +188,25 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
 
               {formData.modality === 'running' && (
                 <div className="ceramic-inset p-4 rounded-lg">
-                  <label className="block text-xs font-semibold text-stone-700 mb-2">
+                  <label className="block text-xs font-semibold text-ceramic-text-secondary mb-2">
                     Pace Zone
                   </label>
-                  <select className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ceramic-info">
+                  <select
+                    value={formData.pace_zone ?? ''}
+                    onChange={(e) => updateField('pace_zone', e.target.value || undefined)}
+                    className="w-full px-3 py-2 rounded-[10px] text-sm text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    style={{
+                      boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
+                    }}
+                  >
                     <option value="">Selecione...</option>
                     <option value="Z1">Z1 - Recovery</option>
-                    <option value="Z2">Z2 - Aeróbico</option>
+                    <option value="Z2">Z2 - Aerobico</option>
                     <option value="Z3">Z3 - Tempo</option>
                     <option value="Z4">Z4 - Threshold</option>
-                    <option value="VO2Max">VO2 Max</option>
-                    <option value="Sprint">Sprint</option>
+                    <option value="Z5">Z5 - VO2 Max</option>
                   </select>
-                  <p className="text-xs text-stone-500 mt-1">
+                  <p className="text-xs text-ceramic-text-secondary mt-1">
                     Zona de ritmo baseada no limiar
                   </p>
                 </div>
@@ -187,17 +214,22 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
 
               {formData.modality === 'swimming' && (
                 <div className="ceramic-inset p-4 rounded-lg">
-                  <label className="block text-xs font-semibold text-stone-700 mb-2">
+                  <label className="block text-xs font-semibold text-ceramic-text-secondary mb-2">
                     CSS Target (%)
                   </label>
                   <input
                     type="number"
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ceramic-info"
+                    value={formData.css_percentage ?? ''}
+                    onChange={(e) => updateField('css_percentage', e.target.value ? parseInt(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 rounded-[10px] text-sm text-ceramic-text-primary bg-ceramic-base focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    style={{
+                      boxShadow: 'inset 2px 2px 4px rgba(163,158,145,0.15), inset -2px -2px 4px rgba(255,255,255,0.85)',
+                    }}
                     placeholder="Ex: 90 (para 90% do CSS)"
                     min="0"
                     max="100"
                   />
-                  <p className="text-xs text-stone-500 mt-1">
+                  <p className="text-xs text-ceramic-text-secondary mt-1">
                     Percentual do CSS (Critical Swim Speed)
                   </p>
                 </div>
@@ -205,8 +237,8 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
 
               {formData.modality === 'strength' && (
                 <div className="ceramic-inset p-4 rounded-lg">
-                  <p className="text-xs text-stone-600">
-                    Parâmetros de carga para musculação serão configurados por exercício individual.
+                  <p className="text-xs text-ceramic-text-secondary">
+                    Parametros de carga para musculacao serao configurados por exercicio individual.
                   </p>
                 </div>
               )}
@@ -230,10 +262,16 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
 
         {/* Footer Actions */}
         <div className="p-6 border-t border-ceramic-text-secondary/10">
+          {saveStatus === 'error' && (
+            <p className="text-xs text-ceramic-error font-medium mb-3 text-center">
+              Erro ao salvar. Tente novamente.
+            </p>
+          )}
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-[14px] text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform"
+              disabled={isSaving}
+              className="flex-1 py-3 rounded-[14px] text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform disabled:opacity-50"
               style={{
                 background: '#F0EFE9',
                 boxShadow: '3px 3px 8px rgba(163,158,145,0.12), -3px -3px 8px rgba(255,255,255,0.9)',
@@ -243,10 +281,29 @@ export const WorkoutBlockEditor: React.FC<WorkoutBlockEditorProps> = ({
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-[14px] text-sm font-bold transition-colors"
+              disabled={isSaving}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-[14px] text-sm font-bold transition-colors ${
+                saveStatus === 'success'
+                  ? 'bg-ceramic-success text-white'
+                  : 'bg-amber-500 hover:bg-amber-600 text-white'
+              } disabled:opacity-70`}
             >
-              <Save className="w-4 h-4" />
-              Salvar
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : saveStatus === 'success' ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Salvo
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Salvar
+                </>
+              )}
             </button>
           </div>
         </div>

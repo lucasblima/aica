@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import { Sparkles, Loader2, Circle, ArrowUpRight, RotateCcw } from 'lucide-react';
+import { Sparkles, Loader2, Circle, ArrowUpRight, RotateCcw, Info } from 'lucide-react';
 import { useConversationSummary } from '@/hooks/useConversationSummary';
 import type { ConversationTopic, ActionItem, TimelineEntry } from '@/services/gmailSummarizeService';
 
@@ -55,6 +55,22 @@ function formatPeriod(period: string): string {
 function formatDateRange(first: string, last: string): string {
     const fmt = (d: string) => new Date(d).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
     return `${fmt(first)} \u2014 ${fmt(last)}`;
+}
+
+const INSUFFICIENT_DATA_KEYWORDS = [
+    'sem dados suficientes',
+    'poucos emails',
+    'analise pendente',
+    'nenhum email encontrado',
+    'dados insuficientes',
+];
+
+function isInsufficientData(summary: { totalEmails: number; sentiment: { overall: string; trend: string; description: string } }): boolean {
+    if (summary.totalEmails < 3) return true;
+    const desc = summary.sentiment.description.toLowerCase();
+    return summary.sentiment.overall === 'neutral'
+        && summary.sentiment.trend === 'stable'
+        && INSUFFICIENT_DATA_KEYWORDS.some((kw) => desc.includes(kw));
 }
 
 // --- Skeleton loader ---
@@ -311,32 +327,48 @@ export function ConversationSummarySection() {
 
                             {/* Sentiment */}
                             <motion.div variants={fadeUp}>
-                                <div
-                                    className="rounded-xl px-4 py-3"
-                                    style={{
-                                        backgroundColor: `${SENTIMENT_COLORS[summary.sentiment.overall]}08`,
-                                    }}
-                                >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span
-                                            className="w-2 h-2 rounded-full"
-                                            style={{ backgroundColor: SENTIMENT_COLORS[summary.sentiment.overall] }}
-                                        />
-                                        <span className="text-sm font-medium text-ceramic-text-primary">
-                                            {SENTIMENT_LABELS[summary.sentiment.overall]}
-                                        </span>
-                                        <ArrowUpRight
-                                            className="w-3.5 h-3.5"
-                                            style={{ color: SENTIMENT_COLORS[summary.sentiment.overall] }}
-                                        />
-                                        <span className="text-xs text-ceramic-text-secondary">
-                                            {TREND_LABELS[summary.sentiment.trend]} {TREND_ARROWS[summary.sentiment.trend]}
-                                        </span>
+                                {isInsufficientData(summary) ? (
+                                    <div className="rounded-xl px-4 py-3 bg-ceramic-info/10 border border-ceramic-info/20">
+                                        <div className="flex items-start gap-2.5">
+                                            <Info className="w-4 h-4 text-ceramic-info flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="text-sm font-medium text-ceramic-text-primary">
+                                                    Dados insuficientes para analise
+                                                </p>
+                                                <p className="text-sm text-ceramic-text-secondary leading-relaxed mt-0.5">
+                                                    Poucos emails encontrados para este contato. Adicione mais conversas para uma analise mais rica.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-ceramic-text-secondary leading-relaxed">
-                                        {summary.sentiment.description}
-                                    </p>
-                                </div>
+                                ) : (
+                                    <div
+                                        className="rounded-xl px-4 py-3"
+                                        style={{
+                                            backgroundColor: `${SENTIMENT_COLORS[summary.sentiment.overall]}08`,
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span
+                                                className="w-2 h-2 rounded-full"
+                                                style={{ backgroundColor: SENTIMENT_COLORS[summary.sentiment.overall] }}
+                                            />
+                                            <span className="text-sm font-medium text-ceramic-text-primary">
+                                                {SENTIMENT_LABELS[summary.sentiment.overall]}
+                                            </span>
+                                            <ArrowUpRight
+                                                className="w-3.5 h-3.5"
+                                                style={{ color: SENTIMENT_COLORS[summary.sentiment.overall] }}
+                                            />
+                                            <span className="text-xs text-ceramic-text-secondary">
+                                                {TREND_LABELS[summary.sentiment.trend]} {TREND_ARROWS[summary.sentiment.trend]}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-ceramic-text-secondary leading-relaxed">
+                                            {summary.sentiment.description}
+                                        </p>
+                                    </div>
+                                )}
                             </motion.div>
 
                             {/* Timeline */}

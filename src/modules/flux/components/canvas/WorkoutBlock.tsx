@@ -25,6 +25,9 @@ export interface WorkoutBlockData {
   reps?: string;
   rest?: string;
   notes?: string;
+  ftp_percentage?: number;
+  pace_zone?: string;
+  css_percentage?: number;
 }
 
 interface WorkoutBlockProps {

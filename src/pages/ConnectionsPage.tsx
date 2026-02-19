@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConnectionsView } from '../modules/connections/views/ConnectionsView';
 import { CreateSpaceDrawer } from '../modules/connections/components/CreateSpaceDrawer';
+import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '../components/features/ModuleAgentChat';
+import { useModuleAgent } from '../hooks/useModuleAgent';
 import { useAuth } from '../hooks/useAuth';
 import type { ConnectionSpace, ArchetypeType } from '../modules/connections/types';
+
+const connectionsAgentConfig = getModuleAgentConfig('connections')!;
 
 export function ConnectionsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedArchetype, setSelectedArchetype] = useState<ArchetypeType | undefined>(undefined);
 
@@ -55,6 +60,20 @@ export function ConnectionsPage() {
         }}
         onComplete={handleSpaceCreated}
         initialArchetype={selectedArchetype}
+      />
+
+      {/* Module Agent */}
+      <ModuleAgentFAB onClick={openAgent} accentBg={connectionsAgentConfig.accentBg} label="Agente Connections" />
+      <ModuleAgentChat
+        isOpen={isAgentOpen}
+        onClose={closeAgent}
+        module={connectionsAgentConfig.module}
+        displayName={connectionsAgentConfig.displayName}
+        accentColor={connectionsAgentConfig.accentColor}
+        accentBg={connectionsAgentConfig.accentBg}
+        suggestedPrompts={connectionsAgentConfig.suggestedPrompts}
+        welcomeMessage={connectionsAgentConfig.welcomeMessage}
+        placeholder={connectionsAgentConfig.placeholder}
       />
     </>
   );

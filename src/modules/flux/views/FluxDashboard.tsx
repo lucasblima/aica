@@ -22,7 +22,10 @@ import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
 import { AthleteFormDrawer } from '../components/forms';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import type { Athlete } from '../types';
+import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
 import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search, CheckCircle, X } from 'lucide-react';
+import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
+import { useModuleAgent } from '@/hooks/useModuleAgent';
 
 // Sort options
 type SortOrder = 'none' | 'asc' | 'desc';
@@ -72,15 +75,21 @@ const ModalityTab: React.FC<{
   );
 };
 
+const fluxAgentConfig = getModuleAgentConfig('flux')!;
+
 export default function FluxDashboard() {
   const navigate = useNavigate();
   const { actions } = useFlux();
+  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
   // Fetch real athletes with adherence from Supabase
   const { athletes: allAthletes, isLoading, error, refresh } = useAthletes();
 
   // Realtime activity notifications
   const { notifications, dismissNotification } = useAthleteActivity();
+
+  // Workout templates count for Biblioteca button
+  const { templates } = useWorkoutTemplates();
 
   // Filter and sort states
   const [selectedModality, setSelectedModality] = useState<TrainingModality | 'all'>('all');
@@ -483,6 +492,11 @@ export default function FluxDashboard() {
                 <span className="text-xl">📚</span>
               </div>
               <p className="text-xs font-bold text-ceramic-text-primary text-center">Biblioteca</p>
+              {templates.length > 0 && (
+                <span className="text-[10px] text-ceramic-text-secondary">
+                  {templates.length} template{templates.length !== 1 ? 's' : ''}
+                </span>
+              )}
             </div>
           </button>
 
@@ -495,6 +509,11 @@ export default function FluxDashboard() {
                 <span className="text-xl">📋</span>
               </div>
               <p className="text-xs font-bold text-ceramic-text-primary text-center">Canvas</p>
+              {allAthletes.length > 0 && (
+                <span className="text-[10px] text-ceramic-text-secondary">
+                  {allAthletes.length} atleta{allAthletes.length !== 1 ? 's' : ''}
+                </span>
+              )}
             </div>
           </button>
 
@@ -831,6 +850,20 @@ export default function FluxDashboard() {
           ))}
         </div>
       )}
+
+      {/* Module Agent */}
+      <ModuleAgentFAB onClick={openAgent} accentBg={fluxAgentConfig.accentBg} label="Agente Flux" />
+      <ModuleAgentChat
+        isOpen={isAgentOpen}
+        onClose={closeAgent}
+        module={fluxAgentConfig.module}
+        displayName={fluxAgentConfig.displayName}
+        accentColor={fluxAgentConfig.accentColor}
+        accentBg={fluxAgentConfig.accentBg}
+        suggestedPrompts={fluxAgentConfig.suggestedPrompts}
+        welcomeMessage={fluxAgentConfig.welcomeMessage}
+        placeholder={fluxAgentConfig.placeholder}
+      />
     </div>
   );
 }

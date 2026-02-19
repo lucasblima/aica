@@ -95,4 +95,4 @@ export function hasAgent(module: string): module is AgentModule {
 }
 
 // Re-export types
-export type { AgentConfig, AgentModule, AgentTool, AgentContext, AgentMessage, AgentResponse } from './types'
+export type { AgentConfig, AgentModule, AgentTool, AgentContext, AgentMessage, AgentResponse, AgentSource, AgentCitation } from './types'

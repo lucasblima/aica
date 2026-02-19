@@ -9,7 +9,7 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, LayoutDashboard, Target, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
@@ -464,23 +464,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               ) : (
                 <Eye className="w-5 h-5 text-ceramic-text-secondary" />
               )}
-            </button>
-            <button
-              onClick={() => {
-                log.debug('=== DEBUG: All Statements ===');
-                console.table(statements.map(s => ({
-                  file_name: s.file_name,
-                  bank_name: s.bank_name,
-                  period_start: s.statement_period_start,
-                  period_end: s.statement_period_end,
-                  transactions: s.transaction_count,
-                  status: s.processing_status,
-                })));
-              }}
-              className="ceramic-card p-3 hover:scale-105 transition-transform"
-              title="Debug Statements"
-            >
-              <span className="text-xs font-bold text-ceramic-error">DEBUG</span>
             </button>
             <button
               onClick={() => setShowUpload(!showUpload)}
