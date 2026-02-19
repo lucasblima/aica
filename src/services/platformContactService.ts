@@ -17,7 +17,7 @@ export interface PlatformContact {
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
-  source_module: 'studio' | 'flux' | 'connections' | 'grants' | 'manual';
+  source_module: 'studio' | 'flux' | 'connections' | 'grants' | 'manual' | 'email';
   invitation_status: 'none' | 'pending' | 'sent' | 'connected';
   linked_at: string | null;
   invitation_sent_at: string | null;
@@ -47,6 +47,12 @@ export async function findOrCreateContact(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { data: null, error: 'Not authenticated' };
 
+    // Self-exclusion: never create a contact for yourself
+    if (email && user.email && email.toLowerCase().trim() === user.email.toLowerCase()) {
+      log.debug('findOrCreateContact: skipping self-contact for', email);
+      return { data: null, error: null };
+    }
+
     const { data, error } = await supabase.rpc('find_or_create_contact', {
       p_owner_id: user.id,
       p_display_name: displayName,
@@ -74,6 +80,9 @@ export async function getContactsByOwner(
   sourceModule?: PlatformContact['source_module']
 ): Promise<{ data: PlatformContact[]; error: string | null }> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const userEmail = user?.email?.toLowerCase();
+
     let query = supabase
       .from('platform_contacts')
       .select('*')
@@ -90,7 +99,12 @@ export async function getContactsByOwner(
       return { data: [], error: error.message };
     }
 
-    return { data: data as PlatformContact[], error: null };
+    // Defense-in-depth: filter out self-contacts that may still exist
+    const contacts = (data as PlatformContact[]).filter(
+      c => !userEmail || !c.email || c.email.toLowerCase() !== userEmail
+    );
+
+    return { data: contacts, error: null };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     log.error('getContactsByOwner error:', message);

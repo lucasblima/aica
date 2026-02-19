@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { HardDrive, Search, RefreshCw, Loader2, ChevronDown, FileText, Image, Sheet, Presentation, File, ExternalLink, Star, Unlink } from 'lucide-react';
+import { HardDrive, Search, RefreshCw, Loader2, ChevronDown, FileText, Image, Sheet, Presentation, File, ExternalLink, Star, Unlink, Trash2, Pencil, Check, X } from 'lucide-react';
 import { useDriveIntegration } from '@/hooks/useDriveIntegration';
+import { trashFile, renameFile } from '@/services/driveService';
 import type { DriveFile } from '@/services/driveService';
 
 // --- Helpers ---
@@ -51,7 +52,16 @@ const rowVariants: Variants = {
 
 // --- Components ---
 
-function FileRow({ file }: { file: DriveFile }) {
+interface FileRowProps {
+    file: DriveFile;
+    onTrash?: (fileId: string) => void;
+    onRename?: (fileId: string, currentName: string) => void;
+    actionLoading?: string | null;
+}
+
+function FileRow({ file, onTrash, onRename, actionLoading }: FileRowProps) {
+    const isThisLoading = actionLoading === file.id;
+
     return (
         <motion.div
             variants={rowVariants}
@@ -88,18 +98,45 @@ function FileRow({ file }: { file: DriveFile }) {
                 </div>
             </div>
 
-            {/* External link — slides in on hover */}
-            {file.webViewLink && (
-                <a
-                    href={file.webViewLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-7 h-7 flex items-center justify-center rounded-md opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 hover:bg-ceramic-cool transition-all duration-200"
-                    title="Abrir no Drive"
-                >
-                    <ExternalLink className="w-3.5 h-3.5 text-ceramic-text-secondary" />
-                </a>
-            )}
+            {/* Actions — visible on hover */}
+            <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                {isThisLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 text-ceramic-text-secondary animate-spin" />
+                ) : (
+                    <>
+                        {onRename && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onRename(file.id, file.name); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-ceramic-cool/80 transition-colors"
+                                title="Renomear"
+                            >
+                                <Pencil className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                            </button>
+                        )}
+                        {onTrash && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onTrash(file.id); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-ceramic-error/10 transition-colors"
+                                title="Excluir"
+                            >
+                                <Trash2 className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                            </button>
+                        )}
+                    </>
+                )}
+                {file.webViewLink && (
+                    <a
+                        href={file.webViewLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-ceramic-cool transition-colors"
+                        title="Abrir no Drive"
+                    >
+                        <ExternalLink className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                    </a>
+                )}
+            </div>
         </motion.div>
     );
 }
@@ -131,6 +168,9 @@ export function DriveSection({ isConnected, onConnect, onDisconnect }: DriveSect
     const { files, isLoading, error, search, refresh, loadMore, hasMore } = useDriveIntegration();
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+    const [renamingFile, setRenamingFile] = useState<{ id: string; name: string } | null>(null);
+    const [renameValue, setRenameValue] = useState('');
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -139,6 +179,36 @@ export function DriveSection({ isConnected, onConnect, onDisconnect }: DriveSect
         await search(searchQuery.trim());
         setIsSearching(false);
     };
+
+    const handleTrash = useCallback(async (fileId: string) => {
+        setActionLoadingId(fileId);
+        try {
+            const result = await trashFile(fileId);
+            if (result.success) await refresh();
+        } finally {
+            setActionLoadingId(null);
+        }
+    }, [refresh]);
+
+    const handleStartRename = useCallback((fileId: string, currentName: string) => {
+        setRenamingFile({ id: fileId, name: currentName });
+        setRenameValue(currentName);
+    }, []);
+
+    const handleConfirmRename = useCallback(async () => {
+        if (!renamingFile || !renameValue.trim() || renameValue === renamingFile.name) {
+            setRenamingFile(null);
+            return;
+        }
+        setActionLoadingId(renamingFile.id);
+        try {
+            const result = await renameFile(renamingFile.id, renameValue.trim());
+            if (result.success) await refresh();
+        } finally {
+            setActionLoadingId(null);
+            setRenamingFile(null);
+        }
+    }, [renamingFile, renameValue, refresh]);
 
     if (!isConnected) {
         return (
@@ -205,6 +275,43 @@ export function DriveSection({ isConnected, onConnect, onDisconnect }: DriveSect
                 </form>
             </div>
 
+            {/* Inline rename dialog */}
+            {renamingFile && (
+                <div className="mb-4 p-3 bg-ceramic-cool/50 rounded-xl border border-ceramic-border/60">
+                    <p className="text-xs text-ceramic-text-secondary mb-2">Renomear arquivo</p>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleConfirmRename();
+                                if (e.key === 'Escape') setRenamingFile(null);
+                            }}
+                            autoFocus
+                            className="flex-1 px-3 py-1.5 bg-ceramic-base rounded-lg text-sm text-ceramic-text-primary border border-ceramic-border focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        />
+                        <button
+                            onClick={handleConfirmRename}
+                            disabled={actionLoadingId === renamingFile.id}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50"
+                        >
+                            {actionLoadingId === renamingFile.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                                <Check className="w-3.5 h-3.5" />
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setRenamingFile(null)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-ceramic-cool/80 transition-colors"
+                        >
+                            <X className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* File list */}
             <div className="max-h-[420px] overflow-y-auto -mx-1">
                 {isLoading && files.length === 0 ? (
@@ -230,7 +337,13 @@ export function DriveSection({ isConnected, onConnect, onDisconnect }: DriveSect
                         className="divide-y divide-ceramic-border/30"
                     >
                         {files.map((file) => (
-                            <FileRow key={file.id} file={file} />
+                            <FileRow
+                                key={file.id}
+                                file={file}
+                                onTrash={handleTrash}
+                                onRename={handleStartRename}
+                                actionLoading={actionLoadingId}
+                            />
                         ))}
                     </motion.div>
                 )}

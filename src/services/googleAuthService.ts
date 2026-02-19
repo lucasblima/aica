@@ -35,14 +35,14 @@ const BASE_GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/userinfo.email',  // Get user email
 ];
 
-/** Gmail scopes */
+/** Gmail scopes — gmail.modify allows read, label, archive, trash */
 export const GMAIL_SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly',  // Read emails
+    'https://www.googleapis.com/auth/gmail.modify',
 ];
 
-/** Google Drive scopes */
+/** Google Drive scopes — full drive allows read, organize, trash, rename */
 export const DRIVE_SCOPES = [
-    'https://www.googleapis.com/auth/drive.readonly',  // Read files
+    'https://www.googleapis.com/auth/drive',
 ];
 
 /**

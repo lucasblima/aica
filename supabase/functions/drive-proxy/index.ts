@@ -61,9 +61,11 @@ serve(async (req) => {
       );
     }
 
-    // 3. Get Google token
+    // 3. Get Google token — use full drive scope for write actions, readonly for reads
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const tokenResult = await getGoogleTokenForUser(user.id, 'drive.readonly', supabaseAdmin);
+    const writeActions = ['trash_file', 'move_file', 'rename_file', 'create_folder'];
+    const requiredScope = writeActions.includes(action) ? 'drive' : 'drive.readonly';
+    const tokenResult = await getGoogleTokenForUser(user.id, requiredScope, supabaseAdmin);
 
     if (tokenResult.error) {
       return new Response(
@@ -240,6 +242,92 @@ serve(async (req) => {
           content: textContent,
           truncated: textContent.length >= MAX_CONTENT_SIZE,
         };
+        break;
+      }
+
+      case 'trash_file': {
+        const fileId = payload.fileId as string;
+        if (!fileId) throw new Error('fileId is required');
+
+        const res = await fetch(`${DRIVE_API}/files/${fileId}`, {
+          method: 'PATCH',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trashed: true }),
+        });
+        if (!res.ok) throw await buildDriveError(res);
+
+        result = { fileId, trashed: true };
+        break;
+      }
+
+      case 'move_file': {
+        const fileId = payload.fileId as string;
+        const targetFolderId = payload.targetFolderId as string;
+        if (!fileId) throw new Error('fileId is required');
+        if (!targetFolderId) throw new Error('targetFolderId is required');
+
+        // Get current parents to remove
+        const metaRes = await fetch(
+          `${DRIVE_API}/files/${fileId}?fields=parents`,
+          { headers: googleHeaders }
+        );
+        if (!metaRes.ok) throw await buildDriveError(metaRes);
+        const meta = await metaRes.json();
+        const previousParents = ((meta.parents as string[]) || []).join(',');
+
+        const params = new URLSearchParams({
+          addParents: targetFolderId,
+          removeParents: previousParents,
+          fields: FILE_FIELDS,
+        });
+
+        const res = await fetch(`${DRIVE_API}/files/${fileId}?${params}`, {
+          method: 'PATCH',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        if (!res.ok) throw await buildDriveError(res);
+
+        result = formatFileMetadata(await res.json());
+        break;
+      }
+
+      case 'rename_file': {
+        const fileId = payload.fileId as string;
+        const newName = payload.newName as string;
+        if (!fileId) throw new Error('fileId is required');
+        if (!newName) throw new Error('newName is required');
+
+        const res = await fetch(`${DRIVE_API}/files/${fileId}?fields=${FILE_FIELDS}`, {
+          method: 'PATCH',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName }),
+        });
+        if (!res.ok) throw await buildDriveError(res);
+
+        result = formatFileMetadata(await res.json());
+        break;
+      }
+
+      case 'create_folder': {
+        const folderName = payload.name as string;
+        const parentId = payload.parentId as string | undefined;
+        if (!folderName) throw new Error('name is required');
+
+        const body: Record<string, unknown> = {
+          name: folderName,
+          mimeType: 'application/vnd.google-apps.folder',
+        };
+        if (parentId) body.parents = [parentId];
+
+        const res = await fetch(`${DRIVE_API}/files?fields=${FILE_FIELDS}`, {
+          method: 'POST',
+          headers: { ...googleHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw await buildDriveError(res);
+
+        result = formatFileMetadata(await res.json());
         break;
       }
 
