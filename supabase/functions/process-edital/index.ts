@@ -58,9 +58,12 @@ function getCorsHeaders(request: Request): Record<string, string> {
 // =============================================================================
 
 interface ProcessEditalRequest {
-  file_data: string  // base64 encoded PDF
+  file_data?: string  // base64 encoded PDF (optional if reprocessing)
   file_name: string
-  file_size: number
+  file_size?: number
+  // Re-processing mode: use existing Google File instead of uploading
+  reprocess_gemini_file_name?: string
+  existing_document_id?: string
 }
 
 interface EvaluationCriterion {
@@ -619,10 +622,11 @@ serve(async (req) => {
     // Parse request body
     const request: ProcessEditalRequest = await req.json()
 
-    // Validate required fields
-    if (!request.file_data) {
+    // Validate required fields — either file_data (new upload) or reprocess_gemini_file_name (reprocess)
+    const isReprocess = !!request.reprocess_gemini_file_name
+    if (!isReprocess && !request.file_data) {
       return new Response(
-        JSON.stringify({ success: false, error: 'file_data (base64) is required' }),
+        JSON.stringify({ success: false, error: 'file_data (base64) or reprocess_gemini_file_name is required' }),
         { status: 400, headers: corsHeaders }
       )
     }
@@ -634,45 +638,63 @@ serve(async (req) => {
       )
     }
 
-    log('INFO', 'Processing edital', {
+    log('INFO', isReprocess ? 'Re-processing existing edital' : 'Processing new edital', {
       userId: user.id,
       fileName: request.file_name,
       fileSize: request.file_size,
+      isReprocess,
+      reprocessFile: request.reprocess_gemini_file_name,
     })
 
     // =======================================================================
     // MAIN PROCESSING PIPELINE (step tracking for debugging)
     // =======================================================================
 
-    // 1. Upload to Google Files API
-    currentStep = 'upload'
-    log('INFO', `[STEP] ${currentStep}`)
-    const geminiFileUri = await uploadToGoogleFiles(
-      request.file_data,
-      request.file_name,
-      'application/pdf'
-    )
+    let geminiFileUri: string
+    let documentId: string
 
-    // 2. Wait for file to be ACTIVE (indexed)
-    currentStep = 'wait_active'
-    log('INFO', `[STEP] ${currentStep}`)
-    await waitForFileActive(geminiFileUri)
+    if (isReprocess) {
+      // RE-PROCESS MODE: skip upload, use existing Google File
+      geminiFileUri = request.reprocess_gemini_file_name!
+      documentId = request.existing_document_id || ''
 
-    // 3. Extract structured data using Gemini
+      // Quick check that file is still ACTIVE
+      currentStep = 'wait_active'
+      log('INFO', `[STEP] ${currentStep} (reprocess — verifying file still active)`)
+      await waitForFileActive(geminiFileUri, 15000) // shorter timeout for existing files
+    } else {
+      // NORMAL MODE: upload new file
+
+      // 1. Upload to Google Files API
+      currentStep = 'upload'
+      log('INFO', `[STEP] ${currentStep}`)
+      geminiFileUri = await uploadToGoogleFiles(
+        request.file_data!,
+        request.file_name,
+        'application/pdf'
+      )
+
+      // 2. Wait for file to be ACTIVE (indexed)
+      currentStep = 'wait_active'
+      log('INFO', `[STEP] ${currentStep}`)
+      await waitForFileActive(geminiFileUri)
+
+      // 4. Save reference to database
+      currentStep = 'save_db'
+      log('INFO', `[STEP] ${currentStep}`)
+      documentId = await saveDocumentReference(
+        supabase,
+        user.id,
+        geminiFileUri,
+        request.file_name,
+        request.file_size || 0
+      )
+    }
+
+    // 3. Extract structured data using Gemini (always runs)
     currentStep = 'extract'
     log('INFO', `[STEP] ${currentStep}`)
     const analyzedData = await extractEditalStructure(geminiFileUri)
-
-    // 4. Save reference to database
-    currentStep = 'save_db'
-    log('INFO', `[STEP] ${currentStep}`)
-    const documentId = await saveDocumentReference(
-      supabase,
-      user.id,
-      geminiFileUri,
-      request.file_name,
-      request.file_size || 0
-    )
 
     // =======================================================================
 

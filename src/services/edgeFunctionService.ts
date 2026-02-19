@@ -545,3 +545,39 @@ export async function processEdital(file: File): Promise<ProcessEditalResponse> 
 
   return response
 }
+
+/**
+ * Re-process an existing edital document using its Google File reference.
+ * Skips upload — goes straight to Gemini extraction from the existing file.
+ *
+ * Use this when a document is already in file_search_documents but no
+ * grant_opportunity was created yet.
+ */
+export async function reprocessEdital(
+  geminiFileName: string,
+  documentId: string,
+  originalFilename: string
+): Promise<ProcessEditalResponse> {
+  log.info('Re-processing existing edital', { geminiFileName, documentId, originalFilename })
+
+  const response = await invokeEdgeFunction<ProcessEditalResponse>('process-edital', {
+    reprocess_gemini_file_name: geminiFileName,
+    existing_document_id: documentId,
+    file_name: originalFilename,
+  }, {
+    retryCount: 1,
+    logContext: { action: 'reprocess_edital', geminiFileName },
+  })
+
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to reprocess edital')
+  }
+
+  log.info('Edital re-processed successfully', {
+    documentId: response.file_search_document_id,
+    processingTimeMs: response.processing_time_ms,
+    title: response.analyzed_data.title,
+  })
+
+  return response
+}
