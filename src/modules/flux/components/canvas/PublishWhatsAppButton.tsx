@@ -1,17 +1,15 @@
 /**
  * PublishWhatsAppButton - Send workout plan via WhatsApp
  *
- * Phase 1: Mock implementation (console.log)
- * Phase 2: Will integrate with @/modules/connections/services/whatsappService
- *
- * Features:
- * - Preview formatted message
- * - Send now or schedule for Sunday 6PM
- * - Integration-ready structure
+ * Integrates with fluxWhatsAppService to:
+ * - Record scheduled_workouts entries for tracking
+ * - Open WhatsApp Web deep link for immediate sends
+ * - Schedule sends for Sunday 6PM
  */
 
 import React, { useState, useMemo } from 'react';
-import { Send, Calendar, X, Check } from 'lucide-react';
+import { Send, Calendar, X, Check, CheckCircle, AlertCircle } from 'lucide-react';
+import { publishWorkoutViaWhatsApp } from '../../services/fluxWhatsAppService';
 import type { WorkoutBlockData } from './WorkoutBlock';
 
 interface PublishWhatsAppButtonProps {
@@ -20,91 +18,92 @@ interface PublishWhatsAppButtonProps {
   athletePhone: string;
   weekNumber: number;
   weekWorkouts: WorkoutBlockData[];
+  microcycleId?: string;
   onPublishSuccess?: () => void;
   disabled?: boolean;
 }
+
+type PublishStatus = 'idle' | 'sending' | 'success' | 'error';
 
 export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
   athleteId,
   athleteName,
   athletePhone,
-  weekNumber,
   weekWorkouts,
+  weekNumber,
+  microcycleId,
   onPublishSuccess,
   disabled = false,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sendNow, setSendNow] = useState(true);
-  const [isSending, setIsSending] = useState(false);
+  const [publishStatus, setPublishStatus] = useState<PublishStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Generate formatted message preview
   const messagePreview = useMemo(() => {
-    const dayNames = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+    const dayNames = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
 
-    // Group workouts by day
-    const workoutsByDay: Record<number, WorkoutBlockData[]> = {};
-    for (const workout of weekWorkouts) {
-      // Mock: assume workout has a dayOfWeek field (would need to add this)
-      const day = Math.floor(Math.random() * 7) + 1; // Mock random day
-      if (!workoutsByDay[day]) workoutsByDay[day] = [];
-      workoutsByDay[day].push(workout);
-    }
+    let message = `*Treino Semana ${weekNumber}*\n\n`;
+    message += `Ola ${athleteName.split(' ')[0]}!\n\n`;
+    message += `Aqui esta sua programacao de treinos para a semana:\n\n`;
 
-    let message = `🏋️ *Treino Semana ${weekNumber}*\n\n`;
-    message += `Olá ${athleteName.split(' ')[0]}! 👋\n\n`;
-    message += `Aqui está sua programação de treinos para a semana:\n\n`;
-
-    for (let day = 1; day <= 7; day++) {
-      const dayWorkouts = workoutsByDay[day] || [];
-      if (dayWorkouts.length > 0) {
-        message += `📅 *${dayNames[day - 1]}*\n`;
-        for (const workout of dayWorkouts) {
-          message += `• ${workout.name} (${workout.duration}min)\n`;
-          if (workout.sets && workout.reps) {
-            message += `  ${workout.sets}x ${workout.reps}`;
-            if (workout.rest && workout.rest !== '0') message += ` • ${workout.rest} rest`;
-            message += `\n`;
-          }
-        }
+    // List workouts sequentially (no random day assignment)
+    for (let i = 0; i < weekWorkouts.length; i++) {
+      const workout = weekWorkouts[i];
+      const dayLabel = i < dayNames.length ? dayNames[i] : `Dia ${i + 1}`;
+      message += `*${dayLabel}*\n`;
+      message += `- ${workout.name} (${workout.duration}min)\n`;
+      if (workout.sets && workout.reps) {
+        message += `  ${workout.sets}x ${workout.reps}`;
+        if (workout.rest && workout.rest !== '0') message += ` - ${workout.rest} rest`;
         message += `\n`;
       }
+      message += `\n`;
     }
 
     const totalVolume = weekWorkouts.reduce((sum, w) => sum + w.duration, 0);
-    message += `⏱ *Volume Total:* ${totalVolume} minutos\n\n`;
-    message += `💪 Bons treinos! Qualquer dúvida, estou à disposição.\n\n`;
+    message += `*Volume Total:* ${totalVolume} minutos\n\n`;
+    message += `Bons treinos! Qualquer duvida, estou a disposicao.\n\n`;
     message += `_Enviado via AICA Life OS_`;
 
     return message;
   }, [athleteName, weekNumber, weekWorkouts]);
 
   const handlePublish = async () => {
-    setIsSending(true);
+    setPublishStatus('sending');
+    setErrorMessage('');
 
-    // Mock delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const result = await publishWorkoutViaWhatsApp({
+      athleteId,
+      athleteName,
+      athletePhone,
+      weekNumber,
+      weekWorkouts,
+      message: messagePreview,
+      sendNow,
+      microcycleId,
+    });
 
-    console.log('📱 Publishing workout via WhatsApp (MOCK)');
-    console.log('Athlete ID:', athleteId);
-    console.log('Phone:', athletePhone);
-    console.log('Send Now:', sendNow);
-    console.log('Message:', messagePreview);
+    if (result.success) {
+      setPublishStatus('success');
+      onPublishSuccess?.();
+      // Auto-close after showing success
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setPublishStatus('idle');
+      }, 2000);
+    } else {
+      setPublishStatus('error');
+      setErrorMessage(result.error || 'Erro ao enviar. Tente novamente.');
+    }
+  };
 
-    // TODO: Integrate with Connections module
-    // import { whatsappService } from '@/modules/connections/services/whatsappService';
-    // await whatsappService.sendWorkoutPlan({
-    //   athleteId,
-    //   phone: athletePhone,
-    //   message: messagePreview,
-    //   scheduleFor: sendNow ? undefined : getNextSunday6PM(),
-    // });
-
-    setIsSending(false);
+  const handleClose = () => {
+    if (publishStatus === 'sending') return;
     setIsModalOpen(false);
-    onPublishSuccess?.();
-
-    // Show success notification (mock)
-    alert(`✅ Treino enviado para ${athleteName}!`);
+    setPublishStatus('idle');
+    setErrorMessage('');
   };
 
   return (
@@ -129,7 +128,7 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
           {/* Overlay */}
           <div
             className="fixed inset-0 bg-black/30 z-40"
-            onClick={() => !isSending && setIsModalOpen(false)}
+            onClick={handleClose}
           />
 
           {/* Modal */}
@@ -144,13 +143,13 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
                   <div>
                     <h2 className="text-xl font-bold text-ceramic-text-primary">Enviar por WhatsApp</h2>
                     <p className="text-sm text-ceramic-text-secondary mt-0.5">
-                      Para {athleteName} • {athletePhone}
+                      Para {athleteName} - {athletePhone}
                     </p>
                   </div>
                 </div>
-                {!isSending && (
+                {publishStatus !== 'sending' && (
                   <button
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={handleClose}
                     className="ceramic-inset p-2 hover:bg-ceramic-cool transition-colors"
                   >
                     <X className="w-5 h-5 text-ceramic-text-secondary" />
@@ -161,10 +160,38 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
 
             {/* Content */}
             <div className="p-6 space-y-5">
+              {/* Success Banner */}
+              {publishStatus === 'success' && (
+                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-green-800">
+                      {sendNow ? 'Treino enviado!' : 'Envio agendado!'}
+                    </p>
+                    <p className="text-xs text-green-600">
+                      {sendNow
+                        ? 'O WhatsApp foi aberto com a mensagem pronta para envio.'
+                        : 'O envio sera feito automaticamente no domingo as 18h.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Banner */}
+              {publishStatus === 'error' && (
+                <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-red-800">Erro no envio</p>
+                    <p className="text-xs text-red-600">{errorMessage}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Message Preview */}
               <div>
                 <label className="block text-xs font-semibold text-ceramic-text-primary mb-2 uppercase tracking-wider">
-                  Prévia da Mensagem
+                  Previa da Mensagem
                 </label>
                 <div className="ceramic-inset p-4 rounded-xl max-h-64 overflow-y-auto">
                   <pre className="text-xs text-ceramic-text-primary whitespace-pre-wrap font-sans">
@@ -174,98 +201,87 @@ export const PublishWhatsAppButton: React.FC<PublishWhatsAppButtonProps> = ({
               </div>
 
               {/* Send Options */}
-              <div className="space-y-3">
-                <label className="block text-xs font-semibold text-ceramic-text-primary uppercase tracking-wider">
-                  Opções de Envio
-                </label>
+              {publishStatus !== 'success' && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-ceramic-text-primary uppercase tracking-wider">
+                    Opcoes de Envio
+                  </label>
 
-                {/* Send Now */}
-                <label className="flex items-center gap-3 ceramic-card p-4 cursor-pointer hover:scale-[1.02] transition-transform">
-                  <input
-                    type="radio"
-                    checked={sendNow}
-                    onChange={() => setSendNow(true)}
-                    className="w-4 h-4 text-green-500 focus:ring-green-500"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-bold text-ceramic-text-primary">Enviar Agora</span>
+                  {/* Send Now */}
+                  <label className="flex items-center gap-3 ceramic-card p-4 cursor-pointer hover:scale-[1.02] transition-transform">
+                    <input
+                      type="radio"
+                      checked={sendNow}
+                      onChange={() => setSendNow(true)}
+                      className="w-4 h-4 text-green-500 focus:ring-green-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-bold text-ceramic-text-primary">Enviar Agora</span>
+                      </div>
+                      <p className="text-xs text-ceramic-text-secondary mt-0.5">
+                        Abre o WhatsApp com a mensagem pronta
+                      </p>
                     </div>
-                    <p className="text-xs text-ceramic-text-secondary mt-0.5">Mensagem será enviada imediatamente</p>
-                  </div>
-                </label>
+                  </label>
 
-                {/* Schedule for Sunday */}
-                <label className="flex items-center gap-3 ceramic-card p-4 cursor-pointer hover:scale-[1.02] transition-transform">
-                  <input
-                    type="radio"
-                    checked={!sendNow}
-                    onChange={() => setSendNow(false)}
-                    className="w-4 h-4 text-green-500 focus:ring-green-500"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-amber-600" />
-                      <span className="text-sm font-bold text-ceramic-text-primary">Agendar para Domingo 18h</span>
+                  {/* Schedule for Sunday */}
+                  <label className="flex items-center gap-3 ceramic-card p-4 cursor-pointer hover:scale-[1.02] transition-transform">
+                    <input
+                      type="radio"
+                      checked={!sendNow}
+                      onChange={() => setSendNow(false)}
+                      className="w-4 h-4 text-green-500 focus:ring-green-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-bold text-ceramic-text-primary">Agendar para Domingo 18h</span>
+                      </div>
+                      <p className="text-xs text-ceramic-text-secondary mt-0.5">
+                        Envio automatico no fim de semana
+                      </p>
                     </div>
-                    <p className="text-xs text-ceramic-text-secondary mt-0.5">
-                      Envio automático no fim de semana
-                    </p>
-                  </div>
-                </label>
-              </div>
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-ceramic-border bg-ceramic-cool">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={isSending}
-                  className="flex-1 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handlePublish}
-                  disabled={isSending}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSending ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      {sendNow ? 'Enviar Agora' : 'Agendar Envio'}
-                    </>
-                  )}
-                </button>
+            {publishStatus !== 'success' && (
+              <div className="p-6 border-t border-ceramic-border bg-ceramic-cool">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleClose}
+                    disabled={publishStatus === 'sending'}
+                    className="flex-1 py-3 ceramic-card text-sm font-bold text-ceramic-text-primary hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handlePublish}
+                    disabled={publishStatus === 'sending'}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {publishStatus === 'sending' ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        {sendNow ? 'Enviar Agora' : 'Agendar Envio'}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </>
       )}
     </>
   );
 };
-
-// ============================================
-// Helper Functions (for future integration)
-// ============================================
-
-/**
- * Get next Sunday 6PM timestamp
- * (for scheduled sending)
- */
-function getNextSunday6PM(): Date {
-  const now = new Date();
-  const daysUntilSunday = 7 - now.getDay();
-  const nextSunday = new Date(now);
-  nextSunday.setDate(now.getDate() + daysUntilSunday);
-  nextSunday.setHours(18, 0, 0, 0);
-  return nextSunday;
-}

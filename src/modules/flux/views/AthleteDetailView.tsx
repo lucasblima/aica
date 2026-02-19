@@ -38,6 +38,7 @@ import {
   Calculator,
   Save,
 } from 'lucide-react';
+import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 export default function AthleteDetailView() {
   const navigate = useNavigate();
@@ -254,6 +255,7 @@ export default function AthleteDetailView() {
   }
 
   return (
+    <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Detalhes do Atleta" />}>
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
       {/* Header */}
       <div className="pt-8 px-6 pb-6">
@@ -776,5 +778,6 @@ export default function AthleteDetailView() {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   );
 }

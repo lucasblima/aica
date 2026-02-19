@@ -30,6 +30,10 @@ export type { LoadAnalysisResult, LoadSuggestion, LoadAdjustmentAI, RecoveryResu
 export { ExerciseService } from './exerciseService';
 export type { Exercise, CreateExerciseInput, UpdateExerciseInput, ExerciseFilters } from './exerciseService';
 
+// WhatsApp integration
+export { publishWorkoutViaWhatsApp, updateScheduledWorkoutStatus } from './fluxWhatsAppService';
+export type { PublishWorkoutParams, PublishWorkoutResult } from './fluxWhatsAppService';
+
 // Utility services
 export { IntensityCalculatorService } from './intensityCalculatorService';
 export { LevelingEngineService } from './levelingEngineService';

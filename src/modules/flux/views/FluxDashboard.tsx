@@ -15,7 +15,7 @@ import { AthleteService, CreateAthleteInput } from '../services/athleteService';
 import { supabase } from '@/services/supabaseClient';
 import { AthleteProfileService } from '../services/athleteProfileService';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
-import type { TrainingModality, AthleteLevel } from '../types';
+import type { TrainingModality, AthleteLevel, Alert, ModalityLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
 import type { SlotFeedback } from '../components/AthleteCard';
 import { WhatsAppMessageModal } from '../components/WhatsAppMessageModal';
@@ -26,6 +26,7 @@ import { useWorkoutTemplates } from '../hooks/useWorkoutTemplates';
 import { ArrowLeft, Users, TrendingUp, Plus, Filter, GraduationCap, ArrowUpDown, ArrowUp, ArrowDown, Search, CheckCircle, X } from 'lucide-react';
 import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
 import { useModuleAgent } from '@/hooks/useModuleAgent';
+import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 // Sort options
 type SortOrder = 'none' | 'asc' | 'desc';
@@ -253,7 +254,7 @@ export default function FluxDashboard() {
   };
 
   // Handle WhatsApp message
-  const handleWhatsAppClick = (athlete: Athlete, alerts: any[]) => {
+  const handleWhatsAppClick = (athlete: Athlete, alerts: Alert[]) => {
     setSelectedAthleteForWhatsApp(athlete);
     setSelectedAthleteAlerts(alerts);
     setWhatsAppModalOpen(true);
@@ -279,7 +280,7 @@ export default function FluxDashboard() {
   };
 
   // Handle save athlete (create or update)
-  const handleSaveAthlete = async (athleteData: Partial<Athlete> & { modalityLevels?: any[] }) => {
+  const handleSaveAthlete = async (athleteData: Partial<Athlete> & { modalityLevels?: ModalityLevel[] }) => {
     try {
       const modalityLevels = athleteData.modalityLevels || [];
 
@@ -454,6 +455,7 @@ export default function FluxDashboard() {
   }
 
   return (
+    <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux Dashboard" />}>
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">
       {/* Header */}
       <div className="pt-8 px-6 pb-6">
@@ -695,7 +697,7 @@ export default function FluxDashboard() {
 
         <div data-tour="flux-athletes-grid" className="grid gap-4">
           {filteredAthletes.slice(0, 20).map((athlete) => {
-            const athleteAlerts: any[] = [];
+            const athleteAlerts: Alert[] = [];
             const athleteFeedbacks = feedbacksByAthlete[athlete.id] || [];
 
             return (
@@ -866,5 +868,6 @@ export default function FluxDashboard() {
         placeholder={fluxAgentConfig.placeholder}
       />
     </div>
+    </ErrorBoundary>
   );
 }
