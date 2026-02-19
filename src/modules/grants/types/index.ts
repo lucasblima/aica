@@ -296,6 +296,7 @@ export interface CreateOpportunityPayload {
   edital_text_content?: string;
   // Google File Search document reference (for semantic search)
   file_search_document_id?: string;
+  status?: 'draft' | 'open';
 }
 
 export interface CreateProjectPayload {

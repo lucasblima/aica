@@ -66,7 +66,7 @@ export async function createOpportunity(
         edital_pdf_path: payload.edital_pdf_path,
         edital_text_content: payload.edital_text_content,
         file_search_document_id: payload.file_search_document_id,
-        status: 'draft'
+        status: payload.status || 'draft'
       })
       .select()
       .single()

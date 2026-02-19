@@ -115,15 +115,25 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
       const formFields = parsedFields.length > 0 ? parsedFields : analyzed_data.form_fields;
 
       const payload: CreateOpportunityPayload = {
-        ...analyzed_data,
+        title: analyzed_data.title,
+        funding_agency: analyzed_data.funding_agency,
+        program_name: analyzed_data.program_name,
+        edital_number: analyzed_data.edital_number,
+        min_funding: analyzed_data.min_funding,
+        max_funding: analyzed_data.max_funding,
+        counterpart_percentage: analyzed_data.counterpart_percentage,
+        submission_start: analyzed_data.submission_start,
+        submission_deadline: analyzed_data.submission_deadline,
+        result_date: analyzed_data.result_date,
+        eligible_themes: analyzed_data.eligible_themes,
+        eligibility_requirements: analyzed_data.eligibility_requirements as any,
+        evaluation_criteria: analyzed_data.evaluation_criteria as any,
+        external_system_url: analyzed_data.external_system_url,
         form_fields: formFields,
-        // Use gemini_file_name as the path reference (Google File Search is the source)
         edital_pdf_path: gemini_file_name,
-        // Store raw text preview for quick access
         edital_text_content: analyzed_data.raw_text_preview || '',
-        // Store File Search document ID for semantic search
         file_search_document_id: file_search_document_id,
-        status: 'open'
+        status: 'open',
       };
 
       await onSave(payload);
@@ -243,7 +253,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
               }`}>
                 3
               </div>
-              <span className="text-sm font-bold">Campos</span>
+              <span className="text-sm font-bold">Campos <span className="text-ceramic-text-tertiary font-normal">(opcional)</span></span>
             </div>
           </div>
         </div>
@@ -370,7 +380,7 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
                 </div>
 
                 <p className="text-xs text-ceramic-text-secondary text-center">
-                  💡 Você poderá editar todos os campos após salvar o edital
+                  Salve agora com os {processedEdital.analyzed_data.form_fields?.length || 0} campos extraídos pela IA, ou personalize os campos antes de salvar.
                 </p>
               </motion.div>
             )}
@@ -506,19 +516,29 @@ export const EditalSetupWizard: React.FC<EditalSetupWizardProps> = ({
           </button>
 
           {currentStep === 'review' && (
-            <button
-              onClick={handleContinue}
-              className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform flex items-center gap-2"
-            >
-              Continuar
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleContinue}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+              >
+                Personalizar Campos
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
+              >
+                {isSaving ? 'Salvando...' : 'Salvar Edital'}
+                {!isSaving && <Check className="w-4 h-4" />}
+              </button>
+            </div>
           )}
 
           {currentStep === 'form_fields' && (
             <button
               onClick={handleSave}
-              disabled={isSaving || parsedFields.length === 0}
+              disabled={isSaving}
               className="ceramic-card px-6 py-3 rounded-full font-bold text-ceramic-accent hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
             >
               {isSaving ? 'Salvando...' : 'Salvar Edital'}
