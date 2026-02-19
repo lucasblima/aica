@@ -722,6 +722,27 @@ async function buildUserContext(supabaseAdmin: any, userId: string, module: stri
           })
         }
       }
+
+      // Exercise Library RAG: load coach's workout templates for AI context
+      const { data: templates } = await supabaseAdmin
+        .from('workout_templates')
+        .select('name, category, modality, intensity, duration, description, level_range, rpe, tags')
+        .eq('user_id', userId)
+        .order('is_favorite', { ascending: false })
+        .order('updated_at', { ascending: false })
+        .limit(20)
+
+      if (templates?.length) {
+        contextParts.push(`\n### Biblioteca de Exercícios do Coach (${templates.length} templates)`)
+        contextParts.push(`Use estes templates para recomendar exercícios personalizados:`)
+        templates.forEach((t: any) => {
+          const desc = t.description ? ` — ${t.description.substring(0, 60)}` : ''
+          const levels = t.level_range?.length ? ` | Níveis: ${t.level_range.join(', ')}` : ''
+          const rpe = t.rpe ? ` | RPE ${t.rpe}` : ''
+          const tags = t.tags?.length ? ` [${t.tags.join(', ')}]` : ''
+          contextParts.push(`- ${t.name} (${t.category}/${t.modality}, ${t.intensity}, ${t.duration}min${rpe})${levels}${desc}${tags}`)
+        })
+      }
     }
 
     if (module === 'agenda' || module === 'coordinator') {

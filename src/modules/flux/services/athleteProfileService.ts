@@ -43,6 +43,23 @@ export interface UpdateAthleteProfileInput extends Partial<CreateAthleteProfileI
 
 export class AthleteProfileService {
   /**
+   * Get all athlete profiles for the current user (coach)
+   */
+  static async getAllProfiles(): Promise<{ data: AthleteProfile[] | null; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from('athlete_profiles')
+        .select('*')
+        .order('athlete_id');
+
+      return { data, error };
+    } catch (error) {
+      console.error('[AthleteProfileService] Error fetching all profiles:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
    * Get all profiles for an athlete (multiple modalities)
    */
   static async getProfilesByAthleteId(

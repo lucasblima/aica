@@ -12,7 +12,7 @@ import { AthleteService } from '../services/athleteService';
 import { ParQService } from '../services/parqService';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { supabase } from '@/services/supabaseClient';
-import type { Athlete } from '../types';
+import type { Athlete, Alert } from '../types';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { ParQStatus, ParQResponse } from '../types/parq';
 import type { SlotFeedback } from '../components/AthleteCard';
@@ -51,7 +51,7 @@ export default function AthleteDetailView() {
   const [latestParQ, setLatestParQ] = useState<ParQResponse | null>(null);
   const [parqLoading, setParqLoading] = useState(false);
   const [feedbacks, setFeedbacks] = useState<SlotFeedback[]>([]);
-  const alerts: never[] = [];
+  const alerts: Alert[] = [];
   const activeBlock = null;
 
   // Athlete profile calculator state
@@ -577,7 +577,7 @@ export default function AthleteDetailView() {
           <ProgressionBar
             currentWeek={1}
             totalWeeks={12}
-            consistencyRate={0}
+            adherenceRate={0}
             completedWorkouts={8}
             totalWorkouts={12}
           />

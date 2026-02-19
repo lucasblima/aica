@@ -14,6 +14,7 @@ import { WorkoutSlotService } from '../services';
 import { supabase } from '@/services/supabaseClient';
 import type { WorkoutSlot } from '../types/flow';
 import { createNamespacedLogger } from '@/lib/logger';
+import { useFluxGamification } from '../hooks/useFluxGamification';
 
 const log = createNamespacedLogger('SlotCard');
 
@@ -24,6 +25,7 @@ interface SlotCardProps {
 }
 
 export function SlotCard({ slot, onToggleComplete, className = '' }: SlotCardProps) {
+  const { trackWorkoutSupervised, trackFeedbackReviewed } = useFluxGamification();
   const [isLoading, setIsLoading] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedback, setFeedback] = useState(slot.athlete_feedback || '');
@@ -48,6 +50,11 @@ export function SlotCard({ slot, onToggleComplete, className = '' }: SlotCardPro
 
       // Callback for optimistic UI (optional - real-time subscription will update anyway)
       onToggleComplete?.(slot.id, checked);
+
+      // Award XP when coach marks workout as completed (non-blocking)
+      if (checked) {
+        trackWorkoutSupervised().catch(() => {});
+      }
 
       log.info('Completion toggled', { slotId: slot.id, isCompleted: checked });
     } catch (error) {
@@ -78,6 +85,10 @@ export function SlotCard({ slot, onToggleComplete, className = '' }: SlotCardPro
       if (error) throw error;
 
       setShowFeedback(false);
+
+      // Award XP for reviewing feedback (non-blocking)
+      trackFeedbackReviewed().catch(() => {});
+
       log.info('Feedback saved', { slotId: slot.id, rpe, actualDuration });
     } catch (error) {
       log.error('Error saving feedback:', error);

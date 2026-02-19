@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { LevelingEngineService } from '../services/levelingEngineService';
-import { AthleteProfileService } from '../services/athleteProfileService';
+import { AthleteProfileService } from '../services/AthleteProfileService';
 import type { LevelingRecommendation, FlowAthleteProfile } from '../types/flow';
 
 export default function LevelingEngineView() {
@@ -27,8 +27,9 @@ export default function LevelingEngineView() {
     setLoading(true);
     const { data } = await AthleteProfileService.getAllProfiles();
     if (data) {
-      setProfiles(data);
-      analyzeAthletes(data);
+      const flowProfiles = data as unknown as FlowAthleteProfile[];
+      setProfiles(flowProfiles);
+      analyzeAthletes(flowProfiles);
     }
     setLoading(false);
   };

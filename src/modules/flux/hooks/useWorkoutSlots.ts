@@ -82,7 +82,7 @@ export function useWorkoutSlots(microcycleId: string) {
               filter: `microcycle_id=eq.${microcycleId}`,
             },
             (payload) => {
-              log.debug('Slot change detected:', payload.eventType, payload.new?.id);
+              log.debug('Slot change detected:', payload.eventType, (payload.new as Record<string, unknown>)?.id);
 
               if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                 const newSlot = payload.new as WorkoutSlot;

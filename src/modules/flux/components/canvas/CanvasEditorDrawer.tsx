@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { Athlete } from '../../types/flux';
 import { PublishWhatsAppButton } from './PublishWhatsAppButton';
+import type { WorkoutBlockData } from './WorkoutBlock';
 
 // ============================================
 // Constants
@@ -453,7 +454,7 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
               athleteName={athlete.name}
               athletePhone={athlete.phone}
               weekNumber={currentWeek}
-              weekWorkouts={weekWorkoutsForPublish}
+              weekWorkouts={weekWorkoutsForPublish as WorkoutBlockData[]}
               microcycleId={microcycleId}
               onPublishSuccess={() => {}}
             />

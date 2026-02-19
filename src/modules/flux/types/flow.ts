@@ -10,6 +10,7 @@
  */
 
 import type { TrainingModality } from './flux';
+export type { TrainingModality } from './flux';
 import type {
   ExerciseStructureV2,
   WorkoutCategorySimplified,
@@ -23,7 +24,7 @@ import type {
  * Full workout category including legacy values still present in DB rows.
  * For new templates, prefer WorkoutCategorySimplified ('warmup' | 'main' | 'cooldown').
  */
-export type WorkoutCategory = 'warmup' | 'main' | 'cooldown' | 'recovery' | 'test';
+export type WorkoutCategory = 'warmup' | 'main' | 'cooldown' | 'recovery' | 'test' | 'technique';
 export type WorkoutIntensity = 'low' | 'medium' | 'high' | 'z1' | 'z2' | 'z3' | 'z4' | 'z5';
 export type MicrocycleWeekFocus = 'volume' | 'intensity' | 'recovery' | 'test';
 export type MicrocycleStatus = 'draft' | 'active' | 'completed' | 'archived';
@@ -378,6 +379,7 @@ export interface ScheduledWorkout {
   // Message Content
   message_text: string;
   message_data?: {
+    week_number?: number;
     week_workouts?: WorkoutSlot[];
     load_total?: number;
     focus_area?: string;

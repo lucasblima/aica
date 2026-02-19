@@ -98,13 +98,14 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
         }
         return null;
 
-      case 'exercise_structure':
-        if (!value || !value.series || value.series.length === 0) {
+      case 'exercise_structure': {
+        const struct = value as ExerciseStructureV2 | undefined;
+        if (!struct || !struct.series || struct.series.length === 0) {
           return 'Adicione pelo menos uma série';
         }
 
         // Validate series data
-        for (const series of value.series) {
+        for (const series of struct.series) {
           if ('work_value' in series && series.work_value <= 0) {
             return 'Valor de trabalho deve ser maior que zero em todas as séries';
           }
@@ -122,14 +123,15 @@ export function useTemplateForm({ initialData, onSuccess }: UseTemplateFormProps
           }
         }
 
-        if (value.warmup && value.warmup.length > 140) {
+        if (struct.warmup && struct.warmup.length > 140) {
           return 'Aquecimento deve ter no máximo 140 caracteres';
         }
-        if (value.cooldown && value.cooldown.length > 140) {
+        if (struct.cooldown && struct.cooldown.length > 140) {
           return 'Desaquecimento deve ter no máximo 140 caracteres';
         }
 
         return null;
+      }
 
       default:
         return null;

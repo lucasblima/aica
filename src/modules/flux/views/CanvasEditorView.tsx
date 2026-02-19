@@ -22,7 +22,7 @@ import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
 import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 import { hasCalendarWriteScope } from '@/services/googleCalendarTokenService';
-import type { WorkoutTemplate, WorkoutSlot } from '../types/flow';
+import type { WorkoutTemplate, WorkoutSlot, PaceZone } from '../types/flow';
 import type { WeekWorkout } from '../components/canvas/WeeklyGrid';
 
 // Canvas components
@@ -426,7 +426,7 @@ export default function CanvasEditorView() {
           intensity: updated.intensity,
           coach_notes: updated.notes,
           ftp_percentage: updated.ftp_percentage,
-          pace_zone: updated.pace_zone,
+          pace_zone: updated.pace_zone as PaceZone | undefined,
           css_percentage: updated.css_percentage,
         });
       }

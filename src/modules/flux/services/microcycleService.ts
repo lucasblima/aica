@@ -15,6 +15,7 @@ import type {
   CreateWorkoutSlotInput,
   UpdateWorkoutSlotInput,
 } from '../types/flow';
+import { createMicrocycleTask, completeMicrocycleTask } from './fluxAtlasBridge';
 
 export class MicrocycleService {
   /**
@@ -138,6 +139,22 @@ export class MicrocycleService {
         })
         .select()
         .single();
+
+      // Bridge: create Atlas work_item (non-blocking)
+      if (data && !error) {
+        supabase
+          .from('athletes')
+          .select('id, name, modality')
+          .eq('id', input.athlete_id)
+          .single()
+          .then(({ data: athlete }) => {
+            if (athlete) {
+              createMicrocycleTask(data as Microcycle, athlete as any).catch((e) =>
+                console.warn('[MicrocycleService] Bridge error (non-blocking):', e)
+              );
+            }
+          });
+      }
 
       return { data, error };
     } catch (error) {
@@ -372,6 +389,13 @@ export class MicrocycleService {
         .select()
         .single();
 
+      // Bridge: mark Atlas work_item as done (non-blocking)
+      if (data && !error) {
+        completeMicrocycleTask(id).catch((e) =>
+          console.warn('[MicrocycleService] Bridge error (non-blocking):', e)
+        );
+      }
+
       return { data, error };
     } catch (error) {
       console.error('[MicrocycleService] Error archiving microcycle:', error);
@@ -396,11 +420,26 @@ export class MicrocycleService {
       }
 
       // Deactivate any other active microcycles for this athlete
+      const { data: deactivated } = await supabase
+        .from('microcycles')
+        .select('id')
+        .eq('athlete_id', microcycle.athlete_id)
+        .eq('status', 'active');
+
       await supabase
         .from('microcycles')
         .update({ status: 'completed' })
         .eq('athlete_id', microcycle.athlete_id)
         .eq('status', 'active');
+
+      // Bridge: mark deactivated microcycles as done in Atlas (non-blocking)
+      if (deactivated?.length) {
+        for (const m of deactivated) {
+          completeMicrocycleTask(m.id).catch((e) =>
+            console.warn('[MicrocycleService] Bridge error (non-blocking):', e)
+          );
+        }
+      }
 
       // Activate this microcycle
       const { data, error } = await supabase

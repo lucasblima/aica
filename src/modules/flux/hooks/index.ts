@@ -39,3 +39,9 @@ export type {
   UseAthleteFormOptions,
   UseAthleteFormReturn,
 } from './useAthleteForm';
+
+export { useFluxGamification } from './useFluxGamification';
+export type { FluxGamificationHook } from './useFluxGamification';
+
+export { usePerformanceTests } from './usePerformanceTests';
+export type { UsePerformanceTestsOptions, UsePerformanceTestsReturn } from './usePerformanceTests';

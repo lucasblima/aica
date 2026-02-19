@@ -238,6 +238,11 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
     'Mudanca de horario nos treinos.',
     'Ferias programadas, preciso pausar.',
   ],
+  feedback_received: [
+    'Atleta enviou feedback sobre o treino da semana.',
+    'Novo feedback recebido aguardando revisao.',
+    'Feedback positivo do atleta sobre evolucao.',
+  ],
 };
 
 const CRITICAL_KEYWORDS: Record<AlertType, string[]> = {
@@ -246,6 +251,7 @@ const CRITICAL_KEYWORDS: Record<AlertType, string[]> = {
   absence: ['faltei', 'perdi', 'nao consegui'],
   documents: ['vencido', 'pendente', 'incompleta'],
   custom: ['pausar', 'conversar'],
+  feedback_received: ['feedback', 'evolucao', 'resultado'],
 };
 
 function generateAlerts(): Alert[] {
@@ -702,6 +708,7 @@ export function getMockAthleteCountsByModality(): Record<TrainingModality, numbe
     running: 0,
     cycling: 0,
     strength: 0,
+    walking: 0,
   };
 
   for (const athlete of MOCK_ATHLETES) {
