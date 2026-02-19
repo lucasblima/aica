@@ -6,7 +6,7 @@
 -- Create exercises table
 CREATE TABLE IF NOT EXISTS public.exercises (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   description TEXT,
   category TEXT NOT NULL DEFAULT 'main'
@@ -40,7 +40,7 @@ ALTER TABLE public.exercises ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 CREATE POLICY "Users can read own exercises"
   ON public.exercises FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id OR user_id IS NULL);
 
 CREATE POLICY "Users can read public exercises"
   ON public.exercises FOR SELECT
@@ -82,7 +82,7 @@ CREATE TRIGGER trigger_exercises_updated_at
 -- We use a DO block so we can insert with a generated system UUID
 DO $$
 DECLARE
-  system_user_id UUID := '00000000-0000-0000-0000-000000000000';
+  system_user_id UUID := NULL;
 BEGIN
 
 -- ============================================
