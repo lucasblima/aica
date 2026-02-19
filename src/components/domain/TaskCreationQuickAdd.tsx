@@ -70,6 +70,9 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
   const [autoCreatedTitle, setAutoCreatedTitle] = useState<string | null>(null);
   const [autoCreatedDetails, setAutoCreatedDetails] = useState<string | null>(null);
 
+  // Phase 6: Progressive refinement — keep editing list after creation
+  const [createdListId, setCreatedListId] = useState<string | null>(null);
+
   // Calendar connection
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
 
@@ -95,6 +98,7 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     setNewChecklistItemText('');
     setAiSuggestion(null);
     setIsAiSuggesting(false);
+    setCreatedListId(null);
   }, []);
 
   const fillPreview = (data: ExtractedTaskData) => {
@@ -178,6 +182,24 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Phase 6: Save checklist updates to already-created list
+  const saveChecklistToCreatedList = async () => {
+    if (!createdListId) return;
+    const { error: updateError } = await supabase
+      .from('work_items')
+      .update({ checklist: previewChecklistItems.length > 0 ? previewChecklistItems : null })
+      .eq('id', createdListId);
+    if (updateError) {
+      log.error('Checklist update error:', updateError);
+    }
+    onTaskCreated();
+  };
+
+  const handleFinishListEditing = async () => {
+    await saveChecklistToCreatedList();
+    resetAll();
   };
 
   const handlePreviewSubmit = async (e: React.FormEvent) => {
@@ -270,12 +292,20 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
       }
       if (data.scheduled_time) flashDetails.push(data.scheduled_time);
 
-      resetAll();
       onTaskCreated();
 
-      setAutoCreatedTitle(flashTitle);
-      setAutoCreatedDetails(flashDetails.length > 0 ? flashDetails.join(' as ') : null);
-      setTimeout(() => { setAutoCreatedTitle(null); setAutoCreatedDetails(null); }, 4000);
+      // Phase 6: Progressive refinement — if we just created a list, stay in edit mode
+      if (data.task_type === 'list' && newTask) {
+        setCreatedListId(newTask.id);
+        setAutoCreatedTitle(flashTitle);
+        setAutoCreatedDetails(flashDetails.length > 0 ? flashDetails.join(' as ') : null);
+        setTimeout(() => { setAutoCreatedTitle(null); setAutoCreatedDetails(null); }, 3000);
+      } else {
+        resetAll();
+        setAutoCreatedTitle(flashTitle);
+        setAutoCreatedDetails(flashDetails.length > 0 ? flashDetails.join(' as ') : null);
+        setTimeout(() => { setAutoCreatedTitle(null); setAutoCreatedDetails(null); }, 4000);
+      }
     } catch (err) {
       log.error('Unexpected error:', err);
       setError('Erro inesperado. Tente novamente.');
@@ -403,36 +433,46 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
               </div>
             )}
 
-            <div className="space-y-2">
-              <p className="text-[11px] font-medium text-ceramic-text-secondary uppercase tracking-wide">AICA entendeu:</p>
-              <input type="text" value={previewTitle} onChange={(e) => setPreviewTitle(e.target.value)} placeholder="Titulo" className="w-full px-4 py-3 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm font-medium text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors" autoFocus disabled={isLoading} maxLength={500} />
-              {(previewDueDate || previewScheduledTime) && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  {previewDueDate && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">
-                      <Calendar className="w-3 h-3" />
-                      {new Date(previewDueDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                    </span>
-                  )}
-                  {previewScheduledTime && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-medium">
-                      <Clock className="w-3 h-3" />
-                      {previewScheduledTime}
-                    </span>
+            {createdListId ? (
+              <div className="flex items-center gap-2">
+                <ListChecks className="w-4 h-4 text-amber-500" />
+                <p className="text-sm font-bold text-ceramic-text-primary">{previewTitle}</p>
+                <span className="text-xs text-ceramic-text-secondary ml-auto">{previewChecklistItems.length} {previewChecklistItems.length === 1 ? 'item' : 'itens'}</span>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-medium text-ceramic-text-secondary uppercase tracking-wide">AICA entendeu:</p>
+                  <input type="text" value={previewTitle} onChange={(e) => setPreviewTitle(e.target.value)} placeholder="Titulo" className="w-full px-4 py-3 bg-ceramic-base border-2 border-ceramic-text-secondary/20 rounded-xl text-sm font-medium text-ceramic-text-primary placeholder:text-ceramic-text-secondary/50 focus:outline-none focus:border-ceramic-accent transition-colors" autoFocus disabled={isLoading} maxLength={500} />
+                  {(previewDueDate || previewScheduledTime) && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {previewDueDate && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(previewDueDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                      )}
+                      {previewScheduledTime && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-medium">
+                          <Clock className="w-3 h-3" />
+                          {previewScheduledTime}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Type selector pills */}
-            <div className="flex gap-2">
-              {TYPE_OPTIONS.map(({ type, label, icon: Icon }) => (
-                <button key={type} type="button" onClick={() => setPreviewTaskType(type)} disabled={isLoading} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-bold transition-all ${previewTaskType === type ? 'bg-amber-500 text-white shadow-sm' : 'bg-ceramic-base text-ceramic-text-secondary border border-ceramic-text-secondary/20 hover:border-ceramic-accent/50'}`}>
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </button>
-              ))}
-            </div>
+                {/* Type selector pills */}
+                <div className="flex gap-2">
+                  {TYPE_OPTIONS.map(({ type, label, icon: Icon }) => (
+                    <button key={type} type="button" onClick={() => setPreviewTaskType(type)} disabled={isLoading} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-bold transition-all ${previewTaskType === type ? 'bg-amber-500 text-white shadow-sm' : 'bg-ceramic-base text-ceramic-text-secondary border border-ceramic-text-secondary/20 hover:border-ceramic-accent/50'}`}>
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Type-specific content */}
             <AnimatePresence mode="wait">
@@ -539,12 +579,25 @@ export const TaskCreationQuickAdd: React.FC<TaskCreationQuickAddProps> = ({
             {error && <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-xs text-ceramic-error ml-1">{error}</motion.p>}
 
             <div className="flex gap-2">
-              <button type="submit" disabled={isLoading || !previewTitle.trim()} className="flex-1 ceramic-card px-4 py-2.5 rounded-xl text-sm font-bold text-ceramic-accent hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Criando...</> : <><Plus className="w-4 h-4" />{previewTaskType === 'task' ? 'Criar Tarefa' : previewTaskType === 'list' ? 'Criar Lista' : 'Criar Evento'}</>}
-              </button>
-              <button type="button" onClick={resetAll} disabled={isLoading} className="ceramic-inset p-2.5 rounded-xl text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors disabled:opacity-50" title="Cancelar">
-                <X className="w-4 h-4" />
-              </button>
+              {createdListId ? (
+                <>
+                  <button type="button" onClick={handleFinishListEditing} className="flex-1 ceramic-card px-4 py-2.5 rounded-xl text-sm font-bold text-ceramic-accent hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" />Concluir Lista
+                  </button>
+                  <button type="button" onClick={async () => { await saveChecklistToCreatedList(); }} disabled={isLoading} className="ceramic-inset px-3 py-2.5 rounded-xl text-sm font-medium text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors disabled:opacity-50 flex items-center gap-1.5" title="Salvar itens">
+                    <Save className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="submit" disabled={isLoading || !previewTitle.trim()} className="flex-1 ceramic-card px-4 py-2.5 rounded-xl text-sm font-bold text-ceramic-accent hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Criando...</> : <><Plus className="w-4 h-4" />{previewTaskType === 'task' ? 'Criar Tarefa' : previewTaskType === 'list' ? 'Criar Lista' : 'Criar Evento'}</>}
+                  </button>
+                  <button type="button" onClick={resetAll} disabled={isLoading} className="ceramic-inset p-2.5 rounded-xl text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors disabled:opacity-50" title="Cancelar">
+                    <X className="w-4 h-4" />
+                  </button>
+                </>
+              )}
             </div>
           </motion.form>
         )}
