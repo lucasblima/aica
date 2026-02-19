@@ -13,6 +13,14 @@ import {
 const log = createNamespacedLogger('GoogleAuthService');
 
 /**
+ * Feature flag: Extended Google scopes (Gmail, Drive)
+ * Currently disabled — requires CASA security assessment ($500-4500/yr)
+ * Enable when user base and revenue justify the cost.
+ * Tracked in: OAuth Verification docs
+ */
+const FEATURE_GOOGLE_EXTENDED_SCOPES = false;
+
+/**
  * DEPRECATED: Estas chaves foram substituídas por armazenamento no banco de dados
  * Mantidas por compatibilidade com código legado
  */
@@ -158,16 +166,26 @@ export async function requestGoogleScopes(additionalScopes: string[]): Promise<v
 }
 
 /**
- * Conecta Gmail (solicita escopo gmail.readonly + mantem escopos existentes)
+ * Conecta Gmail (solicita escopo gmail.modify + mantem escopos existentes)
+ * Disabled when FEATURE_GOOGLE_EXTENDED_SCOPES is false (CASA assessment required)
  */
 export async function connectGmail(): Promise<void> {
+    if (!FEATURE_GOOGLE_EXTENDED_SCOPES) {
+        console.warn('[GoogleAuth] Gmail scopes disabled — CASA assessment required');
+        return;
+    }
     return requestGoogleScopes(GMAIL_SCOPES);
 }
 
 /**
- * Conecta Google Drive (solicita escopo drive.readonly + mantem escopos existentes)
+ * Conecta Google Drive (solicita escopo drive + mantem escopos existentes)
+ * Disabled when FEATURE_GOOGLE_EXTENDED_SCOPES is false (CASA assessment required)
  */
 export async function connectDrive(): Promise<void> {
+    if (!FEATURE_GOOGLE_EXTENDED_SCOPES) {
+        console.warn('[GoogleAuth] Drive scopes disabled — CASA assessment required');
+        return;
+    }
     return requestGoogleScopes(DRIVE_SCOPES);
 }
 

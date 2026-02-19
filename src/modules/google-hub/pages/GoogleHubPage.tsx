@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { PageShell } from '@/components/ui';
 import { useGoogleScopes } from '@/hooks/useGoogleScopes';
-import { GmailSection } from '../components/GmailSection';
-import { ConversationSummarySection } from '../components/ConversationSummarySection';
-import { DriveSection } from '../components/DriveSection';
+// Legacy: will be re-enabled when CASA assessment is completed
+// import { GmailSection } from '../components/GmailSection';
+// import { ConversationSummarySection } from '../components/ConversationSummarySection';
+// import { DriveSection } from '../components/DriveSection';
 import { CalendarSection } from '../components/CalendarSection';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, HardDrive, type LucideIcon } from 'lucide-react';
 
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -98,17 +99,66 @@ function StatusPill({ label, connected, color, isLoading, onConnect, onDisconnec
     );
 }
 
+function ComingSoonPill({ label }: { label: string }) {
+    return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ceramic-cool/60 text-ceramic-text-secondary/70">
+            <span className="w-1.5 h-1.5 rounded-full bg-ceramic-text-secondary/30" />
+            {label} · Em Breve
+        </span>
+    );
+}
+
+interface ComingSoonServiceCardProps {
+    icon: LucideIcon;
+    color: string;
+    title: string;
+    description: string;
+}
+
+function ComingSoonServiceCard({ icon: Icon, color, title, description }: ComingSoonServiceCardProps) {
+    return (
+        <div className="relative overflow-hidden rounded-2xl border border-ceramic-border/40 bg-gradient-to-br from-ceramic-cool/30 via-ceramic-base to-ceramic-cool/20">
+            {/* Subtle decorative circle — faint glow behind the icon */}
+            <div
+                className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-[0.04] blur-2xl"
+                style={{ backgroundColor: color }}
+            />
+
+            <div className="relative px-8 py-10 sm:px-10 sm:py-12">
+                {/* Icon */}
+                <div className="mb-6">
+                    <div
+                        className="inline-flex items-center justify-center w-12 h-12 rounded-xl opacity-25"
+                        style={{ backgroundColor: `${color}12` }}
+                    >
+                        <Icon className="w-6 h-6" style={{ color }} />
+                    </div>
+                </div>
+
+                {/* Title + Badge */}
+                <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-lg font-semibold text-ceramic-text-primary/50">
+                        {title}
+                    </h3>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide uppercase bg-amber-50 text-amber-600/80 border border-amber-200/50">
+                        Em Breve
+                    </span>
+                </div>
+
+                {/* Description */}
+                <p className="text-sm leading-relaxed text-ceramic-text-secondary/60 max-w-md">
+                    {description}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 export function GoogleHubPage() {
     const navigate = useNavigate();
     const {
         hasCalendar,
-        hasGmail,
-        hasDrive,
         isLoading,
-        connectGmail,
-        connectDrive,
-        disconnectGmail,
-        disconnectDrive,
         disconnectCalendar,
     } = useGoogleScopes();
 
@@ -133,26 +183,12 @@ export function GoogleHubPage() {
                             isLoading={isLoading}
                             onDisconnect={hasCalendar ? disconnectCalendar : undefined}
                         />
-                        <StatusPill
-                            label="Gmail"
-                            connected={hasGmail}
-                            color="#4285F4"
-                            isLoading={isLoading}
-                            onConnect={!hasGmail ? connectGmail : undefined}
-                            onDisconnect={hasGmail ? disconnectGmail : undefined}
-                        />
-                        <StatusPill
-                            label="Drive"
-                            connected={hasDrive}
-                            color="#0F9D58"
-                            isLoading={isLoading}
-                            onConnect={!hasDrive ? connectDrive : undefined}
-                            onDisconnect={hasDrive ? disconnectDrive : undefined}
-                        />
+                        <ComingSoonPill label="Gmail" />
+                        <ComingSoonPill label="Drive" />
                     </div>
                 </motion.div>
 
-                {/* Calendar Section */}
+                {/* Calendar Section — fully functional */}
                 <motion.div variants={itemVariants}>
                     <CalendarSection
                         isConnected={hasCalendar}
@@ -160,28 +196,23 @@ export function GoogleHubPage() {
                     />
                 </motion.div>
 
-                {/* Gmail Section */}
+                {/* Gmail — Coming Soon teaser */}
                 <motion.div variants={itemVariants}>
-                    <GmailSection
-                        isConnected={hasGmail}
-                        onConnect={connectGmail}
-                        onDisconnect={disconnectGmail}
+                    <ComingSoonServiceCard
+                        icon={Mail}
+                        color="#4285F4"
+                        title="Gmail"
+                        description="Gerencie sua caixa de entrada sem sair da AICA. Categorize emails com IA, extraia tarefas automaticamente e mantenha tudo organizado."
                     />
                 </motion.div>
 
-                {/* Conversation Summary - only if Gmail connected */}
-                {hasGmail && (
-                    <motion.div variants={itemVariants}>
-                        <ConversationSummarySection />
-                    </motion.div>
-                )}
-
-                {/* Drive Section */}
+                {/* Drive — Coming Soon teaser */}
                 <motion.div variants={itemVariants}>
-                    <DriveSection
-                        isConnected={hasDrive}
-                        onConnect={connectDrive}
-                        onDisconnect={disconnectDrive}
+                    <ComingSoonServiceCard
+                        icon={HardDrive}
+                        color="#0F9D58"
+                        title="Google Drive"
+                        description="Acesse e organize seus arquivos diretamente na AICA. Navegue, busque e gerencie documentos em um so lugar."
                     />
                 </motion.div>
             </motion.div>
