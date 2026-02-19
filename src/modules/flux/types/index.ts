@@ -88,14 +88,15 @@ export type {
   AutomationActionType,
   CoachMessageTriggerType,
 
-  // Exercise Structure
-  IntervalSet,
-  ExerciseStructure,
+  // Exercise Structure (V2 from series.ts, re-exported via flow.ts)
+  ExerciseStructureV2,
 
   // Workout Templates
   WorkoutTemplate,
-  CreateWorkoutTemplateInput,
-  UpdateWorkoutTemplateInput,
+  WorkoutTemplateV2,
+  CreateWorkoutTemplateV2Input,
+  UpdateWorkoutTemplateV2Input,
+  WorkoutCategorySimplified,
 
   // Microcycles (3-week planning)
   Microcycle,

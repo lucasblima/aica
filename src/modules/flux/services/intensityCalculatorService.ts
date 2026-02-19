@@ -7,9 +7,7 @@
 
 import type {
   IntensityCalculation,
-  TrainingModality,
-  PaceZone,
-  AthleteProfile,
+  FlowAthleteProfile,
 } from '../types/flow';
 
 export class IntensityCalculatorService {
@@ -207,7 +205,7 @@ export class IntensityCalculatorService {
    * Calculate intensity for any modality based on athlete profile
    */
   static calculateIntensity(
-    profile: AthleteProfile,
+    profile: FlowAthleteProfile,
     targetZone: number
   ): IntensityCalculation {
     const modality = profile.modality;
@@ -307,7 +305,7 @@ export class IntensityCalculatorService {
   /**
    * Get all zones for athlete profile
    */
-  static getAllZones(profile: AthleteProfile): {
+  static getAllZones(profile: FlowAthleteProfile): {
     z1: string | number;
     z2: string | number;
     z3: string | number;

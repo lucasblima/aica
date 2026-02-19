@@ -7,8 +7,6 @@
 import { supabase } from '@/services/supabaseClient';
 import type {
   WorkoutTemplate,
-  CreateWorkoutTemplateInput,
-  UpdateWorkoutTemplateInput,
   TemplateFilters,
   TemplateUsageStats,
   WorkoutIntensity,
@@ -116,7 +114,7 @@ export class WorkoutTemplateService {
    * Create new template
    */
   static async createTemplate(
-    input: CreateWorkoutTemplateInput
+    input: CreateWorkoutTemplateV2Input
   ): Promise<{ data: WorkoutTemplate | null; error: any }> {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -144,7 +142,7 @@ export class WorkoutTemplateService {
    * Update existing template
    */
   static async updateTemplate(
-    input: UpdateWorkoutTemplateInput
+    input: UpdateWorkoutTemplateV2Input
   ): Promise<{ data: WorkoutTemplate | null; error: any }> {
     try {
       const { id, ...updates } = input;
@@ -285,7 +283,7 @@ export class WorkoutTemplateService {
    * Bulk create templates (for import/seed)
    */
   static async bulkCreateTemplates(
-    templates: CreateWorkoutTemplateInput[]
+    templates: CreateWorkoutTemplateV2Input[]
   ): Promise<{ data: WorkoutTemplate[] | null; error: any }> {
     try {
       const { data: userData } = await supabase.auth.getUser();

@@ -5,7 +5,7 @@
  */
 
 import type {
-  AthleteProfile,
+  FlowAthleteProfile,
   AthleteLevel,
   LevelingRecommendation,
   Microcycle,
@@ -80,7 +80,7 @@ export class LevelingEngineService {
    * Analyze athlete and recommend level based on metrics
    */
   static async analyzeAthleteLevel(
-    profile: AthleteProfile,
+    profile: FlowAthleteProfile,
     microcycles?: Microcycle[]
   ): Promise<LevelingRecommendation> {
     // Calculate weeks active (from created_at)
@@ -206,7 +206,7 @@ export class LevelingEngineService {
    * Calculate confidence score (0-100)
    */
   private static calculateConfidence(
-    profile: AthleteProfile,
+    profile: FlowAthleteProfile,
     weeksActive: number,
     performanceTrend: 'improving' | 'stable' | 'declining'
   ): number {
@@ -263,7 +263,7 @@ export class LevelingEngineService {
    * Analyze multiple athletes and generate recommendations
    */
   static async batchAnalyzeAthletes(
-    profiles: AthleteProfile[]
+    profiles: FlowAthleteProfile[]
   ): Promise<LevelingRecommendation[]> {
     const recommendations: LevelingRecommendation[] = [];
 
@@ -286,7 +286,7 @@ export class LevelingEngineService {
    * Get athletes needing level adjustment
    */
   static async getAthletesNeedingAdjustment(
-    profiles: AthleteProfile[],
+    profiles: FlowAthleteProfile[],
     minConfidence: number = 70
   ): Promise<LevelingRecommendation[]> {
     const recommendations = await this.batchAnalyzeAthletes(profiles);
