@@ -165,7 +165,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
   }
 
   return (
-    <div className="h-screen w-screen bg-ceramic-base overflow-y-scroll">
+    <div className="min-h-screen w-full bg-ceramic-base overflow-y-auto">
       {/* Header */}
       {onBack && (
         <div className="fixed top-0 left-0 right-0 bg-ceramic-base/80 backdrop-blur-lg z-10 border-b border-ceramic-text-secondary/10">
@@ -182,7 +182,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       )}
 
       {/* Hero Section - Saldo Grande e Minimalista */}
-      <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="min-h-[60vh] md:min-h-screen flex items-center justify-center px-4 md:px-6">
         <div className="text-center max-w-2xl">
           {/* Month Navigation */}
           <div className="flex items-center justify-center gap-6 mb-8">
@@ -208,7 +208,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           </div>
 
           {/* Balance - Typography Hero */}
-          <h1 className="text-8xl md:text-9xl font-thin text-ceramic-text-primary mb-4 tracking-tight text-etched">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-thin text-ceramic-text-primary mb-4 tracking-tight text-etched">
             {new Intl.NumberFormat('pt-BR', {
               style: 'currency',
               currency: 'BRL',
@@ -220,7 +220,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
           <div className="mb-12">
             <div className="inline-block">
               <div className="h-px w-24 bg-ceramic-text-secondary/30 mb-6 mx-auto" />
-              <div className="flex items-center justify-center gap-8 text-ceramic-text-secondary">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-ceramic-text-secondary">
                 <div>
                   <p className="text-xs uppercase tracking-wider mb-1">Receitas</p>
                   <p className="text-lg font-medium text-ceramic-success">
@@ -268,7 +268,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
       </div>
 
       {/* Categories Section */}
-      <div className="max-w-4xl mx-auto px-6 py-20">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-10 md:py-20">
         <div className="space-y-8">
           {budgetCategories.map((cat) => {
             const percentage = (cat.spent / cat.budget) * 100;
@@ -278,16 +278,16 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             return (
               <div
                 key={cat.category}
-                className="group ceramic-card transition-all duration-300 p-8"
+                className="group ceramic-card transition-all duration-300 p-4 md:p-8"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-4">
-                    <span className="text-4xl">{cat.icon}</span>
-                    <h3 className="text-xl font-medium text-ceramic-text-primary">{cat.label}</h3>
+                    <span className="text-2xl md:text-4xl">{cat.icon}</span>
+                    <h3 className="text-lg md:text-xl font-medium text-ceramic-text-primary">{cat.label}</h3>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-ceramic-text-primary">
+                    <p className="text-xl md:text-3xl font-bold text-ceramic-text-primary">
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
@@ -411,8 +411,8 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
         </div>
       </div>
 
-      {/* Debug Panel - Auditoria de Saldo */}
-      <div className="max-w-4xl mx-auto px-6 py-10">
+      {/* Debug Panel - only in development */}
+      {import.meta.env.DEV && <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="ceramic-card p-8">
           <h2 className="text-xl font-bold text-ceramic-text-primary mb-4">🔍 Auditoria de Saldo - {monthName}</h2>
 
@@ -528,7 +528,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Income Transactions Section */}
       {monthIncome > 0 && (

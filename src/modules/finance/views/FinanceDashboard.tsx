@@ -9,9 +9,11 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet, HardDrive } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
+import { DriveFilePicker } from '../components/DriveFilePicker';
+import { importFromDrive } from '../services/driveImportService';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
 import { BudgetView } from './BudgetView';
@@ -21,6 +23,8 @@ import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown } from '../
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
 import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement } from '../types';
+import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
+import { useModuleAgent } from '@/hooks/useModuleAgent';
 
 // =====================================================
 // Types
@@ -64,6 +68,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
+  const [showDrivePicker, setShowDrivePicker] = useState(false);
   const [showManagement, setShowManagement] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
@@ -82,6 +87,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     documents,
     clearSearchResults,
   } = useFinanceFileSearch({ userId, autoLoad: true });
+
+  const financeAgentConfig = getModuleAgentConfig('finance')!;
+  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
   const hasIndexedStatements = documents.length > 0;
 
@@ -406,6 +414,20 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         <div className="flex-1 overflow-hidden">
           <BudgetView userId={userId} onBack={onBack} />
         </div>
+
+        {/* Module Agent FAB + Chat Overlay */}
+        <ModuleAgentFAB onClick={openAgent} accentBg={financeAgentConfig.accentBg} label="Agente Finance" />
+        <ModuleAgentChat
+          isOpen={isAgentOpen}
+          onClose={closeAgent}
+          module={financeAgentConfig.module}
+          displayName={financeAgentConfig.displayName}
+          accentColor={financeAgentConfig.accentColor}
+          accentBg={financeAgentConfig.accentBg}
+          suggestedPrompts={financeAgentConfig.suggestedPrompts}
+          welcomeMessage={financeAgentConfig.welcomeMessage}
+          placeholder={financeAgentConfig.placeholder}
+        />
       </div>
     );
   }
@@ -505,6 +527,22 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             userId={userId}
             onSuccess={handleUploadComplete}
             onClose={() => setShowCSVUpload(false)}
+          />
+        )}
+
+        {/* Drive File Picker Modal */}
+        {showDrivePicker && (
+          <DriveFilePicker
+            onImport={async (file, content) => {
+              const result = await importFromDrive(userId, file, content);
+              if (result.success) {
+                setShowDrivePicker(false);
+                loadData();
+              } else {
+                throw new Error(result.error || 'Erro ao importar');
+              }
+            }}
+            onClose={() => setShowDrivePicker(false)}
           />
         )}
 
@@ -663,6 +701,14 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-ceramic-success" />
                 <span className="text-xs font-bold text-ceramic-success">CSV</span>
+              </button>
+              <button
+                onClick={() => setShowDrivePicker(true)}
+                className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
+                title="Importar do Google Drive"
+              >
+                <HardDrive className="w-3.5 h-3.5 text-ceramic-info" />
+                <span className="text-xs font-bold text-ceramic-info">Drive</span>
               </button>
             </div>
           </div>
@@ -1062,6 +1108,20 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary rotate-180" />
         </button>
       </main>
+
+      {/* Module Agent FAB + Chat Overlay */}
+      <ModuleAgentFAB onClick={openAgent} accentBg={financeAgentConfig.accentBg} label="Agente Finance" />
+      <ModuleAgentChat
+        isOpen={isAgentOpen}
+        onClose={closeAgent}
+        module={financeAgentConfig.module}
+        displayName={financeAgentConfig.displayName}
+        accentColor={financeAgentConfig.accentColor}
+        accentBg={financeAgentConfig.accentBg}
+        suggestedPrompts={financeAgentConfig.suggestedPrompts}
+        welcomeMessage={financeAgentConfig.welcomeMessage}
+        placeholder={financeAgentConfig.placeholder}
+      />
     </div>
   );
 };
