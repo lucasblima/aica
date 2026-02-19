@@ -29,15 +29,23 @@ CREATE TABLE IF NOT EXISTS public.exercises (
 );
 
 -- Indexes
-CREATE INDEX idx_exercises_user_id ON public.exercises(user_id);
-CREATE INDEX idx_exercises_modality ON public.exercises(modality);
-CREATE INDEX idx_exercises_category ON public.exercises(category);
-CREATE INDEX idx_exercises_is_public ON public.exercises(is_public) WHERE is_public = TRUE;
+CREATE INDEX IF NOT EXISTS idx_exercises_user_id ON public.exercises(user_id);
+CREATE INDEX IF NOT EXISTS idx_exercises_modality ON public.exercises(modality);
+CREATE INDEX IF NOT EXISTS idx_exercises_category ON public.exercises(category);
+CREATE INDEX IF NOT EXISTS idx_exercises_is_public ON public.exercises(is_public) WHERE is_public = TRUE;
 
 -- Enable RLS
 ALTER TABLE public.exercises ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies (idempotent: drop + create)
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can read own exercises" ON public.exercises;
+  DROP POLICY IF EXISTS "Users can read public exercises" ON public.exercises;
+  DROP POLICY IF EXISTS "Users can insert own exercises" ON public.exercises;
+  DROP POLICY IF EXISTS "Users can update own exercises" ON public.exercises;
+  DROP POLICY IF EXISTS "Users can delete own exercises" ON public.exercises;
+END $$;
+
 CREATE POLICY "Users can read own exercises"
   ON public.exercises FOR SELECT
   USING (auth.uid() = user_id OR user_id IS NULL);
@@ -67,6 +75,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_exercises_updated_at ON public.exercises;
 
 CREATE TRIGGER trigger_exercises_updated_at
   BEFORE UPDATE ON public.exercises
