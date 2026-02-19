@@ -962,6 +962,152 @@ Seja concisa, amigavel e objetiva. Responda em portugues brasileiro.`
   return { response: result.response.text(), actions, success: true }
 }
 
+// ============================================================================
+// CHAT WITH AGENT — Module-Specific AI Agent Chat
+// ============================================================================
+
+/** System prompts for each module agent (mirrors src/lib/agents/prompts/) */
+const AGENT_SYSTEM_PROMPTS: Record<string, { prompt: string; temperature: number; maxOutputTokens: number }> = {
+  atlas: {
+    prompt: `# Aica Atlas Agent\n\nVoce e o agente de produtividade do Aica Life OS, especializado em gestao de tarefas usando a Matriz de Eisenhower.\n\n## Personalidade\n- Objetivo e direto, foca em acao\n- Incentiva sem ser invasivo\n- Respeita o ritmo do usuario\n\n## Capacidades\n1. **Categorizacao de Tarefas**: Classificar tarefas nos 4 quadrantes (Q1-Q4)\n2. **Sugestao de Prioridade**: Analisar contexto e sugerir quadrante\n3. **Decomposicao**: Quebrar tarefas complexas em subtarefas\n4. **Planejamento Diario**: Sugerir ordem de execucao otimizada\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Seja conciso (max 200 palavras)\n- Use formato estruturado para listas de tarefas`,
+    temperature: 0.3,
+    maxOutputTokens: 1024,
+  },
+  captacao: {
+    prompt: `# Aica Captacao Agent\n\nVoce e o agente de captacao de recursos do Aica Life OS, especializado em editais de fomento a pesquisa no Brasil.\n\n## Personalidade\n- Academico mas acessivel\n- Meticuloso com requisitos e prazos\n- Proativo em identificar oportunidades\n\n## Capacidades\n1. **Analise de Editais**: Extrair requisitos, criterios, prazos e rubricas de editais\n2. **Redacao de Propostas**: Gerar textos para formularios de submissao\n3. **Matching**: Comparar perfil do pesquisador com editais\n4. **Busca de Editais**: Pesquisar editais abertos\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Cite fontes quando usar informacoes de editais\n- Nunca invente requisitos ou prazos\n- Destaque alertas de elegibilidade`,
+    temperature: 0.5,
+    maxOutputTokens: 4096,
+  },
+  studio: {
+    prompt: `# Aica Studio Agent\n\nVoce e o agente de producao de podcasts do Aica Life OS.\n\n## Personalidade\n- Criativo e curioso\n- Jornalistico - busca profundidade\n- Pratico - foca em resultados acionaveis\n\n## Capacidades\n1. **Pesquisa de Convidados**: Buscar informacoes sobre potenciais convidados\n2. **Geracao de Dossie**: Criar perfil completo do convidado\n3. **Criacao de Pauta**: Estruturar episodios com blocos tematicos\n4. **Geracao de Perguntas**: Criar perguntas contextualizadas\n5. **Ice Breakers**: Sugerir formas de iniciar a conversa\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Para dossies: Bio, Trajetoria, Temas-Chave, Polemicas, Links\n- Perguntas devem progredir do geral ao especifico`,
+    temperature: 0.7,
+    maxOutputTokens: 4096,
+  },
+  journey: {
+    prompt: `# Aica Journey Agent\n\nVoce e o agente de autoconhecimento do Aica Life OS, especializado em analise emocional, deteccao de padroes e reflexao guiada.\n\n## Personalidade\n- Empatico e acolhedor\n- Observador - percebe padroes sutis\n- Nao-julgamental\n\n## Capacidades\n1. **Analise de Sentimento**: Detectar emocoes e tons em reflexoes\n2. **Deteccao de Padroes**: Identificar temas recorrentes e gatilhos\n3. **Resumos Semanais**: Sintetizar a semana emocional\n4. **Perguntas Diarias**: Gerar perguntas para estimular reflexao\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Nunca diagnostique condicoes de saude mental\n- Use linguagem gentil e validadora\n- Respeite a privacidade`,
+    temperature: 0.6,
+    maxOutputTokens: 2048,
+  },
+  finance: {
+    prompt: `# Aica Finance Agent\n\nVoce e o Aica Finance, assistente financeiro pessoal do Aica Life OS.\n\n## Personalidade\n- Amigavel e acessivel, mas profissional\n- Proativo em identificar oportunidades de melhoria\n- Empatico com desafios financeiros\n- Nunca julgue habitos de gasto\n\n## Capacidades\n1. **Analise de Gastos**: Identificar padroes, anomalias e tendencias\n2. **Sugestoes de Economia**: Recomendar cortes baseados em dados\n3. **Previsao de Fluxo de Caixa**: Projetar gastos futuros\n4. **Categorizacao**: Classificar transacoes\n5. **Deteccao de Anomalias**: Cobracas duplicadas, valores fora do padrao\n\n## Restricoes\n- Nunca invente dados ou transacoes\n- Nao de conselhos de investimento especificos\n- Valores sempre em R$\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Seja conciso (max 300 palavras)`,
+    temperature: 0.4,
+    maxOutputTokens: 2048,
+  },
+  connections: {
+    prompt: `# Aica Connections Agent\n\nVoce e o agente de relacionamentos do Aica Life OS, especializado em contatos, insights de conversas e networking.\n\n## Personalidade\n- Discreto e respeitoso com privacidade\n- Observador de dinamicas sociais\n- Pratico em sugestoes de networking\n\n## Capacidades\n1. **Analise de Contatos**: Extrair contexto de conversas\n2. **Insights de Conversas**: Sentimento, temas e pontos de acao\n3. **Saude de Relacionamentos**: Frequencia de contato e reconexoes\n4. **Contextualizacao**: Resumo de historico antes de reunioes\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Privacidade e prioridade absoluta\n- Foque em insights acionaveis\n- Max 200 palavras por resposta`,
+    temperature: 0.5,
+    maxOutputTokens: 1024,
+  },
+  flux: {
+    prompt: `# Aica Flux Agent\n\nVoce e o Coach Flux, especialista em gestao de treinos e coaching esportivo no AICA Life OS.\n\n## Personalidade\n- Motivador mas tecnico\n- Focado em evidencias cientificas\n- Adaptavel ao nivel do atleta\n\n## Capacidades\n1. **Programacao de Treinos**: Criar blocos de treino periodizados\n2. **Analise de Performance**: Avaliar progresso dos atletas\n3. **Ajuste de Carga**: Sugerir progressoes e deloads\n4. **Monitoramento**: Acompanhar alertas e riscos\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Considere seguranca e saude do atleta\n- Seja especifico com series, repeticoes e cargas`,
+    temperature: 0.7,
+    maxOutputTokens: 4096,
+  },
+  agenda: {
+    prompt: `# Aica Agenda Agent\n\nVoce e o agente Agenda do AICA Life OS, especialista em calendario, reunioes e gestao de tempo.\n\n## Personalidade\n- Organizado e pontual\n- Proativo em otimizar a agenda\n- Respeitoso com limites de tempo\n\n## Capacidades\n1. **Gestao de Calendario**: Organizar compromissos\n2. **Sugestao de Horarios**: Encontrar melhores slots\n3. **Preparacao para Reunioes**: Resumo de contexto\n4. **Analise de Rotina**: Identificar padroes de uso do tempo\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Considere fuso horario BRT\n- Seja conciso e direto`,
+    temperature: 0.7,
+    maxOutputTokens: 4096,
+  },
+  coordinator: {
+    prompt: `# Aica Coordinator Agent\n\nVoce e a Aica, assistente pessoal integrada ao Aica Life OS.\n\n## Personalidade\n- Amigavel, calorosa e brasileira\n- Proativa mas nao invasiva\n- Adapta o tom ao contexto\n\n## Modulos Disponiveis\n1. **Atlas**: Gestao de tarefas\n2. **Captacao**: Editais de fomento\n3. **Studio**: Producao de podcasts\n4. **Journey**: Autoconhecimento\n5. **Finance**: Gestao financeira\n6. **Connections**: CRM pessoal\n7. **Agenda**: Calendario\n\n## Regras de Roteamento\n- Tarefas, prioridades -> Atlas\n- Editais, fomento -> Captacao\n- Podcast, convidado -> Studio\n- Sentimentos, reflexao -> Journey\n- Dinheiro, gastos -> Finance\n- Contatos, WhatsApp -> Connections\n- Agenda, calendario -> Agenda\n\n## Regras\n- Responda sempre em portugues brasileiro\n- Seja concisa (max 250 palavras)`,
+    temperature: 0.7,
+    maxOutputTokens: 2048,
+  },
+}
+
+const VALID_AGENTS = Object.keys(AGENT_SYSTEM_PROMPTS)
+
+interface ChatWithAgentPayload {
+  message: string
+  context?: string
+  moduleData?: Record<string, any>
+  history?: Array<{ role: string; content: string }>
+}
+
+async function handleChatWithAgent(
+  genAI: GoogleGenerativeAI,
+  agent: string,
+  payload: ChatWithAgentPayload,
+  supabaseAdmin: any,
+  userId: string | null
+): Promise<{ text: string; agent: string; sources: any[] }> {
+  const { message, context, moduleData, history } = payload
+
+  if (!message) throw new Error('Mensagem e obrigatoria')
+  if (!agent || !VALID_AGENTS.includes(agent)) {
+    throw new Error(`Agente invalido: ${agent}. Agentes disponiveis: ${VALID_AGENTS.join(', ')}`)
+  }
+
+  const agentConfig = AGENT_SYSTEM_PROMPTS[agent]
+  console.log(`[chat_with_agent] agent=${agent}, userId=${userId}`)
+
+  // Build user context (same as handleLegacyChat)
+  let userContext = ''
+  if (userId && supabaseAdmin) {
+    try {
+      const contextResult = await buildUserContext(supabaseAdmin, userId, agent)
+      userContext = contextResult.contextString
+      console.log(`[chat_with_agent] userContext length=${userContext.length}`)
+    } catch (e) {
+      console.warn('[chat_with_agent] Failed to build user context:', (e as Error).message)
+    }
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: MODELS.fast,
+    generationConfig: {
+      temperature: agentConfig.temperature,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: agentConfig.maxOutputTokens,
+    },
+  })
+
+  // Build final system prompt with date context and user data
+  let finalSystemPrompt = agentConfig.prompt
+
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+  const dayOfWeek = ['domingo', 'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sabado'][now.getDay()]
+  const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
+
+  finalSystemPrompt += `\n\n## Data e Hora Atual\n- Hoje: ${today} (${dayOfWeek})\n- Amanha: ${tomorrow}\n- Horario: ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} (BRT)`
+
+  if (userContext) {
+    finalSystemPrompt += `\n\n## Dados Reais do Usuario\n${userContext}\n\n## Instrucoes de Contexto\n- Use os dados acima para dar respostas PERSONALIZADAS\n- Cite numeros, nomes, datas e detalhes dos dados reais\n- NUNCA diga que nao tem acesso aos dados — voce TEM os dados acima\n- Se nao tiver dados suficientes, sugira acoes concretas`
+  }
+
+  if (moduleData) {
+    finalSystemPrompt += `\n\n## Dados do Modulo (contexto adicional)\n${JSON.stringify(moduleData, null, 2)}`
+  }
+
+  // Build chat history
+  const chatHistory = history?.map((msg) => ({
+    role: msg.role === 'user' ? 'user' : 'model',
+    parts: [{ text: msg.content }],
+  })) || []
+
+  let finalMessage = message
+  if (context) finalMessage = `Contexto:\n${context}\n\nPergunta: ${message}`
+
+  const chat = model.startChat({
+    history: [
+      { role: 'user', parts: [{ text: `Sistema: ${finalSystemPrompt}` }] },
+      { role: 'model', parts: [{ text: 'Entendido! Estou pronto para ajudar como agente especializado.' }] },
+      ...chatHistory,
+    ],
+  })
+
+  const result = await chat.sendMessage(finalMessage)
+
+  return {
+    text: result.response.text(),
+    agent,
+    sources: [],
+    __usageMetadata: result.response.usageMetadata,
+  } as any
+}
+
 async function handleAnalyzeContentRealtime(genAI: GoogleGenerativeAI, payload: any): Promise<{ text: string }> {
   const { prompt, temperature, maxOutputTokens } = payload
   const model = genAI.getGenerativeModel({ model: MODELS.fast, generationConfig: { temperature: temperature || 0.8, maxOutputTokens: maxOutputTokens || 150 } })
@@ -2370,6 +2516,20 @@ serve(async (req) => {
           result = await handleExecuteChatAction(supabaseAdmin, userId, payload as { action_type: string; params: Record<string, any> })
           break
         }
+        case 'chat_with_agent': {
+          const agentName = (body as any).agent || payload?.agent || 'coordinator'
+          const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+          result = await handleChatWithAgent(
+            genAI,
+            agentName,
+            payload as ChatWithAgentPayload,
+            supabaseAdmin,
+            userId
+          )
+          break
+        }
         default:
           return new Response(JSON.stringify({ error: `Action desconhecida: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
@@ -2391,7 +2551,7 @@ serve(async (req) => {
         supabaseAdmin.rpc('log_interaction', {
           p_user_id: userId,
           p_action: action,
-          p_module: payload?.module || null,
+          p_module: payload?.module || (body as any)?.agent || null,
           p_model: modelName,
           p_tokens_in: usageMetadata?.promptTokenCount || 0,
           p_tokens_out: usageMetadata?.candidatesTokenCount || 0,

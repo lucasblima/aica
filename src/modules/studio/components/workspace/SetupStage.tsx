@@ -278,23 +278,23 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               onClick={() => handleGuestTypeSelect('public_figure')}
               className={`
                 relative flex flex-col items-center p-6 rounded-lg border-2 transition-all
-                focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20
+                focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20
                 ${setup.guestType === 'public_figure'
-                  ? 'border-ceramic-primary bg-ceramic-accent shadow-md'
-                  : 'border-ceramic-border hover:border-ceramic-primary/50 hover:bg-ceramic-surface-hover'
+                  ? 'border-ceramic-accent bg-ceramic-warm shadow-md'
+                  : 'border-ceramic-border hover:border-ceramic-accent/50 hover:bg-ceramic-surface-hover'
                 }
               `}
             >
               <Users className={`w-12 h-12 mb-3 ${
-                setup.guestType === 'public_figure' ? 'text-ceramic-primary' : 'text-ceramic-tertiary'
+                setup.guestType === 'public_figure' ? 'text-ceramic-accent' : 'text-ceramic-tertiary'
               }`} aria-hidden="true" />
-              <h3 className="font-semibold text-ceramic-primary mb-1">Figura Pública</h3>
+              <h3 className="font-semibold text-ceramic-text-primary mb-1">Figura Pública</h3>
               <p className="text-sm text-ceramic-secondary text-center">
                 Buscar perfil automaticamente usando IA
               </p>
               {setup.guestType === 'public_figure' && (
                 <div className="absolute top-3 right-3" aria-hidden="true">
-                  <div className="w-6 h-6 bg-ceramic-primary rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-ceramic-accent rounded-full flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -312,23 +312,23 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               onClick={() => handleGuestTypeSelect('common_person')}
               className={`
                 relative flex flex-col items-center p-6 rounded-lg border-2 transition-all
-                focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20
+                focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20
                 ${setup.guestType === 'common_person'
-                  ? 'border-ceramic-primary bg-ceramic-accent shadow-md'
-                  : 'border-ceramic-border hover:border-ceramic-primary/50 hover:bg-ceramic-surface-hover'
+                  ? 'border-ceramic-accent bg-ceramic-warm shadow-md'
+                  : 'border-ceramic-border hover:border-ceramic-accent/50 hover:bg-ceramic-surface-hover'
                 }
               `}
             >
               <UserCircle className={`w-12 h-12 mb-3 ${
-                setup.guestType === 'common_person' ? 'text-ceramic-primary' : 'text-ceramic-tertiary'
+                setup.guestType === 'common_person' ? 'text-ceramic-accent' : 'text-ceramic-tertiary'
               }`} aria-hidden="true" />
-              <h3 className="font-semibold text-ceramic-primary mb-1">Pessoa Comum</h3>
+              <h3 className="font-semibold text-ceramic-text-primary mb-1">Pessoa Comum</h3>
               <p className="text-sm text-ceramic-secondary text-center">
                 Inserir informações manualmente
               </p>
               {setup.guestType === 'common_person' && (
                 <div className="absolute top-3 right-3" aria-hidden="true">
-                  <div className="w-6 h-6 bg-ceramic-primary rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-ceramic-accent rounded-full flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -926,7 +926,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               onClick={() => { syncGuestContact(); actions.setStage('research'); }}
               disabled={!setup.guestName}
               aria-label={!setup.guestName ? 'Preencha o nome do convidado para continuar' : 'Ir para próxima etapa: Pesquisa'}
-              className="px-6 py-3 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed disabled:border disabled:border-ceramic-border transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
+              className="px-6 py-3 bg-ceramic-accent text-white rounded-lg hover:bg-ceramic-accent-dark disabled:bg-ceramic-cool disabled:text-ceramic-text-primary disabled:cursor-not-allowed disabled:border disabled:border-ceramic-border transition-colors flex items-center space-x-2 shadow-sm focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20"
             >
               <span>Próximo: Pesquisa</span>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

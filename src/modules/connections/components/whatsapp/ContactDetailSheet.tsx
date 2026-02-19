@@ -304,6 +304,7 @@ export const ContactDetailSheet: React.FC<ContactDetailSheetProps> = ({
                     isRefreshing={isRefreshing}
                     hasDossier={hasDossier}
                     onRefresh={refreshAll}
+                    error={error}
                     className="mb-4"
                   />
 

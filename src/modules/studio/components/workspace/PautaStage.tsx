@@ -460,7 +460,7 @@ export default function PautaStage() {
             {pauta.topics.length > 0 && (
               <button
                 onClick={handleOpenTeleprompter}
-                className="px-4 py-2.5 min-h-[44px] rounded-lg bg-ceramic-primary text-white text-sm font-bold flex items-center gap-2 hover:bg-ceramic-primary/90 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ceramic-primary focus:ring-offset-2"
+                className="px-4 py-2.5 min-h-[44px] rounded-lg bg-ceramic-accent text-white text-sm font-bold flex items-center gap-2 hover:bg-ceramic-accent-dark hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ceramic-accent focus:ring-offset-2"
                 title="Abrir teleprompter para praticar"
                 aria-label="Abrir teleprompter"
               >
@@ -693,7 +693,7 @@ export default function PautaStage() {
             <button
               type="submit"
               disabled={!newTopicText.trim()}
-              className="min-w-[44px] min-h-[44px] p-3 rounded-xl bg-ceramic-primary text-ceramic-base disabled:opacity-50 transition-all hover:scale-105 active:scale-95 font-bold focus:outline-none focus:ring-2 focus:ring-ceramic-primary focus:ring-offset-2 flex items-center justify-center"
+              className="min-w-[44px] min-h-[44px] p-3 rounded-xl bg-ceramic-accent text-ceramic-base disabled:opacity-50 transition-all hover:scale-105 active:scale-95 font-bold focus:outline-none focus:ring-2 focus:ring-ceramic-accent focus:ring-offset-2 flex items-center justify-center"
               title="Adicionar tópico (Enter)"
               aria-label="Adicionar novo tópico à pauta"
             >

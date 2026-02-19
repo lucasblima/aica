@@ -36,6 +36,7 @@ export interface ContactDossierCardProps {
   isRefreshing: boolean
   hasDossier: boolean
   onRefresh: () => void
+  error?: string | null
   className?: string
 }
 
@@ -147,6 +148,7 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
   isRefreshing,
   hasDossier,
   onRefresh,
+  error,
   className,
 }) => {
   // Loading state
@@ -197,6 +199,12 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
             )}
             {isRefreshing ? 'Gerando...' : 'Gerar dossie'}
           </button>
+          {error && (
+            <p className="mt-3 text-xs text-ceramic-error flex items-center justify-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5" />
+              {error}
+            </p>
+          )}
         </div>
       </div>
     )
@@ -237,6 +245,14 @@ export const ContactDossierCard: React.FC<ContactDossierCardProps> = ({
           )}
         </button>
       </div>
+
+      {/* Error feedback */}
+      {error && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-ceramic-error/10 text-ceramic-error text-sm rounded-lg">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Summary */}
       {dossier?.dossier_summary && (
