@@ -158,26 +158,49 @@ export interface FinanceCategory {
 export interface FinanceBudget {
   id: string;
   user_id: string;
-  year: number;
+  category: string;
+  budget_amount: number;
   month: number;
-  category_id: string;
-  planned_amount: number;
-  actual_amount: number;
-  notes?: string;
+  year: number;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface BudgetWithCategory extends FinanceBudget {
-  category?: FinanceCategory;
+export interface BudgetSummaryRow {
+  category: string;
+  budget_amount: number;
+  spent: number;
+  remaining: number;
+  percentage: number;
 }
 
 export interface MonthlyBudgetSummary {
   year: number;
   month: number;
-  totalPlanned: number;
-  totalActual: number;
-  budgets: BudgetWithCategory[];
+  totalBudget: number;
+  totalSpent: number;
+  rows: BudgetSummaryRow[];
+}
+
+export interface GoalProgress {
+  id: string;
+  title: string;
+  goal_type: string;
+  target_amount: number;
+  current_amount: number;
+  progress_pct: number;
+  deadline: string | null;
+  category: string | null;
+  is_active: boolean;
+}
+
+export interface RecurringSummaryItem {
+  description: string;
+  count: number;
+  average_amount: number;
+  total_amount: number;
+  last_date: string;
 }
 
 // =====================================================
@@ -323,3 +346,65 @@ export const TRANSACTION_CATEGORIES = [
 ] as const;
 
 export type TransactionCategory = typeof TRANSACTION_CATEGORIES[number];
+
+// =====================================================
+// Account Types
+// =====================================================
+
+export interface FinanceAccount {
+  id: string;
+  user_id: string;
+  account_name: string;
+  bank_name: string | null;
+  account_type: 'checking' | 'savings' | 'credit_card' | 'investment' | 'other';
+  is_default: boolean;
+  color: string;
+  icon: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// =====================================================
+// Goal Types
+// =====================================================
+
+export interface FinanceGoal {
+  id: string;
+  user_id: string;
+  title: string;
+  goal_type: 'savings' | 'debt_payoff' | 'investment' | 'emergency_fund' | 'custom';
+  target_amount: number;
+  current_amount: number;
+  deadline: string | null;
+  category: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type GoalTypeLabel = {
+  [K in FinanceGoal['goal_type']]: string;
+};
+
+export const GOAL_TYPE_LABELS: GoalTypeLabel = {
+  savings: 'Poupanca',
+  debt_payoff: 'Quitar Divida',
+  investment: 'Investimento',
+  emergency_fund: 'Reserva de Emergencia',
+  custom: 'Personalizado',
+};
+
+// =====================================================
+// Budget Alert Types
+// =====================================================
+
+export interface BudgetAlert {
+  id: string;
+  type: 'exceeded' | 'warning' | 'unusual' | 'recurring_missed';
+  category: string;
+  message: string;
+  amount?: number;
+  threshold?: number;
+  created_at: string;
+}

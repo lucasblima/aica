@@ -9,20 +9,28 @@ import { createNamespacedLogger } from '@/lib/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 
 const log = createNamespacedLogger('FinanceDashboard');
-import { ArrowLeft, MessageSquare, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet, HardDrive } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, TrendingUp, Wallet, Trash2, Calendar, CheckCircle2, Eye, EyeOff, Loader2, Building2, ChevronRight, Target, FileSpreadsheet, HardDrive, BarChart3, List, GitCompare, Trophy, Download } from 'lucide-react';
 import { StatementUpload } from '../components/StatementUpload';
 import { CSVUpload } from '../components/CSVUpload';
 import { DriveFilePicker } from '../components/DriveFilePicker';
 import { importFromDrive } from '../services/driveImportService';
 import { ExpenseChart } from '../components/Charts/ExpenseChart';
 import { IncomeVsExpense } from '../components/Charts/IncomeVsExpense';
+import { TrendLineChart } from '../components/Charts/TrendLineChart';
 import { BudgetView } from './BudgetView';
 import { FinanceSearchPanel } from '../components/FinanceSearchPanel';
 import { MonthlyDigestCard } from '../components/MonthlyDigestCard';
-import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown } from '../services/financeService';
+import { FinanceEmptyState } from '../components/FinanceEmptyState';
+import { FinanceNotificationCard } from '../components/FinanceNotificationCard';
+import { TransactionListView } from '../components/TransactionListView';
+import { MonthComparisonView } from '../components/MonthComparisonView';
+import { GoalTracker } from '../components/GoalTracker';
+import { AccountManagement } from '../components/AccountManagement';
+import { getAllTimeSummary, getBurnRate, getAllTimeCategoryBreakdown, getTransactionsByDateRange } from '../services/financeService';
+import { exportToCSV } from '../services/exportService';
 import { statementService } from '../services/statementService';
 import { useFinanceFileSearch } from '../hooks/useFinanceFileSearch';
-import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement } from '../types';
+import type { FinanceSummary, BurnRateData, CategoryBreakdown, FinanceStatement, BudgetAlert, FinanceTransaction } from '../types';
 import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
 import { useModuleAgent } from '@/hooks/useModuleAgent';
 
@@ -32,7 +40,6 @@ import { useModuleAgent } from '@/hooks/useModuleAgent';
 
 interface FinanceDashboardProps {
   userId: string;
-  onNavigateToAgent: () => void;
   onBack?: () => void;
 }
 
@@ -48,6 +55,23 @@ interface MonthData {
   processingStatus: 'completed' | 'processing' | 'failed' | 'empty';
 }
 
+type DashboardView = 'history' | 'budget' | 'transactions' | 'comparison' | 'goals' | 'accounts';
+
+interface ViewTab {
+  key: DashboardView;
+  label: string;
+  icon: React.ElementType;
+}
+
+const VIEW_TABS: ViewTab[] = [
+  { key: 'history', label: 'Visao Geral', icon: BarChart3 },
+  { key: 'transactions', label: 'Transacoes', icon: List },
+  { key: 'budget', label: 'Orcamento', icon: Target },
+  { key: 'comparison', label: 'Comparativo', icon: GitCompare },
+  { key: 'goals', label: 'Metas', icon: Trophy },
+  { key: 'accounts', label: 'Contas', icon: Building2 },
+];
+
 // =====================================================
 // Component
 // =====================================================
@@ -55,7 +79,6 @@ interface MonthData {
 /* data-tour markers: finance-header, balance-overview, income-expenses, budget-categories, transaction-list, upload-statement, ai-insights, goals-tracking */
 export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   userId,
-  onNavigateToAgent,
   onBack,
 }) => {
   // Auto-start tour on first visit (Phase 2 - Organic Onboarding)
@@ -65,6 +88,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   const [burnRate, setBurnRate] = useState<BurnRateData | null>(null);
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([]);
   const [statements, setStatements] = useState<FinanceStatement[]>([]);
+  const [allTransactions, setAllTransactions] = useState<FinanceTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
@@ -72,8 +96,16 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   const [showManagement, setShowManagement] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
-  const [isValuesVisible, setIsValuesVisible] = useState(false);
-  const [activeView, setActiveView] = useState<'budget' | 'history'>('history');
+  const [isValuesVisible, setIsValuesVisible] = useState(() => {
+    const saved = localStorage.getItem('finance_values_visible');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [activeView, setActiveView] = useState<DashboardView>('history');
+
+  // Persist visibility toggle
+  useEffect(() => {
+    localStorage.setItem('finance_values_visible', JSON.stringify(isValuesVisible));
+  }, [isValuesVisible]);
 
   // File Search integration
   const {
@@ -100,17 +132,26 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   const loadData = async () => {
     try {
       setLoading(true);
-      const [summaryData, burnRateData, categoryData, statementsData] = await Promise.all([
+
+      // Build a 6-month date range for trend data
+      const now = new Date();
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const trendStart = sixMonthsAgo.toISOString().split('T')[0];
+      const trendEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+      const [summaryData, burnRateData, categoryData, statementsData, trendTransactions] = await Promise.all([
         getAllTimeSummary(userId),
         getBurnRate(userId),
         getAllTimeCategoryBreakdown(userId),
         statementService.getStatements(userId),
+        getTransactionsByDateRange(userId, trendStart, trendEnd),
       ]);
 
       setSummary(summaryData);
       setBurnRate(burnRateData);
       setCategoryBreakdown(categoryData);
       setStatements(statementsData);
+      setAllTransactions(trendTransactions);
     } catch (error) {
       log.error('Error loading finance data:', error);
     } finally {
@@ -125,7 +166,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   };
 
   const handleDelete = async (statementId: string) => {
-    if (!confirm('Tem certeza que deseja deletar este extrato? Esta ação não pode ser desfeita.')) {
+    if (!confirm('Tem certeza que deseja deletar este extrato? Esta acao nao pode ser desfeita.')) {
       return;
     }
 
@@ -143,7 +184,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm(`Tem certeza que deseja deletar TODOS os ${statements.length} extratos? Esta ação não pode ser desfeita.`)) {
+    if (!confirm(`Tem certeza que deseja deletar TODOS os ${statements.length} extratos? Esta acao nao pode ser desfeita.`)) {
       return;
     }
 
@@ -161,7 +202,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
       alert('Todos os extratos foram deletados com sucesso!');
     } catch (error) {
       log.error('Error deleting all statements:', error);
-      alert('Erro ao deletar extratos. Alguns podem não ter sido deletados.');
+      alert('Erro ao deletar extratos. Alguns podem nao ter sido deletados.');
     } finally {
       setDeletingAll(false);
     }
@@ -228,6 +269,66 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         };
     }
   };
+
+  // Build trend data for TrendLineChart from last 6 months of transactions
+  const trendData = useMemo(() => {
+    const now = new Date();
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const points: { month: string; income: number; expense: number }[] = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const label = `${monthNames[month]}`;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const firstStr = firstDay.toISOString().split('T')[0];
+      const lastStr = lastDay.toISOString().split('T')[0];
+
+      let income = 0;
+      let expense = 0;
+
+      for (const tx of allTransactions) {
+        if (tx.transaction_date >= firstStr && tx.transaction_date <= lastStr) {
+          if (tx.type === 'income') {
+            income += Math.abs(Number(tx.amount));
+          } else {
+            expense += Math.abs(Number(tx.amount));
+          }
+        }
+      }
+
+      points.push({ month: label, income, expense });
+    }
+
+    return points;
+  }, [allTransactions]);
+
+  // Generate budget alerts from category breakdown vs rough budget thresholds
+  const budgetAlerts = useMemo((): BudgetAlert[] => {
+    if (!summary || !categoryBreakdown || categoryBreakdown.length === 0) return [];
+
+    const alerts: BudgetAlert[] = [];
+    const avgPerCategory = summary.totalExpenses / Math.max(categoryBreakdown.length, 1);
+
+    categoryBreakdown.forEach((cat) => {
+      if (cat.amount > avgPerCategory * 2) {
+        alerts.push({
+          id: `alert-${cat.category}`,
+          type: 'warning',
+          category: cat.category,
+          message: `${cat.category} representa ${cat.percentage.toFixed(0)}% das despesas`,
+          amount: cat.amount,
+          threshold: avgPerCategory,
+          created_at: new Date().toISOString(),
+        });
+      }
+    });
+
+    return alerts;
+  }, [summary, categoryBreakdown]);
 
   // Process statements into monthly data
   const monthlyData = useMemo(() => {
@@ -362,6 +463,9 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     return months;
   }, [statements]);
 
+  // Check if there's data to show
+  const hasData = summary && summary.transactionCount > 0;
+
   if (loading) {
     return (
       <div className="h-screen bg-ceramic-base flex items-center justify-center">
@@ -374,8 +478,46 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     );
   }
 
-  // Render Budget View if active
-  if (activeView === 'budget') {
+  // ── Render function for sub-views that replace the main content ──
+  const renderSubView = () => {
+    switch (activeView) {
+      case 'budget':
+        return (
+          <div className="flex-1 overflow-hidden">
+            <BudgetView userId={userId} onBack={onBack} />
+          </div>
+        );
+      case 'transactions':
+        return (
+          <div className="flex-1 overflow-y-auto px-6 pb-40">
+            <TransactionListView userId={userId} />
+          </div>
+        );
+      case 'comparison':
+        return (
+          <div className="flex-1 overflow-y-auto px-6 pb-40">
+            <MonthComparisonView userId={userId} />
+          </div>
+        );
+      case 'goals':
+        return (
+          <div className="flex-1 overflow-y-auto px-6 pb-40">
+            <GoalTracker userId={userId} />
+          </div>
+        );
+      case 'accounts':
+        return (
+          <div className="flex-1 overflow-y-auto px-6 pb-40">
+            <AccountManagement userId={userId} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // ── Non-history views get a shared shell ──
+  if (activeView !== 'history') {
     return (
       <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
         {/* Navigation Header */}
@@ -392,28 +534,34 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             </button>
           )}
 
-          {/* View Toggle */}
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setActiveView('history')}
-              className="ceramic-tray px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2 opacity-60 hover:opacity-100"
-            >
-              <Calendar className="w-4 h-4 text-ceramic-text-primary" />
-              <span className="text-sm font-bold text-ceramic-text-primary">Calendário & Extratos</span>
-            </button>
-            <button
-              className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-ceramic-info-bg to-transparent"
-            >
-              <Target className="w-4 h-4 text-ceramic-info" />
-              <span className="text-sm font-bold text-ceramic-info">Orçamento</span>
-            </button>
+          {/* Tab Navigation */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {VIEW_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeView === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveView(tab.key)}
+                  className={`
+                    flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold
+                    whitespace-nowrap transition-all duration-200 flex-shrink-0
+                    ${isActive
+                      ? 'bg-ceramic-accent/10 text-ceramic-accent'
+                      : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-ceramic-cool'
+                    }
+                  `}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Budget View Content */}
-        <div className="flex-1 overflow-hidden">
-          <BudgetView userId={userId} onBack={onBack} />
-        </div>
+        {/* Sub-view Content */}
+        {renderSubView()}
 
         {/* Module Agent FAB + Chat Overlay */}
         <ModuleAgentFAB onClick={openAgent} accentBg={financeAgentConfig.accentBg} label="Agente Finance" />
@@ -432,11 +580,11 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
     );
   }
 
-  // Otherwise render History/Dashboard view
+  // ── History / Overview view ──
   return (
     <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="pt-8 px-6 pb-6 flex-shrink-0">
+      <div className="pt-8 px-6 pb-4 flex-shrink-0">
         {onBack && (
           <button
             onClick={onBack}
@@ -449,21 +597,29 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           </button>
         )}
 
-        {/* View Toggle */}
-        <div className="flex gap-2 mb-4">
-          <button
-            className="ceramic-concave px-4 py-2 flex items-center gap-2 bg-gradient-to-br from-ceramic-info-bg to-transparent"
-          >
-            <Calendar className="w-4 h-4 text-ceramic-info" />
-            <span className="text-sm font-bold text-ceramic-info">Calendário & Extratos</span>
-          </button>
-          <button
-            onClick={() => setActiveView('budget')}
-            className="ceramic-tray px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2 opacity-60 hover:opacity-100"
-          >
-            <Target className="w-4 h-4 text-ceramic-text-primary" />
-            <span className="text-sm font-bold text-ceramic-text-primary">Orçamento</span>
-          </button>
+        {/* Tab Navigation */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin mb-4">
+          {VIEW_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeView === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveView(tab.key)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold
+                  whitespace-nowrap transition-all duration-200 flex-shrink-0
+                  ${isActive
+                    ? 'bg-ceramic-accent/10 text-ceramic-accent'
+                    : 'text-ceramic-text-secondary hover:text-ceramic-text-primary hover:bg-ceramic-cool'
+                  }
+                `}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex items-center justify-between">
@@ -494,13 +650,6 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
             >
               <Upload className="w-5 h-5 text-ceramic-text-primary" />
             </button>
-            <button
-              onClick={onNavigateToAgent}
-              className="ceramic-card p-3 hover:scale-105 transition-transform"
-              title="Assistente Financeiro"
-            >
-              <MessageSquare className="w-5 h-5 text-ceramic-accent" />
-            </button>
           </div>
         </div>
       </div>
@@ -525,7 +674,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
         {showCSVUpload && (
           <CSVUpload
             userId={userId}
-            onSuccess={handleUploadComplete}
+            onSuccess={() => { loadData(); setShowCSVUpload(false); }}
             onClose={() => setShowCSVUpload(false)}
           />
         )}
@@ -546,130 +695,154 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           />
         )}
 
-        {/* Monthly Digest — AI Insights */}
-        {summary && summary.transactionCount > 0 && (
-          <MonthlyDigestCard userId={userId} />
+        {/* Empty State - when no transactions */}
+        {!hasData && (
+          <FinanceEmptyState
+            onUploadPDF={() => setShowUpload(true)}
+            onUploadCSV={() => setShowCSVUpload(true)}
+            onImportDrive={() => setShowDrivePicker(true)}
+            onNavigateBudget={() => setActiveView('budget')}
+          />
         )}
 
-        {/* Summary Section */}
-        {summary && summary.transactionCount > 0 ? (
-          <div className="ceramic-card p-8 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-ceramic-text-secondary/10">
-              <div>
-                <h3 className="text-lg font-black text-ceramic-text-primary text-etched">
-                  Resumo Financeiro
-                </h3>
-                <p className="text-xs text-ceramic-text-secondary mt-1">
-                  Visão consolidada de todos os períodos
-                </p>
-              </div>
-              <div className="ceramic-concave w-12 h-12 flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-ceramic-text-primary" />
-              </div>
-            </div>
-
-            {/* Main Balance */}
-            <div className="ceramic-tray p-6 text-center">
-              <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
-                Saldo Acumulado
-              </p>
-              <p
-                className={`text-5xl font-black text-etched ${
-                  summary.currentBalance >= 0 ? 'text-ceramic-positive' : 'text-ceramic-negative'
-                }`}
-              >
-                {formatCurrency(summary.currentBalance)}
-              </p>
-              {isValuesVisible && (
-                <p className="text-xs text-ceramic-text-secondary mt-3">
-                  {summary.transactionCount} transações processadas
-                </p>
-              )}
-            </div>
-
-            {/* Income & Expenses */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-ceramic-success" />
-                  </div>
-                  <span className="text-xs font-medium text-ceramic-text-secondary">
-                    Receitas
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-ceramic-success">
-                  {formatCurrency(summary.totalIncome)}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-ceramic-error rotate-180" />
-                  </div>
-                  <span className="text-xs font-medium text-ceramic-text-secondary">
-                    Despesas
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-ceramic-error">
-                  {formatCurrency(summary.totalExpenses)}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Charts */}
-        {summary && isValuesVisible && (
+        {/* Everything below only shows when there's data */}
+        {hasData && (
           <>
-            <IncomeVsExpense income={summary.totalIncome} expenses={summary.totalExpenses} />
+            {/* Monthly Digest — AI Insights */}
+            <MonthlyDigestCard userId={userId} />
 
-            <ExpenseChart data={categoryBreakdown} totalExpenses={summary.totalExpenses} />
+            {/* Budget Alerts / Notifications */}
+            {budgetAlerts.length > 0 && (
+              <FinanceNotificationCard alerts={budgetAlerts} />
+            )}
+
+            {/* Summary Section */}
+            <div className="ceramic-card p-8 space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-ceramic-text-secondary/10">
+                <div>
+                  <h3 className="text-lg font-black text-ceramic-text-primary text-etched">
+                    Resumo Financeiro
+                  </h3>
+                  <p className="text-xs text-ceramic-text-secondary mt-1">
+                    Visao consolidada de todos os periodos
+                  </p>
+                </div>
+                <div className="ceramic-concave w-12 h-12 flex items-center justify-center">
+                  <Wallet className="w-6 h-6 text-ceramic-text-primary" />
+                </div>
+              </div>
+
+              {/* Main Balance */}
+              <div className="ceramic-tray p-6 text-center">
+                <p className="text-xs font-bold uppercase tracking-wider text-ceramic-text-secondary mb-2">
+                  Saldo Acumulado
+                </p>
+                <p
+                  className={`text-5xl font-black text-etched ${
+                    summary!.currentBalance >= 0 ? 'text-ceramic-positive' : 'text-ceramic-negative'
+                  }`}
+                >
+                  {formatCurrency(summary!.currentBalance)}
+                </p>
+                {isValuesVisible && (
+                  <p className="text-xs text-ceramic-text-secondary mt-3">
+                    {summary!.transactionCount} transacoes processadas
+                  </p>
+                )}
+              </div>
+
+              {/* Income & Expenses */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-ceramic-success" />
+                    </div>
+                    <span className="text-xs font-medium text-ceramic-text-secondary">
+                      Receitas
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-ceramic-success">
+                    {formatCurrency(summary!.totalIncome)}
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="ceramic-inset w-8 h-8 flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-ceramic-error rotate-180" />
+                    </div>
+                    <span className="text-xs font-medium text-ceramic-text-secondary">
+                      Despesas
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-ceramic-error">
+                    {formatCurrency(summary!.totalExpenses)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts */}
+            {isValuesVisible && (
+              <>
+                <IncomeVsExpense income={summary!.totalIncome} expenses={summary!.totalExpenses} />
+
+                <ExpenseChart data={categoryBreakdown} totalExpenses={summary!.totalExpenses} />
+              </>
+            )}
+
+            {/* Trend Line Chart - 6 Months */}
+            {trendData.some(d => d.income > 0 || d.expense > 0) && (
+              <TrendLineChart data={trendData} />
+            )}
+
+            {/* Goals summary in overview */}
+            <GoalTracker userId={userId} />
+
+            {/* Burn Rate */}
+            {burnRate && burnRate.averageMonthlyExpense > 0 && (
+              <div className="ceramic-card p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-ceramic-text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-ceramic-text-primary">
+                      Burn Rate Mensal
+                    </h3>
+                    <p className="text-xs text-ceramic-text-secondary">
+                      Media dos ultimos 3 meses
+                    </p>
+                  </div>
+                </div>
+
+                <div className="ceramic-tray px-6 py-4 flex items-center justify-between">
+                  <p className="text-3xl font-black text-ceramic-text-primary text-etched">
+                    {formatCurrency(burnRate.averageMonthlyExpense)}
+                  </p>
+                  {isValuesVisible && burnRate.trend !== 'stable' && (
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`ceramic-inset px-3 py-1.5 text-xs font-bold ${
+                          burnRate.trend === 'decreasing'
+                            ? 'text-ceramic-success'
+                            : 'text-ceramic-error'
+                        }`}
+                      >
+                        {burnRate.trend === 'decreasing' ? '\u2193' : '\u2191'}{' '}
+                        {Math.abs(burnRate.percentageChange).toFixed(1)}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
 
-        {/* Burn Rate */}
-        {burnRate && burnRate.averageMonthlyExpense > 0 && (
-          <div className="ceramic-card p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="ceramic-concave w-10 h-10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-ceramic-text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-ceramic-text-primary">
-                  Burn Rate Mensal
-                </h3>
-                <p className="text-xs text-ceramic-text-secondary">
-                  Média dos últimos 3 meses
-                </p>
-              </div>
-            </div>
-
-            <div className="ceramic-tray px-6 py-4 flex items-center justify-between">
-              <p className="text-3xl font-black text-ceramic-text-primary text-etched">
-                {formatCurrency(burnRate.averageMonthlyExpense)}
-              </p>
-              {isValuesVisible && burnRate.trend !== 'stable' && (
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`ceramic-inset px-3 py-1.5 text-xs font-bold ${
-                      burnRate.trend === 'decreasing'
-                        ? 'text-ceramic-success'
-                        : 'text-ceramic-error'
-                    }`}
-                  >
-                    {burnRate.trend === 'decreasing' ? '↓' : '↑'}{' '}
-                    {Math.abs(burnRate.percentageChange).toFixed(1)}%
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Monthly Coverage Calendar */}
+        {/* Monthly Coverage Calendar — always shown */}
         <div className="ceramic-card p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -710,6 +883,16 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 <HardDrive className="w-3.5 h-3.5 text-ceramic-info" />
                 <span className="text-xs font-bold text-ceramic-info">Drive</span>
               </button>
+              {allTransactions.length > 0 && (
+                <button
+                  onClick={() => exportToCSV(allTransactions, `finance-export-${new Date().toISOString().slice(0, 10)}.csv`)}
+                  className="ceramic-card px-4 py-2 hover:scale-105 transition-transform flex items-center gap-2"
+                  title="Exportar CSV"
+                >
+                  <Download className="w-3.5 h-3.5 text-ceramic-text-secondary" />
+                  <span className="text-xs font-bold text-ceramic-text-secondary">Exportar</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -794,7 +977,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                       {isCompleted && (
                         <div className="ceramic-card px-2 py-1 mb-2 bg-ceramic-base/80">
                           <p className="text-[11px] font-black text-ceramic-success">
-                            {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transação' : 'transações'}
+                            {monthData.transactionCount} {monthData.transactionCount === 1 ? 'transacao' : 'transacoes'}
                           </p>
                         </div>
                       )}
@@ -833,7 +1016,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                 {monthlyData.filter(m => m.processingStatus === 'processing').length > 0 && (
                   <p className="text-[10px] font-bold text-ceramic-info flex items-center gap-1 mt-0.5">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    {monthlyData.filter(m => m.processingStatus === 'processing').length} {monthlyData.filter(m => m.processingStatus === 'processing').length === 1 ? 'mês processando' : 'meses processando'}
+                    {monthlyData.filter(m => m.processingStatus === 'processing').length} {monthlyData.filter(m => m.processingStatus === 'processing').length === 1 ? 'mes processando' : 'meses processando'}
                   </p>
                 )}
               </div>
@@ -853,7 +1036,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
           {monthlyData.some(m => !m.hasData) && (
             <div className="ceramic-tray p-4 text-center">
               <p className="text-xs text-ceramic-text-secondary mb-3">
-                Complete sua visão financeira fazendo upload dos extratos faltantes
+                Complete sua visao financeira fazendo upload dos extratos faltantes
               </p>
               <button
                 onClick={() => setShowUpload(true)}
@@ -897,7 +1080,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                         {statement.file_name || 'Processando...'}
                       </p>
                       <p className="text-xs text-ceramic-info">
-                        A IA está analisando este extrato...
+                        A IA esta analisando este extrato...
                       </p>
                     </div>
                   </div>
@@ -922,7 +1105,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                     Gerenciar Extratos
                   </h3>
                   <p className="text-xs text-ceramic-text-secondary">
-                    {statements.length} {statements.length === 1 ? 'extrato' : 'extratos'} • Clique para expandir
+                    {statements.length} {statements.length === 1 ? 'extrato' : 'extratos'} - Clique para expandir
                   </p>
                 </div>
               </div>
@@ -999,7 +1182,7 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
                                   {statement.transaction_count || 0}
                                 </span>
                                 <span className="text-[10px] text-ceramic-text-secondary">
-                                  {statement.transaction_count === 1 ? 'transação' : 'transações'}
+                                  {statement.transaction_count === 1 ? 'transacao' : 'transacoes'}
                                 </span>
                               </div>
 
@@ -1084,29 +1267,11 @@ export const FinanceDashboard: React.FC<FinanceDashboardProps> = ({
               }}
               results={searchResults}
               isSearching={isSearching}
-              hasDocuments={hasIndexedStatements}
+              hasStatements={hasIndexedStatements}
             />
           </div>
         )}
 
-        {/* AI Agent CTA */}
-        <button
-          onClick={onNavigateToAgent}
-          className="w-full ceramic-card p-6 flex items-center gap-4 hover:scale-[1.01] transition-transform"
-        >
-          <div className="w-12 h-12 rounded-full bg-ceramic-accent/10 flex items-center justify-center">
-            <MessageSquare className="w-6 h-6 text-ceramic-accent" />
-          </div>
-          <div className="text-left flex-1">
-            <h3 className="text-lg font-semibold text-ceramic-text-primary">
-              Assistente Financeiro
-            </h3>
-            <p className="text-sm text-ceramic-text-secondary">
-              Converse com a IA sobre suas financas
-            </p>
-          </div>
-          <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary rotate-180" />
-        </button>
       </main>
 
       {/* Module Agent FAB + Chat Overlay */}

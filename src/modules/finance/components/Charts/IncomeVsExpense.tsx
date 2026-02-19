@@ -2,9 +2,10 @@
  * Income vs Expense Chart Component
  *
  * Displays a comparison bar chart of income and expenses.
+ * Enhanced with animated bar growth on mount and optional sparkline.
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 // =====================================================
@@ -16,7 +17,84 @@ interface IncomeVsExpenseProps {
   expenses: number;
   previousIncome?: number;
   previousExpenses?: number;
+  monthlyTrend?: Array<{ month: string; income: number; expense: number }>;
 }
+
+// =====================================================
+// Sparkline sub-component
+// =====================================================
+
+interface SparklineProps {
+  data: Array<{ month: string; income: number; expense: number }>;
+}
+
+const Sparkline: React.FC<SparklineProps> = ({ data }) => {
+  if (data.length < 2) return null;
+
+  const width = 200;
+  const height = 32;
+  const padding = 4;
+  const chartW = width - padding * 2;
+  const chartH = height - padding * 2;
+
+  const allValues = data.flatMap((d) => [d.income, d.expense]);
+  const max = Math.max(...allValues, 1);
+
+  const toPath = (values: number[]) =>
+    values
+      .map((v, i) => {
+        const x = padding + (i / (values.length - 1)) * chartW;
+        const y = padding + chartH - (v / max) * chartH;
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+      })
+      .join(' ');
+
+  const incomePath = toPath(data.map((d) => d.income));
+  const expensePath = toPath(data.map((d) => d.expense));
+
+  return (
+    <div className="ceramic-inset p-2 rounded-lg">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[9px] text-ceramic-text-secondary">Ultimos {data.length} meses</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-0.5 bg-ceramic-success rounded-full" />
+            <span className="text-[8px] text-ceramic-text-secondary">Rec</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-0.5 bg-ceramic-error rounded-full" />
+            <span className="text-[8px] text-ceramic-text-secondary">Desp</span>
+          </div>
+        </div>
+      </div>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        <path
+          d={incomePath}
+          fill="none"
+          stroke="var(--color-ceramic-success, #22c55e)"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d={expensePath}
+          fill="none"
+          stroke="var(--color-ceramic-error, #ef4444)"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <div className="flex justify-between mt-0.5">
+        {data.map((d, i) => (
+          <span key={i} className="text-[7px] text-ceramic-text-secondary">
+            {d.month}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // =====================================================
 // Component
@@ -27,9 +105,16 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
   expenses,
   previousIncome,
   previousExpenses,
+  monthlyTrend,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const balance = income - expenses;
   const maxValue = Math.max(income, expenses, 1);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -77,8 +162,11 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
           </div>
           <div className="ceramic-trough p-1 rounded-full">
             <div
-              className="h-4 rounded-full bg-gradient-to-r from-ceramic-success/80 to-ceramic-success transition-all duration-500"
-              style={{ width: `${(income / maxValue) * 100}%` }}
+              className="h-4 rounded-full bg-gradient-to-r from-ceramic-success/80 to-ceramic-success"
+              style={{
+                width: mounted ? `${(income / maxValue) * 100}%` : '0%',
+                transition: 'width 0.8s ease 0.1s',
+              }}
             />
           </div>
         </div>
@@ -104,12 +192,20 @@ export const IncomeVsExpense: React.FC<IncomeVsExpenseProps> = ({
           </div>
           <div className="ceramic-trough p-1 rounded-full">
             <div
-              className="h-4 rounded-full bg-gradient-to-r from-ceramic-error/80 to-ceramic-error transition-all duration-500"
-              style={{ width: `${(expenses / maxValue) * 100}%` }}
+              className="h-4 rounded-full bg-gradient-to-r from-ceramic-error/80 to-ceramic-error"
+              style={{
+                width: mounted ? `${(expenses / maxValue) * 100}%` : '0%',
+                transition: 'width 0.8s ease 0.25s',
+              }}
             />
           </div>
         </div>
       </div>
+
+      {/* Monthly sparkline */}
+      {monthlyTrend && monthlyTrend.length >= 2 && (
+        <Sparkline data={monthlyTrend} />
+      )}
 
       {/* Balance Summary */}
       <div

@@ -10,6 +10,7 @@
 import { createNamespacedLogger } from '@/lib/logger';
 import type { DriveFile } from '@/services/driveService';
 import { statementService } from './statementService';
+import { isOFXFile, parseOFX } from './ofxParserService';
 import type { FinanceStatement } from '../types';
 
 const log = createNamespacedLogger('DriveImportService');
@@ -43,6 +44,11 @@ export async function importFromDrive(
   try {
     log.info(TAG, `Importing ${file.name} (${file.mimeType})`);
 
+    // Route OFX/QFX files through OFX parser
+    if (isOFXFile(file.name, content)) {
+      return await importOFXContent(userId, file, content);
+    }
+
     // Route based on MIME type
     if (
       file.mimeType === 'text/csv' ||
@@ -54,7 +60,7 @@ export async function importFromDrive(
 
     return {
       success: false,
-      error: `Formato não suportado: ${file.mimeType}. Use CSV ou Google Sheets.`,
+      error: `Formato não suportado: ${file.mimeType}. Use CSV, OFX ou Google Sheets.`,
     };
   } catch (err) {
     log.error(TAG, 'Import error:', err);
@@ -89,4 +95,50 @@ async function importCSVContent(
     statement: result.statement,
     transactionCount: result.transactionCount,
   };
+}
+
+/**
+ * Import OFX/QFX content through the OFX parser, then persist via statementService.
+ */
+async function importOFXContent(
+  userId: string,
+  file: DriveFile,
+  ofxContent: string
+): Promise<DriveImportResult> {
+  const parsed = parseOFX(ofxContent, file.name);
+
+  if (parsed.transactions.length === 0) {
+    return {
+      success: false,
+      error: 'Nenhuma transacao encontrada no arquivo OFX.',
+    };
+  }
+
+  // Convert to CSV and delegate to statementService for persistence
+  const csvFile = new File(
+    [ofxToCSV(parsed)],
+    file.name.replace(/\.(ofx|qfx)$/i, '.csv'),
+    { type: 'text/csv' }
+  );
+  const result = await statementService.processCSVStatement(userId, csvFile);
+
+  return {
+    success: true,
+    statement: result.statement,
+    transactionCount: result.transactionCount,
+  };
+}
+
+/**
+ * Convert parsed OFX data to a simple CSV string for statementService compatibility.
+ */
+function ofxToCSV(
+  parsed: ReturnType<typeof parseOFX>
+): string {
+  const header = 'Data,Descricao,Valor,Tipo';
+  const rows = parsed.transactions.map(
+    (tx) =>
+      `${tx.date},"${tx.description.replace(/"/g, '""')}",${tx.type === 'expense' ? '-' : ''}${tx.amount.toFixed(2)},${tx.type}`
+  );
+  return [header, ...rows].join('\n');
 }
