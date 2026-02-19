@@ -93,7 +93,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-2 -right-2 w-8 h-8 bg-ceramic-primary rounded-full flex items-center justify-center shadow-lg"
+              className="absolute -top-2 -right-2 w-8 h-8 bg-ceramic-accent rounded-full flex items-center justify-center shadow-lg"
               aria-hidden="true"
             >
               <Sparkles className="w-4 h-4 text-white" />
@@ -106,7 +106,7 @@ export const GuestTypeSelector: React.FC<GuestTypeSelectorProps> = ({
                 w-16 h-16 rounded-full flex items-center justify-center transition-colors
                 ${
                   selectedType === 'public_figure'
-                    ? 'bg-ceramic-primary'
+                    ? 'bg-ceramic-accent'
                     : 'bg-ceramic-surface-hover'
                 }
               `}

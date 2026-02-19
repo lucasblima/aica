@@ -391,14 +391,14 @@ const EpisodesSection: React.FC<EpisodesSectionProps> = ({
           <FilterChip active={filter === 'all'} onClick={() => onFilterChange('all')}>
             Todos
           </FilterChip>
-          <FilterChip active={filter === 'published'} onClick={() => onFilterChange('published')}>
-            Publicados
+          <FilterChip active={filter === 'draft'} onClick={() => onFilterChange('draft')}>
+            Rascunhos
           </FilterChip>
           <FilterChip active={filter === 'in_progress'} onClick={() => onFilterChange('in_progress')}>
             Em progresso
           </FilterChip>
-          <FilterChip active={filter === 'draft'} onClick={() => onFilterChange('draft')}>
-            Rascunhos
+          <FilterChip active={filter === 'published'} onClick={() => onFilterChange('published')}>
+            Publicados
           </FilterChip>
         </div>
 

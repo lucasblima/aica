@@ -19,3 +19,6 @@ export type { UseAutomationsOptions } from './useAutomations';
 
 export { useAlerts } from './useAlerts';
 export type { UseAlertsReturn } from './useAlerts';
+
+export { useExercises } from './useExercises';
+export type { UseExercisesOptions, UseExercisesReturn } from './useExercises';

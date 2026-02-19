@@ -407,7 +407,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
               type="button"
               onClick={onBack}
               data-testid="guest-manual-back"
-              className="flex-1 px-4 py-2 border border-ceramic-border text-ceramic-primary rounded-lg hover:bg-ceramic-surface-hover transition-colors focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
+              className="flex-1 px-4 py-2 border border-ceramic-border text-ceramic-text-primary rounded-lg hover:bg-ceramic-surface-hover transition-colors focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20"
             >
               Voltar
             </button>
@@ -415,7 +415,7 @@ export const GuestInfoForm: React.FC<GuestInfoFormProps> = ({
           <button
             type="submit"
             data-testid="guest-manual-submit"
-            className="flex-1 px-4 py-2 bg-ceramic-primary text-white rounded-lg hover:bg-ceramic-primary-hover transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
+            className="flex-1 px-4 py-2 bg-ceramic-accent text-white rounded-lg hover:bg-ceramic-accent-dark transition-colors font-medium focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20"
           >
             Continuar
           </button>

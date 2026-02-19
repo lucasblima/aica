@@ -26,6 +26,10 @@ export { AutomationEngineService } from './automationEngineService';
 export { FluxAIService } from './fluxAIService';
 export type { LoadAnalysisResult, LoadSuggestion, LoadAdjustmentAI, RecoveryResult, WeeklySummaryResult } from './fluxAIService';
 
+// Exercise library
+export { ExerciseService } from './exerciseService';
+export type { Exercise, CreateExerciseInput, UpdateExerciseInput, ExerciseFilters } from './exerciseService';
+
 // Utility services
 export { IntensityCalculatorService } from './intensityCalculatorService';
 export { LevelingEngineService } from './levelingEngineService';

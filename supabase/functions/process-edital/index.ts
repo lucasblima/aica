@@ -424,7 +424,7 @@ IMPORTANTE:
     generationConfig: {
       temperature: 0.1,  // Low temperature for structured extraction
       topP: 0.8,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 16384,  // High limit — thinking tokens consume budget on 2.5 Flash
     },
   }
 
@@ -444,6 +444,19 @@ IMPORTANTE:
 
   const result = await response.json()
 
+  // Log full response metadata for debugging
+  const candidate = result.candidates?.[0]
+  const usageMetadata = result.usageMetadata
+  log('INFO', 'Gemini response metadata', {
+    finishReason: candidate?.finishReason,
+    safetyRatings: candidate?.safetyRatings?.map((r: any) => `${r.category}:${r.probability}`),
+    promptTokenCount: usageMetadata?.promptTokenCount,
+    candidatesTokenCount: usageMetadata?.candidatesTokenCount,
+    totalTokenCount: usageMetadata?.totalTokenCount,
+    thoughtsTokenCount: usageMetadata?.thoughtsTokenCount,
+    blockReason: result.promptFeedback?.blockReason,
+  })
+
   // Check for blocked or empty responses
   if (!result.candidates || result.candidates.length === 0) {
     const blockReason = result.promptFeedback?.blockReason
@@ -451,15 +464,15 @@ IMPORTANTE:
     throw new Error(`Gemini returned no candidates${blockReason ? `: ${blockReason}` : ''}`)
   }
 
-  const responseText = result.candidates[0]?.content?.parts?.[0]?.text || ''
+  const responseText = candidate?.content?.parts?.[0]?.text || ''
 
   if (!responseText) {
-    const finishReason = result.candidates[0]?.finishReason
-    log('ERROR', 'Gemini returned empty text', { finishReason })
+    const finishReason = candidate?.finishReason
+    log('ERROR', 'Gemini returned empty text', { finishReason, candidateKeys: Object.keys(candidate || {}) })
     throw new Error(`Gemini returned empty response (finishReason: ${finishReason})`)
   }
 
-  log('DEBUG', 'Gemini response length', { length: responseText.length })
+  log('DEBUG', 'Gemini response text', { length: responseText.length, preview: responseText.substring(0, 200) })
 
   try {
     const parsed = extractJSON(responseText) as Record<string, unknown>
@@ -567,6 +580,7 @@ serve(async (req) => {
   }
 
   const startTime = Date.now()
+  let currentStep = 'init'
 
   try {
     // Validate API key
@@ -627,10 +641,12 @@ serve(async (req) => {
     })
 
     // =======================================================================
-    // MAIN PROCESSING PIPELINE
+    // MAIN PROCESSING PIPELINE (step tracking for debugging)
     // =======================================================================
 
     // 1. Upload to Google Files API
+    currentStep = 'upload'
+    log('INFO', `[STEP] ${currentStep}`)
     const geminiFileUri = await uploadToGoogleFiles(
       request.file_data,
       request.file_name,
@@ -638,12 +654,18 @@ serve(async (req) => {
     )
 
     // 2. Wait for file to be ACTIVE (indexed)
+    currentStep = 'wait_active'
+    log('INFO', `[STEP] ${currentStep}`)
     await waitForFileActive(geminiFileUri)
 
     // 3. Extract structured data using Gemini
+    currentStep = 'extract'
+    log('INFO', `[STEP] ${currentStep}`)
     const analyzedData = await extractEditalStructure(geminiFileUri)
 
     // 4. Save reference to database
+    currentStep = 'save_db'
+    log('INFO', `[STEP] ${currentStep}`)
     const documentId = await saveDocumentReference(
       supabase,
       user.id,
@@ -692,7 +714,13 @@ serve(async (req) => {
 
   } catch (error) {
     const err = error as Error
-    log('ERROR', 'Request processing failed', { error: err.message, stack: err.stack })
+    const elapsedMs = Date.now() - startTime
+    log('ERROR', 'Request processing failed', {
+      step: currentStep,
+      error: err.message,
+      stack: err.stack,
+      elapsedMs,
+    })
 
     // Determine appropriate status code based on error type
     let statusCode = 500
@@ -720,7 +748,9 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: errorMessage,
-        details: err.message, // Include original error for debugging
+        details: err.message,
+        step: currentStep,
+        elapsed_ms: elapsedMs,
       }),
       { status: statusCode, headers: corsHeaders }
     )

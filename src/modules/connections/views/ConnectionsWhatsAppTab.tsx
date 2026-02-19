@@ -293,7 +293,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
 
   // Selected contact for dossier (Conversation Intelligence Phase 1)
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const { dossier, isLoading: isDossierLoading, isRefreshing: isDossierRefreshing, hasDossier, refreshDossier } = useContactDossier(selectedContactId);
+  const { dossier, isLoading: isDossierLoading, isRefreshing: isDossierRefreshing, hasDossier, refreshDossier, error: dossierError } = useContactDossier(selectedContactId);
   const { threads, isLoading: isThreadsLoading, isBuilding: isThreadsBuilding, hasMore: hasMoreThreads, loadMore: loadMoreThreads, buildThreads } = useConversationThreads(selectedContactId);
 
   // Entity extraction (Conversation Intelligence Phase 3)
@@ -592,6 +592,7 @@ export const ConnectionsWhatsAppTab: React.FC<ConnectionsWhatsAppTabProps> = ({
             isRefreshing={isDossierRefreshing}
             hasDossier={hasDossier}
             onRefresh={refreshDossier}
+            error={dossierError}
           />
           {importedContacts.find(c => c.id === selectedContactId)?.whatsapp_id?.includes('@g.us') && (
             <GroupAnalyticsCard groupContactId={selectedContactId} />
