@@ -256,8 +256,8 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
       {/* Header */}
       <header className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
-          <User className="w-8 h-8 text-ceramic-primary" aria-hidden="true" />
-          <h1 className="text-3xl font-bold text-ceramic-primary">Configuração do Episódio</h1>
+          <User className="w-8 h-8 text-ceramic-text-primary" aria-hidden="true" />
+          <h1 className="text-3xl font-bold text-ceramic-text-primary">Configuração do Episódio</h1>
         </div>
         <p className="text-ceramic-secondary">
           Defina as informações básicas do episódio e do convidado
@@ -272,7 +272,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
         >
           <h2
             id="guest-type-heading"
-            className="block text-sm font-medium text-ceramic-primary mb-4"
+            className="block text-sm font-medium text-ceramic-text-primary mb-4"
           >
             Tipo de Convidado
           </h2>
@@ -359,9 +359,9 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
           >
             <h2
               id="guest-info-heading"
-              className="text-lg font-semibold text-ceramic-primary flex items-center space-x-2"
+              className="text-lg font-semibold text-ceramic-text-primary flex items-center space-x-2"
             >
-              <User className="w-5 h-5 text-ceramic-primary" aria-hidden="true" />
+              <User className="w-5 h-5 text-ceramic-text-primary" aria-hidden="true" />
               <span>Informações do Convidado</span>
             </h2>
 
@@ -369,7 +369,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
             <div>
               <label
                 htmlFor="guest-name-input"
-                className="block text-sm font-medium text-ceramic-primary mb-2"
+                className="block text-sm font-medium text-ceramic-text-primary mb-2"
               >
                 Nome do Convidado <span className="text-ceramic-error" aria-label="obrigatório">*</span>
               </label>
@@ -407,7 +407,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 <div>
                   <label
                     htmlFor="guest-reference-input"
-                    className="block text-sm font-medium text-ceramic-primary mb-2"
+                    className="block text-sm font-medium text-ceramic-text-primary mb-2"
                   >
                     Cargo/Referência (Opcional)
                   </label>
@@ -418,7 +418,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     onChange={(e) => actions.updateSetup({ guestReference: e.target.value })}
                     placeholder="Ex: CEO da Empresa X, Autor do Livro Y"
                     aria-describedby="guest-reference-help"
-                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
+                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
                   />
                   <p
                     id="guest-reference-help"
@@ -482,19 +482,19 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     <div className="flex items-start space-x-3 mb-3">
                       <CheckCircle className="w-5 h-5 text-ceramic-success flex-shrink-0 mt-0.5" aria-hidden="true" />
                       <div className="flex-1">
-                        <h3 className="font-semibold text-ceramic-primary mb-1">Perfil encontrado!</h3>
+                        <h3 className="font-semibold text-ceramic-text-primary mb-1">Perfil encontrado!</h3>
                         {profileData.full_name && (
-                          <p className="text-sm text-ceramic-primary">
+                          <p className="text-sm text-ceramic-text-primary">
                             <strong>Nome completo:</strong> {profileData.full_name}
                           </p>
                         )}
                         {profileData.occupation && (
-                          <p className="text-sm text-ceramic-primary">
+                          <p className="text-sm text-ceramic-text-primary">
                             <strong>Ocupação:</strong> {profileData.occupation}
                           </p>
                         )}
                         {profileData.known_for && (
-                          <p className="text-sm text-ceramic-primary">
+                          <p className="text-sm text-ceramic-text-primary">
                             <strong>Conhecido por:</strong> {profileData.known_for}
                           </p>
                         )}
@@ -517,7 +517,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                           setProfileData(null);
                           setSearchError(null);
                         }}
-                        className="px-4 py-2 bg-ceramic-surface-hover text-ceramic-primary rounded-lg hover:bg-ceramic-disabled transition-colors text-sm focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20"
+                        className="px-4 py-2 bg-ceramic-surface-hover text-ceramic-text-primary rounded-lg hover:bg-ceramic-disabled transition-colors text-sm focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20"
                       >
                         Buscar Novamente
                       </button>
@@ -534,7 +534,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 <div>
                   <label
                     htmlFor="guest-occupation-input"
-                    className="block text-sm font-medium text-ceramic-primary mb-2"
+                    className="block text-sm font-medium text-ceramic-text-primary mb-2"
                   >
                     Ocupação/Cargo
                   </label>
@@ -544,7 +544,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     value={setup.guestReference}
                     onChange={(e) => actions.updateSetup({ guestReference: e.target.value })}
                     placeholder="Ex: Empreendedor, Professor, Atleta"
-                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
+                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
                   />
                 </div>
 
@@ -552,7 +552,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   <div className="flex items-center justify-between mb-2">
                     <label
                       htmlFor="guest-bio-input"
-                      className="block text-sm font-medium text-ceramic-primary"
+                      className="block text-sm font-medium text-ceramic-text-primary"
                     >
                       Notas/Bio Resumida (Opcional)
                     </label>
@@ -589,7 +589,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               <div>
                 <label
                   htmlFor="guest-phone-input"
-                  className="block text-sm font-medium text-ceramic-primary mb-2"
+                  className="block text-sm font-medium text-ceramic-text-primary mb-2"
                 >
                   Telefone (Opcional)
                 </label>
@@ -600,13 +600,13 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   onChange={(e) => actions.updateSetup({ phone: e.target.value })}
                   placeholder="+55 11 99999-9999"
                   autoComplete="tel"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
               <div>
                 <label
                   htmlFor="guest-email-input"
-                  className="block text-sm font-medium text-ceramic-primary mb-2"
+                  className="block text-sm font-medium text-ceramic-text-primary mb-2"
                 >
                   Email (Opcional)
                 </label>
@@ -617,7 +617,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   onChange={(e) => actions.updateSetup({ email: e.target.value })}
                   placeholder="email@exemplo.com"
                   autoComplete="email"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
             </div>
@@ -632,9 +632,9 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
           >
             <h2
               id="episode-theme-heading"
-              className="text-lg font-semibold text-ceramic-primary flex items-center space-x-2"
+              className="text-lg font-semibold text-ceramic-text-primary flex items-center space-x-2"
             >
-              <Sparkles className="w-5 h-5 text-ceramic-primary" aria-hidden="true" />
+              <Sparkles className="w-5 h-5 text-ceramic-text-primary" aria-hidden="true" />
               <span>Tema do Episódio</span>
             </h2>
 
@@ -642,7 +642,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
             <div>
               <h3
                 id="theme-mode-heading"
-                className="block text-sm font-medium text-ceramic-primary mb-3"
+                className="block text-sm font-medium text-ceramic-text-primary mb-3"
               >
                 Modo de Seleção
               </h3>
@@ -659,11 +659,11 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   disabled={isGeneratingThemes}
                   className={`
                     flex-1 px-4 py-3 rounded-lg border-2 transition-all
-                    focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20
+                    focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20
                     disabled:opacity-50 disabled:cursor-not-allowed
                     ${setup.themeMode === 'auto'
-                      ? 'border-ceramic-primary bg-ceramic-accent text-ceramic-primary'
-                      : 'border-ceramic-border hover:border-ceramic-primary/50 text-ceramic-secondary'
+                      ? 'border-ceramic-accent bg-ceramic-accent text-ceramic-text-primary'
+                      : 'border-ceramic-border hover:border-ceramic-accent/50 text-ceramic-secondary'
                     }
                   `}
                 >
@@ -688,10 +688,10 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   onClick={() => actions.updateSetup({ themeMode: 'manual' })}
                   className={`
                     flex-1 px-4 py-3 rounded-lg border-2 transition-all
-                    focus:outline-none focus:ring-4 focus:ring-ceramic-primary/20
+                    focus:outline-none focus:ring-4 focus:ring-ceramic-accent/20
                     ${setup.themeMode === 'manual'
-                      ? 'border-ceramic-primary bg-ceramic-accent text-ceramic-primary'
-                      : 'border-ceramic-border hover:border-ceramic-primary/50 text-ceramic-secondary'
+                      ? 'border-ceramic-accent bg-ceramic-accent text-ceramic-text-primary'
+                      : 'border-ceramic-border hover:border-ceramic-accent/50 text-ceramic-secondary'
                     }
                   `}
                 >
@@ -710,7 +710,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
             <div>
               <label
                 htmlFor="episode-theme-input"
-                className="block text-sm font-medium text-ceramic-primary mb-2"
+                className="block text-sm font-medium text-ceramic-text-primary mb-2"
               >
                 Tema
               </label>
@@ -748,7 +748,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 <div className="flex items-start space-x-3">
                   <Sparkles className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
-                    <p className="font-medium text-ceramic-primary mb-1">Preencha o nome do convidado</p>
+                    <p className="font-medium text-ceramic-text-primary mb-1">Preencha o nome do convidado</p>
                     <p className="text-sm text-ceramic-secondary">
                       Assim que você preencher o nome do convidado acima, a IA gerará automaticamente sugestões de temas relevantes para o episódio.
                     </p>
@@ -803,14 +803,14 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
             {setup.themeMode === 'auto' && themeSuggestions.length > 0 && !isGeneratingThemes && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-ceramic-primary flex items-center space-x-2">
+                  <p className="text-sm font-medium text-ceramic-text-primary flex items-center space-x-2">
                     <Sparkles className="w-4 h-4 text-ceramic-info" aria-hidden="true" />
                     <span>Selecione um tema sugerido pela IA:</span>
                   </p>
                   <button
                     type="button"
                     onClick={() => setThemeSuggestions([])}
-                    className="text-xs text-ceramic-tertiary hover:text-ceramic-secondary underline focus:outline-none focus:ring-2 focus:ring-ceramic-primary rounded px-2 py-1"
+                    className="text-xs text-ceramic-tertiary hover:text-ceramic-secondary underline focus:outline-none focus:ring-2 focus:ring-ceramic-accent rounded px-2 py-1"
                   >
                     Gerar novamente
                   </button>
@@ -831,7 +831,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                         <div className="flex-shrink-0 w-6 h-6 rounded-full bg-ceramic-info-bg flex items-center justify-center text-ceramic-info text-xs font-semibold group-hover:bg-amber-500 group-hover:text-white transition-colors">
                           {index + 1}
                         </div>
-                        <p className="flex-1 text-sm text-ceramic-primary group-hover:text-amber-600 transition-colors">
+                        <p className="flex-1 text-sm text-ceramic-text-primary group-hover:text-amber-600 transition-colors">
                           {suggestion}
                         </p>
                       </div>
@@ -853,9 +853,9 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               <div>
                 <h2
                   id="scheduling-heading"
-                  className="text-lg font-semibold text-ceramic-primary flex items-center space-x-2"
+                  className="text-lg font-semibold text-ceramic-text-primary flex items-center space-x-2"
                 >
-                  <Calendar className="w-5 h-5 text-ceramic-primary" aria-hidden="true" />
+                  <Calendar className="w-5 h-5 text-ceramic-text-primary" aria-hidden="true" />
                   <span>Agendamento</span>
                 </h2>
                 <p className="text-sm text-ceramic-secondary mt-1">
@@ -870,7 +870,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 <div>
                   <label
                     htmlFor="scheduled-date-input"
-                    className="block text-sm font-semibold text-ceramic-primary mb-2 flex items-center space-x-2"
+                    className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center space-x-2"
                   >
                     <Calendar className="w-4 h-4 text-orange-600" aria-hidden="true" />
                     <span>Data da Gravação</span>
@@ -880,7 +880,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     type="date"
                     value={setup.scheduledDate}
                     onChange={(e) => actions.updateSetup({ scheduledDate: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-primary"
+                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-text-primary"
                   />
                   {!setup.scheduledDate && (
                     <p className="text-xs text-ceramic-tertiary mt-1">Selecione a data</p>
@@ -889,7 +889,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 <div>
                   <label
                     htmlFor="scheduled-time-input"
-                    className="block text-sm font-semibold text-ceramic-primary mb-2 flex items-center space-x-2"
+                    className="block text-sm font-semibold text-ceramic-text-primary mb-2 flex items-center space-x-2"
                   >
                     <Clock className="w-4 h-4 text-orange-600" aria-hidden="true" />
                     <span>Horário</span>
@@ -899,7 +899,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                     type="time"
                     value={setup.scheduledTime}
                     onChange={(e) => actions.updateSetup({ scheduledTime: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-primary"
+                    className="w-full px-4 py-3 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-ceramic-base transition-all text-ceramic-text-primary"
                   />
                   {!setup.scheduledTime && (
                     <p className="text-xs text-ceramic-tertiary mt-1">Defina o horário</p>
@@ -913,7 +913,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               <div>
                 <label
                   htmlFor="location-input"
-                  className="block text-sm font-medium text-ceramic-primary mb-2 flex items-center space-x-2"
+                  className="block text-sm font-medium text-ceramic-text-primary mb-2 flex items-center space-x-2"
                 >
                   <MapPin className="w-4 h-4 text-ceramic-tertiary" aria-hidden="true" />
                   <span>Local da Gravação</span>
@@ -924,13 +924,13 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   value={setup.location}
                   onChange={(e) => actions.updateSetup({ location: e.target.value })}
                   placeholder="Ex: Estúdio A, Remoto (Zoom), Casa do convidado"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent transition-all hover:border-ceramic-primary/50 bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent transition-all hover:border-ceramic-accent/50 bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
               <div>
                 <label
                   htmlFor="season-input"
-                  className="block text-sm font-medium text-ceramic-primary mb-2"
+                  className="block text-sm font-medium text-ceramic-text-primary mb-2"
                 >
                   Temporada / Número do Episódio
                 </label>
@@ -940,7 +940,7 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                   value={setup.season}
                   onChange={(e) => actions.updateSetup({ season: e.target.value })}
                   placeholder="Ex: T1 E05, Temporada 1"
-                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent transition-all hover:border-ceramic-primary/50 bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
+                  className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent transition-all hover:border-ceramic-accent/50 bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
                 />
               </div>
             </div>
@@ -955,19 +955,19 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 <p className="text-xs font-medium text-ceramic-tertiary mb-1">RESUMO</p>
                 <div className="flex flex-wrap gap-2">
                   {setup.scheduledDate && (
-                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-primary">
+                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-text-primary">
                       <Calendar className="w-3 h-3" aria-hidden="true" />
                       <span>{new Date(setup.scheduledDate + 'T00:00').toLocaleDateString('pt-BR')}</span>
                     </span>
                   )}
                   {setup.scheduledTime && (
-                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-primary">
+                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-text-primary">
                       <Clock className="w-3 h-3" aria-hidden="true" />
                       <span>{setup.scheduledTime}</span>
                     </span>
                   )}
                   {setup.location && (
-                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-primary">
+                    <span className="inline-flex items-center space-x-1 px-2 py-1 bg-ceramic-base border border-ceramic-border rounded text-xs text-ceramic-text-primary">
                       <MapPin className="w-3 h-3" aria-hidden="true" />
                       <span>{setup.location}</span>
                     </span>
