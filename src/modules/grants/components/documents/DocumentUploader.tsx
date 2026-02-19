@@ -25,6 +25,13 @@ import {
   Building2,
   FolderOpen,
 } from 'lucide-react';
+import {
+  uploadAndProcessDocument,
+  confirmLinkSuggestion,
+  rejectLinkSuggestion,
+  type ProcessDocumentResponse,
+  type LinkSuggestion as ServiceLinkSuggestion,
+} from '../../services/documentProcessingService';
 
 // Types
 export type FileType = 'pdf' | 'pptx' | 'docx' | 'image';
@@ -177,63 +184,58 @@ export function DocumentUploader({
       setProgress(0);
 
       try {
-        // Simulate upload progress
+        // Animate progress while uploading + processing
         const progressInterval = setInterval(() => {
-          setProgress((prev) => Math.min(prev + 10, 90));
-        }, 200);
+          setProgress((prev) => Math.min(prev + 5, 90));
+        }, 300);
 
-        // TODO: Implement actual upload to Supabase Storage
-        // const storagePath = await uploadToStorage(selectedFile);
+        // Upload to Supabase Storage + call process-document Edge Function
+        const response: ProcessDocumentResponse = await uploadAndProcessDocument({
+          file: selectedFile,
+          organizationId,
+          projectId,
+          source: 'web',
+        });
 
         clearInterval(progressInterval);
         setProgress(100);
         setStatus('processing');
 
-        // TODO: Call Edge Function process-document
-        // const result = await processDocument({ storage_path: storagePath, ... });
-
-        // Mock result for now
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const mockResult = {
+        // Map service response to component state
+        const processedResult = {
           document: {
-            id: crypto.randomUUID(),
-            storage_path: `documents/${selectedFile.name}`,
+            id: response.document_id,
+            storage_path: '',
             original_name: selectedFile.name,
             mime_type: selectedFile.type,
             size_bytes: selectedFile.size,
-            raw_text: 'Conteúdo extraído do documento...',
-            detected_type: 'projeto_rouanet',
-            confidence: 0.89,
-            extracted_fields: {
-              pronac: '123456',
-              valor_aprovado: 'R$ 500.000,00',
-              proponente: 'ONG Exemplo',
-            },
+            raw_text: null,
+            detected_type: response.detected_type,
+            confidence: response.confidence,
+            extracted_fields: response.extracted_fields,
             processing_status: 'completed',
             created_at: new Date().toISOString(),
-          },
-          linkSuggestions: [
-            {
-              id: '1',
-              entity_type: 'organization' as const,
-              entity_id: 'org-1',
-              entity_name: 'ONG Exemplo',
-              match_reason: 'name_similarity' as const,
-              confidence: 0.85,
-            },
-          ],
+          } as ProcessedDocument,
+          linkSuggestions: (response.link_suggestions || []).map((s: ServiceLinkSuggestion) => ({
+            id: s.id,
+            entity_type: s.entity_type,
+            entity_id: s.entity_id,
+            entity_name: s.entity_name || '',
+            match_reason: s.match_reason,
+            confidence: s.confidence,
+          })),
         };
 
-        setResult(mockResult);
+        setResult(processedResult);
         setStatus('success');
-        onUploadComplete?.(mockResult.document);
+        onUploadComplete?.(processedResult.document);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao processar documento');
         setStatus('error');
         onUploadError?.(err instanceof Error ? err : new Error('Erro desconhecido'));
       }
     },
-    [validateFile, onUploadComplete, onUploadError]
+    [validateFile, organizationId, projectId, onUploadComplete, onUploadError]
   );
 
   const handleDrop = useCallback(
@@ -271,13 +273,31 @@ export function DocumentUploader({
     }
   }, []);
 
-  const handleLinkConfirm = useCallback((suggestion: LinkSuggestion) => {
-    // TODO: Implement link confirmation
-    log.debug('Confirming link:', suggestion);
+  const handleLinkConfirm = useCallback(async (suggestion: LinkSuggestion) => {
+    try {
+      await confirmLinkSuggestion(suggestion.id);
+      log.debug('Link confirmado:', suggestion.entity_name);
+      // Remove from UI after confirming
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              linkSuggestions: prev.linkSuggestions.filter((s) => s.id !== suggestion.id),
+            }
+          : null
+      );
+    } catch (err) {
+      log.error('Erro ao confirmar vinculação:', err);
+    }
   }, []);
 
-  const handleLinkReject = useCallback((suggestion: LinkSuggestion) => {
-    // TODO: Implement link rejection
+  const handleLinkReject = useCallback(async (suggestion: LinkSuggestion) => {
+    try {
+      await rejectLinkSuggestion(suggestion.id);
+      log.debug('Link rejeitado:', suggestion.entity_name);
+    } catch (err) {
+      log.error('Erro ao rejeitar vinculação:', err);
+    }
     setResult((prev) =>
       prev
         ? {

@@ -11,6 +11,8 @@
 
 import { useTourAutoStart } from '@/hooks/useTourAutoStart';
 import React, { useEffect, useCallback, useRef } from 'react';
+import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '@/components/features/ModuleAgentChat';
+import { useModuleAgent } from '@/hooks/useModuleAgent';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStudio } from '../context/StudioContext';
 import { useAuth } from '../../../hooks/useAuth';
@@ -96,9 +98,12 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
  * Manages view state and renders appropriate component based on mode
  */
 /* data-tour markers: studio-header, studio-shows-list, create-show-button, wizard-button, guest-management, episode-production, studio-library, workspace-view */
+const studioAgentConfig = getModuleAgentConfig('studio')!;
+
 export default function StudioMainView() {
 
   useTourAutoStart('studio-first-visit');  const { state, actions } = useStudio();
+  const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
   const { user } = useAuth();
 
   // Track previous mode for slide direction
@@ -332,18 +337,34 @@ export default function StudioMainView() {
   }
 
   return (
-    <AnimatePresence mode="wait" custom={direction}>
-      <motion.div
-        key={modeKey}
-        custom={direction}
-        variants={pageTransitionVariants}
-        initial="enter"
-        animate="center"
-        exit="exit"
-        className="h-full w-full"
-      >
-        {content}
-      </motion.div>
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait" custom={direction}>
+        <motion.div
+          key={modeKey}
+          custom={direction}
+          variants={pageTransitionVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          className="h-full w-full"
+        >
+          {content}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Module Agent */}
+      <ModuleAgentFAB onClick={openAgent} accentBg={studioAgentConfig.accentBg} label="Agente Studio" />
+      <ModuleAgentChat
+        isOpen={isAgentOpen}
+        onClose={closeAgent}
+        module={studioAgentConfig.module}
+        displayName={studioAgentConfig.displayName}
+        accentColor={studioAgentConfig.accentColor}
+        accentBg={studioAgentConfig.accentBg}
+        suggestedPrompts={studioAgentConfig.suggestedPrompts}
+        welcomeMessage={studioAgentConfig.welcomeMessage}
+        placeholder={studioAgentConfig.placeholder}
+      />
+    </>
   );
 }

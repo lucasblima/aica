@@ -578,43 +578,82 @@ export const BudgetView: React.FC<BudgetViewProps> = ({ userId, onBack }) => {
         </div>
       )}
 
-      {/* Insights Section */}
-      <div className="max-w-4xl mx-auto px-6 pb-20">
-        <div className="space-y-6">
-          <h2 className="text-2xl font-medium text-ceramic-text-primary mb-8">Insights Inteligentes</h2>
+      {/* Insights Section — only show when there are transactions */}
+      {transactions.length > 0 && (
+        <div className="max-w-4xl mx-auto px-6 pb-20">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-medium text-ceramic-text-primary mb-8">Insights do Mês</h2>
 
-          {/* Insight Card */}
-          <div className="bg-gradient-to-br from-ceramic-info/10 to-transparent p-8 rounded-3xl border border-ceramic-info/20">
-            <div className="flex gap-6">
-              <div className="text-5xl">💡</div>
-              <div>
-                <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Padrão Detectado</h4>
-                <p className="text-ceramic-text-secondary leading-relaxed">
-                  Com base no seu histórico, você tende a gastar{' '}
-                  <span className="font-medium text-ceramic-text-primary">R$ 150 a mais</span> em alimentação
-                  nas duas últimas semanas do mês. Considere ajustar seu orçamento ou reduzir
-                  gastos neste período.
-                </p>
-              </div>
-            </div>
-          </div>
+            {/* Top category insight */}
+            {(() => {
+              const topCategory = budgetCategories
+                .filter(c => c.spent > 0)
+                .sort((a, b) => b.spent - a.spent)[0];
+              if (!topCategory) return null;
+              const pct = ((topCategory.spent / totalSpent) * 100).toFixed(0);
+              return (
+                <div className="bg-gradient-to-br from-ceramic-info/10 to-transparent p-8 rounded-3xl border border-ceramic-info/20">
+                  <div className="flex gap-6">
+                    <div className="text-5xl">{topCategory.icon}</div>
+                    <div>
+                      <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Maior Categoria</h4>
+                      <p className="text-ceramic-text-secondary leading-relaxed">
+                        <span className="font-medium text-ceramic-text-primary">{topCategory.label}</span> representa{' '}
+                        <span className="font-medium text-ceramic-text-primary">{pct}%</span> das suas despesas
+                        este mês, totalizando{' '}
+                        <span className="font-medium text-ceramic-text-primary">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(topCategory.spent)}
+                        </span>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
-          {/* Trend Insight */}
-          <div className="bg-gradient-to-br from-ceramic-success/10 to-transparent p-8 rounded-3xl border border-ceramic-success/20">
-            <div className="flex gap-6">
-              <div className="text-5xl">📊</div>
-              <div>
-                <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Tendência Positiva</h4>
-                <p className="text-ceramic-text-secondary leading-relaxed">
-                  Seus gastos com transporte diminuíram{' '}
-                  <span className="font-medium text-ceramic-success">23%</span> comparado ao mês passado.
-                  Continue assim!
-                </p>
+            {/* Over-budget alert */}
+            {budgetCategories.some(c => c.spent > c.budget) && (
+              <div className="bg-gradient-to-br from-ceramic-error/10 to-transparent p-8 rounded-3xl border border-ceramic-error/20">
+                <div className="flex gap-6">
+                  <div className="text-5xl">⚠️</div>
+                  <div>
+                    <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Orçamento Excedido</h4>
+                    <p className="text-ceramic-text-secondary leading-relaxed">
+                      {budgetCategories
+                        .filter(c => c.spent > c.budget)
+                        .map(c => c.label)
+                        .join(', ')}{' '}
+                      {budgetCategories.filter(c => c.spent > c.budget).length === 1
+                        ? 'ultrapassou o orçamento definido'
+                        : 'ultrapassaram os orçamentos definidos'}.
+                      Considere revisar seus gastos nestas categorias.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Positive balance insight */}
+            {monthBalance > 0 && (
+              <div className="bg-gradient-to-br from-ceramic-success/10 to-transparent p-8 rounded-3xl border border-ceramic-success/20">
+                <div className="flex gap-6">
+                  <div className="text-5xl">📊</div>
+                  <div>
+                    <h4 className="text-lg font-bold text-ceramic-text-primary mb-3">Saldo Positivo</h4>
+                    <p className="text-ceramic-text-secondary leading-relaxed">
+                      Suas receitas superaram as despesas em{' '}
+                      <span className="font-medium text-ceramic-success">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthBalance)}
+                      </span>{' '}
+                      este mês. Continue assim!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

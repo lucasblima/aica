@@ -22,7 +22,7 @@ import {
   HardDrive
 } from 'lucide-react';
 import {
-  listFileSearchDocuments,
+  listGrantsDocuments,
   deleteFileSearchDocument,
   deleteMultipleDocuments,
   type FileSearchDocument
@@ -61,8 +61,8 @@ export const UploadedDocumentsManager: React.FC<UploadedDocumentsManagerProps> =
     try {
       setIsLoading(true);
       setError(null);
-      // List ALL documents (not just grants) to catch documents without module_type
-      const docs = await listFileSearchDocuments();
+      // List only grants documents (filtered by module_type='grants')
+      const docs = await listGrantsDocuments();
       log.debug(`Loaded ${docs.length} documents`);
       setDocuments(docs);
     } catch (err) {

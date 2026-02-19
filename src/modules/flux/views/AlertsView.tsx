@@ -5,17 +5,20 @@
  * Allows acknowledgement and resolution tracking.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlux } from '../context/FluxContext';
-import { MOCK_ALERTS, getMockAthleteById } from '../mockData';
+import { useAlerts } from '../hooks/useAlerts';
 import type { AlertType, AlertSeverity } from '../types';
 import { AlertBadge } from '../components/AlertBadge';
-import { ArrowLeft, Filter, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Filter, CheckCircle, Loader2 } from 'lucide-react';
 
 export default function AlertsView() {
   const navigate = useNavigate();
   const { state, actions } = useFlux();
+
+  // Real alerts from DB + computed
+  const { alerts: allAlerts, isLoading, acknowledge } = useAlerts();
 
   // Local filter state
   const [selectedType, setSelectedType] = useState<AlertType | 'all'>('all');
@@ -23,12 +26,12 @@ export default function AlertsView() {
   const [showAcknowledged, setShowAcknowledged] = useState(false);
 
   // Filter alerts
-  const filteredAlerts = MOCK_ALERTS.filter((alert) => {
+  const filteredAlerts = useMemo(() => allAlerts.filter((alert) => {
     if (selectedType !== 'all' && alert.alert_type !== selectedType) return false;
     if (selectedSeverity !== 'all' && alert.severity !== selectedSeverity) return false;
     if (!showAcknowledged && alert.acknowledged_at) return false;
     return true;
-  });
+  }), [allAlerts, selectedType, selectedSeverity, showAcknowledged]);
 
   // Group by severity
   const criticalAlerts = filteredAlerts.filter((a) => a.severity === 'critical');
@@ -36,12 +39,11 @@ export default function AlertsView() {
   const mediumAlerts = filteredAlerts.filter((a) => a.severity === 'medium');
   const lowAlerts = filteredAlerts.filter((a) => a.severity === 'low');
 
-  // Handle alert click
-  const handleAlertClick = (alert: typeof MOCK_ALERTS[0]) => {
-    const athlete = getMockAthleteById(alert.athlete_id);
-    if (athlete) {
-      actions.viewAthleteDetail(athlete.id);
-      navigate(`/flux/athlete/${athlete.id}`);
+  // Handle alert click — navigate to athlete detail
+  const handleAlertClick = (alert: typeof allAlerts[0]) => {
+    if (alert.athlete_id) {
+      actions.viewAthleteDetail(alert.athlete_id);
+      navigate(`/flux/athlete/${alert.athlete_id}`);
     }
   };
 
@@ -50,6 +52,18 @@ export default function AlertsView() {
     actions.viewDashboard();
     navigate('/flux');
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-ceramic-base">
+        <div className="ceramic-card p-8 text-center space-y-4">
+          <Loader2 className="w-12 h-12 mx-auto text-ceramic-info animate-spin" />
+          <p className="text-lg font-bold text-ceramic-text-primary">Carregando alertas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">

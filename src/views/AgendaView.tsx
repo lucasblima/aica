@@ -21,6 +21,8 @@ import { supabase } from '@/services/supabaseClient';
 const log = createNamespacedLogger('AgendaView');
 import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
+import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '../components/features/ModuleAgentChat';
+import { useModuleAgent } from '../hooks/useModuleAgent';
 import { Task, Quadrant } from '../../types';
 // REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
 // import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
@@ -43,8 +45,11 @@ interface AgendaViewProps {
     onLogout: () => void;
 }
 
+const agendaAgentConfig = getModuleAgentConfig('agenda')!;
+
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
     useTourAutoStart('atlas-first-visit');
+    const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
 
     const [matrixTasks, setMatrixTasks] = useState<Record<Quadrant, Task[]>>({
         'urgent-important': [],
@@ -923,6 +928,20 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     ) : null}
                 </DragOverlay>
             </DndContext>
+
+            {/* Module Agent */}
+            <ModuleAgentFAB onClick={openAgent} accentBg={agendaAgentConfig.accentBg} label="Agente Agenda" />
+            <ModuleAgentChat
+                isOpen={isAgentOpen}
+                onClose={closeAgent}
+                module={agendaAgentConfig.module}
+                displayName={agendaAgentConfig.displayName}
+                accentColor={agendaAgentConfig.accentColor}
+                accentBg={agendaAgentConfig.accentBg}
+                suggestedPrompts={agendaAgentConfig.suggestedPrompts}
+                welcomeMessage={agendaAgentConfig.welcomeMessage}
+                placeholder={agendaAgentConfig.placeholder}
+            />
         </div>
     );
 };

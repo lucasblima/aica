@@ -16,3 +16,6 @@ export { useWorkoutSlots } from './useWorkoutSlots';
 
 export { useAutomations } from './useAutomations';
 export type { UseAutomationsOptions } from './useAutomations';
+
+export { useAlerts } from './useAlerts';
+export type { UseAlertsReturn } from './useAlerts';
