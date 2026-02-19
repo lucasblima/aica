@@ -15,7 +15,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
-import { User, Users, UserCircle, Sparkles, Calendar, MapPin, Clock, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Users, UserCircle, Sparkles, Calendar, MapPin, Clock, Search, CheckCircle, AlertCircle, Mic, MicOff } from 'lucide-react';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { searchGuestProfile } from '@/services/podcastProductionService';
 import { findOrCreateContact } from '@/services/platformContactService';
 import { GeminiClient } from '@/lib/gemini/client';
@@ -35,6 +36,17 @@ export default function SetupStage() {
   const [isGeneratingThemes, setIsGeneratingThemes] = useState(false);
   const [themeError, setThemeError] = useState<string | null>(null);
   const hasGeneratedRef = useRef(false);
+
+  // Voice input hooks
+  const voiceName = useSpeechRecognition({
+    onResult: (text) => actions.updateSetup({ guestName: (setup.guestName + ' ' + text).trim() }),
+  });
+  const voiceBio = useSpeechRecognition({
+    onResult: (text) => actions.updateSetup({ guestBio: ((setup.guestBio || '') + ' ' + text).trim() }),
+  });
+  const voiceTheme = useSpeechRecognition({
+    onResult: (text) => actions.updateSetup({ theme: (setup.theme + ' ' + text).trim() }),
+  });
 
   // Sync guest to platform_contacts (find or create)
   const syncGuestContact = useCallback(async () => {
@@ -361,16 +373,32 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               >
                 Nome do Convidado <span className="text-ceramic-error" aria-label="obrigatório">*</span>
               </label>
-              <input
-                id="guest-name-input"
-                type="text"
-                value={setup.guestName}
-                onChange={(e) => actions.updateSetup({ guestName: e.target.value })}
-                placeholder="Digite o nome do convidado"
-                required
-                aria-required="true"
-                className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
-              />
+              <div className="relative">
+                <input
+                  id="guest-name-input"
+                  type="text"
+                  value={setup.guestName}
+                  onChange={(e) => actions.updateSetup({ guestName: e.target.value })}
+                  placeholder="Digite o nome do convidado"
+                  required
+                  aria-required="true"
+                  className="w-full px-4 py-2 pr-12 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
+                />
+                {voiceName.isSupported && (
+                  <button
+                    type="button"
+                    onClick={voiceName.toggle}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-colors ${
+                      voiceName.isListening
+                        ? 'text-ceramic-error animate-pulse'
+                        : 'text-ceramic-text-secondary hover:text-ceramic-accent'
+                    }`}
+                    aria-label={voiceName.isListening ? 'Parar gravação de voz' : 'Ditar nome por voz'}
+                  >
+                    {voiceName.isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Public Figure: Reference/Title field */}
@@ -521,19 +549,35 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="guest-bio-input"
-                    className="block text-sm font-medium text-ceramic-primary mb-2"
-                  >
-                    Notas/Bio Resumida (Opcional)
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      htmlFor="guest-bio-input"
+                      className="block text-sm font-medium text-ceramic-primary"
+                    >
+                      Notas/Bio Resumida (Opcional)
+                    </label>
+                    {voiceBio.isSupported && (
+                      <button
+                        type="button"
+                        onClick={voiceBio.toggle}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          voiceBio.isListening
+                            ? 'text-ceramic-error animate-pulse'
+                            : 'text-ceramic-text-secondary hover:text-ceramic-accent'
+                        }`}
+                        aria-label={voiceBio.isListening ? 'Parar gravação de voz' : 'Ditar bio por voz'}
+                      >
+                        {voiceBio.isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
                   <textarea
                     id="guest-bio-input"
                     value={setup.guestBio || ''}
                     onChange={(e) => actions.updateSetup({ guestBio: e.target.value })}
                     placeholder="Informações relevantes sobre o convidado, experiências, projetos..."
                     rows={4}
-                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent resize-none bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
+                    className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent resize-none bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
                   />
                 </div>
               </div>
@@ -670,16 +714,32 @@ Exemplo: ["Tema 1", "Tema 2", "Tema 3"]`,
               >
                 Tema
               </label>
-              <input
-                id="episode-theme-input"
-                type="text"
-                value={setup.theme}
-                onChange={(e) => actions.updateSetup({ theme: e.target.value })}
-                placeholder={setup.themeMode === 'auto' ? 'Tema será sugerido pela IA' : 'Digite o tema do episódio'}
-                required
-                aria-required="true"
-                className="w-full px-4 py-2 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-primary focus:border-transparent bg-ceramic-base text-ceramic-primary placeholder:text-ceramic-tertiary"
-              />
+              <div className="relative">
+                <input
+                  id="episode-theme-input"
+                  type="text"
+                  value={setup.theme}
+                  onChange={(e) => actions.updateSetup({ theme: e.target.value })}
+                  placeholder={setup.themeMode === 'auto' ? 'Tema será sugerido pela IA' : 'Digite o tema do episódio'}
+                  required
+                  aria-required="true"
+                  className="w-full px-4 py-2 pr-12 border border-ceramic-border rounded-lg focus:ring-2 focus:ring-ceramic-accent focus:border-transparent bg-ceramic-base text-ceramic-text-primary placeholder:text-ceramic-tertiary"
+                />
+                {voiceTheme.isSupported && (
+                  <button
+                    type="button"
+                    onClick={voiceTheme.toggle}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-colors ${
+                      voiceTheme.isListening
+                        ? 'text-ceramic-error animate-pulse'
+                        : 'text-ceramic-text-secondary hover:text-ceramic-accent'
+                    }`}
+                    aria-label={voiceTheme.isListening ? 'Parar gravação de voz' : 'Ditar tema por voz'}
+                  >
+                    {voiceTheme.isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* AI Theme Suggestions - Waiting for guest name */}

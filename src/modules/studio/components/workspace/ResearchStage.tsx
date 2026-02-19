@@ -48,6 +48,14 @@ import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('ResearchStage');
 
+/** Safely coerce a value to string — handles objects/arrays from Gemini API */
+const ensureString = (value: unknown): string => {
+  if (typeof value === 'string') return value;
+  if (value == null) return '';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
 type ResearchTab = 'bio' | 'ficha' | 'noticias';
 
 export default function ResearchStage() {
@@ -67,8 +75,9 @@ export default function ResearchStage() {
 
   // Build context for Gemini Live chat
   const geminiContext = useMemo<GeminiLiveContext>(() => {
+    const biographyText = ensureString(research.dossier?.biography);
     const dossierSummary = research.dossier
-      ? `${research.dossier.biography?.substring(0, 500) || ''}${
+      ? `${biographyText.substring(0, 500)}${
           research.dossier.controversies?.length
             ? ` Controversias: ${research.dossier.controversies.slice(0, 2).join(', ')}`
             : ''
@@ -77,7 +86,7 @@ export default function ResearchStage() {
 
     return {
       guest_name: setup.guestName || 'Convidado',
-      guest_bio: setup.guestBio || research.dossier?.biography?.substring(0, 300),
+      guest_bio: setup.guestBio || biographyText.substring(0, 300) || undefined,
       episode_theme: setup.theme || research.dossier?.episodeTheme,
       dossier_summary: dossierSummary,
     };
@@ -121,7 +130,7 @@ export default function ResearchStage() {
         id: `source_${Date.now()}`,
         type: sourceFile ? 'file' : sourceUrl ? 'url' : 'text',
         content: sourceFile ? sourceFile.name : sourceUrl || sourceText,
-        label: sourceFile?.name || sourceUrl || sourceText.substring(0, 50),
+        label: sourceFile?.name || sourceUrl || ensureString(sourceText).substring(0, 50),
         createdAt: new Date(),
       };
 
@@ -365,14 +374,14 @@ export default function ResearchStage() {
                         {source.type === 'url' && <LinkIcon className="w-3 h-3 text-ceramic-info flex-shrink-0" aria-hidden="true" />}
                         {source.type === 'file' && <Upload className="w-3 h-3 text-ceramic-success flex-shrink-0" aria-hidden="true" />}
                         {source.type === 'text' && <FileText className="w-3 h-3 text-ceramic-text-secondary flex-shrink-0" aria-hidden="true" />}
-                        <span className="font-medium text-ceramic-primary truncate">{source.label || source.content.substring(0, 30)}</span>
+                        <span className="font-medium text-ceramic-primary truncate">{source.label || ensureString(source.content).substring(0, 30)}</span>
                       </div>
                       <span className="text-ceramic-tertiary">{source.type === 'url' ? 'URL' : source.type === 'file' ? 'Arquivo' : 'Texto'}</span>
                     </div>
                     <button
                       onClick={() => handleRemoveSource(source.id)}
                       className="p-1 hover:bg-ceramic-error-bg rounded transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-ceramic-error"
-                      aria-label={`Remover fonte: ${source.label || source.content.substring(0, 30)}`}
+                      aria-label={`Remover fonte: ${source.label || ensureString(source.content).substring(0, 30)}`}
                     >
                       <X className="w-4 h-4 text-ceramic-error" aria-hidden="true" />
                     </button>
@@ -716,7 +725,7 @@ export default function ResearchStage() {
                     <button
                       type="submit"
                       disabled={!chatInput.trim()}
-                      className="min-w-[44px] min-h-[44px] px-3 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                      className="min-w-[44px] min-h-[44px] px-3 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                       aria-label="Enviar pergunta"
                     >
                       <Send className="w-5 h-5" aria-hidden="true" />
