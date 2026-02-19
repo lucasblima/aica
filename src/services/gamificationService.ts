@@ -357,6 +357,59 @@ export const BADGES_CATALOG: Record<string, Badge> = {
     unlock_condition: 'daily_claim_streak_7',
     category: 'aica',
   },
+  // ============================================================================
+  // FLUX MODULE BADGES
+  // ============================================================================
+  'first_athlete': {
+    id: 'first_athlete',
+    name: 'Primeiro Atleta',
+    description: 'Cadastrou seu primeiro atleta no Flux',
+    icon: '🏋️',
+    rarity: 'common',
+    xp_reward: 150,
+    unlock_condition: 'create_first_athlete',
+    category: 'flux',
+  },
+  'microcycle_complete': {
+    id: 'microcycle_complete',
+    name: 'Microciclo Completo',
+    description: 'Completou um microciclo inteiro de treinamento',
+    icon: '🔄',
+    rarity: 'rare',
+    xp_reward: 100,
+    unlock_condition: 'complete_first_microcycle',
+    category: 'flux',
+  },
+  'coach_dedicado': {
+    id: 'coach_dedicado',
+    name: 'Coach Dedicado',
+    description: 'Supervisionou 100 treinos no total',
+    icon: '🏅',
+    rarity: 'epic',
+    xp_reward: 500,
+    unlock_condition: 'supervise_100_workouts',
+    category: 'flux',
+  },
+  'alerta_resolvido': {
+    id: 'alerta_resolvido',
+    name: 'Alerta Resolvido',
+    description: 'Resolveu 10 alertas de atletas',
+    icon: '🔔',
+    rarity: 'rare',
+    xp_reward: 200,
+    unlock_condition: 'resolve_10_alerts',
+    category: 'flux',
+  },
+  'treinador_multimodal': {
+    id: 'treinador_multimodal',
+    name: 'Treinador Multimodal',
+    description: 'Programou treinos com 3 ou mais modalidades diferentes',
+    icon: '🎯',
+    rarity: 'epic',
+    xp_reward: 300,
+    unlock_condition: 'use_3_modalities',
+    category: 'flux',
+  },
 };
 
 // ============================================================================
@@ -379,6 +432,18 @@ export const WHATSAPP_XP_REWARDS = {
   analytics_view: 10,
   contact_analysis: 15,
   anomaly_check: 5,
+};
+
+// ============================================================================
+// FLUX MODULE XP REWARDS
+// ============================================================================
+export const FLUX_XP_REWARDS = {
+  athlete_created: 50,
+  microcycle_completed: 100,
+  workout_supervised: 25,
+  alert_resolved: 30,
+  first_athlete: 150,
+  feedback_reviewed: 15,
 };
 
 // ============================================================================

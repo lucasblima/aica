@@ -59,8 +59,8 @@ export default function IntensityCalculatorView() {
     try {
       const calc = IntensityCalculatorService.calculateIntensity(profile, selectedZone);
       setCalculation(calc);
-    } catch (error: any) {
-      console.error('Error calculating intensity:', error.message);
+    } catch (error: unknown) {
+      console.error('Error calculating intensity:', error instanceof Error ? error.message : error);
     }
   };
 
@@ -70,8 +70,8 @@ export default function IntensityCalculatorView() {
     try {
       const zones = IntensityCalculatorService.getAllZones(profile);
       setAllZones(zones);
-    } catch (error: any) {
-      console.error('Error calculating zones:', error.message);
+    } catch (error: unknown) {
+      console.error('Error calculating zones:', error instanceof Error ? error.message : error);
     }
   };
 
@@ -91,7 +91,7 @@ export default function IntensityCalculatorView() {
     );
   }
 
-  const modalityConfig = MODALITY_CONFIG[profile.modality as any];
+  const modalityConfig = MODALITY_CONFIG[profile.modality as keyof typeof MODALITY_CONFIG];
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-32">

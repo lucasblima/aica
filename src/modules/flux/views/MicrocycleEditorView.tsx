@@ -434,7 +434,7 @@ export default function MicrocycleEditorView() {
                 {microcycle.name}
               </h1>
               <p className="text-sm text-ceramic-text-secondary">
-                {athlete.name} • {MODALITY_CONFIG[athlete.modality as any]?.label}
+                {athlete.name} • {MODALITY_CONFIG[athlete.modality as keyof typeof MODALITY_CONFIG]?.label}
               </p>
             </div>
           </div>

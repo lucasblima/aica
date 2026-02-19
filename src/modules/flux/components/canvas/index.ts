@@ -14,3 +14,7 @@ export { WorkoutBlockEditor } from './WorkoutBlockEditor';
 export { LoadCalculatorPopover } from './LoadCalculatorPopover';
 export type { LoadAdjustment } from './LoadCalculatorPopover';
 export { PublishWhatsAppButton } from './PublishWhatsAppButton';
+export { CanvasLibrarySidebar } from './CanvasLibrarySidebar';
+export { CanvasGridContainer } from './CanvasGridContainer';
+export { CanvasEditorDrawer } from './CanvasEditorDrawer';
+export type { CanvasEditorDrawerProps } from './CanvasEditorDrawer';

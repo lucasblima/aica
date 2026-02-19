@@ -22,3 +22,20 @@ export type { UseAlertsReturn } from './useAlerts';
 
 export { useExercises } from './useExercises';
 export type { UseExercisesOptions, UseExercisesReturn } from './useExercises';
+
+export { useCanvasSlots } from './useCanvasSlots';
+export type { UseCanvasSlotsOptions, UseCanvasSlotsReturn } from './useCanvasSlots';
+
+export { useCanvasDragDrop } from './useCanvasDragDrop';
+export type { UseCanvasDragDropOptions, UseCanvasDragDropReturn } from './useCanvasDragDrop';
+
+export { useCanvasLoadCalc } from './useCanvasLoadCalc';
+export type { UseCanvasLoadCalcOptions, UseCanvasLoadCalcReturn } from './useCanvasLoadCalc';
+
+export { useAthleteForm, MODALITY_OPTIONS, LEVEL_OPTIONS } from './useAthleteForm';
+export type {
+  AthleteFormData,
+  AthleteFormErrors,
+  UseAthleteFormOptions,
+  UseAthleteFormReturn,
+} from './useAthleteForm';

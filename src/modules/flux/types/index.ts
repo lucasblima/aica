@@ -56,6 +56,7 @@ export type {
   // Helper Types
   FluxLoadResult,
   AthleteWithMetrics,
+  ModalityLevel,
 
   // Athlete Portal
   MyAthleteProfile,

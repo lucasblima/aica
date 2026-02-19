@@ -386,7 +386,7 @@ export function generateWorkoutName(
   const label = MODALITY_LABELS[modality] || modality;
   if (series.length === 0) return `Treino de ${label}`;
 
-  const zones = series.filter((s) => 'zone' in s).map((s) => (s as any).zone as IntensityZone);
+  const zones = series.filter(isCardioSeries).map((s) => s.zone);
   const uniqueZones = [...new Set(zones)].sort();
 
   // --- STRENGTH ---
@@ -510,7 +510,7 @@ export function generateWorkoutDescription(
       workStr = `${s.reps}rep${load ? ` ${load}kg` : ''}`;
     }
 
-    const zone = 'zone' in s ? ` ${(s as any).zone}` : '';
+    const zone = 'zone' in s ? ` ${(s as RunningSeries | SwimmingSeries | CyclingSeries).zone}` : '';
     const restMin = s.rest_minutes ?? 0;
     const restSec = s.rest_seconds ?? 0;
     const restStr = (restMin > 0 || restSec > 0)
