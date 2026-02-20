@@ -111,7 +111,13 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   }, [events]);
 
   const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString('pt-BR', {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) {
+      const timeMatch = isoString.match(/(\d{2}):(\d{2})/);
+      if (timeMatch) return `${timeMatch[1]}:${timeMatch[2]}`;
+      return '--:--';
+    }
+    return d.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -122,6 +128,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     if (isTomorrow) return 'Amanhã';
 
     const eventDate = new Date(date);
+    if (isNaN(eventDate.getTime())) return 'Outro dia';
     return eventDate.toLocaleDateString('pt-BR', { weekday: 'long' });
   };
 
@@ -140,23 +147,48 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
 
   const renderEventCard = (event: EventWithCategory, index: number) => {
     const timeUntil = timeUntilMap[event.id] || event.timeUntil;
-    const isPast = timeUntil === 'Agora' || new Date(event.endTime) < new Date();
+    const endDate = new Date(event.endTime);
+    const isEndValid = !isNaN(endDate.getTime());
+    const isPast = isEndValid && endDate < new Date() && timeUntil !== 'Agora';
+    const isHappening = timeUntil === 'Agora';
 
     // Quadrant color border for task items
     const quadrantBorder = event.isTask && (event.is_urgent !== undefined || event.is_important !== undefined)
       ? QUADRANT_COLORS[getQuadrantFromFlags(!!event.is_urgent, !!event.is_important)].border
       : '';
 
+    // Visual state classes
+    const stateClasses = event.skipped || event.isCompleted
+      ? 'opacity-50'
+      : isPast && !event.isTask
+        ? 'opacity-50'
+        : isHappening
+          ? 'ring-2 ring-amber-400/60 bg-amber-50/30'
+          : '';
+
     return (
       <motion.div
         key={event.id}
-        className={`ceramic-tile p-4 ${quadrantBorder ? `border-l-4 ${quadrantBorder}` : ''} ${event.skipped || event.isCompleted ? 'opacity-50' : ''}`}
+        className={`ceramic-tile p-4 ${quadrantBorder ? `border-l-4 ${quadrantBorder}` : ''} ${stateClasses}`}
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.05 }}
       >
+        {/* "Agora" highlight badge */}
+        {event.isToday && isHappening && !event.skipped && !event.isCompleted && (
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-amber-300/40">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
+            </span>
+            <span className="text-xs font-black text-amber-600 uppercase tracking-wide">
+              Acontecendo agora
+            </span>
+          </div>
+        )}
+
         {/* Countdown Badge - Above main content */}
-        {event.isToday && timeUntil && !event.skipped && !event.isCompleted && !isPast && (
+        {event.isToday && timeUntil && !event.skipped && !event.isCompleted && !isPast && !isHappening && (
           <div className="flex items-center gap-2 mb-3 pb-3 border-b border-ceramic-text-secondary/10">
             <Clock className="w-3.5 h-3.5 text-ceramic-accent animate-pulse" />
             <span className="text-xs font-black text-ceramic-accent uppercase tracking-wide">
@@ -183,14 +215,20 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
           )}
 
           {/* Horário - Destaque principal, âncora visual */}
-          <span className="text-lg font-black text-ceramic-text-primary flex-shrink-0 tabular-nums">
+          <span className={`text-lg font-black flex-shrink-0 tabular-nums ${
+            isPast && !event.isTask ? 'text-ceramic-text-secondary' : 'text-ceramic-text-primary'
+          }`}>
             {formatTime(event.startTime)}
           </span>
 
           {/* Título + checklist progress */}
           <div className="flex-1 min-w-0">
-            <h4 className={`text-base font-medium text-ceramic-text-primary truncate ${
-              event.skipped || event.isCompleted ? 'line-through text-ceramic-text-secondary' : ''
+            <h4 className={`text-base font-medium truncate ${
+              event.skipped || event.isCompleted
+                ? 'line-through text-ceramic-text-secondary'
+                : isPast && !event.isTask
+                  ? 'text-ceramic-text-secondary'
+                  : 'text-ceramic-text-primary'
             }`}>
               {event.title}
             </h4>
@@ -202,8 +240,15 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
             )}
           </div>
 
+          {/* "Passou" label for past calendar events */}
+          {isPast && !event.isTask && !event.skipped && (
+            <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary/50">
+              Passou
+            </span>
+          )}
+
           {/* Action Button - Compact (only for calendar events, not tasks) */}
-          {!event.isTask && event.isToday && !isPast && (
+          {!event.isTask && event.isToday && !isPast && !isHappening && (
             <div className="flex-shrink-0">
               {event.skipped ? (
                 <button

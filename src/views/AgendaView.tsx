@@ -46,6 +46,19 @@ interface AgendaViewProps {
 
 const agendaAgentConfig = getModuleAgentConfig('agenda')!;
 
+/** Extract HH:MM from either "HH:MM", "HH:MM:SS" or full timestamptz string */
+const extractTimeHHMM = (ts: string): string | null => {
+    try {
+        // HH:MM or HH:MM:SS format
+        const timeMatch = ts.match(/^(\d{2}):(\d{2})/);
+        if (timeMatch) return `${timeMatch[1]}:${timeMatch[2]}`;
+
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return null;
+        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    } catch { return null; }
+};
+
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
     useTourAutoStart('atlas-first-visit');
     const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
@@ -282,20 +295,36 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             color: event.color || '#D97706'
         }));
 
-        // Add tasks to rest of day
-        const todayTasks = timelineTasks.map(task => ({
-            id: task.id,
-            title: task.title,
-            startTime: `${dateStr}T${task.scheduled_time}:00`,
-            endTime: undefined,
-            type: 'task' as const,
-            isCompleted: !!task.completed_at,
-            checklist: task.checklist || null
-        }));
+        // Add tasks to rest of day (only unscheduled or future tasks not already in NextTwoDaysView)
+        const todayTasks = timelineTasks
+            .filter(task => {
+                // Only include tasks that have a scheduled_time in the future
+                if (!task.scheduled_time) return false;
+                const timeHHMM = extractTimeHHMM(task.scheduled_time);
+                if (!timeHHMM) return false;
+                const taskDate = new Date(`${dateStr}T${timeHHMM}:00`);
+                return taskDate > now;
+            })
+            .map(task => {
+                const timeHHMM = extractTimeHHMM(task.scheduled_time!) || '23:59';
+                return {
+                    id: task.id,
+                    title: task.title,
+                    startTime: `${dateStr}T${timeHHMM}:00`,
+                    endTime: undefined,
+                    type: 'task' as const,
+                    isCompleted: !!task.completed_at,
+                    checklist: task.checklist || null
+                };
+            });
 
-        const combinedRest = [...restTimeline, ...todayTasks].sort((a, b) =>
-            a.startTime.localeCompare(b.startTime)
-        );
+        // Collect IDs already shown in NextTwoDaysView (restTimeline events + calendar)
+        // to avoid duplicating items the hero section already covers
+        const nextTwoDaysIds = new Set(restEvents.map(e => e.id));
+
+        const combinedRest = [...restTimeline, ...todayTasks]
+            .filter(item => !nextTwoDaysIds.has(item.id))
+            .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
         // Check if next event is happening now
         const isNow = nextEventData && new Date(nextEventData.startTime) <= now;
@@ -371,15 +400,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const todayStr = today.toISOString().split('T')[0];
         const tomorrowStr = tomorrow.toISOString().split('T')[0];
         const dayAfterStr = dayAfterTomorrow.toISOString().split('T')[0];
-
-        // Helper: extract HH:MM from timestamptz
-        const extractTimeHHMM = (ts: string): string | null => {
-            try {
-                const d = new Date(ts);
-                if (isNaN(d.getTime())) return null;
-                return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-            } catch { return null; }
-        };
 
         const taskEvents = allDueDateTasks
             .filter(task => {
@@ -755,7 +775,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const timelineContent = (
         <>
             {/* PROXIMOS 2 DIAS */}
-            <section className="max-w-2xl mx-auto w-full">
+            <section className="w-full">
                 <NextTwoDaysView
                     events={nextTwoDaysEvents}
                     onSkipEvent={handleSkipEvent}
@@ -765,7 +785,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             </section>
 
             {/* Quick Add de Tarefas */}
-            <section className="max-w-2xl mx-auto w-full" data-tour="add-task-button">
+            <section className="w-full" data-tour="add-task-button">
                 <TaskCreationQuickAdd
                     userId={userId}
                     onTaskCreated={loadAllTasks}
@@ -774,7 +794,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
             {/* TIMELINE: Mais Tarde */}
             {restOfDay.length > 0 && (
-                <section className="max-w-2xl mx-auto w-full">
+                <section className="w-full">
                     <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
                         Mais Tarde
                     </h2>
@@ -792,7 +812,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             )}
 
             {/* Completed Tasks Section */}
-            <section className="max-w-2xl mx-auto w-full">
+            <section className="w-full">
                 <CompletedTasksSection
                     tasks={completedTodayTasks}
                     onUncomplete={handleUncomplete}
@@ -864,13 +884,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 {isDesktop ? (
                     /* ======== DESKTOP: side-by-side layout ======== */
                     <div className="flex-1 flex overflow-hidden">
-                        {/* LEFT: Timeline ~60% */}
-                        <main className="flex-1 overflow-y-auto px-6 pb-32 pt-8 space-y-12">
+                        {/* LEFT: Timeline — constrained width */}
+                        <main className="w-[55%] min-w-[380px] overflow-y-auto px-6 pb-32 pt-6 space-y-6">
                             {timelineContent}
                         </main>
 
-                        {/* RIGHT: Matrix ~40% */}
-                        <aside className="w-[400px] flex-shrink-0 overflow-y-auto border-l border-ceramic-text-secondary/10 px-4 py-8">
+                        {/* RIGHT: Matrix — takes remaining space */}
+                        <aside className="flex-1 min-w-[420px] overflow-y-auto border-l border-ceramic-text-secondary/10 px-5 py-6">
                             {matrixContent}
                         </aside>
                     </div>
@@ -884,7 +904,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                className="flex-1 overflow-y-auto px-6 pb-32 pt-8 space-y-12"
+                                className="flex-1 overflow-y-auto px-4 pb-32 pt-6 space-y-6"
                             >
                                 {timelineContent}
                             </motion.main>
@@ -895,7 +915,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                className="flex-1 overflow-y-auto px-6 pb-32 pt-8"
+                                className="flex-1 overflow-y-auto px-4 pb-32 pt-6"
                             >
                                 {matrixContent}
                             </motion.main>
