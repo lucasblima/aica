@@ -2,7 +2,7 @@
  * InviteModal Component
  *
  * Modal for managing and sharing invites.
- * Shows invite count, generates links, and displays history.
+ * Shows QR code, invite stats, generates links, and displays enriched history.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -18,20 +18,55 @@ import {
   Gift,
   Loader2,
   Trash2,
-  Link2
+  Link2,
+  QrCode,
+  BarChart3,
+  Sparkles
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useInviteSystem } from '../../hooks/useInviteSystem';
+import type { EnrichedReferral } from '../../services/inviteSystemService';
 
 interface InviteModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+function InviteeStatusBadge({ status, isActive }: { status: EnrichedReferral['status']; isActive: boolean }) {
+  if (status === 'accepted') {
+    if (isActive) {
+      return (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ceramic-success/10 text-ceramic-success">
+          Ativo
+        </span>
+      );
+    }
+    return (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ceramic-cool text-ceramic-text-tertiary">
+        Inativo
+      </span>
+    );
+  }
+  if (status === 'pending') {
+    return (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ceramic-warning/10 text-ceramic-warning">
+        Pendente
+      </span>
+    );
+  }
+  return (
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-ceramic-cool text-ceramic-text-tertiary">
+      Expirado
+    </span>
+  );
+}
+
 export function InviteModal({ isOpen, onClose }: InviteModalProps) {
   const {
     stats,
-    referrals,
-    pendingInvites,
+    dashboard,
+    enrichedReferrals,
+    conversionRate,
     loading,
     generating,
     revoking,
@@ -39,40 +74,22 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
     currentCode,
     hasInvites,
     availableCount,
-    pendingCount,
     generateInvite,
     copyLink,
     shareLink,
-    refreshReferrals,
-    refreshPendingInvites,
+    refreshDashboard,
     revokeInvite
   } = useInviteSystem();
 
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showPending, setShowPending] = useState(false);
 
-  // Load referral history when showing history tab
-  useEffect(() => {
-    if (showHistory) {
-      refreshReferrals();
-    }
-  }, [showHistory, refreshReferrals]);
-
-  // Load pending invites when showing pending tab
-  useEffect(() => {
-    if (showPending) {
-      refreshPendingInvites();
-    }
-  }, [showPending, refreshPendingInvites]);
-
-  // Load pending invites on mount if modal is open
+  // Load dashboard on open
   useEffect(() => {
     if (isOpen) {
-      refreshPendingInvites();
+      refreshDashboard();
     }
-  }, [isOpen, refreshPendingInvites]);
+  }, [isOpen, refreshDashboard]);
 
   // Reset copied state
   useEffect(() => {
@@ -82,7 +99,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
     }
   }, [copied]);
 
-  // Reset copiedCode state
   useEffect(() => {
     if (copiedCode) {
       const timer = setTimeout(() => setCopiedCode(false), 2000);
@@ -116,8 +132,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
   const handleRevoke = async (referralId: string) => {
     const success = await revokeInvite(referralId);
     if (success) {
-      // Refresh pending invites list
-      refreshPendingInvites();
+      refreshDashboard();
     }
   };
 
@@ -127,7 +142,6 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
     } catch {
-      // Fallback
       const textArea = document.createElement('textarea');
       textArea.value = url;
       document.body.appendChild(textArea);
@@ -136,6 +150,14 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
       document.body.removeChild(textArea);
       setCopied(true);
     }
+  };
+
+  const formatCode = (code: string) =>
+    code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+
+  const getDaysRemaining = (expiresAt: string) => {
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
   if (!isOpen) return null;
@@ -159,7 +181,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
 
         {/* Modal */}
         <motion.div
-          className="relative w-full max-w-md ceramic-card p-6 overflow-hidden"
+          className="relative w-full max-w-md ceramic-card p-6 overflow-y-auto max-h-[90vh]"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -187,13 +209,13 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          {/* Stats Bar — 2x2 grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <div className="ceramic-concave p-3 text-center rounded-xl">
               <div className="text-2xl font-bold text-ceramic-accent">
                 {stats?.available ?? 0}
               </div>
-              <div className="text-xs text-ceramic-text-tertiary">Disponíveis</div>
+              <div className="text-xs text-ceramic-text-tertiary">Disponiveis</div>
             </div>
             <div className="ceramic-concave p-3 text-center rounded-xl">
               <div className="text-2xl font-bold text-ceramic-text-primary">
@@ -207,72 +229,80 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
               </div>
               <div className="text-xs text-ceramic-text-tertiary">Aceitos</div>
             </div>
+            <div className="ceramic-concave p-3 text-center rounded-xl">
+              <div className="text-2xl font-bold text-ceramic-info">
+                {conversionRate > 0 ? `${Math.round(conversionRate * 100)}%` : '—'}
+              </div>
+              <div className="text-xs text-ceramic-text-tertiary">Taxa Conv.</div>
+            </div>
           </div>
 
-          {/* Invite Code + Link Section */}
+          {/* QR Code + Link Section */}
           {hasInvites ? (
             <div className="space-y-4">
               {currentUrl ? (
                 <>
-                  {/* Code + Link pair */}
-                  <div className="space-y-3">
-                    {/* Invite Code (prominent) */}
-                    {currentCode && (
-                      <div className="ceramic-concave p-4 rounded-xl">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs text-ceramic-text-tertiary font-medium">
-                            Código de convite
+                  {/* QR + Code/Link side by side */}
+                  <div className="ceramic-concave p-4 rounded-xl flex gap-4 items-start">
+                    {/* QR Code */}
+                    <div className="flex-shrink-0">
+                      <QRCodeSVG
+                        value={currentUrl}
+                        size={128}
+                        bgColor="#F5F4EF"
+                        fgColor="#44403C"
+                        level="M"
+                      />
+                    </div>
+
+                    {/* Code + Link */}
+                    <div className="flex-1 min-w-0 space-y-3">
+                      {/* Invite Code */}
+                      {currentCode && (
+                        <div>
+                          <div className="text-[10px] text-ceramic-text-tertiary font-medium mb-1">
+                            Codigo
                           </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-mono font-bold text-ceramic-text-primary tracking-wider">
+                              {formatCode(currentCode)}
+                            </span>
+                            <button
+                              onClick={handleCopyCode}
+                              className="p-1 rounded hover:bg-ceramic-cool transition-colors"
+                              title="Copiar codigo"
+                            >
+                              {copiedCode ? (
+                                <Check className="w-3.5 h-3.5 text-ceramic-success" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Invite Link */}
+                      <div>
+                        <div className="text-[10px] text-ceramic-text-tertiary font-medium mb-1">
+                          Link
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-ceramic-text-secondary font-mono truncate">
+                            {currentUrl.replace(/^https?:\/\//, '').slice(0, 28)}...
+                          </span>
                           <button
-                            onClick={handleCopyCode}
-                            className="flex items-center gap-1 text-xs text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
+                            onClick={handleCopy}
+                            className="p-1 rounded hover:bg-ceramic-cool transition-colors flex-shrink-0"
+                            title="Copiar link"
                           >
-                            {copiedCode ? (
-                              <>
-                                <Check className="w-3 h-3 text-ceramic-success" />
-                                <span className="text-ceramic-success">Copiado!</span>
-                              </>
+                            {copied ? (
+                              <Check className="w-3.5 h-3.5 text-ceramic-success" />
                             ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>Copiar</span>
-                              </>
+                              <Link2 className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
                             )}
                           </button>
                         </div>
-                        <div className="text-2xl font-mono font-bold text-ceramic-text-primary tracking-[0.25em] text-center">
-                          {currentCode.length === 8
-                            ? `${currentCode.slice(0, 4)}-${currentCode.slice(4)}`
-                            : currentCode}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Invite Link */}
-                    <div className="ceramic-concave p-3 rounded-xl">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="text-xs text-ceramic-text-tertiary font-medium">
-                          Link de convite
-                        </div>
-                        <button
-                          onClick={handleCopy}
-                          className="flex items-center gap-1 text-xs text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
-                        >
-                          {copied ? (
-                            <>
-                              <Check className="w-3 h-3 text-ceramic-success" />
-                              <span className="text-ceramic-success">Copiado!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Link2 className="w-3 h-3" />
-                              <span>Copiar</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      <div className="text-sm text-ceramic-text-primary font-mono truncate">
-                        {currentUrl}
                       </div>
                     </div>
                   </div>
@@ -285,6 +315,17 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                     <Share2 className="w-4 h-4" />
                     Compartilhar convite
                   </button>
+
+                  {/* Generate new */}
+                  {availableCount > 0 && (
+                    <button
+                      onClick={handleGenerateNew}
+                      disabled={generating}
+                      className="w-full text-sm text-ceramic-text-tertiary hover:text-ceramic-accent transition-colors disabled:opacity-50"
+                    >
+                      {generating ? 'Gerando...' : `Gerar novo convite (${availableCount} restantes)`}
+                    </button>
+                  )}
                 </>
               ) : (
                 <button
@@ -300,29 +341,144 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                   <span className="font-bold">Gerar Convite</span>
                 </button>
               )}
-
-              {/* Generate new button */}
-              {currentUrl && availableCount > 0 && (
-                <button
-                  onClick={handleGenerateNew}
-                  disabled={generating}
-                  className="w-full text-sm text-ceramic-text-tertiary hover:text-ceramic-accent transition-colors disabled:opacity-50"
-                >
-                  {generating ? 'Gerando...' : `Gerar novo convite (${availableCount} restantes)`}
-                </button>
-              )}
             </div>
           ) : (
             <div className="ceramic-concave p-6 rounded-xl text-center">
               <div className="text-4xl mb-2">😢</div>
               <div className="text-ceramic-text-primary font-bold mb-1">
-                Sem convites disponíveis
+                Sem convites disponiveis
               </div>
               <div className="text-sm text-ceramic-text-secondary">
-                Você ganha +2 convites quando alguém aceita seu convite!
+                Voce ganha +2 convites quando alguem aceita seu convite!
               </div>
             </div>
           )}
+
+          {/* Invite History — always visible */}
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-4 h-4 text-ceramic-text-tertiary" />
+              <h3 className="text-sm font-bold text-ceramic-text-primary">
+                Historico de Convites
+              </h3>
+              {enrichedReferrals.length > 0 && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-ceramic-cool text-ceramic-text-secondary">
+                  {enrichedReferrals.length}
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {enrichedReferrals.length === 0 ? (
+                <div className="text-sm text-ceramic-text-tertiary text-center py-4 ceramic-concave rounded-xl">
+                  Nenhum convite enviado ainda
+                </div>
+              ) : (
+                enrichedReferrals.map((referral) => (
+                  <div
+                    key={referral.id}
+                    className="ceramic-concave p-3 rounded-lg"
+                  >
+                    {referral.status === 'accepted' ? (
+                      <div className="flex items-center gap-3">
+                        {/* Avatar or icon */}
+                        {referral.invitee_avatar ? (
+                          <img
+                            src={referral.invitee_avatar}
+                            alt={referral.invitee_name ?? ''}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-ceramic-success/10 flex items-center justify-center flex-shrink-0">
+                            <UserPlus className="w-4 h-4 text-ceramic-success" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-ceramic-text-primary truncate">
+                              {referral.invitee_name ?? 'Usuario'}
+                            </span>
+                            <InviteeStatusBadge status="accepted" isActive={referral.is_active} />
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-ceramic-text-tertiary">
+                            {referral.invitee_plan && (
+                              <span className="font-medium">{referral.invitee_plan}</span>
+                            )}
+                            <span>
+                              Aceito {new Date(referral.accepted_at!).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-xs font-bold text-ceramic-success flex-shrink-0">
+                          +{referral.xp_awarded} XP
+                        </div>
+                      </div>
+                    ) : referral.status === 'pending' ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-ceramic-warning/10 flex items-center justify-center flex-shrink-0">
+                          <Clock className="w-4 h-4 text-ceramic-warning" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {referral.invite_code && (
+                              <span className="text-xs font-mono font-bold text-ceramic-text-primary">
+                                {formatCode(referral.invite_code)}
+                              </span>
+                            )}
+                            <InviteeStatusBadge status="pending" isActive={false} />
+                          </div>
+                          <div className="text-[10px] text-ceramic-text-tertiary">
+                            {getDaysRemaining(referral.expires_at)} dias restantes
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => copyInviteUrl(referral.invite_token)}
+                            className="p-1.5 rounded-lg hover:bg-ceramic-cool transition-colors"
+                            title="Copiar link"
+                          >
+                            <Copy className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
+                          </button>
+                          <button
+                            onClick={() => handleRevoke(referral.id)}
+                            disabled={revoking === referral.id}
+                            className="p-1.5 rounded-lg hover:bg-ceramic-error/5 transition-colors disabled:opacity-50"
+                            title="Revogar convite"
+                          >
+                            {revoking === referral.id ? (
+                              <Loader2 className="w-3.5 h-3.5 text-ceramic-error animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5 text-ceramic-error" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Expired */
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-ceramic-cool flex items-center justify-center flex-shrink-0">
+                          <Clock className="w-4 h-4 text-ceramic-text-tertiary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {referral.invite_code && (
+                              <span className="text-xs font-mono font-bold text-ceramic-text-secondary">
+                                {formatCode(referral.invite_code)}
+                              </span>
+                            )}
+                            <InviteeStatusBadge status="expired" isActive={false} />
+                          </div>
+                          <div className="text-[10px] text-ceramic-text-tertiary">
+                            {new Date(referral.expires_at).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
           {/* Bonus info */}
           <div className="mt-6 p-4 bg-gradient-to-r from-ceramic-warning/10 to-ceramic-accent/10 rounded-xl border border-ceramic-warning/20">
@@ -332,169 +488,15 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
               </div>
               <div>
                 <div className="text-sm font-bold text-ceramic-text-primary">
-                  Bônus por indicação
+                  Bonus por indicacao
                 </div>
                 <div className="text-xs text-ceramic-text-secondary">
-                  Quando alguém aceita seu convite, você ganha{' '}
+                  Quando alguem aceita seu convite, voce ganha{' '}
                   <strong>+50 XP</strong> e <strong>+2 convites</strong> extras!
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Pending invites toggle */}
-          {pendingCount > 0 && (
-            <button
-              onClick={() => setShowPending(!showPending)}
-              className="w-full mt-4 text-sm text-ceramic-accent hover:text-ceramic-accent/80 transition-colors flex items-center justify-center gap-1 font-medium"
-            >
-              <Link2 className="w-3 h-3" />
-              {showPending ? 'Ocultar links pendentes' : `Gerenciar links pendentes (${pendingCount})`}
-            </button>
-          )}
-
-          {/* Pending invites list */}
-          <AnimatePresence>
-            {showPending && pendingCount > 0 && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
-                  <div className="text-xs text-ceramic-text-tertiary mb-2">
-                    Delete um link para recuperar 1 convite na sua quota
-                  </div>
-                  {pendingInvites.map((invite) => (
-                    <div
-                      key={invite.id}
-                      className="ceramic-concave p-3 rounded-lg flex items-center justify-between gap-2"
-                    >
-                      <div className="flex-1 min-w-0">
-                        {invite.invite_code && (
-                          <div className="text-xs text-ceramic-text-primary font-mono font-bold">
-                            {invite.invite_code.length === 8
-                              ? `${invite.invite_code.slice(0, 4)}-${invite.invite_code.slice(4)}`
-                              : invite.invite_code}
-                          </div>
-                        )}
-                        <div className="text-[10px] text-ceramic-text-tertiary">
-                          {new Date(invite.created_at).toLocaleDateString('pt-BR')}
-                          {' · '}.../{invite.invite_token.slice(-8)}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => copyInviteUrl(invite.invite_token)}
-                          className="p-1.5 rounded-lg hover:bg-ceramic-cool transition-colors"
-                          title="Copiar link"
-                        >
-                          <Copy className="w-3.5 h-3.5 text-ceramic-text-tertiary" />
-                        </button>
-                        <button
-                          onClick={() => handleRevoke(invite.id)}
-                          disabled={revoking === invite.id}
-                          className="p-1.5 rounded-lg hover:bg-ceramic-error/5 transition-colors disabled:opacity-50"
-                          title="Deletar e recuperar quota"
-                        >
-                          {revoking === invite.id ? (
-                            <Loader2 className="w-3.5 h-3.5 text-ceramic-error animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5 text-ceramic-error" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* History toggle */}
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="w-full mt-4 text-sm text-ceramic-text-secondary hover:text-ceramic-accent transition-colors flex items-center justify-center gap-1"
-          >
-            <Clock className="w-3 h-3" />
-            {showHistory ? 'Ocultar histórico' : 'Ver histórico de convites'}
-          </button>
-
-          {/* History */}
-          <AnimatePresence>
-            {showHistory && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
-                  {referrals.length === 0 ? (
-                    <div className="text-sm text-ceramic-text-tertiary text-center py-4">
-                      Nenhum convite enviado ainda
-                    </div>
-                  ) : (
-                    referrals.map((referral) => (
-                      <div
-                        key={referral.id}
-                        className="ceramic-concave p-3 rounded-lg space-y-1.5"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <UserPlus className="w-4 h-4 text-ceramic-text-tertiary" />
-                            <div>
-                              <div className="text-xs text-ceramic-text-primary">
-                                {referral.status === 'accepted'
-                                  ? 'Aceito'
-                                  : referral.status === 'pending'
-                                  ? 'Pendente'
-                                  : 'Expirado'}
-                              </div>
-                              <div className="text-[10px] text-ceramic-text-tertiary">
-                                {new Date(referral.created_at).toLocaleDateString('pt-BR')}
-                              </div>
-                            </div>
-                          </div>
-                          <div
-                            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                              referral.status === 'accepted'
-                                ? 'bg-ceramic-success/10 text-ceramic-success'
-                                : referral.status === 'pending'
-                                ? 'bg-ceramic-warning/10 text-ceramic-warning'
-                                : 'bg-ceramic-cool text-ceramic-text-tertiary'
-                            }`}
-                          >
-                            {referral.status === 'accepted' && `+${referral.xp_awarded} XP`}
-                            {referral.status === 'pending' && 'Aguardando'}
-                            {referral.status === 'expired' && 'Expirado'}
-                          </div>
-                        </div>
-                        {/* Code + copy link */}
-                        <div className="flex items-center justify-between pl-6">
-                          {referral.invite_code && (
-                            <span className="text-[10px] font-mono font-bold text-ceramic-text-secondary">
-                              {referral.invite_code.length === 8
-                                ? `${referral.invite_code.slice(0, 4)}-${referral.invite_code.slice(4)}`
-                                : referral.invite_code}
-                            </span>
-                          )}
-                          <button
-                            onClick={() => copyInviteUrl(referral.invite_token)}
-                            className="flex items-center gap-1 text-[10px] text-ceramic-accent hover:text-ceramic-accent/80 transition-colors"
-                          >
-                            <Copy className="w-3 h-3" />
-                            Copiar link
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
       </motion.div>
     </AnimatePresence>

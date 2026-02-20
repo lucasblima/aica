@@ -18,32 +18,33 @@ export const demoProcessingService = {
   generateDemoMessages(): DemoMessage[] {
     const templates = [
       // Atlas (Tarefas)
-      { text: "Reuniao amanha 14h com Joao sobre projeto", chaos_level: 85, category: 'atlas' as const },
-      { text: "Comprar presente de aniversario para mae", chaos_level: 90, category: 'atlas' as const },
-      { text: "Ligar dentista para remarcar consulta", chaos_level: 95, category: 'atlas' as const },
-      { text: "Revisar contrato ate sexta-feira", chaos_level: 80, category: 'atlas' as const },
+      { text: "Reuniao amanha 14h com Joao sobre projeto", senderName: "Joao", chaos_level: 85, category: 'atlas' as const },
+      { text: "Comprar presente de aniversario para mae", senderName: "Mae", chaos_level: 90, category: 'atlas' as const },
+      { text: "Ligar dentista para remarcar consulta", senderName: "Maria", chaos_level: 95, category: 'atlas' as const },
+      { text: "Revisar contrato ate sexta-feira", senderName: "Carlos", chaos_level: 80, category: 'atlas' as const },
 
       // Journey (Momentos)
-      { text: "Tive uma ideia incrivel durante a caminhada hoje", chaos_level: 75, category: 'journey' as const },
-      { text: "Me senti frustrado na reuniao de equipe", chaos_level: 70, category: 'journey' as const },
-      { text: "Primeira vez meditando, experiencia transformadora", chaos_level: 65, category: 'journey' as const },
+      { text: "Tive uma ideia incrivel durante a caminhada hoje", senderName: "Eu", chaos_level: 75, category: 'journey' as const },
+      { text: "Me senti frustrado na reuniao de equipe", senderName: "Eu", chaos_level: 70, category: 'journey' as const },
+      { text: "Primeira vez meditando, experiencia transformadora", senderName: "Eu", chaos_level: 65, category: 'journey' as const },
 
       // Studio (Podcasts)
-      { text: "Ideia de podcast: IA e etica no seculo XXI", chaos_level: 88, category: 'studio' as const },
-      { text: "Convidar Maria Silva para entrevista sobre sustentabilidade", chaos_level: 82, category: 'studio' as const },
-      { text: "Topico interessante: futuro do trabalho remoto", chaos_level: 86, category: 'studio' as const },
+      { text: "Ideia de podcast: IA e etica no seculo XXI", senderName: "Eu", chaos_level: 88, category: 'studio' as const },
+      { text: "Convidar Maria Silva para entrevista sobre sustentabilidade", senderName: "Pedro", chaos_level: 82, category: 'studio' as const },
+      { text: "Topico interessante: futuro do trabalho remoto", senderName: "Eu", chaos_level: 86, category: 'studio' as const },
 
       // Connections (Relacionamentos)
-      { text: "Pedro nao responde ha 2 semanas", chaos_level: 92, category: 'connections' as const },
-      { text: "Ana me mandou artigo sobre neurociencia", chaos_level: 60, category: 'connections' as const },
-      { text: "Grupo da familia planejando reuniao", chaos_level: 78, category: 'connections' as const },
+      { text: "Pedro nao responde ha 2 semanas", senderName: "Pedro", chaos_level: 92, category: 'connections' as const },
+      { text: "Ana me mandou artigo sobre neurociencia", senderName: "Ana", chaos_level: 60, category: 'connections' as const },
+      { text: "Grupo da familia planejando reuniao", senderName: "Familia", chaos_level: 78, category: 'connections' as const },
     ];
 
     return templates.map((template, index) => ({
       id: `msg-${index}`,
       text: template.text,
       timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Ultimos 7 dias
-      sender: Math.random() > 0.5 ? 'user' as const : 'contact' as const,
+      sender: template.senderName === 'Eu' ? 'user' as const : 'contact' as const,
+      senderName: template.senderName,
       chaos_level: template.chaos_level,
       category: template.category
     }));
