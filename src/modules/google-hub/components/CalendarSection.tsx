@@ -24,6 +24,9 @@ export function CalendarSection({ isConnected, onDisconnect }: CalendarSectionPr
                 <div className="flex items-center gap-2.5 mb-3">
                     <Calendar className="w-5 h-5 text-[#EA4335]" />
                     <h2 className="text-lg font-semibold text-ceramic-text-primary">Calendar</h2>
+                    <span className="text-xs text-ceramic-text-secondary bg-ceramic-cool/60 px-2 py-0.5 rounded-full">
+                        Não conectado
+                    </span>
                 </div>
                 <p className="text-sm text-ceramic-text-secondary">
                     O Calendar é conectado automaticamente no login com Google.

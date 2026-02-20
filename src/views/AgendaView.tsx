@@ -815,6 +815,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         isConnected={isCalendarConnected}
                         isSyncing={isLoadingCalendar}
                         hasError={!!calendarError}
+                        lastSyncTime={lastSyncTime}
                         onConnect={handleConnectCalendar}
                         onSync={syncCalendar}
                         onDisconnect={handleDisconnectCalendar}
