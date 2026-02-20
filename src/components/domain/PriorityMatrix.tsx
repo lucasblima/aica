@@ -89,7 +89,7 @@ const DroppableQuadrant: React.FC<{
             ref={setNodeRef}
             data-container-type="quadrant"
             data-tour={getQuadrantTourTarget(quadrant.id)}
-            className={`ceramic-tray ${compact ? 'p-3 min-h-[140px]' : 'p-4 min-h-[200px]'} rounded-2xl transition-all ${
+            className={`ceramic-tray ${compact ? 'p-3 min-h-[120px]' : 'p-3 min-h-[160px]'} rounded-xl transition-all ${
                 isOver ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''
             }`}
             style={{ borderTop: `4px solid ${quadrant.color}` }}
@@ -424,7 +424,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
             )}
 
             {/* Matrix Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {QUADRANTS.map(quadrant => (
                     <DroppableQuadrant
                         key={quadrant.id}

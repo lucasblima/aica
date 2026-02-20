@@ -50,7 +50,9 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
     }
   };
   const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString('pt-BR', {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '--:--';
+    return d.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -58,7 +60,11 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
 
   const getDuration = (start: string, end?: string) => {
     if (!end) return null;
-    const diffMs = new Date(end).getTime() - new Date(start).getTime();
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return null;
+    const diffMs = endDate.getTime() - startDate.getTime();
+    if (diffMs <= 0) return null;
     const diffMins = Math.round(diffMs / 60000);
     if (diffMins < 60) return `${diffMins}min`;
     const hours = Math.floor(diffMins / 60);
