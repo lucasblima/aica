@@ -379,7 +379,8 @@ export class WorkoutSlotService {
    */
   static async syncToGoogleCalendar(
     microcycleId: string,
-    weekNumber?: number
+    weekNumber?: number,
+    timezone?: string
   ): Promise<{
     data: {
       success: boolean;
@@ -392,7 +393,7 @@ export class WorkoutSlotService {
   }> {
     try {
       const { data, error } = await supabase.functions.invoke('sync-workout-calendar', {
-        body: { microcycleId, weekNumber },
+        body: { microcycleId, weekNumber, timezone },
       });
 
       if (error) throw error;
