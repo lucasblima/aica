@@ -38,7 +38,7 @@ export const CompletedTasksSection: React.FC<CompletedTasksSectionProps> = ({
           <ChevronDown className="w-4 h-4 text-ceramic-text-secondary" />
         </motion.div>
         <span className="text-sm font-medium text-ceramic-text-secondary">
-          Concluidas ({tasks.length})
+          Concluidas <span className="text-ceramic-success font-bold">({tasks.length})</span>
         </span>
       </button>
 
@@ -77,7 +77,7 @@ export const CompletedTasksSection: React.FC<CompletedTasksSectionProps> = ({
                     </span>
 
                     {/* Completed time */}
-                    {task.completed_at && (
+                    {task.completed_at && !isNaN(new Date(task.completed_at).getTime()) && (
                       <span className="text-xs text-ceramic-text-secondary/60 flex-shrink-0">
                         {new Date(task.completed_at).toLocaleTimeString('pt-BR', {
                           hour: '2-digit',

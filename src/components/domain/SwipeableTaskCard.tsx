@@ -107,7 +107,16 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
     }
   }, [task, onOpen, isCompleting]);
 
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date();
+  const safeDateStr = (dateStr: string | null | undefined): string | null => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('pt-BR');
+  };
+
+  const parsedDue = task.due_date ? new Date(task.due_date) : null;
+  const isOverdue = parsedDue && !isNaN(parsedDue.getTime()) && parsedDue < new Date();
+  const formattedDueDate = safeDateStr(task.due_date);
   const quadrant = task.priority_quadrant as Quadrant | undefined;
   const borderClass = showQuadrantBorder && quadrant
     ? QUADRANT_COLORS[quadrant]?.border ?? 'border-l-amber-400'
@@ -172,14 +181,14 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
                     </p>
                   )}
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {task.due_date && (
+                    {formattedDueDate && (
                       <span
                         className={`text-xs flex items-center gap-1 ${
                           isOverdue ? 'text-ceramic-error' : 'text-ceramic-text-secondary'
                         }`}
                       >
                         <Calendar className="w-3 h-3" />
-                        {new Date(task.due_date).toLocaleDateString('pt-BR')}
+                        {formattedDueDate}
                       </span>
                     )}
                     {!compact && task.estimated_duration && (
