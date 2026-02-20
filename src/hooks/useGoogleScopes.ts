@@ -41,15 +41,13 @@ export function useGoogleScopes(): GoogleScopesState {
                 return;
             }
 
-            const [calendar, gmail, drive] = await Promise.all([
-                hasCalendarWriteScope(),
-                hasGmailScope(),
-                hasDriveScope(),
-            ]);
-
+            // Only check Calendar scope — Gmail/Drive disabled (CASA assessment required)
+            const calendar = await hasCalendarWriteScope();
             setHasCalendar(calendar);
-            setHasGmail(gmail);
-            setHasDrive(drive);
+
+            // Gmail and Drive scopes disabled until FEATURE_GOOGLE_EXTENDED_SCOPES is enabled
+            setHasGmail(false);
+            setHasDrive(false);
         } catch (err) {
             log.error('Error checking Google scopes:', { error: err });
         } finally {
@@ -62,12 +60,13 @@ export function useGoogleScopes(): GoogleScopesState {
     }, [checkScopes]);
 
     const handleConnectGmail = useCallback(async () => {
-        await connectGmail();
-        // Page will redirect for OAuth — no need to update state here
+        // Gmail scope disabled — requires CASA security assessment
+        log.warn('Gmail connection disabled — CASA assessment required');
     }, []);
 
     const handleConnectDrive = useCallback(async () => {
-        await connectDrive();
+        // Drive scope disabled — requires CASA security assessment
+        log.warn('Drive connection disabled — CASA assessment required');
     }, []);
 
     const handleDisconnectAll = useCallback(async () => {
