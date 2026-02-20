@@ -171,7 +171,7 @@ export async function requestGoogleScopes(additionalScopes: string[]): Promise<v
  */
 export async function connectGmail(): Promise<void> {
     if (!FEATURE_GOOGLE_EXTENDED_SCOPES) {
-        console.warn('[GoogleAuth] Gmail scopes disabled — CASA assessment required');
+        log.warn('Gmail scopes disabled — CASA assessment required');
         return;
     }
     return requestGoogleScopes(GMAIL_SCOPES);
@@ -183,7 +183,7 @@ export async function connectGmail(): Promise<void> {
  */
 export async function connectDrive(): Promise<void> {
     if (!FEATURE_GOOGLE_EXTENDED_SCOPES) {
-        console.warn('[GoogleAuth] Drive scopes disabled — CASA assessment required');
+        log.warn('Drive scopes disabled — CASA assessment required');
         return;
     }
     return requestGoogleScopes(DRIVE_SCOPES);
