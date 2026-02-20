@@ -6,7 +6,7 @@
  * If not activated, shows the WaitingRoomPage.
  */
 
-import { ReactNode } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { useActivationStatus } from '@/hooks/useActivationStatus'
 import { LoadingScreen } from '@/components/ui'
 import { WaitingRoomPage } from '@/pages/WaitingRoomPage'
@@ -17,9 +17,18 @@ interface ActivationGuardProps {
 
 export function ActivationGuard({ children }: ActivationGuardProps) {
   const { isActivated, loading } = useActivationStatus()
+  const [showLoading, setShowLoading] = useState(false)
+
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setShowLoading(true), 300)
+      return () => clearTimeout(timer)
+    }
+    setShowLoading(false)
+  }, [loading])
 
   if (loading) {
-    return <LoadingScreen message="Verificando acesso..." />
+    return showLoading ? <LoadingScreen message="Verificando acesso..." /> : null
   }
 
   if (isActivated === false) {

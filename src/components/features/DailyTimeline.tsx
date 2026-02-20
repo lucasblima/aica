@@ -65,8 +65,8 @@ const DraggableTimelineTask: React.FC<{ task: Task; style: React.CSSProperties; 
             <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-bold text-ceramic-text-primary truncate">{task.title}</h4>
-                    {task.association && (
-                        <p className="text-xs text-ceramic-text-secondary truncate">{task.association.name}</p>
+                    {task.associations && (
+                        <p className="text-xs text-ceramic-text-secondary truncate">{task.associations.name}</p>
                     )}
                     <p className="text-xs text-ceramic-text-secondary font-mono mt-1">
                         {task.scheduled_time} • {task.estimated_duration || 30}min

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin, X, Check, AlertCircle, ListChecks } from 'lucide-react';
+import { getQuadrantFromFlags, QUADRANT_COLORS } from '@/constants/quadrantColors';
 
 interface EventWithCategory {
   id: string;
@@ -17,6 +18,8 @@ interface EventWithCategory {
   isTask?: boolean;
   isCompleted?: boolean;
   checklist?: Array<{ text: string; done: boolean }> | null;
+  is_urgent?: boolean;
+  is_important?: boolean;
 }
 
 interface NextTwoDaysViewProps {
@@ -139,10 +142,15 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     const timeUntil = timeUntilMap[event.id] || event.timeUntil;
     const isPast = timeUntil === 'Agora' || new Date(event.endTime) < new Date();
 
+    // Quadrant color border for task items
+    const quadrantBorder = event.isTask && (event.is_urgent !== undefined || event.is_important !== undefined)
+      ? QUADRANT_COLORS[getQuadrantFromFlags(!!event.is_urgent, !!event.is_important)].border
+      : '';
+
     return (
       <motion.div
         key={event.id}
-        className={`ceramic-tile p-4 ${event.skipped || event.isCompleted ? 'opacity-50' : ''}`}
+        className={`ceramic-tile p-4 ${quadrantBorder ? `border-l-4 ${quadrantBorder}` : ''} ${event.skipped || event.isCompleted ? 'opacity-50' : ''}`}
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.05 }}
