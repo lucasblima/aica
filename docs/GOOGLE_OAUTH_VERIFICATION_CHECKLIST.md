@@ -2,9 +2,10 @@
 
 Checklist completo para aprovacao OAuth do Google Cloud para o projeto AICA Life OS.
 
-**Ultima atualizacao:** 2026-01-16
+**Ultima atualizacao:** 2026-02-19
 **Projeto:** AICA Life OS
-**Ambiente:** Staging (southamerica-east1)
+**Ambiente:** Production (aica.guru) / Staging (dev.aica.guru)
+**Scopes:** calendar.events (sensitive) + userinfo.email (non-sensitive)
 
 ---
 
@@ -26,10 +27,10 @@ Checklist completo para aprovacao OAuth do Google Cloud para o projeto AICA Life
 
 ### Pre-requisitos de Dominio
 
-- [ ] Dominio proprio registrado (NAO usar *.run.app, *.vercel.app, etc.)
-- [ ] SSL/HTTPS configurado e valido
+- [x] Dominio proprio registrado (aica.guru)
+- [x] SSL/HTTPS configurado e valido
 - [ ] Dominio verificado no Google Search Console
-- [ ] DNS propagado completamente (pode levar ate 48h)
+- [x] DNS propagado completamente
 
 ### Passos para Verificacao no Search Console
 
@@ -51,7 +52,7 @@ TTL: 3600
 
 - [ ] Acessar https://search.google.com/search-console
 - [ ] Confirmar que o dominio aparece como "Verificado"
-- [ ] Testar acesso HTTPS no dominio (sem erros de certificado)
+- [x] Testar acesso HTTPS no dominio (sem erros de certificado)
 
 ---
 
@@ -59,39 +60,39 @@ TTL: 3600
 
 ### Paginas Obrigatorias
 
-| Pagina | URL Padrao | Status |
-|--------|------------|--------|
-| Homepage | `https://[dominio]/` ou `/landing` | [ ] Criada |
-| Privacy Policy | `https://[dominio]/privacy` | [ ] Criada |
-| Terms of Service | `https://[dominio]/terms` | [ ] Criada |
+| Pagina | URL | Status |
+|--------|-----|--------|
+| Homepage | https://aica.guru | [x] Criada |
+| Privacy Policy | https://aica.guru/privacy | [x] Criada |
+| Terms of Service | https://aica.guru/terms | [x] Criada |
 
 ### Requisitos das Paginas
 
-- [ ] Homepage publica e acessivel (sem login necessario)
-- [ ] Privacy Policy no MESMO dominio da aplicacao
-- [ ] Terms of Service no MESMO dominio da aplicacao
-- [ ] Links funcionais entre todas as paginas
-- [ ] Navegacao clara para encontrar Privacy e Terms
-- [ ] Paginas respondem em menos de 3 segundos
-- [ ] Nenhuma pagina retorna erro 404 ou 500
+- [x] Homepage publica e acessivel (sem login necessario)
+- [x] Privacy Policy no MESMO dominio da aplicacao
+- [x] Terms of Service no MESMO dominio da aplicacao
+- [x] Links funcionais entre todas as paginas
+- [x] Navegacao clara para encontrar Privacy e Terms
+- [x] Paginas respondem em menos de 3 segundos
+- [x] Nenhuma pagina retorna erro 404 ou 500
 
 ### Conteudo Minimo
 
 **Homepage:**
-- [ ] Nome do aplicativo
-- [ ] Descricao do proposito
-- [ ] Link para Privacy Policy no footer
-- [ ] Link para Terms of Service no footer
+- [x] Nome do aplicativo
+- [x] Descricao do proposito
+- [x] Link para Privacy Policy no footer
+- [x] Link para Terms of Service no footer
 
 **Privacy Policy:**
-- [ ] Data de ultima atualizacao
-- [ ] Email de contato
-- [ ] Secao sobre Google APIs (ver secao 3)
+- [x] Data de ultima atualizacao
+- [x] Email de contato (contato@aica.guru)
+- [x] Secao sobre Google APIs (Calendar + compliance)
 
 **Terms of Service:**
-- [ ] Data de ultima atualizacao
-- [ ] Email de contato
-- [ ] Termos de uso claros
+- [x] Data de ultima atualizacao
+- [x] Email de contato
+- [x] Termos de uso claros
 
 ---
 
@@ -99,85 +100,22 @@ TTL: 3600
 
 ### Secoes Obrigatorias para OAuth
 
-- [ ] Secao especifica sobre integracao com Google APIs
-- [ ] Lista de TODOS os escopos OAuth solicitados
-- [ ] Explicacao de USO para cada escopo
-- [ ] Como dados sao armazenados
-- [ ] Como dados sao compartilhados (ou que NAO sao compartilhados)
-- [ ] Instrucoes de como revogar acesso
-- [ ] Link para Google API Services User Data Policy
-
-### Template de Secao Google Calendar
-
-```html
-<section id="google-calendar-integration">
-  <h2>Integracao com Google Calendar</h2>
-
-  <h3>Permissoes Solicitadas</h3>
-  <ul>
-    <li>
-      <strong>calendar.readonly</strong>: Permite leitura dos seus eventos de calendario.
-      Usamos para sincronizar seus compromissos com o AICA Life OS.
-    </li>
-    <li>
-      <strong>userinfo.email</strong>: Permite identificar sua conta Google.
-      Usamos para associar a integracao ao seu perfil.
-    </li>
-  </ul>
-
-  <h3>Como Usamos Seus Dados</h3>
-  <p>
-    Os dados do seu Google Calendar sao usados exclusivamente para:
-  </p>
-  <ul>
-    <li>Exibir seus eventos na interface do AICA Life OS</li>
-    <li>Sincronizar compromissos com o sistema de tarefas</li>
-    <li>Gerar insights sobre sua rotina</li>
-  </ul>
-
-  <h3>Armazenamento de Dados</h3>
-  <p>
-    Tokens de acesso sao armazenados de forma segura no Supabase,
-    criptografados em repouso. Dados de eventos sao processados
-    em tempo real e nao sao armazenados permanentemente.
-  </p>
-
-  <h3>Compartilhamento de Dados</h3>
-  <p>
-    <strong>NAO compartilhamos</strong> seus dados do Google com terceiros.
-    Seus dados sao usados exclusivamente para funcionalidades do AICA Life OS.
-  </p>
-
-  <h3>Como Revogar Acesso</h3>
-  <p>Voce pode revogar o acesso a qualquer momento:</p>
-  <ol>
-    <li>Nas configuracoes do AICA Life OS, clique em "Desconectar Google"</li>
-    <li>Ou acesse diretamente:
-      <a href="https://myaccount.google.com/permissions">
-        Permissoes da Conta Google
-      </a>
-    </li>
-  </ol>
-
-  <h3>Conformidade</h3>
-  <p>
-    O AICA Life OS esta em conformidade com a
-    <a href="https://developers.google.com/terms/api-services-user-data-policy">
-      Google API Services User Data Policy
-    </a>
-    , incluindo os requisitos de Limited Use.
-  </p>
-</section>
-```
+- [x] Secao especifica sobre integracao com Google Calendar
+- [x] Lista de TODOS os escopos OAuth solicitados (calendar.events + userinfo.email)
+- [x] Explicacao de USO para cada escopo
+- [x] Como dados sao armazenados
+- [x] Como dados sao compartilhados (ou que NAO sao compartilhados)
+- [x] Instrucoes de como revogar acesso
+- [x] Link para Google API Services User Data Policy
 
 ### Checklist de Conformidade
 
-- [ ] Privacy Policy menciona "Google Calendar" explicitamente
-- [ ] Cada escopo tem explicacao de uso
-- [ ] Instrucoes claras para revogacao
-- [ ] Link funcional para Google API Services User Data Policy
-- [ ] Data de atualizacao visivel
-- [ ] Email de contato valido
+- [x] Privacy Policy menciona "Google Calendar" explicitamente
+- [x] Cada escopo tem explicacao de uso
+- [x] Instrucoes claras para revogacao
+- [x] Link funcional para Google API Services User Data Policy
+- [x] Data de atualizacao visivel
+- [x] Email de contato valido (contato@aica.guru)
 
 ---
 
@@ -189,125 +127,60 @@ Acessar: https://console.cloud.google.com/apis/credentials/consent
 
 ### Informacoes Basicas
 
-- [ ] **App name**: AICA Life OS
-- [ ] **User support email**: [seu-email@dominio.com]
-- [ ] **App logo**: PNG 120x120px (sem transparencia)
-- [ ] **App homepage**: https://[dominio]/
-- [ ] **App privacy policy**: https://[dominio]/privacy
-- [ ] **App terms of service**: https://[dominio]/terms
+- [ ] **App name**: AICA - Life OS
+- [ ] **User support email**: contato@aica.guru
+- [ ] **App logo**: PNG 120x120px (sem transparencia) — `public/assets/images/logo-aica-blue.png`
+- [ ] **App homepage**: https://aica.guru
+- [ ] **App privacy policy**: https://aica.guru/privacy
+- [ ] **App terms of service**: https://aica.guru/terms
 
 ### Dominios Autorizados
 
-- [ ] Dominio principal adicionado (ex: aicalifeos.com)
-- [ ] Subdominio staging, se aplicavel
-- [ ] NENHUM dominio *.run.app, *.vercel.app
+- [ ] aica.guru
 
 ### Escopos Configurados
 
-Para AICA Life OS (funcionalidade atual):
-
 | Escopo | Tipo | Adicionado |
 |--------|------|------------|
-| `openid` | Non-sensitive | [ ] |
 | `userinfo.email` | Non-sensitive | [ ] |
-| `userinfo.profile` | Non-sensitive | [ ] |
-| `calendar.readonly` | Sensitive | [ ] |
+| `calendar.events` | Sensitive | [ ] |
 
-> **IMPORTANTE**: Apenas adicione escopos que o codigo REALMENTE utiliza.
-> Escopos nao utilizados causam rejeicao.
+> **IMPORTANTE**: Apenas estes 2 escopos devem ser submetidos.
+> Gmail (gmail.modify) e Drive (drive) sao RESTRICTED e serao submetidos separadamente apos CASA assessment.
 
 ### Usuarios de Teste (Modo Testing)
 
-- [ ] Adicionar emails de teste
-- [ ] Maximo 100 usuarios em modo teste
+- [ ] lucasboscacci@gmail.com adicionado como usuario de teste
 - [ ] Documentar usuarios de teste para submissao
 
 ---
 
 ## 5. Scope Justification
 
-### Escopos Atuais do AICA Life OS
+### Escopos Submetidos
 
-Baseado em analise do codigo em:
-- `src/services/googleAuthService.ts`
-- `src/hooks/useGoogleAuth.ts`
+#### Escopo: `calendar.events` (Sensitive)
 
-#### Escopo: `calendar.readonly`
+**Justificativa (EN — para o formulario Google):**
 
-**Status**: Sensitive (requer verificacao)
+> AICA uses `calendar.events` to provide bidirectional calendar synchronization within the Agenda module. Users can view their Google Calendar events alongside their AICA tasks, and AICA creates calendar events from scheduled tasks and workout sessions to keep everything in sync. This bidirectional sync is the core value proposition of the Agenda module — users manage their life in AICA and see it reflected in Google Calendar automatically.
+>
+> Data accessed: event titles, descriptions, dates/times, attendees, and status. Events created by AICA are marked with extended properties for deduplication. OAuth tokens are stored per-user in a PostgreSQL database with Row Level Security (RLS). Users can disconnect at any time through the Google Hub page, which immediately revokes access and deletes stored tokens.
 
-**Justificativa:**
+#### Escopo: `userinfo.email` (Non-sensitive)
 
-```markdown
-## Justificativa para calendar.readonly
+**Justificativa (EN):**
 
-### Por que precisamos deste escopo
-O AICA Life OS sincroniza eventos do Google Calendar para:
-1. Exibir compromissos na agenda integrada
-2. Considerar eventos ao sugerir horarios para tarefas
-3. Gerar insights sobre rotina e disponibilidade
+> AICA uses `userinfo.email` to identify the user's Google account email address when they connect their Google services. This email is displayed in the app's Google Hub and profile settings to show which Google account is connected, allowing users to verify and manage their integrations.
 
-### Como usamos os dados
-- Leitura de eventos do calendario principal
-- Exibicao de compromissos na interface
-- Analise de padroes para sugestoes de produtividade
+### Escopos NAO Submetidos (futuros — CASA required)
 
-### Por que nao usamos escopo menor
-- `calendar.readonly` e o escopo mais restritivo que permite leitura de eventos
-- Nao existem escopos mais granulares para leitura de calendario
+| Escopo | Classificacao | Status |
+|--------|---------------|--------|
+| `gmail.modify` | Restricted | Codigo pronto, aguardando CASA |
+| `drive` | Restricted | Codigo pronto, aguardando CASA |
 
-### Conformidade
-Nosso uso esta em conformidade com a Google API Services User Data Policy:
-- Limited Use: Dados usados apenas para funcionalidade descrita
-- Secure handling: Tokens armazenados com criptografia
-- Appropriate access: Acesso apenas quando usuario inicia sincronizacao
-```
-
-#### Escopo: `userinfo.email`
-
-**Status**: Non-sensitive
-
-**Justificativa:**
-
-```markdown
-## Justificativa para userinfo.email
-
-### Por que precisamos deste escopo
-Identificacao da conta Google conectada para:
-1. Associar tokens ao usuario correto
-2. Exibir email da conta conectada nas configuracoes
-3. Permitir gerenciamento de multiplas contas
-
-### Como usamos os dados
-- Armazenamento seguro do email associado aos tokens
-- Exibicao nas configuracoes da integracao
-
-### Conformidade
-Escopo nao-sensitivo, usado conforme diretrizes padrao.
-```
-
-### Escopos a REMOVER (se presentes no codigo legado)
-
-| Escopo | Motivo para Remover |
-|--------|---------------------|
-| `calendar` (full) | Redundante com calendar.readonly |
-| `calendar.events` | Nao utilizado (so lemos eventos) |
-| `contacts.readonly` | Feature nao implementada |
-| `contacts.other.readonly` | Feature nao implementada |
-
-### Validacao de Escopos no Codigo
-
-Executar para verificar uso real:
-
-```bash
-# Verificar onde escopos sao definidos
-grep -rn "googleapis.com/auth" src/
-
-# Verificar se CRIA eventos (justificaria calendar.events)
-grep -rn "createEvent\|insertEvent\|events.insert" src/
-
-# Se nao ha criacao de eventos, remover calendar.events
-```
+Ver `GOOGLE_OAUTH_SUBMISSION_GUIDE.md` Secao 10 para detalhes.
 
 ---
 
@@ -317,104 +190,78 @@ grep -rn "createEvent\|insertEvent\|events.insert" src/
 
 | Requisito | Valor |
 |-----------|-------|
-| Duracao | 3-5 minutos |
+| Duracao | 3-4 minutos |
 | Resolucao | Minimo 1080p (1920x1080) |
 | Formato | MP4 (H.264) |
 | Hospedagem | YouTube (Nao Listado) |
-| Audio | Narracao clara em ingles ou portugues |
+| Audio | Narracao clara em ingles |
 
 ### Estrutura do Video
 
-#### Intro (0:00 - 0:30)
+#### [0:00 - 0:30] Intro
 
+- Mostrar homepage https://aica.guru
+- "This video demonstrates how AICA uses Google Calendar integration"
+- Mostrar barra de endereco com o dominio
+
+#### [0:30 - 1:30] Login + Calendar OAuth
+
+1. Fazer login na plataforma (Google Sign-In)
+2. **PAUSAR na consent screen** para mostrar:
+   - Nome do app: "AICA - Life OS"
+   - Escopos: calendar.events + userinfo.email
+   - Link para Privacy Policy
+   - Consent screen em ingles
+3. Aceitar o consentimento
+4. Mostrar login bem-sucedido
+
+#### [1:30 - 2:30] Calendar em Uso
+
+1. Navegar ate o modulo Agenda
+2. Mostrar eventos do Google Calendar sincronizados
+3. Criar tarefa com data — mostrar que aparece no Google Calendar
+4. "AICA syncs tasks and calendar events bidirectionally"
+
+#### [2:30 - 3:30] Privacidade + Revogacao
+
+1. Mostrar Privacy Policy (https://aica.guru/privacy)
+2. Desconectar Calendar no Google Hub
+3. "Users can disconnect at any time"
+4. Mostrar https://myaccount.google.com/permissions
+
+#### [3:30 - 4:00] Encerramento
+
+- "AICA uses the minimum necessary scope — calendar.events"
+- "Users can disconnect at any time"
+- Mostrar URL: https://aica.guru
+
+### YouTube Metadata
+
+**Titulo:** `AICA - Life OS | Google Calendar Integration OAuth Demo`
+
+**Descricao:**
 ```
-"This video demonstrates how AICA Life OS integrates with
-Google Calendar to help users manage their productivity.
+Demonstration of the OAuth flow for Google Calendar integration
+in the AICA platform.
 
-AICA Life OS is a personal operating system that combines
-task management, calendar sync, and AI-powered insights."
-```
+Website: https://aica.guru
+Privacy Policy: https://aica.guru/privacy
+Terms of Service: https://aica.guru/terms
 
-#### Fluxo de Autorizacao (0:30 - 2:00)
+Scopes requested:
+- calendar.events (bidirectional calendar sync with task management)
+- userinfo.email (user identification)
 
-**Acoes a demonstrar:**
-1. Usuario na pagina de configuracoes
-2. Clique no botao "Conectar Google Calendar"
-3. Popup de consentimento do Google aparece
-4. **PAUSAR e destacar os escopos solicitados:**
-   - "View your calendars" (calendar.readonly)
-   - "See your email address" (userinfo.email)
-5. Usuario clica em "Permitir"
-6. Redirect de volta para AICA Life OS
-7. Mensagem de sucesso
-
-**Narracao sugerida:**
-```
-"When the user clicks 'Connect Google Calendar', they are
-redirected to Google's consent screen.
-
-Here you can see the permissions we request:
-- 'View your calendars' allows us to read calendar events
-- 'See your email address' identifies the connected account
-
-After granting permission, the user returns to AICA Life OS
-with the integration active."
-```
-
-#### Uso dos Dados (2:00 - 3:30)
-
-**Acoes a demonstrar:**
-1. Mostrar eventos do Google Calendar na interface
-2. Demonstrar como eventos aparecem na agenda
-3. Mostrar sincronizacao funcionando
-4. Destacar beneficio para o usuario
-
-**Narracao sugerida:**
-```
-"Now we can see how AICA Life OS uses the calendar data.
-
-Events from Google Calendar appear in the unified agenda,
-allowing users to view all their commitments in one place.
-
-The system uses this information to suggest optimal times
-for tasks and provide productivity insights."
-```
-
-#### Desconexao (3:30 - 4:15)
-
-**Acoes a demonstrar:**
-1. Ir para configuracoes
-2. Mostrar opcao "Desconectar Google Calendar"
-3. Clicar e confirmar desconexao
-4. Mostrar que dados foram removidos
-
-**Narracao sugerida:**
-```
-"Users can revoke access at any time through the settings.
-
-Clicking 'Disconnect Google Calendar' removes all stored
-tokens and stops the synchronization.
-
-Users can also revoke access through their Google Account
-permissions page."
-```
-
-#### Encerramento (4:15 - 4:45)
-
-```
-"AICA Life OS follows Google's API Services User Data Policy
-and only accesses the minimum data necessary for functionality.
-
-Thank you for reviewing our integration."
+Visibility: UNLISTED
 ```
 
 ### Checklist do Video
 
-- [ ] Video tem entre 3-5 minutos
+- [ ] Video tem entre 3-4 minutos
 - [ ] Resolucao minima 1080p
 - [ ] Consent screen visivel e pausado
-- [ ] Escopos claramente mostrados
-- [ ] Demonstra uso REAL dos dados
+- [ ] Escopos claramente mostrados (calendar.events + userinfo.email)
+- [ ] Demonstra uso REAL dos dados (eventos sincronizados)
 - [ ] Mostra como revogar acesso
 - [ ] Audio claro e audivel
 - [ ] Hospedado no YouTube (Nao Listado)
@@ -423,79 +270,52 @@ Thank you for reviewing our integration."
 
 ## 7. AICA-Specific Configuration
 
-### URLs do Ambiente Staging
+### URLs do Ambiente
 
 | Componente | URL |
 |------------|-----|
-| Frontend | https://aica-staging-5562559893.southamerica-east1.run.app |
+| Production | https://aica.guru |
+| Staging | https://dev.aica.guru |
 | Supabase | https://uzywajqzbdbrfammshdg.supabase.co |
-| Region | southamerica-east1 (Sao Paulo) |
-
-### Variaveis de Ambiente
-
-```env
-# Google OAuth
-VITE_GOOGLE_OAUTH_CLIENT_ID=[client-id-do-google-cloud]
-
-# URLs (atuais - precisam ser substituidas por dominio proprio)
-VITE_FRONTEND_URL=https://aica-staging-5562559893.southamerica-east1.run.app
-
-# Supabase
-VITE_SUPABASE_URL=https://uzywajqzbdbrfammshdg.supabase.co
-VITE_SUPABASE_ANON_KEY=[anon-key]
-```
+| GCP Project | gen-lang-client-0948335762 |
 
 ### Redirect URIs Autorizados
 
 Configurar no Google Cloud Console > Credentials > OAuth 2.0 Client IDs:
 
 ```
-# Producao (dominio proprio - OBRIGATORIO para verificacao)
-https://aicalifeos.com/auth/callback
-https://aicalifeos.com/
+# Producao
+https://aica.guru/auth/callback
 
-# Staging (temporario - NAO sera aceito para verificacao)
-https://aica-staging-5562559893.southamerica-east1.run.app/auth/callback
-https://aica-staging-5562559893.southamerica-east1.run.app/
+# Staging
+https://dev.aica.guru/auth/callback
 ```
 
 ### Arquivos Relevantes
 
 | Arquivo | Descricao |
 |---------|-----------|
-| `src/services/googleAuthService.ts` | Servico principal de autenticacao Google |
+| `src/services/googleAuthService.ts` | Servico principal de autenticacao Google + feature flag |
 | `src/hooks/useGoogleAuth.ts` | Hook React para autenticacao |
 | `src/services/googleCalendarService.ts` | Servico de sincronizacao Calendar |
-| `src/services/googleCalendarTokenService.ts` | Gerenciamento de tokens |
-| `src/views/AgendaView.tsx` | View que usa a integracao |
+| `supabase/functions/google-token-manager/` | Edge Function para gerenciamento de tokens |
+| `src/views/AgendaView.tsx` | View que usa a integracao Calendar |
 
 ### Escopos Atualmente Configurados
 
-Encontrados em `src/services/googleAuthService.ts`:
+Em `src/services/googleAuthService.ts`:
 
 ```typescript
-// Escopos minimos (RECOMENDADO)
-const GOOGLE_SCOPES_MINIMAL = [
-  'https://www.googleapis.com/auth/calendar.readonly', // Read calendar events
-  'https://www.googleapis.com/auth/userinfo.email',    // Get user email
+// Escopos submetidos para verificacao
+const GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',  // Bidirectional calendar sync
+  'https://www.googleapis.com/auth/userinfo.email',    // User identification
 ];
 
-// Escopos extras para contatos (NAO USAR ate feature implementada)
-const GOOGLE_SCOPES_CONTACTS = [
-  'https://www.googleapis.com/auth/contacts.readonly',
-  'https://www.googleapis.com/auth/contacts.other.readonly',
-];
+// Feature flag para escopos restricted (futuros)
+// FEATURE_GOOGLE_EXTENDED_SCOPES — gmail.modify + drive
+// Ativacao apos CASA assessment
 ```
-
-### Acoes Pendentes para AICA
-
-- [ ] Adquirir dominio proprio (aicalifeos.com ou similar)
-- [ ] Configurar DNS e SSL para dominio proprio
-- [ ] Criar paginas /privacy e /terms no dominio proprio
-- [ ] Migrar OAuth para usar dominio proprio
-- [ ] Remover escopos nao utilizados do codigo
-- [ ] Verificar dominio no Google Search Console
-- [ ] Atualizar redirect URIs no Google Cloud Console
 
 ---
 
@@ -505,88 +325,87 @@ const GOOGLE_SCOPES_CONTACTS = [
 
 ```yaml
 App Information:
-  App name: AICA Life OS
-  User support email: suporte@aicalifeos.com
-  App logo: [Upload PNG 120x120px]
+  App name: AICA - Life OS
+  User support email: contato@aica.guru
+  App logo: public/assets/images/logo-aica-blue.png
 
 App Domain:
-  Homepage: https://aicalifeos.com/
-  Privacy Policy: https://aicalifeos.com/privacy
-  Terms of Service: https://aicalifeos.com/terms
+  Homepage: https://aica.guru
+  Privacy Policy: https://aica.guru/privacy
+  Terms of Service: https://aica.guru/terms
 
 Authorized Domains:
-  - aicalifeos.com
+  - aica.guru
 
 Scopes:
   Non-sensitive:
-    - openid
     - userinfo.email
-    - userinfo.profile
   Sensitive:
-    - calendar.readonly
+    - calendar.events
 
 Sensitive Scope Justification:
-  calendar.readonly: |
-    AICA Life OS synchronizes Google Calendar events to provide
-    an integrated productivity experience. We read events to:
-    1. Display appointments in the unified agenda
-    2. Suggest optimal times for tasks
-    3. Generate productivity insights
-
-    We use calendar.readonly (not calendar) because we only need
-    read access - we do not create or modify events.
+  calendar.events: |
+    AICA uses calendar.events for bidirectional synchronization.
+    Users view Google Calendar events in the Agenda module and
+    AICA creates events from scheduled tasks and workout sessions.
+    Events are tagged with extended properties for deduplication.
+    Tokens stored with RLS, revocable at any time.
 
 Demo Video:
   URL: https://youtu.be/[VIDEO_ID]
-  Duration: 4 minutes
+  Duration: 3-4 minutes
   Language: English
+  Title: "AICA - Life OS | Google Calendar Integration OAuth Demo"
 
-Test Credentials (if needed):
-  Email: test@aicalifeos.com
-  Password: [senha-de-teste]
+Test Credentials:
+  Email: lucasboscacci@gmail.com
+  Login: Via Google OAuth (botao "Entrar com Google")
   Instructions: |
-    1. Login with provided credentials
-    2. Go to Settings > Integrations
-    3. Click "Connect Google Calendar"
-    4. Follow OAuth flow
+    1. Go to https://aica.guru
+    2. Click "Entrar com Google"
+    3. Login with provided Google account
+    4. Calendar integration is pre-connected with real data
 ```
 
 ### Checklist Final
 
 #### Infraestrutura
 
-- [ ] Dominio proprio configurado e funcionando
-- [ ] SSL valido (sem erros de certificado)
+- [x] Dominio proprio configurado e funcionando (aica.guru)
+- [x] SSL valido (sem erros de certificado)
 - [ ] Dominio verificado no Google Search Console
-- [ ] DNS completamente propagado
+- [x] DNS completamente propagado
 
 #### Codigo
 
-- [ ] Apenas escopos realmente utilizados
-- [ ] Sem escopos redundantes (ex: calendar + calendar.readonly)
-- [ ] Tratamento de erros OAuth implementado
-- [ ] Revogacao de tokens funcionando
-- [ ] Tokens armazenados de forma segura
+- [x] Apenas escopos realmente utilizados (calendar.events + userinfo.email)
+- [x] Sem escopos redundantes
+- [x] Tratamento de erros OAuth implementado
+- [x] Revogacao de tokens funcionando
+- [x] Tokens armazenados de forma segura (Supabase + RLS)
 
 #### Documentacao
 
-- [ ] Privacy Policy com secao Google APIs
-- [ ] Todos escopos documentados na Privacy Policy
-- [ ] Data de atualizacao visivel
-- [ ] Email de contato correto e funcional
-- [ ] Terms of Service atualizado
+- [x] Privacy Policy com secao Google Calendar
+- [x] Todos escopos documentados na Privacy Policy
+- [x] Data de atualizacao visivel
+- [x] Email de contato correto e funcional (contato@aica.guru)
+- [x] Terms of Service atualizado
 
 #### OAuth Consent Screen
 
-- [ ] Nome do app correto
-- [ ] Logo configurado (120x120px PNG)
-- [ ] URLs de homepage, privacy e terms corretas
-- [ ] Dominios autorizados listados
-- [ ] Escopos corretos adicionados
+- [ ] Nome do app: AICA - Life OS
+- [ ] Logo configurado (logo-aica-blue.png)
+- [ ] Homepage URL: https://aica.guru
+- [ ] Privacy Policy URL: https://aica.guru/privacy
+- [ ] Terms of Service URL: https://aica.guru/terms
+- [ ] Support email: contato@aica.guru
+- [ ] Authorized domains: aica.guru
+- [ ] Scopes: calendar.events + userinfo.email
 
 #### Video
 
-- [ ] Duracao entre 3-5 minutos
+- [ ] Duracao entre 3-4 minutos
 - [ ] Resolucao minima 1080p
 - [ ] Mostra consent screen com pausa
 - [ ] Demonstra uso real dos dados
@@ -595,10 +414,15 @@ Test Credentials (if needed):
 
 #### Justificativas
 
-- [ ] Uma justificativa por escopo sensitive
-- [ ] Justificativas claras e objetivas
-- [ ] Demonstram necessidade real
-- [ ] Mencionam conformidade com Google policies
+- [x] Justificativa para calendar.events (sensitive)
+- [x] userinfo.email nao requer justificativa (non-sensitive)
+- [x] Demonstram necessidade real (bidirectional sync)
+- [x] Mencionam conformidade com Google policies
+
+#### Email
+
+- [x] Codigo unificado com contato@aica.guru
+- [ ] Email funcional configurado (Hostinger forwarding)
 
 ---
 
@@ -608,11 +432,11 @@ Test Credentials (if needed):
 
 #### "Domain not verified"
 
-**Causa:** Dominio nao verificado no Google Search Console ou usando dominio temporario.
+**Causa:** Dominio nao verificado no Google Search Console.
 
 **Solucao:**
-1. Adquirir dominio proprio
-2. Adicionar registro TXT de verificacao
+1. Acessar Google Search Console
+2. Adicionar registro TXT de verificacao para aica.guru
 3. Aguardar propagacao DNS (ate 48h)
 4. Confirmar verificacao no Search Console
 
@@ -621,21 +445,19 @@ Test Credentials (if needed):
 **Causa:** Privacy Policy incompleta ou sem secao sobre Google APIs.
 
 **Solucao:**
-1. Adicionar secao especifica sobre integracao Google
-2. Listar todos os escopos OAuth
-3. Explicar uso de cada escopo
-4. Adicionar instrucoes de revogacao
-5. Incluir link para Google API Services User Data Policy
+1. Verificar secao sobre Google Calendar em https://aica.guru/privacy
+2. Confirmar que calendar.events esta documentado
+3. Verificar instrucoes de revogacao
+4. Verificar link para Google API Services User Data Policy
 
 #### "Scopes not justified"
 
 **Causa:** Escopos solicitados que nao sao demonstrados no uso real.
 
 **Solucao:**
-1. Demonstrar uso REAL no video
-2. Remover escopos nao utilizados
-3. Escrever justificativa detalhada para cada escopo
-4. Verificar que codigo realmente usa os escopos
+1. Demonstrar uso REAL de calendar.events no video (criar tarefa → sync)
+2. Escrever justificativa detalhada (ver Secao 5)
+3. Verificar que codigo realmente usa calendar.events para write
 
 #### "Video doesn't show consent screen"
 
@@ -643,7 +465,7 @@ Test Credentials (if needed):
 
 **Solucao:**
 1. Gravar novo video com pausa na consent screen
-2. Garantir que escopos sao visiveis
+2. Garantir que calendar.events e userinfo.email sao visiveis
 3. Usar resolucao alta (1080p minimo)
 4. Narrar quais permissoes estao sendo solicitadas
 
@@ -652,10 +474,9 @@ Test Credentials (if needed):
 **Causa:** Homepage requer login ou esta com erro.
 
 **Solucao:**
-1. Criar landing page publica
-2. Garantir que homepage nao requer autenticacao
+1. Verificar https://aica.guru carrega sem login
+2. Testar em navegador anonimo
 3. Verificar que pagina carrega em menos de 3 segundos
-4. Testar em navegador anonimo
 
 ---
 
@@ -678,8 +499,6 @@ Test Credentials (if needed):
 ### Escopos por API
 
 - [Calendar API Scopes](https://developers.google.com/calendar/api/auth)
-- [Gmail API Scopes](https://developers.google.com/gmail/api/auth/scopes)
-- [Drive API Scopes](https://developers.google.com/drive/api/guides/api-specific-auth)
 
 ---
 
@@ -688,7 +507,8 @@ Test Credentials (if needed):
 | Data | Versao | Alteracoes |
 |------|--------|------------|
 | 2026-01-16 | 1.0 | Versao inicial do checklist |
+| 2026-02-19 | 2.0 | Atualizado para sensitive-only (calendar.events + userinfo.email). Removidos gmail.modify e drive (restricted — CASA required). URLs atualizadas para aica.guru. |
 
 ---
 
-**Maintainers:** Lucas Boscacci Lima + Claude Opus 4.5
+**Maintainers:** Lucas Boscacci Lima + Claude Opus 4.6

@@ -1,22 +1,34 @@
 # Clarification-First Protocol
 
-## Rule: Immediately Call AskUserQuestion
+## Rule: Session Start → Name → Clarify → Ask About Team
 
-For ANY non-trivial task, your **very first tool call** MUST be `AskUserQuestion` with 2-4 targeted questions.
+Every session follows this exact sequence:
+
+### Step 0 — Session Name (MANDATORY, every session)
+Your **very first action** in every new session MUST be to suggest a descriptive session name (e.g., `feat-studio-teleprompter`, `fix-auth-redirect`, `refactor-billing`) and wait for user approval before doing anything else.
+
+### Step 1 — Clarification (for non-trivial tasks)
+After session name is confirmed, call `AskUserQuestion` with 2-4 targeted questions about the task.
+
+### Step 2 — Ask About Agent Team (MANDATORY)
+After clarification answers are received (or if task is trivially clear), you MUST **always ask the user** if they want an Agent Team activated. Never auto-create teams without asking. Use `AskUserQuestion` with an option like:
+- "Ativar Agent Team para esta tarefa?" → Yes (com composicao sugerida) / No (trabalho solo)
+
+Include a brief suggestion of team composition so the user can decide with context.
 
 **Do NOT:**
 - Explain why you need to ask questions
 - Describe the clarification protocol
-- Output any text before the AskUserQuestion call
+- Output text before the AskUserQuestion call
 - Say "I need to clarify..." — just ASK
+- Auto-create Agent Teams without asking the user first
 
 **DO:**
-- Read the user's request
-- Identify what's ambiguous
-- Call `AskUserQuestion` immediately as your first action
-- Wait for answers, then create an Agent Team
-
-This applies BEFORE creating an Agent Team. The team composition depends on the answers.
+- Suggest session name first, wait for approval
+- Read the user's request, identify ambiguities
+- Call `AskUserQuestion` for clarification
+- After answers, ask if user wants a team activated
+- Only create team after user confirms
 
 ## 6 Dimensions to Evaluate
 
@@ -81,15 +93,18 @@ Skip ONLY when ALL are true:
 ## Flow Diagram
 
 ```
-User request arrives
+New session starts
     │
-    ├─ Trivially clear? → Execute solo (no team needed)
+    ├─ Step 0: Suggest session name → Wait for approval
     │
-    └─ Any ambiguity? → Ask 2-4 targeted questions
-                              │
-                              └─ Answers received → Design team composition
-                                                         │
-                                                         └─ Create team → Execute
+    ├─ Step 1: Trivially clear? → Skip clarification
+    │          Any ambiguity?   → Ask 2-4 targeted questions → Wait for answers
+    │
+    ├─ Step 2: Ask user: "Ativar Agent Team?" (ALWAYS ask, never auto-create)
+    │          ├─ User says Yes → Create team with suggested composition
+    │          └─ User says No  → Execute solo
+    │
+    └─ Step 3: Execute → PR → Review comments → Resolve → Merge/Close
 ```
 
 ## Anti-Patterns (NEVER Do These)

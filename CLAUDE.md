@@ -38,14 +38,17 @@ npx supabase functions serve  # Local Edge Functions
 | **Finance** | `src/modules/finance/` | `finance_transactions` |
 | **Flux** | `src/modules/flux/` | `athletes`, `workout_blocks`, `alerts` |
 
-## Default Working Mode: Clarify → Team → Execute
+## Default Working Mode: Name → Clarify → Ask Team → Execute → PR → Review
 
-For medium+ complexity tasks (2+ files, decisions involved, new features):
-1. **Clarify** — Ask about information gaps before starting (see `clarification-first.md`)
-2. **Team** — Create an Agent Team with appropriate composition (see `agent-teams.md`)
-3. **Execute** — Teammates work in parallel, lead synthesizes and reports
+Every session follows this mandatory flow:
+1. **Name** — Suggest a session name (e.g., `feat-studio-teleprompter`), wait for approval
+2. **Clarify** — Ask about information gaps before starting (see `clarification-first.md`)
+3. **Ask Team** — Always ask if user wants an Agent Team activated (never auto-create)
+4. **Execute** — Team or solo, based on user decision
+5. **PR** — Create Pull Request on feature branch (never push directly to main)
+6. **Review** — Read PR comments, address them, report resolution status to user
 
-Solo work is reserved for trivially clear single-file fixes only.
+Solo work is chosen by the user, not assumed. PRs are mandatory for every session with code changes.
 
 ## Modular Rules Index
 
@@ -76,8 +79,11 @@ Detailed instructions are in `.claude/rules/` (loaded automatically):
 
 ## Critical Rules (Summary)
 
+- **ALWAYS** suggest a session name and wait for approval at session start
 - **ALWAYS** clarify information gaps before starting medium+ tasks
-- **ALWAYS** create Agent Teams for tasks touching 2+ files or involving decisions
+- **ALWAYS** ask user if they want Agent Team activated (never auto-create teams)
+- **ALWAYS** create Pull Requests — never push directly to main
+- **ALWAYS** read and address PR comments before merging
 - **NEVER** expose API keys in frontend — use Edge Functions
 - **NEVER** create .backup/.bak files — Git is the backup
 - **NEVER** deploy without staging validation first
