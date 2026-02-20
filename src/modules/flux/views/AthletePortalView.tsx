@@ -347,6 +347,56 @@ export default function AthletePortalView() {
     try { localStorage.setItem('flux_athlete_view_mode', mode); } catch {}
   }, []);
 
+  // ============ CANVAS HOOKS (must be before early returns) ============
+
+  // Canvas view: current week start date for calendar integration
+  const canvasWeekStart = useMemo(() => {
+    const micro = profile?.active_microcycle;
+    if (!micro?.start_date) return weekStart;
+    const start = new Date(micro.start_date);
+    const currentWeekOffset = ((micro.current_week || 1) - 1) * 7;
+    const canvasStart = new Date(start);
+    canvasStart.setDate(start.getDate() + currentWeekOffset);
+    canvasStart.setHours(0, 0, 0, 0);
+    return canvasStart;
+  }, [profile?.active_microcycle?.start_date, profile?.active_microcycle?.current_week, weekStart]);
+
+  // Canvas view: transform slots into WeekWorkout format for WeeklyGrid
+  const canvasWorkouts = useMemo<WeekWorkout[]>(() => {
+    const micro = profile?.active_microcycle;
+    const currentWeekSlots = micro?.slots?.filter((s) => s.week_number === (micro?.current_week || 1)) || [];
+    if (!currentWeekSlots.length) return [];
+    return currentWeekSlots.map((slot) => ({
+      id: slot.id,
+      day_of_week: slot.day_of_week,
+      start_time: slot.time_of_day || undefined,
+      name: slot.template?.name || 'Treino',
+      duration: slot.custom_duration || slot.template?.duration || 60,
+      intensity: (['low', 'medium', 'high'].includes(slot.template?.intensity || '') ? slot.template.intensity : 'medium') as 'low' | 'medium' | 'high',
+      modality: 'strength' as const,
+    }));
+  }, [profile?.active_microcycle]);
+
+  // Canvas view: calendar integration (only active in canvas mode to avoid unnecessary API calls)
+  const calendar = useCanvasCalendar({
+    weekStartDate: canvasWeekStart,
+    athleteId: viewMode === 'canvas' ? profile?.athlete_id : undefined,
+  });
+
+  // Canvas drag handler — reschedule workout via RPC (security checks + calendar sync reset)
+  const handleCanvasReorder = useCallback(async (workoutId: string, _fromDay: number, toDay: number, toTime: string) => {
+    setUpdating(workoutId);
+    try {
+      const { error } = await WorkoutSlotService.updateAthleteSchedule(workoutId, toDay, toTime);
+      if (error) throw error;
+      await refetch();
+    } catch (err) {
+      log.error('Error reordering workout:', err);
+    } finally {
+      setUpdating(null);
+    }
+  }, [refetch]);
+
   // ============ EARLY RETURNS ============
 
   if (isLoading) {
@@ -509,51 +559,6 @@ export default function AthletePortalView() {
     existing.push(slot);
     slotsByDay.set(slot.day_of_week, existing);
   }
-
-  // Canvas view: current week start date for calendar integration
-  const canvasWeekStart = useMemo(() => {
-    if (!micro?.start_date) return weekStart;
-    const start = new Date(micro.start_date);
-    const currentWeekOffset = ((micro.current_week || 1) - 1) * 7;
-    const canvasStart = new Date(start);
-    canvasStart.setDate(start.getDate() + currentWeekOffset);
-    canvasStart.setHours(0, 0, 0, 0);
-    return canvasStart;
-  }, [micro?.start_date, micro?.current_week, weekStart]);
-
-  // Canvas view: transform slots into WeekWorkout format for WeeklyGrid
-  const canvasWorkouts = useMemo<WeekWorkout[]>(() => {
-    if (!currentWeekSlots.length) return [];
-    return currentWeekSlots.map((slot) => ({
-      id: slot.id,
-      day_of_week: slot.day_of_week,
-      start_time: slot.time_of_day || undefined,
-      name: slot.template?.name || 'Treino',
-      duration: slot.custom_duration || slot.template?.duration || 60,
-      intensity: (['low', 'medium', 'high'].includes(slot.template?.intensity || '') ? slot.template.intensity : 'medium') as 'low' | 'medium' | 'high',
-      modality: 'strength' as const, // Default — template doesn't expose modality in this profile shape
-    }));
-  }, [currentWeekSlots]);
-
-  // Canvas view: calendar integration (only active in canvas mode to avoid unnecessary API calls)
-  const calendar = useCanvasCalendar({
-    weekStartDate: canvasWeekStart,
-    athleteId: viewMode === 'canvas' ? profile?.athlete_id : undefined,
-  });
-
-  // Canvas drag handler — reschedule workout via RPC (security checks + calendar sync reset)
-  const handleCanvasReorder = useCallback(async (workoutId: string, _fromDay: number, toDay: number, toTime: string) => {
-    setUpdating(workoutId);
-    try {
-      const { error } = await WorkoutSlotService.updateAthleteSchedule(workoutId, toDay, toTime);
-      if (error) throw error;
-      await refetch();
-    } catch (err) {
-      log.error('Error reordering workout:', err);
-    } finally {
-      setUpdating(null);
-    }
-  }, [refetch]);
 
   // Compute actual dates from microcycle start_date
   const getDateForDay = (dayOfWeek: number): Date | null => {
