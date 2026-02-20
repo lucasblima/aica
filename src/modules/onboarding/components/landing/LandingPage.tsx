@@ -8,7 +8,6 @@ import { ProcessingPipeline } from './components/ProcessingPipeline';
 import { FounderStorySection } from './components/FounderStorySection';
 import { ModulesOverviewSection } from './components/ModulesOverviewSection';
 import { WaitlistSection } from './components/WaitlistSection';
-import { TestimonialSection } from './components/TestimonialSection';
 import { FooterSection } from './components/FooterSection';
 import { demoProcessingService } from './services/demoProcessingService';
 import { AuthSheet } from '@/components/layout';
@@ -349,10 +348,7 @@ export function LandingPage() {
         {/* ── 4. Founder Story ── */}
         <FounderStorySection />
 
-        {/* ── 5. Testimonials ── */}
-        <TestimonialSection />
-
-        {/* ── 6. How It Works ── */}
+        {/* ── 5. How It Works ── */}
         <section className="max-w-7xl mx-auto px-6 py-16 border-t border-white/20">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-black text-ceramic-text-primary mb-4 tracking-tighter">

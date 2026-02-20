@@ -2,13 +2,13 @@ import { motion } from 'framer-motion';
 
 const modules = [
   { icon: '\u{1F4CB}', name: 'Atlas', subtitle: 'Tarefas', description: 'Organize tarefas com a Matriz de Eisenhower' },
-  { icon: '\u2728', name: 'Journey', subtitle: 'Consciencia', description: 'Diario inteligente com reflexoes e emocoes' },
-  { icon: '\u{1F399}\uFE0F', name: 'Studio', subtitle: 'Podcast', description: 'Produza podcasts do briefing a gravacao' },
-  { icon: '\u{1F4D1}', name: 'Grants', subtitle: 'Captacao', description: 'Encontre editais e monte propostas com IA' },
-  { icon: '\u{1F4B0}', name: 'Finance', subtitle: 'Financas', description: 'Gestao financeira pessoal inteligente' },
-  { icon: '\u{1F91D}', name: 'Connections', subtitle: 'Rede', description: 'CRM pessoal e networking estrategico' },
-  { icon: '\u{1F3CB}\uFE0F', name: 'Flux', subtitle: 'Treinos', description: 'Gestao de treinos para coaches e atletas' },
-  { icon: '\u{1F4C5}', name: 'Agenda', subtitle: 'Agenda', description: 'Calendario integrado com todos os modulos' },
+  { icon: '\u2728', name: 'Journey', subtitle: 'Consciência', description: 'Diário inteligente com reflexões e emoções' },
+  { icon: '\u{1F399}\uFE0F', name: 'Studio', subtitle: 'Podcast', description: 'Produza podcasts do briefing à gravação' },
+  { icon: '\u{1F4D1}', name: 'Grants', subtitle: 'Captação', description: 'Encontre editais e monte propostas com IA' },
+  { icon: '\u{1F4B0}', name: 'Finance', subtitle: 'Finanças', description: 'Gestão financeira pessoal inteligente' },
+  { icon: '\u{1F91D}', name: 'Connections', subtitle: 'Rede', description: 'CRM pessoal e networking estratégico' },
+  { icon: '\u{1F3CB}\uFE0F', name: 'Flux', subtitle: 'Treinos', description: 'Gestão de treinos para coaches e atletas' },
+  { icon: '\u{1F4C5}', name: 'Agenda', subtitle: 'Agenda', description: 'Calendário integrado com todos os módulos' },
 ];
 
 export function ModulesOverviewSection() {
@@ -16,7 +16,7 @@ export function ModulesOverviewSection() {
     <section className="max-w-7xl mx-auto px-6 py-16">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-5xl font-black text-ceramic-text-primary mb-4 tracking-tighter">
-          8 modulos para organizar sua vida
+          8 módulos para organizar sua vida
         </h2>
         <p className="text-lg text-ceramic-text-secondary font-medium uppercase tracking-widest opacity-60">
           Cada aspecto da sua rotina, integrado por IA

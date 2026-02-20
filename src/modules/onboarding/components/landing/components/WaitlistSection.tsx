@@ -48,10 +48,10 @@ export function WaitlistSection({
             <Ticket className="w-6 h-6 text-amber-600" />
           </div>
           <h3 className="text-xl font-black text-ceramic-text-primary mb-2 tracking-tight text-center">
-            Tenho um codigo de convite
+            Tenho um código de convite
           </h3>
           <p className="text-sm text-ceramic-text-secondary mb-6 leading-relaxed text-center">
-            Digite seu codigo para acesso imediato.
+            Digite seu código para acesso imediato.
           </p>
           <div className="flex gap-2 mt-auto">
             <input
@@ -97,7 +97,7 @@ export function WaitlistSection({
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                Codigo valido! Clique em &quot;Entrar com Convite&quot; no topo.
+                Código válido! Clique em &quot;Entrar com Convite&quot; no topo.
               </motion.p>
             )}
           </AnimatePresence>
@@ -144,7 +144,7 @@ export function WaitlistSection({
                 <Check className="w-6 h-6 text-ceramic-success" />
               </div>
               <p className="text-sm font-medium text-ceramic-success">
-                Voce esta na lista! Avisaremos quando houver vaga.
+                Você está na lista! Avisaremos quando houver vaga.
               </p>
             </div>
           ) : (

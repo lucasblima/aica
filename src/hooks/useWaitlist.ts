@@ -9,7 +9,11 @@ export function useWaitlist() {
   const [alreadyExists, setAlreadyExists] = useState(false);
 
   useEffect(() => {
-    waitlistService.getWaitlistCount().then(setWaitlistCount);
+    let isMounted = true;
+    waitlistService.getWaitlistCount().then(count => {
+      if (isMounted) setWaitlistCount(count);
+    });
+    return () => { isMounted = false; };
   }, []);
 
   const joinWaitlist = useCallback(async (email: string, referralCode?: string) => {
