@@ -46,11 +46,13 @@ interface AgendaViewProps {
 
 const agendaAgentConfig = getModuleAgentConfig('agenda')!;
 
-/** Extract HH:MM from either "HH:MM" or full timestamptz string */
+/** Extract HH:MM from either "HH:MM", "HH:MM:SS" or full timestamptz string */
 const extractTimeHHMM = (ts: string): string | null => {
     try {
-        // Already HH:MM format
-        if (/^\d{2}:\d{2}$/.test(ts)) return ts;
+        // HH:MM or HH:MM:SS format
+        const timeMatch = ts.match(/^(\d{2}):(\d{2})/);
+        if (timeMatch) return `${timeMatch[1]}:${timeMatch[2]}`;
+
         const d = new Date(ts);
         if (isNaN(d.getTime())) return null;
         return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
