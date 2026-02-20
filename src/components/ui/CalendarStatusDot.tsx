@@ -6,6 +6,7 @@ interface CalendarStatusDotProps {
   isConnected: boolean;
   isSyncing: boolean;
   hasError?: boolean;
+  lastSyncTime?: Date | null;
   onConnect: () => void;
   onDisconnect?: () => void;
   onSync?: () => void;
@@ -15,6 +16,7 @@ export const CalendarStatusDot: React.FC<CalendarStatusDotProps> = ({
   isConnected,
   isSyncing,
   hasError = false,
+  lastSyncTime,
   onConnect,
   onDisconnect,
   onSync
@@ -91,6 +93,13 @@ export const CalendarStatusDot: React.FC<CalendarStatusDotProps> = ({
             >
               {isConnected ? (
                 <div className="space-y-2">
+                  {/* Sync status label */}
+                  {lastSyncTime && !isSyncing && (
+                    <p className="px-3 py-1 text-[10px] text-ceramic-text-secondary">
+                      Sincronizado {lastSyncTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
+
                   {/* Sync Button */}
                   {onSync && (
                     <button
