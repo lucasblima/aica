@@ -28,7 +28,7 @@ import { CompletedTasksSection } from '../components/domain/CompletedTasksSectio
 import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '../components/features/ModuleAgentChat';
 import { useModuleAgent } from '../hooks/useModuleAgent';
 import { useTaskCompletion } from '../hooks/useTaskCompletion';
-import { Task, Quadrant } from '../../types';
+import { Task, Quadrant } from '@/types';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
 import { useTourAutoStart } from '../hooks/useTourAutoStart';
@@ -307,7 +307,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 startTime: nextEventData.startTime,
                 endTime: nextEventData.endTime,
                 description: nextEventData.description,
-                location: nextEventData.location,
+                location: (nextEventData as any).location,
                 attendees: nextEventData.attendees,
                 organizer: nextEventData.organizer,
                 isNow
@@ -358,7 +358,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     startTime: event.startTime,
                     endTime: event.endTime,
                     description: event.description,
-                    location: event.location,
+                    location: (event as any).location,
                     category: detectEventCategory(event.title, event.description),
                     isToday,
                     isTomorrow,
@@ -584,8 +584,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             if (!connected) return;
             const eventData = atlasTaskToGoogleEvent({
                 id: taskId,
-                title: task.title,
-                description: task.description,
+                title: task!.title,
+                description: task!.description,
                 scheduled_time: time,
                 due_date: today,
             });
