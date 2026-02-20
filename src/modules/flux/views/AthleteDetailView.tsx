@@ -54,6 +54,11 @@ export default function AthleteDetailView() {
   const alerts: Alert[] = [];
   const activeBlock = null;
 
+  // Inline edit state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
+  const [editSaving, setEditSaving] = useState(false);
+
   // Athlete profile calculator state
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({
@@ -208,6 +213,38 @@ export default function AthleteDetailView() {
     }));
   };
 
+  // Handle inline edit toggle
+  const handleStartEdit = () => {
+    if (!athlete) return;
+    setEditForm({ name: athlete.name, email: athlete.email || '', phone: athlete.phone || '' });
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!athleteId) return;
+    setEditSaving(true);
+    try {
+      const { data, error } = await AthleteService.updateAthlete({
+        id: athleteId,
+        name: editForm.name.trim(),
+        email: editForm.email.trim() || undefined,
+        phone: editForm.phone.trim(),
+      });
+      if (error) {
+        console.error('Error saving athlete:', error);
+      } else if (data) {
+        setAthlete(data);
+        setIsEditing(false);
+      }
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   // Handle back
   const handleBack = () => {
     actions.viewDashboard();
@@ -278,35 +315,86 @@ export default function AthleteDetailView() {
             </div>
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-black text-ceramic-text-primary mb-2">
-                {athlete.name}
-              </h1>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  autoFocus
+                  className="w-full text-2xl font-black text-ceramic-text-primary bg-transparent border-b-2 border-ceramic-accent focus:outline-none mb-2"
+                />
+              ) : (
+                <h1 className="text-2xl font-black text-ceramic-text-primary mb-2">
+                  {athlete.name}
+                </h1>
+              )}
               <LevelBadge level={athlete.level} size="md" />
             </div>
 
-            {/* Edit Button */}
-            <button
-              onClick={() => console.log('Editar atleta (em desenvolvimento)')}
-              className="ceramic-card p-3 hover:scale-105 transition-transform"
-            >
-              <Edit className="w-5 h-5 text-ceramic-text-primary" />
-            </button>
+            {/* Edit / Save / Cancel Buttons */}
+            {isEditing ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={editSaving || !editForm.name.trim()}
+                  className="ceramic-card p-3 hover:scale-105 transition-transform bg-ceramic-success/10 disabled:opacity-50"
+                >
+                  {editSaving ? <Loader2 className="w-5 h-5 animate-spin text-ceramic-success" /> : <Save className="w-5 h-5 text-ceramic-success" />}
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  disabled={editSaving}
+                  className="ceramic-card p-3 hover:scale-105 transition-transform"
+                >
+                  <ArrowLeft className="w-5 h-5 text-ceramic-text-secondary" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleStartEdit}
+                className="ceramic-card p-3 hover:scale-105 transition-transform"
+              >
+                <Edit className="w-5 h-5 text-ceramic-text-primary" />
+              </button>
+            )}
           </div>
 
           {/* Contact Info */}
           <div className="grid grid-cols-2 gap-3 pt-4 border-t border-ceramic-text-secondary/10">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-ceramic-text-secondary" />
-              <p className="text-xs text-ceramic-text-secondary truncate">
-                {athlete.email || 'Sem email'}
-              </p>
-              <ConnectionStatusDot status={athlete.invitation_status} size="md" />
+              {isEditing ? (
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="email@exemplo.com"
+                  className="w-full text-xs text-ceramic-text-primary bg-transparent border-b border-ceramic-accent/50 focus:outline-none focus:border-ceramic-accent py-0.5"
+                />
+              ) : (
+                <>
+                  <p className="text-xs text-ceramic-text-secondary truncate">
+                    {athlete.email || 'Sem email'}
+                  </p>
+                  <ConnectionStatusDot status={athlete.invitation_status} size="md" />
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-ceramic-text-secondary" />
-              <p className="text-xs text-ceramic-text-secondary truncate">
-                {athlete.phone}
-              </p>
+              {isEditing ? (
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="(11) 99999-9999"
+                  className="w-full text-xs text-ceramic-text-primary bg-transparent border-b border-ceramic-accent/50 focus:outline-none focus:border-ceramic-accent py-0.5"
+                />
+              ) : (
+                <p className="text-xs text-ceramic-text-secondary truncate">
+                  {athlete.phone}
+                </p>
+              )}
             </div>
           </div>
 
