@@ -23,6 +23,7 @@ import type {
   CouncilStatus,
   CouncilAction,
 } from '@/hooks/useLifeCouncil'
+import { formatRelativeTime } from '@/lib/dateUtils'
 
 // =============================================================================
 // STATUS CONFIG
@@ -77,6 +78,8 @@ interface LifeCouncilCardProps {
   compact?: boolean
   /** Callback when user wants to see full details (navigates to Journey) */
   onViewMore?: () => void
+  /** ISO date string for "last updated" display */
+  lastUpdated?: string | null
 }
 
 // =============================================================================
@@ -92,6 +95,7 @@ export function LifeCouncilCard({
   onMarkViewed,
   compact = false,
   onViewMore,
+  lastUpdated,
 }: LifeCouncilCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -212,20 +216,27 @@ export function LifeCouncilCard({
               </span>
             </div>
           </div>
-          {!isToday && (
-            <button
-              onClick={onRun}
-              disabled={isRunning}
-              className="text-xs text-amber-500 hover:text-amber-600 font-medium flex items-center gap-1"
-            >
-              {isRunning ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Sparkles className="w-3 h-3" />
-              )}
-              Atualizar
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {lastUpdated && (
+              <span className="text-xs text-ceramic-text-tertiary">
+                {formatRelativeTime(lastUpdated)}
+              </span>
+            )}
+            {!isToday && (
+              <button
+                onClick={onRun}
+                disabled={isRunning}
+                className="text-xs text-amber-500 hover:text-amber-600 font-medium flex items-center gap-1"
+              >
+                {isRunning ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3" />
+                )}
+                Atualizar
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Headline */}

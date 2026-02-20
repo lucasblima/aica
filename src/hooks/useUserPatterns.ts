@@ -59,6 +59,8 @@ export interface UseUserPatternsReturn {
   refresh: () => Promise<void>
   getByType: (type: PatternType) => UserPattern[]
   highConfidence: UserPattern[]
+  /** Most recent last_confirmed_at across all patterns */
+  lastSynthesizedAt: string | null
 }
 
 // =============================================================================
@@ -144,6 +146,11 @@ export function useUserPatterns(): UseUserPatternsReturn {
   // High confidence patterns (>= 0.70)
   const highConfidence = patterns.filter(p => p.confidence_score >= 0.70)
 
+  // Most recent synthesis date
+  const lastSynthesizedAt = patterns.length > 0
+    ? patterns.reduce((latest, p) => p.last_confirmed_at > latest ? p.last_confirmed_at : latest, patterns[0].last_confirmed_at)
+    : null
+
   return {
     patterns,
     isLoading,
@@ -154,5 +161,6 @@ export function useUserPatterns(): UseUserPatternsReturn {
     refresh: fetchPatterns,
     getByType,
     highConfidence,
+    lastSynthesizedAt,
   }
 }

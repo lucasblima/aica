@@ -77,7 +77,7 @@ export const QUESTION_CATEGORY_COLORS: Record<QuestionCategory, string> = {
   reflection: '#3b82f6', // blue-500
   gratitude: '#10b981', // green-500
   energy: '#f59e0b', // amber-500
-  learning: '#a855f7', // purple-500
+  learning: '#8B5CF6', // violet-500
   change: '#f97316', // orange-500
 }
 

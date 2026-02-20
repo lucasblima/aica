@@ -211,13 +211,17 @@ export async function answerQuestion(
       log.error('Error awarding CP:', cpError)
     }
 
-    // Update stats via RPC (supabase.sql doesn't work client-side)
-    const { error: statsError } = await supabase.rpc('increment_questions_answered', {
+    // Update streak — counts as consciousness interaction
+    const { error: streakError } = await supabase.rpc('update_consciousness_streak', {
       p_user_id: userId,
+      p_interaction_type: 'question',
     })
 
-    if (statsError) {
-      log.warn('Error incrementing questions counter:', statsError)
+    if (streakError) {
+      // Fallback to legacy function if new one not deployed yet
+      log.warn('update_consciousness_streak failed, trying legacy:', streakError)
+      const { error: legacyErr } = await supabase.rpc('update_moment_streak', { p_user_id: userId })
+      if (legacyErr) log.warn('Legacy streak update also failed:', legacyErr)
     }
 
     // Fire-and-forget: save quality data to question_responses + update avg

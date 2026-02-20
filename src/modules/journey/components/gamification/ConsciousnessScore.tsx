@@ -25,7 +25,7 @@ export function ConsciousnessScore({
   const sizeClasses = {
     sm: {
       container: 'p-3',
-      title: 'text-[10px]',
+      title: 'text-xs',
       points: 'text-xl',
       level: 'text-xs',
       badge: 'w-10 h-10 text-lg',
@@ -94,7 +94,7 @@ export function ConsciousnessScore({
       {/* Progress to next level */}
       {showDetails && progress.next_level && (
         <div className={size === 'sm' ? 'mt-2' : 'mt-4'}>
-          <div className={`flex items-center justify-between ${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary mb-1`}>
+          <div className={`flex items-center justify-between ${size === 'sm' ? 'text-xs' : 'text-xs'} text-ceramic-text-secondary mb-1`}>
             <span>Nível {progress.next_level}</span>
             <span className="font-medium">
               {progress.points_to_next} CP
@@ -117,21 +117,21 @@ export function ConsciousnessScore({
             <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
               {stats.total_moments}
             </div>
-            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary`}>Momentos</div>
+            <div className={`${size === 'sm' ? 'text-xs' : 'text-xs'} text-ceramic-text-secondary`}>Momentos</div>
           </div>
 
           <div className="text-center">
             <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
               {stats.total_questions_answered}
             </div>
-            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary`}>Perguntas</div>
+            <div className={`${size === 'sm' ? 'text-xs' : 'text-xs'} text-ceramic-text-secondary`}>Perguntas</div>
           </div>
 
           <div className="text-center">
             <div className={`${size === 'sm' ? 'text-sm' : 'text-lg'} font-bold text-ceramic-text-primary`}>
               {stats.longest_streak}
             </div>
-            <div className={`${size === 'sm' ? 'text-[10px]' : 'text-xs'} text-ceramic-text-secondary`}>Recorde</div>
+            <div className={`${size === 'sm' ? 'text-xs' : 'text-xs'} text-ceramic-text-secondary`}>Recorde</div>
           </div>
         </div>
       )}

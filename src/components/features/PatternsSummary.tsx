@@ -20,6 +20,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import type { UserPattern, PatternType } from '@/hooks/useUserPatterns'
+import { formatRelativeTime } from '@/lib/dateUtils'
 
 // =============================================================================
 // CONFIG
@@ -50,6 +51,8 @@ interface PatternsSummaryProps {
   compact?: boolean
   /** Callback when user wants full view (navigates to Journey) */
   onViewMore?: () => void
+  /** ISO date string for "last updated" display */
+  lastUpdated?: string | null
 }
 
 // =============================================================================
@@ -64,6 +67,7 @@ export function PatternsSummary({
   onSynthesize,
   compact = false,
   onViewMore,
+  lastUpdated,
 }: PatternsSummaryProps) {
   const displayPatterns = compact ? patterns.slice(0, 3) : patterns
   const hasMore = compact && patterns.length > 3
@@ -101,18 +105,25 @@ export function PatternsSummary({
           )}
         </div>
         {!compact && (
-          <button
-            onClick={onSynthesize}
-            disabled={isSynthesizing}
-            className="text-xs text-amber-500 hover:text-amber-600 font-medium flex items-center gap-1"
-          >
-            {isSynthesizing ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3 h-3" />
+          <div className="flex items-center gap-2">
+            {lastUpdated && (
+              <span className="text-xs text-ceramic-text-tertiary">
+                {formatRelativeTime(lastUpdated)}
+              </span>
             )}
-            {isSynthesizing ? 'Analisando...' : 'Sintetizar'}
-          </button>
+            <button
+              onClick={onSynthesize}
+              disabled={isSynthesizing}
+              className="text-xs text-amber-500 hover:text-amber-600 font-medium flex items-center gap-1"
+            >
+              {isSynthesizing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3 h-3" />
+              )}
+              {isSynthesizing ? 'Analisando...' : 'Sintetizar'}
+            </button>
+          </div>
         )}
       </div>
 
