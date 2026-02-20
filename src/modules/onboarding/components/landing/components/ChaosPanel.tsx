@@ -9,7 +9,7 @@ interface ChaosPanelProps {
 export function ChaosPanel({ messages, isProcessing }: ChaosPanelProps) {
   return (
     <div
-      className="relative min-h-[700px] p-8 rounded-3xl overflow-hidden bg-gradient-to-br from-ceramic-base to-[#E5E3DA]"
+      className="relative min-h-[500px] p-8 rounded-3xl overflow-hidden bg-gradient-to-br from-ceramic-base to-[#E5E3DA]"
       role="region"
       aria-label="Mensagens desorganizadas"
       aria-live="polite"
@@ -25,7 +25,7 @@ export function ChaosPanel({ messages, isProcessing }: ChaosPanelProps) {
       </div>
 
       {/* Floating Messages */}
-      <div className="relative h-[600px]">
+      <div className="relative h-[400px]">
         {messages.map((message, index) => (
           <FloatingMessageCard
             key={message.id}

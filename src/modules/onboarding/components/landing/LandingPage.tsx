@@ -1,13 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Ticket, Check, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Eye } from 'lucide-react';
 import { ChaosPanel } from './components/ChaosPanel';
 import { OrderPanel } from './components/OrderPanel';
 import { ProcessingPipeline } from './components/ProcessingPipeline';
+import { FounderStorySection } from './components/FounderStorySection';
+import { ModulesOverviewSection } from './components/ModulesOverviewSection';
+import { WaitlistSection } from './components/WaitlistSection';
+import { TestimonialSection } from './components/TestimonialSection';
+import { FooterSection } from './components/FooterSection';
 import { demoProcessingService } from './services/demoProcessingService';
 import { AuthSheet } from '@/components/layout';
 import { Logo } from '@/components/ui';
+import { useWaitlist } from '@/hooks/useWaitlist';
 import {
   validateInviteCode,
   storeInviteCode,
@@ -16,12 +22,34 @@ import {
 import type { DemoMessage, ProcessedModules, ProcessingStage } from './types';
 
 /**
- * LandingPage - "Ordem ao Caos" Concept
+ * LandingPage - Redesigned for conversion
+ *
+ * Structure:
+ * 1. Header (fixed)
+ * 2. Hero (Life OS value prop)
+ * 3. Modules Overview (8 modules)
+ * 4. Interactive Demo (Chaos → Order)
+ * 5. Founder Story
+ * 6. Testimonials
+ * 7. How It Works (3 steps)
+ * 8. Waitlist + Invite Code
+ * 9. Security Badges
+ * 10. Final CTA
+ * 11. Footer
  */
 export function LandingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isAuthSheetOpen, setIsAuthSheetOpen] = useState(false);
+
+  // Waitlist hook
+  const {
+    joinWaitlist,
+    waitlistCount,
+    isSubmitting: waitlistSubmitting,
+    submitted: waitlistSubmitted,
+    error: waitlistError,
+  } = useWaitlist();
 
   // Demo state
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
@@ -52,7 +80,40 @@ export function LandingPage() {
     }
   }, [searchParams]);
 
-  // Format invite code input: uppercase, auto-dash
+  // SEO Meta Tags
+  useEffect(() => {
+    document.title = 'Aica Life OS — Seu sistema operacional de vida pessoal';
+
+    const metaTags: { name?: string; property?: string; content: string }[] = [
+      { name: 'description', content: '8 módulos de IA que organizam suas tarefas, reflexões, finanças, treinos, podcasts e conexões. Tudo integrado, tudo inteligente.' },
+      { property: 'og:title', content: 'Aica Life OS — Seu sistema operacional de vida pessoal' },
+      { property: 'og:description', content: '8 módulos de IA que organizam tarefas, reflexões, finanças, treinos, podcasts e conexões.' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: 'https://aica.guru/landing' },
+      { property: 'og:image', content: 'https://aica.guru/og-image.png' },
+    ];
+
+    metaTags.forEach(({ name, property, content }) => {
+      const selector = name ? `meta[name="${name}"]` : `meta[property="${property}"]`;
+      let tag = document.querySelector(selector);
+      if (!tag) {
+        tag = document.createElement('meta');
+        if (name) tag.setAttribute('name', name);
+        if (property) tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    });
+
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Smooth scroll to section
+  const scrollToSection = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // Format invite code input
   const handleCodeInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (raw.length <= 8) {
@@ -82,45 +143,9 @@ export function LandingPage() {
     }
   }, [inviteCode]);
 
-  // SEO Meta Tags
-  useEffect(() => {
-    // Title
-    document.title = 'Aica Life OS - Transforme o caos em ordem';
-
-    // Meta description
-    let metaDescription = document.querySelector('meta[name="description"]');
-    if (!metaDescription) {
-      metaDescription = document.createElement('meta');
-      metaDescription.setAttribute('name', 'description');
-      document.head.appendChild(metaDescription);
-    }
-    metaDescription.setAttribute('content', 'O Life OS que refina suas conversas do WhatsApp em clareza absoluta. Tarefas, reflexões e conexões, destiladas por IA.');
-
-    // Open Graph tags for social sharing
-    const ogTags = [
-      { property: 'og:title', content: 'Aica Life OS - Transforme o caos em ordem' },
-      { property: 'og:description', content: 'O Life OS que refina suas conversas do WhatsApp em clareza absoluta.' },
-      { property: 'og:type', content: 'website' },
-    ];
-
-    ogTags.forEach(({ property, content }) => {
-      let tag = document.querySelector(`meta[property="${property}"]`);
-      if (!tag) {
-        tag = document.createElement('meta');
-        tag.setAttribute('property', property);
-        document.head.appendChild(tag);
-      }
-      tag.setAttribute('content', content);
-    });
-
-    // Scroll to top
-    window.scrollTo(0, 0);
-  }, []);
-
   // Handle processing demo
   const handleProcessChaos = async () => {
     if (isProcessing) return;
-
     setIsProcessing(true);
     setProcessedModules(null);
 
@@ -140,18 +165,12 @@ export function LandingPage() {
     setProcessedModules(null);
     setIsProcessing(false);
     setProcessingStage(null);
-    const newMessages = demoProcessingService.generateDemoMessages();
-    setMessages(newMessages);
+    setMessages(demoProcessingService.generateDemoMessages());
   };
 
   // Auth handlers
-  const handleOpenLogin = () => {
-    setIsAuthSheetOpen(true);
-  };
-
-  const handleAuthSuccess = () => {
-    navigate('/');
-  };
+  const handleOpenLogin = () => setIsAuthSheetOpen(true);
+  const handleAuthSuccess = () => navigate('/');
 
   return (
     <div className="min-h-screen bg-ceramic-base font-sans overflow-x-hidden" data-testid="landing-page">
@@ -163,28 +182,36 @@ export function LandingPage() {
         Pular para o conteúdo principal
       </a>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-ceramic-base/80 backdrop-blur-md border-b border-white/20">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Logo variant="default" width={44} className="rounded-lg" />
             <span className="font-black text-2xl text-ceramic-text-primary tracking-tighter">Aica</span>
           </div>
-          <button
-            onClick={handleOpenLogin}
-            className={`px-6 py-2.5 rounded-full font-bold text-sm text-white transition-all hover:scale-105 ${
-              hasStoredInvite
-                ? 'bg-amber-600 shadow-[4px_4px_10px_rgba(180,83,9,0.25)]'
-                : 'bg-[#5C554B] shadow-[4px_4px_10px_rgba(92,85,75,0.25)]'
-            }`}
-          >
-            {hasStoredInvite ? 'Entrar com Convite' : 'Entrar'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => scrollToSection('waitlist')}
+              className="hidden sm:block px-5 py-2 rounded-full font-bold text-sm text-ceramic-text-primary transition-all hover:scale-105 ceramic-card"
+            >
+              Lista de Espera
+            </button>
+            <button
+              onClick={handleOpenLogin}
+              className={`px-6 py-2.5 rounded-full font-bold text-sm text-white transition-all hover:scale-105 ${
+                hasStoredInvite
+                  ? 'bg-amber-600 shadow-[4px_4px_10px_rgba(180,83,9,0.25)]'
+                  : 'bg-[#5C554B] shadow-[4px_4px_10px_rgba(92,85,75,0.25)]'
+              }`}
+            >
+              {hasStoredInvite ? 'Entrar com Convite' : 'Entrar'}
+            </button>
+          </div>
         </div>
       </header>
 
       <main id="main" className="pt-24 pb-16">
-        {/* Hero Section */}
+        {/* ── 1. Hero Section ── */}
         <section className="max-w-7xl mx-auto px-6 mb-16">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -193,164 +220,140 @@ export function LandingPage() {
             className="text-center mb-12"
           >
             <h1 className="text-5xl md:text-8xl font-black text-ceramic-text-primary mb-8 leading-[0.9] tracking-tighter">
-              A essência da <br />
+              Seu sistema operacional{' '}
+              <br className="hidden md:block" />
+              de{' '}
               <span className="bg-gradient-to-r from-ceramic-info via-ceramic-accent to-ceramic-warning bg-clip-text text-transparent">
-                ordem
-              </span>{' '}
-              em meio ao caos.
+                vida pessoal
+              </span>
+              .
             </h1>
-            <p className="text-xl md:text-2xl text-ceramic-text-secondary max-w-2xl mx-auto font-medium leading-relaxed">
-              O Life OS que refina suas conversas do WhatsApp em clareza absoluta. Tarefas, reflexões e conexões, destiladas por IA.
+            <p className="text-xl md:text-2xl text-ceramic-text-secondary max-w-3xl mx-auto font-medium leading-relaxed">
+              8 módulos de IA que organizam suas tarefas, reflexões, finanças, treinos, podcasts, conexões e muito mais. Tudo a partir das suas conversas do dia a dia.
             </p>
+
+            {/* Hero CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
+            >
+              <button
+                onClick={() => scrollToSection('waitlist')}
+                className="px-10 py-4 rounded-full font-bold text-lg text-white transition-all hover:scale-[1.02] bg-amber-600 shadow-[8px_8px_24px_rgba(180,83,9,0.25)] hover:bg-amber-700"
+              >
+                Entrar na lista de espera
+              </button>
+              <button
+                onClick={() => scrollToSection('demo')}
+                className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-[1.02] ceramic-card"
+              >
+                Ver demonstração
+              </button>
+            </motion.div>
           </motion.div>
         </section>
 
-        {/* Processing Pipeline Area */}
-        <div className="h-24 flex items-center justify-center mb-12">
-          <AnimatePresence>
-            {isProcessing && processingStage && (
-              <ProcessingPipeline
-                stage={processingStage}
-                messageCount={messages.length}
-              />
-            )}
-          </AnimatePresence>
-        </div>
+        {/* ── 2. Modules Overview ── */}
+        <ModulesOverviewSection />
 
-        {/* Main Demo Area */}
-        <section className="max-w-7xl mx-auto px-6 mb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            {/* Left: Chaos Panel */}
+        {/* ── 3. Interactive Demo ── */}
+        <section id="demo" className="scroll-mt-20">
+          <div className="max-w-7xl mx-auto px-6 mb-4">
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-center mb-8"
             >
-              <ChaosPanel
-                messages={messages}
-                isProcessing={isProcessing}
-              />
-            </motion.div>
-
-            {/* Right: Order Panel */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              <OrderPanel
-                modules={processedModules}
-                isProcessing={isProcessing}
-              />
+              <h2 className="text-3xl md:text-5xl font-black text-ceramic-text-primary mb-4 tracking-tighter">
+                Veja o AICA em ação
+              </h2>
+              <p className="text-lg text-ceramic-text-secondary font-medium uppercase tracking-widest opacity-60">
+                Mensagens caóticas se transformam em clareza
+              </p>
             </motion.div>
           </div>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex justify-center mt-12 gap-4"
-          >
-            {!processedModules ? (
-              <button
-                onClick={handleProcessChaos}
-                disabled={isProcessing}
-                className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed bg-[#5C554B] shadow-[8px_8px_24px_rgba(92,85,75,0.25)]"
-              >
-                {isProcessing ? 'Destilando...' : 'Organizar meu WhatsApp'}
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={handleResetDemo}
-                  className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-[1.02] bg-ceramic-base ceramic-shadow"
-                >
-                  Reiniciar
-                </button>
-                <button
-                  onClick={handleOpenLogin}
-                  className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-[1.02] bg-[#B45309] shadow-[8px_8px_24px_rgba(180,83,9,0.25)]"
-                >
-                  Testar minha conexão
-                </button>
-              </>
-            )}
-          </motion.div>
-        </section>
-
-        {/* Invite Code Section */}
-        <motion.section
-          className="max-w-md mx-auto px-6 mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="p-8 text-center ceramic-card relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 opacity-50" />
-            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <Ticket className="w-6 h-6 text-amber-600" />
-            </div>
-            <h3 className="text-xl font-black text-ceramic-text-primary mb-2 tracking-tight">
-              Acesso por convite
-            </h3>
-            <p className="text-sm text-ceramic-text-secondary mb-6 leading-relaxed">
-              O AICA está em beta exclusivo. Digite seu código para entrar.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="XXXX-XXXX"
-                maxLength={9}
-                value={inviteCode}
-                onChange={handleCodeInput}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && inviteCode.replace(/-/g, '').length === 8) {
-                    handleCodeSubmit();
-                  }
-                }}
-                className="flex-1 px-4 py-3 rounded-xl text-center font-mono text-lg uppercase tracking-[0.2em] text-ceramic-text-primary placeholder:text-ceramic-text-tertiary/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-shadow"
-                style={{ boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.06), inset -2px -2px 4px rgba(255,255,255,0.7)' }}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <button
-                onClick={handleCodeSubmit}
-                disabled={inviteCode.replace(/-/g, '').length !== 8}
-                className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
-              >
-                {codeValid ? <Check className="w-5 h-5" /> : 'Entrar'}
-              </button>
-            </div>
+          {/* Processing Pipeline */}
+          <div className="h-24 flex items-center justify-center mb-8">
             <AnimatePresence>
-              {codeError && (
-                <motion.p
-                  className="flex items-center justify-center gap-1.5 text-sm text-ceramic-error mt-3"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  {codeError}
-                </motion.p>
-              )}
-              {codeValid && (
-                <motion.p
-                  className="text-sm text-ceramic-success mt-3 font-medium"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  Código válido! Clique em "Entrar com Convite" acima.
-                </motion.p>
+              {isProcessing && processingStage && (
+                <ProcessingPipeline
+                  stage={processingStage}
+                  messageCount={messages.length}
+                />
               )}
             </AnimatePresence>
           </div>
-        </motion.section>
 
-        {/* Features Section */}
-        <section className="max-w-7xl mx-auto px-6 py-16 mb-16 border-t border-white/20">
+          {/* Demo Panels */}
+          <div className="max-w-7xl mx-auto px-6 mb-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <ChaosPanel messages={messages} isProcessing={isProcessing} />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <OrderPanel modules={processedModules} isProcessing={isProcessing} />
+              </motion.div>
+            </div>
+
+            {/* Demo CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="flex justify-center mt-12 gap-4"
+            >
+              {!processedModules ? (
+                <button
+                  onClick={handleProcessChaos}
+                  disabled={isProcessing}
+                  className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed bg-[#5C554B] shadow-[8px_8px_24px_rgba(92,85,75,0.25)]"
+                >
+                  {isProcessing ? 'Destilando...' : 'Organizar meu WhatsApp'}
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleResetDemo}
+                    className="px-8 py-4 rounded-full font-bold text-lg text-ceramic-text-secondary transition-all hover:scale-[1.02] bg-ceramic-base ceramic-shadow"
+                  >
+                    Reiniciar
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('waitlist')}
+                    className="px-12 py-5 rounded-full font-bold text-xl text-white transition-all hover:scale-[1.02] bg-amber-600 shadow-[8px_8px_24px_rgba(180,83,9,0.25)]"
+                  >
+                    Quero experimentar
+                  </button>
+                </>
+              )}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── 4. Founder Story ── */}
+        <FounderStorySection />
+
+        {/* ── 5. Testimonials ── */}
+        <TestimonialSection />
+
+        {/* ── 6. How It Works ── */}
+        <section className="max-w-7xl mx-auto px-6 py-16 border-t border-white/20">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-black text-ceramic-text-primary mb-4 tracking-tighter">
               Como funciona
@@ -398,49 +401,76 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Curiosity Section */}
-        <section className="max-w-6xl mx-auto px-6 text-center">
+        {/* ── 7. Waitlist + Invite Code ── */}
+        <div id="waitlist" className="scroll-mt-20">
+          <WaitlistSection
+            waitlistCount={waitlistCount}
+            onJoinWaitlist={joinWaitlist}
+            isSubmitting={waitlistSubmitting}
+            submitted={waitlistSubmitted}
+            error={waitlistError}
+            inviteCode={inviteCode}
+            onCodeChange={handleCodeInput}
+            onCodeSubmit={handleCodeSubmit}
+            codeValid={codeValid}
+            codeError={codeError}
+          />
+        </div>
+
+        {/* ── 8. Security Badges ── */}
+        <motion.section
+          className="max-w-4xl mx-auto px-6 py-12"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex flex-wrap items-center justify-center gap-8 text-ceramic-text-secondary">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-ceramic-success" />
+              <span className="text-sm font-bold">LGPD Compliant</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-ceramic-success" />
+              <span className="text-sm font-bold">Dados criptografados</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-ceramic-success" />
+              <span className="text-sm font-bold">Sem acesso a senhas</span>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ── 9. Final CTA ── */}
+        <section className="max-w-6xl mx-auto px-6 text-center mb-16">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.8 }}
             className="p-16 ceramic-card relative overflow-hidden"
           >
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-ceramic-info via-ceramic-accent to-ceramic-warning opacity-40" />
             <h2 className="text-4xl md:text-6xl font-black text-ceramic-text-primary mb-8 tracking-tighter leading-tight">
-              A curiosidade é o primeiro passo <br /> para a ordem.
+              Pronto para organizar{' '}
+              <br className="hidden md:block" />
+              sua vida?
             </h2>
             <p className="text-xl text-ceramic-text-secondary mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-              Conecte seu WhatsApp e veja a mágica da destilação em tempo real. Sem burocracia, apenas clareza.
+              Junte-se aos primeiros usuários que estão transformando o caos digital em clareza com inteligência artificial.
             </p>
             <button
-              onClick={handleOpenLogin}
-              className={`px-20 py-8 rounded-full font-black text-2xl text-white transition-all hover:scale-[1.02] ${
-                hasStoredInvite
-                  ? 'bg-amber-600 shadow-[12px_12px_32px_rgba(180,83,9,0.3)] hover:bg-amber-700'
-                  : 'bg-[#5C554B] shadow-[12px_12px_32px_rgba(92,85,75,0.3)] hover:bg-[#3A3632]'
-              }`}
+              onClick={() => scrollToSection('waitlist')}
+              className="px-16 py-6 rounded-full font-black text-xl text-white transition-all hover:scale-[1.02] bg-amber-600 shadow-[12px_12px_32px_rgba(180,83,9,0.3)] hover:bg-amber-700"
             >
-              {hasStoredInvite ? 'Começar com meu convite' : 'Testar minha conexão'}
+              Quero entrar
             </button>
           </motion.div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/20 py-12 mt-16">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-4">
-            <Logo variant="default" width={32} />
-            <span className="font-black text-xl text-ceramic-text-primary tracking-tighter">Aica Life OS</span>
-          </div>
-          <div className="flex items-center gap-8 text-sm font-bold text-ceramic-text-secondary uppercase tracking-widest">
-            <a href="/privacy" className="hover:text-ceramic-text-primary transition-colors">Privacidade</a>
-            <a href="/terms" className="hover:text-ceramic-text-primary transition-colors">Termos</a>
-            <span className="opacity-40">&copy; {new Date().getFullYear()} Aica</span>
-          </div>
-        </div>
-      </footer>
+      {/* ── Footer ── */}
+      <FooterSection />
 
       {/* Auth Sheet */}
       <AuthSheet
