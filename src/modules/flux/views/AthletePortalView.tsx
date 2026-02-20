@@ -373,9 +373,9 @@ export default function AthletePortalView() {
       name: slot.template?.name || 'Treino',
       duration: slot.custom_duration || slot.template?.duration || 60,
       intensity: (['low', 'medium', 'high'].includes(slot.template?.intensity || '') ? slot.template.intensity : 'medium') as 'low' | 'medium' | 'high',
-      modality: 'strength' as const,
+      modality: (['swimming', 'running', 'cycling', 'strength'].includes(profile?.modality || '') ? profile?.modality : 'strength') as WeekWorkout['modality'],
     }));
-  }, [profile?.active_microcycle]);
+  }, [profile?.active_microcycle, profile?.modality]);
 
   // Canvas view: calendar integration (only active in canvas mode to avoid unnecessary API calls)
   const calendar = useCanvasCalendar({
