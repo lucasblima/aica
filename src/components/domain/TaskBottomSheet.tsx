@@ -9,7 +9,7 @@
  * more prominent (not buried in accordion).
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue } from 'framer-motion';
 import {
   X, Save, Trash2, Calendar, Clock, Link2, AlertCircle,
@@ -84,6 +84,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const isDirtyRef = useRef(isDirty);
   const [isDecomposing, setIsDecomposing] = useState(false);
 
   // Drag
@@ -119,12 +120,19 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
       JSON.stringify(checklist) !== JSON.stringify(task.checklist || []) ||
       recurrenceRule !== (task.recurrence_rule || undefined);
     setIsDirty(hasChanges);
+    isDirtyRef.current = hasChanges;
   }, [title, dueDate, estimatedDuration, scheduledTime, description, tags, checklist, recurrenceRule, task]);
 
   // ---- Keyboard ----
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) handleCloseClick();
+      if (e.key === 'Escape' && isOpen) {
+        if (isDirty) {
+          const confirmed = window.confirm('Voce tem alteracoes nao salvas. Deseja sair?');
+          if (!confirmed) return;
+        }
+        onClose();
+      }
     };
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
@@ -134,7 +142,7 @@ export const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [isOpen, isDirty, onClose]);
 
   // ---- Validate ----
   const validateForm = (): boolean => {

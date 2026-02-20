@@ -590,7 +590,7 @@ export function AppRouter() {
 
    // Show loading screen while checking authentication (300ms delay to avoid flash)
    if (isCheckingAuth) {
-      if (!showAuthLoading) return null;
+      if (!showAuthLoading) return <div className="h-screen w-full bg-ceramic-base" />;
       return (
          <div className="h-screen w-full bg-ceramic-base flex items-center justify-center">
             <div className="text-center space-y-4">

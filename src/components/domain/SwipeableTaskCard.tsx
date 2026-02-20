@@ -86,8 +86,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       if (info.offset.x > SWIPE_THRESHOLD) {
         setIsCompleting(true);
-        // Wait for animation then call onComplete
-        setTimeout(() => onComplete(task), 1500);
+        onComplete(task);
       }
     },
     [task, onComplete]
@@ -97,7 +96,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
     (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsCompleting(true);
-      setTimeout(() => onComplete(task), 1500);
+      onComplete(task);
     },
     [task, onComplete]
   );
