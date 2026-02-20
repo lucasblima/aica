@@ -57,12 +57,11 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Dia da semana inválido');
   END IF;
 
-  -- Update the slot
+  -- Update the slot (keep calendar_event_id so sync does PUT instead of creating duplicates)
   UPDATE workout_slots
   SET
     day_of_week = p_new_day_of_week,
     start_time = p_new_start_time::TEXT,
-    calendar_event_id = NULL,
     calendar_synced_at = NULL,
     updated_at = now()
   WHERE id = p_slot_id;

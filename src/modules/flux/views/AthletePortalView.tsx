@@ -13,6 +13,7 @@ import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
 import { useParQ } from '../hooks/useParQ';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
 import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
+import { WorkoutSlotService } from '../services/workoutSlotService';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
 import { ProgressTimeline, WorkoutCard } from '../components/athlete';
@@ -540,22 +541,18 @@ export default function AthletePortalView() {
     athleteId: viewMode === 'canvas' ? profile?.athlete_id : undefined,
   });
 
-  // Canvas drag handler — reschedule workout
+  // Canvas drag handler — reschedule workout via RPC (security checks + calendar sync reset)
   const handleCanvasReorder = useCallback(async (workoutId: string, _fromDay: number, toDay: number, toTime: string) => {
     setUpdating(workoutId);
     try {
-      await supabase
-        .from('workout_slots')
-        .update({
-          day_of_week: toDay,
-          start_time: toTime, // DB column is start_time
-        })
-        .eq('id', workoutId);
+      const { error } = await WorkoutSlotService.updateAthleteSchedule(workoutId, toDay, toTime);
+      if (error) throw error;
       await refetch();
+    } catch (err) {
+      log.error('Error reordering workout:', err);
     } finally {
       setUpdating(null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetch]);
 
   // Compute actual dates from microcycle start_date
