@@ -70,7 +70,7 @@ export function useAuth() {
 
     async function initializeAuth(retryCount = 0) {
       const MAX_RETRIES = 2
-      const RETRY_DELAY = 500
+      const RETRY_DELAY = 200
 
       try {
         const code = getAuthCodeFromUrl()

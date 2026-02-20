@@ -178,6 +178,16 @@ export function AppRouter() {
 
    // Phase A: Auth Migration - Using useAuth hook instead of manual state
    const { user, session, isLoading: isCheckingAuth, isAuthenticated } = useAuth();
+
+   // Delay showing auth loading spinner by 300ms to avoid flash for fast checks
+   const [showAuthLoading, setShowAuthLoading] = useState(false);
+   useEffect(() => {
+      if (isCheckingAuth) {
+         const timer = setTimeout(() => setShowAuthLoading(true), 300);
+         return () => clearTimeout(timer);
+      }
+      setShowAuthLoading(false);
+   }, [isCheckingAuth]);
    const userId = user?.id || null;
    const userEmail = user?.email || null;
    const [associations, setAssociations] = useState<any[]>([]);
@@ -578,8 +588,9 @@ export function AppRouter() {
       );
    }
 
-   // Show loading screen while checking authentication
+   // Show loading screen while checking authentication (300ms delay to avoid flash)
    if (isCheckingAuth) {
+      if (!showAuthLoading) return <div className="h-screen w-full bg-ceramic-base" />;
       return (
          <div className="h-screen w-full bg-ceramic-base flex items-center justify-center">
             <div className="text-center space-y-4">

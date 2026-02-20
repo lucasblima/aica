@@ -14,22 +14,21 @@ import {
     CollisionDetection,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { createNamespacedLogger } from '@/lib/logger';
 import { supabase } from '@/services/supabaseClient';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
+import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
 
 const log = createNamespacedLogger('AgendaView');
-import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd } from '../components';
+import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, AgendaModeToggle } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
+import { CompletedTasksSection } from '../components/domain/CompletedTasksSection';
 import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '../components/features/ModuleAgentChat';
 import { useModuleAgent } from '../hooks/useModuleAgent';
-import { Task, Quadrant } from '../../types';
-// REMOVED: Atlas module imports (deprecated - moved to _deprecated/modules/)
-// import { useAtlasTasks } from '../modules/atlas/hooks/useAtlasTasks';
-// import { TaskCreationInput } from '../modules/atlas/components/TaskCreationInput';
-// import { TaskList } from '../modules/atlas/components/TaskList';
-// import { ProjectList } from '../modules/atlas/components/ProjectList';
-// import { AtlasTask } from '../modules/atlas/types/plane';
+import { useTaskCompletion } from '../hooks/useTaskCompletion';
+import { Task, Quadrant } from '@/types';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
 import { useTourAutoStart } from '../hooks/useTourAutoStart';
@@ -50,6 +49,8 @@ const agendaAgentConfig = getModuleAgentConfig('agenda')!;
 export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLogout }) => {
     useTourAutoStart('atlas-first-visit');
     const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
+    const isDesktop = useIsDesktop();
+    const [mobileMode, setMobileMode] = useState<'agenda' | 'organizar'>('agenda');
 
     const [matrixTasks, setMatrixTasks] = useState<Record<Quadrant, Task[]>>({
         'urgent-important': [],
@@ -64,16 +65,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [skippedEvents, setSkippedEvents] = useState<Set<string>>(new Set());
 
-    // REMOVED: Atlas Module Integration (deprecated - moved to _deprecated/modules/)
-    // const { tasks: atlasTasks, addTask: addAtlasTask, isSyncing: isAtlasSyncing } = useAtlasTasks();
+    // Task completion hook — centralizes complete/uncomplete across the view
+    const {
+        handleComplete,
+        handleUncomplete,
+        completedTodayTasks,
+        isLoadingCompleted,
+        loadCompletedToday,
+    } = useTaskCompletion({ onRefresh: () => loadAllTasks() });
 
-    // REMOVED: Atlas task creation wrapper function
-    // const handleAddTask = async (input: any) => {
-    //     await addAtlasTask(input);
-    //     await loadAllTasks(); // Refresh all data to sync TaskList
-    // };
-
-    // Google Calendar Integration - Buscar próximos 7 dias
+    // Google Calendar Integration - Buscar proximos 7 dias
     // Usar useMemo para evitar recriar datas a cada render e causar loop
     const dateRange = useMemo(() => {
         const today = new Date();
@@ -81,7 +82,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
         return { today, nextWeek };
-    }, []); // Sem dependências - criar apenas uma vez por dia
+    }, []); // Sem dependencias - criar apenas uma vez por dia
 
     const {
         events: googleCalendarEvents,
@@ -148,6 +149,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     useEffect(() => {
         loadAllTasks();
+        loadCompletedToday();
     }, [userId]);
 
     // Reload tasks when selected date changes
@@ -157,7 +159,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Log Google Calendar events for debugging
     useEffect(() => {
-        log.debug(' 📅 Google Calendar status:', {
+        log.debug('Google Calendar status:', {
             isConnected: isCalendarConnected,
             isLoading: isLoadingCalendar,
             eventsCount: calendarEvents.length,
@@ -170,12 +172,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible' && isCalendarConnected && !isTokenExpired) {
-                log.debug(' 👁️ Aba visível - sincronizando Google Calendar...');
+                log.debug('Aba visivel - sincronizando Google Calendar...');
                 try {
                     await syncCalendar();
                 } catch (error) {
-                    log.warn(' ⚠️ Erro ao sincronizar (visibility change):', error);
-                    // Erro já tratado pelo hook, não precisa fazer nada
+                    log.warn('Erro ao sincronizar (visibility change):', error);
                 }
             }
         };
@@ -194,7 +195,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
         // Validate if date is valid
         if (isNaN(startDate.getTime())) {
-            log.warn(' Invalid startTime:', event.startTime);
+            log.warn('Invalid startTime:', event.startTime);
             return {
                 id: event.id,
                 title: event.title,
@@ -214,8 +215,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             title: event.title,
             scheduled_time,
             estimated_duration: event.duration,
-            due_date: event.startTime.split('T')[0], // Extract date part
-            // Google Calendar events don't have priority quadrant
+            due_date: event.startTime.split('T')[0],
             priority_quadrant: undefined,
         };
     };
@@ -239,7 +239,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             return a.scheduled_time.localeCompare(b.scheduled_time);
         });
 
-        log.debug(' 🔀 Merged timeline tasks:', {
+        log.debug('Merged timeline tasks:', {
             selectedDate: dateStr,
             supabaseTasks: timelineTasks.length,
             calendarEvents: selectedDateCalendarEvents.length,
@@ -249,33 +249,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
         return merged;
     }, [timelineTasks, calendarEvents, selectedDate]);
-
-    // REMOVED: Atlas Tasks merging logic (deprecated - moved to _deprecated/modules/)
-    // const mergedMatrixTasks = useMemo(() => {
-    //     const merged = { ...matrixTasks };
-    //     atlasTasks.forEach(atlasTask => {
-    //         // Use Eisenhower Matrix dimensions (is_urgent, is_important) to determine quadrant
-    //         let quadrant: Quadrant = 'low';
-    //         if (atlasTask.is_urgent && atlasTask.is_important) {
-    //             quadrant = 'urgent-important';
-    //         } else if (!atlasTask.is_urgent && atlasTask.is_important) {
-    //             quadrant = 'important';
-    //         } else if (atlasTask.is_urgent && !atlasTask.is_important) {
-    //             quadrant = 'urgent';
-    //         } else {
-    //             quadrant = 'low';
-    //         }
-    //         // Map AtlasTask to Task
-    //         const task: Task = {
-    //             id: atlasTask.id,
-    //             title: atlasTask.title,
-    //             priority_quadrant: quadrant,
-    //             priority: atlasTask.priority,
-    //         };
-    //         merged[quadrant] = [task, ...merged[quadrant]];
-    //     });
-    //     return merged;
-    // }, [matrixTasks, atlasTasks]);
 
     // Identify next event and rest of day
     const { nextEvent, restOfDay } = useMemo(() => {
@@ -306,7 +279,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             endTime: event.endTime,
             type: 'event' as const,
             location: (event as any).location,
-            color: event.color || '#D97706' // Use event color (Flux modality) or default Amber
+            color: event.color || '#D97706'
         }));
 
         // Add tasks to rest of day
@@ -334,7 +307,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 startTime: nextEventData.startTime,
                 endTime: nextEventData.endTime,
                 description: nextEventData.description,
-                location: nextEventData.location,
+                location: (nextEventData as any).location,
                 attendees: nextEventData.attendees,
                 organizer: nextEventData.organizer,
                 isNow
@@ -355,7 +328,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const threeDaysFromNow = new Date(today);
         threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
-        log.debug(' 📅 Filtrando eventos dos próximos 2 dias:', {
+        log.debug('Filtrando eventos dos proximos 2 dias:', {
             today: today.toISOString(),
             tomorrow: tomorrow.toISOString(),
             dayAfterTomorrow: dayAfterTomorrow.toISOString(),
@@ -385,7 +358,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     startTime: event.startTime,
                     endTime: event.endTime,
                     description: event.description,
-                    location: event.location,
+                    location: (event as any).location,
                     category: detectEventCategory(event.title, event.description),
                     isToday,
                     isTomorrow,
@@ -399,7 +372,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const tomorrowStr = tomorrow.toISOString().split('T')[0];
         const dayAfterStr = dayAfterTomorrow.toISOString().split('T')[0];
 
-        // Helper: extract HH:MM from timestamptz (e.g., "2026-02-19T12:00:00+00:00" → "12:00")
+        // Helper: extract HH:MM from timestamptz
         const extractTimeHHMM = (ts: string): string | null => {
             try {
                 const d = new Date(ts);
@@ -418,7 +391,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 const timeHHMM = task.scheduled_time ? extractTimeHHMM(task.scheduled_time) : null;
                 const startTime = timeHHMM
                     ? `${task.due_date}T${timeHHMM}:00`
-                    : `${task.due_date}T23:59:00`; // All-day tasks sort to end
+                    : `${task.due_date}T23:59:00`;
 
                 return {
                     id: `task-${task.id}`,
@@ -435,13 +408,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     isTask: true,
                     isCompleted: !!task.completed_at,
                     checklist: task.checklist || null,
+                    is_urgent: task.is_urgent,
+                    is_important: task.is_important,
                 };
             });
 
         const filtered = [...calendarFiltered, ...taskEvents]
             .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-        log.debug(' ✅ Eventos filtrados:', {
+        log.debug('Eventos filtrados:', {
             total: filtered.length,
             hoje: filtered.filter(e => e.isToday).length,
             amanha: filtered.filter(e => e.isTomorrow).length,
@@ -457,7 +432,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             const targetDate = forDate || selectedDate;
             const dateStr = targetDate.toISOString().split('T')[0];
 
-            log.debug(' 📅 Carregando tasks para:', dateStr);
+            log.debug('Carregando tasks para:', dateStr);
 
             const { data, error } = await supabase
                 .from('work_items')
@@ -516,7 +491,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             setTimelineTasks(timeline);
             setAllDueDateTasks((data || []).filter((t: any) => t.due_date));
         } catch (error) {
-            log.error(' Error loading tasks:', error);
+            log.error('Error loading tasks:', error);
         } finally {
             setIsLoading(false);
         }
@@ -609,8 +584,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             if (!connected) return;
             const eventData = atlasTaskToGoogleEvent({
                 id: taskId,
-                title: task.title,
-                description: task.description,
+                title: task!.title,
+                description: task!.description,
                 scheduled_time: time,
                 due_date: today,
             });
@@ -678,7 +653,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         setSkippedEvents(prev => {
             const newSet = new Set(prev);
             newSet.add(eventId);
-            // Persist to localStorage
             localStorage.setItem('skippedEvents', JSON.stringify(Array.from(newSet)));
             return newSet;
         });
@@ -689,7 +663,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         setSkippedEvents(prev => {
             const newSet = new Set(prev);
             newSet.delete(eventId);
-            // Persist to localStorage
             localStorage.setItem('skippedEvents', JSON.stringify(Array.from(newSet)));
             return newSet;
         });
@@ -708,23 +681,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         }
     }, []);
 
-    // Handle task completion from NextTwoDaysView
+    // Handle task completion — delegates to useTaskCompletion hook
     const handleTaskComplete = async (taskId: string) => {
-        const { error } = await supabase
-            .from('work_items')
-            .update({ completed_at: new Date().toISOString() })
-            .eq('id', taskId);
-
-        if (!error) {
-            // Unsync completed task from Google Calendar (non-blocking)
-            isGoogleCalendarConnected().then((connected) => {
-                if (!connected) return;
-                unsyncEntityFromGoogle('atlas', taskId).catch((err) =>
-                    log.warn('Calendar unsync failed for completed task:', err)
-                );
-            });
-            loadAllTasks();
-        }
+        await handleComplete(taskId);
     };
 
     const unscheduleTask = async (taskId: string, targetQuadrant: Quadrant) => {
@@ -745,7 +704,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             .eq('id', taskId);
 
         if (!error) {
-            // Show success notification
             notificationService.show({
                 type: 'success',
                 title: 'Tarefa removida da agenda',
@@ -762,11 +720,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 );
             });
         } else {
-            log.error(' Error unscheduling task:', error);
+            log.error('Error unscheduling task:', error);
             notificationService.show({
                 type: 'error',
                 title: 'Erro ao remover tarefa',
-                message: 'Não foi possível remover a tarefa da agenda',
+                message: 'Nao foi possivel remover a tarefa da agenda',
                 icon: '❌',
                 duration: 5000
             });
@@ -775,28 +733,94 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         }
     };
 
-    // Handler para conectar Google Calendar — delega ao serviço centralizado
+    // Handler para conectar Google Calendar
     const handleConnectCalendar = async () => {
-        log.debug(' Conectando Google Calendar...');
+        log.debug('Conectando Google Calendar...');
         await connectGoogleCalendar();
     };
 
     // Handler para desconectar Google Calendar
     const handleDisconnectCalendar = async () => {
-        log.debug(' Desconectando Google Calendar...');
+        log.debug('Desconectando Google Calendar...');
         try {
             await disconnectGoogleCalendar();
-            log.debug(' ✅ Google Calendar desconectado com sucesso');
-            // Força reload para atualizar estado de conexão
+            log.debug('Google Calendar desconectado com sucesso');
             window.location.reload();
         } catch (error) {
-            log.error(' ❌ Erro ao desconectar:', error);
+            log.error('Erro ao desconectar:', error);
         }
     };
 
+    // Timeline content (used in both desktop left panel and mobile agenda mode)
+    const timelineContent = (
+        <>
+            {/* PROXIMOS 2 DIAS */}
+            <section className="max-w-2xl mx-auto w-full">
+                <NextTwoDaysView
+                    events={nextTwoDaysEvents}
+                    onSkipEvent={handleSkipEvent}
+                    onUnskipEvent={handleUnskipEvent}
+                    onTaskComplete={handleTaskComplete}
+                />
+            </section>
+
+            {/* Quick Add de Tarefas */}
+            <section className="max-w-2xl mx-auto w-full" data-tour="add-task-button">
+                <TaskCreationQuickAdd
+                    userId={userId}
+                    onTaskCreated={loadAllTasks}
+                />
+            </section>
+
+            {/* TIMELINE: Mais Tarde */}
+            {restOfDay.length > 0 && (
+                <section className="max-w-2xl mx-auto w-full">
+                    <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
+                        Mais Tarde
+                    </h2>
+                    <AgendaTimeline
+                        events={restOfDay}
+                        onEventClick={(eventId) => {
+                            log.debug('Event clicked:', eventId);
+                        }}
+                        onTaskToggle={async (taskId) => {
+                            log.debug('Task toggled:', taskId);
+                            await handleComplete(taskId);
+                        }}
+                    />
+                </section>
+            )}
+
+            {/* Completed Tasks Section */}
+            <section className="max-w-2xl mx-auto w-full">
+                <CompletedTasksSection
+                    tasks={completedTodayTasks}
+                    onUncomplete={handleUncomplete}
+                    isLoading={isLoadingCompleted}
+                />
+            </section>
+        </>
+    );
+
+    // Matrix content (used in both desktop right panel and mobile organizar mode)
+    const matrixContent = (
+        <div className="w-full" data-tour="eisenhower-matrix">
+            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
+                Matriz de Prioridades
+            </h2>
+            <PriorityMatrix
+                userId={userId}
+                tasks={matrixTasks}
+                isLoading={isLoading}
+                onRefresh={loadAllTasks}
+                compact={!isDesktop}
+            />
+        </div>
+    );
+
     return (
         <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
-            {/* Header com Sync Indicator */}
+            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-ceramic-text-secondary/10" data-tour="atlas-header">
                 <div>
                     <h1 className="text-2xl font-black text-ceramic-text-primary">Meu Dia</h1>
@@ -809,8 +833,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    {/* Status minimalista do Calendar */}
+                <div className="flex items-center gap-3">
+                    {/* Mode toggle — only on mobile */}
+                    {!isDesktop && (
+                        <AgendaModeToggle
+                            mode={mobileMode}
+                            onModeChange={setMobileMode}
+                        />
+                    )}
+
+                    {/* Calendar status */}
                     <CalendarStatusDot
                         isConnected={isCalendarConnected}
                         isSyncing={isLoadingCalendar}
@@ -829,97 +861,47 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <main className="flex-1 overflow-y-auto px-6 pb-32 pt-8 space-y-12">
-                    {/* PRÓXIMOS 2 DIAS: Foco Principal - Sempre visível */}
-                    <section className="max-w-2xl mx-auto w-full">
-                        <NextTwoDaysView
-                            events={nextTwoDaysEvents}
-                            onSkipEvent={handleSkipEvent}
-                            onUnskipEvent={handleUnskipEvent}
-                            onTaskComplete={handleTaskComplete}
-                        />
-                    </section>
+                {isDesktop ? (
+                    /* ======== DESKTOP: side-by-side layout ======== */
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* LEFT: Timeline ~60% */}
+                        <main className="flex-1 overflow-y-auto px-6 pb-32 pt-8 space-y-12">
+                            {timelineContent}
+                        </main>
 
-                    {/* Quick Add de Tarefas */}
-                    <section className="max-w-2xl mx-auto w-full" data-tour="add-task-button">
-                        <TaskCreationQuickAdd
-                            userId={userId}
-                            onTaskCreated={loadAllTasks}
-                        />
-                    </section>
-
-                    {/* TIMELINE: Mais Tarde */}
-                    {restOfDay.length > 0 && (
-                        <section className="max-w-2xl mx-auto w-full">
-                            <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
-                                Mais Tarde
-                            </h2>
-                            <AgendaTimeline
-                                events={restOfDay}
-                                onEventClick={(eventId) => {
-                                    log.debug(' Event clicked:', eventId);
-                                }}
-                                onTaskToggle={async (taskId) => {
-                                    log.debug(' Task toggled:', taskId);
-                                    const { error } = await supabase
-                                        .from('work_items')
-                                        .update({ completed_at: new Date().toISOString() })
-                                        .eq('id', taskId);
-
-                                    if (!error) {
-                                        // Unsync completed task from Google Calendar (non-blocking)
-                                        isGoogleCalendarConnected().then((connected) => {
-                                            if (!connected) return;
-                                            unsyncEntityFromGoogle('atlas', taskId).catch((err) =>
-                                                log.warn('Calendar unsync failed for completed task:', err)
-                                            );
-                                        });
-
-                                        loadAllTasks();
-                                    }
-                                }}
-                            />
-                        </section>
-                    )}
-
-                    {/* Priority Matrix */}
-                    <div className="flex-none max-w-4xl mx-auto w-full" data-tour="eisenhower-matrix">
-                        <h2 className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-widest mb-4 ml-1">
-                            Matriz de Prioridades
-                        </h2>
-                        <PriorityMatrix
-                            userId={userId}
-                            tasks={matrixTasks}
-                            isLoading={isLoading}
-                            onRefresh={loadAllTasks}
-                        />
+                        {/* RIGHT: Matrix ~40% */}
+                        <aside className="w-[400px] flex-shrink-0 overflow-y-auto border-l border-ceramic-text-secondary/10 px-4 py-8">
+                            {matrixContent}
+                        </aside>
                     </div>
-
-                    {/* REMOVED: Atlas Task List (deprecated - moved to _deprecated/modules/) */}
-                    {/* <div className="flex-none max-w-2xl mx-auto w-full">
-                        <TaskList
-                            tasks={Object.values(matrixTasks).flat().map(task => ({
-                                id: task.id,
-                                title: task.title,
-                                description: undefined,
-                                priority: task.priority || 'none',
-                                status: task.completed_at ? 'completed' : 'todo',
-                                target_date: task.due_date,
-                                is_urgent: task.priority_quadrant === 'urgent-important' || task.priority_quadrant === 'urgent',
-                                is_important: task.priority_quadrant === 'urgent-important' || task.priority_quadrant === 'important',
-                                priority_quadrant: task.priority_quadrant,
-                                created_at: undefined,
-                                updated_at: undefined
-                            }))}
-                            onTaskCreated={loadAllTasks}
-                        />
-                    </div> */}
-
-                    {/* REMOVED: Atlas Projects Section (deprecated - moved to _deprecated/modules/) */}
-                    {/* <div className="flex-none max-w-4xl mx-auto w-full">
-                        <ProjectList />
-                    </div> */}
-                </main>
+                ) : (
+                    /* ======== MOBILE: toggle between modes ======== */
+                    <AnimatePresence mode="wait">
+                        {mobileMode === 'agenda' ? (
+                            <motion.main
+                                key="agenda-view"
+                                variants={pageTransitionVariants}
+                                initial="initial"
+                                animate="animate"
+                                exit="exit"
+                                className="flex-1 overflow-y-auto px-6 pb-32 pt-8 space-y-12"
+                            >
+                                {timelineContent}
+                            </motion.main>
+                        ) : (
+                            <motion.main
+                                key="organizar-view"
+                                variants={pageTransitionVariants}
+                                initial="initial"
+                                animate="animate"
+                                exit="exit"
+                                className="flex-1 overflow-y-auto px-6 pb-32 pt-8"
+                            >
+                                {matrixContent}
+                            </motion.main>
+                        )}
+                    </AnimatePresence>
+                )}
 
                 <DragOverlay>
                     {activeTask ? (

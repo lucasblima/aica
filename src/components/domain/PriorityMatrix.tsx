@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
 import {
-    useSensor,
-    useSensors,
-    PointerSensor,
-    KeyboardSensor,
     useDroppable,
 } from '@dnd-kit/core';
 import {
     SortableContext,
-    sortableKeyboardCoordinates,
     verticalListSortingStrategy,
-    useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Sparkles, Calendar, Clock, Edit2, Trash2, Filter, Check } from 'lucide-react';
+import { Sparkles, Filter } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { Task, Quadrant } from '@/types';
-import { TaskEditDrawer } from '@/components/domain';
+import { SwipeableTaskCard } from '@/components/domain/SwipeableTaskCard';
+import { TaskBottomSheet } from '@/components/domain/TaskBottomSheet';
 import { ConfirmationModal } from '@/components/ui';
 import { EmptyQuadrantState } from '@/components/domain';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -81,11 +75,11 @@ const DroppableQuadrant: React.FC<{
     quadrant: QuadrantConfig;
     tasks: Task[];
     isLoading: boolean;
-    onEditTask: (task: Task) => void;
-    onDeleteTask: (task: Task) => void;
+    onOpenTask: (task: Task) => void;
     onCompleteTask: (task: Task) => void;
+    compact?: boolean;
     children?: React.ReactNode;
-}> = ({ quadrant, tasks, isLoading, onEditTask, onDeleteTask, onCompleteTask, children }) => {
+}> = ({ quadrant, tasks, isLoading, onOpenTask, onCompleteTask, compact = false, children }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: quadrant.id,
     });
@@ -95,14 +89,14 @@ const DroppableQuadrant: React.FC<{
             ref={setNodeRef}
             data-container-type="quadrant"
             data-tour={getQuadrantTourTarget(quadrant.id)}
-            className={`ceramic-tray p-4 min-h-[200px] rounded-2xl transition-all ${
+            className={`ceramic-tray ${compact ? 'p-3 min-h-[140px]' : 'p-4 min-h-[200px]'} rounded-2xl transition-all ${
                 isOver ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''
             }`}
             style={{ borderTop: `4px solid ${quadrant.color}` }}
         >
             {/* Quadrant Header */}
-            <div className="mb-4">
-                <h3 className="text-sm font-black text-ceramic-text-primary uppercase tracking-wide">
+            <div className={compact ? 'mb-2' : 'mb-4'}>
+                <h3 className={`${compact ? 'text-xs' : 'text-sm'} font-black text-ceramic-text-primary uppercase tracking-wide`}>
                     {quadrant.title}
                 </h3>
                 <p className="text-xs text-ceramic-text-secondary">
@@ -129,100 +123,16 @@ const DroppableQuadrant: React.FC<{
                     <EmptyQuadrantState quadrantType={quadrant.id} />
                 ) : (
                     tasks.map(task => (
-                        <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} onComplete={onCompleteTask} />
+                        <SwipeableTaskCard
+                            key={task.id}
+                            task={task}
+                            onOpen={onOpenTask}
+                            onComplete={onCompleteTask}
+                            compact={compact}
+                        />
                     ))
                 )}
             </SortableContext>
-        </div>
-    );
-};
-
-// Sortable Task Card Component
-const TaskCard: React.FC<{ task: Task; isDragging?: boolean; onEdit: (task: Task) => void; onDelete: (task: Task) => void; onComplete: (task: Task) => void }> = ({ task, isDragging, onEdit, onDelete, onComplete }) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-    } = useSortable({ id: task.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-    };
-
-    const isOverdue = task.due_date && new Date(task.due_date) < new Date();
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className="ceramic-card p-3 mb-2 group hover:scale-[1.02] transition-all bg-[#F7F6F4] border-l-4 border-amber-400 shadow-sm"
-        >
-            <div className="flex items-start gap-2">
-                {/* Complete checkbox */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onComplete(task);
-                    }}
-                    className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-ceramic-text-secondary/30 hover:border-ceramic-accent hover:scale-110 flex items-center justify-center transition-all"
-                    title="Concluir tarefa"
-                >
-                    <Check className="w-3 h-3 text-transparent group-hover:text-ceramic-accent/40 transition-colors" />
-                </button>
-                <div className="cursor-move" {...attributes} {...listeners}>
-                    <GripVertical className="w-4 h-4 text-ceramic-text-secondary mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold text-ceramic-text-primary truncate">
-                        {task.title}
-                    </h4>
-                    {task.associations && (
-                        <p className="text-xs text-ceramic-text-secondary truncate">
-                            {task.associations.name}
-                        </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                        {task.due_date && (
-                            <span className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-ceramic-error' : 'text-ceramic-text-secondary'}`}>
-                                <Calendar className="w-3 h-3" />
-                                {new Date(task.due_date).toLocaleDateString('pt-BR')}
-                            </span>
-                        )}
-                        {task.estimated_duration && (
-                            <span className="text-xs text-ceramic-text-secondary flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {task.estimated_duration}min
-                            </span>
-                        )}
-                    </div>
-                </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(task);
-                        }}
-                        className="p-1 rounded-lg hover:bg-ceramic-text-secondary/10 transition-all"
-                        title="Editar tarefa"
-                    >
-                        <Edit2 className="w-4 h-4 text-ceramic-text-secondary" />
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(task);
-                        }}
-                        className="p-1 rounded-lg hover:bg-ceramic-error/5 transition-all"
-                        title="Remover tarefa"
-                    >
-                        <Trash2 className="w-4 h-4 text-ceramic-error" />
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };
@@ -233,21 +143,27 @@ interface PriorityMatrixProps {
     tasks: Record<Quadrant, Task[]>;
     isLoading: boolean;
     onRefresh: () => void;
+    compact?: boolean;
+    onOpenTask?: (task: Task) => void;
 }
 
-export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, isLoading, onRefresh }) => {
+export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, isLoading, onRefresh, compact = false, onOpenTask: externalOnOpenTask }) => {
     const [isAicaWorking, setIsAicaWorking] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [deletingTask, setDeletingTask] = useState<Task | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [selectedAssociation, setSelectedAssociation] = useState<string>('all');
     const [showFilters, setShowFilters] = useState(false);
 
-    const handleEditTask = (task: Task) => {
-        setEditingTask(task);
-        setIsEditModalOpen(true);
+    const handleOpenTask = (task: Task) => {
+        if (externalOnOpenTask) {
+            externalOnOpenTask(task);
+        } else {
+            setEditingTask(task);
+            setIsSheetOpen(true);
+        }
     };
 
     const handleSaveTask = async (taskId: string, updates: Partial<Task>) => {
@@ -290,8 +206,8 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
         }
     };
 
-    const handleCancelEdit = () => {
-        setIsEditModalOpen(false);
+    const handleCloseSheet = () => {
+        setIsSheetOpen(false);
         setEditingTask(null);
     };
 
@@ -515,23 +431,22 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                         quadrant={quadrant}
                         tasks={filteredTasks[quadrant.id]}
                         isLoading={isLoading}
-                        onEditTask={handleEditTask}
-                        onDeleteTask={handleDeleteTask}
+                        onOpenTask={handleOpenTask}
                         onCompleteTask={handleCompleteTask}
+                        compact={compact}
                     />
                 ))}
             </div>
 
-            {/* Edit Drawer */}
-            {editingTask && (
-                <TaskEditDrawer
-                    taskId={editingTask.id}
-                    initialData={editingTask}
-                    isOpen={isEditModalOpen}
-                    onSave={handleSaveTask}
-                    onCancel={handleCancelEdit}
-                />
-            )}
+            {/* Task Detail Sheet */}
+            <TaskBottomSheet
+                task={editingTask}
+                isOpen={isSheetOpen}
+                onSave={handleSaveTask}
+                onComplete={handleCompleteTask}
+                onDelete={handleDeleteTask}
+                onClose={handleCloseSheet}
+            />
 
             {/* Delete Confirmation Modal */}
             <ConfirmationModal

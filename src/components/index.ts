@@ -89,6 +89,7 @@ export { UnifiedJourneyCard } from './features/UnifiedJourneyCard';
 export { WeeklyCalendarView } from './features/WeeklyCalendarView';
 
 // ============ Domain-Specific ============
+export { AgendaModeToggle } from './domain/AgendaModeToggle';
 export { EmptyQuadrantState } from './domain/EmptyQuadrantState';
 export { PriorityMatrix } from './domain/PriorityMatrix';
 export { TaskCreationQuickAdd } from './domain/TaskCreationQuickAdd';
