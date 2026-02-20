@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import {
   getInviteStats,
+  getInviteDashboard,
   generateInviteToken,
   getInviteUrl,
   copyInviteLink,
@@ -18,6 +19,8 @@ import {
   getPendingInvites,
   revokeInvite as revokeInviteService,
   type InviteStats,
+  type InviteDashboard,
+  type EnrichedReferral,
   type Referral,
   type AcceptInviteResult
 } from '../services/inviteSystemService';
@@ -25,7 +28,9 @@ import {
 interface UseInviteSystemReturn {
   // State
   stats: InviteStats | null;
+  dashboard: InviteDashboard | null;
   referrals: Referral[];
+  enrichedReferrals: EnrichedReferral[];
   pendingInvites: Referral[];
   loading: boolean;
   generating: boolean;
@@ -39,6 +44,7 @@ interface UseInviteSystemReturn {
   copyLink: () => Promise<boolean>;
   shareLink: () => Promise<boolean>;
   refreshStats: () => Promise<void>;
+  refreshDashboard: () => Promise<void>;
   refreshReferrals: () => Promise<void>;
   refreshPendingInvites: () => Promise<void>;
   revokeInvite: (referralId: string) => Promise<boolean>;
@@ -47,6 +53,7 @@ interface UseInviteSystemReturn {
   hasInvites: boolean;
   availableCount: number;
   pendingCount: number;
+  conversionRate: number;
 }
 
 export function useInviteSystem(): UseInviteSystemReturn {
@@ -54,6 +61,7 @@ export function useInviteSystem(): UseInviteSystemReturn {
 
   // State
   const [stats, setStats] = useState<InviteStats | null>(null);
+  const [dashboard, setDashboard] = useState<InviteDashboard | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [pendingInvites, setPendingInvites] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +75,8 @@ export function useInviteSystem(): UseInviteSystemReturn {
   const availableCount = stats?.available ?? 0;
   const pendingCount = pendingInvites.length;
   const currentUrl = currentToken ? getInviteUrl(currentToken) : null;
+  const enrichedReferrals = dashboard?.referrals ?? [];
+  const conversionRate = dashboard?.stats.conversion_rate ?? 0;
 
   // Fetch stats on mount and auth change
   const refreshStats = useCallback(async () => {
@@ -116,6 +126,29 @@ export function useInviteSystem(): UseInviteSystemReturn {
       console.error('[useInviteSystem] Error fetching pending invites:', error);
     }
   }, [isAuthenticated]);
+
+  // Fetch full dashboard (stats + enriched referrals)
+  const refreshDashboard = useCallback(async () => {
+    if (!isAuthenticated) {
+      setDashboard(null);
+      return;
+    }
+    try {
+      const data = await getInviteDashboard();
+      setDashboard(data);
+      if (data?.stats) {
+        setStats({
+          available: data.stats.available,
+          total_sent: data.stats.total_sent,
+          total_accepted: data.stats.total_accepted,
+          pending: data.stats.pending,
+          lifetime: stats?.lifetime ?? 0
+        });
+      }
+    } catch (error) {
+      console.error('[useInviteSystem] Error fetching dashboard:', error);
+    }
+  }, [isAuthenticated, stats?.lifetime]);
 
   // Revoke an invite
   const revokeInvite = useCallback(async (referralId: string): Promise<boolean> => {
@@ -213,7 +246,9 @@ export function useInviteSystem(): UseInviteSystemReturn {
 
   return {
     stats,
+    dashboard,
     referrals,
+    enrichedReferrals,
     pendingInvites,
     loading,
     generating,
@@ -225,12 +260,14 @@ export function useInviteSystem(): UseInviteSystemReturn {
     copyLink,
     shareLink,
     refreshStats,
+    refreshDashboard,
     refreshReferrals,
     refreshPendingInvites,
     revokeInvite,
     hasInvites,
     availableCount,
-    pendingCount
+    pendingCount,
+    conversionRate
   };
 }
 

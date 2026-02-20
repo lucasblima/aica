@@ -71,6 +71,35 @@ export interface Referral {
   expires_at: string;
 }
 
+export interface InviteDashboardStats {
+  available: number;
+  total_sent: number;
+  total_accepted: number;
+  pending: number;
+  conversion_rate: number;
+}
+
+export interface EnrichedReferral {
+  id: string;
+  invite_code: string | null;
+  invite_token: string;
+  status: 'pending' | 'accepted' | 'expired';
+  created_at: string;
+  expires_at: string;
+  accepted_at: string | null;
+  xp_awarded: number;
+  invitee_name: string | null;
+  invitee_avatar: string | null;
+  invitee_last_seen: string | null;
+  invitee_plan: string | null;
+  is_active: boolean;
+}
+
+export interface InviteDashboard {
+  stats: InviteDashboardStats;
+  referrals: EnrichedReferral[];
+}
+
 // ============================================================================
 // SERVICE FUNCTIONS
 // ============================================================================
@@ -92,6 +121,25 @@ export async function getInviteStats(): Promise<InviteStats | null> {
   }
 
   return data as InviteStats;
+}
+
+/**
+ * Get full invite dashboard (stats + enriched referrals)
+ */
+export async function getInviteDashboard(): Promise<InviteDashboard | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase.rpc('get_invite_dashboard', {
+    p_user_id: user.id
+  });
+
+  if (error) {
+    console.error('[InviteSystem] Error getting dashboard:', error);
+    return null;
+  }
+
+  return data as InviteDashboard;
 }
 
 /**

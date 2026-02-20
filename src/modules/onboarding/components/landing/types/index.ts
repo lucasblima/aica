@@ -3,6 +3,7 @@ export interface DemoMessage {
   text: string;
   timestamp: Date;
   sender: 'user' | 'contact';
+  senderName: string;
   chaos_level: number; // 0-100
   category?: 'atlas' | 'journey' | 'studio' | 'connections';
 }

@@ -19,7 +19,7 @@ interface InviteShareCardProps {
 }
 
 export function InviteShareCard({ compact = true, onClick }: InviteShareCardProps) {
-  const { availableCount, stats, loading } = useInviteSystem();
+  const { availableCount, stats, loading, conversionRate, pendingCount } = useInviteSystem();
 
   const accepted = stats?.total_accepted ?? 0;
 
@@ -48,6 +48,9 @@ export function InviteShareCard({ compact = true, onClick }: InviteShareCardProp
             <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">
               Convites
             </span>
+            {pendingCount > 0 && (
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            )}
           </div>
           {availableCount > 0 && (
             <div className="ceramic-inset px-2 py-0.5 rounded-full">
@@ -66,6 +69,11 @@ export function InviteShareCard({ compact = true, onClick }: InviteShareCardProp
               : 'Convide amigos'
           }
         </p>
+        {conversionRate > 0 && (
+          <p className="text-[10px] text-ceramic-text-tertiary">
+            Taxa: {Math.round(conversionRate * 100)}%
+          </p>
+        )}
       </div>
     </motion.div>
   );

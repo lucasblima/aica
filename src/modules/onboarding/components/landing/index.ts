@@ -12,6 +12,11 @@ export { LandingPage, default } from './LandingPage';
 export { ChaosPanel } from './components/ChaosPanel';
 export { OrderPanel } from './components/OrderPanel';
 export { ProcessingPipeline } from './components/ProcessingPipeline';
+export { FounderStorySection } from './components/FounderStorySection';
+export { ModulesOverviewSection } from './components/ModulesOverviewSection';
+export { WaitlistSection } from './components/WaitlistSection';
+export { TestimonialSection } from './components/TestimonialSection';
+export { FooterSection } from './components/FooterSection';
 
 // Services
 export { demoProcessingService } from './services/demoProcessingService';
