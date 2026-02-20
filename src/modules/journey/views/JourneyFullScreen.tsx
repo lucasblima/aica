@@ -1,6 +1,7 @@
 /**
  * JourneyFullScreen Component
- * Full-screen view with 3 zones: Momento Presente, Atividades (Unified Timeline), Insights & Patterns
+ * Desktop: 2-column layout — Life Council + Patterns + Insights (left) | Timeline + Capture (right)
+ * Mobile: Tab-based navigation (Atividades, Insights, Busca, Entrevista)
  */
 
 import React, { useState, useEffect } from 'react'
@@ -155,7 +156,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   }, []);
 
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search' | 'interview'>('timeline')
+  const [activeTab, setActiveTab] = useState<'timeline' | 'insights' | 'search' | 'interview'>('insights')
   const [activeInterviewSessionId, setActiveInterviewSessionId] = useState<string | null>(null)
   const [showInsight, setShowInsight] = useState(false)
   const [currentInsight, setCurrentInsight] = useState<{
@@ -193,16 +194,22 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
 
   const hasIndexedMoments = documents.length > 0
 
-  // Lazy load: fetch weekly summary only when insights tab is selected
+  // Fetch weekly summary — eager on desktop (always visible), lazy on mobile (insights tab)
   useEffect(() => {
-    if (activeTab === 'insights' && !summary && !isLoadingSummary) {
-      refreshSummary()
+    if (!summary && !isLoadingSummary) {
+      // On desktop (lg+), insights are always visible so fetch immediately
+      // On mobile, only fetch when insights tab is selected
+      const isDesktop = window.innerWidth >= 1024
+      if (isDesktop || activeTab === 'insights') {
+        refreshSummary()
+      }
     }
   }, [activeTab, summary, isLoadingSummary, refreshSummary])
 
-  // Lazy load: initialize File Search only when search tab is selected
+  // Initialize File Search: immediately on desktop (inline), or on search tab on mobile
   useEffect(() => {
-    if (activeTab === 'search') {
+    const isDesktop = window.innerWidth >= 1024
+    if (isDesktop || activeTab === 'search') {
       initializeFileSearch().catch((err) => {
         log.warn('File search initialization failed (non-critical):', err)
       })
@@ -368,7 +375,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                         {stats.total_points.toLocaleString()}
                       </span>
                       <span className="text-xs font-medium text-ceramic-text-secondary">CP</span>
-                      <span className="text-[10px] text-ceramic-text-secondary/60 ml-1">
+                      <span className="text-xs text-ceramic-text-secondary/60 ml-1">
                         {stats.level_name}
                       </span>
                     </div>
@@ -383,7 +390,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                       />
                     </div>
                     {progress.next_level && (
-                      <span className="text-[10px] text-ceramic-text-secondary/50 mt-0.5 leading-none">
+                      <span className="text-xs text-ceramic-text-secondary/50 mt-0.5 leading-none">
                         {progress.points_to_next} para nível {progress.next_level}
                       </span>
                     )}
@@ -416,31 +423,143 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
         </div>
       </div>
 
-      {/* Main content - single column */}
-      <div className="max-w-4xl mx-auto p-6 space-y-4 pb-40">
-        {/* Tabs */}
+      {/* ═══ DESKTOP LAYOUT (lg+): 2-column — Insights left, Timeline right ═══ */}
+      <div className="hidden lg:block max-w-7xl mx-auto p-6 pb-40">
+        <div className="grid grid-cols-5 gap-6">
+          {/* LEFT COLUMN (3/5 = 60%) — Insights: Life Council + Patterns + Weekly Summary */}
+          <div className="col-span-3 space-y-5">
+            {/* Life Council — primary content */}
+            <LifeCouncilCard
+              insight={council.insight}
+              isLoading={council.isLoading}
+              isRunning={council.isRunning}
+              error={council.error}
+              onRun={council.runCouncil}
+              onMarkViewed={council.markViewed}
+              lastUpdated={council.insight?.insight_date}
+            />
+
+            {/* Behavioral Patterns */}
+            <PatternsSummary
+              patterns={userPatterns.patterns}
+              isLoading={userPatterns.isLoading}
+              isSynthesizing={userPatterns.isSynthesizing}
+              error={userPatterns.error}
+              onSynthesize={userPatterns.synthesize}
+              lastUpdated={userPatterns.lastSynthesizedAt}
+            />
+
+            {/* Weekly Summary */}
+            {isLoadingSummary ? (
+              <WeeklySummarySkeleton />
+            ) : summary ? (
+              <WeeklySummaryCard
+                summary={summary}
+                onAddReflection={handleAddReflection}
+              />
+            ) : (
+              <InsightsEmptyState />
+            )}
+
+            {/* Pattern Dashboard (heatmap, trends, clusters) */}
+            <PatternDashboard userId={user?.id} />
+
+            {/* Search — inline on desktop */}
+            <div className="ceramic-card p-6">
+              <JourneySearchPanel
+                onSearch={async (query) => { return await searchInMoments(query, 10) }}
+                onSearchEmotion={async (emotion) => { return await findByEmotion(emotion, 10) }}
+                onSearchTag={async (tag) => { return await findByTag(tag, 10) }}
+                onSearchGrowth={async () => { return await findGrowthMoments(10) }}
+                onSearchInsights={async (question) => { return await findInsights(question, 10) }}
+                results={searchResults}
+                isSearching={isSearching}
+                hasMoments={hasIndexedMoments}
+                onClear={clearSearchResults}
+              />
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN (2/5 = 40%) — Activities: Capture + Question + Timeline + Interview */}
+          <div className="col-span-2 space-y-4">
+            {/* QuickCapture */}
+            <QuickCapture onSubmit={handleCreateMoment} compact />
+
+            {/* Daily Question */}
+            <div data-tour="daily-question">
+              {isLoadingQuestion ? (
+                <DailyQuestionSkeleton />
+              ) : question ? (
+                <DailyQuestionCard
+                  question={question}
+                  onAnswer={handleAnswerQuestion}
+                  onSkip={skipQuestion}
+                />
+              ) : (
+                <DailyQuestionRetryState onRetry={refreshQuestion} />
+              )}
+            </div>
+
+            {/* Interview section */}
+            <div className="ceramic-card p-4">
+              <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3 flex items-center gap-2">
+                <ClipboardDocumentListIcon className="h-4 w-4 text-amber-500" />
+                Entrevista
+              </h4>
+              {activeInterviewSessionId ? (
+                <InterviewSessionView
+                  sessionId={activeInterviewSessionId}
+                  onComplete={() => setActiveInterviewSessionId(null)}
+                  onBack={() => setActiveInterviewSessionId(null)}
+                />
+              ) : (
+                <InterviewCategoryPicker
+                  onSessionStart={(sessionId) => setActiveInterviewSessionId(sessionId)}
+                />
+              )}
+            </div>
+
+            {/* Timeline */}
+            <div>
+              <h4 className="text-sm font-semibold text-ceramic-text-primary mb-3 flex items-center gap-2">
+                <ClockIcon className="h-4 w-4 text-amber-500" />
+                Atividades Recentes
+              </h4>
+              <UnifiedTimelineView userId={user?.id} layout="masonry" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ MOBILE LAYOUT (<lg): Tab-based navigation ═══ */}
+      <div className="lg:hidden max-w-4xl mx-auto p-6 space-y-4 pb-40">
+        {/* Tabs — icons only on mobile, icon+label on sm+ */}
         <div className="flex gap-2">
-          <CeramicFilterTab
-            icon={<ClockIcon className="h-4 w-4" />}
-            label="Atividades"
-            isActive={activeTab === 'timeline'}
-            onClick={() => setActiveTab('timeline')}
-          />
           <CeramicFilterTab
             icon={<ChartBarIcon className="h-4 w-4" />}
             label="Insights"
+            labelClassName="hidden sm:inline"
             isActive={activeTab === 'insights'}
             onClick={() => setActiveTab('insights')}
           />
           <CeramicFilterTab
+            icon={<ClockIcon className="h-4 w-4" />}
+            label="Atividades"
+            labelClassName="hidden sm:inline"
+            isActive={activeTab === 'timeline'}
+            onClick={() => setActiveTab('timeline')}
+          />
+          <CeramicFilterTab
             icon={<MagnifyingGlassIcon className="h-4 w-4" />}
             label="Busca"
+            labelClassName="hidden sm:inline"
             isActive={activeTab === 'search'}
             onClick={() => setActiveTab('search')}
           />
           <CeramicFilterTab
             icon={<ClipboardDocumentListIcon className="h-4 w-4" />}
             label="Entrevista"
+            labelClassName="hidden sm:inline"
             isActive={activeTab === 'interview'}
             onClick={() => setActiveTab('interview')}
           />
@@ -460,7 +579,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               animate="animate"
               exit="exit"
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              className="space-y-4"
             >
               {/* Daily Question */}
               <div data-tour="daily-question">
@@ -483,10 +602,8 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 )}
               </div>
 
-              {/* Timeline masonry */}
-              <div>
-                <UnifiedTimelineView userId={user?.id} layout="masonry" />
-              </div>
+              {/* Timeline */}
+              <UnifiedTimelineView userId={user?.id} layout="masonry" />
             </motion.div>
           )}
 
@@ -501,7 +618,6 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              {/* Life Council — Full card */}
               <LifeCouncilCard
                 insight={council.insight}
                 isLoading={council.isLoading}
@@ -509,15 +625,16 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 error={council.error}
                 onRun={council.runCouncil}
                 onMarkViewed={council.markViewed}
+                lastUpdated={council.insight?.insight_date}
               />
 
-              {/* Behavioral Patterns — Full list */}
               <PatternsSummary
                 patterns={userPatterns.patterns}
                 isLoading={userPatterns.isLoading}
                 isSynthesizing={userPatterns.isSynthesizing}
                 error={userPatterns.error}
                 onSynthesize={userPatterns.synthesize}
+                lastUpdated={userPatterns.lastSynthesizedAt}
               />
 
               {isLoadingSummary ? (
@@ -547,26 +664,11 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               className="ceramic-card p-6"
             >
               <JourneySearchPanel
-                onSearch={async (query) => {
-                  const results = await searchInMoments(query, 10);
-                  return results;
-                }}
-                onSearchEmotion={async (emotion) => {
-                  const results = await findByEmotion(emotion, 10);
-                  return results;
-                }}
-                onSearchTag={async (tag) => {
-                  const results = await findByTag(tag, 10);
-                  return results;
-                }}
-                onSearchGrowth={async () => {
-                  const results = await findGrowthMoments(10);
-                  return results;
-                }}
-                onSearchInsights={async (question) => {
-                  const results = await findInsights(question, 10);
-                  return results;
-                }}
+                onSearch={async (query) => { return await searchInMoments(query, 10) }}
+                onSearchEmotion={async (emotion) => { return await findByEmotion(emotion, 10) }}
+                onSearchTag={async (tag) => { return await findByTag(tag, 10) }}
+                onSearchGrowth={async () => { return await findGrowthMoments(10) }}
+                onSearchInsights={async (question) => { return await findInsights(question, 10) }}
                 results={searchResults}
                 isSearching={isSearching}
                 hasMoments={hasIndexedMoments}

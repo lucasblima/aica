@@ -135,7 +135,7 @@ export async function apiGetCurrentStreak() {
   return {
     currentStreak: stats.current_streak,
     longestStreak: stats.longest_streak,
-    lastMomentDate: stats.last_moment_date,
+    lastMomentDate: stats.last_activity_date,
   }
 }
 

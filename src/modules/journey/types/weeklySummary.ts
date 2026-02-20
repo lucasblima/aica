@@ -99,5 +99,5 @@ export const EMOTIONAL_TREND_COLORS: Record<EmotionalTrend, string> = {
   ascending: '#10b981', // green-500
   stable: '#3b82f6', // blue-500
   descending: '#f97316', // orange-500
-  volatile: '#a855f7', // purple-500
+  volatile: '#8B5CF6', // violet-500
 }

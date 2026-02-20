@@ -8,7 +8,7 @@ import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 
 const log = createNamespacedLogger('useWeeklySummary')
-import { WeeklySummary, WeeklySummaryWithReflection } from '../types/weeklySummary'
+import { WeeklySummary, WeeklySummaryWithReflection, getCurrentWeekNumber } from '../types/weeklySummary'
 import {
   getCurrentWeeklySummary,
   getWeeklySummary,
@@ -61,10 +61,11 @@ export function useCurrentWeeklySummary(options?: { immediate?: boolean }) {
       setIsGenerating(true)
       setError(null)
 
+      const { week, year } = getCurrentWeekNumber()
       const newSummary = await generateWeeklySummary(
         user.id,
-        new Date().getFullYear(),
-        Math.ceil(new Date().getDate() / 7)
+        year,
+        week
       )
 
       setSummary(newSummary)
