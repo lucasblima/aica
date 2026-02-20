@@ -6,8 +6,13 @@
  * coupled to specific business domains.
  */
 
+export { AgendaModeToggle } from './AgendaModeToggle';
 export { EmptyQuadrantState } from './EmptyQuadrantState';
 export { PriorityMatrix } from './PriorityMatrix';
+export { SwipeableTaskCard } from './SwipeableTaskCard';
+export { TaskBottomSheet } from './TaskBottomSheet';
 export { TaskCreationQuickAdd } from './TaskCreationQuickAdd';
 export { TaskEditModal } from './TaskEditModal';
 export { TaskEditDrawer } from './TaskEditDrawer';
+export { CompletedTasksSection } from './CompletedTasksSection';
+export { RecurrenceChip } from './RecurrenceChip';

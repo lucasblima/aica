@@ -39,19 +39,23 @@ export function useActivationStatus(): UseActivationStatusReturn {
     }
 
     try {
-      // STEP 1: Process any pending invite from localStorage FIRST
-      // This handles the case where user entered a code on the landing page
-      // or clicked an invite link, then logged in.
-      const pendingResult = await processPendingInvite();
-      if (pendingResult?.success) {
-        console.log('[useActivationStatus] Pending invite processed:', pendingResult);
+      // Run both checks in parallel to save ~500-1000ms
+      // If pending invite succeeds, use that; otherwise fall back to activation status
+      const [inviteResult, statusResult] = await Promise.allSettled([
+        processPendingInvite(),
+        checkActivationStatus(),
+      ]);
+
+      // Prefer pending invite result if it succeeded
+      if (inviteResult.status === 'fulfilled' && inviteResult.value?.success) {
+        console.log('[useActivationStatus] Pending invite processed:', inviteResult.value);
         setIsActivated(true);
         setLoading(false);
         return;
       }
 
-      // STEP 2: Check activation status from database
-      const status = await checkActivationStatus();
+      // Fall back to activation status from database
+      const status = statusResult.status === 'fulfilled' ? statusResult.value : null;
       setIsActivated(status?.is_activated ?? true); // Default to true if check fails
     } catch (error) {
       console.error('[useActivationStatus] Error:', error);
