@@ -24,6 +24,7 @@ const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 interface SyncRequest {
   microcycleId: string;
   weekNumber?: number; // Optional: sync only specific week (1-3)
+  timezone?: string;   // Optional: IANA timezone (default: America/Sao_Paulo)
 }
 
 interface CalendarEvent {
@@ -107,7 +108,8 @@ function slotToCalendarEvent(
     coach_notes?: string;
     exercise_structure?: Record<string, unknown>;
   },
-  microcycleStartDate: string // "YYYY-MM-DD" (Monday of week 1)
+  microcycleStartDate: string, // "YYYY-MM-DD" (Monday of week 1)
+  timezone: string = 'America/Sao_Paulo'
 ): CalendarEvent {
   // Calculate the actual date for this slot
   const baseDate = new Date(microcycleStartDate + 'T00:00:00');
@@ -155,11 +157,11 @@ function slotToCalendarEvent(
     description: descParts.join('\n'),
     start: {
       dateTime: `${dateStr}T${startHour}:${startMin}:00`,
-      timeZone: 'America/Sao_Paulo',
+      timeZone: timezone,
     },
     end: {
       dateTime: `${dateStr}T${endHour}:${endMin}:00`,
-      timeZone: 'America/Sao_Paulo',
+      timeZone: timezone,
     },
     colorId: '7', // Peacock/teal (Flux color)
     extendedProperties: {
@@ -223,7 +225,8 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // 2. Parse request
-    const { microcycleId, weekNumber }: SyncRequest = await req.json();
+    const { microcycleId, weekNumber, timezone }: SyncRequest = await req.json();
+    const tz = timezone || 'America/Sao_Paulo';
 
     if (!microcycleId) {
       return new Response(
@@ -344,7 +347,7 @@ serve(async (req) => {
           continue;
         }
 
-        const calendarEvent = slotToCalendarEvent(slot, microcycle.start_date);
+        const calendarEvent = slotToCalendarEvent(slot, microcycle.start_date, tz);
 
         let eventId: string;
         let action: string;
