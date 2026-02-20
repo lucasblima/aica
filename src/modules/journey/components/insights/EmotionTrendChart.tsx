@@ -254,7 +254,7 @@ export function EmotionTrendChart({ data }: EmotionTrendChartProps) {
             strokeDashoffset: estimatedLength,
             animation: `drawLine 1.2s ease-out forwards`,
             ['--path-length' as string]: estimatedLength,
-          }}
+          } as React.CSSProperties}
         />
 
         {/* Data points with outer glow ring */}

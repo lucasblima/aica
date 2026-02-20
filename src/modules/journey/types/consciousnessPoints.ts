@@ -34,7 +34,7 @@ export interface UserConsciousnessStats {
   // Streaks
   current_streak: number
   longest_streak: number
-  last_moment_date?: string
+  last_activity_date?: string
 
   // Counts
   total_moments: number

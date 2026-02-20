@@ -23,21 +23,7 @@ import type {
   CouncilStatus,
   CouncilAction,
 } from '@/hooks/useLifeCouncil'
-
-// =============================================================================
-// HELPERS
-// =============================================================================
-
-function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  if (diffDays === 0) return 'Hoje'
-  if (diffDays === 1) return 'Ontem'
-  if (diffDays < 7) return `${diffDays} dias atrás`
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-}
+import { formatRelativeTime } from '@/lib/dateUtils'
 
 // =============================================================================
 // STATUS CONFIG
@@ -233,7 +219,7 @@ export function LifeCouncilCard({
           <div className="flex items-center gap-2">
             {lastUpdated && (
               <span className="text-xs text-ceramic-text-tertiary">
-                {formatRelativeDate(lastUpdated)}
+                {formatRelativeTime(lastUpdated)}
               </span>
             )}
             {!isToday && (

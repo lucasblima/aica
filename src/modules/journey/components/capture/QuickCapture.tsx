@@ -219,7 +219,7 @@ export function QuickCapture({
             <div className="flex items-start gap-2">
               <LightBulbIcon className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-ceramic-accent flex-shrink-0 mt-0.5`} />
               <div className="flex-1">
-                <p className={`${compact ? 'text-xs' : 'text-xs'} font-bold text-ceramic-accent mb-1`}>
+                <p className="text-xs font-bold text-ceramic-accent mb-1">
                   {aiSuggestion.type === 'reflection' && 'Reflexao sugerida'}
                   {aiSuggestion.type === 'question' && 'Pergunta para aprofundar'}
                   {aiSuggestion.type === 'pattern' && 'Padrao identificado'}
