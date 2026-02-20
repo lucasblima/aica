@@ -6,15 +6,17 @@
  * workout cards with accordion expand, and coach availability.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { useMyAthleteProfile } from '../hooks/useMyAthleteProfile';
 import { useParQ } from '../hooks/useParQ';
 import { useAthleteDocuments } from '../hooks/useAthleteDocuments';
+import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
 import { ProgressTimeline, WorkoutCard } from '../components/athlete';
+import { WeeklyGrid, type WeekWorkout } from '../components/canvas/WeeklyGrid';
 import type { FeedbackData } from '../components/athlete';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
@@ -26,6 +28,8 @@ import {
   Calendar,
   Clock,
   Leaf,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -183,6 +187,10 @@ export default function AthletePortalView() {
   // UI state
   const [expandedSlotId, setExpandedSlotId] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'canvas'>(() => {
+    try { return (localStorage.getItem('flux_athlete_view_mode') as 'list' | 'canvas') || 'list'; }
+    catch { return 'list'; }
+  });
 
   // Welcome state
   const welcomeParam = searchParams.get('welcome') === 'true';
@@ -331,6 +339,13 @@ export default function AthletePortalView() {
     }
   };
 
+  // ============ VIEW MODE ============
+
+  const handleViewModeChange = useCallback((mode: 'list' | 'canvas') => {
+    setViewMode(mode);
+    try { localStorage.setItem('flux_athlete_view_mode', mode); } catch {}
+  }, []);
+
   // ============ EARLY RETURNS ============
 
   if (isLoading) {
@@ -462,14 +477,27 @@ export default function AthletePortalView() {
     ? Math.round((micro.completed_slots / Math.max(micro.total_slots, 1)) * 100)
     : 0;
 
-  // Build weeks for ProgressTimeline
+  // Build weeks for ProgressTimeline (4 weeks)
   const weeks = micro
-    ? [1, 2, 3].map((wk) => ({
-        weekNumber: wk,
-        focus: (micro as Record<string, unknown>)[`week_${wk}_focus`] as string || '',
-        totalSlots: micro.slots?.filter((s) => s.week_number === wk).length || 0,
-        completedSlots: micro.slots?.filter((s) => s.week_number === wk && s.is_completed).length || 0,
-      }))
+    ? [1, 2, 3, 4].map((wk) => {
+        // Calculate date range for this week
+        let dateRange = '';
+        if (micro.start_date) {
+          const start = new Date(micro.start_date);
+          const weekStart = new Date(start);
+          weekStart.setDate(start.getDate() + (wk - 1) * 7);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          dateRange = `${weekStart.getDate().toString().padStart(2, '0')}/${(weekStart.getMonth() + 1).toString().padStart(2, '0')} - ${weekEnd.getDate().toString().padStart(2, '0')}/${(weekEnd.getMonth() + 1).toString().padStart(2, '0')}`;
+        }
+        return {
+          weekNumber: wk,
+          focus: (micro as Record<string, unknown>)[`week_${wk}_focus`] as string || '',
+          totalSlots: micro.slots?.filter((s) => s.week_number === wk).length || 0,
+          completedSlots: micro.slots?.filter((s) => s.week_number === wk && s.is_completed).length || 0,
+          dateRange,
+        };
+      })
     : [];
 
   // Current week slots grouped by day_of_week
@@ -480,6 +508,55 @@ export default function AthletePortalView() {
     existing.push(slot);
     slotsByDay.set(slot.day_of_week, existing);
   }
+
+  // Canvas view: current week start date for calendar integration
+  const canvasWeekStart = useMemo(() => {
+    if (!micro?.start_date) return weekStart;
+    const start = new Date(micro.start_date);
+    const currentWeekOffset = ((micro.current_week || 1) - 1) * 7;
+    const canvasStart = new Date(start);
+    canvasStart.setDate(start.getDate() + currentWeekOffset);
+    canvasStart.setHours(0, 0, 0, 0);
+    return canvasStart;
+  }, [micro?.start_date, micro?.current_week, weekStart]);
+
+  // Canvas view: transform slots into WeekWorkout format for WeeklyGrid
+  const canvasWorkouts = useMemo<WeekWorkout[]>(() => {
+    if (!currentWeekSlots.length) return [];
+    return currentWeekSlots.map((slot) => ({
+      id: slot.id,
+      day_of_week: slot.day_of_week,
+      start_time: slot.time_of_day || undefined,
+      name: slot.template?.name || 'Treino',
+      duration: slot.custom_duration || slot.template?.duration || 60,
+      intensity: (['low', 'medium', 'high'].includes(slot.template?.intensity || '') ? slot.template.intensity : 'medium') as 'low' | 'medium' | 'high',
+      modality: 'strength' as const, // Default — template doesn't expose modality in this profile shape
+    }));
+  }, [currentWeekSlots]);
+
+  // Canvas view: calendar integration (only active in canvas mode to avoid unnecessary API calls)
+  const calendar = useCanvasCalendar({
+    weekStartDate: canvasWeekStart,
+    athleteId: viewMode === 'canvas' ? profile?.athlete_id : undefined,
+  });
+
+  // Canvas drag handler — reschedule workout
+  const handleCanvasReorder = useCallback(async (workoutId: string, _fromDay: number, toDay: number, toTime: string) => {
+    setUpdating(workoutId);
+    try {
+      await supabase
+        .from('workout_slots')
+        .update({
+          day_of_week: toDay,
+          start_time: toTime, // DB column is start_time
+        })
+        .eq('id', workoutId);
+      await refetch();
+    } finally {
+      setUpdating(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refetch]);
 
   // Compute actual dates from microcycle start_date
   const getDateForDay = (dayOfWeek: number): Date | null => {
@@ -498,13 +575,41 @@ export default function AthletePortalView() {
     <div className="flex flex-col w-full min-h-screen bg-ceramic-base pb-24">
       {/* Header */}
       <header className="pt-6 px-5 pb-2">
-        <button
-          onClick={() => navigate('/')}
-          className="mb-4 flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
-        </button>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
+          </button>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-ceramic-cool/60">
+            <button
+              onClick={() => handleViewModeChange('list')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'list'
+                  ? 'bg-white text-ceramic-text-primary shadow-sm'
+                  : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              Lista
+            </button>
+            <button
+              onClick={() => handleViewModeChange('canvas')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'canvas'
+                  ? 'bg-white text-ceramic-text-primary shadow-sm'
+                  : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              Canvas
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Profile Card */}
@@ -532,7 +637,7 @@ export default function AthletePortalView() {
             <div className="space-y-2 pt-3 border-t border-ceramic-border/30">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-ceramic-text-secondary">
-                  Semana {micro.current_week}/3
+                  Semana {micro.current_week}/4
                 </span>
                 <span className="text-xs font-bold text-ceramic-text-primary">
                   {completionPct}%
@@ -590,61 +695,99 @@ export default function AthletePortalView() {
         </motion.div>
       )}
 
-      {/* Weekly Calendar */}
+      {/* Weekly Calendar / Canvas */}
       {micro ? (
-        <motion.section
-          className="px-5 space-y-1"
-          custom={3}
-          initial="hidden"
-          animate="visible"
-          variants={sectionVariants}
-        >
-          {[1, 2, 3, 4, 5, 6, 7].map((day) => {
-            const daySlots = slotsByDay.get(day) || [];
-            const date = getDateForDay(day);
+        viewMode === 'canvas' ? (
+          /* ── Canvas View ── */
+          <motion.section
+            className="px-5 flex-1"
+            custom={3}
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+          >
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 340px)', minHeight: '500px' }}>
+              <WeeklyGrid
+                weekNumber={micro.current_week || 1}
+                workouts={canvasWorkouts}
+                calendarEvents={calendar.busySlots}
+                onReorderWorkout={handleCanvasReorder}
+                onWorkoutClick={(id) => setExpandedSlotId(expandedSlotId === id ? null : id)}
+                startDate={canvasWeekStart}
+                isLoading={calendar.isLoading}
+              />
+            </div>
+            {/* Calendar legend */}
+            <div className="flex items-center gap-4 mt-3 px-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#7B8FA2]/20" />
+                <span className="text-[10px] text-ceramic-text-secondary">Coach ocupado</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#C4883A]/20" />
+                <span className="text-[10px] text-ceramic-text-secondary">Sua agenda</span>
+              </div>
+              <span className="text-[10px] text-ceramic-text-tertiary ml-auto">
+                Arraste treinos para reorganizar
+              </span>
+            </div>
+          </motion.section>
+        ) : (
+          /* ── List View ── */
+          <motion.section
+            className="px-5 space-y-1"
+            custom={3}
+            initial="hidden"
+            animate="visible"
+            variants={sectionVariants}
+          >
+            {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+              const daySlots = slotsByDay.get(day) || [];
+              const date = getDateForDay(day);
 
-            return (
-              <div key={day}>
-                {/* Day Header */}
-                <div className="flex items-center gap-2 py-3">
-                  <span className="text-xs font-black text-ceramic-text-primary uppercase">
-                    {DAY_NAMES[day]}
-                  </span>
-                  {date && (
-                    <span className="text-xs text-ceramic-text-secondary">
-                      {date.getDate()} {MONTH_NAMES[date.getMonth()]}
+              return (
+                <div key={day}>
+                  {/* Day Header */}
+                  <div className="flex items-center gap-2 py-3">
+                    <span className="text-xs font-black text-ceramic-text-primary uppercase">
+                      {DAY_NAMES[day]}
                     </span>
+                    {date && (
+                      <span className="text-xs text-ceramic-text-secondary">
+                        {date.getDate()} {MONTH_NAMES[date.getMonth()]}
+                      </span>
+                    )}
+                  </div>
+
+                  {daySlots.length > 0 ? (
+                    <div className="space-y-2">
+                      {daySlots.map((slot) => (
+                        <WorkoutCard
+                          key={slot.id}
+                          slot={slot}
+                          isExpanded={expandedSlotId === slot.id}
+                          onToggleExpand={() => toggleExpand(slot.id)}
+                          onToggleComplete={handleToggleComplete}
+                          onSubmitFeedback={handleSubmitFeedback}
+                          onReschedule={handleReschedule}
+                          isUpdating={updating === slot.id}
+                          modality={profile.modality}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 py-3 px-4 rounded-xl bg-ceramic-cool/50">
+                      <Leaf className="w-4 h-4 text-green-400" />
+                      <span className="text-xs text-ceramic-text-secondary italic">
+                        Descanso
+                      </span>
+                    </div>
                   )}
                 </div>
-
-                {daySlots.length > 0 ? (
-                  <div className="space-y-2">
-                    {daySlots.map((slot) => (
-                      <WorkoutCard
-                        key={slot.id}
-                        slot={slot}
-                        isExpanded={expandedSlotId === slot.id}
-                        onToggleExpand={() => toggleExpand(slot.id)}
-                        onToggleComplete={handleToggleComplete}
-                        onSubmitFeedback={handleSubmitFeedback}
-                        onReschedule={handleReschedule}
-                        isUpdating={updating === slot.id}
-                        modality={profile.modality}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 py-3 px-4 rounded-xl bg-ceramic-cool/50">
-                    <Leaf className="w-4 h-4 text-green-400" />
-                    <span className="text-xs text-ceramic-text-secondary italic">
-                      Descanso
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </motion.section>
+              );
+            })}
+          </motion.section>
+        )
       ) : (
         <motion.section
           className="px-5"

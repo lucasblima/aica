@@ -299,6 +299,32 @@ export class WorkoutSlotService {
   }
 
   /**
+   * Update athlete workout schedule (day + time)
+   * Uses RPC that verifies the caller is the linked athlete
+   */
+  static async updateAthleteSchedule(
+    slotId: string,
+    newDayOfWeek: number,
+    newStartTime: string
+  ): Promise<{ data: any; error: any }> {
+    try {
+      const { data, error } = await supabase.rpc('update_athlete_workout_schedule', {
+        p_slot_id: slotId,
+        p_new_day_of_week: newDayOfWeek,
+        p_new_start_time: newStartTime,
+      });
+
+      if (error) throw error;
+
+      log.info('Updated athlete workout schedule', { slotId, newDayOfWeek, newStartTime });
+      return { data, error: null };
+    } catch (error) {
+      log.error('Error updating athlete schedule:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
    * Get completion stats for microcycle
    */
   static async getCompletionStats(
@@ -344,6 +370,44 @@ export class WorkoutSlotService {
     } catch (error) {
       log.error('Error calculating completion stats:', error);
       return { total: 0, completed: 0, percentage: 0, weekStats: [] };
+    }
+  }
+
+  /**
+   * Sync workout slots to athlete's Google Calendar via Edge Function.
+   * Works for both athlete (self-sync) and coach (sync on behalf of athlete).
+   */
+  static async syncToGoogleCalendar(
+    microcycleId: string,
+    weekNumber?: number
+  ): Promise<{
+    data: {
+      success: boolean;
+      synced: number;
+      skipped: number;
+      failed: number;
+      events: Array<{ slotId: string; eventId: string; action: string }>;
+    } | null;
+    error: any;
+  }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-workout-calendar', {
+        body: { microcycleId, weekNumber },
+      });
+
+      if (error) throw error;
+
+      log.info('Synced workouts to Google Calendar', {
+        microcycleId,
+        weekNumber,
+        synced: data?.synced,
+        failed: data?.failed,
+      });
+
+      return { data, error: null };
+    } catch (error) {
+      log.error('Error syncing workouts to calendar:', error);
+      return { data: null, error };
     }
   }
 }

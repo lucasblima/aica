@@ -1,7 +1,7 @@
 /**
- * ProgressTimeline — 3-week horizontal microcycle overview
+ * ProgressTimeline — 4-week horizontal microcycle overview
  *
- * Shows week pills with completion progress and focus labels.
+ * Shows week pills with completion progress, date ranges, and focus labels.
  * Current week gets amber accent, completed weeks get a green check.
  */
 
@@ -14,6 +14,7 @@ export interface ProgressTimelineProps {
     focus: string;
     totalSlots: number;
     completedSlots: number;
+    dateRange?: string;
   }>;
   currentWeek: number;
   microcycleName: string;
@@ -103,7 +104,7 @@ export function ProgressTimeline({
                 </div>
               )}
 
-              {/* Week number */}
+              {/* Week date range or number */}
               <p
                 className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${
                   isCurrent
@@ -111,7 +112,7 @@ export function ProgressTimeline({
                     : 'text-ceramic-text-secondary'
                 }`}
               >
-                Sem {week.weekNumber}
+                {week.dateRange || `Sem ${week.weekNumber}`}
               </p>
 
               {/* Progress bar */}
