@@ -88,7 +88,7 @@ export function ActivityHeatmap({ data, days = 90 }: ActivityHeatmapProps) {
               key={`day-${i}`}
               x={0}
               y={i * (cellSize + gap) + cellSize - 2}
-              className="text-[9px]"
+              className="text-[11px]"
               fill="#948D82"
             >
               {label}
@@ -114,11 +114,11 @@ export function ActivityHeatmap({ data, days = 90 }: ActivityHeatmapProps) {
 
       {/* Intensity legend */}
       <div className="flex items-center gap-1 mt-3 justify-end">
-        <span className="text-[10px] text-[#948D82] mr-1">Menos</span>
+        <span className="text-xs text-[#948D82] mr-1">Menos</span>
         {['#E0DDD5', '#fbbf24', '#d97706', '#b45309', '#92400e'].map((color, i) => (
           <div key={i} className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
         ))}
-        <span className="text-[10px] text-[#948D82] ml-1">Mais</span>
+        <span className="text-xs text-[#948D82] ml-1">Mais</span>
       </div>
     </div>
   )

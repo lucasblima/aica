@@ -137,7 +137,7 @@ export function getProgressToNextLevel(points: number): {
 export const LEVEL_COLORS: Record<CPLevel, string> = {
   1: '#94a3b8', // slate-400
   2: '#3b82f6', // blue-500
-  3: '#a855f7', // purple-500
+  3: '#8B5CF6', // violet-500
   4: '#f59e0b', // amber-500
   5: '#eab308', // yellow-500
 }

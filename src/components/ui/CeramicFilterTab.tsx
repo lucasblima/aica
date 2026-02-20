@@ -8,6 +8,7 @@ interface CeramicFilterTabProps {
   onClick: () => void
   size?: 'sm' | 'md'
   className?: string
+  labelClassName?: string
 }
 
 const sizeMap = {
@@ -23,12 +24,15 @@ export function CeramicFilterTab({
   onClick,
   size = 'md',
   className = '',
+  labelClassName = '',
 }: CeramicFilterTabProps) {
   const s = sizeMap[size]
 
   return (
     <button
       onClick={onClick}
+      aria-label={label}
+      title={label}
       className={`
         flex items-center gap-2 ${s.container} rounded-full font-bold uppercase tracking-wider transition-all duration-200
         ${isActive
@@ -40,7 +44,7 @@ export function CeramicFilterTab({
       `}
     >
       {icon && <span className="flex-shrink-0">{icon}</span>}
-      <span>{label}</span>
+      <span className={labelClassName}>{label}</span>
       {count !== undefined && (
         <span className={`${s.count} rounded bg-[#E0DDD5]/50 text-[#948D82] font-medium`}>
           {count}
