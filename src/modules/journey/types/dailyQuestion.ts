@@ -7,7 +7,7 @@
  * - User-specific questions (user_id set) are AI-generated personalized
  */
 
-export type QuestionCategory = 'reflection' | 'gratitude' | 'energy' | 'learning' | 'change'
+export type QuestionCategory = 'reflection' | 'gratitude' | 'energy' | 'learning' | 'change' | 'connection' | 'purpose' | 'creativity' | 'health' | 'mindfulness'
 
 export interface DailyQuestion {
   id: string
@@ -79,6 +79,11 @@ export const QUESTION_CATEGORY_COLORS: Record<QuestionCategory, string> = {
   energy: '#f59e0b', // amber-500
   learning: '#8B5CF6', // violet-500
   change: '#f97316', // orange-500
+  connection: '#ec4899', // pink-500
+  purpose: '#6366f1', // indigo-500
+  creativity: '#14b8a6', // teal-500
+  health: '#22c55e', // green-500
+  mindfulness: '#06b6d4', // cyan-500
 }
 
 // Question category icons (emojis)
@@ -88,6 +93,11 @@ export const QUESTION_CATEGORY_ICONS: Record<QuestionCategory, string> = {
   energy: '⚡',
   learning: '📚',
   change: '🔄',
+  connection: '🤝',
+  purpose: '🎯',
+  creativity: '🎨',
+  health: '💪',
+  mindfulness: '🧘',
 }
 
 // Question category descriptions
@@ -97,4 +107,9 @@ export const QUESTION_CATEGORY_DESCRIPTIONS: Record<QuestionCategory, string> = 
   energy: 'Perguntas sobre energia e motivação',
   learning: 'Perguntas sobre aprendizado e crescimento',
   change: 'Perguntas sobre mudança e objetivos',
+  connection: 'Perguntas sobre relacionamentos e vínculos',
+  purpose: 'Perguntas sobre propósito e significado',
+  creativity: 'Perguntas sobre criatividade e expressão',
+  health: 'Perguntas sobre saúde física e bem-estar',
+  mindfulness: 'Perguntas sobre presença e atenção plena',
 }

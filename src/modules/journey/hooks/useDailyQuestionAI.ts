@@ -18,6 +18,7 @@ import {
   getDailyQuestionWithContext,
   saveDailyResponse,
   logDailyQuestionUsage,
+  generateFollowUpQuestion,
 } from '../services/dailyQuestionService'
 import { answerQuestion as saveQuestionResponse } from '../services/questionService'
 
@@ -27,6 +28,10 @@ interface DailyQuestionState {
   isLoading: boolean
   isSubmitting: boolean
   error: Error | null
+  // Follow-up (Wave 3)
+  followUp: QuestionWithResponse | null
+  isFollowUpLoading: boolean
+  isFollowUpPhase: boolean
 }
 
 /**
@@ -48,6 +53,9 @@ export function useDailyQuestionAI() {
     isLoading: false,
     isSubmitting: false,
     error: null,
+    followUp: null,
+    isFollowUpLoading: false,
+    isFollowUpPhase: false,
   })
 
   const fetchQuestion = useCallback(async () => {
@@ -141,6 +149,36 @@ export function useDailyQuestionAI() {
           isSubmitting: false,
         }))
 
+        // Generate follow-up (non-blocking, optional)
+        if (!state.isFollowUpPhase && state.question) {
+          setState(prev => ({ ...prev, isFollowUpLoading: true }))
+          generateFollowUpQuestion(
+            user.id,
+            state.question.question_text,
+            responseText,
+          ).then(followUpText => {
+            if (followUpText) {
+              const followUpQuestion: QuestionWithResponse = {
+                id: `followup-${Date.now()}`,
+                question_text: followUpText,
+                category: state.question?.category || 'reflection',
+                active: true,
+                created_at: new Date().toISOString(),
+                parent_question_id: state.question?.id,
+              }
+              setState(prev => ({
+                ...prev,
+                followUp: followUpQuestion,
+                isFollowUpLoading: false,
+              }))
+            } else {
+              setState(prev => ({ ...prev, isFollowUpLoading: false }))
+            }
+          }).catch(() => {
+            setState(prev => ({ ...prev, isFollowUpLoading: false }))
+          })
+        }
+
         return result
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to save response')
@@ -154,15 +192,40 @@ export function useDailyQuestionAI() {
         throw error
       }
     },
-    [user?.id, state.question, state.source]
+    [user?.id, state.question, state.source, state.isFollowUpPhase]
   )
 
+  // Accept follow-up: replace current question with follow-up
+  const acceptFollowUp = useCallback(() => {
+    if (!state.followUp) return
+    setState(prev => ({
+      ...prev,
+      question: prev.followUp,
+      followUp: null,
+      isFollowUpPhase: true, // Prevent nested follow-ups
+    }))
+  }, [state.followUp])
+
+  // Dismiss follow-up
+  const dismissFollowUp = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      followUp: null,
+      isFollowUpLoading: false,
+    }))
+  }, [])
+
   const skip = useCallback(() => {
-    // Fetch a new question
     fetchQuestion()
   }, [fetchQuestion])
 
   const refresh = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      followUp: null,
+      isFollowUpPhase: false,
+      isFollowUpLoading: false,
+    }))
     fetchQuestion()
   }, [fetchQuestion])
 
@@ -182,6 +245,11 @@ export function useDailyQuestionAI() {
     answer,
     skip,
     refresh,
+    // Follow-up (Wave 3)
+    followUp: state.followUp,
+    isFollowUpLoading: state.isFollowUpLoading,
+    acceptFollowUp,
+    dismissFollowUp,
   }
 }
 
