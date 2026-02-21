@@ -63,4 +63,8 @@ export { PatternsSummary } from './PatternsSummary';
 // Module Agent Chat — Reusable AI agent interface
 export { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig, MODULE_AGENT_CONFIGS } from './ModuleAgentChat';
 
+// Universal Input Funnel — Multi-modal input (text + audio + photo)
+export { MultiModalInput } from './MultiModalInput';
+export type { MultiModalOutput } from './MultiModalInput';
+
 

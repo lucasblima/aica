@@ -393,6 +393,74 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   }
 }
 
+/**
+ * Describe an image using Gemini vision (OCR + description)
+ * Used by the Universal Input Funnel for photo moments
+ *
+ * @param imageFile - Image File from camera/gallery input
+ * @returns Description text in Portuguese
+ */
+export async function describeImage(imageFile: File): Promise<string> {
+  const startTime = Date.now()
+
+  try {
+    // Convert File to base64
+    const arrayBuffer = await imageFile.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+    let binary = ''
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    const imageBase64 = btoa(binary)
+
+    const mimeType = imageFile.type || 'image/jpeg'
+
+    log.debug('[momentPersistenceService] Describing image', {
+      mimeType,
+      sizeBytes: imageFile.size,
+    })
+
+    const response = await geminiClient.call({
+      action: 'analyze_moment',
+      payload: {
+        imageBase64,
+        mimeType,
+        prompt: 'Descreva esta imagem em portugues brasileiro de forma concisa (max 200 caracteres). Foque no conteudo principal e no contexto emocional se houver.',
+      },
+    })
+
+    const description = response.result?.description || response.result?.text || response.result || ''
+
+    // Track AI usage (non-blocking)
+    trackAIUsage({
+      operation_type: 'image_description',
+      ai_model: 'gemini-2.5-flash',
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || 0,
+      module_type: 'journey',
+      duration_seconds: (Date.now() - startTime) / 1000,
+      request_metadata: {
+        function_name: 'describeImage',
+        operation: 'image_description',
+        image_size_bytes: imageFile.size,
+        image_mime_type: mimeType,
+      },
+    }).catch(error => {
+      log.warn('[Journey AI Tracking] Non-blocking error:', error.message)
+    })
+
+    log.debug('[momentPersistenceService] Image described', {
+      descriptionLength: String(description).length,
+      durationMs: Date.now() - startTime,
+    })
+
+    return String(description)
+  } catch (error) {
+    log.error('[momentPersistenceService] Error describing image:', error)
+    throw new Error('Falha ao descrever a imagem. Tente novamente.')
+  }
+}
+
 // =====================================================
 // HELPER FUNCTIONS
 // =====================================================
