@@ -2,7 +2,7 @@
  * useChatSession - Session lifecycle hook for Aica Chat
  *
  * Wraps chatService (persistence) + GeminiClient (AI calls).
- * Integrates client-side intent classification for agent routing.
+ * Uses client-side intent classification for agent-specific system prompts.
  * NEVER calls supabase.auth.refreshSession() — uses getSession() only.
  */
 
@@ -10,10 +10,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { chatService, type ChatSession, type ChatMessage } from '@/services/chatService'
 import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
-import { classifyIntent, type IntentResult } from '@/lib/agents/intentClassifier'
+import { classifyIntent } from '@/lib/agents/intentClassifier'
 import { getAgentPrompt, hasAgent } from '@/lib/agents'
 import type { AgentModule } from '@/lib/agents/types'
-import type { TrustLevel } from '@/lib/agents/trustLevel'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
 import type { ChatAction } from '@/types/chatActions'
 
@@ -23,7 +22,6 @@ export interface DisplayMessage {
   content: string
   created_at: string
   agent?: AgentModule | 'coordinator'
-  classification?: IntentResult
   actions?: ChatAction[]
 }
 
@@ -42,19 +40,17 @@ export interface UseChatSessionReturn {
   showSessions: boolean
   setShowSessions: (show: boolean) => void
   activeAgent: AgentModule | 'coordinator' | null
-  lastClassification: IntentResult | null
-  reclassifyLastMessage: () => Promise<void>
-  isReclassifying: boolean
 }
 
 const BASE_SYSTEM_PROMPT = `Voce e a Aica, assistente pessoal inteligente do AICA Life OS.
 Voce ajuda o usuario com produtividade, organizacao e bem-estar.
 Seja concisa, amigavel e objetiva. Responda em portugues.`
 
-const TRUST_SUFFIXES: Record<TrustLevel, string> = {
-  suggest_confirm: '\n\nVoce esta no modo "Sugerir e Confirmar". Sugira acoes e peca confirmacao antes de executar qualquer mudanca no sistema.',
-  execute_validate: '\n\nVoce esta no modo "Executar e Validar". Quando tiver alta confianca, execute acoes diretamente e informe o resultado para validacao.',
-  jarvis: '\n\nModo Jarvis ativo. Execute acoes autonomamente, otimize proativamente e informe resultados. O usuario confia no seu julgamento.',
+function getSystemPromptForAgent(module: AgentModule | 'coordinator'): string {
+  if (module !== 'coordinator' && hasAgent(module)) {
+    return getAgentPrompt(module as AgentModule)
+  }
+  return BASE_SYSTEM_PROMPT
 }
 
 function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
@@ -66,21 +62,7 @@ function chatMsgToDisplay(msg: ChatMessage): DisplayMessage {
   }
 }
 
-/**
- * Get the system prompt for a classified agent module + trust level.
- * Falls back to the default BASE_SYSTEM_PROMPT for coordinator or unknown modules.
- */
-function getSystemPromptForAgent(
-  module: AgentModule | 'coordinator',
-  trustLevel: TrustLevel = 'suggest_confirm'
-): string {
-  const base = module !== 'coordinator' && hasAgent(module)
-    ? getAgentPrompt(module as AgentModule)
-    : BASE_SYSTEM_PROMPT
-  return base + TRUST_SUFFIXES[trustLevel]
-}
-
-export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseChatSessionReturn {
+export function useChatSession(): UseChatSessionReturn {
   const [session, setSession] = useState<ChatSession | null>(null)
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [messages, setMessages] = useState<DisplayMessage[]>([])
@@ -90,8 +72,6 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
   const [limitInfo, setLimitInfo] = useState<InteractionLimitResult | null>(null)
   const [showSessions, setShowSessions] = useState(false)
   const [activeAgent, setActiveAgent] = useState<AgentModule | 'coordinator' | null>(null)
-  const [lastClassification, setLastClassification] = useState<IntentResult | null>(null)
-  const [isReclassifying, setIsReclassifying] = useState(false)
   const initRef = useRef(false)
 
   // Load sessions on mount
@@ -134,7 +114,7 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
     setIsLoading(true)
 
     try {
-      // Check interaction limit before calling Gemini (fail-open)
+      // Check interaction limit before calling AI (fail-open)
       try {
         const limit = await checkInteractionLimit()
         setLimitInfo(limit)
@@ -160,7 +140,6 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
 
       // Classify intent — client-side keyword matching
       const classification = classifyIntent(trimmed)
-      setLastClassification(classification)
       setActiveAgent(classification.module)
 
       // Optimistic user message
@@ -169,7 +148,6 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
         role: 'user',
         content: trimmed,
         created_at: new Date().toISOString(),
-        classification,
       }
       setMessages(prev => [...prev, tempUserMsg])
 
@@ -184,7 +162,7 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
       // Replace temp with saved
       setMessages(prev =>
         prev.map(m => m.id === tempUserMsg.id
-          ? { ...chatMsgToDisplay(savedUserMsg), classification }
+          ? chatMsgToDisplay(savedUserMsg)
           : m
         )
       )
@@ -194,10 +172,10 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
         .slice(-10)
         .map(m => ({ role: m.role, content: m.content }))
 
-      // Get agent-specific system prompt with trust level
-      const systemPrompt = getSystemPromptForAgent(classification.module, trustLevel)
+      // Get agent-specific system prompt
+      const systemPrompt = getSystemPromptForAgent(classification.module)
 
-      // Call Gemini — reuses chat_aica with agent-specific systemPrompt
+      // Call Gemini via gemini-chat Edge Function
       const client = GeminiClient.getInstance()
       const response = await client.call({
         action: 'chat_aica',
@@ -234,7 +212,6 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
       setMessages(prev => [...prev, {
         ...chatMsgToDisplay(savedAssistantMsg),
         agent: classification.module,
-        classification,
         actions: responseActions,
       }])
     } catch (err) {
@@ -243,99 +220,7 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
     } finally {
       setIsLoading(false)
     }
-  }, [session, messages, isLoading, getUserId, trustLevel])
-
-  /**
-   * Re-classify the last user message via server-side Gemini classification.
-   * Replaces the last assistant response with a new one from the correct agent.
-   */
-  const reclassifyLastMessage = useCallback(async () => {
-    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-    if (!lastUserMsg || isLoading || isReclassifying) return
-
-    setIsReclassifying(true)
-    setError(null)
-
-    try {
-      const userId = await getUserId()
-      const client = GeminiClient.getInstance()
-
-      // Server-side classification via Edge Function
-      const classifyResponse = await client.call({
-        action: 'classify_intent',
-        payload: { message: lastUserMsg.content },
-      })
-
-      const serverResult = classifyResponse?.result?.classification
-      if (!serverResult?.module) {
-        setError('Nao foi possivel reclassificar')
-        return
-      }
-
-      const newClassification: IntentResult = {
-        module: serverResult.module,
-        confidence: serverResult.confidence || 0.9,
-        actionHint: serverResult.action_hint || '',
-        needsServerClassification: false,
-      }
-
-      setLastClassification(newClassification)
-      setActiveAgent(serverResult.module)
-
-      // Re-send with new agent prompt + trust level
-      const systemPrompt = getSystemPromptForAgent(serverResult.module, trustLevel)
-      const history = messages
-        .slice(-10)
-        .filter(m => m.content !== lastUserMsg.content)
-        .map(m => ({ role: m.role, content: m.content }))
-
-      const response = await client.call({
-        action: 'chat_aica',
-        payload: {
-          message: lastUserMsg.content,
-          history,
-          systemPrompt,
-          module: serverResult.module || 'coordinator',
-        },
-      })
-
-      const responseText =
-        response?.result?.response ||
-        response?.result ||
-        'Desculpe, nao consegui gerar uma resposta.'
-      const finalText = typeof responseText === 'string' ? responseText : JSON.stringify(responseText)
-
-      // Save new response to DB
-      if (!session) return
-      const savedMsg = await chatService.saveMessage({
-        sessionId: session.id,
-        userId,
-        content: finalText,
-        direction: 'outbound',
-        modelUsed: 'gemini-2.5-flash',
-      })
-
-      // Replace last assistant message in UI
-      setMessages(prev => {
-        const msgs = [...prev]
-        for (let i = msgs.length - 1; i >= 0; i--) {
-          if (msgs[i].role === 'assistant') {
-            msgs[i] = {
-              ...chatMsgToDisplay(savedMsg),
-              agent: serverResult.module,
-              classification: newClassification,
-            }
-            break
-          }
-        }
-        return msgs
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao reclassificar')
-    } finally {
-      setIsReclassifying(false)
-    }
-  }, [messages, isLoading, isReclassifying, session, getUserId, trustLevel])
+  }, [session, messages, isLoading, getUserId])
 
   const createNewSession = useCallback(() => {
     setSession(null)
@@ -343,7 +228,6 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
     setError(null)
     setShowSessions(false)
     setActiveAgent(null)
-    setLastClassification(null)
   }, [])
 
   const switchSession = useCallback(async (sessionId: string) => {
@@ -356,7 +240,6 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
       setShowSessions(false)
       setError(null)
       setActiveAgent(null)
-      setLastClassification(null)
     } catch {
       setError('Erro ao carregar conversa')
     }
@@ -371,7 +254,6 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
         setSession(null)
         setMessages([])
         setActiveAgent(null)
-        setLastClassification(null)
       }
     } catch {
       setError('Erro ao arquivar conversa')
@@ -393,8 +275,5 @@ export function useChatSession(trustLevel: TrustLevel = 'suggest_confirm'): UseC
     showSessions,
     setShowSessions,
     activeAgent,
-    lastClassification,
-    reclassifyLastMessage,
-    isReclassifying,
   }
 }

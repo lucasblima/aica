@@ -3,35 +3,20 @@
  *
  * Chat interface with persistent sessions (chat_sessions + chat_messages).
  * Uses useChatSession hook for lifecycle, GeminiClient for AI calls.
- * Displays agent routing indicators and supports reclassification.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, RefreshCw, Zap } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
 import type { DisplayMessage } from '@/hooks/useChatSession'
-import { useUserStats } from '@/hooks/useUserStats'
-import { calculateTrustLevel, getTrustLevelLabel } from '@/lib/agents/trustLevel'
 import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
-import type { AgentModule } from '@/lib/agents/types'
+import { formatAgentName } from '@/lib/agents/formatAgentName'
 import { ChatActionButtons } from './ChatActionButtons'
 import { executeChatAction } from '@/services/chatActionService'
 import type { ChatAction } from '@/types/chatActions'
 import './AicaChatFAB.css'
-
-const AGENT_LABELS: Record<AgentModule | 'coordinator', string> = {
-  atlas: 'Atlas',
-  journey: 'Jornada',
-  connections: 'Conexoes',
-  finance: 'Financas',
-  flux: 'Flux',
-  studio: 'Studio',
-  captacao: 'Captacao',
-  agenda: 'Agenda',
-  coordinator: 'Aica',
-}
 
 interface AicaChatFABProps {
   position?: 'bottom-right' | 'bottom-left'
@@ -48,11 +33,6 @@ export function AicaChatFAB({
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
-  // Trust level from user engagement stats
-  const { stats } = useUserStats()
-  const trustLevel = stats ? calculateTrustLevel(stats) : 'suggest_confirm'
-  const trustLabel = getTrustLevelLabel(trustLevel)
-
   const {
     session,
     sessions,
@@ -68,10 +48,7 @@ export function AicaChatFAB({
     showSessions,
     setShowSessions,
     activeAgent,
-    lastClassification,
-    reclassifyLastMessage,
-    isReclassifying,
-  } = useChatSession(trustLevel)
+  } = useChatSession()
 
   // Escape to close
   useEffect(() => {
@@ -147,8 +124,6 @@ export function AicaChatFAB({
     return true
   }
 
-  const showReclassifyButton = lastClassification?.needsServerClassification && !isLoading
-
   return (
     <>
       {/* Backdrop */}
@@ -192,15 +167,9 @@ export function AicaChatFAB({
                   {session?.title || 'Aica'}
                 </h3>
                 <p className="aica-fab-header__subtitle">
-                  {activeAgent
-                    ? <span className="aica-fab-agent-indicator">{AGENT_LABELS[activeAgent]}</span>
-                    : (session ? 'Conversa ativa' : 'Assistente pessoal')
-                  }
-                  {stats && (
-                    <span className={cn('aica-fab-trust-badge', `aica-fab-trust-badge--${trustLevel}`)}>
-                      {trustLabel}
-                    </span>
-                  )}
+                  {activeAgent && activeAgent !== 'coordinator'
+                    ? `via ${formatAgentName(activeAgent)}`
+                    : (session ? 'Conversa ativa' : 'Assistente pessoal')}
                 </p>
               </div>
               <button
@@ -306,32 +275,10 @@ export function AicaChatFAB({
                   )}
 
                   {/* Agent badge for assistant messages */}
-                  {msg.role === 'assistant' && msg.agent && (
+                  {msg.role === 'assistant' && msg.agent && msg.agent !== 'coordinator' && (
                     <div className="aica-fab-agent-badge">
-                      {AGENT_LABELS[msg.agent]}
-                      {msg.classification && (
-                        <span className="aica-fab-agent-badge__confidence">
-                          {Math.round(msg.classification.confidence * 100)}%
-                        </span>
-                      )}
+                      {formatAgentName(msg.agent)}
                     </div>
-                  )}
-
-                  {/* Reclassify button on last assistant message */}
-                  {isLastAssistantMessage(msg, idx) && showReclassifyButton && (
-                    <button
-                      className="aica-fab-reclassify"
-                      onClick={reclassifyLastMessage}
-                      disabled={isReclassifying}
-                      title="Reanalisar com IA"
-                    >
-                      {isReclassifying ? (
-                        <Loader2 size={12} className="aica-fab-loading-icon" />
-                      ) : (
-                        <RefreshCw size={12} />
-                      )}
-                      <span>Reanalisar</span>
-                    </button>
                   )}
                 </div>
               ))}
@@ -384,12 +331,12 @@ export function AicaChatFAB({
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={isLoading || isReclassifying}
+                disabled={isLoading}
               />
               <button
                 className="aica-fab-send"
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading || isReclassifying}
+                disabled={!input.trim() || isLoading}
                 aria-label="Enviar"
               >
                 <Send size={16} />
