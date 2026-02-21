@@ -18,7 +18,8 @@ import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Calendar, Clock, Check, Repeat, CheckSquare, ListChecks, CalendarDays, Tag } from 'lucide-react';
+import { GripVertical, Calendar, Clock, Check, Repeat, ListChecks, CalendarDays } from 'lucide-react';
+import { getTagColor } from '@/lib/utils/tagColors';
 import type { Task, Quadrant } from '@/types';
 import { QUADRANT_COLORS } from '@/constants/quadrantColors';
 import { springPress } from '@/lib/animations/ceramic-motion';
@@ -222,15 +223,19 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
                   </div>
 
                   {/* Identity row: association chip + tags */}
-                  {!compact && (task.associations || (task.tags && task.tags.length > 0)) && (
+                  {(task.associations || (task.tags && task.tags.length > 0)) && (
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       {task.associations && <AssociationChip name={task.associations.name} />}
-                      {task.tags?.slice(0, 2).map(tag => (
-                        <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-ceramic-cool text-ceramic-text-secondary text-[10px] font-medium">
-                          <Tag className="w-2 h-2" />
+                      {task.tags?.slice(0, 3).map(tag => (
+                        <span key={tag} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${getTagColor(tag)}`}>
                           {tag}
                         </span>
                       ))}
+                      {(task.tags?.length || 0) > 3 && (
+                        <span className="text-[10px] text-ceramic-text-secondary font-medium">
+                          +{(task.tags?.length || 0) - 3}
+                        </span>
+                      )}
                     </div>
                   )}
 
