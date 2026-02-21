@@ -95,6 +95,9 @@ export { PriorityMatrix } from './domain/PriorityMatrix';
 export { TaskCreationQuickAdd } from './domain/TaskCreationQuickAdd';
 export { TaskEditModal } from './domain/TaskEditModal';
 export { TaskEditDrawer } from './domain/TaskEditDrawer';
+export { TaskListView } from './domain/TaskListView';
+export { TaskKanbanView } from './domain/TaskKanbanView';
+export { TaskFilterBar } from './domain/TaskFilterBar';
 
 // ============ Legacy Organization (keeping for gradual migration) ============
 // These will be moved to appropriate subdirectories in future sprints
