@@ -18,8 +18,6 @@ import { syncEntityToGoogle, unsyncEntityFromGoogle } from '@/services/calendarS
 import { atlasTaskToGoogleEvent } from '@/services/calendarSyncTransforms';
 import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 
-export type AgendaMode = 'agenda' | 'lista' | 'kanban' | 'matriz';
-
 const log = createNamespacedLogger('PriorityMatrix');
 
 interface QuadrantConfig {
@@ -153,9 +151,10 @@ interface PriorityMatrixProps {
     compact?: boolean;
     onOpenTask?: (task: Task) => void;
     onComplete?: (task: Task) => void;
+    onTaskDeleted?: () => void;
 }
 
-export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, isLoading, onRefresh, compact = false, onOpenTask: externalOnOpenTask, onComplete: externalOnComplete }) => {
+export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, isLoading, onRefresh, compact = false, onOpenTask: externalOnOpenTask, onComplete: externalOnComplete, onTaskDeleted }) => {
     const [isAicaWorking, setIsAicaWorking] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -247,6 +246,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
             });
 
             onRefresh();
+            onTaskDeleted?.();
             setIsDeleteModalOpen(false);
             setDeletingTask(null);
         } catch (error) {
@@ -260,38 +260,6 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
         setIsDeleteModalOpen(false);
         setDeletingTask(null);
     };
-
-    const handleCompleteTask = async (task: Task) => {
-        try {
-            const { error } = await supabase
-                .from('work_items')
-                .update({
-                    completed_at: new Date().toISOString(),
-                    is_completed: true,
-                    status: 'completed',
-                })
-                .eq('id', task.id);
-
-            if (error) throw error;
-
-            log.debug('Task completed:', task.id);
-
-            // Unsync from Google Calendar (non-blocking)
-            isGoogleCalendarConnected().then((connected) => {
-                if (!connected) return;
-                unsyncEntityFromGoogle('atlas', task.id).catch((err) =>
-                    log.warn('Calendar unsync failed for completed task:', err)
-                );
-            });
-
-            onRefresh();
-        } catch (error) {
-            log.error('Error completing task:', { error });
-        }
-    };
-
-    // Use external onComplete when provided, otherwise fall back to internal handler
-    const resolvedCompleteHandler = externalOnComplete ?? handleCompleteTask;
 
     // Extract unique associations from tasks
     const uniqueAssociations = React.useMemo(() => {
@@ -447,7 +415,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                         tasks={filteredTasks[quadrant.id]}
                         isLoading={isLoading}
                         onOpenTask={handleOpenTask}
-                        onCompleteTask={resolvedCompleteHandler}
+                        onCompleteTask={externalOnComplete!}
                         compact={compact}
                     />
                 ))}
@@ -458,7 +426,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                 task={editingTask}
                 isOpen={isSheetOpen}
                 onSave={handleSaveTask}
-                onComplete={resolvedCompleteHandler}
+                onComplete={externalOnComplete!}
                 onDelete={handleDeleteTask}
                 onClose={handleCloseSheet}
             />

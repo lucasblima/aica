@@ -32,8 +32,9 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
 
   /**
    * Mark a task as complete: update DB, animate, handle recurrence, unsync calendar.
+   * Returns true if DB update succeeded, false otherwise.
    */
-  const handleComplete = useCallback(async (taskId: string) => {
+  const handleComplete = useCallback(async (taskId: string): Promise<boolean> => {
     const now = new Date().toISOString();
 
     // Update DB — set ALL completion-related fields for consistency
@@ -50,7 +51,7 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
 
     if (error) {
       log.error('Error completing task:', { error });
-      return;
+      return false;
     }
 
     log.debug('Task completed:', taskId);
@@ -134,6 +135,7 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
     });
 
     onRefresh();
+    return true;
   }, [onRefresh]);
 
   /**
@@ -175,6 +177,7 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
         .from('work_items')
         .select('*')
         .gte('completed_at', todayStart.toISOString())
+        .eq('archived', false)
         .order('completed_at', { ascending: false });
 
       if (error) {

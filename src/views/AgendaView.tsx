@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -22,12 +22,14 @@ import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { pageTransitionVariants } from '@/lib/animations/ceramic-motion';
 
 const log = createNamespacedLogger('AgendaView');
-import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, AgendaModeToggle } from '../components';
+import { PriorityMatrix, DailyTimeline, HeaderGlobal, CalendarStatusDot, NextEventHero, AgendaTimeline, TaskCreationQuickAdd, AgendaModeToggle, TaskListView, TaskKanbanView, TaskFilterBar } from '../components';
 import { NextTwoDaysView, detectEventCategory, calculateTimeUntil } from '../components';
 import { CompletedTasksSection } from '../components/domain/CompletedTasksSection';
 import { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig } from '../components/features/ModuleAgentChat';
 import { useModuleAgent } from '../hooks/useModuleAgent';
 import { useTaskCompletion } from '../hooks/useTaskCompletion';
+import { useTaskFilters } from '../hooks/useTaskFilters';
+import type { AgendaMode } from '../components/domain/AgendaModeToggle';
 import { Task, Quadrant } from '@/types';
 import { useGoogleCalendarEvents } from '../hooks/useGoogleCalendarEvents';
 import { useFluxAgendaEvents } from '../modules/flux/hooks/useFluxAgendaEvents';
@@ -63,7 +65,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     useTourAutoStart('atlas-first-visit');
     const { isAgentOpen, openAgent, closeAgent } = useModuleAgent();
     const isDesktop = useIsDesktop();
-    const [mobileMode, setMobileMode] = useState<'agenda' | 'organizar'>('agenda');
+    const [mobileMode, setMobileMode] = useState<AgendaMode>('agenda');
 
     const [matrixTasks, setMatrixTasks] = useState<Record<Quadrant, Task[]>>({
         'urgent-important': [],
@@ -73,10 +75,27 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
     });
     const [timelineTasks, setTimelineTasks] = useState<Task[]>([]);
     const [allDueDateTasks, setAllDueDateTasks] = useState<any[]>([]);
+    const [allTasks, setAllTasks] = useState<Task[]>([]);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [skippedEvents, setSkippedEvents] = useState<Set<string>>(new Set());
+    const completionTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+    // Task filters for Lista/Kanban views
+    const {
+        filters: taskFilters,
+        filteredTasks,
+        availableTags,
+        taskCounts,
+        activeFilterCount,
+        setStatus: setFilterStatus,
+        setPriority: setFilterPriority,
+        setSearchQuery: setFilterSearch,
+        setSortBy: setFilterSort,
+        toggleTag: toggleFilterTag,
+        clearFilters,
+    } = useTaskFilters(allTasks);
 
     // Task completion hook — centralizes complete/uncomplete across the view
     const {
@@ -146,15 +165,16 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             return rectIntersectionCollisions;
         }
 
-        // Filter for quadrant containers first
-        const quadrantCollisions = rectIntersectionCollisions.filter(collision => {
+        // Filter for quadrant/kanban containers first
+        const containerCollisions = rectIntersectionCollisions.filter(collision => {
             const id = collision.id.toString();
-            return ['urgent-important', 'important', 'urgent', 'low'].includes(id);
+            return ['urgent-important', 'important', 'urgent', 'low'].includes(id) ||
+                   id.startsWith('kanban-');
         });
 
-        // If we found quadrant containers, return those
-        if (quadrantCollisions.length > 0) {
-            return quadrantCollisions;
+        // If we found containers, return those
+        if (containerCollisions.length > 0) {
+            return containerCollisions;
         }
 
         // Otherwise, return all collisions (for timeline slots, etc.)
@@ -471,6 +491,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     priority,
                     task_type,
                     checklist,
+                    status,
+                    tags,
+                    created_at,
+                    archived,
+                    recurrence_rule,
                     associations(name)
                 `)
                 .is('completed_at', null)
@@ -486,8 +511,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 'low': []
             };
             const timeline: Task[] = [];
+            const flat: Task[] = [];
 
             data?.forEach((task: any) => {
+                flat.push(task);
+
                 // If task has due_date matching selected date, it goes to timeline
                 if (task.due_date === dateStr) {
                     timeline.push(task);
@@ -510,6 +538,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
             setMatrixTasks(matrix);
             setTimelineTasks(timeline);
+            setAllTasks(flat);
             setAllDueDateTasks((data || []).filter((t: any) => t.due_date));
         } catch (error) {
             log.error('Error loading tasks:', error);
@@ -554,8 +583,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         const isSourceMatrix = (Object.values(matrixTasks) as Task[][]).some(tasks => tasks.some(t => t.id === taskId));
         const isDestTimeline = overId.startsWith('timeline-slot-');
         const isDestMatrix = ['urgent-important', 'important', 'urgent', 'low'].includes(overId);
+        const isDestKanban = overId.startsWith('kanban-');
 
-        if (isSourceMatrix && isDestTimeline) {
+        if (isDestKanban) {
+            const newStatus = overId.replace('kanban-', '');
+            const dbStatus = newStatus === 'todo' ? 'pending' : newStatus;
+            handleMoveTask(taskId, dbStatus);
+        } else if (isSourceMatrix && isDestTimeline) {
             // Move from Matrix to Timeline
             const time = overId.replace('timeline-slot-', '');
             await scheduleTask(taskId, time);
@@ -565,6 +599,21 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         } else if (!isSourceMatrix && isDestMatrix) {
             // Move from Timeline back to Matrix (unschedule)
             await unscheduleTask(taskId, overId as Quadrant);
+        }
+    };
+
+    // Handle moving a task to a new status (for Kanban view)
+    const handleMoveTask = async (taskId: string, newStatus: string) => {
+        try {
+            const { error } = await supabase
+                .from('work_items')
+                .update({ status: newStatus })
+                .eq('id', taskId);
+            if (error) throw error;
+            log.debug('Task status updated:', { taskId, newStatus });
+            loadAllTasks(undefined, { silent: true });
+        } catch (error) {
+            log.error('Error moving task:', { error });
         }
     };
 
@@ -704,11 +753,13 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
 
     // Handle task completion — DB update first, then delayed removal for animation
     const handleTaskComplete = async (taskId: string) => {
-        // 1. Start DB update + add to completedTodayTasks immediately
-        await handleComplete(taskId);
+        // 1. DB update — returns false if it failed
+        const success = await handleComplete(taskId);
+        if (!success) return;
 
         // 2. Delay state removal to let SwipeableTaskCard's 2s animation play
-        setTimeout(() => {
+        // Store timer ref so it can be cancelled if user uncompletes within the window
+        const timer = setTimeout(() => {
             setMatrixTasks(prev => ({
                 'urgent-important': prev['urgent-important'].filter(t => t.id !== taskId),
                 'important': prev['important'].filter(t => t.id !== taskId),
@@ -717,7 +768,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             }));
             setTimelineTasks(prev => prev.filter(t => t.id !== taskId));
             setAllDueDateTasks(prev => prev.filter((t: any) => t.id !== taskId));
-        }, 2200); // slightly longer than animation duration (2s)
+            completionTimers.current.delete(taskId);
+        }, 2200);
+        completionTimers.current.set(taskId, timer);
     };
 
     const unscheduleTask = async (taskId: string, targetQuadrant: Quadrant) => {
@@ -830,7 +883,15 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
             <section className="w-full">
                 <CompletedTasksSection
                     tasks={completedTodayTasks}
-                    onUncomplete={handleUncomplete}
+                    onUncomplete={(taskId: string) => {
+                        // Cancel pending removal timer if user uncompletes within animation window
+                        const pendingTimer = completionTimers.current.get(taskId);
+                        if (pendingTimer) {
+                            clearTimeout(pendingTimer);
+                            completionTimers.current.delete(taskId);
+                        }
+                        handleUncomplete(taskId);
+                    }}
                     isLoading={isLoadingCompleted}
                 />
             </section>
@@ -853,6 +914,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onRefresh={loadAllTasks}
                 compact={!isDesktop}
                 onComplete={handleCompleteTaskFromMatrix}
+                onTaskDeleted={loadCompletedToday}
             />
         </div>
     );
@@ -873,13 +935,11 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {/* Mode toggle — only on mobile */}
-                    {!isDesktop && (
-                        <AgendaModeToggle
-                            mode={mobileMode}
-                            onModeChange={setMobileMode}
-                        />
-                    )}
+                    {/* Mode toggle — always visible */}
+                    <AgendaModeToggle
+                        mode={mobileMode}
+                        onModeChange={setMobileMode}
+                    />
 
                     {/* Calendar status */}
                     <CalendarStatusDot
@@ -900,8 +960,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                {isDesktop ? (
-                    /* ======== DESKTOP: side-by-side layout ======== */
+                {mobileMode === 'agenda' && isDesktop ? (
+                    /* ======== DESKTOP AGENDA: side-by-side layout ======== */
                     <div className="flex-1 flex overflow-hidden">
                         {/* LEFT: Timeline — constrained width */}
                         <main className="w-[55%] min-w-[380px] overflow-y-auto px-6 pb-32 pt-6 space-y-6">
@@ -914,31 +974,57 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                         </aside>
                     </div>
                 ) : (
-                    /* ======== MOBILE: toggle between modes ======== */
+                    /* ======== ALL OTHER MODES: full-width content ======== */
                     <AnimatePresence mode="wait">
-                        {mobileMode === 'agenda' ? (
-                            <motion.main
-                                key="agenda-view"
-                                variants={pageTransitionVariants}
-                                initial="initial"
-                                animate="animate"
-                                exit="exit"
-                                className="flex-1 overflow-y-auto px-4 pb-32 pt-6 space-y-6"
-                            >
-                                {timelineContent}
-                            </motion.main>
-                        ) : (
-                            <motion.main
-                                key="organizar-view"
-                                variants={pageTransitionVariants}
-                                initial="initial"
-                                animate="animate"
-                                exit="exit"
-                                className="flex-1 overflow-y-auto px-4 pb-32 pt-6"
-                            >
-                                {matrixContent}
-                            </motion.main>
-                        )}
+                        <motion.main
+                            key={mobileMode}
+                            variants={pageTransitionVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            className="flex-1 overflow-y-auto px-4 pb-32 pt-6 space-y-6"
+                        >
+                            {mobileMode === 'agenda' ? (
+                                timelineContent
+                            ) : (
+                                <>
+                                    {/* Filter bar — visible in list/kanban/matrix modes */}
+                                    <TaskFilterBar
+                                        filters={taskFilters}
+                                        taskCounts={taskCounts}
+                                        availableTags={availableTags}
+                                        activeFilterCount={activeFilterCount}
+                                        onStatusChange={setFilterStatus}
+                                        onPriorityChange={setFilterPriority}
+                                        onSearchChange={setFilterSearch}
+                                        onSortChange={setFilterSort}
+                                        onToggleTag={toggleFilterTag}
+                                        onClear={clearFilters}
+                                    />
+
+                                    {mobileMode === 'list' && (
+                                        <TaskListView
+                                            tasks={filteredTasks}
+                                            onOpenTask={(task) => log.debug('Open task:', task.id)}
+                                            onCompleteTask={handleCompleteTaskFromMatrix}
+                                            isLoading={isLoading}
+                                        />
+                                    )}
+
+                                    {mobileMode === 'kanban' && (
+                                        <TaskKanbanView
+                                            tasks={filteredTasks}
+                                            onOpenTask={(task) => log.debug('Open task:', task.id)}
+                                            onCompleteTask={handleCompleteTaskFromMatrix}
+                                            onMoveTask={handleMoveTask}
+                                            isLoading={isLoading}
+                                        />
+                                    )}
+
+                                    {mobileMode === 'matrix' && matrixContent}
+                                </>
+                            )}
+                        </motion.main>
                     </AnimatePresence>
                 )}
 
