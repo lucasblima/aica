@@ -50,6 +50,9 @@ const ConnectionsPage = lazy(() => import('../pages/ConnectionsPage').then(m => 
 const SpaceDetailView = lazy(() => import('../modules/connections/views/SpaceDetailView').then(m => ({ default: m.SpaceDetailView })));
 const ContactsView = lazy(() => import('../pages/ContactsView').then(m => ({ default: m.ContactsView })));
 
+// EraForge Module - Historical simulation game for children
+const EraForgeMainView = lazy(() => import('../modules/eraforge/views/EraForgeMainView').then(m => ({ default: m.EraForgeMainView })));
+
 // Flux Module - Swim training management
 const FluxDashboard = lazy(() => import('../modules/flux').then(m => ({ default: m.FluxDashboard })));
 const FluxAthleteDetailView = lazy(() => import('../modules/flux').then(m => ({ default: m.AthleteDetailView })));
@@ -487,6 +490,11 @@ export function AppRouter() {
       <JourneyFullScreen onBack={() => setCurrentView('vida')} />
    );
 
+   // ==================== ERAFORGE VIEW ====================
+   const renderEraForge = () => (
+      <EraForgeMainView onBack={() => setCurrentView('vida')} />
+   );
+
    // Main App Content (authenticated state)
    const renderMainApp = () => {
       return <MainAppWithNavigation />;
@@ -499,7 +507,7 @@ export function AppRouter() {
       // Define focused modes where global nav should be hidden (Contextual Descent)
       const focusedModes: ViewState[] = [
          'association_detail', 'finance', 'grants', 'ai-cost', 'file-search-analytics',
-         'studio',
+         'studio', 'eraforge',
          // Life Area Modules
          'health', 'education', 'legal', 'professional'
       ];
@@ -530,6 +538,13 @@ export function AppRouter() {
                <motion.div key="grants" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
                   <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Grants" />}>
                      <GrantsModuleView onBack={() => setCurrentView('vida')} />
+                  </ErrorBoundary>
+               </motion.div>
+            )}
+            {currentView === 'eraforge' && (
+               <motion.div key="eraforge" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}>
+                     {renderEraForge()}
                   </ErrorBoundary>
                </motion.div>
             )}

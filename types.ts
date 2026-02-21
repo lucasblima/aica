@@ -91,6 +91,7 @@ export type ViewState =
   | 'grants'
   | 'ai-cost'
   | 'file-search-analytics'
+  | 'eraforge'
   // Life Area Modules
   | 'health'
   | 'education'
