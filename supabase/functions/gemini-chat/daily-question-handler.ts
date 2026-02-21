@@ -39,7 +39,7 @@ export interface GenerateDailyQuestionPayload {
 
 export interface GenerateDailyQuestionResult {
   question: string
-  category: 'reflection' | 'gratitude' | 'energy' | 'learning' | 'change'
+  category: 'reflection' | 'gratitude' | 'energy' | 'learning' | 'change' | 'connection' | 'purpose' | 'creativity' | 'health' | 'mindfulness'
   relevance: 'high' | 'medium' | 'low'
   contextFactors: string[]
 }
@@ -130,31 +130,37 @@ export async function handleGenerateDailyQuestion(
   }
 }
 
+type QuestionCategoryFull = 'reflection' | 'gratitude' | 'energy' | 'learning' | 'change' | 'connection' | 'purpose' | 'creativity' | 'health' | 'mindfulness'
+
 /**
  * Determina categoria de pergunta baseado no contexto
  */
-function determineCategory(
-  context: UserContext
-): 'reflection' | 'gratitude' | 'energy' | 'learning' | 'change' {
+function determineCategory(context: UserContext): QuestionCategoryFull {
   const { healthStatus, criticalAreas, activeJourneys } = context
 
-  // Se usuário tem burnout, focar em energia/reflexão
+  // Se usuário tem burnout, focar em energia ou saúde
   if (healthStatus.burnoutCount >= 2 || healthStatus.mentalHealthFlags.includes('burnout')) {
-    return 'energy'
+    return Math.random() < 0.5 ? 'energy' : 'health'
   }
 
-  // Se há áreas críticas, focar em mudança/ação
+  // Se há flags de depressão/ansiedade, focar em mindfulness ou conexão
+  if (healthStatus.mentalHealthFlags.includes('depression_anxiety')) {
+    return Math.random() < 0.5 ? 'mindfulness' : 'connection'
+  }
+
+  // Se há áreas críticas, focar em mudança/propósito
   if (criticalAreas.some(a => a.severity === 'high')) {
-    return 'change'
+    return Math.random() < 0.6 ? 'change' : 'purpose'
   }
 
-  // Se há jornadas ativas, focar em aprendizado
+  // Se há jornadas ativas, focar em aprendizado/criatividade
   if (activeJourneys.length > 0) {
-    return 'learning'
+    return Math.random() < 0.6 ? 'learning' : 'creativity'
   }
 
-  // Default para reflexão
-  return 'reflection'
+  // Default: distribuição balanceada
+  const defaults: QuestionCategoryFull[] = ['reflection', 'gratitude', 'purpose', 'connection', 'mindfulness']
+  return defaults[Math.floor(Math.random() * defaults.length)]
 }
 
 /**

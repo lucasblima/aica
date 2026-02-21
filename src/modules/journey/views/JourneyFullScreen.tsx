@@ -25,7 +25,7 @@ import { JourneySearchPanel } from '../components/JourneySearchPanel'
 import { PostCaptureInsight } from '../components/insights/PostCaptureInsight'
 import { useMoments } from '../hooks/useMoments'
 import { useCurrentWeeklySummary } from '../hooks/useWeeklySummary'
-import { useDailyQuestion } from '../hooks/useDailyQuestion'
+import { useDailyQuestionAI } from '../hooks/useDailyQuestionAI'
 import { useConsciousnessPoints, useCPAnimation } from '../hooks/useConsciousnessPoints'
 import { useJourneyFileSearch } from '../hooks/useJourneyFileSearch'
 import { useUnifiedTimeline } from '../hooks/useUnifiedTimeline'
@@ -171,7 +171,7 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
   const userPatterns = useUserPatterns()
   const { moments, create: createMoment } = useMoments()
   const { summary, isLoading: isLoadingSummary, addReflection, refresh: refreshSummary } = useCurrentWeeklySummary()
-  const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion } = useDailyQuestion()
+  const { question, isLoading: isLoadingQuestion, answer: answerQuestion, skip: skipQuestion, refresh: refreshQuestion, followUp, isFollowUpLoading, acceptFollowUp, dismissFollowUp } = useDailyQuestionAI()
   const { stats, refresh: refreshStats } = useConsciousnessPoints()
   const { showAnimation, pointsEarned, leveledUp, newLevel, qualityFeedback, triggerAnimation } = useCPAnimation()
   const { refresh: refreshTimeline } = useUnifiedTimeline(user?.id)
@@ -494,6 +494,10 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                   question={question}
                   onAnswer={handleAnswerQuestion}
                   onSkip={skipQuestion}
+                  followUp={followUp}
+                  isFollowUpLoading={isFollowUpLoading}
+                  onAcceptFollowUp={acceptFollowUp}
+                  onDismissFollowUp={dismissFollowUp}
                 />
               ) : (
                 <DailyQuestionRetryState onRetry={refreshQuestion} />
@@ -595,6 +599,10 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                       question={question}
                       onAnswer={handleAnswerQuestion}
                       onSkip={skipQuestion}
+                      followUp={followUp}
+                      isFollowUpLoading={isFollowUpLoading}
+                      onAcceptFollowUp={acceptFollowUp}
+                      onDismissFollowUp={dismissFollowUp}
                     />
                   </motion.div>
                 ) : (

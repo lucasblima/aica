@@ -12,7 +12,7 @@ import { GeminiClient } from '@/lib/gemini'
 import type { GeminiChatResponse } from '@/lib/gemini'
 import { createNamespacedLogger } from '@/lib/logger'
 import { trackAIUsage } from '@/services/aiUsageTrackingService'
-import { QuestionWithResponse, DailyQuestion } from '../types/dailyQuestion'
+import { QuestionWithResponse, DailyQuestion, QuestionCategory } from '../types/dailyQuestion'
 
 const log = createNamespacedLogger('DailyQuestion')
 
@@ -43,6 +43,25 @@ interface UserContext {
     tags: string[]
     date: string
   }>
+  // Enriched context (Wave 3)
+  lifeCouncil?: {
+    headline: string
+    synthesis: string
+    status: string
+    actions: string[]
+  } | null
+  patterns?: Array<{
+    type: string
+    description: string
+    confidence: number
+  }>
+  weeklySummary?: {
+    emotionalTrend: string
+    dominantEmotions: string[]
+    insights: string[]
+    suggestedFocus: string
+  } | null
+  timeOfDay?: 'morning' | 'afternoon' | 'evening'
 }
 
 interface DailyQuestionResult {
@@ -55,38 +74,40 @@ interface DailyQuestionResult {
  * Pool fixo de perguntas reflexivas (Fallback Level 3)
  */
 const FALLBACK_QUESTION_POOL: DailyQuestion[] = [
+  // reflection (4)
   {
     id: 'pool-1',
-    question_text: 'O que você quer conquistar hoje?',
-    category: 'change',
-    active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'pool-2',
     question_text: 'Como você está se sentindo neste momento?',
     category: 'reflection',
     active: true,
     created_at: new Date().toISOString(),
   },
   {
-    id: 'pool-3',
+    id: 'pool-2',
     question_text: 'Qual área da sua vida precisa de mais atenção?',
     category: 'reflection',
     active: true,
     created_at: new Date().toISOString(),
   },
   {
-    id: 'pool-4',
-    question_text: 'O que te deixaria orgulhoso hoje?',
-    category: 'gratitude',
+    id: 'pool-3',
+    question_text: 'Se pudesse mudar uma coisa hoje, o que seria?',
+    category: 'reflection',
     active: true,
     created_at: new Date().toISOString(),
   },
   {
+    id: 'pool-4',
+    question_text: 'O que seus pensamentos recentes revelam sobre você?',
+    category: 'reflection',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // gratitude (4)
+  {
     id: 'pool-5',
-    question_text: 'Como você pode se cuidar melhor agora?',
-    category: 'energy',
+    question_text: 'O que te deixaria orgulhoso hoje?',
+    category: 'gratitude',
     active: true,
     created_at: new Date().toISOString(),
   },
@@ -99,15 +120,247 @@ const FALLBACK_QUESTION_POOL: DailyQuestion[] = [
   },
   {
     id: 'pool-7',
+    question_text: 'Por qual pessoa na sua vida você é grato hoje?',
+    category: 'gratitude',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-8',
+    question_text: 'Qual pequena conquista recente você ainda não celebrou?',
+    category: 'gratitude',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // energy (4)
+  {
+    id: 'pool-9',
+    question_text: 'Como você pode se cuidar melhor agora?',
+    category: 'energy',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-10',
+    question_text: 'Como você quer se sentir nesta semana?',
+    category: 'energy',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-11',
+    question_text: 'O que drena sua energia e como reduzir isso?',
+    category: 'energy',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-12',
+    question_text: 'Qual atividade te recarrega que você tem negligenciado?',
+    category: 'energy',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // learning (4)
+  {
+    id: 'pool-13',
     question_text: 'O que você aprendeu recentemente que mudou sua perspectiva?',
     category: 'learning',
     active: true,
     created_at: new Date().toISOString(),
   },
   {
-    id: 'pool-8',
-    question_text: 'Como você quer se sentir nesta semana?',
-    category: 'energy',
+    id: 'pool-14',
+    question_text: 'Qual erro recente te ensinou algo valioso?',
+    category: 'learning',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-15',
+    question_text: 'Que habilidade você gostaria de dominar este ano?',
+    category: 'learning',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-16',
+    question_text: 'Quem te inspirou recentemente e por quê?',
+    category: 'learning',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // change (4)
+  {
+    id: 'pool-17',
+    question_text: 'O que você quer conquistar hoje?',
+    category: 'change',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-18',
+    question_text: 'Qual hábito antigo você está pronto para abandonar?',
+    category: 'change',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-19',
+    question_text: 'Que primeiro passo você pode dar agora rumo ao seu objetivo?',
+    category: 'change',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-20',
+    question_text: 'O que te impede de fazer a mudança que deseja?',
+    category: 'change',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // connection (4)
+  {
+    id: 'pool-21',
+    question_text: 'Com quem você gostaria de se reconectar esta semana?',
+    category: 'connection',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-22',
+    question_text: 'Qual relacionamento merece mais da sua atenção agora?',
+    category: 'connection',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-23',
+    question_text: 'Como você pode demonstrar mais carinho por alguém hoje?',
+    category: 'connection',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-24',
+    question_text: 'Que conversa importante você tem adiado?',
+    category: 'connection',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // purpose (4)
+  {
+    id: 'pool-25',
+    question_text: 'O que dá sentido ao seu dia a dia?',
+    category: 'purpose',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-26',
+    question_text: 'Seu trabalho atual reflete seus valores mais profundos?',
+    category: 'purpose',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-27',
+    question_text: 'Que legado você quer construir com suas ações?',
+    category: 'purpose',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-28',
+    question_text: 'Qual causa maior que você te motiva a seguir?',
+    category: 'purpose',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // creativity (4)
+  {
+    id: 'pool-29',
+    question_text: 'Quando foi a última vez que você criou algo por prazer?',
+    category: 'creativity',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-30',
+    question_text: 'Que ideia tem ocupado sua mente que merece ação?',
+    category: 'creativity',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-31',
+    question_text: 'Como você pode trazer mais criatividade para sua rotina?',
+    category: 'creativity',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-32',
+    question_text: 'Que projeto pessoal te empolga mas nunca começa?',
+    category: 'creativity',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // health (4)
+  {
+    id: 'pool-33',
+    question_text: 'Como está a qualidade do seu sono ultimamente?',
+    category: 'health',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-34',
+    question_text: 'Você tem se movimentado o suficiente nos últimos dias?',
+    category: 'health',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-35',
+    question_text: 'Que sinal do seu corpo você tem ignorado?',
+    category: 'health',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-36',
+    question_text: 'O que você pode fazer hoje para nutrir melhor seu corpo?',
+    category: 'health',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  // mindfulness (4)
+  {
+    id: 'pool-37',
+    question_text: 'Quantas vezes hoje você parou para respirar fundo?',
+    category: 'mindfulness',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-38',
+    question_text: 'O que está presente ao seu redor que você não notou?',
+    category: 'mindfulness',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-39',
+    question_text: 'Que pensamento repetitivo está ocupando sua mente hoje?',
+    category: 'mindfulness',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'pool-40',
+    question_text: 'Você está vivendo o presente ou preso no futuro?',
+    category: 'mindfulness',
     active: true,
     created_at: new Date().toISOString(),
   },
@@ -194,11 +447,73 @@ async function getUserContext(userId: string): Promise<UserContext> {
       .order('responded_at', { ascending: false })
       .limit(5)
 
+    // 5. Enriched context — fetch in parallel, graceful degradation
+    const [councilResult, patternsResult, summaryResult] = await Promise.allSettled([
+      supabase
+        .from('daily_council_insights')
+        .select('headline, synthesis, overall_status, actions')
+        .eq('user_id', userId)
+        .order('insight_date', { ascending: false })
+        .limit(1)
+        .single(),
+      supabase
+        .from('user_patterns')
+        .select('pattern_type, description, confidence_score')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('confidence_score', { ascending: false })
+        .limit(5),
+      supabase
+        .from('weekly_summaries')
+        .select('summary_data')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single(),
+    ])
+
+    // Extract enriched context (null if fetch failed)
+    const councilData = councilResult.status === 'fulfilled' && councilResult.value.data
+      ? {
+          headline: councilResult.value.data.headline,
+          synthesis: councilResult.value.data.synthesis,
+          status: councilResult.value.data.overall_status,
+          actions: (councilResult.value.data.actions as any[])?.map((a: any) => a.text || a.action || String(a)) || [],
+        }
+      : null
+
+    const patternsData = patternsResult.status === 'fulfilled' && patternsResult.value.data
+      ? patternsResult.value.data.map((p: any) => ({
+          type: p.pattern_type,
+          description: p.description,
+          confidence: p.confidence_score,
+        }))
+      : []
+
+    const summaryRaw = summaryResult.status === 'fulfilled' && summaryResult.value.data?.summary_data
+      ? summaryResult.value.data.summary_data as any
+      : null
+
+    const weeklySummaryData = summaryRaw
+      ? {
+          emotionalTrend: summaryRaw.emotionalTrend || summaryRaw.emotional_trend || 'stable',
+          dominantEmotions: summaryRaw.dominantEmotions || summaryRaw.dominant_emotions || [],
+          insights: summaryRaw.insights || [],
+          suggestedFocus: summaryRaw.suggestedFocus || summaryRaw.suggested_focus || '',
+        }
+      : null
+
+    // 6. Time of day
+    const hour = new Date().getHours()
+    const timeOfDay: 'morning' | 'afternoon' | 'evening' =
+      hour >= 5 && hour < 12 ? 'morning' :
+      hour >= 12 && hour < 18 ? 'afternoon' : 'evening'
+
     return {
       healthStatus: {
         burnoutCount,
         mentalHealthFlags,
-        energyLevel: undefined, // Could be fetched from consciousness points
+        energyLevel: undefined,
       },
       criticalAreas,
       activeJourneys: activeJourneys?.map(j => ({
@@ -216,6 +531,10 @@ async function getUserContext(userId: string): Promise<UserContext> {
         tags: m.tags || [],
         date: m.created_at,
       })),
+      lifeCouncil: councilData,
+      patterns: patternsData,
+      weeklySummary: weeklySummaryData,
+      timeOfDay,
     }
   } catch (error) {
     log.error('Error fetching user context:', error)
@@ -244,36 +563,73 @@ async function generateAIDrivenQuestion(
   const client = GeminiClient.getInstance()
   const startTime = Date.now()
 
-  // Estruturar prompt contextual
+  // Estruturar prompt contextual enriquecido (Wave 3)
+  const timeLabels = { morning: 'manhã', afternoon: 'tarde', evening: 'noite' }
+  const timePreferences = {
+    morning: 'Prefira categorias: energy, change, purpose, creativity (intenção e planejamento)',
+    afternoon: 'Prefira categorias: learning, connection, mindfulness (produtividade e presença)',
+    evening: 'Prefira categorias: reflection, gratitude, health (revisão e descanso)',
+  }
+
   const systemPrompt = `Você é um assistente compassivo de bem-estar para o Aica Life OS.
 
 Responsabilidades:
-- Gerar UMA pergunta reflexiva e relevante baseada no contexto do usuário
+- Gerar UMA pergunta reflexiva e profundamente relevante baseada no contexto COMPLETO do usuário
+- Use os insights do Life Council, padrões comportamentais e tendências emocionais para personalizar
 - A pergunta deve ser útil para auto-compreensão ou ação concreta
 - Deve ser curta (máximo 15 palavras)
 - Nunca repetir perguntas recentes da mesma pessoa
 - Adaptar tom baseado no estado emocional (mais suave se stressado, mais motivador se energizado)
 
+Categorias disponíveis: reflection, gratitude, energy, learning, change, connection, purpose, creativity, health, mindfulness
+${context.timeOfDay ? timePreferences[context.timeOfDay] : ''}
+
 Estilo:
 - Compaixão e empatia
-- Linguagem simples e clara
-- Perguntas abertas que estimulam reflexão
+- Linguagem simples e clara em português brasileiro
+- Perguntas abertas que estimulam reflexão profunda
 - Evitar julgamentos ou pressão
+- Referência sutil a padrões detectados quando relevante
 
 Formato:
 Responda APENAS com a pergunta, sem explicações adicionais.`
 
+  // Build enriched context summary
+  const councilSection = context.lifeCouncil
+    ? `\nInsight do Life Council:
+- Status: ${context.lifeCouncil.status}
+- Resumo: ${context.lifeCouncil.headline}
+- Síntese: ${context.lifeCouncil.synthesis?.substring(0, 200) || ''}
+- Ações sugeridas: ${context.lifeCouncil.actions?.slice(0, 3).join('; ') || 'nenhuma'}`
+    : ''
+
+  const patternsSection = context.patterns && context.patterns.length > 0
+    ? `\nPadrões comportamentais detectados:
+${context.patterns.map(p => `- [${p.type}] ${p.description} (confiança: ${Math.round(p.confidence * 100)}%)`).join('\n')}`
+    : ''
+
+  const weeklySection = context.weeklySummary
+    ? `\nResumo semanal:
+- Tendência emocional: ${context.weeklySummary.emotionalTrend}
+- Emoções dominantes: ${context.weeklySummary.dominantEmotions?.join(', ') || 'não detectadas'}
+- Foco sugerido: ${context.weeklySummary.suggestedFocus || 'nenhum'}
+- Insights: ${context.weeklySummary.insights?.slice(0, 2).join('; ') || 'nenhum'}`
+    : ''
+
   const contextSummary = `
+Período do dia: ${context.timeOfDay ? timeLabels[context.timeOfDay] : 'desconhecido'}
+
 Estado do usuário:
 - Saúde: ${context.healthStatus.burnoutCount} burnouts, ${context.healthStatus.mentalHealthFlags.join(', ') || 'estável'}
 - Áreas críticas: ${context.criticalAreas.map(a => a.areaName).join(', ') || 'nenhuma'}
 - Trilhas ativas: ${context.activeJourneys.map(j => j.journeyType).join(', ') || 'nenhuma'}
-- Emoções recentes: ${context.momentHistory?.slice(0, 3).map(m => m.emotion).join(', ') || 'não rastreadas'}
+- Emoções recentes: ${context.momentHistory?.slice(0, 5).map(m => m.emotion).join(', ') || 'não rastreadas'}
+${councilSection}${patternsSection}${weeklySection}
 
 Respostas recentes (evitar repetição):
 ${context.recentResponses.map(r => `- Pergunta: ${r.questionText}`).join('\n') || 'Sem respostas recentes'}
 
-Gere uma pergunta reflexiva e apropriada:
+Gere uma pergunta reflexiva, personalizada e apropriada para este momento:
   `
 
   for (let attempt = 0; attempt < retries; attempt++) {
@@ -336,6 +692,76 @@ Gere uma pergunta reflexiva e apropriada:
 }
 
 /**
+ * Gera pergunta de follow-up baseada na resposta do usuário (Wave 3)
+ * Retorna null se timeout ou erro — follow-up é sempre opcional
+ */
+export async function generateFollowUpQuestion(
+  userId: string,
+  originalQuestion: string,
+  userResponse: string,
+): Promise<string | null> {
+  const client = GeminiClient.getInstance()
+
+  const systemPrompt = `Você é um assistente compassivo do Aica Life OS que aprofunda reflexões.
+
+Dado uma pergunta original e a resposta do usuário, gere UMA pergunta de follow-up que:
+- Aprofunde o tema que o usuário trouxe na resposta
+- Seja natural e empática (como uma conversa entre amigos)
+- Seja curta (máximo 15 palavras)
+- NÃO repita a pergunta original
+- NÃO seja genérica — deve se conectar diretamente com o que o usuário disse
+
+Se a resposta do usuário for muito curta ou superficial para gerar follow-up, responda "SKIP".
+
+Formato: Responda APENAS com a pergunta de follow-up ou "SKIP".`
+
+  const prompt = `Pergunta original: "${originalQuestion}"
+Resposta do usuário: "${userResponse}"
+
+Gere uma pergunta de follow-up que aprofunde a reflexão:`
+
+  try {
+    let timeoutId: ReturnType<typeof setTimeout>
+    const timeoutPromise = new Promise<null>((resolve) => {
+      timeoutId = setTimeout(() => resolve(null), 3000)
+    })
+
+    const geminiPromise = client.call({
+      action: 'generate_daily_question',
+      payload: {
+        userContext: {},
+        systemPrompt,
+        contextSummary: prompt,
+      },
+      model: 'fast',
+    })
+
+    const result = (await Promise.race([
+      geminiPromise,
+      timeoutPromise,
+    ])) as GeminiChatResponse | null
+
+    // Clean up timeout to avoid lingering timer
+    clearTimeout(timeoutId!)
+
+    if (result?.result) {
+      const followUp = String(result.result).trim()
+
+      // Skip if AI decided follow-up isn't appropriate
+      if (followUp === 'SKIP' || followUp.length < 5 || followUp.length > 200) {
+        return null
+      }
+
+      return followUp
+    }
+  } catch (error) {
+    log.warn('Follow-up generation failed:', error)
+  }
+
+  return null
+}
+
+/**
  * Obtém pergunta da trilha ativa (Level 2: Journey Fallback)
  */
 async function getJourneyQuestion(
@@ -384,9 +810,29 @@ async function getJourneyQuestion(
 /**
  * Obtém pergunta do pool fixo aleatoriamente (Level 3: Final Fallback)
  */
+/**
+ * Time-of-day category preferences for fallback pool selection
+ */
+const TIME_CATEGORY_WEIGHTS: Record<string, QuestionCategory[]> = {
+  morning: ['energy', 'change', 'purpose', 'creativity'],
+  afternoon: ['learning', 'connection', 'mindfulness'],
+  evening: ['reflection', 'gratitude', 'health'],
+}
+
 function getPoolQuestion(userId: string): DailyQuestion {
-  const randomIndex = Math.floor(Math.random() * FALLBACK_QUESTION_POOL.length)
-  return FALLBACK_QUESTION_POOL[randomIndex]
+  const hour = new Date().getHours()
+  const timeOfDay = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 18 ? 'afternoon' : 'evening'
+  const preferredCategories = TIME_CATEGORY_WEIGHTS[timeOfDay]
+
+  // 70% chance to pick from time-preferred categories, 30% fully random
+  if (Math.random() < 0.7) {
+    const timeFiltered = FALLBACK_QUESTION_POOL.filter(q => preferredCategories.includes(q.category))
+    if (timeFiltered.length > 0) {
+      return timeFiltered[Math.floor(Math.random() * timeFiltered.length)]
+    }
+  }
+
+  return FALLBACK_QUESTION_POOL[Math.floor(Math.random() * FALLBACK_QUESTION_POOL.length)]
 }
 
 /**
