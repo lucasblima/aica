@@ -136,10 +136,9 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
       )}
 
       <div className="space-y-3">
-        {events.map((item, idx) => {
+        {events.map((item) => {
           const isTask = item.type === 'task';
           const duration = getDuration(item.startTime, item.endTime);
-          const isLast = idx === events.length - 1;
 
           return (
             <motion.div

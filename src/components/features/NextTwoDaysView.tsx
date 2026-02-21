@@ -93,6 +93,29 @@ const celebrationSpring = {
   damping: 25,
 };
 
+// Checklist progress bar — top-level to avoid re-mount on parent re-render
+const ChecklistProgressBar: React.FC<{ checklist: Array<{ text: string; done: boolean }> }> = ({ checklist }) => {
+  const done = checklist.filter(i => i.done).length;
+  const total = checklist.length;
+  const pct = Math.round((done / total) * 100);
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5">
+      <div className="flex-1 h-1 rounded-full bg-ceramic-border/40 overflow-hidden">
+        <motion.div
+          className="h-full rounded-full bg-ceramic-accent/70"
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+        />
+      </div>
+      <span className="text-[10px] tabular-nums text-ceramic-text-secondary/60 flex-shrink-0">
+        {done}/{total}
+      </span>
+    </div>
+  );
+};
+
 export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   events,
   onSkipEvent,
@@ -151,29 +174,6 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   const todayEvents = events.filter(e => e.isToday);
   const tomorrowEvents = events.filter(e => e.isTomorrow);
   const dayAfterEvents = events.filter(e => !e.isToday && !e.isTomorrow);
-
-  // Checklist progress bar component
-  const ChecklistProgressBar: React.FC<{ checklist: Array<{ text: string; done: boolean }> }> = ({ checklist }) => {
-    const done = checklist.filter(i => i.done).length;
-    const total = checklist.length;
-    const pct = Math.round((done / total) * 100);
-
-    return (
-      <div className="flex items-center gap-2 mt-1.5">
-        <div className="flex-1 h-1 rounded-full bg-ceramic-border/40 overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-ceramic-accent/70"
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-          />
-        </div>
-        <span className="text-[10px] tabular-nums text-ceramic-text-secondary/60 flex-shrink-0">
-          {done}/{total}
-        </span>
-      </div>
-    );
-  };
 
 
   const renderEventCard = (event: EventWithCategory, index: number) => {
