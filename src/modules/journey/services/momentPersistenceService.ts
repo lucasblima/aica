@@ -324,6 +324,25 @@ export async function getUserStats(userId: string) {
 }
 
 // =====================================================
+// BASE64 HELPER
+// =====================================================
+
+/**
+ * Convert a Blob/File to base64 string using FileReader (efficient, no byte-by-byte loop)
+ */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      resolve(dataUrl.split(',')[1])
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
+// =====================================================
 // AUDIO TRANSCRIPTION (Universal Input Funnel - Phase 0)
 // =====================================================
 
@@ -337,15 +356,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   const startTime = Date.now()
 
   try {
-    // Convert Blob to base64
-    const arrayBuffer = await audioBlob.arrayBuffer()
-    const bytes = new Uint8Array(arrayBuffer)
-    let binary = ''
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i])
-    }
-    const audioBase64 = btoa(binary)
-
+    const audioBase64 = await blobToBase64(audioBlob)
     const mimeType = audioBlob.type || 'audio/webm'
 
     log.debug('[momentPersistenceService] Transcribing audio', {
@@ -404,14 +415,7 @@ export async function describeImage(imageFile: File): Promise<string> {
   const startTime = Date.now()
 
   try {
-    // Convert File to base64
-    const arrayBuffer = await imageFile.arrayBuffer()
-    const bytes = new Uint8Array(arrayBuffer)
-    let binary = ''
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i])
-    }
-    const imageBase64 = btoa(binary)
+    const imageBase64 = await blobToBase64(imageFile)
 
     const mimeType = imageFile.type || 'image/jpeg'
 

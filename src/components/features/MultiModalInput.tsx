@@ -80,6 +80,7 @@ export function MultiModalInput({
   const animFrameRef = useRef<number | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
+  const recordSecondsRef = useRef(0)
 
   // ── Auto-resize textarea ──────────────────────────────────────────
 
@@ -192,15 +193,15 @@ export function MultiModalInput({
       mediaRecorder.start(250)
       setState('recording')
       setRecordSeconds(0)
+      recordSecondsRef.current = 0
 
       timerRef.current = setInterval(() => {
-        setRecordSeconds(prev => {
-          if (prev >= MAX_RECORDING_SECONDS - 1) {
-            stopRecordingCleanup()
-            return 0
-          }
-          return prev + 1
-        })
+        recordSecondsRef.current += 1
+        const seconds = recordSecondsRef.current
+        setRecordSeconds(seconds)
+        if (seconds >= MAX_RECORDING_SECONDS) {
+          stopRecordingCleanup()
+        }
       }, 1000)
 
       updateAudioLevel()
@@ -243,7 +244,7 @@ export function MultiModalInput({
 
   // ── Submit ────────────────────────────────────────────────────────
 
-  const canSubmit = text.trim().length > 0 || photoFile !== null
+  const canSubmit = text.trim().length > 0 || photoFile !== null || audioBlob !== null
   const isBusy = state === 'recording' || state === 'transcribing' || state === 'submitting'
 
   const handleSubmit = useCallback(async () => {
