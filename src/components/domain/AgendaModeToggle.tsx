@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, LayoutGrid } from 'lucide-react';
+import { CalendarDays, List, Columns3, LayoutGrid } from 'lucide-react';
 
-type AgendaMode = 'agenda' | 'organizar';
+export type AgendaMode = 'agenda' | 'list' | 'kanban' | 'matrix';
 
 interface AgendaModeToggleProps {
   mode: AgendaMode;
@@ -11,7 +11,9 @@ interface AgendaModeToggleProps {
 
 const segments: { key: AgendaMode; label: string; icon: React.ElementType }[] = [
   { key: 'agenda', label: 'Agenda', icon: CalendarDays },
-  { key: 'organizar', label: 'Organizar', icon: LayoutGrid },
+  { key: 'list', label: 'Lista', icon: List },
+  { key: 'kanban', label: 'Kanban', icon: Columns3 },
+  { key: 'matrix', label: 'Matriz', icon: LayoutGrid },
 ];
 
 export const AgendaModeToggle: React.FC<AgendaModeToggleProps> = ({
@@ -38,7 +40,7 @@ export const AgendaModeToggle: React.FC<AgendaModeToggleProps> = ({
             )}
             <span className={`relative flex items-center gap-1.5 ${isActive ? 'text-white' : 'text-ceramic-text-secondary'}`}>
               <Icon className="w-3.5 h-3.5" />
-              {seg.label}
+              <span className="hidden sm:inline">{seg.label}</span>
             </span>
           </button>
         );

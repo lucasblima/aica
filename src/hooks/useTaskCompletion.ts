@@ -32,21 +32,26 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
 
   /**
    * Mark a task as complete: update DB, animate, handle recurrence, unsync calendar.
+   * Returns true if DB update succeeded, false otherwise.
    */
-  const handleComplete = useCallback(async (taskId: string) => {
+  const handleComplete = useCallback(async (taskId: string): Promise<boolean> => {
     const now = new Date().toISOString();
 
-    // Update DB
+    // Update DB — set ALL completion-related fields for consistency
     const { data: updatedTask, error } = await supabase
       .from('work_items')
-      .update({ completed_at: now })
+      .update({
+        completed_at: now,
+        is_completed: true,
+        status: 'completed',
+      })
       .eq('id', taskId)
       .select('*')
       .single();
 
     if (error) {
       log.error('Error completing task:', { error });
-      return;
+      return false;
     }
 
     log.debug('Task completed:', taskId);
@@ -130,6 +135,7 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
     });
 
     onRefresh();
+    return true;
   }, [onRefresh]);
 
   /**
@@ -138,7 +144,11 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
   const handleUncomplete = useCallback(async (taskId: string) => {
     const { error } = await supabase
       .from('work_items')
-      .update({ completed_at: null })
+      .update({
+        completed_at: null,
+        is_completed: false,
+        status: 'pending',
+      })
       .eq('id', taskId);
 
     if (error) {
@@ -167,6 +177,7 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
         .from('work_items')
         .select('*')
         .gte('completed_at', todayStart.toISOString())
+        .eq('archived', false)
         .order('completed_at', { ascending: false });
 
       if (error) {

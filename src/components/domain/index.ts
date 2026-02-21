@@ -16,3 +16,6 @@ export { TaskEditModal } from './TaskEditModal';
 export { TaskEditDrawer } from './TaskEditDrawer';
 export { CompletedTasksSection } from './CompletedTasksSection';
 export { RecurrenceChip } from './RecurrenceChip';
+export { TaskListView } from './TaskListView';
+export { TaskKanbanView } from './TaskKanbanView';
+export { TaskFilterBar } from './TaskFilterBar';
