@@ -5,7 +5,7 @@
  * Replaces the embedded TaskCard in PriorityMatrix.
  *
  * Features:
- * - Swipe right past 80px threshold -> green background -> complete
+ * - Swipe right past 100px threshold -> green background -> complete
  * - Checkbox always visible (not hidden behind hover)
  * - Card body tappable -> opens TaskBottomSheet
  * - Drag handle (GripVertical) separate touch zone for dnd-kit
@@ -23,7 +23,7 @@ import type { Task, Quadrant } from '@/types';
 import { QUADRANT_COLORS } from '@/constants/quadrantColors';
 import { springPress } from '@/lib/animations/ceramic-motion';
 
-const SWIPE_THRESHOLD = 80;
+const SWIPE_THRESHOLD = 100;
 
 interface SwipeableTaskCardProps {
   task: Task;
@@ -141,7 +141,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 
             {/* The card itself */}
             <motion.div
-              className={`ceramic-card ${compact ? 'p-2' : 'p-3'} bg-[#F7F6F4] border-l-4 ${borderClass} shadow-sm cursor-pointer active:scale-[0.98] transition-transform`}
+              className={`ceramic-card ${compact ? 'p-2' : 'p-3'} bg-[#F7F6F4] border-l-4 ${borderClass} shadow-[0_1px_4px_rgba(0,0,0,0.06)] cursor-pointer active:scale-[0.98] transition-transform`}
               drag="x"
               dragConstraints={{ left: 0, right: 200 }}
               dragElastic={0.1}
@@ -154,11 +154,9 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
                 {/* Checkbox - always visible */}
                 <button
                   onClick={handleCheckboxClick}
-                  className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-ceramic-text-secondary/30 hover:border-green-500 hover:scale-110 flex items-center justify-center transition-all"
+                  className="flex-shrink-0 w-6 h-6 mt-0.5 rounded-full border-2 border-ceramic-text-secondary/50 hover:border-ceramic-success hover:scale-110 flex items-center justify-center transition-all"
                   title="Concluir tarefa"
-                >
-                  <Check className="w-3 h-3 text-ceramic-text-secondary/30" />
-                </button>
+                />
 
                 {/* Drag handle - separate touch zone */}
                 <div
@@ -205,7 +203,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
           </motion.div>
         </div>
       ) : (
-        /* Completing animation: green pulse then collapse */
+        /* Completing animation: green gradient + spring bounce then collapse */
         <motion.div
           key={`completing-${task.id}`}
           initial={{ opacity: 1, height: 'auto' }}
@@ -214,18 +212,18 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
             height: [undefined, undefined, 0],
             marginBottom: [8, 8, 0],
           }}
-          transition={{ duration: 1.5, times: [0, 0.6, 1] }}
+          transition={{ duration: 2, times: [0, 0.6, 1] }}
           className="overflow-hidden"
         >
           <div ref={setNodeRef} style={sortableStyle}>
-            <div className="ceramic-card p-3 mb-0 bg-green-50 border-l-4 border-l-green-500 shadow-sm">
+            <div className="ceramic-card p-3 mb-0 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-l-green-500 shadow-[0_0_12px_rgba(34,197,94,0.2)]">
               <div className="flex items-center gap-2">
                 <motion.div
-                  className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 0.6, repeat: 2 }}
+                  className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ duration: 0.5, type: 'spring', stiffness: 300, damping: 15 }}
                 >
-                  <Check className="w-3 h-3 text-white" />
+                  <Check className="w-3.5 h-3.5 text-white" />
                 </motion.div>
                 <span className="text-sm font-bold text-green-700 line-through">
                   {task.title}

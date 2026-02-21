@@ -17,25 +17,25 @@ interface QuadrantInfo {
 const QUADRANT_INFO: Record<Quadrant, QuadrantInfo> = {
     'urgent-important': {
         icon: Zap,
-        message: 'Nenhuma tarefa urgente e importante',
+        message: '\u{1F534} Nenhuma tarefa urgente — bom sinal!',
         hint: 'Arraste tarefas para cá ou use "AICA Auto" para priorizar automaticamente',
         color: 'text-ceramic-error'
     },
     'important': {
         icon: Target,
-        message: 'Nenhuma tarefa importante',
+        message: '\u{1F7E2} Nenhuma tarefa importante agendada',
         hint: 'Planeje tarefas importantes antes que se tornem urgentes',
         color: 'text-ceramic-info'
     },
     'urgent': {
         icon: Clock,
-        message: 'Nenhuma tarefa urgente',
+        message: '\u{1F7E1} Nenhuma tarefa urgente pendente',
         hint: 'Considere delegar tarefas urgentes mas não importantes',
         color: 'text-amber-500'
     },
     'low': {
         icon: Archive,
-        message: 'Nenhuma tarefa de baixa prioridade',
+        message: '\u{26AA} Zona limpa — foco no que importa',
         hint: 'Tarefas que não são urgentes nem importantes podem ser eliminadas',
         color: 'text-ceramic-text-secondary'
     }

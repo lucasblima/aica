@@ -85,7 +85,8 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         completedTodayTasks,
         isLoadingCompleted,
         loadCompletedToday,
-    } = useTaskCompletion({ onRefresh: () => loadAllTasks() });
+        completingTaskIds,
+    } = useTaskCompletion({ onRefresh: () => loadAllTasks(undefined, { silent: true }) });
 
     // Google Calendar Integration - Buscar proximos 7 dias
     // Usar useMemo para evitar recriar datas a cada render e causar loop
@@ -446,9 +447,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         return filtered;
     }, [calendarEvents, skippedEvents, allDueDateTasks]);
 
-    const loadAllTasks = async (forDate?: Date) => {
+    const loadAllTasks = async (forDate?: Date, { silent = false }: { silent?: boolean } = {}) => {
         try {
-            setIsLoading(true);
+            if (!silent) setIsLoading(true);
             const targetDate = forDate || selectedDate;
             const dateStr = targetDate.toISOString().split('T')[0];
 
@@ -701,8 +702,18 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         }
     }, []);
 
-    // Handle task completion — delegates to useTaskCompletion hook
+    // Handle task completion — optimistic removal + delegates to useTaskCompletion hook
     const handleTaskComplete = async (taskId: string) => {
+        // Optimistic removal: immediately remove task from all state lists
+        setMatrixTasks(prev => ({
+            'urgent-important': prev['urgent-important'].filter(t => t.id !== taskId),
+            'important': prev['important'].filter(t => t.id !== taskId),
+            'urgent': prev['urgent'].filter(t => t.id !== taskId),
+            'low': prev['low'].filter(t => t.id !== taskId),
+        }));
+        setTimelineTasks(prev => prev.filter(t => t.id !== taskId));
+        setAllDueDateTasks(prev => prev.filter((t: any) => t.id !== taskId));
+
         await handleComplete(taskId);
     };
 
@@ -749,7 +760,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 duration: 5000
             });
             // Revert optimistic update
-            loadAllTasks();
+            loadAllTasks(undefined, { silent: true });
         }
     };
 
@@ -781,6 +792,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     onSkipEvent={handleSkipEvent}
                     onUnskipEvent={handleUnskipEvent}
                     onTaskComplete={handleTaskComplete}
+                    completingTaskIds={completingTaskIds}
                 />
             </section>
 
@@ -822,6 +834,9 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         </>
     );
 
+    // Wrapper for PriorityMatrix onComplete: accepts Task, extracts id
+    const handleCompleteTaskFromMatrix = (task: Task) => handleTaskComplete(task.id);
+
     // Matrix content (used in both desktop right panel and mobile organizar mode)
     const matrixContent = (
         <div className="w-full" data-tour="eisenhower-matrix">
@@ -834,6 +849,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                 isLoading={isLoading}
                 onRefresh={loadAllTasks}
                 compact={!isDesktop}
+                onComplete={handleCompleteTaskFromMatrix}
             />
         </div>
     );

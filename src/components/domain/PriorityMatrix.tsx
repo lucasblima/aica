@@ -24,6 +24,7 @@ interface QuadrantConfig {
     id: Quadrant;
     title: string;
     subtitle: string;
+    emoji: string;
     color: string;
     bgClass: string;
 }
@@ -33,6 +34,7 @@ const QUADRANTS: QuadrantConfig[] = [
         id: 'urgent-important',
         title: 'Urgente & Importante',
         subtitle: 'Faça Agora',
+        emoji: '\u{1F534}',
         color: '#D97706',
         bgClass: 'bg-gradient-to-br from-ceramic-error/5 to-amber-50'
     },
@@ -40,6 +42,7 @@ const QUADRANTS: QuadrantConfig[] = [
         id: 'important',
         title: 'Importante, Não Urgente',
         subtitle: 'Agende',
+        emoji: '\u{1F7E2}',
         color: '#7B8FA2',
         bgClass: 'bg-gradient-to-br from-ceramic-info/5 to-ceramic-info/10'
     },
@@ -47,6 +50,7 @@ const QUADRANTS: QuadrantConfig[] = [
         id: 'urgent',
         title: 'Urgente, Não Importante',
         subtitle: 'Delegue',
+        emoji: '\u{1F7E1}',
         color: '#FBBF24',
         bgClass: 'bg-gradient-to-br from-amber-50 to-amber-50'
     },
@@ -54,6 +58,7 @@ const QUADRANTS: QuadrantConfig[] = [
         id: 'low',
         title: 'Nem Urgente, Nem Importante',
         subtitle: 'Elimine',
+        emoji: '\u{26AA}',
         color: '#A89F91',
         bgClass: 'bg-gradient-to-br from-ceramic-cool to-ceramic-base'
     }
@@ -89,18 +94,18 @@ const DroppableQuadrant: React.FC<{
             ref={setNodeRef}
             data-container-type="quadrant"
             data-tour={getQuadrantTourTarget(quadrant.id)}
-            className={`ceramic-tray ${compact ? 'p-3 min-h-[120px]' : 'p-3 min-h-[160px]'} rounded-xl transition-all ${
+            className={`ceramic-tray ${compact ? 'p-3 min-h-[120px]' : 'p-3 min-h-[160px]'} rounded-2xl transition-all ${
                 isOver ? 'ring-2 ring-amber-400 bg-amber-50/50' : ''
             }`}
-            style={{ borderTop: `4px solid ${quadrant.color}` }}
+            style={{ borderLeft: `3px solid ${quadrant.color}` }}
         >
             {/* Quadrant Header */}
             <div className={compact ? 'mb-2' : 'mb-4'}>
                 <h3 className={`${compact ? 'text-xs' : 'text-sm'} font-black text-ceramic-text-primary uppercase tracking-wide`}>
-                    {quadrant.title}
+                    <span className="mr-1.5">{quadrant.emoji}</span>{quadrant.title}
                 </h3>
                 <p className="text-xs text-ceramic-text-secondary">
-                    {quadrant.subtitle} • {tasks.length} tarefas
+                    {quadrant.subtitle} • <span style={{ color: quadrant.color, fontWeight: 700 }}>{tasks.length}</span> tarefas
                 </p>
             </div>
 
@@ -145,9 +150,10 @@ interface PriorityMatrixProps {
     onRefresh: () => void;
     compact?: boolean;
     onOpenTask?: (task: Task) => void;
+    onComplete?: (task: Task) => void;
 }
 
-export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, isLoading, onRefresh, compact = false, onOpenTask: externalOnOpenTask }) => {
+export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, isLoading, onRefresh, compact = false, onOpenTask: externalOnOpenTask, onComplete: externalOnComplete }) => {
     const [isAicaWorking, setIsAicaWorking] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -277,6 +283,9 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
             log.error('Error completing task:', { error });
         }
     };
+
+    // Use external onComplete when provided, otherwise fall back to internal handler
+    const resolvedCompleteHandler = externalOnComplete ?? handleCompleteTask;
 
     // Extract unique associations from tasks
     const uniqueAssociations = React.useMemo(() => {
@@ -432,7 +441,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                         tasks={filteredTasks[quadrant.id]}
                         isLoading={isLoading}
                         onOpenTask={handleOpenTask}
-                        onCompleteTask={handleCompleteTask}
+                        onCompleteTask={resolvedCompleteHandler}
                         compact={compact}
                     />
                 ))}
@@ -443,7 +452,7 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
                 task={editingTask}
                 isOpen={isSheetOpen}
                 onSave={handleSaveTask}
-                onComplete={handleCompleteTask}
+                onComplete={resolvedCompleteHandler}
                 onDelete={handleDeleteTask}
                 onClose={handleCloseSheet}
             />
