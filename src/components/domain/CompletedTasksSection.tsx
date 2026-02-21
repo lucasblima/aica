@@ -1,7 +1,7 @@
 /**
  * CompletedTasksSection — Collapsible section showing today's completed tasks
  *
- * Default: collapsed. Expanded shows strikethrough tasks with "Desfazer" button.
+ * Default: collapsed. Expanded shows completed tasks with green celebration style.
  */
 
 import React, { useState } from 'react';
@@ -15,6 +15,12 @@ interface CompletedTasksSectionProps {
   isLoading?: boolean;
 }
 
+const itemSpring = {
+  type: "spring" as const,
+  stiffness: 280,
+  damping: 22,
+};
+
 export const CompletedTasksSection: React.FC<CompletedTasksSectionProps> = ({
   tasks,
   onUncomplete,
@@ -24,21 +30,34 @@ export const CompletedTasksSection: React.FC<CompletedTasksSectionProps> = ({
 
   if (tasks.length === 0 && !isLoading) return null;
 
+  // Natural language label
+  const countLabel = tasks.length === 1
+    ? '1 tarefa concluida'
+    : `${tasks.length} tarefas concluidas`;
+
   return (
     <div className="mt-4">
       {/* Header toggle */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg hover:bg-ceramic-cool/50 transition-colors"
+        className={`flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-xl transition-colors ${
+          isExpanded ? 'bg-ceramic-success/5' : 'hover:bg-ceramic-cool/50'
+        }`}
       >
         <motion.div
           animate={{ rotate: isExpanded ? 180 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <ChevronDown className="w-4 h-4 text-ceramic-text-secondary" />
+          <ChevronDown className={`w-4 h-4 ${isExpanded ? 'text-ceramic-success' : 'text-ceramic-text-secondary'}`} />
         </motion.div>
+
+        {/* Green accent checkmark */}
+        <div className="w-5 h-5 rounded-full bg-ceramic-success/15 flex items-center justify-center flex-shrink-0">
+          <Check className="w-3 h-3 text-ceramic-success" />
+        </div>
+
         <span className="text-sm font-medium text-ceramic-text-secondary">
-          Concluidas <span className="text-ceramic-success font-bold">({tasks.length})</span>
+          {countLabel}
         </span>
       </button>
 
@@ -58,27 +77,33 @@ export const CompletedTasksSection: React.FC<CompletedTasksSectionProps> = ({
                   <div className="w-5 h-5 border-2 border-ceramic-border border-t-ceramic-info rounded-full animate-spin" />
                 </div>
               ) : (
-                tasks.map((task) => (
+                tasks.map((task, idx) => (
                   <motion.div
                     key={task.id}
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-ceramic-cool/30 opacity-60"
+                    transition={{ ...itemSpring, delay: idx * 0.03 }}
+                    className="group flex items-center gap-3 px-3 py-2.5 rounded-xl bg-ceramic-success/5 hover:bg-ceramic-success/10 transition-colors"
                   >
-                    {/* Green check icon */}
-                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-ceramic-success/20 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-ceramic-success" />
-                    </div>
+                    {/* Animated green check icon */}
+                    <motion.div
+                      className="flex-shrink-0 w-6 h-6 rounded-full bg-ceramic-success/20 flex items-center justify-center"
+                      initial={{ scale: 0.5 }}
+                      animate={{ scale: 1 }}
+                      transition={itemSpring}
+                    >
+                      <Check className="w-3.5 h-3.5 text-ceramic-success" />
+                    </motion.div>
 
                     {/* Task title (strikethrough) */}
                     <span className="flex-1 text-sm text-ceramic-text-secondary line-through truncate">
                       {task.title}
                     </span>
 
-                    {/* Completed time */}
+                    {/* Completion time */}
                     {task.completed_at && !isNaN(new Date(task.completed_at).getTime()) && (
-                      <span className="text-xs text-ceramic-text-secondary/60 flex-shrink-0">
+                      <span className="text-[11px] tabular-nums text-ceramic-text-secondary/50 flex-shrink-0">
                         {new Date(task.completed_at).toLocaleTimeString('pt-BR', {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -86,16 +111,18 @@ export const CompletedTasksSection: React.FC<CompletedTasksSectionProps> = ({
                       </span>
                     )}
 
-                    {/* Undo button */}
+                    {/* Undo button: visible on hover (desktop), always visible (mobile) */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onUncomplete(task.id);
                       }}
-                      className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-ceramic-info hover:bg-ceramic-info/10 transition-colors"
+                      className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-ceramic-info
+                        opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+                        hover:bg-ceramic-info/10 transition-all duration-150"
                     >
                       <Undo2 className="w-3 h-3" />
-                      Desfazer
+                      <span className="hidden sm:inline">Desfazer</span>
                     </button>
                   </motion.div>
                 ))

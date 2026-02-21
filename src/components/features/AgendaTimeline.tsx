@@ -21,6 +21,29 @@ interface AgendaTimelineProps {
   onEventEdit?: (eventId: string) => void;
 }
 
+// Checklist progress bar component
+const ChecklistProgressBar: React.FC<{ checklist: Array<{ text: string; done: boolean }> }> = ({ checklist }) => {
+  const done = checklist.filter(i => i.done).length;
+  const total = checklist.length;
+  const pct = Math.round((done / total) * 100);
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5">
+      <div className="flex-1 h-1 rounded-full bg-ceramic-border/40 overflow-hidden">
+        <motion.div
+          className="h-full rounded-full bg-ceramic-accent/70"
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+        />
+      </div>
+      <span className="text-[10px] tabular-nums text-ceramic-text-secondary/60 flex-shrink-0">
+        {done}/{total}
+      </span>
+    </div>
+  );
+};
+
 export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
   events,
   onEventClick,
@@ -89,53 +112,65 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
       x: 0,
       transition: {
         type: "spring" as const,
-        stiffness: 100,
-        damping: 15
+        stiffness: 250,
+        damping: 22
       }
     }
   };
 
   return (
     <motion.div
-      className="space-y-3"
+      className="relative"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {events.map((item) => {
-        const isTask = item.type === 'task';
-        const duration = getDuration(item.startTime, item.endTime);
+      {/* Vertical timeline connector line */}
+      {events.length > 1 && (
+        <div
+          className="absolute left-[13px] top-6 bottom-6 w-px"
+          style={{
+            background: 'linear-gradient(to bottom, var(--color-ceramic-border, #d4d0c8), transparent)'
+          }}
+        />
+      )}
 
-        return (
-          <motion.div
-            key={item.id}
-            variants={itemVariants}
-            onClick={() => handleEventAction(item)}
-            className={`ceramic-card p-4 rounded-2xl cursor-pointer hover:scale-[1.01] transition-transform ${
-              isTask && item.isCompleted ? 'opacity-60' : ''
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              {/* Timeline Indicator */}
-              <div className="flex-shrink-0">
+      <div className="space-y-3">
+        {events.map((item, idx) => {
+          const isTask = item.type === 'task';
+          const duration = getDuration(item.startTime, item.endTime);
+          const isLast = idx === events.length - 1;
+
+          return (
+            <motion.div
+              key={item.id}
+              variants={itemVariants}
+              className="relative flex gap-3"
+            >
+              {/* Timeline dot column */}
+              <div className="flex-shrink-0 flex flex-col items-center z-10 pt-4">
                 {isTask ? (
                   <motion.button
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center ${
                       item.isCompleted
                         ? 'bg-ceramic-accent border-ceramic-accent'
-                        : 'border-ceramic-text-secondary/30 hover:border-ceramic-accent'
+                        : 'border-ceramic-text-secondary/50 hover:border-ceramic-accent bg-ceramic-base'
                     }`}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTaskToggle?.(item.id);
+                    }}
                   >
                     {item.isCompleted && (
                       <Check className="w-4 h-4 text-white" />
                     )}
                   </motion.button>
                 ) : (
-                  <div className="ceramic-concave w-6 h-6 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-ceramic-base border-2 border-ceramic-border flex items-center justify-center">
                     <Circle
-                      className="w-3 h-3"
+                      className="w-3.5 h-3.5"
                       style={{ color: item.color || '#D97706' }}
                       fill={item.color || '#D97706'}
                     />
@@ -143,47 +178,61 @@ export const AgendaTimeline: React.FC<AgendaTimelineProps> = ({
                 )}
               </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                {/* Horário */}
-                <div className="text-sm font-bold text-ceramic-text-secondary mb-1">
-                  {formatTime(item.startTime)}
-                  {duration && ` • ${duration}`}
-                </div>
+              {/* Card content */}
+              <motion.div
+                onClick={() => handleEventAction(item)}
+                className={`flex-1 ceramic-card p-4 rounded-2xl cursor-pointer hover:scale-[1.01] transition-transform ${
+                  isTask && item.isCompleted ? 'opacity-60' : ''
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Title (primary) */}
+                    <h4 className={`text-base font-semibold text-ceramic-text-primary truncate ${
+                      isTask && item.isCompleted ? 'line-through text-ceramic-text-secondary' : ''
+                    }`}>
+                      {item.title}
+                    </h4>
 
-                {/* Título */}
-                <h4 className={`text-base font-bold text-ceramic-text-primary truncate ${
-                  isTask && item.isCompleted ? 'line-through' : ''
-                }`}>
-                  {item.title}
-                </h4>
-                {item.checklist && item.checklist.length > 0 && (
-                  <span className="inline-flex items-center gap-1 mt-0.5 text-xs text-ceramic-text-secondary">
-                    <ListChecks className="w-3 h-3" />
-                    {item.checklist.filter(i => i.done).length}/{item.checklist.length}
-                  </span>
-                )}
+                    {/* Time + duration (secondary, below title) */}
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Clock className="w-3 h-3 text-ceramic-text-secondary/60" />
+                      <span className="text-sm font-medium tabular-nums text-ceramic-text-secondary">
+                        {formatTime(item.startTime)}
+                        {duration && (
+                          <span className="text-ceramic-text-secondary/50 font-normal"> &middot; {duration}</span>
+                        )}
+                      </span>
+                    </div>
 
-                {/* Local (se houver) */}
-                {item.location && (
-                  <div className="flex items-center gap-1 mt-1 text-xs text-ceramic-text-secondary">
-                    <MapPin className="w-3 h-3" />
-                    <span className="truncate">{item.location}</span>
+                    {/* Checklist progress bar */}
+                    {item.checklist && item.checklist.length > 0 && (
+                      <ChecklistProgressBar checklist={item.checklist} />
+                    )}
+
+                    {/* Location */}
+                    {item.location && (
+                      <div className="flex items-center gap-1 mt-1.5 text-xs text-ceramic-text-secondary">
+                        <MapPin className="w-3 h-3" />
+                        <span className="truncate">{item.location}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Barra lateral de cor (apenas para eventos) */}
-              {!isTask && (
-                <div
-                  className="w-1 h-12 rounded-full"
-                  style={{ backgroundColor: item.color || '#D97706' }}
-                />
-              )}
-            </div>
-          </motion.div>
-        );
-      })}
+                  {/* Color bar (events only) */}
+                  {!isTask && (
+                    <div
+                      className="w-1 h-12 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: item.color || '#D97706' }}
+                    />
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })}
+      </div>
     </motion.div>
   );
 };

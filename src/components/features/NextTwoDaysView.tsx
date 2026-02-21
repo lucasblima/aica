@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, MapPin, X, Check, AlertCircle, ListChecks } from 'lucide-react';
 import { getQuadrantFromFlags, QUADRANT_COLORS } from '@/constants/quadrantColors';
 
@@ -10,7 +10,7 @@ interface EventWithCategory {
   endTime: string;
   description?: string;
   location?: string;
-  category: string; // treino, reunião, compromisso, etc
+  category: string; // treino, reuniao, compromisso, etc
   isToday: boolean;
   isTomorrow: boolean;
   timeUntil?: string; // "1h 33min" ou "Agora"
@@ -27,9 +27,10 @@ interface NextTwoDaysViewProps {
   onSkipEvent: (eventId: string) => void;
   onUnskipEvent: (eventId: string) => void;
   onTaskComplete?: (taskId: string) => void;
+  completingTaskIds?: Set<string>;
 }
 
-// Detectar categoria do evento baseado no título e descrição
+// Detectar categoria do evento baseado no titulo e descricao
 export function detectEventCategory(title: string, description?: string): string {
   const text = `${title} ${description || ''}`.toLowerCase();
 
@@ -52,7 +53,7 @@ export function detectEventCategory(title: string, description?: string): string
   return 'Compromisso';
 }
 
-// Calcular tempo até o evento
+// Calcular tempo ate o evento
 export function calculateTimeUntil(startTime: string): string {
   const now = new Date();
   const start = new Date(startTime);
@@ -71,7 +72,7 @@ export function calculateTimeUntil(startTime: string): string {
   return `${minutes}min`;
 }
 
-// Variants para animação stagger entre seções
+// Variants para animacao stagger entre secoes
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
@@ -85,11 +86,19 @@ const sectionVariants = {
   })
 };
 
+// Spring config for celebration animation
+const celebrationSpring = {
+  type: "spring" as const,
+  stiffness: 300,
+  damping: 25,
+};
+
 export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   events,
   onSkipEvent,
   onUnskipEvent,
-  onTaskComplete
+  onTaskComplete,
+  completingTaskIds
 }) => {
   const [timeUntilMap, setTimeUntilMap] = useState<Record<string, string>>({});
 
@@ -123,15 +132,6 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     });
   };
 
-  const formatDayLabel = (isToday: boolean, isTomorrow: boolean, date: string) => {
-    if (isToday) return 'Hoje';
-    if (isTomorrow) return 'Amanhã';
-
-    const eventDate = new Date(date);
-    if (isNaN(eventDate.getTime())) return 'Outro dia';
-    return eventDate.toLocaleDateString('pt-BR', { weekday: 'long' });
-  };
-
   // Helper para calcular opacidade baseada no dia
   const getDayOpacity = (dayIndex: number): string => {
     if (dayIndex === 0) return 'opacity-100';
@@ -139,10 +139,41 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     return 'opacity-90';
   };
 
+  // Check if a task (by its raw ID without "task-" prefix) is in the completing set
+  const isTaskCompleting = (eventId: string): boolean => {
+    if (!completingTaskIds || completingTaskIds.size === 0) return false;
+    // Event IDs in NextTwoDaysView have "task-" prefix, completingTaskIds uses raw UUID
+    const rawId = eventId.replace('task-', '');
+    return completingTaskIds.has(rawId);
+  };
+
   // Agrupar eventos por dia
   const todayEvents = events.filter(e => e.isToday);
   const tomorrowEvents = events.filter(e => e.isTomorrow);
   const dayAfterEvents = events.filter(e => !e.isToday && !e.isTomorrow);
+
+  // Checklist progress bar component
+  const ChecklistProgressBar: React.FC<{ checklist: Array<{ text: string; done: boolean }> }> = ({ checklist }) => {
+    const done = checklist.filter(i => i.done).length;
+    const total = checklist.length;
+    const pct = Math.round((done / total) * 100);
+
+    return (
+      <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex-1 h-1 rounded-full bg-ceramic-border/40 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-ceramic-accent/70"
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          />
+        </div>
+        <span className="text-[10px] tabular-nums text-ceramic-text-secondary/60 flex-shrink-0">
+          {done}/{total}
+        </span>
+      </div>
+    );
+  };
 
 
   const renderEventCard = (event: EventWithCategory, index: number) => {
@@ -151,6 +182,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     const isEndValid = !isNaN(endDate.getTime());
     const isPast = isEndValid && endDate < new Date() && timeUntil !== 'Agora';
     const isHappening = timeUntil === 'Agora';
+    const completing = isTaskCompleting(event.id);
 
     // Quadrant color border for task items
     const quadrantBorder = event.isTask && (event.is_urgent !== undefined || event.is_important !== undefined)
@@ -158,137 +190,171 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
       : '';
 
     // Visual state classes
-    const stateClasses = event.skipped || event.isCompleted
-      ? 'opacity-50'
-      : isPast && !event.isTask
+    const stateClasses = completing
+      ? '' // Completing state has its own style
+      : event.skipped || event.isCompleted
         ? 'opacity-50'
-        : isHappening
-          ? 'ring-2 ring-amber-400/60 bg-amber-50/30'
-          : '';
+        : isPast && !event.isTask
+          ? 'opacity-50'
+          : isHappening
+            ? 'ring-2 ring-amber-400/60 bg-amber-50/30'
+            : '';
 
     return (
-      <motion.div
-        key={event.id}
-        className={`ceramic-tile p-4 ${quadrantBorder ? `border-l-4 ${quadrantBorder}` : ''} ${stateClasses}`}
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: index * 0.05 }}
-      >
-        {/* "Agora" highlight badge */}
-        {event.isToday && isHappening && !event.skipped && !event.isCompleted && (
-          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-amber-300/40">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
-            </span>
-            <span className="text-xs font-black text-amber-600 uppercase tracking-wide">
-              Acontecendo agora
-            </span>
-          </div>
-        )}
-
-        {/* Countdown Badge - Above main content */}
-        {event.isToday && timeUntil && !event.skipped && !event.isCompleted && !isPast && !isHappening && (
-          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-ceramic-text-secondary/10">
-            <Clock className="w-3.5 h-3.5 text-ceramic-accent animate-pulse" />
-            <span className="text-xs font-black text-ceramic-accent uppercase tracking-wide">
-              Falta {timeUntil}
-            </span>
-          </div>
-        )}
-
-        {/* Layout horizontal: Horário | Título | Ação */}
-        <div className="flex items-center gap-4">
-          {/* Task completion checkbox */}
-          {event.isTask && onTaskComplete && (
-            <button
-              onClick={() => onTaskComplete(event.id.replace('task-', ''))}
-              className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                event.isCompleted
-                  ? 'bg-ceramic-accent border-ceramic-accent'
-                  : 'border-ceramic-text-secondary/30 hover:border-ceramic-accent hover:scale-110'
-              }`}
-              title={event.isCompleted ? 'Concluida' : 'Marcar como concluida'}
-            >
-              {event.isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
-            </button>
+      <AnimatePresence mode="popLayout" key={event.id}>
+        <motion.div
+          layout
+          className={`ceramic-tile p-4 ${quadrantBorder && !completing ? `border-l-4 ${quadrantBorder}` : ''} ${stateClasses} ${
+            completing ? 'border-l-4 border-ceramic-success bg-ceramic-success/5' : ''
+          }`}
+          initial={{ opacity: 0, x: -10 }}
+          animate={completing ? {
+            opacity: [1, 1, 0],
+            scale: [1, 1.02, 0.95],
+            transition: { duration: 1.4, times: [0, 0.6, 1] }
+          } : {
+            opacity: 1,
+            x: 0
+          }}
+          transition={completing ? undefined : { delay: index * 0.05 }}
+        >
+          {/* Completion celebration overlay */}
+          {completing && (
+            <div className="flex items-center gap-2 mb-3 pb-3 border-b border-ceramic-success/30">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={celebrationSpring}
+              >
+                <div className="w-5 h-5 rounded-full bg-ceramic-success flex items-center justify-center">
+                  <Check className="w-3 h-3 text-white" />
+                </div>
+              </motion.div>
+              <span className="text-xs font-bold text-ceramic-success uppercase tracking-wide">
+                Concluida
+              </span>
+            </div>
           )}
 
-          {/* Horário - Destaque principal, âncora visual */}
-          <span className={`text-lg font-black flex-shrink-0 tabular-nums ${
-            isPast && !event.isTask ? 'text-ceramic-text-secondary' : 'text-ceramic-text-primary'
-          }`}>
-            {formatTime(event.startTime)}
-          </span>
-
-          {/* Título + checklist progress */}
-          <div className="flex-1 min-w-0">
-            <h4 className={`text-base font-medium truncate ${
-              event.skipped || event.isCompleted
-                ? 'line-through text-ceramic-text-secondary'
-                : isPast && !event.isTask
-                  ? 'text-ceramic-text-secondary'
-                  : 'text-ceramic-text-primary'
-            }`}>
-              {event.title}
-            </h4>
-            {event.checklist && event.checklist.length > 0 && (
-              <span className="inline-flex items-center gap-1 mt-0.5 text-xs text-ceramic-text-secondary">
-                <ListChecks className="w-3 h-3" />
-                {event.checklist.filter(i => i.done).length}/{event.checklist.length}
+          {/* "Agora" highlight badge */}
+          {!completing && event.isToday && isHappening && !event.skipped && !event.isCompleted && (
+            <div className="flex items-center gap-2 mb-3 pb-3 border-b border-amber-300/40">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
               </span>
+              <span className="text-xs font-black text-amber-600 uppercase tracking-wide">
+                Acontecendo agora
+              </span>
+            </div>
+          )}
+
+          {/* Countdown Badge - Above main content */}
+          {!completing && event.isToday && timeUntil && !event.skipped && !event.isCompleted && !isPast && !isHappening && (
+            <div className="flex items-center gap-2 mb-3 pb-3 border-b border-ceramic-text-secondary/10">
+              <Clock className="w-3.5 h-3.5 text-ceramic-accent animate-pulse" />
+              <span className="text-xs font-black text-ceramic-accent uppercase tracking-wide">
+                Falta {timeUntil}
+              </span>
+            </div>
+          )}
+
+          {/* Layout horizontal: Checkbox | Title (primary) | Time (secondary) | Action */}
+          <div className="flex items-center gap-3">
+            {/* Task completion checkbox - larger, more visible */}
+            {event.isTask && onTaskComplete && !completing && (
+              <motion.button
+                onClick={() => onTaskComplete(event.id.replace('task-', ''))}
+                className={`flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
+                  event.isCompleted
+                    ? 'bg-ceramic-accent border-ceramic-accent'
+                    : 'border-ceramic-text-secondary/50 hover:border-ceramic-accent hover:bg-ceramic-accent/5'
+                }`}
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                title={event.isCompleted ? 'Concluida' : 'Marcar como concluida'}
+              >
+                {event.isCompleted && <Check className="w-4 h-4 text-white" />}
+              </motion.button>
+            )}
+
+            {/* Title (primary) + checklist progress */}
+            <div className="flex-1 min-w-0">
+              <h4 className={`text-base font-semibold truncate ${
+                completing
+                  ? 'line-through text-ceramic-success/70'
+                  : event.skipped || event.isCompleted
+                    ? 'line-through text-ceramic-text-secondary'
+                    : isPast && !event.isTask
+                      ? 'text-ceramic-text-secondary'
+                      : 'text-ceramic-text-primary'
+              }`}>
+                {event.title}
+              </h4>
+              {event.checklist && event.checklist.length > 0 && !completing && (
+                <ChecklistProgressBar checklist={event.checklist} />
+              )}
+            </div>
+
+            {/* Time (secondary anchor) */}
+            <span className={`text-sm font-medium flex-shrink-0 tabular-nums ${
+              completing
+                ? 'text-ceramic-success/50'
+                : isPast && !event.isTask ? 'text-ceramic-text-secondary/60' : 'text-ceramic-text-secondary'
+            }`}>
+              {formatTime(event.startTime)}
+            </span>
+
+            {/* "Passou" label for past calendar events */}
+            {!completing && isPast && !event.isTask && !event.skipped && (
+              <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary/50">
+                Passou
+              </span>
+            )}
+
+            {/* Action Button - Compact (only for calendar events, not tasks) */}
+            {!completing && !event.isTask && event.isToday && !isPast && !isHappening && (
+              <div className="flex-shrink-0">
+                {event.skipped ? (
+                  <button
+                    onClick={() => onUnskipEvent(event.id)}
+                    className="ceramic-card px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
+                    title="Desfazer"
+                  >
+                    <Check className="w-4 h-4 text-ceramic-success" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onSkipEvent(event.id)}
+                    className="ceramic-concave px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
+                    title="Nao vou"
+                  >
+                    <X className="w-4 h-4 text-ceramic-error" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
-          {/* "Passou" label for past calendar events */}
-          {isPast && !event.isTask && !event.skipped && (
-            <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary/50">
-              Passou
-            </span>
-          )}
-
-          {/* Action Button - Compact (only for calendar events, not tasks) */}
-          {!event.isTask && event.isToday && !isPast && !isHappening && (
-            <div className="flex-shrink-0">
-              {event.skipped ? (
-                <button
-                  onClick={() => onUnskipEvent(event.id)}
-                  className="ceramic-card px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
-                  title="Desfazer"
-                >
-                  <Check className="w-4 h-4 text-ceramic-success" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => onSkipEvent(event.id)}
-                  className="ceramic-concave px-3 py-1.5 rounded-xl hover:scale-105 transition-transform"
-                  title="Nao vou"
-                >
-                  <X className="w-4 h-4 text-ceramic-error" />
-                </button>
-              )}
+          {/* Metadados secundarios - Location */}
+          {event.location && !completing && (
+            <div className="flex items-center gap-1.5 mt-2 ml-10">
+              <MapPin className="w-3 h-3 text-ceramic-text-secondary/60 flex-shrink-0" />
+              <span className="text-xs text-ceramic-text-secondary truncate">
+                {event.location}
+              </span>
             </div>
           )}
-        </div>
 
-        {/* Metadados secundários - Location */}
-        {event.location && (
-          <div className="flex items-center gap-1.5 mt-2 pl-[calc(theme(spacing.4)+4ch)]">
-            <MapPin className="w-3 h-3 text-ceramic-text-secondary/60 flex-shrink-0" />
-            <span className="text-xs text-ceramic-text-secondary truncate">
-              {event.location}
-            </span>
-          </div>
-        )}
-
-        {/* Skipped indicator */}
-        {event.skipped && (
-          <div className="flex items-center gap-1.5 mt-2 pl-[calc(theme(spacing.4)+4ch)]">
-            <AlertCircle className="w-3 h-3 text-ceramic-error/60 flex-shrink-0" />
-            <span className="text-xs text-ceramic-error font-medium">Nao foi</span>
-          </div>
-        )}
-      </motion.div>
+          {/* Skipped indicator */}
+          {event.skipped && !completing && (
+            <div className="flex items-center gap-1.5 mt-2 ml-10">
+              <AlertCircle className="w-3 h-3 text-ceramic-error/60 flex-shrink-0" />
+              <span className="text-xs text-ceramic-error font-medium">Nao foi</span>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     );
   };
 
@@ -299,14 +365,14 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
   ) => {
     return (
       <div className="ceramic-tray p-5 mb-4">
-        {/* Título "gravado" na borda superior da bandeja */}
+        {/* Titulo "gravado" na borda superior da bandeja */}
         <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 ${
           isToday ? 'text-ceramic-accent' : 'text-ceramic-text-secondary/70'
         }`}>
           {dayLabel}
         </h3>
 
-        {/* Conteúdo */}
+        {/* Conteudo */}
         {dayEvents.length > 0 ? (
           <div className="space-y-3">
             {dayEvents.map((event, index) => renderEventCard(event, index))}
@@ -320,7 +386,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
     );
   };
 
-  // Sempre mostrar as seções de dias (framework da página)
+  // Sempre mostrar as secoes de dias (framework da pagina)
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -329,7 +395,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Seção Hoje - index 0 */}
+      {/* Secao Hoje - index 0 */}
       <motion.div
         custom={0}
         variants={sectionVariants}
@@ -340,7 +406,7 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         {renderDaySection('Hoje', todayEvents, true)}
       </motion.div>
 
-      {/* Seção Amanhã - index 1 */}
+      {/* Secao Amanha - index 1 */}
       <motion.div
         custom={1}
         variants={sectionVariants}
@@ -348,10 +414,10 @@ export const NextTwoDaysView: React.FC<NextTwoDaysViewProps> = ({
         animate="visible"
         className={getDayOpacity(1)}
       >
-        {renderDaySection('Amanhã', tomorrowEvents)}
+        {renderDaySection('Amanha', tomorrowEvents)}
       </motion.div>
 
-      {/* Seção Depois de Amanhã - index 2 */}
+      {/* Secao Depois de Amanha - index 2 */}
       <motion.div
         custom={2}
         variants={sectionVariants}
