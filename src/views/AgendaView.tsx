@@ -702,19 +702,22 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
         }
     }, []);
 
-    // Handle task completion — optimistic removal + delegates to useTaskCompletion hook
+    // Handle task completion — DB update first, then delayed removal for animation
     const handleTaskComplete = async (taskId: string) => {
-        // Optimistic removal: immediately remove task from all state lists
-        setMatrixTasks(prev => ({
-            'urgent-important': prev['urgent-important'].filter(t => t.id !== taskId),
-            'important': prev['important'].filter(t => t.id !== taskId),
-            'urgent': prev['urgent'].filter(t => t.id !== taskId),
-            'low': prev['low'].filter(t => t.id !== taskId),
-        }));
-        setTimelineTasks(prev => prev.filter(t => t.id !== taskId));
-        setAllDueDateTasks(prev => prev.filter((t: any) => t.id !== taskId));
-
+        // 1. Start DB update + add to completedTodayTasks immediately
         await handleComplete(taskId);
+
+        // 2. Delay state removal to let SwipeableTaskCard's 2s animation play
+        setTimeout(() => {
+            setMatrixTasks(prev => ({
+                'urgent-important': prev['urgent-important'].filter(t => t.id !== taskId),
+                'important': prev['important'].filter(t => t.id !== taskId),
+                'urgent': prev['urgent'].filter(t => t.id !== taskId),
+                'low': prev['low'].filter(t => t.id !== taskId),
+            }));
+            setTimelineTasks(prev => prev.filter(t => t.id !== taskId));
+            setAllDueDateTasks(prev => prev.filter((t: any) => t.id !== taskId));
+        }, 2200); // slightly longer than animation duration (2s)
     };
 
     const unscheduleTask = async (taskId: string, targetQuadrant: Quadrant) => {

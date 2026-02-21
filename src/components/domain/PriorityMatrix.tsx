@@ -18,6 +18,8 @@ import { syncEntityToGoogle, unsyncEntityFromGoogle } from '@/services/calendarS
 import { atlasTaskToGoogleEvent } from '@/services/calendarSyncTransforms';
 import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 
+export type AgendaMode = 'agenda' | 'lista' | 'kanban' | 'matriz';
+
 const log = createNamespacedLogger('PriorityMatrix');
 
 interface QuadrantConfig {
@@ -263,7 +265,11 @@ export const PriorityMatrix: React.FC<PriorityMatrixProps> = ({ userId, tasks, i
         try {
             const { error } = await supabase
                 .from('work_items')
-                .update({ completed_at: new Date().toISOString() })
+                .update({
+                    completed_at: new Date().toISOString(),
+                    is_completed: true,
+                    status: 'completed',
+                })
                 .eq('id', task.id);
 
             if (error) throw error;

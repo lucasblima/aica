@@ -36,10 +36,14 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
   const handleComplete = useCallback(async (taskId: string) => {
     const now = new Date().toISOString();
 
-    // Update DB
+    // Update DB — set ALL completion-related fields for consistency
     const { data: updatedTask, error } = await supabase
       .from('work_items')
-      .update({ completed_at: now })
+      .update({
+        completed_at: now,
+        is_completed: true,
+        status: 'completed',
+      })
       .eq('id', taskId)
       .select('*')
       .single();
@@ -138,7 +142,11 @@ export function useTaskCompletion({ onRefresh }: UseTaskCompletionOptions) {
   const handleUncomplete = useCallback(async (taskId: string) => {
     const { error } = await supabase
       .from('work_items')
-      .update({ completed_at: null })
+      .update({
+        completed_at: null,
+        is_completed: false,
+        status: 'pending',
+      })
       .eq('id', taskId);
 
     if (error) {
