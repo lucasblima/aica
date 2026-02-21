@@ -721,8 +721,9 @@ Resposta do usuário: "${userResponse}"
 Gere uma pergunta de follow-up que aprofunde a reflexão:`
 
   try {
+    let timeoutId: ReturnType<typeof setTimeout>
     const timeoutPromise = new Promise<null>((resolve) => {
-      setTimeout(() => resolve(null), 3000)
+      timeoutId = setTimeout(() => resolve(null), 3000)
     })
 
     const geminiPromise = client.call({
@@ -739,6 +740,9 @@ Gere uma pergunta de follow-up que aprofunde a reflexão:`
       geminiPromise,
       timeoutPromise,
     ])) as GeminiChatResponse | null
+
+    // Clean up timeout to avoid lingering timer
+    clearTimeout(timeoutId!)
 
     if (result?.result) {
       const followUp = String(result.result).trim()

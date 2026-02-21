@@ -150,30 +150,34 @@ export function useDailyQuestionAI() {
         }))
 
         // Generate follow-up (non-blocking, optional)
-        if (!state.isFollowUpPhase && state.question) {
+        // Capture question ID to guard against race conditions (question may change before .then resolves)
+        const currentQuestionId = state.question.id
+        const currentCategory = state.question.category
+        if (!state.isFollowUpPhase) {
           setState(prev => ({ ...prev, isFollowUpLoading: true }))
           generateFollowUpQuestion(
             user.id,
             state.question.question_text,
             responseText,
           ).then(followUpText => {
-            if (followUpText) {
-              const followUpQuestion: QuestionWithResponse = {
-                id: `followup-${Date.now()}`,
-                question_text: followUpText,
-                category: state.question?.category || 'reflection',
-                active: true,
-                created_at: new Date().toISOString(),
-                parent_question_id: state.question?.id,
+            setState(prev => {
+              // Guard: if question changed while waiting, discard follow-up
+              if (prev.question?.id !== currentQuestionId) {
+                return { ...prev, isFollowUpLoading: false }
               }
-              setState(prev => ({
-                ...prev,
-                followUp: followUpQuestion,
-                isFollowUpLoading: false,
-              }))
-            } else {
-              setState(prev => ({ ...prev, isFollowUpLoading: false }))
-            }
+              if (followUpText) {
+                const followUpQuestion: QuestionWithResponse = {
+                  id: `followup-${Date.now()}`,
+                  question_text: followUpText,
+                  category: currentCategory || 'reflection',
+                  active: true,
+                  created_at: new Date().toISOString(),
+                  parent_question_id: currentQuestionId,
+                }
+                return { ...prev, followUp: followUpQuestion, isFollowUpLoading: false }
+              }
+              return { ...prev, isFollowUpLoading: false }
+            })
           }).catch(() => {
             setState(prev => ({ ...prev, isFollowUpLoading: false }))
           })
