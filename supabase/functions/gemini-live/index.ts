@@ -18,6 +18,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0"
+import { getCorsHeaders } from "../_shared/cors.ts"
 
 // =====================================================
 // CONFIGURATION
@@ -44,28 +45,6 @@ setInterval(() => {
     }
   }
 }, 30000) // Every 30 seconds
-
-// CORS configuration
-const ALLOWED_ORIGINS = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://aica-staging-5562559893.southamerica-east1.run.app',
-  'https://aica-5562559893.southamerica-east1.run.app',
-  'https://dev.aica.guru',
-  'https://aica.guru',
-]
-
-function getCorsHeaders(request: Request): Record<string, string> {
-  const origin = request.headers.get('origin') || ''
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ''
-
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Credentials': 'true',
-  }
-}
 
 // =====================================================
 // TYPES
