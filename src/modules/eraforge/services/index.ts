@@ -1,0 +1,14 @@
+/**
+ * EraForge Services - Barrel Export
+ */
+
+// Game CRUD
+export { EraforgeGameService } from './eraforgeGameService';
+
+// AI Game Master
+export { EraforgeAIService } from './eraforgeAIService';
+export type { GenerateScenarioResult, AdvisorResponseResult, SimulationResult } from './eraforgeAIService';
+
+// Voice / TTS
+export { EraforgeVoiceService } from './eraforgeVoiceService';
+export type { VoiceOption, SpeechResult } from './eraforgeVoiceService';

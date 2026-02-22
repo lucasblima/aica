@@ -295,11 +295,11 @@ export interface Advisor {
 export const ERA_LABELS: Record<Era, string> = {
   stone_age: 'Idade da Pedra',
   ancient_egypt: 'Egito Antigo',
-  classical_greece: 'Grecia Classica',
-  roman_empire: 'Imperio Romano',
-  medieval: 'Idade Media',
+  classical_greece: 'Grécia Clássica',
+  roman_empire: 'Império Romano',
+  medieval: 'Idade Média',
   renaissance: 'Renascimento',
-  industrial_revolution: 'Revolucao Industrial',
+  industrial_revolution: 'Revolução Industrial',
   modern: 'Era Moderna',
   future: 'Futuro',
 };
@@ -310,11 +310,11 @@ export const ERA_LABELS: Record<Era, string> = {
 export const ERA_CONFIG: Record<Era, { label: string; icon: string; color: string; period: string }> = {
   stone_age:              { label: 'Idade da Pedra',        icon: 'bone',      color: 'amber',   period: '~3M a.C. - 3500 a.C.' },
   ancient_egypt:          { label: 'Egito Antigo',          icon: 'pyramid',   color: 'yellow',  period: '3100 a.C. - 30 a.C.' },
-  classical_greece:       { label: 'Grecia Classica',       icon: 'columns',   color: 'blue',    period: '800 a.C. - 146 a.C.' },
-  roman_empire:           { label: 'Imperio Romano',        icon: 'shield',    color: 'red',     period: '27 a.C. - 476 d.C.' },
-  medieval:               { label: 'Idade Media',           icon: 'castle',    color: 'stone',   period: '476 - 1453' },
+  classical_greece:       { label: 'Grécia Clássica',       icon: 'columns',   color: 'blue',    period: '800 a.C. - 146 a.C.' },
+  roman_empire:           { label: 'Império Romano',        icon: 'shield',    color: 'red',     period: '27 a.C. - 476 d.C.' },
+  medieval:               { label: 'Idade Média',           icon: 'castle',    color: 'stone',   period: '476 - 1453' },
   renaissance:            { label: 'Renascimento',          icon: 'palette',   color: 'purple',  period: '1300 - 1600' },
-  industrial_revolution:  { label: 'Revolucao Industrial',  icon: 'cog',       color: 'gray',    period: '1760 - 1840' },
+  industrial_revolution:  { label: 'Revolução Industrial',  icon: 'cog',       color: 'gray',    period: '1760 - 1840' },
   modern:                 { label: 'Era Moderna',           icon: 'globe',     color: 'green',   period: '1900 - presente' },
   future:                 { label: 'Futuro',                icon: 'rocket',    color: 'cyan',    period: '2100+' },
 };
@@ -323,11 +323,11 @@ export const ERA_CONFIG: Record<Era, { label: string; icon: string; color: strin
  * Advisor configurations for display.
  */
 export const ADVISOR_CONFIG: Record<AdvisorId, { name: string; title: string; specialty: string }> = {
-  historian:   { name: 'Prof. Chronos',     title: 'Historiador',   specialty: 'Fatos historicos e contexto' },
-  scientist:   { name: 'Dra. Eureka',       title: 'Cientista',     specialty: 'Descobertas cientificas da era' },
+  historian:   { name: 'Prof. Chronos',     title: 'Historiador',   specialty: 'Fatos históricos e contexto' },
+  scientist:   { name: 'Dra. Eureka',       title: 'Cientista',     specialty: 'Descobertas científicas da era' },
   artist:      { name: 'Mestre Artisan',     title: 'Artista',       specialty: 'Arte, cultura e arquitetura' },
-  explorer:    { name: 'Capitao Vento',      title: 'Explorador',    specialty: 'Geografia e navegacao' },
-  philosopher: { name: 'Sabio Logos',        title: 'Filosofo',      specialty: 'Etica e questoes filosoficas' },
+  explorer:    { name: 'Capitão Vento',      title: 'Explorador',    specialty: 'Geografia e navegação' },
+  philosopher: { name: 'Sábio Logos',        title: 'Filósofo',      specialty: 'Ética e questões filosóficas' },
   engineer:    { name: 'Eng. Mechanica',     title: 'Engenheiro',    specialty: 'Tecnologia e engenharia' },
-  diplomat:    { name: 'Embaixador Pax',     title: 'Diplomata',     specialty: 'Politica e dinamicas sociais' },
+  diplomat:    { name: 'Embaixador Pax',     title: 'Diplomata',     specialty: 'Política e dinâmicas sociais' },
 };

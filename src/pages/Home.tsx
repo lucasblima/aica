@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Globe, type LucideIcon } from 'lucide-react';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Globe, Compass, type LucideIcon } from 'lucide-react';
 import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget, InviteShareCard, InviteModal } from '../components';
 import { FinanceCard } from '../modules/finance/components/FinanceCard';
 import { GrantsCard } from '../modules/grants/components/GrantsCard';
@@ -56,6 +56,7 @@ const MODULE_REGISTRY: ModuleConfig[] = [
    { id: 'flux', label: 'Flux', icon: '🏋️', route: 'flux', type: 'core' },
    { id: 'studio', label: 'Studio', icon: '🎙️', route: 'studio', type: 'core' },
    { id: 'connections', label: 'Conexões', icon: '🏢', route: 'connections', type: 'core' },
+   { id: 'eraforge', label: 'EraForge', icon: '🏛️', route: 'eraforge', type: 'core' },
    // Generic modules — active if have tasks
    { id: 'health', label: 'Saúde', icon: '🫀', route: 'health', type: 'generic' },
    { id: 'education', label: 'Educação', icon: '📚', route: 'education', type: 'generic' },
@@ -386,6 +387,36 @@ export default function Home({
                   className="cursor-pointer"
                >
                   <InterviewerCard compact />
+               </motion.div>
+
+               {/* EraForge — Historical RPG for kids */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('eraforge')}
+                  className="cursor-pointer"
+               >
+                  <motion.div
+                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
+                     style={{ background: 'linear-gradient(135deg, #F0EFE9 0%, #F5E8DC 100%)' }}
+                     variants={cardElevationVariants}
+                     initial="rest"
+                     whileHover="hover"
+                     whileTap="pressed"
+                  >
+                     <Compass className="absolute -right-2 -bottom-2 w-20 h-20 text-amber-700 opacity-10" />
+                     <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="ceramic-inset p-1.5">
+                              <span className="text-lg">🏛️</span>
+                           </div>
+                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">EraForge</span>
+                        </div>
+                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">Aventuras na Historia</p>
+                     </div>
+                  </motion.div>
                </motion.div>
 
                {/* Invites — compact */}
