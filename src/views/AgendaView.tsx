@@ -492,7 +492,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     task_type,
                     checklist,
                     status,
-                    tags,
                     created_at,
                     archived,
                     recurrence_rule,
