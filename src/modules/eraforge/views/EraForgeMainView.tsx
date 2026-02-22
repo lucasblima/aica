@@ -384,8 +384,14 @@ export default function EraForgeMainView() {
     // TODO: Update parental settings
   }, []);
 
-  const handleAddChild = useCallback(() => {
-    // TODO: Show add child modal
+  const handleAddChild = useCallback((_input: { display_name: string; avatar_emoji: string; birth_year?: number }) => {
+    // TODO: Create child profile via EraforgeGameService
+    log.debug('Add child requested');
+  }, []);
+
+  const handleEditChild = useCallback((_id: string, _input: { display_name?: string; avatar_emoji?: string }) => {
+    // TODO: Update child profile via EraforgeGameService
+    log.debug('Edit child requested');
   }, []);
 
   // ------- RENDER -------
@@ -452,6 +458,7 @@ export default function EraForgeMainView() {
           onVerifyPin={handleVerifyPin}
           onUpdateSettings={handleUpdateSettings}
           onAddChild={handleAddChild}
+          onEditChild={handleEditChild}
           onBack={() => actions.goHome()}
         />
       );
