@@ -116,7 +116,10 @@ export class GeminiLiveAudioService {
       const token = await this.getEphemeralToken();
 
       // 2. Connect to Gemini Live API
-      const ai = new GoogleGenAI({ apiKey: token });
+      const ai = new GoogleGenAI({
+        apiKey: token,
+        httpOptions: { apiVersion: 'v1alpha' },
+      });
 
       const liveConfig: LiveConnectConfig = {
         responseModalities: [Modality.AUDIO],
