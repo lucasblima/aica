@@ -4,6 +4,9 @@
  * Issues ephemeral tokens for direct client WebSocket connections
  * to the Gemini Multimodal Live API.
  *
+ * Uses direct REST API instead of @google/genai SDK because the SDK's
+ * authTokens.create() with liveConnectConstraints fails in Deno runtime.
+ *
  * Flow: Client calls this endpoint -> gets short-lived token ->
  *       client connects directly to wss://generativelanguage.googleapis.com/ws/...
  *
@@ -12,7 +15,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { GoogleGenAI } from "npm:@google/genai"
 import { getCorsHeaders } from "../_shared/cors.ts"
 
 // Configuration
@@ -46,7 +48,8 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Authenticate user via JWT
+    // [1/5] Authenticate user via JWT
+    console.log("[gemini-live-token] [1/5] Authenticating user...")
     const authHeader = req.headers.get("Authorization")
     if (!authHeader) {
       return new Response(
@@ -65,8 +68,10 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       )
     }
+    console.log(`[gemini-live-token] [1/5] Auth OK — user: ${user.id}`)
 
-    // 2. Parse optional config from body
+    // [2/5] Parse optional config from body
+    console.log("[gemini-live-token] [2/5] Parsing request body...")
     let systemInstruction: string | undefined
     let temperature = 0.7
     let voiceName: string | undefined
@@ -78,52 +83,51 @@ serve(async (req) => {
         temperature = Math.min(Math.max(body.temperature, 0), 2)
       }
       voiceName = body.voiceName
+      console.log(`[gemini-live-token] [2/5] Body parsed — voice: ${voiceName || "default"}, temp: ${temperature}`)
     } catch {
-      // Empty body is fine — defaults will be used
+      console.log("[gemini-live-token] [2/5] Empty body — using defaults")
     }
 
-    console.log(`[gemini-live-token] Creating token for user: ${user.id}`)
-
-    // 3. Create ephemeral token via Google GenAI SDK
-    const client = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+    // [3/5] Create ephemeral token via REST API
+    // NOTE: Direct REST API is used instead of @google/genai SDK because
+    // the SDK's authTokens.create() with liveConnectConstraints fails in Deno.
+    // The REST API only supports uses, expireTime, newSessionExpireTime.
+    // Client specifies model and config at WebSocket connect time.
+    console.log("[gemini-live-token] [3/5] Calling Google auth_tokens API...")
 
     const expireTime = new Date(Date.now() + TOKEN_MESSAGE_EXPIRY_MS).toISOString()
     const newSessionExpireTime = new Date(Date.now() + TOKEN_SESSION_EXPIRY_MS).toISOString()
 
-    // Build live connect constraints to lock the token to specific config
-    const liveConnectConfig: Record<string, unknown> = {
-      responseModalities: ["AUDIO"],
-      temperature,
-    }
-
-    if (voiceName) {
-      liveConnectConfig.speechConfig = {
-        voiceConfig: {
-          prebuiltVoiceConfig: { voiceName },
-        },
-      }
-    }
-
-    if (systemInstruction) {
-      liveConnectConfig.systemInstruction = systemInstruction
-    }
-
-    const token = await client.authTokens.create({
-      config: {
+    const tokenUrl = `https://generativelanguage.googleapis.com/v1alpha/auth_tokens?key=${GEMINI_API_KEY}`
+    const tokenResponse = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         uses: 1,
         expireTime,
         newSessionExpireTime,
-        liveConnectConstraints: {
-          model: LIVE_AUDIO_MODEL,
-          config: liveConnectConfig,
-        },
-        httpOptions: { apiVersion: "v1alpha" },
-      },
+      }),
     })
 
-    console.log(`[gemini-live-token] Token created for user: ${user.id}, expires: ${expireTime}`)
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text()
+      console.error(`[gemini-live-token] [3/5] Google API error: ${tokenResponse.status} — ${errorText}`)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Google API error creating token",
+          details: `HTTP ${tokenResponse.status}: ${errorText}`,
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      )
+    }
 
-    // 4. Log token creation for usage tracking
+    const tokenData = await tokenResponse.json()
+    const tokenName = tokenData.name
+    console.log(`[gemini-live-token] [3/5] Token created: ${tokenName?.substring(0, 20)}...`)
+
+    // [4/5] Log token creation for usage tracking
+    console.log("[gemini-live-token] [4/5] Logging metrics...")
     await supabase.from("llm_metrics").insert({
       user_id: user.id,
       action: "gemini_live_token_create",
@@ -134,11 +138,12 @@ serve(async (req) => {
       output_tokens: 0,
     }).catch(err => console.error("[gemini-live-token] Metrics log error:", err))
 
-    // 5. Return token to client
+    // [5/5] Return token to client
+    console.log(`[gemini-live-token] [5/5] Success — returning token for user: ${user.id}`)
     return new Response(
       JSON.stringify({
         success: true,
-        token: token.name,
+        token: tokenName,
         model: LIVE_AUDIO_MODEL,
         expiresAt: expireTime,
         newSessionExpiresAt: newSessionExpireTime,
