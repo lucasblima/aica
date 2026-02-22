@@ -7,7 +7,7 @@ export { EraforgeGameService } from './eraforgeGameService';
 
 // AI Game Master
 export { EraforgeAIService } from './eraforgeAIService';
-export type { GenerateScenarioResult, AdvisorResponseResult, SimulationResult } from './eraforgeAIService';
+export type { GenerateScenarioResult, AdvisorResponseResult, ProcessDecisionResult, SimulationResult } from './eraforgeAIService';
 
 // Voice / TTS
 export { EraforgeVoiceService } from './eraforgeVoiceService';
