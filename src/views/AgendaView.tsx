@@ -494,7 +494,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ userId, userEmail, onLog
                     status,
                     created_at,
                     archived,
-                    recurrence_rule,
                     associations(name)
                 `)
                 .is('completed_at', null)
