@@ -26,6 +26,8 @@ import type {
   Turn,
   TurnScenario,
   TurnConsequences,
+  WorldCreateInput,
+  ChildProfileCreateInput,
 } from '../types/eraforge.types';
 
 const log = createNamespacedLogger('EraForgeMainView');
@@ -47,6 +49,7 @@ export default function EraForgeMainView() {
   const [consequence, setConsequence] = useState<TurnConsequences | null>(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Ref to track whether we've already initiated game start for the current child
   const gameStartedRef = useRef(false);
@@ -185,20 +188,64 @@ export default function EraForgeMainView() {
   const handleSelectChild = useCallback(async (child: ChildProfile) => {
     if (!state.currentWorld) return;
 
-    const result = await EraforgeGameService.getChildMember(state.currentWorld.id, child.id);
-    if (result.data) {
-      gameStartedRef.current = false; // Reset so the effect can trigger
-      actions.setChild(child, result.data);
-    } else {
-      log.error('Failed to load member data for child:', result.error);
-      actions.setError('Erro ao carregar dados do jogador');
+    let result = await EraforgeGameService.getChildMember(state.currentWorld.id, child.id);
+
+    // Auto-join world if no member record exists yet
+    if (!result.data) {
+      log.debug('No member record found, auto-joining world');
+      const joinResult = await EraforgeGameService.joinWorld({
+        world_id: state.currentWorld.id,
+        child_id: child.id,
+      });
+      if (joinResult.data) {
+        result = { data: joinResult.data, error: null };
+      } else {
+        log.error('Failed to join world:', joinResult.error);
+        actions.setError('Erro ao entrar no mundo');
+        return;
+      }
     }
+
+    gameStartedRef.current = false; // Reset so the effect can trigger
+    actions.setChild(child, result.data!);
   }, [state.currentWorld, actions]);
 
-  const handleCreateWorld = useCallback(() => {
-    // TODO: Show world creation modal
-    log.debug('Create world requested');
-  }, []);
+  const handleCreateWorld = useCallback(async (input: WorldCreateInput) => {
+    setIsCreating(true);
+    try {
+      const result = await EraforgeGameService.createWorld(input);
+      if (result.data) {
+        setWorlds(prev => [result.data!, ...prev]);
+        actions.setWorld(result.data);
+      } else {
+        log.error('Failed to create world:', result.error);
+        actions.setError('Erro ao criar mundo');
+      }
+    } catch (err) {
+      log.error('Unexpected error creating world:', err);
+      actions.setError('Erro inesperado ao criar mundo');
+    } finally {
+      setIsCreating(false);
+    }
+  }, [actions]);
+
+  const handleCreateChild = useCallback(async (input: ChildProfileCreateInput) => {
+    setIsCreating(true);
+    try {
+      const result = await EraforgeGameService.createChildProfile(input);
+      if (result.data) {
+        setChildProfiles(prev => [...prev, result.data!]);
+      } else {
+        log.error('Failed to create child profile:', result.error);
+        actions.setError('Erro ao criar perfil do jogador');
+      }
+    } catch (err) {
+      log.error('Unexpected error creating child profile:', err);
+      actions.setError('Erro inesperado ao criar perfil');
+    } finally {
+      setIsCreating(false);
+    }
+  }, [actions]);
 
   // ------- ADVISOR HANDLERS -------
 
@@ -384,15 +431,25 @@ export default function EraForgeMainView() {
     // TODO: Update parental settings
   }, []);
 
-  const handleAddChild = useCallback((_input: { display_name: string; avatar_emoji: string; birth_year?: number }) => {
-    // TODO: Create child profile via EraforgeGameService
-    log.debug('Add child requested');
-  }, []);
+  const handleAddChild = useCallback(async (input: { display_name: string; avatar_emoji: string; birth_year?: number }) => {
+    const result = await EraforgeGameService.createChildProfile(input);
+    if (result.data) {
+      setChildProfiles(prev => [...prev, result.data!]);
+    } else {
+      log.error('Failed to add child from dashboard:', result.error);
+      actions.setError('Erro ao adicionar jogador');
+    }
+  }, [actions]);
 
-  const handleEditChild = useCallback((_id: string, _input: { display_name?: string; avatar_emoji?: string }) => {
-    // TODO: Update child profile via EraforgeGameService
-    log.debug('Edit child requested');
-  }, []);
+  const handleEditChild = useCallback(async (id: string, input: { display_name?: string; avatar_emoji?: string }) => {
+    const result = await EraforgeGameService.updateChildProfile(id, input);
+    if (result.data) {
+      setChildProfiles(prev => prev.map(c => c.id === id ? result.data! : c));
+    } else {
+      log.error('Failed to edit child profile:', result.error);
+      actions.setError('Erro ao editar perfil do jogador');
+    }
+  }, [actions]);
 
   // ------- RENDER -------
 
@@ -402,10 +459,13 @@ export default function EraForgeMainView() {
         <EF_HomeScreen
           worlds={worlds}
           children={childProfiles}
+          selectedWorld={state.currentWorld}
           onSelectWorld={handleSelectWorld}
           onSelectChild={handleSelectChild}
           onCreateWorld={handleCreateWorld}
+          onCreateChild={handleCreateChild}
           loading={loading}
+          isCreating={isCreating}
         />
       );
 
