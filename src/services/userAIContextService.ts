@@ -58,7 +58,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       .toISOString().split('T')[0]
 
     // Run all queries in parallel
-    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes, eventsRes] = await Promise.all([
+    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('full_name')
@@ -76,7 +76,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .eq('status', 'completed')
         .gte('completed_at', today),
       supabase
-        .from('moment_entries')
+        .from('moments')
         .select('content')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -96,14 +96,17 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .select('type, amount')
         .eq('user_id', userId)
         .gte('transaction_date', monthStart),
-      supabase
-        .from('calendar_events')
-        .select('title, start_time')
-        .eq('user_id', userId)
-        .gte('start_time', new Date().toISOString())
-        .order('start_time', { ascending: true })
-        .limit(5),
     ])
+
+    // calendar_events may not exist yet — query separately with graceful fallback
+    const eventsRes = await supabase
+      .from('calendar_events')
+      .select('title, start_time')
+      .eq('user_id', userId)
+      .gte('start_time', new Date().toISOString())
+      .order('start_time', { ascending: true })
+      .limit(5)
+      .then(res => res, () => ({ data: null, error: null }))
 
     // Calculate finance summary
     let financeSummary: UserAIContext['financeSummary'] = null
