@@ -64,7 +64,7 @@ export function ProgressTimeline({
       {/* Title row */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-ceramic-text-primary truncate">
-          {microcycleName}
+          {microcycleName.replace(/^Microciclo\s*/i, 'Ciclo ')}
         </h3>
         {status === 'draft' && (
           <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">
