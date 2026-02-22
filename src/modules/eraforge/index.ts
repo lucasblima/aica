@@ -85,3 +85,4 @@ export { EF_SceneRenderer } from './components/EF_SceneRenderer';
 export { EF_StatsBar } from './components/EF_StatsBar';
 export { EF_TurnCounter } from './components/EF_TurnCounter';
 export { EF_ParentDashboard } from './components/EF_ParentDashboard';
+export { EF_VoiceWave } from './components/EF_VoiceWave';

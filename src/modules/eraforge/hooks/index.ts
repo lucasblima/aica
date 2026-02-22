@@ -18,12 +18,13 @@ export type {
 // VOICE
 // ============================================
 
-export { useEraforgeVoice } from './useEraforgeVoice';
+export { useEraforgeVoice, useEraforgeVoiceHook } from './useEraforgeVoice';
 export type {
   EraforgeVoiceState,
   EraforgeVoiceActions,
   EraforgeVoiceContextValue,
 } from './useEraforgeVoice';
+export type { UseEraforgeVoiceResult } from './useEraforgeVoice';
 
 // ============================================
 // TURNS

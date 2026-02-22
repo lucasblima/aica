@@ -1,20 +1,22 @@
 /**
  * EraForge AI Service
  *
- * Placeholder for Gemini Game Master integration.
- * Generates scenarios, advisor responses, and simulations.
+ * Calls the `eraforge-gamemaster` Edge Function for AI-powered game mastering.
+ * Generates scenarios, processes decisions, and runs simulations via Gemini.
  *
- * TODO: Create Edge Function for EraForge AI (gemini-eraforge)
+ * @issue #314 (EF-003)
  */
 
-// import { GeminiClient } from '@/lib/gemini'; // Phase 2 (EF-003)
+import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type {
   Era,
   AdvisorId,
   TurnScenario,
+  TurnConsequences,
   SimulationEvent,
   WorldMember,
+  Turn,
 } from '../types/eraforge.types';
 
 const log = createNamespacedLogger('EraforgeAIService');
@@ -28,87 +30,191 @@ export interface AdvisorResponseResult {
   hint: string;
 }
 
+export interface ProcessDecisionResult {
+  consequences: TurnConsequences;
+}
+
 export interface SimulationResult {
   events: SimulationEvent[];
   summary: string;
+  stats_delta?: {
+    knowledge?: number;
+    cooperation?: number;
+    courage?: number;
+    era_progress?: number;
+  };
+}
+
+/**
+ * Invoke the eraforge-gamemaster Edge Function.
+ */
+async function invokeGameMaster<T>(
+  action: string,
+  payload: Record<string, any>,
+): Promise<{ data: T | null; error: any }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('eraforge-gamemaster', {
+      body: { action, payload },
+    });
+
+    if (error) {
+      log.error(`Edge Function error (${action}):`, error);
+      return { data: null, error };
+    }
+
+    if (!data?.success) {
+      const msg = data?.error || 'Resposta inválida do Game Master';
+      log.error(`Game Master error (${action}):`, msg);
+      return { data: null, error: new Error(msg) };
+    }
+
+    return { data: data.data as T, error: null };
+  } catch (err) {
+    log.error(`invokeGameMaster failed (${action}):`, err);
+    return { data: null, error: err };
+  }
 }
 
 export class EraforgeAIService {
-  // Pre-loaded for Phase 2 (EF-003) — will call gemini-eraforge Edge Function
-  // private static client = GeminiClient.getInstance();
-
   /**
    * Generate a historical scenario for the current era and child stats.
-   * TODO: Implement via gemini-eraforge Edge Function
    */
   static async generateScenario(
     worldName: string,
     era: Era,
-    stats: Pick<WorldMember, 'knowledge' | 'cooperation' | 'courage'>
+    stats: Pick<WorldMember, 'knowledge' | 'cooperation' | 'courage'>,
+    turnHistory?: Array<Pick<Turn, 'scenario' | 'decision'>>,
   ): Promise<{ data: GenerateScenarioResult | null; error: any }> {
-    log.debug('generateScenario called (placeholder)', { worldName, era, stats });
+    log.debug('generateScenario', { worldName, era, stats });
 
-    // TODO: Call Edge Function
-    const placeholderScenario: TurnScenario = {
-      title: `Aventura na ${era}`,
-      description: 'Uma nova aventura aguarda... (placeholder)',
-      location: 'Local historico',
-      choices: [
-        { id: '1', text: 'Explorar a area', consequence_hint: 'Pode encontrar algo util' },
-        { id: '2', text: 'Falar com os moradores', consequence_hint: 'Pode aprender algo novo' },
-        { id: '3', text: 'Construir algo', consequence_hint: 'Pode ajudar a comunidade' },
-      ],
-      historical_context: 'Contexto historico sera gerado pela IA.',
-    };
+    const compactHistory = turnHistory?.slice(-5).map(t => ({
+      title: t.scenario?.title,
+      decision: t.decision,
+    }));
+
+    const result = await invokeGameMaster<TurnScenario>('generate_scenario', {
+      era,
+      worldName,
+      memberStats: {
+        knowledge: stats.knowledge,
+        cooperation: stats.cooperation,
+        courage: stats.courage,
+      },
+      turnHistory: compactHistory,
+    });
+
+    if (result.error) {
+      return { data: null, error: result.error };
+    }
 
     return {
-      data: { scenario: placeholderScenario },
+      data: { scenario: result.data! },
       error: null,
     };
   }
 
   /**
    * Get advisor response for the current scenario.
-   * TODO: Implement via gemini-eraforge Edge Function
+   * Extracts the advisor's hint from the scenario's advisor_hints map.
    */
   static async getAdvisorResponse(
     advisorId: AdvisorId,
-    scenario: TurnScenario
+    scenario: TurnScenario,
   ): Promise<{ data: AdvisorResponseResult | null; error: any }> {
-    log.debug('getAdvisorResponse called (placeholder)', { advisorId });
+    log.debug('getAdvisorResponse', { advisorId });
 
-    // TODO: Call Edge Function
+    // Advisor hints are embedded in the scenario by generate_scenario
+    const hint = scenario.advisor_hints?.[advisorId] || '';
+
+    if (hint) {
+      return {
+        data: {
+          text: hint,
+          hint,
+        },
+        error: null,
+      };
+    }
+
+    // If no hint was pre-generated, return a generic response
     return {
       data: {
-        text: `O conselheiro ${advisorId} esta pensando... (placeholder)`,
-        hint: 'Dica do conselheiro sera gerada pela IA.',
+        text: 'Hmm, preciso pensar um pouco mais sobre isso...',
+        hint: 'Tente explorar as opções com cuidado!',
       },
       error: null,
     };
   }
 
   /**
+   * Process a child's decision and get consequences.
+   */
+  static async processDecision(
+    scenario: TurnScenario,
+    choiceId: string,
+    advisorId: AdvisorId | null,
+    era: Era,
+    stats: Pick<WorldMember, 'knowledge' | 'cooperation' | 'courage'>,
+  ): Promise<{ data: ProcessDecisionResult | null; error: any }> {
+    log.debug('processDecision', { choiceId, advisorId, era });
+
+    const result = await invokeGameMaster<TurnConsequences>('process_decision', {
+      scenario: {
+        title: scenario.title,
+        description: scenario.description,
+        location: scenario.location,
+        choices: scenario.choices,
+        historical_context: scenario.historical_context,
+      },
+      choiceId,
+      advisorId: advisorId || undefined,
+      era,
+      memberStats: {
+        knowledge: stats.knowledge,
+        cooperation: stats.cooperation,
+        courage: stats.courage,
+      },
+    });
+
+    if (result.error) {
+      return { data: null, error: result.error };
+    }
+
+    return {
+      data: { consequences: result.data! },
+      error: null,
+    };
+  }
+
+  /**
    * Run a 14-day simulation for a world.
-   * TODO: Implement via gemini-eraforge Edge Function
    */
   static async runSimulation(
-    worldId: string
+    worldId: string,
+    worldName: string,
+    era: Era,
+    eraProgress: number,
+    stats: Pick<WorldMember, 'knowledge' | 'cooperation' | 'courage'>,
   ): Promise<{ data: SimulationResult | null; error: any }> {
-    log.debug('runSimulation called (placeholder)', { worldId });
+    log.debug('runSimulation', { worldId, worldName, era });
 
-    // TODO: Call Edge Function
-    return {
-      data: {
-        events: [
-          {
-            title: 'Evento de simulacao',
-            description: 'A simulacao sera gerada pela IA.',
-            era: 'stone_age',
-            impact: 'neutral',
-          },
-        ],
-        summary: 'Resumo da simulacao sera gerado pela IA.',
+    const result = await invokeGameMaster<SimulationResult>('run_simulation', {
+      worldName,
+      era,
+      eraProgress,
+      memberStats: {
+        knowledge: stats.knowledge,
+        cooperation: stats.cooperation,
+        courage: stats.courage,
       },
+    });
+
+    if (result.error) {
+      return { data: null, error: result.error };
+    }
+
+    return {
+      data: result.data,
       error: null,
     };
   }
