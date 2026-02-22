@@ -29,6 +29,7 @@ import type {
   WorldCreateInput,
   ChildProfileCreateInput,
 } from '../types/eraforge.types';
+import { getNextEra, ERA_CONFIG } from '../types/eraforge.types';
 
 const log = createNamespacedLogger('EraForgeMainView');
 
@@ -388,27 +389,85 @@ export default function EraForgeMainView() {
     }
   }, [handleSelectChoice]);
 
-  // ------- END GAME -------
+  // ------- ERA PROGRESS (computed from turns) -------
 
-  const handleEndGame = useCallback(async () => {
-    // Persist turns_today to DB
-    if (state.currentWorld && state.currentChild && state.currentMember) {
-      const turnsPlayed = turns.length;
-      const newTurnsToday = state.currentMember.turns_today + turnsPlayed;
+  const totalEraProgressEarned = turns.reduce(
+    (sum, t) => sum + (t.consequences?.era_progress_delta || 0),
+    0,
+  );
+
+  const currentWorldProgress = state.currentWorld?.era_progress ?? 0;
+  const projectedProgress = currentWorldProgress + totalEraProgressEarned;
+  const willAdvanceEra = projectedProgress >= 100 && state.currentWorld
+    ? getNextEra(state.currentWorld.current_era) !== null
+    : false;
+  const nextEra = state.currentWorld ? getNextEra(state.currentWorld.current_era) : null;
+  const nextEraName = willAdvanceEra && nextEra ? ERA_CONFIG[nextEra].label : null;
+
+  // ------- PERSIST GAME PROGRESS -------
+
+  const persistGameProgress = useCallback(async (): Promise<{ advancedEra: boolean }> => {
+    if (!state.currentWorld || !state.currentChild || !state.currentMember) {
+      return { advancedEra: false };
+    }
+
+    const turnsPlayed = turns.length;
+    const newTurnsToday = state.currentMember.turns_today + turnsPlayed;
+
+    // Persist member turns_today
+    try {
+      const { error } = await supabaseUpdateMember(
+        state.currentWorld.id,
+        state.currentChild.id,
+        newTurnsToday,
+      );
+      if (error) log.error('Failed to save turns_today:', error);
+    } catch (err) {
+      log.error('Error saving member progress:', err);
+    }
+
+    // Accumulate era progress on the world
+    const eraProgressDelta = turns.reduce(
+      (sum, t) => sum + (t.consequences?.era_progress_delta || 0),
+      0,
+    );
+
+    if (eraProgressDelta > 0 || projectedProgress >= 100) {
+      const newProgress = currentWorldProgress + eraProgressDelta;
+      const shouldAdvance = newProgress >= 100 && nextEra !== null;
+
+      const worldUpdate: { era_progress: number; current_era?: typeof nextEra } = {
+        era_progress: shouldAdvance ? newProgress - 100 : newProgress,
+      };
+      if (shouldAdvance && nextEra) {
+        worldUpdate.current_era = nextEra;
+      }
 
       try {
-        const { error } = await supabaseUpdateMember(
+        const { data, error } = await EraforgeGameService.updateWorld(
           state.currentWorld.id,
-          state.currentChild.id,
-          newTurnsToday,
+          worldUpdate,
         );
         if (error) {
-          log.error('Failed to save turns_today:', error);
+          log.error('Failed to update world progress:', error);
+        } else if (data) {
+          // Update local worlds list with new data
+          setWorlds(prev => prev.map(w => w.id === data.id ? data : w));
         }
       } catch (err) {
-        log.error('Error saving game progress:', err);
+        log.error('Error updating world progress:', err);
       }
+
+      return { advancedEra: shouldAdvance };
     }
+
+    return { advancedEra: false };
+  }, [state.currentWorld, state.currentChild, state.currentMember, turns, currentWorldProgress, projectedProgress, nextEra]);
+
+  // ------- END GAME (go back to HOME) -------
+
+  const handleEndGame = useCallback(async () => {
+    await persistGameProgress();
 
     // Reset local state
     setSelectedAdvisor(null);
@@ -418,7 +477,51 @@ export default function EraForgeMainView() {
     gameStartedRef.current = false;
 
     actions.endGame();
-  }, [state.currentWorld, state.currentChild, state.currentMember, turns, actions]);
+  }, [persistGameProgress, actions]);
+
+  // ------- PLAY AGAIN (same world, possibly new era) -------
+
+  const handlePlayAgain = useCallback(async () => {
+    await persistGameProgress();
+
+    // Reload world to get updated era/progress
+    if (state.currentWorld) {
+      const { data: updatedWorld } = await EraforgeGameService.getWorld(state.currentWorld.id);
+      if (updatedWorld) {
+        setWorlds(prev => prev.map(w => w.id === updatedWorld.id ? updatedWorld : w));
+
+        // Re-fetch member to get fresh stats
+        if (state.currentChild) {
+          const { data: updatedMember } = await EraforgeGameService.getChildMember(
+            updatedWorld.id,
+            state.currentChild.id,
+          );
+
+          // Reset local game state for new session
+          setSelectedAdvisor(null);
+          setAdvisorHint(null);
+          setConsequence(null);
+          setTurns([]);
+          gameStartedRef.current = false;
+
+          // Set fresh world + child → triggers auto-start effect
+          actions.endGame(); // Reset to HOME first
+          // Small delay to let the state settle, then re-select
+          setTimeout(() => {
+            actions.setWorld(updatedWorld);
+            if (updatedMember && state.currentChild) {
+              gameStartedRef.current = false;
+              actions.setChild(state.currentChild, updatedMember);
+            }
+          }, 100);
+          return;
+        }
+      }
+    }
+
+    // Fallback: just go home
+    actions.endGame();
+  }, [persistGameProgress, state.currentWorld, state.currentChild, actions]);
 
   // ------- PARENT DASHBOARD HANDLERS -------
 
@@ -494,6 +597,9 @@ export default function EraForgeMainView() {
           onVoiceDecision={handleVoiceDecision}
           onNextTurn={handleNextTurn}
           onEndGame={handleEndGame}
+          onPlayAgain={handlePlayAgain}
+          eraProgressEarned={totalEraProgressEarned}
+          nextEraName={nextEraName}
           onStartListening={voice.listen}
           onStopSpeaking={voice.stopSpeaking}
           onSpeak={voice.speak}
