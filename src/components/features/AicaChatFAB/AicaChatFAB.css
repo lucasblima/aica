@@ -548,17 +548,6 @@
    AGENT INDICATORS
    ============================================================================ */
 
-.aica-fab-agent-indicator {
-  display: inline-block;
-  padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  background: rgba(245, 158, 11, 0.12);
-  color: #b45309;
-}
-
 .aica-fab-agent-badge {
   display: flex;
   align-items: center;
@@ -569,66 +558,6 @@
   font-size: 10px;
   font-weight: 500;
   color: rgba(0, 0, 0, 0.35);
-}
-
-.aica-fab-agent-badge__confidence {
-  font-size: 9px;
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.25);
-}
-
-.aica-fab-trust-badge {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 6px;
-  border-radius: 8px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.aica-fab-trust-badge--suggest_confirm {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.4);
-}
-
-.aica-fab-trust-badge--execute_validate {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
-}
-
-.aica-fab-trust-badge--jarvis {
-  background: rgba(168, 85, 247, 0.12);
-  color: #7c3aed;
-}
-
-.aica-fab-reclassify {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  margin-bottom: 4px;
-  padding: 3px 10px;
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.45);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.aica-fab-reclassify:hover:not(:disabled) {
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.2);
-  color: #b45309;
-}
-
-.aica-fab-reclassify:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* ============================================================================
@@ -864,44 +793,8 @@
     background: rgba(255, 255, 255, 0.08);
   }
 
-  .aica-fab-agent-indicator {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
-  }
-
   .aica-fab-agent-badge {
     color: rgba(255, 255, 255, 0.35);
-  }
-
-  .aica-fab-agent-badge__confidence {
-    color: rgba(255, 255, 255, 0.25);
-  }
-
-  .aica-fab-trust-badge--suggest_confirm {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  .aica-fab-trust-badge--execute_validate {
-    background: rgba(59, 130, 246, 0.2);
-    color: #60a5fa;
-  }
-
-  .aica-fab-trust-badge--jarvis {
-    background: rgba(168, 85, 247, 0.2);
-    color: #a78bfa;
-  }
-
-  .aica-fab-reclassify {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.45);
-  }
-
-  .aica-fab-reclassify:hover:not(:disabled) {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.3);
-    color: #fbbf24;
   }
 
   .aica-fab-action-btn {
