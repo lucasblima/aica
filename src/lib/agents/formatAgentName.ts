@@ -26,5 +26,6 @@ const AGENT_DISPLAY_NAMES: Record<string, string> = {
 }
 
 export function formatAgentName(name: string): string {
+  if (!name) return ''
   return AGENT_DISPLAY_NAMES[name] || name.replace(/_agent$/, '')
 }

@@ -10,6 +10,7 @@ import { chatService, type ChatSession, type ChatMessage } from '@/services/chat
 import { GeminiClient } from '@/lib/gemini'
 import { supabase } from '@/services/supabaseClient'
 import { checkInteractionLimit, type InteractionLimitResult } from '@/services/billingService'
+import { getUserAIContext } from '@/services/userAIContextService'
 import type { ChatAction } from '@/types/chatActions'
 
 export interface DisplayMessage {
@@ -152,7 +153,6 @@ export function useChatSession(): UseChatSessionReturn {
       // Get user context for ADK agents (best-effort)
       let userContext: Record<string, unknown> | undefined
       try {
-        const { getUserAIContext } = await import('@/services/userAIContextService')
         const ctx = await getUserAIContext()
         if (ctx) {
           userContext = {
