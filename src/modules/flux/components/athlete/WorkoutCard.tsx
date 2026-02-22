@@ -62,11 +62,12 @@ export interface WorkoutSlot {
 
 export interface WorkoutCardProps {
   slot: WorkoutSlot;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
   onToggleComplete: (slotId: string, currentlyCompleted: boolean) => void;
   onSubmitFeedback: (slotId: string, data: FeedbackData) => void;
   onReschedule: (slotId: string, newDay: number, newTime: string) => void;
+  onViewFeedback?: (slotId: string) => void;
   isUpdating: boolean;
   modality: string;
 }
@@ -172,14 +173,18 @@ function getRpeColorClass(rpe: number): string {
 
 export function WorkoutCard({
   slot,
-  isExpanded,
-  onToggleExpand,
+  isExpanded: isExpandedProp,
+  onToggleExpand: onToggleExpandProp,
   onToggleComplete,
   onSubmitFeedback,
   onReschedule,
+  onViewFeedback,
   isUpdating,
   modality,
 }: WorkoutCardProps) {
+  const [internalExpanded, setInternalExpanded] = useState(false);
+  const isExpanded = isExpandedProp ?? internalExpanded;
+  const onToggleExpand = onToggleExpandProp ?? (() => setInternalExpanded((p) => !p));
   const [showFeedback, setShowFeedback] = useState(false);
   const [rpe, setRpe] = useState<number>(
     slot.completion_data?.rpe_actual ?? slot.rpe ?? 5

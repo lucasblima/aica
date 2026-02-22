@@ -45,3 +45,11 @@ export type { FluxGamificationHook } from './useFluxGamification';
 
 export { usePerformanceTests } from './usePerformanceTests';
 export type { UsePerformanceTestsOptions, UsePerformanceTestsReturn } from './usePerformanceTests';
+
+export { useAthleteFeedback } from './useAthleteFeedback';
+export type {
+  FeedbackEntry,
+  FeedbackSlotSummary,
+  SubmitDailyFeedbackInput,
+  SubmitWeeklyFeedbackInput,
+} from './useAthleteFeedback';
