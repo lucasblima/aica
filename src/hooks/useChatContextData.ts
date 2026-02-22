@@ -29,8 +29,9 @@ export function useChatContextData(isExpanded: boolean): ChatContextDataResult {
         setContext(data)
         setIsLoading(false)
       }
-    }).catch(() => {
+    }).catch((error) => {
       if (!cancelled) {
+        console.error('Failed to fetch chat context:', error)
         setIsLoading(false)
       }
     })
