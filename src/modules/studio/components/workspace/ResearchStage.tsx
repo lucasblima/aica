@@ -18,10 +18,11 @@
  * - Streaming chat responses with typing indicator
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { usePodcastWorkspace } from '@/modules/studio/context/PodcastWorkspaceContext';
 import { useWorkspaceAI } from '@/modules/studio/hooks/useWorkspaceAI';
 import { useGeminiLive, type GeminiLiveContext } from '@/modules/studio/services/geminiLiveService';
+import { useGeminiLiveAudio } from '@/modules/studio/hooks/useGeminiLiveAudio';
 import {
   Sparkles,
   FileText,
@@ -44,6 +45,10 @@ import {
   ExternalLink,
   Mic,
   MicOff,
+  Radio,
+  MessageSquare,
+  Phone,
+  PhoneOff,
 } from 'lucide-react';
 import type { WorkspaceCustomSource } from '@/modules/studio/types';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -60,6 +65,31 @@ const ensureString = (value: unknown): string => {
 };
 
 type ResearchTab = 'bio' | 'ficha' | 'noticias';
+type ChatMode = 'text' | 'audio';
+
+/** Audio level waveform visualization bars */
+function AudioWaveform({ level, isActive }: { level: number; isActive: boolean }) {
+  const barCount = 5;
+  return (
+    <div className="flex items-center justify-center gap-1 h-8" aria-hidden="true">
+      {Array.from({ length: barCount }, (_, i) => {
+        // Center bars are taller, scale by audio level
+        const centerDistance = Math.abs(i - Math.floor(barCount / 2));
+        const baseHeight = isActive ? 0.3 : 0.15;
+        const scale = Math.min(1.0, baseHeight + (level / 100) * (1 - centerDistance * 0.15));
+        return (
+          <div
+            key={i}
+            className={`w-1 rounded-full transition-all duration-100 ${
+              isActive ? 'bg-orange-500' : 'bg-ceramic-border'
+            }`}
+            style={{ height: `${Math.max(4, scale * 32)}px` }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ResearchStage() {
   const { state, actions } = usePodcastWorkspace();
@@ -76,7 +106,10 @@ export default function ResearchStage() {
   const [isProcessingSources, setIsProcessingSources] = useState(false);
   const [chatInput, setChatInput] = useState('');
 
-  // Voice input for chat
+  // Chat mode: text (existing SSE) or audio (Gemini Live)
+  const [chatMode, setChatMode] = useState<ChatMode>('text');
+
+  // Voice input for text chat
   const voiceChat = useSpeechRecognition({
     onResult: (text) => setChatInput((prev) => (prev + ' ' + text).trim()),
   });
@@ -113,6 +146,35 @@ export default function ResearchStage() {
   } = useGeminiLive({
     context: geminiContext,
   });
+
+  // Build system instruction for live audio from context
+  const liveAudioSystemInstruction = useMemo(() => {
+    const parts = [
+      'Você é um assistente de preparação de entrevistas para podcasts.',
+      'Responda em português brasileiro.',
+      `Convidado: ${geminiContext.guest_name}`,
+    ];
+    if (geminiContext.guest_bio) parts.push(`Bio: ${geminiContext.guest_bio}`);
+    if (geminiContext.episode_theme) parts.push(`Tema: ${geminiContext.episode_theme}`);
+    if (geminiContext.dossier_summary) parts.push(`Dossier: ${geminiContext.dossier_summary.substring(0, 800)}`);
+    parts.push('Seja conciso, direto e util. Sugira perguntas, alerte sobre topicos sensiveis, e ajude com preparacao em tempo real.');
+    return parts.join('\n');
+  }, [geminiContext]);
+
+  // Gemini Live Audio hook (real-time voice conversation)
+  const liveAudio = useGeminiLiveAudio({
+    systemInstruction: liveAudioSystemInstruction,
+    voiceName: 'Kore',
+    enableTranscription: true,
+  });
+
+  // Handle audio mode toggle — disconnect audio when switching to text
+  const handleChatModeChange = useCallback((mode: ChatMode) => {
+    if (mode === 'text' && liveAudio.status !== 'idle' && liveAudio.status !== 'disconnected') {
+      liveAudio.disconnect();
+    }
+    setChatMode(mode);
+  }, [liveAudio]);
 
   // Update context when it changes
   useEffect(() => {
@@ -596,44 +658,106 @@ export default function ResearchStage() {
             )}
           </div>
 
-          {/* Chat Section - Gemini Live Integration */}
+          {/* Chat Section - Dual Mode: Text Chat + Live Audio */}
           <div className="border-t border-ceramic-border bg-ceramic-surface">
-            {/* Chat Header with Connection Status */}
+            {/* Chat Header with Mode Toggle + Status */}
             <div className="flex items-center justify-between px-4 py-2 border-b border-ceramic-border bg-ceramic-base">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-orange-500" aria-hidden="true" />
-                <span className="text-sm font-medium text-ceramic-text-primary">Chat com IA</span>
+                {/* Mode toggle */}
+                <div className="flex bg-ceramic-surface-secondary rounded-lg p-0.5" role="tablist" aria-label="Modo de conversa">
+                  <button
+                    role="tab"
+                    aria-selected={chatMode === 'text'}
+                    onClick={() => handleChatModeChange('text')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      chatMode === 'text'
+                        ? 'bg-ceramic-surface text-orange-600 shadow-sm'
+                        : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+                    }`}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Chat</span>
+                  </button>
+                  <button
+                    role="tab"
+                    aria-selected={chatMode === 'audio'}
+                    onClick={() => handleChatModeChange('audio')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      chatMode === 'audio'
+                        ? 'bg-ceramic-surface text-orange-600 shadow-sm'
+                        : 'text-ceramic-text-secondary hover:text-ceramic-text-primary'
+                    }`}
+                  >
+                    <Radio className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Ao Vivo</span>
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                {/* Connection indicator */}
-                <div className="flex items-center gap-1">
-                  {connectionState === 'connected' && (
-                    <>
-                      <Wifi className="w-3 h-3 text-ceramic-success" aria-hidden="true" />
-                      <span className="text-xs text-ceramic-success">Conectado</span>
-                    </>
-                  )}
-                  {connectionState === 'connecting' && (
-                    <>
-                      <Loader2 className="w-3 h-3 text-orange-500 animate-spin" aria-hidden="true" />
-                      <span className="text-xs text-orange-600">Conectando...</span>
-                    </>
-                  )}
-                  {connectionState === 'error' && (
-                    <>
-                      <WifiOff className="w-3 h-3 text-ceramic-error" aria-hidden="true" />
-                      <span className="text-xs text-ceramic-error">Erro</span>
-                    </>
-                  )}
-                  {connectionState === 'disconnected' && (
-                    <>
-                      <div className="w-2 h-2 rounded-full bg-ceramic-text-tertiary" aria-hidden="true" />
-                      <span className="text-xs text-ceramic-tertiary">Pronto</span>
-                    </>
-                  )}
-                </div>
-                {/* Clear chat button */}
-                {chatMessages.length > 0 && (
+                {/* Connection indicator — varies by mode */}
+                {chatMode === 'text' ? (
+                  <div className="flex items-center gap-1">
+                    {connectionState === 'connected' && (
+                      <>
+                        <Wifi className="w-3 h-3 text-ceramic-success" aria-hidden="true" />
+                        <span className="text-xs text-ceramic-success">Conectado</span>
+                      </>
+                    )}
+                    {connectionState === 'connecting' && (
+                      <>
+                        <Loader2 className="w-3 h-3 text-orange-500 animate-spin" aria-hidden="true" />
+                        <span className="text-xs text-orange-600">Conectando...</span>
+                      </>
+                    )}
+                    {connectionState === 'error' && (
+                      <>
+                        <WifiOff className="w-3 h-3 text-ceramic-error" aria-hidden="true" />
+                        <span className="text-xs text-ceramic-error">Erro</span>
+                      </>
+                    )}
+                    {connectionState === 'disconnected' && (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-ceramic-text-tertiary" aria-hidden="true" />
+                        <span className="text-xs text-ceramic-tertiary">Pronto</span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    {liveAudio.status === 'streaming' && (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-ceramic-success animate-pulse" aria-hidden="true" />
+                        <span className="text-xs text-ceramic-success">Ao Vivo</span>
+                      </>
+                    )}
+                    {liveAudio.status === 'connected' && (
+                      <>
+                        <Wifi className="w-3 h-3 text-ceramic-success" aria-hidden="true" />
+                        <span className="text-xs text-ceramic-success">Conectado</span>
+                      </>
+                    )}
+                    {liveAudio.status === 'connecting' && (
+                      <>
+                        <Loader2 className="w-3 h-3 text-orange-500 animate-spin" aria-hidden="true" />
+                        <span className="text-xs text-orange-600">Conectando...</span>
+                      </>
+                    )}
+                    {liveAudio.status === 'error' && (
+                      <>
+                        <WifiOff className="w-3 h-3 text-ceramic-error" aria-hidden="true" />
+                        <span className="text-xs text-ceramic-error">Erro</span>
+                      </>
+                    )}
+                    {(liveAudio.status === 'idle' || liveAudio.status === 'disconnected') && (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-ceramic-text-tertiary" aria-hidden="true" />
+                        <span className="text-xs text-ceramic-tertiary">Desconectado</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                {/* Clear messages */}
+                {chatMode === 'text' && chatMessages.length > 0 && (
                   <button
                     onClick={clearMessages}
                     className="text-xs text-ceramic-tertiary hover:text-ceramic-secondary px-2 py-1 rounded hover:bg-ceramic-surface-secondary transition-colors"
@@ -642,124 +766,276 @@ export default function ResearchStage() {
                     Limpar
                   </button>
                 )}
-              </div>
-            </div>
-
-            <div className="flex flex-col h-80">
-              <div
-                ref={chatContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4"
-                role="log"
-                aria-live="polite"
-                aria-label="Chat de perguntas sobre o convidado"
-              >
-                {chatMessages.length === 0 && !currentResponse && (
-                  <div className="flex items-center justify-center h-full text-center">
-                    <div className="space-y-2">
-                      <Sparkles className="w-8 h-8 text-ceramic-text-tertiary mx-auto" aria-hidden="true" />
-                      <p className="text-ceramic-tertiary text-sm">
-                        Faca perguntas sobre {setup.guestName || 'o convidado'}
-                      </p>
-                      <p className="text-ceramic-tertiary text-xs">
-                        Ex: "Quais perguntas devo evitar?" ou "Sugira um quebra-gelo"
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Chat messages */}
-                {chatMessages.map((msg, idx) => (
-                  <div
-                    key={msg.timestamp.getTime()}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                {chatMode === 'audio' && liveAudio.messages.length > 0 && (
+                  <button
+                    onClick={liveAudio.clearMessages}
+                    className="text-xs text-ceramic-tertiary hover:text-ceramic-secondary px-2 py-1 rounded hover:bg-ceramic-surface-secondary transition-colors"
+                    aria-label="Limpar transcricao"
                   >
-                    <div
-                      className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                        msg.role === 'user'
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-ceramic-surface-secondary text-ceramic-text-primary'
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Streaming response */}
-                {currentResponse && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] px-4 py-2 rounded-lg bg-ceramic-surface-secondary text-ceramic-text-primary">
-                      <p className="text-sm whitespace-pre-wrap">{currentResponse}</p>
-                      <span className="inline-block w-1.5 h-4 bg-orange-500 animate-pulse ml-0.5" aria-hidden="true" />
-                    </div>
-                  </div>
+                    Limpar
+                  </button>
                 )}
-
-                {/* Loading indicator (when streaming hasn't started yet) */}
-                {isChatLoading && !currentResponse && (
-                  <div className="flex justify-start">
-                    <div className="bg-ceramic-surface-secondary text-ceramic-text-primary px-4 py-2 rounded-lg flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                      <span className="text-sm text-ceramic-secondary">Pensando...</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Chat input */}
-              <div className="border-t border-ceramic-border p-4">
-                <form onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }} className="flex gap-2">
-                  <label htmlFor="chat-input" className="sr-only">Pergunta sobre o convidado</label>
-                  <input
-                    id="chat-input"
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder={isChatLoading ? 'Aguarde a resposta...' : 'Faca uma pergunta...'}
-                    className="flex-1 px-3 py-2.5 min-h-[44px] border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                    disabled={isChatLoading}
-                    aria-required="true"
-                  />
-                  {voiceChat.isSupported && !isChatLoading && (
-                    <button
-                      type="button"
-                      onClick={voiceChat.toggle}
-                      className={`min-w-[44px] min-h-[44px] px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                        voiceChat.isListening
-                          ? 'bg-ceramic-error text-white animate-pulse focus:ring-ceramic-error'
-                          : 'bg-ceramic-cool text-ceramic-text-secondary hover:text-ceramic-accent focus:ring-orange-500'
-                      }`}
-                      aria-label={voiceChat.isListening ? 'Parar ditado por voz' : 'Ditar pergunta por voz'}
-                    >
-                      {voiceChat.isListening ? (
-                        <MicOff className="w-5 h-5" aria-hidden="true" />
-                      ) : (
-                        <Mic className="w-5 h-5" aria-hidden="true" />
-                      )}
-                    </button>
-                  )}
-                  {isChatLoading ? (
-                    <button
-                      type="button"
-                      onClick={handleCancelChat}
-                      className="min-w-[44px] min-h-[44px] px-3 py-2.5 bg-ceramic-error text-white rounded-lg hover:bg-ceramic-error-hover transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-error focus:ring-offset-2"
-                      aria-label="Cancelar resposta"
-                    >
-                      <StopCircle className="w-5 h-5" aria-hidden="true" />
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={!chatInput.trim()}
-                      className="min-w-[44px] min-h-[44px] px-3 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                      aria-label="Enviar pergunta"
-                    >
-                      <Send className="w-5 h-5" aria-hidden="true" />
-                    </button>
-                  )}
-                </form>
               </div>
             </div>
+
+            {/* TEXT CHAT MODE */}
+            {chatMode === 'text' && (
+              <div className="flex flex-col h-80">
+                <div
+                  ref={chatContainerRef}
+                  className="flex-1 overflow-y-auto p-4 space-y-4"
+                  role="log"
+                  aria-live="polite"
+                  aria-label="Chat de perguntas sobre o convidado"
+                >
+                  {chatMessages.length === 0 && !currentResponse && (
+                    <div className="flex items-center justify-center h-full text-center">
+                      <div className="space-y-2">
+                        <Sparkles className="w-8 h-8 text-ceramic-text-tertiary mx-auto" aria-hidden="true" />
+                        <p className="text-ceramic-tertiary text-sm">
+                          Faca perguntas sobre {setup.guestName || 'o convidado'}
+                        </p>
+                        <p className="text-ceramic-tertiary text-xs">
+                          Ex: "Quais perguntas devo evitar?" ou "Sugira um quebra-gelo"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {chatMessages.map((msg) => (
+                    <div
+                      key={msg.timestamp.getTime()}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                          msg.role === 'user'
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-ceramic-surface-secondary text-ceramic-text-primary'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {currentResponse && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[80%] px-4 py-2 rounded-lg bg-ceramic-surface-secondary text-ceramic-text-primary">
+                        <p className="text-sm whitespace-pre-wrap">{currentResponse}</p>
+                        <span className="inline-block w-1.5 h-4 bg-orange-500 animate-pulse ml-0.5" aria-hidden="true" />
+                      </div>
+                    </div>
+                  )}
+
+                  {isChatLoading && !currentResponse && (
+                    <div className="flex justify-start">
+                      <div className="bg-ceramic-surface-secondary text-ceramic-text-primary px-4 py-2 rounded-lg flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                        <span className="text-sm text-ceramic-secondary">Pensando...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Text chat input */}
+                <div className="border-t border-ceramic-border p-4">
+                  <form onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }} className="flex gap-2">
+                    <label htmlFor="chat-input" className="sr-only">Pergunta sobre o convidado</label>
+                    <input
+                      id="chat-input"
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder={isChatLoading ? 'Aguarde a resposta...' : 'Faca uma pergunta...'}
+                      className="flex-1 px-3 py-2.5 min-h-[44px] border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      disabled={isChatLoading}
+                      aria-required="true"
+                    />
+                    {voiceChat.isSupported && !isChatLoading && (
+                      <button
+                        type="button"
+                        onClick={voiceChat.toggle}
+                        className={`min-w-[44px] min-h-[44px] px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                          voiceChat.isListening
+                            ? 'bg-ceramic-error text-white animate-pulse focus:ring-ceramic-error'
+                            : 'bg-ceramic-cool text-ceramic-text-secondary hover:text-ceramic-accent focus:ring-orange-500'
+                        }`}
+                        aria-label={voiceChat.isListening ? 'Parar ditado por voz' : 'Ditar pergunta por voz'}
+                      >
+                        {voiceChat.isListening ? (
+                          <MicOff className="w-5 h-5" aria-hidden="true" />
+                        ) : (
+                          <Mic className="w-5 h-5" aria-hidden="true" />
+                        )}
+                      </button>
+                    )}
+                    {isChatLoading ? (
+                      <button
+                        type="button"
+                        onClick={handleCancelChat}
+                        className="min-w-[44px] min-h-[44px] px-3 py-2.5 bg-ceramic-error text-white rounded-lg hover:bg-ceramic-error-hover transition-colors focus:outline-none focus:ring-2 focus:ring-ceramic-error focus:ring-offset-2"
+                        aria-label="Cancelar resposta"
+                      >
+                        <StopCircle className="w-5 h-5" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={!chatInput.trim()}
+                        className="min-w-[44px] min-h-[44px] px-3 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                        aria-label="Enviar pergunta"
+                      >
+                        <Send className="w-5 h-5" aria-hidden="true" />
+                      </button>
+                    )}
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE AUDIO MODE */}
+            {chatMode === 'audio' && (
+              <div className="flex flex-col h-80">
+                {/* Audio control area */}
+                <div className="flex flex-col items-center justify-center py-6 px-4 border-b border-ceramic-border">
+                  {/* Waveform + status */}
+                  <div className="flex flex-col items-center gap-3">
+                    <AudioWaveform
+                      level={liveAudio.audioLevel}
+                      isActive={liveAudio.status === 'streaming' || liveAudio.status === 'connected'}
+                    />
+                    <p className="text-xs text-ceramic-secondary">
+                      {liveAudio.status === 'idle' || liveAudio.status === 'disconnected'
+                        ? 'Converse por voz com a IA sobre o convidado'
+                        : liveAudio.status === 'connecting'
+                        ? 'Conectando ao Gemini Live...'
+                        : liveAudio.status === 'streaming'
+                        ? 'Conversa ao vivo — fale naturalmente'
+                        : liveAudio.status === 'connected'
+                        ? 'Conectado — aguardando audio'
+                        : 'Erro na conexao'}
+                    </p>
+                  </div>
+
+                  {/* Connect / Disconnect button */}
+                  <div className="mt-4">
+                    {liveAudio.status === 'idle' || liveAudio.status === 'disconnected' || liveAudio.status === 'error' ? (
+                      <button
+                        onClick={() => liveAudio.connect()}
+                        className="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                        aria-label="Iniciar conversa ao vivo"
+                      >
+                        <Phone className="w-5 h-5" aria-hidden="true" />
+                        <span>Iniciar Conversa</span>
+                      </button>
+                    ) : liveAudio.status === 'connecting' ? (
+                      <button
+                        disabled
+                        className="flex items-center gap-2 px-6 py-3 bg-ceramic-cool text-ceramic-text-secondary rounded-full cursor-not-allowed font-medium"
+                        aria-label="Conectando"
+                        aria-busy="true"
+                      >
+                        <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                        <span>Conectando...</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => liveAudio.disconnect()}
+                        className="flex items-center gap-2 px-6 py-3 bg-ceramic-error text-white rounded-full hover:bg-red-600 transition-colors font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-ceramic-error focus:ring-offset-2"
+                        aria-label="Encerrar conversa ao vivo"
+                      >
+                        <PhoneOff className="w-5 h-5" aria-hidden="true" />
+                        <span>Encerrar</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Error display */}
+                  {liveAudio.error && (
+                    <div className="mt-3 flex items-center gap-2 text-xs text-ceramic-error">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                      <span>{liveAudio.error}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live transcript */}
+                <div
+                  className="flex-1 overflow-y-auto p-4 space-y-3"
+                  role="log"
+                  aria-live="polite"
+                  aria-label="Transcricao da conversa ao vivo"
+                >
+                  {liveAudio.messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-center">
+                      <div className="space-y-2">
+                        <Radio className="w-8 h-8 text-ceramic-text-tertiary mx-auto" aria-hidden="true" />
+                        <p className="text-ceramic-tertiary text-sm">
+                          {liveAudio.status === 'idle' || liveAudio.status === 'disconnected'
+                            ? 'Clique em Iniciar Conversa para comecar'
+                            : 'A transcricao aparecera aqui...'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    liveAudio.messages.map((msg, idx) => (
+                      <div
+                        key={`${msg.role}-${msg.timestamp.getTime()}-${idx}`}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                            msg.role === 'user'
+                              ? 'bg-orange-500 text-white'
+                              : 'bg-ceramic-surface-secondary text-ceramic-text-primary'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          <p className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-orange-200' : 'text-ceramic-tertiary'}`}>
+                            {msg.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Text input for audio mode (send text within live session) */}
+                {(liveAudio.status === 'connected' || liveAudio.status === 'streaming') && (
+                  <div className="border-t border-ceramic-border p-3">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (chatInput.trim()) {
+                          liveAudio.sendText(chatInput.trim());
+                          setChatInput('');
+                        }
+                      }}
+                      className="flex gap-2"
+                    >
+                      <label htmlFor="audio-text-input" className="sr-only">Enviar texto na conversa ao vivo</label>
+                      <input
+                        id="audio-text-input"
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Digite para enviar texto..."
+                        className="flex-1 px-3 py-2 min-h-[40px] border border-ceramic-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!chatInput.trim()}
+                        className="min-w-[40px] min-h-[40px] px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-ceramic-cool disabled:text-ceramic-text-secondary disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                        aria-label="Enviar texto"
+                      >
+                        <Send className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
