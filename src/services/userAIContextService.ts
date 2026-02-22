@@ -30,6 +30,7 @@ export interface UserAIContext {
     monthlyExpenses: number
     balance: number
   } | null
+  upcomingEvents: Array<{ title: string; startTime: string }> | null
 }
 
 // Cache with 5-minute TTL
@@ -57,7 +58,7 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       .toISOString().split('T')[0]
 
     // Run all queries in parallel
-    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes] = await Promise.all([
+    const [profileRes, pendingTasksRes, completedTasksRes, momentsRes, grantsRes, episodesRes, financeRes, eventsRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('full_name')
@@ -95,6 +96,13 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
         .select('type, amount')
         .eq('user_id', userId)
         .gte('transaction_date', monthStart),
+      supabase
+        .from('calendar_events')
+        .select('title, start_time')
+        .eq('user_id', userId)
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true })
+        .limit(5),
     ])
 
     // Calculate finance summary
@@ -123,6 +131,10 @@ export async function getUserAIContext(forceRefresh = false): Promise<UserAICont
       activeGrants: grantsRes.count || 0,
       upcomingEpisodes: episodesRes.count || 0,
       financeSummary,
+      upcomingEvents: (eventsRes.data || []).map((e: any) => ({
+        title: e.title || 'Sem titulo',
+        startTime: e.start_time,
+      })),
     }
 
     // Update cache
