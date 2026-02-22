@@ -56,9 +56,12 @@ export class EraforgeGameService {
 
   static async createChildProfile(input: ChildProfileCreateInput): Promise<{ data: ChildProfile | null; error: any }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { data: null, error: 'Not authenticated' };
+
       const { data, error } = await supabase
         .from('eraforge_child_profiles')
-        .insert(input)
+        .insert({ ...input, parent_id: user.id })
         .select()
         .single();
 
@@ -134,9 +137,12 @@ export class EraforgeGameService {
 
   static async createWorld(input: WorldCreateInput): Promise<{ data: World | null; error: any }> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { data: null, error: 'Not authenticated' };
+
       const { data, error } = await supabase
         .from('eraforge_worlds')
-        .insert(input)
+        .insert({ ...input, parent_id: user.id })
         .select()
         .single();
 
