@@ -3,10 +3,11 @@
  *
  * Chat interface with persistent sessions (chat_sessions + chat_messages).
  * Uses useChatSession hook for lifecycle, ADK agent-proxy for AI calls.
+ * Supports expand to fullscreen with context sidebar.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Plus, Clock, ChevronLeft, Archive, Zap, Maximize2, Minimize2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useChatSession } from '@/hooks/useChatSession'
@@ -16,6 +17,8 @@ import { formatAgentName } from '@/lib/agents/formatAgentName'
 import { ChatActionButtons } from './ChatActionButtons'
 import { executeChatAction } from '@/services/chatActionService'
 import type { ChatAction } from '@/types/chatActions'
+import { useChatContextData } from '@/hooks/useChatContextData'
+import { ChatContextSidebar } from './ChatContextSidebar'
 import './AicaChatFAB.css'
 
 interface AicaChatFABProps {
@@ -28,6 +31,7 @@ export function AicaChatFAB({
   bottomOffset = 80,
 }: AicaChatFABProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -50,12 +54,20 @@ export function AicaChatFAB({
     activeAgent,
   } = useChatSession()
 
-  // Escape to close
+  const activeModule = activeAgent
+    ? activeAgent.replace(/_agent$/, '').replace('aica_', '')
+    : 'coordinator'
+
+  const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
+
+  // Escape cascade: sessions → expanded → close
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         if (showSessions) {
           setShowSessions(false)
+        } else if (isExpanded) {
+          setIsExpanded(false)
         } else {
           setIsOpen(false)
         }
@@ -63,7 +75,7 @@ export function AicaChatFAB({
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, showSessions, setShowSessions])
+  }, [isOpen, isExpanded, showSessions, setShowSessions])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -76,6 +88,11 @@ export function AicaChatFAB({
       setTimeout(() => inputRef.current?.focus(), 400)
     }
   }, [isOpen, showSessions])
+
+  const handleClose = () => {
+    setIsExpanded(false)
+    setIsOpen(false)
+  }
 
   const handleSend = async () => {
     const trimmed = input.trim()
@@ -130,7 +147,7 @@ export function AicaChatFAB({
       {isOpen && (
         <div
           className="aica-fab-backdrop"
-          onClick={() => setIsOpen(false)}
+          onClick={handleClose}
           aria-hidden="true"
         />
       )}
@@ -140,6 +157,7 @@ export function AicaChatFAB({
         className={cn(
           'aica-fab-drawer',
           isOpen && 'aica-fab-drawer--open',
+          isExpanded && 'aica-fab-drawer--expanded',
           position === 'bottom-left' && 'aica-fab-drawer--left'
         )}
         style={{ '--fab-bottom-offset': `${bottomOffset}px` } as React.CSSProperties}
@@ -188,11 +206,19 @@ export function AicaChatFAB({
               >
                 <Plus size={16} />
               </button>
+              <button
+                className="aica-fab-header__action"
+                onClick={() => setIsExpanded(prev => !prev)}
+                aria-label={isExpanded ? 'Reduzir' : 'Expandir'}
+                title={isExpanded ? 'Reduzir' : 'Expandir'}
+              >
+                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
             </>
           )}
           <button
             className="aica-fab-drawer__close"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             aria-label="Fechar"
           >
             <X size={18} />
@@ -239,110 +265,119 @@ export function AicaChatFAB({
             )}
           </div>
         ) : (
-          <>
-            {/* Messages */}
-            <div className="aica-fab-messages">
-              {messages.length === 0 && !isLoading && (
-                <div className="aica-fab-empty">
-                  <p>Ola! Como posso ajudar?</p>
-                </div>
-              )}
-
-              {messages.map((msg, idx) => (
-                <div key={msg.id}>
-                  <div
-                    className={cn(
-                      'aica-fab-message',
-                      msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
-                    )}
-                  >
-                    {msg.role === 'assistant' ? (
-                      <div
-                        className="aica-fab-message__content"
-                        dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
-                      />
-                    ) : (
-                      <p>{msg.content}</p>
-                    )}
-                  </div>
-
-                  {/* Action buttons on last assistant message */}
-                  {isLastAssistantMessage(msg, idx) && msg.actions && msg.actions.length > 0 && (
-                    <ChatActionButtons
-                      actions={msg.actions}
-                      onExecute={handleExecuteAction}
-                    />
-                  )}
-
-                  {/* Agent badge for non-coordinator assistant messages */}
-                  {msg.role === 'assistant' && msg.agent && msg.agent !== 'aica_coordinator' && (
-                    <div className="aica-fab-agent-badge">
-                      {formatAgentName(msg.agent)}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isLoading && (
-                <div className="aica-fab-message aica-fab-message--assistant">
-                  <Loader2 size={16} className="aica-fab-loading-icon" />
-                </div>
-              )}
-
-              {error && (
-                limitReached ? (
-                  <div className="rounded-lg mx-3 my-2 p-3 bg-ceramic-warning/10 border border-ceramic-warning/30">
-                    <p className="text-ceramic-warning text-xs font-medium mb-1">
-                      Creditos mensais esgotados
-                    </p>
-                    <p className="text-ceramic-text-secondary text-xs">
-                      {error}
-                    </p>
-                    {limitInfo && (
-                      <p className="text-ceramic-text-secondary text-[10px] mt-1">
-                        Plano: {limitInfo.plan} | {limitInfo.remaining} creditos restantes | Renova: {new Date(limitInfo.resetsAt).toLocaleDateString('pt-BR')}
-                      </p>
-                    )}
-                    <button
-                      onClick={() => navigate('/pricing')}
-                      className="mt-2 flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
-                    >
-                      <Zap size={12} />
-                      Fazer upgrade
-                    </button>
-                  </div>
-                ) : (
-                  <div className="aica-fab-error">
-                    <p>{error}</p>
-                  </div>
-                )
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="aica-fab-input-bar">
-              <input
-                ref={inputRef}
-                type="text"
-                className="aica-fab-input"
-                placeholder="Pergunte algo..."
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isLoading}
+          <div className="aica-fab-body">
+            {isExpanded && (
+              <ChatContextSidebar
+                activeModule={activeModule}
+                context={chatContext}
+                isLoading={contextLoading}
               />
-              <button
-                className="aica-fab-send"
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                aria-label="Enviar"
-              >
-                <Send size={16} />
-              </button>
+            )}
+            <div className="aica-fab-main">
+              {/* Messages */}
+              <div className="aica-fab-messages">
+                {messages.length === 0 && !isLoading && (
+                  <div className="aica-fab-empty">
+                    <p>Ola! Como posso ajudar?</p>
+                  </div>
+                )}
+
+                {messages.map((msg, idx) => (
+                  <div key={msg.id}>
+                    <div
+                      className={cn(
+                        'aica-fab-message',
+                        msg.role === 'user' ? 'aica-fab-message--user' : 'aica-fab-message--assistant'
+                      )}
+                    >
+                      {msg.role === 'assistant' ? (
+                        <div
+                          className="aica-fab-message__content"
+                          dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
+                        />
+                      ) : (
+                        <p>{msg.content}</p>
+                      )}
+                    </div>
+
+                    {/* Action buttons on last assistant message */}
+                    {isLastAssistantMessage(msg, idx) && msg.actions && msg.actions.length > 0 && (
+                      <ChatActionButtons
+                        actions={msg.actions}
+                        onExecute={handleExecuteAction}
+                      />
+                    )}
+
+                    {/* Agent badge for non-coordinator assistant messages */}
+                    {msg.role === 'assistant' && msg.agent && msg.agent !== 'aica_coordinator' && (
+                      <div className="aica-fab-agent-badge">
+                        {formatAgentName(msg.agent)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="aica-fab-message aica-fab-message--assistant">
+                    <Loader2 size={16} className="aica-fab-loading-icon" />
+                  </div>
+                )}
+
+                {error && (
+                  limitReached ? (
+                    <div className="rounded-lg mx-3 my-2 p-3 bg-ceramic-warning/10 border border-ceramic-warning/30">
+                      <p className="text-ceramic-warning text-xs font-medium mb-1">
+                        Creditos mensais esgotados
+                      </p>
+                      <p className="text-ceramic-text-secondary text-xs">
+                        {error}
+                      </p>
+                      {limitInfo && (
+                        <p className="text-ceramic-text-secondary text-[10px] mt-1">
+                          Plano: {limitInfo.plan} | {limitInfo.remaining} creditos restantes | Renova: {new Date(limitInfo.resetsAt).toLocaleDateString('pt-BR')}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => navigate('/pricing')}
+                        className="mt-2 flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                      >
+                        <Zap size={12} />
+                        Fazer upgrade
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="aica-fab-error">
+                      <p>{error}</p>
+                    </div>
+                  )
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="aica-fab-input-bar">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="aica-fab-input"
+                  placeholder="Pergunte algo..."
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isLoading}
+                />
+                <button
+                  className="aica-fab-send"
+                  onClick={handleSend}
+                  disabled={!input.trim() || isLoading}
+                  aria-label="Enviar"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 
