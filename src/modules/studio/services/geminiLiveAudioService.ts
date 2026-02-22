@@ -476,10 +476,19 @@ export class GeminiLiveAudioService {
     });
 
     if (error) {
+      // Log full error details for debugging (FunctionsHttpError has context with response body)
+      const errorContext = (error as any).context;
+      if (errorContext) {
+        try {
+          const body = typeof errorContext.json === 'function' ? await errorContext.json() : errorContext;
+          console.error('[gemini-live-token] Error details:', JSON.stringify(body));
+        } catch { /* ignore parse errors */ }
+      }
       throw new Error(`Failed to get ephemeral token: ${error.message}`);
     }
 
     if (!data?.token) {
+      console.error('[gemini-live-token] Unexpected response:', JSON.stringify(data));
       throw new Error('No token received from server');
     }
 

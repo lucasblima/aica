@@ -4,11 +4,13 @@
  * Issues ephemeral tokens for direct client WebSocket connections
  * to the Gemini Multimodal Live API.
  *
- * Flow: Client calls this endpoint -> gets short-lived token ->
- *       client connects directly to wss://generativelanguage.googleapis.com/ws/...
+ * Uses direct REST API call to v1alpha/auth_tokens endpoint.
+ * The token is created unconstrained — the client specifies
+ * model and config when connecting via WebSocket.
  *
- * Note: The REST API for auth_tokens does NOT support liveConnectConstraints.
- * The token is unconstrained — model/config are specified client-side at connect time.
+ * IMPORTANT: Do NOT use the @google/genai SDK here — it has Deno
+ * compatibility issues and the authTokens.create() method fails.
+ * The REST API v1alpha/auth_tokens does NOT support liveConnectConstraints.
  *
  * @module gemini-live-token
  */
@@ -32,6 +34,8 @@ const TOKEN_MESSAGE_EXPIRY_MS = 30 * 60 * 1000
 const TOKEN_SESSION_EXPIRY_MS = 2 * 60 * 1000
 
 serve(async (req) => {
+  console.log(`[gemini-live-token] === ${req.method} request ===`)
+
   const corsHeaders = getCorsHeaders(req)
 
   // CORS preflight
@@ -49,8 +53,10 @@ serve(async (req) => {
 
   try {
     // 1. Authenticate user via JWT
+    console.log("[gemini-live-token] [1/5] Authenticating...")
     const authHeader = req.headers.get("Authorization")
     if (!authHeader) {
+      console.log("[gemini-live-token] FAIL: No auth header")
       return new Response(
         JSON.stringify({ success: false, error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -58,49 +64,74 @@ serve(async (req) => {
     }
 
     const jwt = authHeader.replace("Bearer ", "")
+    console.log("[gemini-live-token] JWT present, length:", jwt.length)
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(jwt)
 
     if (authError || !user) {
-      console.error("[gemini-live-token] Auth failed:", authError?.message)
+      console.error("[gemini-live-token] FAIL: Auth error:", authError?.message)
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       )
     }
+    console.log(`[gemini-live-token] [1/5] OK user=${user.id}`)
 
-    console.log(`[gemini-live-token] Creating token for user: ${user.id}`)
+    // 2. Parse optional config from body (for logging only — token is unconstrained)
+    console.log("[gemini-live-token] [2/5] Parsing body...")
+    try {
+      const body = await req.json()
+      console.log("[gemini-live-token] [2/5] Body keys:", Object.keys(body).join(","))
+    } catch {
+      console.log("[gemini-live-token] [2/5] No body (OK)")
+    }
 
-    // 2. Create ephemeral token via REST API
-    // The v1alpha/auth_tokens endpoint only accepts: uses, expireTime, newSessionExpireTime
-    // Model and config constraints are NOT supported — they are specified client-side at connect time
+    // 3. Create ephemeral token via REST API
+    console.log("[gemini-live-token] [3/5] Creating token via REST API...")
+    console.log("[gemini-live-token] API_KEY present:", !!GEMINI_API_KEY, "len:", GEMINI_API_KEY?.length || 0)
+
     const expireTime = new Date(Date.now() + TOKEN_MESSAGE_EXPIRY_MS).toISOString()
     const newSessionExpireTime = new Date(Date.now() + TOKEN_SESSION_EXPIRY_MS).toISOString()
 
-    const tokenResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1alpha/auth_tokens?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uses: 1,
-          expireTime,
-          newSessionExpireTime,
-        }),
-      }
-    )
+    const requestBody = {
+      uses: 1,
+      expireTime,
+      newSessionExpireTime,
+    }
+    console.log("[gemini-live-token] Request:", JSON.stringify(requestBody))
+
+    const tokenUrl = `https://generativelanguage.googleapis.com/v1alpha/auth_tokens?key=${GEMINI_API_KEY}`
+
+    const tokenResponse = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    })
+
+    console.log(`[gemini-live-token] [3/5] Google API status: ${tokenResponse.status}`)
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      console.error(`[gemini-live-token] Google API error (${tokenResponse.status}):`, errorText)
-      throw new Error(`Google API returned ${tokenResponse.status}: ${errorText}`)
+      console.error(`[gemini-live-token] FAIL: Google API ${tokenResponse.status}:`, errorText)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Google API error",
+          details: `${tokenResponse.status}: ${errorText}`,
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      )
     }
 
     const token = await tokenResponse.json()
+    console.log(`[gemini-live-token] [3/5] OK token=${token.name?.substring(0, 20)}...`)
 
-    console.log(`[gemini-live-token] Token created for user: ${user.id}, expires: ${expireTime}`)
-
-    // 3. Log token creation for usage tracking
-    await supabase.from("llm_metrics").insert({
+    // 4. Log metrics (non-blocking)
+    console.log("[gemini-live-token] [4/5] Logging metrics...")
+    supabase.from("llm_metrics").insert({
       user_id: user.id,
       action: "gemini_live_token_create",
       model: LIVE_AUDIO_MODEL,
@@ -108,9 +139,11 @@ serve(async (req) => {
       status: "success",
       input_tokens: 0,
       output_tokens: 0,
-    }).catch(err => console.error("[gemini-live-token] Metrics log error:", err))
+    }).then(() => console.log("[gemini-live-token] [4/5] Metrics OK"))
+      .catch((err: Error) => console.error("[gemini-live-token] [4/5] Metrics error:", err))
 
-    // 4. Return token to client
+    // 5. Return success
+    console.log("[gemini-live-token] [5/5] Returning success")
     return new Response(
       JSON.stringify({
         success: true,
@@ -127,8 +160,8 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     const err = error as Error
-    console.error("[gemini-live-token] Error:", err.message)
-    console.error("[gemini-live-token] Stack:", err.stack)
+    console.error("[gemini-live-token] UNCAUGHT:", err.message)
+    console.error("[gemini-live-token] STACK:", err.stack)
     return new Response(
       JSON.stringify({
         success: false,
