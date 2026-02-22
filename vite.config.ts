@@ -21,10 +21,10 @@ export default defineConfig(() => {
         'Content-Security-Policy': [
           "default-src 'self'",
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-inline/eval needed for React dev tools and HMR
-          "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for styled components
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // unsafe-inline needed for styled components
           "img-src 'self' data: https: blob:", // Allow images from data URIs, HTTPS, and blob URLs
-          "font-src 'self' data:",
-          "connect-src 'self' https://ai.google.dev https://*.supabase.co wss://*.supabase.co https://n8n-n8n.w9jo16.easypanel.host https://project-management-docker.w9jo16.easypanel.host https://www.googleapis.com https://*.googleapis.com https://oauth2.googleapis.com https://accounts.google.com https://*.googleusercontent.com",
+          "font-src 'self' data: https://fonts.gstatic.com",
+          "connect-src 'self' https://ai.google.dev https://*.supabase.co wss://*.supabase.co wss://generativelanguage.googleapis.com https://generativelanguage.googleapis.com https://n8n-n8n.w9jo16.easypanel.host https://project-management-docker.w9jo16.easypanel.host https://www.googleapis.com https://*.googleapis.com https://oauth2.googleapis.com https://accounts.google.com https://*.googleusercontent.com",
           "media-src 'self' blob: data:",
           "object-src 'none'",
           "frame-ancestors 'none'",
