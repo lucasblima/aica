@@ -13,6 +13,8 @@ import { ViewState } from '../../types';
 import { useNavigation } from '../contexts/NavigationContext';
 import { StudioProvider } from '../modules/studio/context/StudioContext';
 import { FluxProvider } from '../modules/flux/context/FluxContext';
+import { EraforgeGameProvider } from '../modules/eraforge/contexts/EraforgeGameContext';
+import { EraforgeVoiceProvider } from '../modules/eraforge/contexts/EraforgeVoiceContext';
 import { useAuth } from '../hooks/useAuth';
 import { XPNotificationProvider } from '../contexts/XPNotificationContext';
 import { TourProvider } from '../contexts/TourContext';
@@ -55,6 +57,9 @@ const FluxDashboard = lazy(() => import('../modules/flux').then(m => ({ default:
 const FluxAthleteDetailView = lazy(() => import('../modules/flux').then(m => ({ default: m.AthleteDetailView })));
 const FluxCanvasEditorView = lazy(() => import('../modules/flux').then(m => ({ default: m.CanvasEditorView })));
 const FluxAlertsView = lazy(() => import('../modules/flux').then(m => ({ default: m.AlertsView })));
+
+// EraForge Module - Historical simulation game for children
+const EraForgeMainView = lazy(() => import('../modules/eraforge/views/EraForgeMainView'));
 
 // Athlete Portal - Read-only training view for athletes
 const AthletePortalView = lazy(() => import('../modules/flux/views/AthletePortalView').then(m => ({ default: m.default })));
@@ -499,7 +504,7 @@ export function AppRouter() {
       // Define focused modes where global nav should be hidden (Contextual Descent)
       const focusedModes: ViewState[] = [
          'association_detail', 'finance', 'grants', 'ai-cost', 'file-search-analytics',
-         'studio',
+         'studio', 'eraforge',
          // Life Area Modules
          'health', 'education', 'legal', 'professional'
       ];
@@ -530,6 +535,17 @@ export function AppRouter() {
                <motion.div key="grants" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
                   <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Grants" />}>
                      <GrantsModuleView onBack={() => setCurrentView('vida')} />
+                  </ErrorBoundary>
+               </motion.div>
+            )}
+            {currentView === 'eraforge' && (
+               <motion.div key="eraforge" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
+                  <ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}>
+                     <EraforgeGameProvider>
+                        <EraforgeVoiceProvider>
+                           <EraForgeMainView />
+                        </EraforgeVoiceProvider>
+                     </EraforgeGameProvider>
                   </ErrorBoundary>
                </motion.div>
             )}
@@ -721,6 +737,9 @@ export function AppRouter() {
                <Route path="/flux/intensity/:athleteId?" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><IntensityCalculatorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
                <Route path="/flux/crm" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><CRMCommandCenterView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
                <Route path="/flux/parq/:athleteId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><ParQFormView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+
+               {/* EraForge Module - Historical simulation game */}
+               <Route path="/eraforge" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}><EraforgeGameProvider><EraforgeVoiceProvider><EraForgeMainView /></EraforgeVoiceProvider></EraforgeGameProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
                <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
