@@ -310,14 +310,17 @@ export default function EraForgeMainView() {
       return;
     }
 
-    const normalizedTranscript = transcript.toLowerCase().trim();
+    const normalizeText = (text: string) =>
+      text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    const normalizedTranscript = normalizeText(transcript);
 
     // Fuzzy match: find choice whose text has the most keyword overlap with the transcript
     let bestMatch: string | null = null;
     let bestScore = 0;
 
     for (const choice of scenario.choices) {
-      const choiceWords = choice.text.toLowerCase().split(/\s+/);
+      const choiceWords = normalizeText(choice.text).split(/\s+/);
       const matchCount = choiceWords.filter(word =>
         word.length > 2 && normalizedTranscript.includes(word),
       ).length;
@@ -470,7 +473,7 @@ async function supabaseUpdateMember(
       .from('eraforge_world_members')
       .update({
         turns_today: turnsToday,
-        last_turn_date: new Date().toISOString().split('T')[0],
+        last_turn_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
       })
       .eq('world_id', worldId)
       .eq('child_id', childId);

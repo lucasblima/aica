@@ -142,7 +142,7 @@ export function EF_GameScreen({
   useEffect(() => {
     if (phase === 'turn_complete') {
       const timer = setTimeout(() => {
-        if (turnsRemaining <= 0) {
+        if (turnsRemaining <= 1) {
           setPhase('day_complete');
         } else {
           onNextTurn();
@@ -520,6 +520,7 @@ function PhaseCard({
 }) {
   return (
     <div
+      aria-hidden={!visible}
       className="p-4 bg-ceramic-card rounded-xl shadow-ceramic-emboss transition-all duration-500"
       style={{
         opacity: visible ? 1 : 0,
