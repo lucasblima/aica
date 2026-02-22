@@ -450,30 +450,12 @@ export class GeminiLiveAudioService {
   // ============================================
 
   private handleDisconnection(): void {
-    if (this.reconnectAttempts >= RECONNECT_MAX_RETRIES) {
-      log.error('Max reconnection attempts reached');
-      this.setStatus('error');
-      this.callbacks?.onError(new Error('Connection lost. Max reconnection attempts exceeded.'));
-      this.cleanup();
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = Math.min(
-      RECONNECT_BASE_DELAY_MS * Math.pow(2, this.reconnectAttempts - 1),
-      RECONNECT_MAX_DELAY_MS
-    );
-
-    log.info(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${RECONNECT_MAX_RETRIES})`);
-    this.setStatus('connecting');
-
-    this.reconnectTimer = setTimeout(() => {
-      // Attempt reconnection — need stored config/callbacks
-      log.warn('Reconnection not yet implemented for audio sessions');
-      this.setStatus('error');
-      this.callbacks?.onError(new Error('Connection lost. Please reconnect manually.'));
-      this.cleanup();
-    }, delay);
+    // Auto-reconnection not supported for live audio sessions (ephemeral tokens are single-use).
+    // Transition to error immediately so the user can reconnect manually.
+    log.warn('Connection lost — manual reconnect required (ephemeral tokens are single-use)');
+    this.setStatus('error');
+    this.callbacks?.onError(new Error('Conexao perdida. Clique em Iniciar Conversa para reconectar.'));
+    this.cleanup();
   }
 
   // ============================================
@@ -573,12 +555,7 @@ export class GeminiLiveAudioService {
   }
 
   private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer) as any));
   }
 
   private base64ToArrayBuffer(base64: string): ArrayBuffer {

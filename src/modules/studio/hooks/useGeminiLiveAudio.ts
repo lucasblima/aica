@@ -106,6 +106,17 @@ export function useGeminiLiveAudio(
           log.debug('Model generation interrupted');
         },
         onTurnComplete: () => {
+          // Flush user transcript first to maintain chronological order
+          if (currentUserTranscript.current.trim()) {
+            const msg: AudioMessage = {
+              role: 'user',
+              content: currentUserTranscript.current.trim(),
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, msg]);
+            currentUserTranscript.current = '';
+          }
+
           // Flush accumulated model transcript to messages
           if (currentModelTranscript.current.trim()) {
             const msg: AudioMessage = {
@@ -115,17 +126,6 @@ export function useGeminiLiveAudio(
             };
             setMessages(prev => [...prev, msg]);
             currentModelTranscript.current = '';
-          }
-
-          // Flush user transcript if any
-          if (currentUserTranscript.current.trim()) {
-            const msg: AudioMessage = {
-              role: 'user',
-              content: currentUserTranscript.current.trim(),
-              timestamp: new Date(),
-            };
-            setMessages(prev => [...prev, msg]);
-            currentUserTranscript.current = '';
           }
         },
       });

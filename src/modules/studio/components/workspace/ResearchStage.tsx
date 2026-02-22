@@ -76,7 +76,7 @@ function AudioWaveform({ level, isActive }: { level: number; isActive: boolean }
         // Center bars are taller, scale by audio level
         const centerDistance = Math.abs(i - Math.floor(barCount / 2));
         const baseHeight = isActive ? 0.3 : 0.15;
-        const scale = baseHeight + (level / 100) * (1 - centerDistance * 0.15);
+        const scale = Math.min(1.0, baseHeight + (level / 100) * (1 - centerDistance * 0.15));
         return (
           <div
             key={i}
@@ -150,8 +150,8 @@ export default function ResearchStage() {
   // Build system instruction for live audio from context
   const liveAudioSystemInstruction = useMemo(() => {
     const parts = [
-      'Voce e um assistente de preparacao de entrevistas para podcasts.',
-      'Responda em portugues brasileiro.',
+      'Você é um assistente de preparação de entrevistas para podcasts.',
+      'Responda em português brasileiro.',
       `Convidado: ${geminiContext.guest_name}`,
     ];
     if (geminiContext.guest_bio) parts.push(`Bio: ${geminiContext.guest_bio}`);
