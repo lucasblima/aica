@@ -50,7 +50,7 @@ export function EF_VoiceWave({
   if (!voiceSupported) {
     return (
       <div className={`flex items-center gap-2 text-ceramic-text-secondary text-xs font-nunito ${className}`}>
-        <span>Voz nao disponivel neste navegador</span>
+        <span>Voz não disponível neste navegador</span>
       </div>
     );
   }
