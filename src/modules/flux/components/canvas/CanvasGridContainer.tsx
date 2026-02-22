@@ -92,7 +92,7 @@ export const CanvasGridContainer: React.FC<CanvasGridContainerProps> = ({
               <MicrocycleGrid
                 microcycle={{
                   id: activeMicrocycle.id,
-                  title: activeMicrocycle.name || 'Microciclo',
+                  title: activeMicrocycle.name || 'Ciclo',
                   start_date: activeMicrocycle.start_date,
                   focus: activeMicrocycle.week_1_focus || '',
                 }}
@@ -108,7 +108,7 @@ export const CanvasGridContainer: React.FC<CanvasGridContainerProps> = ({
               <MicrocycleGrid
                 microcycle={{
                   id: '',
-                  title: 'Carregando Microciclo...',
+                  title: 'Carregando Ciclo...',
                   start_date: new Date().toISOString(),
                   focus: '',
                 }}

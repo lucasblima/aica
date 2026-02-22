@@ -248,7 +248,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ mode, onChange }) => (
       }
     >
       <LayoutGrid size={11} />
-      Microciclo
+      Ciclos
     </button>
   </div>
 );
@@ -363,7 +363,7 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
               {athlete?.name}
             </h1>
             <p className="text-sm text-ceramic-text-secondary mt-0.5">
-              Semana {currentWeek} / Microciclo
+              Semana {currentWeek} / Ciclo
               {activeMicrocycleName && ` · ${activeMicrocycleName}`}
               {' · '}
               {MODALITY_PT_LABELS[athlete?.modality || ''] || athlete?.modality}

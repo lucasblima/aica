@@ -478,10 +478,10 @@ export default function CanvasEditorView() {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-ceramic-base">
         <p className="text-lg font-bold text-ceramic-text-primary mb-2">
-          Erro ao carregar microciclo
+          Erro ao carregar ciclo
         </p>
         <p className="text-sm text-ceramic-text-secondary mb-6">
-          Nao foi possivel criar o microciclo para este atleta.
+          Nao foi possivel criar o ciclo para este atleta.
         </p>
         <button
           onClick={() => navigate('/flux')}
@@ -538,7 +538,7 @@ export default function CanvasEditorView() {
         setCurrentWeek={setCurrentWeek}
         viewMode={viewMode}
         setViewMode={setViewMode}
-        activeMicrocycleName={activeMicrocycle?.name || 'Microciclo'}
+        activeMicrocycleName={activeMicrocycle?.name || 'Ciclo'}
         weekWorkoutsForPublish={weekWorkoutsForPublish}
         microcycleId={activeMicrocycle?.id}
         calendarConnected={calendarConnected}
