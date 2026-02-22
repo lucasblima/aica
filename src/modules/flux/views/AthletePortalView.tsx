@@ -526,8 +526,7 @@ export default function AthletePortalView() {
                         <div className="space-y-2">
                           {daySlots.map((slot) => (
                             <WorkoutCard key={slot.id} slot={slot}
-                              onToggleComplete={handleToggleComplete} onSubmitFeedback={handleSubmitFeedback}
-                              onReschedule={handleReschedule} onViewFeedback={handleViewFeedback}
+                              onToggleComplete={handleToggleComplete}
                               isUpdating={updating === slot.id} modality={profile.modality} />
                           ))}
                         </div>
