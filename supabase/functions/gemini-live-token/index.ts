@@ -7,6 +7,9 @@
  * Flow: Client calls this endpoint -> gets short-lived token ->
  *       client connects directly to wss://generativelanguage.googleapis.com/ws/...
  *
+ * Note: The REST API for auth_tokens does NOT support liveConnectConstraints.
+ * The token is unconstrained — model/config are specified client-side at connect time.
+ *
  * @module gemini-live-token
  */
 
@@ -65,45 +68,13 @@ serve(async (req) => {
       )
     }
 
-    // 2. Parse optional config from body
-    let systemInstruction: string | undefined
-    let temperature = 0.7
-    let voiceName: string | undefined
-
-    try {
-      const body = await req.json()
-      systemInstruction = body.systemInstruction
-      if (typeof body.temperature === "number") {
-        temperature = Math.min(Math.max(body.temperature, 0), 2)
-      }
-      voiceName = body.voiceName
-    } catch {
-      // Empty body is fine — defaults will be used
-    }
-
     console.log(`[gemini-live-token] Creating token for user: ${user.id}`)
 
-    // 3. Create ephemeral token via REST API (direct fetch — avoids npm SDK/Deno issues)
+    // 2. Create ephemeral token via REST API
+    // The v1alpha/auth_tokens endpoint only accepts: uses, expireTime, newSessionExpireTime
+    // Model and config constraints are NOT supported — they are specified client-side at connect time
     const expireTime = new Date(Date.now() + TOKEN_MESSAGE_EXPIRY_MS).toISOString()
     const newSessionExpireTime = new Date(Date.now() + TOKEN_SESSION_EXPIRY_MS).toISOString()
-
-    // Build live connect config to lock the token to specific settings
-    const liveConnectConfig: Record<string, unknown> = {
-      responseModalities: ["AUDIO"],
-      temperature,
-    }
-
-    if (voiceName) {
-      liveConnectConfig.speechConfig = {
-        voiceConfig: {
-          prebuiltVoiceConfig: { voiceName },
-        },
-      }
-    }
-
-    if (systemInstruction) {
-      liveConnectConfig.systemInstruction = systemInstruction
-    }
 
     const tokenResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1alpha/auth_tokens?key=${GEMINI_API_KEY}`,
@@ -114,10 +85,6 @@ serve(async (req) => {
           uses: 1,
           expireTime,
           newSessionExpireTime,
-          liveConnectConstraints: {
-            model: `models/${LIVE_AUDIO_MODEL}`,
-            config: liveConnectConfig,
-          },
         }),
       }
     )
@@ -132,7 +99,7 @@ serve(async (req) => {
 
     console.log(`[gemini-live-token] Token created for user: ${user.id}, expires: ${expireTime}`)
 
-    // 4. Log token creation for usage tracking
+    // 3. Log token creation for usage tracking
     await supabase.from("llm_metrics").insert({
       user_id: user.id,
       action: "gemini_live_token_create",
@@ -143,14 +110,14 @@ serve(async (req) => {
       output_tokens: 0,
     }).catch(err => console.error("[gemini-live-token] Metrics log error:", err))
 
-    // 5. Return token to client (REST API returns { name: "token_string", ... })
+    // 4. Return token to client
     return new Response(
       JSON.stringify({
         success: true,
         token: token.name,
         model: LIVE_AUDIO_MODEL,
-        expiresAt: token.expireTime || expireTime,
-        newSessionExpiresAt: token.newSessionExpireTime || newSessionExpireTime,
+        expiresAt: expireTime,
+        newSessionExpiresAt: newSessionExpireTime,
       }),
       {
         status: 200,
@@ -162,7 +129,6 @@ serve(async (req) => {
     const err = error as Error
     console.error("[gemini-live-token] Error:", err.message)
     console.error("[gemini-live-token] Stack:", err.stack)
-    console.error("[gemini-live-token] Full:", JSON.stringify(error, Object.getOwnPropertyNames(err)))
     return new Response(
       JSON.stringify({
         success: false,
