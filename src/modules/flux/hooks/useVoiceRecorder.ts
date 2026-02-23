@@ -1,17 +1,19 @@
 /**
- * useVoiceRecorder — browser speech-to-text hook
+ * useVoiceRecorder — records audio via MediaRecorder, transcribes via Gemini Edge Function
  *
- * Uses the Web Speech API (SpeechRecognition) for real-time transcription.
- * Falls back gracefully when the API is not available (e.g., Firefox).
+ * Primary: MediaRecorder (local, works everywhere) → transcribe-audio Edge Function (Gemini)
+ * This avoids Web Speech API's dependency on Google's servers which fails with "network" errors.
  */
 
 import { useState, useCallback, useRef } from 'react';
+import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
 const log = createNamespacedLogger('useVoiceRecorder');
 
 export interface UseVoiceRecorderReturn {
   isRecording: boolean;
+  isTranscribing: boolean;
   isSupported: boolean;
   transcript: string;
   duration: number;
@@ -21,31 +23,47 @@ export interface UseVoiceRecorderReturn {
   clearTranscript: () => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SpeechRecognitionInstance = any;
+function isMediaRecorderSupported(): boolean {
+  return typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+}
 
-function getSpeechRecognitionConstructor(): (new () => SpeechRecognitionInstance) | null {
-  if (typeof window === 'undefined') return null;
-  const win = window as unknown as Record<string, unknown>;
-  return (win.SpeechRecognition ?? win.webkitSpeechRecognition ?? null) as
-    | (new () => SpeechRecognitionInstance)
-    | null;
+function getPreferredMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') return 'audio/webm';
+  if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
+  if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
+  if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+  if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) return 'audio/ogg;codecs=opus';
+  return 'audio/webm';
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      // Strip the data:audio/...;base64, prefix
+      const base64 = dataUrl.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
-  const retryCountRef = useRef(0);
-  const maxRetries = 2;
 
-  const Ctor = getSpeechRecognitionConstructor();
-  const isSupported = Ctor !== null;
+  const isSupported = isMediaRecorderSupported();
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -54,127 +72,134 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
     }
   }, []);
 
-  const createRecognition = useCallback((onRetry: () => void) => {
-    if (!Ctor) return null;
+  const stopStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
 
-    const recognition = new Ctor();
-    recognition.lang = 'pt-BR';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+  const transcribeAudio = useCallback(async (audioBlob: Blob, mimeType: string) => {
+    setIsTranscribing(true);
+    setError(null);
 
-    let finalTranscript = '';
+    try {
+      const base64 = await blobToBase64(audioBlob);
+      // Use the simple mime type for Gemini (strip codecs)
+      const simpleMime = mimeType.split(';')[0];
 
-    recognition.onresult = (event: { resultIndex: number; results: { length: number; [i: number]: { isFinal: boolean; 0: { transcript: string } } } }) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          finalTranscript += result[0].transcript + ' ';
-        } else {
-          interim += result[0].transcript;
-        }
-      }
-      setTranscript((finalTranscript + interim).trim());
-      // Successful result — reset retry counter
-      retryCountRef.current = 0;
-    };
+      const { data, error: fnError } = await supabase.functions.invoke('transcribe-audio', {
+        body: { audio: base64, mimeType: simpleMime },
+      });
 
-    recognition.onerror = (event: { error: string }) => {
-      log.error('Speech recognition error:', event.error);
-
-      if (event.error === 'not-allowed') {
-        setError('Permissao de microfone negada. Verifique as configuracoes do navegador.');
-        setIsRecording(false);
-        stopTimer();
+      if (fnError) {
+        log.error('Edge Function error:', fnError);
+        setError('Erro na transcricao. Suas observacoes foram gravadas — use o campo de texto.');
         return;
       }
 
-      if (event.error === 'no-speech') {
-        // Not critical — user just didn't speak yet
-        return;
+      if (data?.success && data.transcript) {
+        setTranscript(data.transcript);
+      } else if (data?.success && !data.transcript) {
+        setError('Audio nao reconhecido. Tente falar mais perto do microfone.');
+      } else {
+        log.error('Transcription failed:', data?.error);
+        setError('Erro na transcricao. Use o campo de texto como alternativa.');
       }
+    } catch (err) {
+      log.error('Transcription error:', err);
+      setError('Erro ao enviar audio. Verifique sua conexao.');
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, []);
 
-      // Network errors: auto-retry before showing error
-      if (event.error === 'network' && retryCountRef.current < maxRetries) {
-        retryCountRef.current++;
-        log.warn(`Network error, retrying (${retryCountRef.current}/${maxRetries})...`);
-        setTimeout(() => onRetry(), 500);
-        return;
-      }
-
-      // Final error after retries exhausted or non-network error
-      const errorMessages: Record<string, string> = {
-        network: 'Erro de conexao com o servico de voz. Use o campo de texto como alternativa.',
-        'audio-capture': 'Microfone nao detectado. Verifique se esta conectado.',
-        aborted: 'Gravacao cancelada.',
-      };
-      setError(errorMessages[event.error] || 'Erro no reconhecimento de voz. Use o campo de texto.');
-      setIsRecording(false);
-      stopTimer();
-    };
-
-    recognition.onend = () => {
-      // Only stop if we're not in a retry cycle
-      if (retryCountRef.current === 0 || retryCountRef.current >= maxRetries) {
-        setIsRecording(false);
-        stopTimer();
-      }
-    };
-
-    return recognition;
-  }, [Ctor, stopTimer]);
-
-  const startRecording = useCallback(() => {
-    if (!Ctor) {
-      setError('Reconhecimento de voz nao suportado neste navegador');
+  const startRecording = useCallback(async () => {
+    if (!isSupported) {
+      setError('Gravacao de audio nao suportada neste navegador');
       return;
     }
 
     setError(null);
     setTranscript('');
     setDuration(0);
-    retryCountRef.current = 0;
+    chunksRef.current = [];
 
-    const tryStart = () => {
-      const recognition = createRecognition(tryStart);
-      if (!recognition) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-      recognitionRef.current = recognition;
+      const mimeType = getPreferredMimeType();
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
 
-      try {
-        recognition.start();
-        if (retryCountRef.current === 0) {
-          // Only set timer on first start
-          startTimeRef.current = Date.now();
-          timerRef.current = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-            setDuration(elapsed);
-            if (elapsed >= 120) {
-              recognition.stop();
-            }
-          }, 1000);
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
         }
-        setIsRecording(true);
-      } catch (err) {
-        log.error('Failed to start recognition:', err);
-        setError('Erro ao iniciar gravacao. Tente novamente.');
-        stopTimer();
-        setIsRecording(false);
-      }
-    };
+      };
 
-    tryStart();
-  }, [Ctor, createRecognition, stopTimer]);
+      recorder.onstop = async () => {
+        stopTimer();
+        stopStream();
+
+        const chunks = chunksRef.current;
+        if (chunks.length === 0) {
+          setError('Nenhum audio capturado. Tente novamente.');
+          return;
+        }
+
+        const audioBlob = new Blob(chunks, { type: mimeType });
+        log.info(`Audio recorded: ${(audioBlob.size / 1024).toFixed(1)}KB, ${mimeType}`);
+
+        // Only transcribe if audio is substantial (>1KB = ~0.5s of audio)
+        if (audioBlob.size < 1024) {
+          setError('Audio muito curto. Fale por mais tempo.');
+          return;
+        }
+
+        await transcribeAudio(audioBlob, mimeType);
+      };
+
+      recorder.onerror = () => {
+        log.error('MediaRecorder error');
+        setError('Erro na gravacao. Tente novamente.');
+        setIsRecording(false);
+        stopTimer();
+        stopStream();
+      };
+
+      // Start recording with 1s timeslices
+      recorder.start(1000);
+      setIsRecording(true);
+
+      // Timer
+      startTimeRef.current = Date.now();
+      timerRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        setDuration(elapsed);
+        if (elapsed >= 120) {
+          recorder.stop();
+          setIsRecording(false);
+        }
+      }, 1000);
+    } catch (err) {
+      log.error('Failed to access microphone:', err);
+      const e = err as DOMException;
+      if (e.name === 'NotAllowedError') {
+        setError('Permissao de microfone negada. Verifique as configuracoes do navegador.');
+      } else if (e.name === 'NotFoundError') {
+        setError('Microfone nao encontrado. Verifique se esta conectado.');
+      } else {
+        setError('Erro ao acessar microfone. Verifique as permissoes.');
+      }
+    }
+  }, [isSupported, stopTimer, stopStream, transcribeAudio]);
 
   const stopRecording = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
     }
     setIsRecording(false);
   }, []);
@@ -187,6 +212,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 
   return {
     isRecording,
+    isTranscribing,
     isSupported,
     transcript,
     duration,

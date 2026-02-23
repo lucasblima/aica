@@ -1,11 +1,11 @@
 /**
- * VoiceRecorder — microphone button with real-time transcription
+ * VoiceRecorder — microphone button with MediaRecorder + Gemini transcription
  *
- * Uses Web Speech API for browser-native speech-to-text in Portuguese.
- * Shows recording indicator (pulsing dot + timer) and transcribed text.
+ * Records audio locally via MediaRecorder API, sends to transcribe-audio
+ * Edge Function (Gemini 2.5 Flash) for transcription in Portuguese.
  */
 
-import { Mic, MicOff, Square, X } from 'lucide-react';
+import { Mic, MicOff, Square, X, Loader2 } from 'lucide-react';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 
 function formatDuration(seconds: number): string {
@@ -22,6 +22,7 @@ export interface VoiceRecorderProps {
 export function VoiceRecorder({ onTranscriptChange, initialTranscript }: VoiceRecorderProps) {
   const {
     isRecording,
+    isTranscribing,
     isSupported,
     transcript,
     duration,
@@ -35,10 +36,13 @@ export function VoiceRecorder({ onTranscriptChange, initialTranscript }: VoiceRe
 
   const handleStop = () => {
     stopRecording();
-    if (transcript) {
-      onTranscriptChange(transcript, duration);
-    }
+    // Transcript will be set async after transcription completes
   };
+
+  // Sync transcript to parent when it changes
+  if (transcript && transcript !== initialTranscript) {
+    onTranscriptChange(transcript, duration);
+  }
 
   const handleClear = () => {
     clearTranscript();
@@ -73,6 +77,11 @@ export function VoiceRecorder({ onTranscriptChange, initialTranscript }: VoiceRe
             <span>{formatDuration(duration)}</span>
             <Square className="w-3 h-3" />
           </button>
+        ) : isTranscribing ? (
+          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200/50 text-amber-700 text-xs font-bold rounded-xl">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span>Transcrevendo...</span>
+          </div>
         ) : (
           <button
             type="button"
@@ -84,7 +93,7 @@ export function VoiceRecorder({ onTranscriptChange, initialTranscript }: VoiceRe
           </button>
         )}
 
-        {displayTranscript && !isRecording && (
+        {displayTranscript && !isRecording && !isTranscribing && (
           <button
             type="button"
             onClick={handleClear}
