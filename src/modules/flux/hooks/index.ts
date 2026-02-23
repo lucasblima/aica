@@ -49,7 +49,14 @@ export type { UsePerformanceTestsOptions, UsePerformanceTestsReturn } from './us
 export { useAthleteFeedback } from './useAthleteFeedback';
 export type {
   FeedbackEntry,
+  FeedbackEntryRow,
   FeedbackSlotSummary,
+  WeekFeedbackSummary,
+  QuestionnaireData,
   SubmitDailyFeedbackInput,
+  SubmitExerciseFeedbackInput,
   SubmitWeeklyFeedbackInput,
 } from './useAthleteFeedback';
+
+export { useVoiceRecorder } from './useVoiceRecorder';
+export type { UseVoiceRecorderReturn } from './useVoiceRecorder';
