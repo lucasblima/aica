@@ -18,7 +18,7 @@ import {
   getXPForLevel,
   getXPProgress,
   type EntityType,
-  type EntityAgentResponse,
+  type EntityStats,
 } from '../../types/liferpg';
 
 interface EntityDashboardProps {
@@ -106,7 +106,10 @@ export const EntityDashboard: React.FC<EntityDashboardProps> = ({ personaId }) =
   const entityEmoji = persona.avatar_emoji || ENTITY_EMOJI[persona.entity_type as EntityType] || '\u{2753}';
   const xpProgress = getXPProgress(persona.xp, persona.level);
   const xpForNext = getXPForLevel(persona.level + 1);
-  const stats = (persona.stats as Record<string, number>) || {};
+  const statsObj = (persona.stats as EntityStats) || {};
+  const stats: Record<string, number> = Object.fromEntries(
+    Object.entries(statsObj).filter((entry): entry is [string, number] => typeof entry[1] === 'number')
+  );
 
   return (
     <div className="space-y-4 p-4 max-w-lg mx-auto">

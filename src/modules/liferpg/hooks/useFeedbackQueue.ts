@@ -51,6 +51,7 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
 
   const loadQuestions = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;

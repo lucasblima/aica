@@ -34,9 +34,9 @@ export const InventoryStats: React.FC<InventoryStatsProps> = ({
       </div>
 
       {lowConditionCount > 0 && (
-        <div className="bg-red-50 rounded-xl p-3 shadow-ceramic-emboss text-center">
-          <div className="text-2xl font-bold text-red-600">{lowConditionCount}</div>
-          <div className="text-[10px] text-red-600 mt-0.5">Condicao ruim</div>
+        <div className="bg-ceramic-error/10 rounded-xl p-3 shadow-ceramic-emboss text-center">
+          <div className="text-2xl font-bold text-ceramic-error">{lowConditionCount}</div>
+          <div className="text-[10px] text-ceramic-error mt-0.5">Condicao ruim</div>
         </div>
       )}
 

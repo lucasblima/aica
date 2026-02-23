@@ -286,9 +286,17 @@ export interface SuggestedAction {
   description: string;
 }
 
+export type AgentTone = 'friendly' | 'concerned' | 'proud' | 'urgent' | 'neutral';
+
+const VALID_TONES: AgentTone[] = ['friendly', 'concerned', 'proud', 'urgent', 'neutral'];
+
+export function isValidTone(value: unknown): value is AgentTone {
+  return typeof value === 'string' && VALID_TONES.includes(value as AgentTone);
+}
+
 export interface EntityAgentResponse {
   response: string;
-  tone: 'friendly' | 'concerned' | 'proud' | 'urgent' | 'neutral';
+  tone: AgentTone;
   suggested_actions?: SuggestedAction[];
   feedback_question?: {
     question: string;
@@ -345,6 +353,10 @@ export function getXPForLevel(level: number): number {
 }
 
 export function getXPProgress(xp: number, level: number): number {
-  const xpNeeded = getXPForLevel(level + 1);
-  return Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
+  const currentLevelXP = getXPForLevel(level);
+  const nextLevelXP = getXPForLevel(level + 1);
+  const range = nextLevelXP - currentLevelXP;
+  if (range <= 0) return 100;
+  const progress = ((xp - currentLevelXP) / range) * 100;
+  return Math.max(0, Math.min(100, progress));
 }

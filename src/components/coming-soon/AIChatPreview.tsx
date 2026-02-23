@@ -67,20 +67,29 @@ export function AIChatPreview({
     if (!text.trim() || isLoading || limitReached) return;
 
     const userMessage: ChatMessage = { role: 'user', content: text.trim() };
-    const updatedMessages = [...messages, userMessage];
 
     if (!isInitial) {
-      setMessages(updatedMessages);
+      setMessages((prev) => [...prev, userMessage]);
     }
     setInput('');
     setIsLoading(true);
 
     try {
+      // Use functional state getter to avoid stale closure
+      const currentMessages = await new Promise<ChatMessage[]>((resolve) => {
+        setMessages((prev) => {
+          resolve(prev);
+          return prev;
+        });
+      });
+
+      const historyForAPI = isInitial ? [] : currentMessages;
+
       const { data, error } = await supabase.functions.invoke('module-preview-chat', {
         body: {
           module_id: module.id,
           message: text.trim(),
-          chat_history: isInitial ? [] : updatedMessages.slice(0, -1),
+          chat_history: historyForAPI,
         },
       });
 
@@ -98,7 +107,7 @@ export function AIChatPreview({
       setRemaining(data.remaining_messages ?? 0);
       setSuggestions(data.suggested_questions ?? []);
       setLimitReached(data.limit_reached ?? false);
-    } catch (err) {
+    } catch {
       const errorMessage: ChatMessage = {
         role: 'assistant',
         content: 'Desculpe, ocorreu um erro. Tente novamente.',

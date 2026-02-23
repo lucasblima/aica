@@ -6,7 +6,7 @@
 
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
-import type { EntityAgentResponse } from '../types/liferpg';
+import { isValidTone, type EntityAgentResponse } from '../types/liferpg';
 
 const log = createNamespacedLogger('EntityAgentService');
 
@@ -53,7 +53,14 @@ export class EntityAgentService {
         return { success: false, error: data?.error || 'Unknown error' };
       }
 
-      return { success: true, data: data.data };
+      // Runtime validation of tone field
+      const responseData = data.data as EntityAgentResponse;
+      if (responseData && !isValidTone(responseData.tone)) {
+        log.warn('Invalid tone from API, defaulting to neutral', { tone: responseData.tone });
+        responseData.tone = 'neutral';
+      }
+
+      return { success: true, data: responseData };
     } catch (err) {
       log.error('Chat failed', { err });
       return { success: false, error: (err as Error).message };
