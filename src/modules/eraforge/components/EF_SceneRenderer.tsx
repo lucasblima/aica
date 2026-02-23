@@ -53,28 +53,30 @@ export function EF_SceneRenderer({ era }: EF_SceneRendererProps) {
       initial="initial"
       animate="animate"
     >
-      {SceneComponent ? (
-        <SceneComponent />
-      ) : (
-        <svg
-          viewBox="0 0 400 180"
-          className="w-full h-full"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          <defs>
-            <linearGradient id={`era-grad-${era}`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={gradient.from} />
-              <stop offset="100%" stopColor={gradient.to} />
-            </linearGradient>
-          </defs>
-          <rect width="400" height="180" fill={`url(#era-grad-${era})`} />
-          <Sun cx={340} cy={40} r={20} />
-          <Cloud cx={80} cy={35} />
-          <Cloud cx={220} cy={50} />
-          <Mountain x={0} y={120} width={160} height={60} fill={gradient.to} />
-          <Mountain x={120} y={120} width={200} height={60} fill={gradient.from} opacity={0.6} />
-        </svg>
-      )}
+      <svg
+        viewBox="0 0 400 180"
+        className="w-full h-full"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        {SceneComponent ? (
+          <SceneComponent />
+        ) : (
+          <g>
+            <defs>
+              <linearGradient id={`era-grad-${era}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={gradient.from} />
+                <stop offset="100%" stopColor={gradient.to} />
+              </linearGradient>
+            </defs>
+            <rect width="400" height="180" fill={`url(#era-grad-${era})`} />
+            <Sun cx={340} cy={40} r={20} />
+            <Cloud cx={80} cy={35} />
+            <Cloud cx={220} cy={50} />
+            <Mountain x={0} y={120} width={160} height={60} color={gradient.to} />
+            <Mountain x={120} y={120} width={200} height={60} color={gradient.from} />
+          </g>
+        )}
+      </svg>
 
       {/* Frosted glass era label */}
       <div className="absolute bottom-0 left-0 right-0 px-4 py-2 bg-white/30 backdrop-blur-sm">
