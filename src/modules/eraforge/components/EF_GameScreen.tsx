@@ -10,7 +10,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { pageTransitionVariants, staggerContainer, staggerItem, springElevation } from '@/lib/animations/ceramic-motion';
+import { pageTransitionVariants, staggerContainer, staggerItem, springElevation, springPress } from '@/lib/animations/ceramic-motion';
+import { EF_NavHeader } from './EF_NavHeader';
 import { EF_SceneRenderer } from './EF_SceneRenderer';
 import { EF_StatsBar } from './EF_StatsBar';
 import { EF_AdvisorPanel } from './EF_AdvisorPanel';
@@ -63,6 +64,9 @@ export interface EF_GameScreenProps {
   onStopSpeaking?: () => void;
   onSpeak?: (text: string) => void;
   onSimulate?: () => void;
+  worldName?: string;
+  eraLabel?: string;
+  onBack?: () => void;
 }
 
 // ============================================
@@ -131,6 +135,9 @@ export function EF_GameScreen({
   onStopSpeaking,
   onSpeak,
   onSimulate,
+  worldName,
+  eraLabel,
+  onBack,
 }: EF_GameScreenProps) {
   const scenario = currentTurn?.scenario;
 
@@ -138,6 +145,7 @@ export function EF_GameScreen({
   const [phase, setPhase] = useState<GamePhase>('scenario');
   const [prevMember, setPrevMember] = useState<WorldMember>(member);
   const [animatingStats, setAnimatingStats] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
@@ -227,6 +235,19 @@ export function EF_GameScreen({
   const handleNextTurn = useCallback(() => {
     setPhase('turn_complete');
   }, []);
+
+  const handleBackPress = useCallback(() => {
+    if (phase === 'day_complete') {
+      onEndGame();
+    } else {
+      setShowExitConfirm(true);
+    }
+  }, [phase, onEndGame]);
+
+  const handleConfirmExit = useCallback(() => {
+    setShowExitConfirm(false);
+    onEndGame();
+  }, [onEndGame]);
 
   // ----- Render helpers -----
 
@@ -524,6 +545,10 @@ export function EF_GameScreen({
 
   // ----- Main render -----
 
+  const headerSubtitle = worldName && eraLabel
+    ? `${worldName} \u2022 ${eraLabel}`
+    : worldName || eraLabel || undefined;
+
   return (
     <motion.div
       className="flex flex-col min-h-screen bg-ceramic-base"
@@ -531,6 +556,12 @@ export function EF_GameScreen({
       initial="initial"
       animate="animate"
     >
+      <EF_NavHeader
+        title="Aventura"
+        subtitle={headerSubtitle}
+        onBack={onBack ? handleBackPress : undefined}
+      />
+
       {/* Top bar: stats + turns */}
       <div className="flex items-center justify-between p-4">
         <EF_StatsBar
@@ -558,19 +589,61 @@ export function EF_GameScreen({
         </AnimatePresence>
       </div>
 
-      {/* End Game shortcut */}
-      {phase !== 'day_complete' && phase !== 'turn_complete' && (
-        <div className="px-4 pb-6">
-          <button
-            onClick={onEndGame}
-            aria-label="Encerrar sessão de jogo"
-            className="w-full py-2 text-sm text-ceramic-text-secondary bg-ceramic-cool shadow-ceramic-inset
-                       rounded-lg hover:bg-ceramic-cool-hover transition-colors"
+      {/* Exit confirmation dialog */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
           >
-            Encerrar Sessão
-          </button>
-        </div>
-      )}
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+              onClick={() => setShowExitConfirm(false)}
+            />
+
+            {/* Dialog */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 8 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="relative w-full max-w-xs p-5 bg-white/80 backdrop-blur-md rounded-2xl shadow-ceramic-elevated text-center"
+            >
+              <h3 className="text-base font-bold text-ceramic-text-primary font-fredoka">
+                Sair da aventura?
+              </h3>
+              <p className="text-sm text-ceramic-text-secondary mt-2 leading-relaxed">
+                O progresso do turno atual sera perdido.
+              </p>
+              <div className="flex gap-3 mt-5">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  transition={springPress}
+                  onClick={() => setShowExitConfirm(false)}
+                  className="flex-1 py-2.5 text-sm font-medium text-ceramic-text-secondary bg-ceramic-cool rounded-xl hover:bg-ceramic-cool-hover transition-colors"
+                >
+                  Cancelar
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  transition={springPress}
+                  onClick={handleConfirmExit}
+                  className="flex-1 py-2.5 text-sm font-bold text-white bg-ceramic-error rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  Sair
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
