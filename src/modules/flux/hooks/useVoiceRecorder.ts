@@ -41,19 +41,21 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
+  const retryCountRef = useRef(0);
+  const maxRetries = 2;
 
   const Ctor = getSpeechRecognitionConstructor();
   const isSupported = Ctor !== null;
 
-  const startRecording = useCallback(() => {
-    if (!Ctor) {
-      setError('Reconhecimento de voz nao suportado neste navegador');
-      return;
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
+  }, []);
 
-    setError(null);
-    setTranscript('');
-    setDuration(0);
+  const createRecognition = useCallback((onRetry: () => void) => {
+    if (!Ctor) return null;
 
     const recognition = new Ctor();
     recognition.lang = 'pt-BR';
@@ -74,47 +76,96 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
         }
       }
       setTranscript((finalTranscript + interim).trim());
+      // Successful result — reset retry counter
+      retryCountRef.current = 0;
     };
 
     recognition.onerror = (event: { error: string }) => {
       log.error('Speech recognition error:', event.error);
+
       if (event.error === 'not-allowed') {
-        setError('Permissao de microfone negada');
-      } else if (event.error === 'no-speech') {
-        // Not a critical error — user just didn't speak
-      } else {
-        setError('Erro no reconhecimento de voz');
+        setError('Permissao de microfone negada. Verifique as configuracoes do navegador.');
+        setIsRecording(false);
+        stopTimer();
+        return;
       }
+
+      if (event.error === 'no-speech') {
+        // Not critical — user just didn't speak yet
+        return;
+      }
+
+      // Network errors: auto-retry before showing error
+      if (event.error === 'network' && retryCountRef.current < maxRetries) {
+        retryCountRef.current++;
+        log.warn(`Network error, retrying (${retryCountRef.current}/${maxRetries})...`);
+        setTimeout(() => onRetry(), 500);
+        return;
+      }
+
+      // Final error after retries exhausted or non-network error
+      const errorMessages: Record<string, string> = {
+        network: 'Erro de conexao com o servico de voz. Use o campo de texto como alternativa.',
+        'audio-capture': 'Microfone nao detectado. Verifique se esta conectado.',
+        aborted: 'Gravacao cancelada.',
+      };
+      setError(errorMessages[event.error] || 'Erro no reconhecimento de voz. Use o campo de texto.');
       setIsRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
+      stopTimer();
     };
 
     recognition.onend = () => {
-      setIsRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
+      // Only stop if we're not in a retry cycle
+      if (retryCountRef.current === 0 || retryCountRef.current >= maxRetries) {
+        setIsRecording(false);
+        stopTimer();
+      }
     };
 
-    recognitionRef.current = recognition;
-    startTimeRef.current = Date.now();
+    return recognition;
+  }, [Ctor, stopTimer]);
 
-    timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      setDuration(elapsed);
-      // Max 120 seconds
-      if (elapsed >= 120) {
-        recognition.stop();
-      }
-    }, 1000);
-
-    try {
-      recognition.start();
-      setIsRecording(true);
-    } catch (err) {
-      log.error('Failed to start recognition:', err);
-      setError('Erro ao iniciar gravacao');
-      if (timerRef.current) clearInterval(timerRef.current);
+  const startRecording = useCallback(() => {
+    if (!Ctor) {
+      setError('Reconhecimento de voz nao suportado neste navegador');
+      return;
     }
-  }, [Ctor]);
+
+    setError(null);
+    setTranscript('');
+    setDuration(0);
+    retryCountRef.current = 0;
+
+    const tryStart = () => {
+      const recognition = createRecognition(tryStart);
+      if (!recognition) return;
+
+      recognitionRef.current = recognition;
+
+      try {
+        recognition.start();
+        if (retryCountRef.current === 0) {
+          // Only set timer on first start
+          startTimeRef.current = Date.now();
+          timerRef.current = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+            setDuration(elapsed);
+            if (elapsed >= 120) {
+              recognition.stop();
+            }
+          }, 1000);
+        }
+        setIsRecording(true);
+      } catch (err) {
+        log.error('Failed to start recognition:', err);
+        setError('Erro ao iniciar gravacao. Tente novamente.');
+        stopTimer();
+        setIsRecording(false);
+      }
+    };
+
+    tryStart();
+  }, [Ctor, createRecognition, stopTimer]);
 
   const stopRecording = useCallback(() => {
     if (recognitionRef.current) {
