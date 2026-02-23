@@ -1,15 +1,20 @@
 /**
  * ExerciseQuestionnaireSheet — 8-question structured feedback form
  *
- * Bottom-sheet overlay with progress bar showing answered/8.
- * Each question uses a ScaleInput (0-5). Optional notes field.
- * All text in Portuguese per Ceramic design.
+ * Bottom-sheet overlay showing one question at a time with auto-advance,
+ * progress bar, and notes field. Same UX pattern as WeeklyFeedbackCard.
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { X, Send, Loader2 } from 'lucide-react';
-import { ScaleInput } from './ScaleInput';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  X,
+  Send,
+  Loader2,
+  Check,
+  ChevronLeft,
+  SkipForward,
+} from 'lucide-react';
 
 // ─── Questionnaire schema ─────────────────────────
 
@@ -29,20 +34,53 @@ type QuestionKey = keyof QuestionnaireAnswers;
 interface QuestionDef {
   key: QuestionKey;
   label: string;
-  lowAnchor: string;
-  highAnchor: string;
+  scaleLabels: string[];
 }
 
 const QUESTIONS: QuestionDef[] = [
-  { key: 'volume_adequate', label: 'Volume adequado?', lowAnchor: 'Nada', highAnchor: 'Perfeito' },
-  { key: 'volume_completed', label: 'Cumpriu volume?', lowAnchor: 'Nada', highAnchor: 'Tudo' },
-  { key: 'intensity_adequate', label: 'Intensidade adequada?', lowAnchor: 'Nada', highAnchor: 'Perfeito' },
-  { key: 'intensity_completed', label: 'Cumpriu intensidade?', lowAnchor: 'Nada', highAnchor: 'Tudo' },
-  { key: 'fatigue', label: 'Nivel de cansaco', lowAnchor: 'Descansado', highAnchor: 'Exausto' },
-  { key: 'stress', label: 'Nivel de stress', lowAnchor: 'Relaxado', highAnchor: 'Muito estressado' },
-  { key: 'nutrition', label: 'Alimentacao', lowAnchor: 'Pessima', highAnchor: 'Excelente' },
-  { key: 'sleep', label: 'Qualidade do sono', lowAnchor: 'Pessima', highAnchor: 'Excelente' },
+  {
+    key: 'volume_adequate',
+    label: 'Volume adequado ao perfil?',
+    scaleLabels: ['Nada', 'Muito Pouco', 'Pouco', 'Regular', 'Bastante', 'Extremo'],
+  },
+  {
+    key: 'volume_completed',
+    label: 'Cumpriu o volume?',
+    scaleLabels: ['Nada', 'Muito Pouco', 'Pouco', 'Medio', 'Bastante', 'Totalmente'],
+  },
+  {
+    key: 'intensity_adequate',
+    label: 'Intensidade adequada?',
+    scaleLabels: ['Pessima', 'Ruim', 'Regular', 'Boa', 'Muito Boa', 'Excelente'],
+  },
+  {
+    key: 'intensity_completed',
+    label: 'Cumpriu a intensidade?',
+    scaleLabels: ['Nada', 'Muito Pouco', 'Pouco', 'Medio', 'Bastante', 'Totalmente'],
+  },
+  {
+    key: 'fatigue',
+    label: 'Nivel de cansaco',
+    scaleLabels: ['Nada', 'Muito Pouco', 'Pouco', 'Regular', 'Bastante', 'Extremo'],
+  },
+  {
+    key: 'stress',
+    label: 'Nivel de stress',
+    scaleLabels: ['Nada', 'Muito Pouco', 'Pouco', 'Regular', 'Bastante', 'Extremo'],
+  },
+  {
+    key: 'nutrition',
+    label: 'Cuidado com alimentacao',
+    scaleLabels: ['Nada', 'Muito Pouco', 'Pouco', 'Regular', 'Bastante', 'Extremo'],
+  },
+  {
+    key: 'sleep',
+    label: 'Qualidade do sono',
+    scaleLabels: ['Nada', 'Muito Pouco', 'Pouco', 'Regular', 'Bastante', 'Extremo'],
+  },
 ];
+
+const TOTAL_STEPS = QUESTIONS.length + 1; // 8 questions + 1 notes step
 
 // ─── Props ─────────────────────────────────────────
 
@@ -66,6 +104,7 @@ export function ExerciseQuestionnaireSheet({
   isSubmitting = false,
 }: ExerciseQuestionnaireSheetProps) {
   const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
+  const [currentStep, setCurrentStep] = useState(0);
   const [notes, setNotes] = useState('');
 
   const answeredCount = useMemo(
@@ -73,21 +112,28 @@ export function ExerciseQuestionnaireSheet({
     [answers]
   );
 
-  const progressPct = (answeredCount / QUESTIONS.length) * 100;
+  const progressPct = Math.round(((currentStep) / TOTAL_STEPS) * 100);
 
   const handleAnswer = useCallback((key: QuestionKey, value: number) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
+    // Auto-advance after short delay
+    setTimeout(() => {
+      setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS - 1));
+    }, 300);
   }, []);
 
   const handleSubmit = async () => {
     await onSubmit({ slotId, questionnaire: answers, notes });
   };
 
+  const isOnNotesStep = currentStep >= QUESTIONS.length;
+  const currentQuestion = !isOnNotesStep ? QUESTIONS[currentStep] : null;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -102,10 +148,10 @@ export function ExerciseQuestionnaireSheet({
         <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
           <div>
             <h3 className="text-sm font-bold text-ceramic-text-primary">
-              Feedback — {slotName} ({dayLabel})
+              {slotName}
             </h3>
             <p className="text-xs text-ceramic-text-secondary mt-0.5">
-              Avalie cada aspecto do treino
+              {dayLabel}
             </p>
           </div>
           <button
@@ -121,73 +167,164 @@ export function ExerciseQuestionnaireSheet({
         <div className="px-5 pb-3 flex-shrink-0">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-ceramic-text-secondary">
-              {answeredCount}/{QUESTIONS.length} respondidas
+              {currentStep + 1}/{TOTAL_STEPS}
             </span>
             {answeredCount === QUESTIONS.length && (
               <span className="text-[10px] font-bold text-amber-600">Completo</span>
             )}
           </div>
-          <div className="h-2 bg-ceramic-cool rounded-full overflow-hidden">
-            <div
-              className="h-full bg-amber-500 rounded-full transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
+          <div className="h-1.5 bg-ceramic-cool rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-amber-400 rounded-full"
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.3 }}
             />
           </div>
         </div>
 
-        {/* Questions list - scrollable */}
-        <div className="flex-1 overflow-y-auto px-5 pb-3 space-y-5">
-          {QUESTIONS.map((q, i) => (
-            <div key={q.key} className="space-y-2">
-              <label className="text-sm font-medium text-ceramic-text-primary">
-                {i + 1}. {q.label}
-              </label>
-              <ScaleInput
-                value={answers[q.key]}
-                onChange={(v) => handleAnswer(q.key, v)}
-                lowAnchor={q.lowAnchor}
-                highAnchor={q.highAnchor}
-                disabled={isSubmitting}
-              />
-            </div>
-          ))}
+        {/* Question / Notes content */}
+        <div className="flex-1 overflow-y-auto px-5 pb-5">
+          <AnimatePresence mode="wait">
+            {currentQuestion ? (
+              <motion.div
+                key={currentQuestion.key}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                {/* Question label */}
+                <p className="text-sm font-medium text-ceramic-text-primary">
+                  {currentQuestion.label}
+                </p>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-ceramic-text-primary">
-              Observacoes (opcional)
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Alguma dor, desconforto ou observacao sobre o treino?"
-              rows={3}
-              disabled={isSubmitting}
-              className="w-full px-3 py-2.5 text-sm border border-ceramic-border/50 rounded-xl resize-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 outline-none transition-all bg-white"
-            />
-          </div>
-        </div>
+                {/* Scale options — vertical list with labels */}
+                <div className="space-y-2">
+                  {currentQuestion.scaleLabels.map((label, idx) => {
+                    const isSelected = answers[currentQuestion.key] === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleAnswer(currentQuestion.key, idx)}
+                        disabled={isSubmitting}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+                          isSelected
+                            ? 'border-amber-400 bg-amber-50 shadow-sm'
+                            : 'border-ceramic-border/40 bg-ceramic-cool/20 hover:border-ceramic-border hover:bg-ceramic-cool/40'
+                        }`}
+                      >
+                        <span
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                            isSelected
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-white text-ceramic-text-secondary border border-ceramic-border/60'
+                          }`}
+                        >
+                          {idx}
+                        </span>
+                        <span
+                          className={`text-sm ${
+                            isSelected
+                              ? 'font-bold text-amber-700'
+                              : 'text-ceramic-text-primary'
+                          }`}
+                        >
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-        {/* Submit button */}
-        <div className="px-5 py-4 border-t border-ceramic-border/30 flex-shrink-0">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Salvando...
-              </>
+                {/* Navigation */}
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
+                    disabled={currentStep === 0}
+                    className="flex items-center gap-1 text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Anterior
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep((s) => Math.min(TOTAL_STEPS - 1, s + 1))}
+                    className="flex items-center gap-1 text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+                  >
+                    <SkipForward className="w-3.5 h-3.5" />
+                    Pular
+                  </button>
+                </div>
+              </motion.div>
             ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Salvar Feedback
-              </>
+              <motion.div
+                key="notes-step"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                {/* Summary */}
+                {answeredCount > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200/50">
+                    <Check className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                    <span className="text-xs text-amber-700">
+                      {answeredCount} de {QUESTIONS.length} perguntas respondidas
+                    </span>
+                  </div>
+                )}
+
+                {/* Notes */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-ceramic-text-primary">
+                    Observacoes (opcional)
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Alguma dor, desconforto ou observacao sobre o treino?"
+                    rows={3}
+                    disabled={isSubmitting}
+                    className="w-full px-3 py-2.5 text-sm border border-ceramic-border/50 rounded-xl resize-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 outline-none transition-all placeholder:text-ceramic-text-secondary/50"
+                  />
+                </div>
+
+                {/* Navigation + Submit */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(QUESTIONS.length - 1)}
+                    className="flex items-center gap-1 px-3 py-2.5 text-xs text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Salvar Feedback
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
             )}
-          </button>
+          </AnimatePresence>
         </div>
       </motion.div>
     </motion.div>
