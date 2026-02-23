@@ -147,6 +147,10 @@ export function WeeklyFeedbackCard({
   const handleTranscriptChange = useCallback((transcript: string, durationSeconds: number) => {
     setVoiceTranscript(transcript);
     setVoiceDuration(durationSeconds);
+    // Append transcription to notes field
+    if (transcript) {
+      setNotes((prev) => prev ? `${prev}\n${transcript}` : transcript);
+    }
   }, []);
 
   const handleSubmit = useCallback(async () => {
