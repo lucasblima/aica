@@ -47,9 +47,6 @@ export default defineConfig(() => {
     plugins: [
       react(),
       VitePWA({
-        // TEMPORARY: selfDestroying nukes the broken SW + all caches for existing users.
-        // After 1-2 deploys, remove this line and set selfDestroying: false.
-        selfDestroying: true,
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg'],
         manifest: {
@@ -84,9 +81,13 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+          // Exclude unhashed files from precache manifest to prevent stale entries
+          globIgnores: ['**/sw-share-target.js'],
           skipWaiting: true,
           clientsClaim: true,
           cleanupOutdatedCaches: true,
+          // Prevent Workbox navigation fallback from serving index.html for /assets/ paths
+          navigateFallbackDenylist: [/^\/assets\//, /^\/api\//],
           importScripts: ['/sw-share-target.js'],
           runtimeCaching: [
             {
