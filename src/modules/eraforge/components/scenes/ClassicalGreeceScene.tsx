@@ -27,16 +27,16 @@ export function ClassicalGreeceScene({ children }: SceneChildProps) {
       {/* Island/hill */}
       <ellipse cx={200} cy={130} rx={180} ry={40} fill="#86EFAC" />
 
-      {/* Temple / Parthenon */}
+      {/* Temple / Parthenon — enlarged */}
       <g aria-label="Templo">
         {/* Base */}
-        <rect x={120} y={92} width={80} height={6} fill="#E7E5E4" rx="1" />
-        <rect x={125} y={98} width={70} height={32} fill="#D6D3D1" />
+        <rect x={100} y={82} width={110} height={8} fill="#E7E5E4" rx="1" />
+        <rect x={105} y={90} width={100} height={40} fill="#D6D3D1" />
         {/* Pediment */}
-        <polygon points="118,92 160,72 202,92" fill="#E7E5E4" />
+        <polygon points="96,82 155,56 214,82" fill="#E7E5E4" />
         {/* Columns */}
-        {[130, 145, 160, 175, 190].map((cx, i) => (
-          <rect key={i} x={cx} y={92} width={5} height={38} fill="#F5F5F4" rx="2" />
+        {[110, 128, 146, 164, 182, 198].map((cx, i) => (
+          <rect key={i} x={cx} y={82} width={6} height={48} fill="#F5F5F4" rx="2" />
         ))}
       </g>
 
@@ -48,8 +48,8 @@ export function ClassicalGreeceScene({ children }: SceneChildProps) {
       </g>
 
       {/* Olive trees */}
-      <Tree x={55} y={128} height={32} leafColor="#84CC16" type="round" />
-      <Tree x={350} y={128} height={28} leafColor="#84CC16" type="round" />
+      <Tree x={55} y={128} height={42} leafColor="#84CC16" type="round" />
+      <Tree x={350} y={128} height={38} leafColor="#84CC16" type="round" />
 
       {/* Ground */}
       <rect x="0" y={130} width={400} height={50} fill="#22C55E" opacity="0.3" />
@@ -63,12 +63,12 @@ export function ClassicalGreeceScene({ children }: SceneChildProps) {
             y={108}
             emoji={child.avatar_emoji || '🏛️'}
             color={child.avatar_color || '#3B82F6'}
-            scale={0.6}
+            scale={0.85}
             name={child.child_id}
           />
         ))
       ) : (
-        <Character x={230} y={108} emoji="🏛️" color="#60A5FA" scale={0.6} />
+        <Character x={230} y={100} emoji="🏛️" color="#60A5FA" scale={0.9} />
       )}
     </g>
   );

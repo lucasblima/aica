@@ -32,9 +32,9 @@ export function AncientEgyptScene({ children, isAnimating }: SceneChildProps) {
       <ellipse cx={300} cy={140} rx={100} ry={18} fill="#EAB308" opacity="0.4" />
 
       {/* Pyramids */}
-      <Pyramid x={80} y={148} width={90} height={65} color="#D97706" shadowColor="#92400E" />
-      <Pyramid x={170} y={148} width={70} height={50} color="#EAB308" shadowColor="#A16207" />
-      <Pyramid x={245} y={148} width={50} height={35} color="#D97706" shadowColor="#92400E" />
+      <Pyramid x={80} y={148} width={110} height={80} color="#D97706" shadowColor="#92400E" />
+      <Pyramid x={180} y={148} width={85} height={62} color="#EAB308" shadowColor="#A16207" />
+      <Pyramid x={260} y={148} width={60} height={45} color="#D97706" shadowColor="#92400E" />
 
       {/* Sphinx silhouette */}
       <g aria-label="Esfinge" opacity="0.6">
@@ -47,9 +47,9 @@ export function AncientEgyptScene({ children, isAnimating }: SceneChildProps) {
       <Water y={148} height={14} color="#2563EB" waveColor="#60A5FA" />
 
       {/* Palm trees along Nile */}
-      <Tree x={290} y={145} height={42} leafColor="#16A34A" trunkColor="#78716C" type="palm" />
-      <Tree x={330} y={147} height={35} leafColor="#15803D" trunkColor="#92400E" type="palm" />
-      <Tree x={370} y={146} height={38} leafColor="#16A34A" trunkColor="#78716C" type="palm" />
+      <Tree x={290} y={145} height={52} leafColor="#16A34A" trunkColor="#78716C" type="palm" />
+      <Tree x={330} y={147} height={45} leafColor="#15803D" trunkColor="#92400E" type="palm" />
+      <Tree x={370} y={146} height={48} leafColor="#16A34A" trunkColor="#78716C" type="palm" />
 
       {/* Desert ground */}
       <DesertGround y={155} />
@@ -73,14 +73,14 @@ export function AncientEgyptScene({ children, isAnimating }: SceneChildProps) {
             y={125}
             emoji={child.avatar_emoji || '🏺'}
             color={child.avatar_color || '#EAB308'}
-            scale={0.65}
+            scale={0.85}
             name={child.child_id}
           />
         ))
       ) : (
         <>
-          <Character x={135} y={125} emoji="🏺" color="#EAB308" scale={0.6} />
-          <Character x={175} y={128} emoji="📜" color="#FBBF24" scale={0.55} />
+          <Character x={135} y={115} emoji="🏺" color="#EAB308" scale={0.9} />
+          <Character x={180} y={118} emoji="📜" color="#FBBF24" scale={0.8} />
         </>
       )}
     </g>
