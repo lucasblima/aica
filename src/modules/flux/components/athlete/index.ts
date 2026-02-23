@@ -10,8 +10,6 @@ export { FeedbackForm } from './FeedbackForm';
 export type { FeedbackFormProps } from './FeedbackForm';
 export { FeedbackEntryCard } from './FeedbackEntryCard';
 export type { FeedbackEntryCardProps } from './FeedbackEntryCard';
-export { VoiceRecorder } from './VoiceRecorder';
-export type { VoiceRecorderProps } from './VoiceRecorder';
 export { WeeklyFeedbackCard } from './WeeklyFeedbackCard';
 export type { WeeklyFeedbackCardProps } from './WeeklyFeedbackCard';
 export { ScaleInput } from './ScaleInput';

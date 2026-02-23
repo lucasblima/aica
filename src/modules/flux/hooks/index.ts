@@ -57,6 +57,3 @@ export type {
   SubmitExerciseFeedbackInput,
   SubmitWeeklyFeedbackInput,
 } from './useAthleteFeedback';
-
-export { useVoiceRecorder } from './useVoiceRecorder';
-export type { UseVoiceRecorderReturn } from './useVoiceRecorder';

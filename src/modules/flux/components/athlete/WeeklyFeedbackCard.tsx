@@ -18,7 +18,8 @@ import {
   SkipForward,
   Lock,
 } from 'lucide-react';
-import { VoiceRecorder } from './VoiceRecorder';
+import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
+import { transcribeAudio } from '@/modules/journey/services/momentPersistenceService';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 
@@ -144,12 +145,22 @@ export function WeeklyFeedbackCard({
     }, 300);
   }, []);
 
-  const handleTranscriptChange = useCallback((transcript: string, durationSeconds: number) => {
-    setVoiceTranscript(transcript);
-    setVoiceDuration(durationSeconds);
-    // Append transcription to notes field
-    if (transcript) {
-      setNotes((prev) => prev ? `${prev}\n${transcript}` : transcript);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
+  const handleRecordingComplete = useCallback(async (blob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      const text = await transcribeAudio(blob);
+      if (text) {
+        setVoiceTranscript(text);
+        setVoiceDuration(Math.round(blob.size / 16000)); // approximate
+        setNotes((prev) => prev ? `${prev}\n${text}` : text);
+      }
+    } catch (err) {
+      log.error('Transcription error:', err);
+      setError('Erro na transcricao. Use o campo de texto.');
+    } finally {
+      setIsTranscribing(false);
     }
   }, []);
 
@@ -409,10 +420,25 @@ export function WeeklyFeedbackCard({
               </div>
 
               {/* Voice recorder */}
-              <VoiceRecorder
-                onTranscriptChange={handleTranscriptChange}
-                initialTranscript={voiceTranscript}
-              />
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  {isTranscribing ? (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200/50 text-amber-700 text-xs font-bold rounded-xl">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Transcrevendo...</span>
+                    </div>
+                  ) : (
+                    <AudioRecorder onRecordingComplete={handleRecordingComplete} />
+                  )}
+                </div>
+                {voiceTranscript && (
+                  <div className="px-3 py-2.5 rounded-xl bg-ceramic-cool/30 border border-ceramic-border/30">
+                    <p className="text-xs text-ceramic-text-secondary italic leading-relaxed">
+                      &ldquo;{voiceTranscript}&rdquo;
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Error */}
               {error && (
