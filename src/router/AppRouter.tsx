@@ -401,7 +401,7 @@ export function AppRouter() {
             onSelectArchetype={handleSelectArchetype}
             onCreateAssociation={handleCreateAssociation}
          />
-      ) : null
+      ) : <CeramicLoadingState variant="page" />
    );
 
    // ==================== MEU DIA (AGENDA) VIEW ====================
@@ -412,7 +412,7 @@ export function AppRouter() {
             userEmail={userEmail || undefined}
             onLogout={() => supabase.auth.signOut()}
          />
-      ) : null
+      ) : <CeramicLoadingState variant="page" />
    );
 
    // ==================== ASSOCIATION DETAIL VIEW ====================
@@ -492,7 +492,7 @@ export function AppRouter() {
             userId={userId}
             onBack={() => setCurrentView('vida')}
          />
-      ) : null
+      ) : <CeramicLoadingState variant="page" />
    );
 
    // ==================== JOURNEY VIEW ====================
@@ -533,22 +533,22 @@ export function AppRouter() {
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
             <AnimatePresence mode="wait">
             {currentView === 'vida' && <motion.div key="vida" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderVida()}</motion.div>}
-            {currentView === 'agenda' && <motion.div key="agenda" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Agenda" />}>{renderAgenda()}</ErrorBoundary></motion.div>}
-            {currentView === 'connections' && <motion.div key="connections" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}>{renderConnections()}</ErrorBoundary></motion.div>}
-            {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>{renderStudio()}</ErrorBoundary></motion.div>}
+            {currentView === 'agenda' && <motion.div key="agenda" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Agenda" />}>{renderAgenda()}</ErrorBoundary></motion.div>}
+            {currentView === 'connections' && <motion.div key="connections" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Connections" />}>{renderConnections()}</ErrorBoundary></motion.div>}
+            {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>{renderStudio()}</ErrorBoundary></motion.div>}
             {currentView === 'association_detail' && <motion.div key="association_detail" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderAssociationDetail()}</motion.div>}
-            {currentView === 'finance' && <motion.div key="finance" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Finance" />}>{renderFinance()}</ErrorBoundary></motion.div>}
-            {currentView === 'journey' && <motion.div key="journey" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Journey" />}>{renderJourney()}</ErrorBoundary></motion.div>}
+            {currentView === 'finance' && <motion.div key="finance" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Finance" />}>{renderFinance()}</ErrorBoundary></motion.div>}
+            {currentView === 'journey' && <motion.div key="journey" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Journey" />}>{renderJourney()}</ErrorBoundary></motion.div>}
             {currentView === 'grants' && (
                <motion.div key="grants" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
-                  <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Grants" />}>
+                  <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Grants" />}>
                      <GrantsModuleView onBack={() => setCurrentView('vida')} />
                   </ErrorBoundary>
                </motion.div>
             )}
             {currentView === 'eraforge' && (
                <motion.div key="eraforge" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">
-                  <ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}>
+                  <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="EraForge" />}>
                      <EraforgeGameProvider>
                         <EraforgeVoiceProvider>
                            <EraForgeMainView onExitToApp={() => setCurrentView('vida')} />
@@ -686,8 +686,8 @@ export function AppRouter() {
                />
 
                {/* Connections Module Routes - Simplified 2-level navigation */}
-               <Route path="/connections" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/connections/:spaceId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Connections" />}><SpaceDetailView /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/connections" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Connections" />}><ConnectionsLayout><ConnectionsPage /></ConnectionsLayout></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/connections/:spaceId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Connections" />}><SpaceDetailView /></ErrorBoundary></ProtectedRoute>} />
                {/* Legacy redirects: old /connections/:archetype/:spaceId → new /connections/:spaceId */}
                <Route path="/connections/:archetype/:spaceId" element={<LegacySpaceRedirect />} />
                <Route path="/connections/:archetype/:spaceId/:section" element={<LegacySpaceRedirect />} />
@@ -698,7 +698,7 @@ export function AppRouter() {
                   path="/studio"
                   element={
                      <ProtectedRoute>
-                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>
+                        <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>
                            <StudioProvider>
                               <StudioMainView />
                            </StudioProvider>
@@ -712,7 +712,7 @@ export function AppRouter() {
                   path="/studio/calendar"
                   element={
                      <ProtectedRoute>
-                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>
+                        <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>
                            <ContentCalendarPage />
                         </ErrorBoundary>
                      </ProtectedRoute>
@@ -722,7 +722,7 @@ export function AppRouter() {
                   path="/studio/analytics"
                   element={
                      <ProtectedRoute>
-                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Studio" />}>
+                        <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>
                            <StudioAnalyticsPage />
                         </ErrorBoundary>
                      </ProtectedRoute>
@@ -730,40 +730,40 @@ export function AppRouter() {
                />
 
                {/* Flux Module Routes - Protected */}
-               <Route path="/flux" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxDashboard /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/athlete/:athleteId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAthleteDetailView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/canvas" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/canvas/:athleteId/:blockId?" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/alerts" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAlertsView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxDashboard /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/athlete/:athleteId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAthleteDetailView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/canvas" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/canvas/:athleteId/:blockId?" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxCanvasEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/alerts" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><FluxAlertsView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* Flow Module Routes (Intelligent Prescription) - Protected */}
-               <Route path="/flux/templates" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/templates/new" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/templates/:templateId/edit" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/microcycle/:microcycleId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><MicrocycleEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/leveling" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><LevelingEngineView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/intensity/:athleteId?" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><IntensityCalculatorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/crm" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><CRMCommandCenterView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/flux/parq/:athleteId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><ParQFormView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/templates" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/templates/new" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/templates/:templateId/edit" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><TemplateLibraryView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/microcycle/:microcycleId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><MicrocycleEditorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/leveling" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><LevelingEngineView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/intensity/:athleteId?" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><IntensityCalculatorView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/crm" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><CRMCommandCenterView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/flux/parq/:athleteId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><ParQFormView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* EraForge Module - Historical simulation game */}
-               <Route path="/eraforge" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}><EraForgeAccessGuard><EraforgeGameProvider><EraforgeVoiceProvider><EraForgeMainView onExitToApp={() => navigate('/')} /></EraforgeVoiceProvider></EraforgeGameProvider></EraForgeAccessGuard></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/eraforge" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="EraForge" />}><EraForgeAccessGuard><EraforgeGameProvider><EraforgeVoiceProvider><EraForgeMainView onExitToApp={() => navigate('/')} /></EraforgeVoiceProvider></EraforgeGameProvider></EraForgeAccessGuard></ErrorBoundary></ProtectedRoute>} />
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
-               <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Guest Portal - Read-only episode view for podcast guests */}
-               <Route path="/meu-episodio" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Episodio" />}><GuestPortalView /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/meu-episodio" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Meu Episodio" />}><GuestPortalView /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Platform Contacts - Unified contact management */}
-               <Route path="/contatos" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Contatos" />}><ContactsPage /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/contatos" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Contatos" />}><ContactsPage /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Contacts Module Routes - Protected */}
                <Route
                   path="/contacts"
                   element={
                      <ProtectedRoute>
-                        <ErrorBoundary fallback={<ModuleErrorFallback moduleName="Contacts" />}>
+                        <ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Contacts" />}>
                            <ConnectionsLayout>
                               <ContactsView />
                            </ConnectionsLayout>
@@ -830,8 +830,8 @@ export function AppRouter() {
                />
 
                {/* Life RPG Module - Entity personas as RPG characters */}
-               <Route path="/liferpg" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGMainView /></ErrorBoundary></ProtectedRoute>} />
-               <Route path="/liferpg/:personaId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGDetailView /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/liferpg" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGMainView /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/liferpg/:personaId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGDetailView /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Main App - Authenticated users (root path only, ViewState-driven) */}
                <Route
