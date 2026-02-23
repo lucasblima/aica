@@ -97,6 +97,10 @@ const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ de
 // Module Hub - Coming Soon system (CS-004)
 const ModuleHubPage = lazy(() => import('../components/coming-soon/ModuleHubPage').then(m => ({ default: m.ModuleHubPage })));
 
+// Life RPG Module - Entity personas as RPG characters
+const LifeRPGMainView = lazy(() => import('../modules/liferpg/views/LifeRPGMainView'));
+const LifeRPGDetailView = lazy(() => import('../modules/liferpg/views/LifeRPGDetailView'));
+
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
 const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
@@ -824,6 +828,10 @@ export function AppRouter() {
                   path="/modules"
                   element={<ProtectedRoute><ModuleHubPage /></ProtectedRoute>}
                />
+
+               {/* Life RPG Module - Entity personas as RPG characters */}
+               <Route path="/liferpg" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGMainView /></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/liferpg/:personaId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGDetailView /></ErrorBoundary></ProtectedRoute>} />
 
                {/* Main App - Authenticated users (root path only, ViewState-driven) */}
                <Route
