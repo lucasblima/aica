@@ -94,6 +94,9 @@ const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m =>
 // Google Hub Module - Gmail + Drive integration
 const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ default: m.GoogleHubPage })));
 
+// Module Hub - Coming Soon system (CS-004)
+const ModuleHubPage = lazy(() => import('../components/coming-soon/ModuleHubPage').then(m => ({ default: m.ModuleHubPage })));
+
 // Analytics/Settings - Rarely accessed
 const AICostDashboard = lazy(() => import('../components/aiCost/AICostDashboard').then(m => ({ default: m.AICostDashboard })));
 const FileSearchAnalyticsView = lazy(() => import('../components/fileSearch/FileSearchAnalyticsView').then(m => ({ default: m.FileSearchAnalyticsView })));
@@ -814,6 +817,12 @@ export function AppRouter() {
                <Route
                   path="/manage-subscription"
                   element={<ProtectedRoute><ManageSubscriptionPage /></ProtectedRoute>}
+               />
+
+               {/* Module Hub - Coming Soon system (CS-004) */}
+               <Route
+                  path="/modules"
+                  element={<ProtectedRoute><ModuleHubPage /></ProtectedRoute>}
                />
 
                {/* Main App - Authenticated users (root path only, ViewState-driven) */}
