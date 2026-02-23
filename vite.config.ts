@@ -47,6 +47,9 @@ export default defineConfig(() => {
     plugins: [
       react(),
       VitePWA({
+        // TEMPORARY: selfDestroying nukes the broken SW + all caches for existing users.
+        // After 1-2 deploys, remove this line and set selfDestroying: false.
+        selfDestroying: true,
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg'],
         manifest: {

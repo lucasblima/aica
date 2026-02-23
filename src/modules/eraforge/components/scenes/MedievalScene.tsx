@@ -32,13 +32,13 @@ export function MedievalScene({ children, isAnimating }: SceneChildProps) {
       <ellipse cx={200} cy={135} rx={100} ry={30} fill="#4ADE80" opacity="0.5" />
       <ellipse cx={350} cy={138} rx={70} ry={22} fill="#86EFAC" opacity="0.6" />
 
-      {/* Castle */}
-      <Castle x={70} y={138} width={70} height={60} color="#A8A29E" roofColor="#991B1B" />
+      {/* Castle — enlarged */}
+      <Castle x={70} y={138} width={90} height={75} color="#A8A29E" roofColor="#991B1B" />
 
       {/* Forest edge */}
-      <Tree x={170} y={140} height={40} leafColor="#15803D" type="pine" />
-      <Tree x={195} y={142} height={35} leafColor="#16A34A" type="round" />
-      <Tree x={215} y={140} height={42} leafColor="#15803D" type="pine" />
+      <Tree x={170} y={140} height={50} leafColor="#15803D" type="pine" />
+      <Tree x={195} y={142} height={45} leafColor="#16A34A" type="round" />
+      <Tree x={215} y={140} height={52} leafColor="#15803D" type="pine" />
 
       {/* Village houses */}
       <g aria-label="Vila">
@@ -114,14 +114,14 @@ export function MedievalScene({ children, isAnimating }: SceneChildProps) {
             y={125}
             emoji={child.avatar_emoji || '🏰'}
             color={child.avatar_color || '#A8A29E'}
-            scale={0.65}
+            scale={0.85}
             name={child.child_id}
           />
         ))
       ) : (
         <>
-          <Character x={145} y={125} emoji="🏰" color="#A8A29E" scale={0.6} />
-          <Character x={240} y={128} emoji="⚔️" color="#D6D3D1" scale={0.55} />
+          <Character x={145} y={115} emoji="🏰" color="#A8A29E" scale={0.9} />
+          <Character x={240} y={118} emoji="⚔️" color="#D6D3D1" scale={0.8} />
         </>
       )}
     </g>

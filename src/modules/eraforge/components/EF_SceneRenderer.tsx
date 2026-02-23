@@ -48,13 +48,13 @@ export function EF_SceneRenderer({ era }: EF_SceneRendererProps) {
   return (
     <motion.div
       className="relative rounded-xl overflow-hidden shadow-ceramic-emboss"
-      style={{ height: 180 }}
+      style={{ height: 240 }}
       variants={pageTransitionVariants}
       initial="initial"
       animate="animate"
     >
       <svg
-        viewBox="0 0 400 180"
+        viewBox="0 20 400 160"
         className="w-full h-full"
         preserveAspectRatio="xMidYMid slice"
       >
