@@ -14,6 +14,7 @@ import {
   staggerItem,
   cardElevationVariants,
 } from '@/lib/animations/ceramic-motion';
+import { EF_NavHeader } from './EF_NavHeader';
 import { ERA_CONFIG } from '../types/eraforge.types';
 import type { World, ChildProfile, Era, WorldCreateInput, ChildProfileCreateInput } from '../types/eraforge.types';
 
@@ -31,6 +32,8 @@ interface EF_HomeScreenProps {
   onCreateChild?: (input: ChildProfileCreateInput) => Promise<void>;
   loading?: boolean;
   isCreating?: boolean;
+  onBack?: () => void;
+  onParentDashboard?: () => void;
 }
 
 export function EF_HomeScreen({
@@ -43,6 +46,8 @@ export function EF_HomeScreen({
   onCreateChild,
   loading = false,
   isCreating = false,
+  onBack,
+  onParentDashboard,
 }: EF_HomeScreenProps) {
   const [showWorldForm, setShowWorldForm] = useState(false);
   const [showChildForm, setShowChildForm] = useState(false);
@@ -74,21 +79,23 @@ export function EF_HomeScreen({
   };
 
   return (
-    <motion.div
-      className="p-6 space-y-8"
-      variants={pageTransitionVariants}
-      initial="initial"
-      animate="animate"
-    >
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-ceramic-text-primary font-fredoka">
-          EraForge
-        </h1>
-        <p className="text-ceramic-text-secondary mt-2">
-          Escolha um mundo para explorar
-        </p>
-      </div>
+    <div className="flex flex-col min-h-screen bg-ceramic-base">
+      <EF_NavHeader
+        title="EraForge"
+        onBack={onBack}
+        onParentDashboard={onParentDashboard}
+        showParentAccess={!!onParentDashboard}
+      />
+      <motion.div
+        className="p-6 space-y-8 flex-1"
+        variants={pageTransitionVariants}
+        initial="initial"
+        animate="animate"
+      >
+      {/* Subtitle */}
+      <p className="text-ceramic-text-secondary text-center -mt-2">
+        Escolha um mundo para explorar
+      </p>
 
       {/* Children Section */}
       <div>
@@ -349,5 +356,6 @@ export function EF_HomeScreen({
         </div>
       )}
     </motion.div>
+    </div>
   );
 }

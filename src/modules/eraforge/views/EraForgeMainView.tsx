@@ -39,10 +39,25 @@ const log = createNamespacedLogger('EraForgeMainView');
 
 const DEFAULT_TURNS = 5;
 
-export default function EraForgeMainView() {
+interface EraForgeMainViewProps {
+  onExitToApp?: () => void;
+}
+
+export default function EraForgeMainView({ onExitToApp }: EraForgeMainViewProps = {}) {
   const { state, actions } = useEraforgeGame();
   const voice = useEraforgeVoiceHook();
   const turnsPersistence = useEraforgeTurns();
+
+  // ------- NAV HANDLERS -------
+
+  const handleExitToApp = useCallback(async () => {
+    actions.endGame();
+    onExitToApp?.();
+  }, [actions, onExitToApp]);
+
+  const handleGoParentDashboard = useCallback(() => {
+    actions.goParentDashboard();
+  }, [actions]);
 
   // Data loading state
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -626,6 +641,8 @@ export default function EraForgeMainView() {
           onCreateChild={handleCreateChild}
           loading={loading}
           isCreating={isCreating}
+          onBack={handleExitToApp}
+          onParentDashboard={handleGoParentDashboard}
         />
       );
 
@@ -661,6 +678,9 @@ export default function EraForgeMainView() {
           onStopSpeaking={voice.stopSpeaking}
           onSpeak={voice.speak}
           onSimulate={handleStartSimulation}
+          worldName={state.currentWorld.name}
+          eraLabel={ERA_CONFIG[state.currentWorld.current_era]?.label}
+          onBack={handleEndGame}
         />
       );
 

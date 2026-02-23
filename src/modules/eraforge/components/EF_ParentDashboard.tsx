@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { EF_NavHeader } from './EF_NavHeader';
 import type { ChildProfile, ParentalSettings, WorldMember } from '../types/eraforge.types';
 
 // ─── Emoji Picker Grid ────────────────────────────────────
@@ -320,15 +321,12 @@ export function EF_ParentDashboard({
   // DASHBOARD (after PIN verified)
   // ═══════════════════════════════════════════════════════════
   return (
-    <div className="p-6 space-y-6 bg-ceramic-base min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1
-          className="text-2xl font-bold text-ceramic-text-primary"
-          style={fredokaFont}
-        >
-          Painel dos Pais
-        </h1>
+    <div className="bg-ceramic-base min-h-screen">
+      <EF_NavHeader title="Painel dos Pais" onBack={onBack} />
+
+      <div className="p-6 space-y-6">
+      {/* Lock button */}
+      <div className="flex justify-end">
         <button
           onClick={() => {
             setIsVerified(false);
@@ -752,6 +750,7 @@ export function EF_ParentDashboard({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
