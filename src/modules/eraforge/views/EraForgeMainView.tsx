@@ -12,7 +12,9 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useEraforgeGame } from '../contexts/EraforgeGameContext';
 import { EraforgeGameService } from '../services/eraforgeGameService';
 import { EraforgeAIService } from '../services/eraforgeAIService';
+import type { SimulationResult } from '../services/eraforgeAIService';
 import { useEraforgeVoiceHook } from '../hooks/useEraforgeVoice';
+import { useEraforgeTurns } from '../hooks/useEraforgeTurns';
 import { supabase } from '@/services/supabaseClient';
 import { EF_HomeScreen } from '../components/EF_HomeScreen';
 import { EF_GameScreen } from '../components/EF_GameScreen';
@@ -28,6 +30,8 @@ import type {
   TurnConsequences,
   WorldCreateInput,
   ChildProfileCreateInput,
+  SimulationEvent,
+  StatsDelta,
 } from '../types/eraforge.types';
 import { getNextEra, ERA_CONFIG } from '../types/eraforge.types';
 
@@ -38,6 +42,7 @@ const DEFAULT_TURNS = 5;
 export default function EraForgeMainView() {
   const { state, actions } = useEraforgeGame();
   const voice = useEraforgeVoiceHook();
+  const turnsPersistence = useEraforgeTurns();
 
   // Data loading state
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -51,6 +56,7 @@ export default function EraForgeMainView() {
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [simulationData, setSimulationData] = useState<SimulationResult | null>(null);
 
   // Ref to track whether we've already initiated game start for the current child
   const gameStartedRef = useRef(false);
@@ -124,6 +130,13 @@ export default function EraForgeMainView() {
         consequences: {},
         created_at: new Date().toISOString(),
       };
+
+      // Persist to DB (fire-and-forget, don't block UI)
+      turnsPersistence.createTurn({
+        world_id: state.currentWorld.id,
+        child_id: state.currentChild.id,
+        scenario: result.data.scenario,
+      }).catch(err => log.warn('Failed to persist turn:', err));
 
       return turn;
     } catch (err) {
@@ -335,6 +348,13 @@ export default function EraForgeMainView() {
           ),
         );
 
+        // Persist decision to DB (fire-and-forget)
+        if (turns.length > 0) {
+          const currentTurnId = turns[turns.length - 1].id;
+          turnsPersistence.submitDecision(currentTurnId, choiceId, consequences)
+            .catch(err => log.warn('Failed to persist decision:', err));
+        }
+
         // Narrate the consequence via TTS
         if (voice.voiceSupported && consequences.narrative) {
           voice.speak(consequences.narrative);
@@ -523,6 +543,43 @@ export default function EraForgeMainView() {
     actions.endGame();
   }, [persistGameProgress, state.currentWorld, state.currentChild, actions]);
 
+  // ------- SIMULATION HANDLER -------
+
+  const handleStartSimulation = useCallback(async () => {
+    if (!state.currentWorld || !state.currentMember) {
+      log.error('Cannot start simulation: missing world or member');
+      return;
+    }
+
+    setIsLoadingAI(true);
+    try {
+      const result = await EraforgeAIService.runSimulation(
+        state.currentWorld.id,
+        state.currentWorld.name,
+        state.currentWorld.current_era,
+        state.currentWorld.era_progress,
+        {
+          knowledge: state.currentMember.knowledge,
+          cooperation: state.currentMember.cooperation,
+          courage: state.currentMember.courage,
+        },
+      );
+
+      if (result.data) {
+        setSimulationData(result.data);
+        actions.goSimulation();
+      } else {
+        log.error('Failed to run simulation:', result.error);
+        actions.setError('Erro ao executar simulação');
+      }
+    } catch (err) {
+      log.error('Unexpected error running simulation:', err);
+      actions.setError('Erro inesperado na simulação');
+    } finally {
+      setIsLoadingAI(false);
+    }
+  }, [state.currentWorld, state.currentMember, actions]);
+
   // ------- PARENT DASHBOARD HANDLERS -------
 
   const handleVerifyPin = useCallback(async (_pin: string): Promise<boolean> => {
@@ -603,18 +660,36 @@ export default function EraForgeMainView() {
           onStartListening={voice.listen}
           onStopSpeaking={voice.stopSpeaking}
           onSpeak={voice.speak}
+          onSimulate={handleStartSimulation}
         />
       );
 
-    case 'SIMULATION':
+    case 'SIMULATION': {
+      const simStats = state.currentMember ? {
+        knowledge: state.currentMember.knowledge,
+        cooperation: state.currentMember.cooperation,
+        courage: state.currentMember.courage,
+      } : { knowledge: 50, cooperation: 50, courage: 50 };
+      const simDelta = simulationData?.stats_delta ?? {};
+      const simAfter = {
+        knowledge: simStats.knowledge + (simDelta.knowledge ?? 0),
+        cooperation: simStats.cooperation + (simDelta.cooperation ?? 0),
+        courage: simStats.courage + (simDelta.courage ?? 0),
+      };
       return (
         <EF_SimulationScreen
-          events={[]}
-          summary=""
-          statsDelta={{}}
+          events={simulationData?.events ?? []}
+          summary={simulationData?.summary ?? ''}
+          statsDelta={simDelta}
+          statsBefore={simStats}
+          statsAfter={simAfter}
           onBack={() => actions.goHome()}
+          onSpeak={voice.speak}
+          isSpeaking={voice.isSpeaking}
+          onStopSpeaking={voice.stopSpeaking}
         />
       );
+    }
 
     case 'PARENT_DASHBOARD':
       return (

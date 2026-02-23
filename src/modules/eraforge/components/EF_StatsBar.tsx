@@ -1,11 +1,12 @@
 /**
- * EF_StatsBar - Child stats progress bars
+ * EF_StatsBar - Animated child stats progress bars
  *
- * Shows 3 progress bars for knowledge, cooperation, and courage.
- * Uses ceramic tokens for consistent styling.
+ * Shows 3 progress bars for knowledge, cooperation, and courage
+ * with Framer Motion spring animations on bar width and number pop.
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { motion, useSpring, useTransform } from 'framer-motion';
 
 interface EF_StatsBarProps {
   knowledge: number;
@@ -19,6 +20,28 @@ const STATS_CONFIG = [
   { key: 'cooperation', label: 'Cooperacao',   emoji: '🤝', color: 'bg-ceramic-success' },
   { key: 'courage',     label: 'Coragem',      emoji: '⚔️', color: 'bg-ceramic-warning' },
 ] as const;
+
+function AnimatedNumber({ value }: { value: number }) {
+  const spring = useSpring(value, { stiffness: 300, damping: 30 });
+  const display = useTransform(spring, (v) => Math.round(v));
+  const prevRef = useRef(value);
+  const isChanging = prevRef.current !== value;
+
+  useEffect(() => {
+    spring.set(value);
+    prevRef.current = value;
+  }, [value, spring]);
+
+  return (
+    <motion.span
+      className="text-xs text-ceramic-text-secondary w-6 text-right font-medium tabular-nums"
+      animate={isChanging ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+      transition={{ duration: 0.4 }}
+    >
+      {display}
+    </motion.span>
+  );
+}
 
 export function EF_StatsBar({ knowledge, cooperation, courage, max = 100 }: EF_StatsBarProps) {
   const values: Record<string, number> = {
@@ -36,15 +59,14 @@ export function EF_StatsBar({ knowledge, cooperation, courage, max = 100 }: EF_S
         return (
           <div key={stat.key} className="flex items-center gap-2">
             <span className="text-xs w-4 text-center">{stat.emoji}</span>
-            <div className="flex-1 h-2 bg-ceramic-inset rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${stat.color}`}
-                style={{ width: `${pct}%` }}
+            <div className="flex-1 h-2 bg-ceramic-cool shadow-ceramic-inset rounded-full overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${stat.color}`}
+                animate={{ width: `${pct}%` }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               />
             </div>
-            <span className="text-[10px] text-ceramic-text-secondary w-6 text-right font-medium">
-              {value}
-            </span>
+            <AnimatedNumber value={value} />
           </div>
         );
       })}
