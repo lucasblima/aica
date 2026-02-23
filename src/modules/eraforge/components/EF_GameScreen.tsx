@@ -57,6 +57,11 @@ export interface EF_GameScreenProps {
   onVoiceDecision: (transcript: string) => void;
   onNextTurn: () => void;
   onEndGame: () => void;
+  onPlayAgain: () => void;
+  /** Total era progress earned this session */
+  eraProgressEarned?: number;
+  /** Name of the next era if advancement was triggered */
+  nextEraName?: string | null;
   /** Start STT listening */
   onStartListening?: () => void;
   /** Stop TTS speaking */
@@ -88,6 +93,9 @@ export function EF_GameScreen({
   onVoiceDecision,
   onNextTurn,
   onEndGame,
+  onPlayAgain,
+  eraProgressEarned = 0,
+  nextEraName = null,
   onStartListening,
   onStopSpeaking,
   onSpeak,
@@ -430,14 +438,24 @@ export function EF_GameScreen({
   const renderDayComplete = () => (
     <PhaseCard visible={phase === 'day_complete'}>
       <div className="flex flex-col items-center py-6 text-center">
-        <span className="text-5xl mb-3">🌟</span>
+        <span className="text-5xl mb-3">{nextEraName ? '🏆' : '🌟'}</span>
         <h2 className="text-xl font-bold text-ceramic-text-primary" style={fredoka}>
-          Parabéns!
+          {nextEraName ? 'Nova Era Desbloqueada!' : 'Parabéns!'}
         </h2>
         <p className="text-sm text-ceramic-text-secondary mt-2 leading-relaxed max-w-xs">
-          Sua aventura de hoje foi incrível! Você explorou a história
-          e tomou decisões incríveis.
+          {nextEraName
+            ? `Você avançou para: ${nextEraName}! Continue explorando a história.`
+            : 'Sua aventura de hoje foi incrível! Você explorou a história e tomou decisões incríveis.'}
         </p>
+
+        {/* Era progress earned */}
+        {eraProgressEarned > 0 && (
+          <div className="mt-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs font-bold text-amber-700" style={fredoka}>
+              Progresso da Era: +{eraProgressEarned}%
+            </p>
+          </div>
+        )}
 
         {/* Stats summary */}
         <div className="mt-4 w-full max-w-xs">
@@ -448,15 +466,26 @@ export function EF_GameScreen({
           />
         </div>
 
-        <button
-          onClick={onEndGame}
-          aria-label="Voltar ao início"
-          className="mt-6 w-full max-w-xs py-3 rounded-xl font-bold text-white bg-amber-500
-                     hover:bg-amber-600 active:scale-[0.97] transition-all shadow-lg shadow-amber-500/30"
-          style={fredoka}
-        >
-          Voltar ao Início
-        </button>
+        {/* Two action buttons */}
+        <div className="mt-6 w-full max-w-xs space-y-3">
+          <button
+            onClick={onPlayAgain}
+            aria-label={nextEraName ? `Explorar ${nextEraName}` : 'Jogar novamente'}
+            className="w-full py-3 rounded-xl font-bold text-white bg-amber-500
+                       hover:bg-amber-600 active:scale-[0.97] transition-all shadow-lg shadow-amber-500/30"
+            style={fredoka}
+          >
+            {nextEraName ? `Explorar ${nextEraName}` : 'Jogar Novamente'}
+          </button>
+          <button
+            onClick={onEndGame}
+            aria-label="Voltar ao início"
+            className="w-full py-2 text-sm text-ceramic-text-secondary bg-ceramic-inset
+                       rounded-lg hover:bg-ceramic-border transition-colors"
+          >
+            Voltar ao Início
+          </button>
+        </div>
       </div>
     </PhaseCard>
   );

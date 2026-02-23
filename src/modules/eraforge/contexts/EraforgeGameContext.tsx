@@ -115,13 +115,7 @@ function eraforgeGameReducer(state: EraforgeGameState, action: EraforgeGameActio
       };
 
     case 'END_GAME':
-      return {
-        ...state,
-        mode: 'HOME',
-        isPlaying: false,
-        currentScenario: null,
-        turnsRemaining: 0,
-      };
+      return { ...INITIAL_STATE };
 
     case 'NEXT_TURN':
       return {

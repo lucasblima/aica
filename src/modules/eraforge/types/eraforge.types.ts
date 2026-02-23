@@ -286,8 +286,33 @@ export interface Advisor {
 }
 
 // ============================================
-// CONSTANTS
+// CONSTANTS & HELPERS
 // ============================================
+
+/**
+ * Ordered era progression sequence.
+ * Used to determine which era comes next when era_progress reaches 100.
+ */
+export const ERA_ORDER: Era[] = [
+  'stone_age',
+  'ancient_egypt',
+  'classical_greece',
+  'roman_empire',
+  'medieval',
+  'renaissance',
+  'industrial_revolution',
+  'modern',
+  'future',
+];
+
+/**
+ * Returns the next era in the progression, or null if already at the last era.
+ */
+export function getNextEra(current: Era): Era | null {
+  const idx = ERA_ORDER.indexOf(current);
+  if (idx < 0 || idx >= ERA_ORDER.length - 1) return null;
+  return ERA_ORDER[idx + 1];
+}
 
 /**
  * Display labels for eras in Portuguese.
