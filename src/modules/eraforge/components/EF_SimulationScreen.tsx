@@ -37,14 +37,13 @@ interface EF_SimulationScreenProps {
 // CONSTANTS
 // ============================================
 
-const FREDOKA = "'Fredoka', 'Nunito', sans-serif";
 const AUTO_PLAY_DELAY_MS = 3000;
 const TOTAL_DAYS = 14;
 
 const IMPACT_COLORS: Record<string, string> = {
-  positive: 'bg-emerald-400',
-  neutral: 'bg-amber-400',
-  negative: 'bg-rose-400',
+  positive: 'bg-ceramic-success',
+  neutral: 'bg-ceramic-warning',
+  negative: 'bg-ceramic-error',
 };
 
 const IMPACT_BORDER: Record<string, string> = {
@@ -66,9 +65,9 @@ const IMPACT_LABELS: Record<string, string> = {
 };
 
 const STAT_CONFIG = [
-  { key: 'knowledge' as const, label: 'Conhecimento', emoji: '\u{1F4DA}', color: 'bg-blue-500' },
-  { key: 'cooperation' as const, label: 'Cooperação', emoji: '\u{1F91D}', color: 'bg-green-500' },
-  { key: 'courage' as const, label: 'Coragem', emoji: '\u{2694}\u{FE0F}', color: 'bg-red-500' },
+  { key: 'knowledge' as const, label: 'Conhecimento', emoji: '\u{1F4DA}', color: 'bg-ceramic-info' },
+  { key: 'cooperation' as const, label: 'Cooperação', emoji: '\u{1F91D}', color: 'bg-ceramic-success' },
+  { key: 'courage' as const, label: 'Coragem', emoji: '\u{2694}\u{FE0F}', color: 'bg-ceramic-warning' },
 ];
 
 // ============================================
@@ -121,8 +120,7 @@ function AnimatedTitle({ onComplete }: { onComplete: () => void }) {
   return (
     <div className="text-center py-4">
       <h1
-        className="text-2xl sm:text-3xl font-bold text-ceramic-text-primary"
-        style={{ fontFamily: FREDOKA }}
+        className="text-2xl sm:text-3xl font-bold text-ceramic-text-primary font-fredoka"
       >
         {text.slice(0, visibleChars)}
         <span className="animate-pulse text-amber-500">|</span>
@@ -153,14 +151,14 @@ function DayPill({
       onClick={onClick}
       aria-label={`Dia ${day}${hasEvents ? ' - tem eventos' : ''}`}
       className={[
-        'flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300',
+        'flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 font-fredoka',
         isActive
           ? 'bg-amber-500 text-white scale-110 shadow-lg'
           : isRevealed && hasEvents
             ? 'bg-ceramic-card text-ceramic-text-primary shadow-ceramic-emboss'
             : 'bg-ceramic-cool/50 text-ceramic-text-secondary',
       ].join(' ')}
-      style={{ fontFamily: FREDOKA, minWidth: 56 }}
+      style={{ minWidth: 56 }}
     >
       <span className="text-xs font-medium">Dia</span>
       <span className="text-lg font-bold">{day}</span>
@@ -504,8 +502,7 @@ export function EF_SimulationScreen({
           {/* Header */}
           <div className="text-center">
             <h1
-              className="text-xl sm:text-2xl font-bold text-ceramic-text-primary"
-              style={{ fontFamily: FREDOKA }}
+              className="text-xl sm:text-2xl font-bold text-ceramic-text-primary font-fredoka"
             >
               Enquanto voc{'\u00EA'} esteve fora...
             </h1>
@@ -599,8 +596,7 @@ export function EF_SimulationScreen({
           {/* ---- Event Cards ---- */}
           <div className="space-y-3">
             <h2
-              className="text-base font-semibold text-ceramic-text-primary"
-              style={{ fontFamily: FREDOKA }}
+              className="text-base font-semibold text-ceramic-text-primary font-fredoka"
             >
               {'\u{1F4DC}'} Eventos da Simulação
             </h2>
@@ -616,8 +612,7 @@ export function EF_SimulationScreen({
                         <div className="flex items-center gap-2 pt-2">
                           <div className="h-px flex-1 bg-ceramic-border/50" />
                           <span
-                            className="text-[10px] font-bold text-amber-600 uppercase tracking-wider"
-                            style={{ fontFamily: FREDOKA }}
+                            className="text-[10px] font-bold text-amber-600 uppercase tracking-wider font-fredoka"
                           >
                             Dia {day}
                           </span>
@@ -648,8 +643,7 @@ export function EF_SimulationScreen({
           {allRevealed && summary && (
             <div className="p-4 bg-ceramic-card rounded-xl shadow-ceramic-emboss animate-[fadeIn_0.5s_ease-out]">
               <h2
-                className="text-sm font-semibold text-ceramic-text-primary mb-2"
-                style={{ fontFamily: FREDOKA }}
+                className="text-sm font-semibold text-ceramic-text-primary mb-2 font-fredoka"
               >
                 {'\u{1F989}'} Resumo da Sábia Coruja
               </h2>
@@ -663,8 +657,7 @@ export function EF_SimulationScreen({
           {showStats && (
             <div className="p-4 bg-ceramic-card rounded-xl shadow-ceramic-emboss space-y-4 animate-[fadeIn_0.5s_ease-out]">
               <h2
-                className="text-sm font-semibold text-ceramic-text-primary"
-                style={{ fontFamily: FREDOKA }}
+                className="text-sm font-semibold text-ceramic-text-primary font-fredoka"
               >
                 {'\u{1F4CA}'} Evolução dos Atributos
               </h2>
@@ -712,9 +705,8 @@ export function EF_SimulationScreen({
                 'w-full py-3.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700',
                 'text-white font-bold rounded-xl transition-all duration-200',
                 'shadow-lg hover:shadow-xl active:scale-[0.98]',
-                'animate-[fadeIn_0.5s_ease-out]',
+                'animate-[fadeIn_0.5s_ease-out] font-fredoka',
               ].join(' ')}
-              style={{ fontFamily: FREDOKA }}
             >
               {'\u{1F680}'} Continuar aventura!
             </button>
@@ -725,8 +717,7 @@ export function EF_SimulationScreen({
             <button
               onClick={onBack}
               aria-label="Voltar ao início"
-              className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors"
-              style={{ fontFamily: FREDOKA }}
+              className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-colors font-fredoka"
             >
               Voltar ao Início
             </button>

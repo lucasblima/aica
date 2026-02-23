@@ -6,24 +6,7 @@
 -- ============================================================================
 
 -- ============================================================================
--- 1. HELPER FUNCTION: user_owns_persona()
--- ============================================================================
-
-CREATE OR REPLACE FUNCTION public.user_owns_persona(p_persona_id UUID)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.entity_personas
-    WHERE id = p_persona_id AND user_id = auth.uid()
-  );
-$$;
-
--- ============================================================================
--- 2. ENTITY PERSONAS — Core table
+-- 1. ENTITY PERSONAS — Core table (must be created before helper functions)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS public.entity_personas (
@@ -74,6 +57,23 @@ CREATE POLICY "Users can update own personas"
 CREATE POLICY "Users can delete own personas"
   ON public.entity_personas FOR DELETE
   USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- 2. HELPER FUNCTION: user_owns_persona()
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.user_owns_persona(p_persona_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.entity_personas
+    WHERE id = p_persona_id AND user_id = auth.uid()
+  );
+$$;
 
 -- ============================================================================
 -- 3. ENTITY INVENTORY — Universal inventory

@@ -2,32 +2,29 @@
  * EF_VoiceWave - Animated voice wave during recording/speaking
  *
  * Shows an animated sound wave visualization when STT is listening
- * or TTS is speaking. Includes mic/stop buttons as fallback controls.
- * Uses Ceramic design tokens with Fredoka/Nunito fonts.
+ * or TTS is speaking. Uses Framer Motion for smooth bar animations.
+ * Includes glow effects on active states.
  */
 
 import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 
 interface EF_VoiceWaveProps {
-  /** Whether the microphone is actively listening */
   isListening?: boolean;
-  /** Whether TTS audio is playing */
   isSpeaking?: boolean;
-  /** Interim transcript text to display */
   interimTranscript?: string;
-  /** Callback to start listening */
   onListen?: () => void;
-  /** Callback to stop speaking */
   onStopSpeaking?: () => void;
-  /** Whether voice is supported */
   voiceSupported?: boolean;
-  /** Error message */
   error?: string | null;
-  /** Additional className */
   className?: string;
 }
 
 const BAR_COUNT = 5;
+
+// Heights vary per bar for frequency-like effect (center tallest)
+const BAR_MAX_HEIGHTS = [16, 22, 28, 22, 16];
+const BAR_MIN_HEIGHT = 6;
 
 export function EF_VoiceWave({
   isListening = false,
@@ -41,7 +38,6 @@ export function EF_VoiceWave({
 }: EF_VoiceWaveProps) {
   const isActive = isListening || isSpeaking;
 
-  // Generate bar animation delays
   const barDelays = useMemo(
     () => Array.from({ length: BAR_COUNT }, (_, i) => i * 0.12),
     []
@@ -49,32 +45,48 @@ export function EF_VoiceWave({
 
   if (!voiceSupported) {
     return (
-      <div className={`flex items-center gap-2 text-ceramic-text-secondary text-xs font-nunito ${className}`}>
+      <div className={`flex items-center gap-2 text-ceramic-text-secondary text-xs ${className}`}>
         <span>Voz não disponível neste navegador</span>
       </div>
     );
   }
 
+  const glowClass = isActive
+    ? isListening
+      ? 'shadow-[0_0_12px_rgba(217,119,6,0.3)]'
+      : 'shadow-[0_0_12px_rgba(123,143,162,0.3)]'
+    : '';
+
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       {/* Wave visualization */}
-      <div className="flex items-center gap-0.5 h-8 min-w-[40px]">
+      <div className={`flex items-center gap-0.5 h-8 min-w-[40px] rounded-lg px-1 transition-shadow duration-300 ${glowClass}`}>
         {barDelays.map((delay, i) => (
-          <div
+          <motion.div
             key={i}
-            className={`w-1 rounded-full transition-all duration-200 ${
+            className={`w-1 rounded-full ${
               isActive
                 ? isListening
                   ? 'bg-amber-500'
                   : 'bg-ceramic-info'
                 : 'bg-ceramic-border'
             }`}
-            style={{
-              height: isActive ? undefined : '8px',
-              animation: isActive
-                ? `ef-voice-wave 0.8s ease-in-out ${delay}s infinite alternate`
-                : 'none',
+            animate={{
+              height: isActive
+                ? [BAR_MIN_HEIGHT, BAR_MAX_HEIGHTS[i], BAR_MIN_HEIGHT]
+                : BAR_MIN_HEIGHT,
             }}
+            transition={
+              isActive
+                ? {
+                    duration: 0.8,
+                    delay,
+                    repeat: Infinity,
+                    repeatType: 'reverse' as const,
+                    ease: 'easeInOut',
+                  }
+                : { duration: 0.2 }
+            }
           />
         ))}
       </div>
@@ -82,23 +94,23 @@ export function EF_VoiceWave({
       {/* Status / Transcript */}
       <div className="flex-1 min-w-0">
         {error ? (
-          <span className="text-ceramic-error text-xs font-nunito truncate block">{error}</span>
+          <span className="text-ceramic-error text-xs truncate block">{error}</span>
         ) : isListening && interimTranscript ? (
-          <span className="text-ceramic-text-primary text-sm font-nunito truncate block italic">
+          <span className="text-ceramic-text-primary text-sm truncate block italic">
             {interimTranscript}...
           </span>
         ) : isListening ? (
-          <span className="text-amber-600 text-xs font-nunito animate-pulse">
+          <span className="text-amber-600 text-xs animate-pulse">
             Ouvindo...
           </span>
         ) : isSpeaking ? (
-          <span className="text-ceramic-info text-xs font-nunito animate-pulse">
+          <span className="text-ceramic-info text-xs animate-pulse">
             Falando...
           </span>
         ) : null}
       </div>
 
-      {/* Controls — always visible as fallback */}
+      {/* Controls */}
       <div className="flex items-center gap-2 shrink-0">
         {isSpeaking ? (
           <button
@@ -127,21 +139,9 @@ export function EF_VoiceWave({
           </button>
         )}
       </div>
-
-      {/* CSS animation for wave bars */}
-      <style>{`
-        @keyframes ef-voice-wave {
-          0% { height: 6px; }
-          100% { height: 24px; }
-        }
-      `}</style>
     </div>
   );
 }
-
-// ============================================
-// INLINE ICONS (to avoid external deps)
-// ============================================
 
 function MicIcon() {
   return (

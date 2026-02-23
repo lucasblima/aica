@@ -5,9 +5,12 @@
  *   scenario -> ask_advice -> advisors -> decision -> consequence -> turn_complete -> (loop | day_complete)
  *
  * All data comes via props; callbacks trigger parent actions.
+ * Uses Framer Motion for phase transitions and Ceramic design tokens.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { pageTransitionVariants, staggerContainer, staggerItem, springElevation } from '@/lib/animations/ceramic-motion';
 import { EF_SceneRenderer } from './EF_SceneRenderer';
 import { EF_StatsBar } from './EF_StatsBar';
 import { EF_AdvisorPanel } from './EF_AdvisorPanel';
@@ -43,13 +46,9 @@ export interface EF_GameScreenProps {
   advisorHint: string | null;
   consequence: TurnConsequences | null;
   isLoadingAI: boolean;
-  /** TTS is currently speaking */
   isSpeaking?: boolean;
-  /** STT is currently listening */
   isListening?: boolean;
-  /** Interim transcript from STT */
   interimTranscript?: string;
-  /** Whether voice features are available */
   voiceSupported?: boolean;
   onAskAdvice: () => void;
   onSelectAdvisor: (advisorId: AdvisorId) => void;
@@ -58,16 +57,48 @@ export interface EF_GameScreenProps {
   onNextTurn: () => void;
   onEndGame: () => void;
   onPlayAgain: () => void;
-  /** Total era progress earned this session */
   eraProgressEarned?: number;
-  /** Name of the next era if advancement was triggered */
   nextEraName?: string | null;
-  /** Start STT listening */
   onStartListening?: () => void;
-  /** Stop TTS speaking */
   onStopSpeaking?: () => void;
-  /** Speak text via TTS */
   onSpeak?: (text: string) => void;
+  onSimulate?: () => void;
+}
+
+// ============================================
+// EFButton — shared button component
+// ============================================
+
+function EFButton({
+  variant = 'primary',
+  loading = false,
+  children,
+  className = '',
+  ...props
+}: {
+  variant?: 'primary' | 'secondary' | 'ghost';
+  loading?: boolean;
+  children: React.ReactNode;
+  className?: string;
+} & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className'>) {
+  const styles = {
+    primary: 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/30',
+    secondary: 'bg-ceramic-cool hover:bg-ceramic-cool-hover text-ceramic-text-primary',
+    ghost: 'text-ceramic-text-secondary hover:text-ceramic-text-primary bg-transparent',
+  };
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      className={`py-3 px-4 rounded-xl font-fredoka font-bold transition-colors ${styles[variant]} ${className}`}
+      disabled={loading}
+      {...(props as any)}
+    >
+      {loading ? (
+        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto" />
+      ) : children}
+    </motion.button>
+  );
 }
 
 // ============================================
@@ -99,6 +130,7 @@ export function EF_GameScreen({
   onStartListening,
   onStopSpeaking,
   onSpeak,
+  onSimulate,
 }: EF_GameScreenProps) {
   const scenario = currentTurn?.scenario;
 
@@ -135,11 +167,9 @@ export function EF_GameScreen({
   useEffect(() => {
     if (consequence && phaseRef.current === 'decision') {
       setPhase('consequence');
-      // Auto-narrate consequence narrative
       if (consequence.narrative && onSpeak) {
         onSpeak(consequence.narrative);
       }
-      // Animate stats after a short delay
       setAnimatingStats(true);
       const timer = setTimeout(() => setAnimatingStats(false), 1200);
       return () => clearTimeout(timer);
@@ -200,8 +230,6 @@ export function EF_GameScreen({
 
   // ----- Render helpers -----
 
-  const fredoka = { fontFamily: "'Fredoka', 'Nunito', sans-serif" };
-
   const renderStatDeltas = (cons: TurnConsequences) => {
     const deltas = [
       { label: 'Conhecimento', delta: cons.knowledge_delta, emoji: '📚' },
@@ -212,22 +240,31 @@ export function EF_GameScreen({
     if (deltas.length === 0) return null;
 
     return (
-      <div className="flex gap-3 mt-3">
-        {deltas.map((d) => (
-          <div
+      <motion.div
+        className="flex gap-3 mt-3"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        {deltas.map((d, i) => (
+          <motion.div
             key={d.label}
-            className={`flex items-center gap-1 text-sm font-bold transition-all duration-700 ${
-              animatingStats ? 'scale-110' : 'scale-100'
-            } ${d.delta! > 0 ? 'text-ceramic-success' : 'text-ceramic-error'}`}
+            variants={staggerItem}
+            className={`flex items-center gap-1 text-sm font-bold ${
+              d.delta! > 0 ? 'text-ceramic-success' : 'text-ceramic-error'
+            }`}
           >
             <span>{d.emoji}</span>
-            <span>
-              {d.delta! > 0 ? '+' : ''}
-              {d.delta}
-            </span>
-          </div>
+            <motion.span
+              initial={{ scale: 1 }}
+              animate={animatingStats ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+            >
+              {d.delta! > 0 ? '+' : ''}{d.delta}
+            </motion.span>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     );
   };
 
@@ -236,7 +273,7 @@ export function EF_GameScreen({
   const renderScenarioPhase = () => {
     if (!scenario) {
       return (
-        <PhaseCard visible>
+        <PhaseCard phaseKey="scenario-loading">
           <p className="text-ceramic-text-secondary text-sm text-center py-4">
             Preparando cenário...
           </p>
@@ -245,18 +282,14 @@ export function EF_GameScreen({
     }
 
     return (
-      <PhaseCard visible={phase === 'scenario'}>
-        <h2
-          className="text-lg font-bold text-ceramic-text-primary"
-          style={fredoka}
-        >
+      <PhaseCard phaseKey="scenario">
+        <h2 className="text-lg font-bold text-ceramic-text-primary font-fredoka">
           {scenario.title || 'Aventura'}
         </h2>
         <p className="text-sm text-ceramic-text-secondary mt-2 leading-relaxed">
           {scenario.description || 'Carregando cenário...'}
         </p>
 
-        {/* Voice wave when narrating */}
         {isSpeaking && (
           <div className="mt-3">
             <EF_VoiceWave
@@ -267,25 +300,21 @@ export function EF_GameScreen({
           </div>
         )}
 
-        {/* Ask Advice button */}
         {phase === 'scenario' && !isSpeaking && (
-          <button
+          <EFButton
             onClick={handleAskAdvice}
             aria-label="Pedir conselho aos conselheiros"
-            className="mt-4 w-full py-3 rounded-xl font-bold text-white bg-amber-500
-                       hover:bg-amber-600 active:scale-[0.97] transition-all
-                       shadow-lg shadow-amber-500/30 animate-pulse"
-            style={fredoka}
+            className="mt-4 w-full animate-pulse"
           >
             Pedir Conselho!
-          </button>
+          </EFButton>
         )}
       </PhaseCard>
     );
   };
 
   const renderAdvisorPhase = () => (
-    <PhaseCard visible={phase === 'ask_advice' || phase === 'advisors'}>
+    <PhaseCard phaseKey="advisors">
       <EF_AdvisorPanel
         onSelectAdvisor={handleSelectAdvisor}
         selectedAdvisor={selectedAdvisor}
@@ -296,17 +325,14 @@ export function EF_GameScreen({
         voiceSupported={voiceSupported}
       />
 
-      {/* Choose button — visible when hint is shown */}
       {phase === 'advisors' && advisorHint && !isSpeaking && (
-        <button
+        <EFButton
           onClick={handleChooseDecision}
           aria-label="Escolher uma decisão"
-          className="mt-4 w-full py-3 rounded-xl font-bold text-white bg-amber-500
-                     hover:bg-amber-600 active:scale-[0.97] transition-all shadow-lg shadow-amber-500/30"
-          style={fredoka}
+          className="mt-4 w-full"
         >
           Escolher
-        </button>
+        </EFButton>
       )}
     </PhaseCard>
   );
@@ -315,31 +341,35 @@ export function EF_GameScreen({
     if (!scenario?.choices) return null;
 
     return (
-      <PhaseCard visible={phase === 'decision'}>
-        <h3
-          className="text-sm font-bold text-ceramic-text-primary mb-3"
-          style={fredoka}
-        >
+      <PhaseCard phaseKey="decision">
+        <h3 className="text-sm font-bold text-ceramic-text-primary mb-3 font-fredoka">
           O que você decide?
         </h3>
 
-        <div className="space-y-2">
+        <motion.div
+          className="space-y-2"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {scenario.choices.map((choice) => (
-            <button
+            <motion.button
               key={choice.id}
+              variants={staggerItem}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => handleSelectChoice(choice.id)}
               disabled={isLoadingAI}
-              className="w-full text-left p-3 rounded-lg bg-ceramic-inset hover:bg-amber-50
-                         active:scale-[0.98] transition-all disabled:opacity-50"
+              className="w-full text-left p-3 rounded-lg bg-ceramic-cool shadow-ceramic-inset hover:bg-amber-50
+                         transition-colors disabled:opacity-50"
             >
               <span className="text-sm font-medium text-ceramic-text-primary">
                 {choice.text}
               </span>
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
 
-        {/* Voice decision option */}
         <div className="mt-4 pt-3 border-t border-ceramic-border">
           <p className="text-xs text-ceramic-text-secondary mb-2 text-center">
             Ou fale sua decisão:
@@ -369,15 +399,13 @@ export function EF_GameScreen({
     if (!consequence) return null;
 
     return (
-      <PhaseCard visible={phase === 'consequence'}>
-        {/* Narrative */}
-        <div className="p-4 bg-ceramic-inset rounded-lg">
+      <PhaseCard phaseKey="consequence">
+        <div className="p-4 bg-ceramic-cool shadow-ceramic-inset rounded-lg">
           <p className="text-sm text-ceramic-text-primary leading-relaxed">
             {consequence.narrative}
           </p>
         </div>
 
-        {/* Voice wave when narrating consequence */}
         {isSpeaking && (
           <div className="mt-3">
             <EF_VoiceWave
@@ -388,13 +416,11 @@ export function EF_GameScreen({
           </div>
         )}
 
-        {/* Stat deltas */}
         {renderStatDeltas(consequence)}
 
-        {/* Historical fact bonus */}
         {consequence.historical_fact && (
-          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-xs font-bold text-amber-700 mb-1" style={fredoka}>
+          <div className="mt-3 p-3 bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 rounded-lg">
+            <p className="text-xs font-bold text-amber-700 mb-1 font-fredoka">
               Você sabia?
             </p>
             <p className="text-xs text-amber-800 leading-relaxed">
@@ -403,32 +429,26 @@ export function EF_GameScreen({
           </div>
         )}
 
-        {/* Next turn button */}
         {!isSpeaking && (
-          <button
+          <EFButton
             onClick={handleNextTurn}
             aria-label={turnsRemaining <= 1 ? 'Finalizar aventura' : 'Ir para o próximo turno'}
-            className="mt-4 w-full py-3 rounded-xl font-bold text-white bg-amber-500
-                       hover:bg-amber-600 active:scale-[0.97] transition-all shadow-lg shadow-amber-500/30"
-            style={fredoka}
+            className="mt-4 w-full"
           >
             {turnsRemaining <= 1
               ? 'Aventura Completa!'
               : 'Próximo Turno'}
-          </button>
+          </EFButton>
         )}
       </PhaseCard>
     );
   };
 
   const renderTurnComplete = () => (
-    <PhaseCard visible={phase === 'turn_complete'}>
+    <PhaseCard phaseKey="turn_complete">
       <div className="flex flex-col items-center py-6">
         <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
-        <p
-          className="mt-3 text-sm font-bold text-ceramic-text-primary"
-          style={fredoka}
-        >
+        <p className="mt-3 text-sm font-bold text-ceramic-text-primary font-fredoka">
           Preparando próximo turno...
         </p>
       </div>
@@ -436,10 +456,17 @@ export function EF_GameScreen({
   );
 
   const renderDayComplete = () => (
-    <PhaseCard visible={phase === 'day_complete'}>
+    <PhaseCard phaseKey="day_complete">
       <div className="flex flex-col items-center py-6 text-center">
-        <span className="text-5xl mb-3">{nextEraName ? '🏆' : '🌟'}</span>
-        <h2 className="text-xl font-bold text-ceramic-text-primary" style={fredoka}>
+        <motion.span
+          className="text-5xl mb-3"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        >
+          {nextEraName ? '🏆' : '🌟'}
+        </motion.span>
+        <h2 className="text-xl font-bold text-ceramic-text-primary font-fredoka">
           {nextEraName ? 'Nova Era Desbloqueada!' : 'Parabéns!'}
         </h2>
         <p className="text-sm text-ceramic-text-secondary mt-2 leading-relaxed max-w-xs">
@@ -448,16 +475,14 @@ export function EF_GameScreen({
             : 'Sua aventura de hoje foi incrível! Você explorou a história e tomou decisões incríveis.'}
         </p>
 
-        {/* Era progress earned */}
         {eraProgressEarned > 0 && (
           <div className="mt-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-xs font-bold text-amber-700" style={fredoka}>
+            <p className="text-xs font-bold text-amber-700 font-fredoka">
               Progresso da Era: +{eraProgressEarned}%
             </p>
           </div>
         )}
 
-        {/* Stats summary */}
         <div className="mt-4 w-full max-w-xs">
           <EF_StatsBar
             knowledge={member.knowledge}
@@ -466,22 +491,29 @@ export function EF_GameScreen({
           />
         </div>
 
-        {/* Two action buttons */}
         <div className="mt-6 w-full max-w-xs space-y-3">
-          <button
+          <EFButton
             onClick={onPlayAgain}
             aria-label={nextEraName ? `Explorar ${nextEraName}` : 'Jogar novamente'}
-            className="w-full py-3 rounded-xl font-bold text-white bg-amber-500
-                       hover:bg-amber-600 active:scale-[0.97] transition-all shadow-lg shadow-amber-500/30"
-            style={fredoka}
+            className="w-full"
           >
             {nextEraName ? `Explorar ${nextEraName}` : 'Jogar Novamente'}
-          </button>
+          </EFButton>
+          {onSimulate && (
+            <EFButton
+              variant="secondary"
+              onClick={onSimulate}
+              aria-label="Simular 14 dias"
+              className="w-full"
+            >
+              Simular 14 dias
+            </EFButton>
+          )}
           <button
             onClick={onEndGame}
             aria-label="Voltar ao início"
-            className="w-full py-2 text-sm text-ceramic-text-secondary bg-ceramic-inset
-                       rounded-lg hover:bg-ceramic-border transition-colors"
+            className="w-full py-2 text-sm text-ceramic-text-secondary bg-ceramic-cool shadow-ceramic-inset
+                       rounded-lg hover:bg-ceramic-cool-hover transition-colors"
           >
             Voltar ao Início
           </button>
@@ -493,7 +525,12 @@ export function EF_GameScreen({
   // ----- Main render -----
 
   return (
-    <div className="flex flex-col min-h-screen bg-ceramic-base">
+    <motion.div
+      className="flex flex-col min-h-screen bg-ceramic-base"
+      variants={pageTransitionVariants}
+      initial="initial"
+      animate="animate"
+    >
       {/* Top bar: stats + turns */}
       <div className="flex items-center justify-between p-4">
         <EF_StatsBar
@@ -511,56 +548,54 @@ export function EF_GameScreen({
 
       {/* Phase content */}
       <div className="flex-1 px-4 mt-4 pb-4 space-y-0">
-        {renderScenarioPhase()}
-        {(phase === 'ask_advice' || phase === 'advisors') && renderAdvisorPhase()}
-        {phase === 'decision' && renderDecisionPhase()}
-        {phase === 'consequence' && renderConsequencePhase()}
-        {phase === 'turn_complete' && renderTurnComplete()}
-        {phase === 'day_complete' && renderDayComplete()}
+        <AnimatePresence mode="wait">
+          {phase === 'scenario' && renderScenarioPhase()}
+          {(phase === 'ask_advice' || phase === 'advisors') && renderAdvisorPhase()}
+          {phase === 'decision' && renderDecisionPhase()}
+          {phase === 'consequence' && renderConsequencePhase()}
+          {phase === 'turn_complete' && renderTurnComplete()}
+          {phase === 'day_complete' && renderDayComplete()}
+        </AnimatePresence>
       </div>
 
-      {/* End Game shortcut (only during active gameplay, not day_complete) */}
+      {/* End Game shortcut */}
       {phase !== 'day_complete' && phase !== 'turn_complete' && (
         <div className="px-4 pb-6">
           <button
             onClick={onEndGame}
             aria-label="Encerrar sessão de jogo"
-            className="w-full py-2 text-sm text-ceramic-text-secondary bg-ceramic-inset
-                       rounded-lg hover:bg-ceramic-border transition-colors"
+            className="w-full py-2 text-sm text-ceramic-text-secondary bg-ceramic-cool shadow-ceramic-inset
+                       rounded-lg hover:bg-ceramic-cool-hover transition-colors"
           >
             Encerrar Sessão
           </button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
 // ============================================
-// PHASE CARD — animated wrapper
+// PHASE CARD — Framer Motion animated wrapper
 // ============================================
 
 function PhaseCard({
-  visible,
+  phaseKey,
   children,
 }: {
-  visible: boolean;
+  phaseKey: string;
   children: React.ReactNode;
 }) {
   return (
-    <div
-      aria-hidden={!visible}
-      className="p-4 bg-ceramic-card rounded-xl shadow-ceramic-emboss transition-all duration-500"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        pointerEvents: visible ? 'auto' : 'none',
-        maxHeight: visible ? '2000px' : '0px',
-        overflow: 'hidden',
-        marginBottom: visible ? '0px' : '-16px',
-      }}
+    <motion.div
+      key={phaseKey}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={springElevation}
+      className="p-4 bg-ceramic-card rounded-xl shadow-ceramic-emboss"
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
