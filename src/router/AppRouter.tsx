@@ -60,6 +60,7 @@ const FluxAlertsView = lazy(() => import('../modules/flux').then(m => ({ default
 
 // EraForge Module - Historical simulation game for children
 const EraForgeMainView = lazy(() => import('../modules/eraforge/views/EraForgeMainView'));
+const EraForgeAccessGuard = lazy(() => import('../modules/eraforge/components/EraForgeAccessGuard'));
 
 // Athlete Portal - Read-only training view for athletes
 const AthletePortalView = lazy(() => import('../modules/flux/views/AthletePortalView').then(m => ({ default: m.default })));
@@ -739,7 +740,7 @@ export function AppRouter() {
                <Route path="/flux/parq/:athleteId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><ParQFormView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* EraForge Module - Historical simulation game */}
-               <Route path="/eraforge" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}><EraforgeGameProvider><EraforgeVoiceProvider><EraForgeMainView /></EraforgeVoiceProvider></EraforgeGameProvider></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/eraforge" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}><EraForgeAccessGuard><EraforgeGameProvider><EraforgeVoiceProvider><EraForgeMainView /></EraforgeVoiceProvider></EraforgeGameProvider></EraForgeAccessGuard></ErrorBoundary></ProtectedRoute>} />
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
                <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />

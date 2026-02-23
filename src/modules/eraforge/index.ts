@@ -58,6 +58,8 @@ export {
 
 export { useEraforgeTurns } from './hooks';
 export type { UseEraforgeTurnsResult } from './hooks';
+export { useEraforgeAccess } from './hooks';
+export type { UseEraforgeAccessReturn } from './hooks';
 
 // ============================================
 // SERVICES
@@ -66,12 +68,14 @@ export type { UseEraforgeTurnsResult } from './hooks';
 export { EraforgeGameService } from './services';
 export { EraforgeAIService } from './services';
 export { EraforgeVoiceService } from './services';
+export { EraforgeAccessService } from './services';
 
 // ============================================
 // VIEWS
 // ============================================
 
 export { default as EraForgeMainView } from './views/EraForgeMainView';
+export { EraForgeLandingView } from './views/EraForgeLandingView';
 
 // ============================================
 // COMPONENTS
@@ -86,3 +90,4 @@ export { EF_StatsBar } from './components/EF_StatsBar';
 export { EF_TurnCounter } from './components/EF_TurnCounter';
 export { EF_ParentDashboard } from './components/EF_ParentDashboard';
 export { EF_VoiceWave } from './components/EF_VoiceWave';
+export { EraForgeAccessGuard } from './components/EraForgeAccessGuard';
