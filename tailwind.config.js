@@ -8,6 +8,7 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],
+                fredoka: ['Fredoka', 'Nunito', 'sans-serif'],
             },
             colors: {
                 'aurora-blue': '#6366f1',
@@ -39,12 +40,15 @@ export default {
                 'ceramic-warning-bg': '#F8F0E5',
                 'ceramic-success-bg': '#F0F3ED',
                 'ceramic-error-bg': '#F5EFED',
+                'ceramic-card': '#F0EFE9',
+                'ceramic-border': '#DDD8CF',
             },
             animation: {
                 'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
                 'scale-in': 'scaleIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
                 'float': 'float 8s ease-in-out infinite',
                 'pulse-slow': 'pulseSlow 3s infinite',
+                'shimmer': 'shimmer 2s ease-in-out infinite',
             },
             keyframes: {
                 fadeInUp: {
@@ -62,9 +66,14 @@ export default {
                 pulseSlow: {
                     '0%, 100%': { opacity: '1', transform: 'scale(1)' },
                     '50%': { opacity: '0.9', transform: 'scale(0.95)' },
+                },
+                shimmer: {
+                    '0%': { backgroundPosition: '200% 0' },
+                    '100%': { backgroundPosition: '-200% 0' },
                 }
             },
             boxShadow: {
+                'ceramic-emboss': '4px 4px 10px rgba(163, 158, 145, 0.15), -4px -4px 10px rgba(255, 255, 255, 0.90)',
                 'ceramic-inset': 'inset 3px 3px 6px rgba(163, 158, 145, 0.25), inset -3px -3px 6px rgba(255, 255, 255, 0.95)',
                 'ceramic-elevated': '5px 5px 10px rgba(163, 158, 145, 0.25), -5px -5px 10px rgba(255, 255, 255, 0.95)',
                 // Digital Desire - Landing Page V2 shadows
