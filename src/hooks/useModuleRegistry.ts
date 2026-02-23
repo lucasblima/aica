@@ -280,7 +280,11 @@ export function useModuleRegistry(): UseModuleRegistryReturn {
             );
           }
         )
-        .subscribe();
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            log.error('Realtime subscription error', { status, err });
+          }
+        });
 
       if (!cancelled) {
         channelRef.current = newChannel;

@@ -94,13 +94,34 @@ export class InventoryService {
 
       if (error) throw error;
 
-      // Log event
-      await supabase.from('entity_event_log').insert({
-        persona_id: input.persona_id,
-        event_type: 'item_added',
-        event_data: { item_name: input.name, category: input.category },
-        triggered_by: 'user',
-      });
+      // Log event (non-critical)
+      try {
+        await supabase.from('entity_event_log').insert({
+          persona_id: input.persona_id,
+          event_type: 'item_added',
+          event_data: { item_name: input.name, category: input.category },
+          triggered_by: 'user',
+        });
+      } catch (logErr) {
+        log.error('Failed to log event', { logErr });
+      }
+
+      // +1 HP for item added (non-critical)
+      try {
+        const { data: persona } = await supabase
+          .from('entity_personas')
+          .select('hp')
+          .eq('id', input.persona_id)
+          .single();
+        if (persona) {
+          await supabase
+            .from('entity_personas')
+            .update({ hp: Math.min(100, (persona.hp || 0) + 1) })
+            .eq('id', input.persona_id);
+        }
+      } catch (hpErr) {
+        log.error('Failed to award +1 HP for item added', { hpErr });
+      }
 
       return { data, error: null };
     } catch (err) {
@@ -142,13 +163,17 @@ export class InventoryService {
 
       if (error) throw error;
 
-      // Log event
-      await supabase.from('entity_event_log').insert({
-        persona_id: personaId,
-        event_type: 'item_removed',
-        event_data: { item_name: itemName },
-        triggered_by: 'user',
-      });
+      // Log event (non-critical)
+      try {
+        await supabase.from('entity_event_log').insert({
+          persona_id: personaId,
+          event_type: 'item_removed',
+          event_data: { item_name: itemName },
+          triggered_by: 'user',
+        });
+      } catch (logErr) {
+        log.error('Failed to log event', { logErr });
+      }
 
       return { success: true, error: null };
     } catch (err) {
@@ -184,7 +209,7 @@ export class InventoryService {
       };
     } catch (err) {
       log.error('Failed to get inventory stats', { err });
-      return { totalItems: 0, totalValue: 0, lowConditionCount: 0, categories: [], locations: [] };
+      throw err;
     }
   }
 }

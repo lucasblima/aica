@@ -32,15 +32,21 @@ export function WaitlistButton({
 
   const handleJoin = async () => {
     setLoading(true);
-    await onJoin();
-    setLoading(false);
+    try {
+      await onJoin();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLeave = async () => {
     setLoading(true);
-    await onLeave();
-    setLoading(false);
-    setShowCancel(false);
+    try {
+      await onLeave();
+    } finally {
+      setLoading(false);
+      setShowCancel(false);
+    }
   };
 
   if (isLoadingState) {

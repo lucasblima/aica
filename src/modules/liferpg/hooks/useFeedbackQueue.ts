@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
-import type { FeedbackQuestion } from '../types/liferpg';
+import type { FeedbackQuestionWithPersona } from '../types/liferpg';
 
 const log = createNamespacedLogger('useFeedbackQueue');
 
@@ -14,8 +14,9 @@ const MAX_DAILY_QUESTIONS = 2;
 const ANSWERED_TODAY_KEY = 'liferpg_feedback_answered_today';
 
 interface UseFeedbackQueueReturn {
-  currentQuestion: FeedbackQuestion | null;
+  currentQuestion: FeedbackQuestionWithPersona | null;
   loading: boolean;
+  error: string | null;
   dailyLimitReached: boolean;
   answerQuestion: (questionId: string, answer: string) => Promise<boolean>;
   skipQuestion: (questionId: string) => Promise<boolean>;
@@ -41,8 +42,9 @@ function incrementAnsweredToday(): void {
 }
 
 export function useFeedbackQueue(): UseFeedbackQueueReturn {
-  const [questions, setQuestions] = useState<FeedbackQuestion[]>([]);
+  const [questions, setQuestions] = useState<FeedbackQuestionWithPersona[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [answeredToday, setAnsweredToday] = useState(0);
 
   const dailyLimitReached = answeredToday >= MAX_DAILY_QUESTIONS;
@@ -66,7 +68,7 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
 
       // Diversify: one question per persona, sorted by priority
       const seen = new Set<string>();
-      const diversified = (data || []).filter((q: FeedbackQuestion) => {
+      const diversified = (data || []).filter((q: FeedbackQuestionWithPersona) => {
         if (seen.has(q.persona_id)) return false;
         seen.add(q.persona_id);
         return true;
@@ -76,6 +78,7 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
       setAnsweredToday(getAnsweredToday());
     } catch (err) {
       log.error('Failed to load feedback queue', { err });
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -98,30 +101,38 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
 
       if (error) throw error;
 
-      // Log event
-      await supabase.from('entity_event_log').insert({
-        persona_id: question.persona_id,
-        event_type: 'feedback_answered',
-        event_data: {
-          question_id: questionId,
-          question_type: question.question_type,
-          answer_preview: answer.slice(0, 100),
-        },
-        triggered_by: 'user',
-      });
+      // Log event (non-critical)
+      try {
+        await supabase.from('entity_event_log').insert({
+          persona_id: question.persona_id,
+          event_type: 'feedback_answered',
+          event_data: {
+            question_id: questionId,
+            question_type: question.question_type,
+            answer_preview: answer.slice(0, 100),
+          },
+          triggered_by: 'user',
+        });
+      } catch (logErr) {
+        log.error('Failed to log feedback event', { logErr });
+      }
 
-      // Recovery: +2 HP for answering feedback
-      const { data: persona } = await supabase
-        .from('entity_personas')
-        .select('hp')
-        .eq('id', question.persona_id)
-        .single();
-
-      if (persona) {
-        await supabase
+      // Recovery: +2 HP for answering feedback (non-critical)
+      try {
+        const { data: persona } = await supabase
           .from('entity_personas')
-          .update({ hp: Math.min(100, (persona.hp || 0) + 2) })
-          .eq('id', question.persona_id);
+          .select('hp')
+          .eq('id', question.persona_id)
+          .single();
+
+        if (persona) {
+          await supabase
+            .from('entity_personas')
+            .update({ hp: Math.min(100, (persona.hp || 0) + 2) })
+            .eq('id', question.persona_id);
+        }
+      } catch (hpErr) {
+        log.error('Failed to award HP bonus', { hpErr });
       }
 
       incrementAnsweredToday();
@@ -160,6 +171,7 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
   return {
     currentQuestion,
     loading,
+    error,
     dailyLimitReached,
     answerQuestion,
     skipQuestion,

@@ -61,7 +61,19 @@ export interface OrganizationStats {
   innovation: number;
 }
 
-export type EntityStats = HabitatStats | PersonStats | OrganizationStats | Record<string, number>;
+export interface ProjectStats {
+  progress: number;
+  quality: number;
+  momentum: number;
+}
+
+export interface VehicleStats {
+  condition: number;
+  maintenance: number;
+  fuel_efficiency: number;
+}
+
+export type EntityStats = HabitatStats | PersonStats | OrganizationStats | ProjectStats | VehicleStats;
 
 // Entity color constants
 export const ENTITY_COLORS: Record<EntityType, string> = {
@@ -221,6 +233,14 @@ export interface FeedbackQuestion {
   created_at: string;
 }
 
+export interface FeedbackQuestionWithPersona extends FeedbackQuestion {
+  entity_personas: {
+    persona_name: string;
+    avatar_emoji: string | null;
+    entity_type: EntityType;
+  };
+}
+
 // ============================================================================
 // EVENT LOG TYPES
 // ============================================================================
@@ -325,7 +345,6 @@ export function getXPForLevel(level: number): number {
 }
 
 export function getXPProgress(xp: number, level: number): number {
-  const currentLevelXP = getXPForLevel(level);
-  const nextLevelXP = getXPForLevel(level + 1);
-  return ((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
+  const xpNeeded = getXPForLevel(level + 1);
+  return Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
 }

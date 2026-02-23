@@ -86,7 +86,9 @@ export function useEntityInventory({
       if (createError || !data) return false;
       setItems((prev) => [data, ...prev]);
       // Reload stats
-      InventoryService.getStats(personaId).then(setStats);
+      InventoryService.getStats(personaId)
+        .then(setStats)
+        .catch((err) => log.error('Failed to refresh stats', { err }));
       return true;
     },
     [personaId]
@@ -108,7 +110,9 @@ export function useEntityInventory({
       const { success } = await InventoryService.deleteItem(itemId, personaId, itemName);
       if (success) {
         setItems((prev) => prev.filter((i) => i.id !== itemId));
-        InventoryService.getStats(personaId).then(setStats);
+        InventoryService.getStats(personaId)
+          .then(setStats)
+          .catch((err) => log.error('Failed to refresh stats', { err }));
       }
       return success;
     },

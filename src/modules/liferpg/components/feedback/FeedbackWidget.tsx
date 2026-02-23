@@ -38,10 +38,9 @@ export const FeedbackWidget: React.FC = () => {
     );
   }
 
-  const questionAny = currentQuestion as unknown as Record<string, unknown>;
-  const persona = questionAny.entity_personas as Record<string, unknown> | undefined;
-  const emoji = (persona?.avatar_emoji as string) || ENTITY_EMOJI[(persona?.entity_type as EntityType) || 'habitat'];
-  const name = (persona?.persona_name as string) || 'Entidade';
+  const persona = currentQuestion.entity_personas;
+  const emoji = persona?.avatar_emoji || ENTITY_EMOJI[persona?.entity_type || 'habitat'];
+  const name = persona?.persona_name || 'Entidade';
 
   const isYesNo = currentQuestion.question_type === 'state_verification' ||
     currentQuestion.question_type === 'decision';

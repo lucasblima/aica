@@ -80,7 +80,7 @@ export function AIChatPreview({
         body: {
           module_id: module.id,
           message: text.trim(),
-          chat_history: isInitial ? [] : messages,
+          chat_history: isInitial ? [] : updatedMessages.slice(0, -1),
         },
       });
 

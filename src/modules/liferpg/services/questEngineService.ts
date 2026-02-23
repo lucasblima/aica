@@ -4,6 +4,7 @@
 
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
+import type { QuestType, QuestPriority } from '../types/liferpg';
 
 const log = createNamespacedLogger('QuestEngineService');
 
@@ -45,8 +46,8 @@ export class QuestEngineService {
     persona_id: string;
     title: string;
     description?: string;
-    quest_type?: string;
-    priority?: string;
+    quest_type?: QuestType;
+    priority?: QuestPriority;
     xp_reward?: number;
     due_date?: string;
     estimated_minutes?: number;
