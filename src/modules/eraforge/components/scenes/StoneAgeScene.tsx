@@ -47,12 +47,12 @@ export function StoneAgeScene({ children, isAnimating }: SceneChildProps) {
       </g>
 
       {/* Trees */}
-      <Tree x={200} y={148} height={45} leafColor="#15803D" type="round" />
-      <Tree x={270} y={150} height={35} leafColor="#16A34A" type="pine" />
-      <Tree x={340} y={148} height={40} leafColor="#15803D" type="round" />
+      <Tree x={200} y={148} height={55} leafColor="#15803D" type="round" />
+      <Tree x={270} y={150} height={45} leafColor="#16A34A" type="pine" />
+      <Tree x={340} y={148} height={50} leafColor="#15803D" type="round" />
 
       {/* Campfire */}
-      <Fire x={175} y={142} scale={0.9} />
+      <Fire x={175} y={138} scale={1.3} />
 
       {/* Ground */}
       <StoneGround y={150} />
@@ -69,14 +69,14 @@ export function StoneAgeScene({ children, isAnimating }: SceneChildProps) {
             y={125}
             emoji={child.avatar_emoji || '🦴'}
             color={child.avatar_color || '#FBBF24'}
-            scale={0.7}
+            scale={0.9}
             name={child.child_id}
           />
         ))
       ) : (
         <>
-          <Character x={110} y={125} emoji="🦴" color="#FBBF24" scale={0.65} />
-          <Character x={155} y={128} emoji="🪨" color="#F97316" scale={0.55} />
+          <Character x={110} y={118} emoji="🦴" color="#FBBF24" scale={0.9} />
+          <Character x={160} y={120} emoji="🪨" color="#F97316" scale={0.8} />
         </>
       )}
     </g>
