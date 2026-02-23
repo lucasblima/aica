@@ -1258,7 +1258,9 @@ async function handleTranscribeAudio(genAI: GoogleGenerativeAI, payload: any): P
     { text: 'Transcreva o audio acima em portugues. Retorne APENAS o texto transcrito, sem formatacao adicional.' },
   ])
 
-  const transcription = result.response.text().trim()
+  const raw = result.response.text().trim()
+  // Strip Gemini thinking tokens that leak with 2.5 Flash
+  const transcription = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim()
 
   return {
     transcription,

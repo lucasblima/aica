@@ -372,7 +372,9 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
       },
     })
 
-    const transcription = response.result?.transcription || response.result?.text || ''
+    const raw = response.result?.transcription || response.result?.text || ''
+    // Strip Gemini thinking tokens that may leak with 2.5 Flash
+    const transcription = raw.replace(/<THINK>[\s\S]*?<\/THINK>\s*/gi, '').trim()
 
     // Track AI usage (non-blocking)
     trackAIUsage({
