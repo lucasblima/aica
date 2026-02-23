@@ -11,7 +11,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -27,6 +27,14 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // 0. Recover stale "processing" items (older than 5 minutes)
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    await supabase
+      .from("module_notification_queue")
+      .update({ status: "pending" })
+      .eq("status", "processing")
+      .lt("created_at", fiveMinAgo);
 
     // 1. Fetch pending notifications
     const { data: pending, error: fetchError } = await supabase
@@ -49,10 +57,14 @@ serve(async (req) => {
 
     // 2. Mark as processing
     const pendingIds = pending.map((n: { id: string }) => n.id);
-    await supabase
+    const { error: markError } = await supabase
       .from("module_notification_queue")
       .update({ status: "processing" })
       .in("id", pendingIds);
+
+    if (markError) {
+      throw new Error(`Failed to mark as processing: ${markError.message}`);
+    }
 
     let successCount = 0;
     let failCount = 0;

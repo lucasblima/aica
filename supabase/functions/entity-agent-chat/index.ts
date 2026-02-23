@@ -211,12 +211,20 @@ serve(async (req: Request) => {
 
     // Rate limit check
     const today = new Date().toISOString().split("T")[0];
-    const { count: msgCount } = await supabase
+    const { count: msgCount, error: countError } = await supabase
       .from("entity_event_log")
       .select("id", { count: "exact", head: true })
       .eq("persona_id", persona_id)
       .eq("event_type", "agent_chat")
       .gte("created_at", `${today}T00:00:00Z`);
+
+    if (countError) {
+      console.error("[entity-agent-chat] Rate limit check failed:", countError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Rate limit check failed" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if ((msgCount || 0) >= RATE_LIMIT_PER_DAY) {
       return new Response(
@@ -311,6 +319,13 @@ serve(async (req: Request) => {
 
     // Parse structured response
     const parsed = extractJSON(geminiResponse as string);
+
+    // Validate tone field (FIX 8)
+    const VALID_TONES = ['friendly', 'concerned', 'proud', 'urgent', 'neutral'];
+    if (parsed && parsed.tone && !VALID_TONES.includes(parsed.tone as string)) {
+      parsed.tone = 'neutral';
+    }
+
     const agentResponse = parsed || {
       response: geminiResponse as string,
       tone: "neutral",
@@ -319,37 +334,49 @@ serve(async (req: Request) => {
       knowledge_gap_detected: false,
     };
 
-    // Log event
-    await supabase.from("entity_event_log").insert({
-      persona_id,
-      event_type: "agent_chat",
-      event_data: {
-        user_message: message.slice(0, 200),
-        agent_response: ((agentResponse as Record<string, unknown>).response as string || "").slice(0, 200),
-        tone: (agentResponse as Record<string, unknown>).tone,
-        knowledge_gap: (agentResponse as Record<string, unknown>).knowledge_gap_detected,
-      },
-      triggered_by: "user",
-    });
-
-    // Update last_interaction
-    await supabase
-      .from("entity_personas")
-      .update({ last_interaction: new Date().toISOString() })
-      .eq("id", persona_id);
-
-    // If feedback question was generated, save it
-    const feedbackQ = (agentResponse as Record<string, unknown>).feedback_question as Record<string, unknown> | null;
-    if (feedbackQ && feedbackQ.question) {
-      await supabase.from("entity_feedback_queue").insert({
+    // Log event (non-critical)
+    try {
+      await supabase.from("entity_event_log").insert({
         persona_id,
-        user_id: user.id,
-        question: feedbackQ.question,
-        question_type: feedbackQ.question_type || "context",
-        priority: feedbackQ.priority || 5,
-        status: "pending",
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        event_type: "agent_chat",
+        event_data: {
+          user_message: message.slice(0, 200),
+          agent_response: ((agentResponse as Record<string, unknown>).response as string || "").slice(0, 200),
+          tone: (agentResponse as Record<string, unknown>).tone,
+          knowledge_gap: (agentResponse as Record<string, unknown>).knowledge_gap_detected,
+        },
+        triggered_by: "user",
       });
+    } catch (logErr) {
+      console.error("[entity-agent-chat] Failed to log event:", logErr);
+    }
+
+    // Update last_interaction (non-critical)
+    try {
+      await supabase
+        .from("entity_personas")
+        .update({ last_interaction: new Date().toISOString() })
+        .eq("id", persona_id);
+    } catch (updateErr) {
+      console.error("[entity-agent-chat] Failed to update last_interaction:", updateErr);
+    }
+
+    // If feedback question was generated, save it (non-critical)
+    try {
+      const feedbackQ = (agentResponse as Record<string, unknown>).feedback_question as Record<string, unknown> | null;
+      if (feedbackQ && feedbackQ.question) {
+        await supabase.from("entity_feedback_queue").insert({
+          persona_id,
+          user_id: user.id,
+          question: feedbackQ.question,
+          question_type: feedbackQ.question_type || "context",
+          priority: feedbackQ.priority || 5,
+          status: "pending",
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+      }
+    } catch (fbErr) {
+      console.error("[entity-agent-chat] Failed to insert feedback question:", fbErr);
     }
 
     return new Response(

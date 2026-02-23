@@ -354,6 +354,23 @@ serve(async (req: Request) => {
       // No body = cron mode, process all active personas
     }
 
+    // Validate user_id matches authenticated user when provided
+    if (userId) {
+      const authHeader = req.headers.get("authorization");
+      if (authHeader) {
+        const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: { user }, error: authErr } = await userClient.auth.getUser();
+        if (authErr || !user || user.id !== userId) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Unauthorized" }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
     // Load active personas
     let query = supabase
       .from("entity_personas")

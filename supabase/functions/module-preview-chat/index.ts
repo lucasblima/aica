@@ -11,7 +11,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/+esm";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")!;
@@ -60,6 +60,15 @@ serve(async (req) => {
   }
 
   try {
+    // Auth: require valid JWT
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing authorization" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { module_id, message, chat_history = [] } = await req.json();
 
     if (!module_id || !message) {

@@ -379,8 +379,8 @@ serve(async (req: Request) => {
                 persona_id: decayResult.persona_id,
               },
             });
-          } catch {
-            // scheduled_notifications table may not exist, skip silently
+          } catch (notifErr) {
+            console.error("[calculate-entity-decay] Failed to insert notification:", notifErr);
           }
         }
 
