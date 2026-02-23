@@ -15,6 +15,11 @@ import {
   ChevronLeft,
   SkipForward,
 } from 'lucide-react';
+import { AudioRecorder } from '@/modules/journey/components/capture/AudioRecorder';
+import { transcribeAudio } from '@/modules/journey/services/momentPersistenceService';
+import { createNamespacedLogger } from '@/lib/logger';
+
+const log = createNamespacedLogger('ExerciseQuestionnaire');
 
 // ─── Questionnaire schema ─────────────────────────
 
@@ -106,6 +111,26 @@ export function ExerciseQuestionnaireSheet({
   const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
   const [currentStep, setCurrentStep] = useState(0);
   const [notes, setNotes] = useState('');
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleRecordingComplete = useCallback(async (blob: Blob) => {
+    setIsTranscribing(true);
+    setError(null);
+    try {
+      const text = await transcribeAudio(blob);
+      if (text) {
+        setVoiceTranscript(text);
+        setNotes((prev) => prev ? `${prev}\n${text}` : text);
+      }
+    } catch (err) {
+      log.error('Transcription error:', err);
+      setError('Erro na transcricao. Use o campo de texto.');
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, []);
 
   const answeredCount = useMemo(
     () => QUESTIONS.filter((q) => answers[q.key] !== undefined).length,
@@ -292,6 +317,32 @@ export function ExerciseQuestionnaireSheet({
                     className="w-full px-3 py-2.5 text-sm border border-ceramic-border/50 rounded-xl resize-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 outline-none transition-all placeholder:text-ceramic-text-secondary/50"
                   />
                 </div>
+
+                {/* Voice recorder */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    {isTranscribing ? (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200/50 text-amber-700 text-xs font-bold rounded-xl">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Transcrevendo...</span>
+                      </div>
+                    ) : (
+                      <AudioRecorder onRecordingComplete={handleRecordingComplete} />
+                    )}
+                  </div>
+                  {voiceTranscript && (
+                    <div className="px-3 py-2.5 rounded-xl bg-ceramic-cool/30 border border-ceramic-border/30">
+                      <p className="text-xs text-ceramic-text-secondary italic leading-relaxed">
+                        &ldquo;{voiceTranscript}&rdquo;
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <p className="text-xs text-red-500">{error}</p>
+                )}
 
                 {/* Navigation + Submit */}
                 <div className="flex items-center gap-3">
