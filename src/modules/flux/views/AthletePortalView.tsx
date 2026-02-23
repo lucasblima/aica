@@ -16,9 +16,10 @@ import { useCanvasCalendar } from '../hooks/useCanvasCalendar';
 import { WorkoutSlotService } from '../services/workoutSlotService';
 import { AthleteWelcome } from '../components/AthleteWelcome';
 import { ParQWizard } from '../components/parq/ParQWizard';
-import { ProgressTimeline, WorkoutCard, AthleteFeedbackView } from '../components/athlete';
+import { ProgressTimeline, WorkoutCard, AthleteFeedbackView, WeeklyFeedbackCard } from '../components/athlete';
 import { WeeklyGrid, type WeekWorkout } from '../components/canvas/WeeklyGrid';
 import type { FeedbackData } from '../components/athlete';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/services/supabaseClient';
 import { MODALITY_CONFIG } from '../types';
 import { createNamespacedLogger } from '@/lib/logger';
@@ -26,8 +27,8 @@ import {
   Loader2,
   Dumbbell,
   ArrowLeft,
-  Calendar,
   Clock,
+  Eye,
   Leaf,
   LayoutGrid,
   List,
@@ -38,108 +39,6 @@ const log = createNamespacedLogger('AthletePortalView');
 
 const DAY_NAMES = ['', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const WEEKDAY_LABELS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
-
-interface CoachBusyBlock {
-  start: string;
-  end: string;
-}
-
-// ─── Coach Availability Card ──────────────────────────────────────
-
-function CoachAvailabilityCard({
-  busyBlocks, isLoading, error, weekStart,
-}: {
-  busyBlocks: CoachBusyBlock[];
-  isLoading: boolean;
-  error: string | null;
-  weekStart: Date;
-}) {
-  const HOURS_START = 6;
-  const HOURS_END = 22;
-  const TOTAL_HOURS = HOURS_END - HOURS_START;
-
-  const blocksByDay = useMemo(() => {
-    const days: CoachBusyBlock[][] = Array.from({ length: 7 }, () => []);
-    for (const block of busyBlocks) {
-      const blockDate = new Date(block.start);
-      const dayOffset = Math.floor(
-        (blockDate.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000)
-      );
-      if (dayOffset >= 0 && dayOffset < 7) days[dayOffset].push(block);
-    }
-    return days;
-  }, [busyBlocks, weekStart]);
-
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
-          <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
-        </div>
-        <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-5 h-5 text-ceramic-text-secondary animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
-          <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
-        </div>
-        <p className="text-xs text-ceramic-text-secondary">{error}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-      <div className="flex items-center gap-2">
-        <Calendar className="w-4 h-4 text-ceramic-text-secondary" />
-        <h3 className="text-sm font-bold text-ceramic-text-primary">Disponibilidade do Coach</h3>
-      </div>
-      <p className="text-[10px] text-ceramic-text-secondary">
-        Cinza = ocupado &middot; Branco = disponivel
-      </p>
-      <div className="flex gap-1">
-        <div className="flex flex-col justify-between pt-5 pr-1" style={{ height: `${TOTAL_HOURS * 12 + 20}px` }}>
-          {[HOURS_START, HOURS_START + 4, HOURS_START + 8, HOURS_START + 12, HOURS_END].map((h) => (
-            <span key={h} className="text-[9px] text-ceramic-text-secondary leading-none">{h}h</span>
-          ))}
-        </div>
-        {WEEKDAY_LABELS_SHORT.map((label, dayIdx) => {
-          const dayBlocks = blocksByDay[dayIdx] || [];
-          return (
-            <div key={dayIdx} className="flex-1 flex flex-col items-center">
-              <span className="text-[10px] font-bold text-ceramic-text-secondary mb-1">{label}</span>
-              <div className="w-full bg-white rounded relative border border-ceramic-border" style={{ height: `${TOTAL_HOURS * 12}px` }}>
-                {dayBlocks.map((block, blockIdx) => {
-                  const startDate = new Date(block.start);
-                  const endDate = new Date(block.end);
-                  const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-                  const endHour = endDate.getHours() + endDate.getMinutes() / 60;
-                  const clampedStart = Math.max(startHour, HOURS_START);
-                  const clampedEnd = Math.min(endHour, HOURS_END);
-                  if (clampedEnd <= clampedStart) return null;
-                  const topPct = ((clampedStart - HOURS_START) / TOTAL_HOURS) * 100;
-                  const heightPct = ((clampedEnd - clampedStart) / TOTAL_HOURS) * 100;
-                  return (
-                    <div key={blockIdx} className="absolute left-0 right-0 bg-ceramic-text-secondary/20 rounded-sm" style={{ top: `${topPct}%`, height: `${heightPct}%` }} />
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─── Stagger animation variants ────────────────────────────────────
 
@@ -157,6 +56,7 @@ export default function AthletePortalView() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile, isLoading, error, isLinked, refetch } = useMyAthleteProfile();
+  const { user } = useAuth();
 
   const parq = useParQ({ athleteId: profile?.athlete_id || '', filledByRole: 'athlete' });
   const docs = useAthleteDocuments({ athleteId: profile?.athlete_id || '' });
@@ -166,6 +66,7 @@ export default function AthletePortalView() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'treinos' | 'feedback'>('treinos');
   const [feedbackSlotId, setFeedbackSlotId] = useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'list' | 'canvas'>(() => {
     try { return (localStorage.getItem('flux_athlete_view_mode') as 'list' | 'canvas') || 'list'; }
     catch { return 'list'; }
@@ -173,10 +74,6 @@ export default function AthletePortalView() {
 
   const welcomeParam = searchParams.get('welcome') === 'true';
   const [showWelcome, setShowWelcome] = useState(() => welcomeParam || !AthleteWelcome.hasBeenShown());
-
-  const [coachBusyBlocks, setCoachBusyBlocks] = useState<CoachBusyBlock[]>([]);
-  const [coachAvailLoading, setCoachAvailLoading] = useState(false);
-  const [coachAvailError, setCoachAvailError] = useState<string | null>(null);
 
   const weekStart = useMemo(() => {
     const now = new Date();
@@ -188,42 +85,12 @@ export default function AthletePortalView() {
     return monday;
   }, []);
 
-  const weekEnd = useMemo(() => {
-    const end = new Date(weekStart);
-    end.setDate(end.getDate() + 7);
-    return end;
-  }, [weekStart]);
-
+  // Sync selectedWeek when microcycle changes
+  const microId = profile?.active_microcycle?.id;
+  const microCurrentWeek = profile?.active_microcycle?.current_week;
   useEffect(() => {
-    if (!profile?.athlete_id) return;
-    let cancelled = false;
-    const fetchCoachAvailability = async () => {
-      setCoachAvailLoading(true);
-      setCoachAvailError(null);
-      try {
-        const { data: athleteRow, error: athleteErr } = await supabase
-          .from('athletes').select('user_id').eq('id', profile.athlete_id).maybeSingle();
-        if (athleteErr || !athleteRow?.user_id) {
-          log.debug('Could not resolve coach user_id:', athleteErr);
-          if (!cancelled) setCoachAvailError('Coach nao encontrado');
-          return;
-        }
-        const { data: response, error: fnError } = await supabase.functions.invoke('fetch-coach-availability', {
-          body: { coachUserId: athleteRow.user_id, startDate: weekStart.toISOString(), endDate: weekEnd.toISOString() },
-        });
-        if (cancelled) return;
-        if (fnError) { log.error('Error fetching coach availability:', fnError); setCoachAvailError('Erro ao buscar agenda do coach'); return; }
-        if (!response?.success) { log.debug('Coach availability not available:', response?.error); setCoachAvailError(response?.error || 'Agenda do coach indisponivel'); return; }
-        setCoachBusyBlocks(response.busySlots || []);
-      } catch (err) {
-        if (!cancelled) { log.error('Coach availability error:', err); setCoachAvailError('Erro ao carregar disponibilidade'); }
-      } finally {
-        if (!cancelled) setCoachAvailLoading(false);
-      }
-    };
-    fetchCoachAvailability();
-    return () => { cancelled = true; };
-  }, [profile?.athlete_id, weekStart, weekEnd]);
+    setSelectedWeek(microCurrentWeek || 1);
+  }, [microId, microCurrentWeek]);
 
   // ── Handlers ──
 
@@ -267,24 +134,24 @@ export default function AthletePortalView() {
     const micro = profile?.active_microcycle;
     if (!micro?.start_date) return weekStart;
     const start = new Date(micro.start_date);
-    const currentWeekOffset = ((micro.current_week || 1) - 1) * 7;
+    const weekOffset = (selectedWeek - 1) * 7;
     const canvasStart = new Date(start);
-    canvasStart.setDate(start.getDate() + currentWeekOffset);
+    canvasStart.setDate(start.getDate() + weekOffset);
     canvasStart.setHours(0, 0, 0, 0);
     return canvasStart;
-  }, [profile?.active_microcycle?.start_date, profile?.active_microcycle?.current_week, weekStart]);
+  }, [profile?.active_microcycle?.start_date, selectedWeek, weekStart]);
 
   const canvasWorkouts = useMemo<WeekWorkout[]>(() => {
     const micro = profile?.active_microcycle;
-    const currentWeekSlots = micro?.slots?.filter((s) => s.week_number === (micro?.current_week || 1)) || [];
-    if (!currentWeekSlots.length) return [];
-    return currentWeekSlots.map((slot) => ({
+    const selectedWeekSlots = micro?.slots?.filter((s) => s.week_number === selectedWeek) || [];
+    if (!selectedWeekSlots.length) return [];
+    return selectedWeekSlots.map((slot) => ({
       id: slot.id, day_of_week: slot.day_of_week, start_time: slot.time_of_day || undefined,
       name: slot.template?.name || 'Treino', duration: slot.custom_duration || slot.template?.duration || 60,
       intensity: (['low', 'medium', 'high'].includes(slot.template?.intensity || '') ? slot.template.intensity : 'medium') as 'low' | 'medium' | 'high',
       modality: (['swimming', 'running', 'cycling', 'strength'].includes(profile?.modality || '') ? profile?.modality : 'strength') as WeekWorkout['modality'],
     }));
-  }, [profile?.active_microcycle, profile?.modality]);
+  }, [profile?.active_microcycle, profile?.modality, selectedWeek]);
 
   const calendar = useCanvasCalendar({ weekStartDate: canvasWeekStart, athleteId: viewMode === 'canvas' ? profile?.athlete_id : undefined });
 
@@ -400,7 +267,7 @@ export default function AthletePortalView() {
       })
     : [];
 
-  const currentWeekSlots = micro?.slots?.filter((s) => s.week_number === (micro.current_week || 1)) || [];
+  const currentWeekSlots = micro?.slots?.filter((s) => s.week_number === selectedWeek) || [];
   const slotsByDay = new Map<number, typeof currentWeekSlots>();
   for (const slot of currentWeekSlots) {
     const existing = slotsByDay.get(slot.day_of_week) || [];
@@ -411,10 +278,10 @@ export default function AthletePortalView() {
   const getDateForDay = (dayOfWeek: number): Date | null => {
     if (!micro?.start_date) return null;
     const start = new Date(micro.start_date);
-    const currentWeekOffset = ((micro.current_week || 1) - 1) * 7;
+    const weekOffset = (selectedWeek - 1) * 7;
     const dayOffset = dayOfWeek - 1;
     const date = new Date(start);
-    date.setDate(start.getDate() + currentWeekOffset + dayOffset);
+    date.setDate(start.getDate() + weekOffset + dayOffset);
     return date;
   };
 
@@ -425,7 +292,7 @@ export default function AthletePortalView() {
       {/* Header */}
       <header className="pt-6 px-5 pb-2">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors">
+          <button onClick={() => { window.history.length > 1 ? navigate(-1) : navigate('/'); }} className="flex items-center gap-2 text-ceramic-text-secondary hover:text-ceramic-text-primary transition-colors">
             <ArrowLeft className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Meu Treino</span>
           </button>
@@ -470,8 +337,28 @@ export default function AthletePortalView() {
       {/* Progress Timeline */}
       {micro && (
         <motion.section className="px-5 mb-4" custom={1} initial="hidden" animate="visible" variants={sectionVariants}>
-          <ProgressTimeline weeks={weeks} currentWeek={micro.current_week || 1} microcycleName={micro.name} status={micro.status} />
+          <ProgressTimeline weeks={weeks} currentWeek={micro.current_week || 1} microcycleName={micro.name} status={micro.status} selectedWeek={selectedWeek} onWeekSelect={setSelectedWeek} />
         </motion.section>
+      )}
+
+      {/* Week viewing indicator */}
+      {micro && selectedWeek !== (micro.current_week || 1) && (
+        <motion.div className="px-5 mb-2" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
+          <div className="flex items-center justify-between bg-sky-50 border border-sky-200/60 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Eye className="w-3.5 h-3.5 text-sky-500" />
+              <span className="text-xs text-sky-700 font-medium">
+                Semana {selectedWeek} de 4 · Visualizando
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedWeek(micro.current_week || 1)}
+              className="text-[10px] font-bold text-sky-600 hover:text-sky-800 transition-colors uppercase tracking-wider"
+            >
+              Voltar para atual
+            </button>
+          </div>
+        </motion.div>
       )}
 
       {/* Tab Toggle: Treinos / Feedback */}
@@ -501,7 +388,7 @@ export default function AthletePortalView() {
             viewMode === 'canvas' ? (
               <motion.section className="px-5 flex-1" custom={4} initial="hidden" animate="visible" variants={sectionVariants}>
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
-                  <WeeklyGrid weekNumber={micro.current_week || 1} workouts={canvasWorkouts} calendarEvents={calendar.busySlots}
+                  <WeeklyGrid weekNumber={selectedWeek} workouts={canvasWorkouts} calendarEvents={calendar.busySlots}
                     onReorderWorkout={handleCanvasReorder} onWorkoutClick={(id) => handleViewFeedback(id)}
                     startDate={canvasWeekStart} isLoading={calendar.isLoading} />
                 </div>
@@ -551,9 +438,17 @@ export default function AthletePortalView() {
             </motion.section>
           )}
 
-          <motion.section className="px-5 mt-8" custom={5} initial="hidden" animate="visible" variants={sectionVariants}>
-            <CoachAvailabilityCard busyBlocks={coachBusyBlocks} isLoading={coachAvailLoading} error={coachAvailError} weekStart={weekStart} />
-          </motion.section>
+          {micro && user && (
+            <motion.section className="px-5 mt-8" custom={5} initial="hidden" animate="visible" variants={sectionVariants}>
+              <WeeklyFeedbackCard
+                athleteId={profile.athlete_id}
+                microcycleId={micro.id}
+                weekNumber={selectedWeek}
+                userId={user.id}
+                currentWeek={micro.current_week || 1}
+              />
+            </motion.section>
+          )}
         </>
       ) : (
         <motion.section className="px-5" custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
