@@ -32,3 +32,10 @@ export type { UseEraforgeVoiceResult } from './useEraforgeVoice';
 
 export { useEraforgeTurns } from './useEraforgeTurns';
 export type { UseEraforgeTurnsResult } from './useEraforgeTurns';
+
+// ============================================
+// ACCESS GATE
+// ============================================
+
+export { useEraforgeAccess } from './useEraforgeAccess';
+export type { UseEraforgeAccessReturn } from './useEraforgeAccess';
