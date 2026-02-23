@@ -2,7 +2,7 @@
  * useModuleChatSession - Persistent chat sessions for module-specific agents
  *
  * Merges persistence from useChatSession (chat_sessions/chat_messages tables)
- * with agent-specific Gemini calls from useAgentChat (chat_with_agent action).
+ * with agent-specific Gemini chat_with_agent calls.
  *
  * Each module gets its own session history, separate from the global AicaChatFAB.
  */
