@@ -19,6 +19,8 @@ export interface ProgressTimelineProps {
   currentWeek: number;
   microcycleName: string;
   status: string;
+  selectedWeek?: number;
+  onWeekSelect?: (week: number) => void;
 }
 
 const FOCUS_COLORS: Record<string, string> = {
@@ -58,7 +60,10 @@ export function ProgressTimeline({
   currentWeek,
   microcycleName,
   status,
+  selectedWeek,
+  onWeekSelect,
 }: ProgressTimelineProps) {
+  const activeSelected = selectedWeek ?? currentWeek;
   return (
     <div className="space-y-3">
       {/* Title row */}
@@ -78,12 +83,23 @@ export function ProgressTimeline({
       <div className="flex gap-2">
         {weeks.map((week, i) => {
           const isCurrent = week.weekNumber === currentWeek;
+          const isSelected = week.weekNumber === activeSelected;
           const isComplete =
             week.totalSlots > 0 && week.completedSlots >= week.totalSlots;
           const pct =
             week.totalSlots > 0
               ? Math.round((week.completedSlots / week.totalSlots) * 100)
               : 0;
+          const clickable = !!onWeekSelect;
+
+          let pillStyle = 'bg-white shadow-sm';
+          if (isCurrent && isSelected) {
+            pillStyle = 'bg-white ring-2 ring-amber-400 shadow-md';
+          } else if (isSelected) {
+            pillStyle = 'bg-white ring-2 ring-sky-400 shadow-md';
+          } else if (isCurrent) {
+            pillStyle = 'bg-white ring-2 ring-amber-400/50 shadow-sm';
+          }
 
           return (
             <motion.div
@@ -91,10 +107,9 @@ export function ProgressTimeline({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08, duration: 0.3 }}
-              className={`flex-1 rounded-2xl p-3 relative overflow-hidden transition-shadow ${
-                isCurrent
-                  ? 'bg-white ring-2 ring-amber-400 shadow-md'
-                  : 'bg-white shadow-sm'
+              onClick={clickable ? () => onWeekSelect(week.weekNumber) : undefined}
+              className={`flex-1 rounded-2xl p-3 relative overflow-hidden transition-all duration-200 ${pillStyle} ${
+                clickable ? 'cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]' : ''
               }`}
             >
               {/* Completed overlay */}
@@ -107,9 +122,13 @@ export function ProgressTimeline({
               {/* Week date range or number */}
               <p
                 className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${
-                  isCurrent
+                  isCurrent && isSelected
                     ? 'text-amber-600'
-                    : 'text-ceramic-text-secondary'
+                    : isSelected
+                      ? 'text-sky-600'
+                      : isCurrent
+                        ? 'text-amber-500'
+                        : 'text-ceramic-text-secondary'
                 }`}
               >
                 {week.dateRange || `Sem ${week.weekNumber}`}
