@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { EF_NavHeader } from './EF_NavHeader';
 import type { SimulationEvent, StatsDelta, Era } from '../types/eraforge.types';
 import { ERA_LABELS } from '../types/eraforge.types';
 
@@ -492,6 +493,8 @@ export function EF_SimulationScreen({
 
   return (
     <div className="flex flex-col min-h-full pb-6">
+      <EF_NavHeader title="Simulação" onBack={onBack} />
+
       {/* ---- Animated Title ---- */}
       {!titleDone ? (
         <div className="flex-1 flex items-center justify-center p-6">

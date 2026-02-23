@@ -547,7 +547,7 @@ export function AppRouter() {
                   <ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}>
                      <EraforgeGameProvider>
                         <EraforgeVoiceProvider>
-                           <EraForgeMainView />
+                           <EraForgeMainView onExitToApp={() => setCurrentView('vida')} />
                         </EraforgeVoiceProvider>
                      </EraforgeGameProvider>
                   </ErrorBoundary>
@@ -743,7 +743,7 @@ export function AppRouter() {
                <Route path="/flux/parq/:athleteId" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Flux" />}><FluxProvider><ParQFormView /></FluxProvider></ErrorBoundary></ProtectedRoute>} />
 
                {/* EraForge Module - Historical simulation game */}
-               <Route path="/eraforge" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}><EraForgeAccessGuard><EraforgeGameProvider><EraforgeVoiceProvider><EraForgeMainView /></EraforgeVoiceProvider></EraforgeGameProvider></EraForgeAccessGuard></ErrorBoundary></ProtectedRoute>} />
+               <Route path="/eraforge" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="EraForge" />}><EraForgeAccessGuard><EraforgeGameProvider><EraforgeVoiceProvider><EraForgeMainView onExitToApp={() => navigate('/')} /></EraforgeVoiceProvider></EraforgeGameProvider></EraForgeAccessGuard></ErrorBoundary></ProtectedRoute>} />
 
                {/* Athlete Portal - Read-only training view (no FluxProvider needed, athlete context) */}
                <Route path="/meu-treino" element={<ProtectedRoute><ErrorBoundary fallback={<ModuleErrorFallback moduleName="Meu Treino" />}><AthletePortalView /></ErrorBoundary></ProtectedRoute>} />
