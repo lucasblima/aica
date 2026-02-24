@@ -21,7 +21,7 @@ import type {
   ModalityLevel,
   AthleteLevel,
 } from '../types/flux';
-import { AthleteProfileService } from '../services/AthleteProfileService';
+import { AthleteProfileService } from '../services/athleteProfileService';
 
 // ============================================
 // TYPES
@@ -276,6 +276,7 @@ export function useAthleteForm({
           phone: formData.phone.trim(),
           modality: formData.modalityLevels[0].modality,
           level: formData.modalityLevels[0].level as AthleteLevel,
+          practiced_modalities: formData.modalityLevels.map((ml) => ml.modality),
           status: 'active',
           requires_cardio_exam: formData.requires_cardio_exam,
           requires_clearance_cert: formData.requires_clearance_cert,

@@ -35,7 +35,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { MicrocycleService } from '../services/microcycleService';
-import { AthleteProfileService } from '../services/AthleteProfileService';
+import { AthleteProfileService } from '../services/athleteProfileService';
 import { WorkoutTemplateService } from '../services/workoutTemplateService';
 import { AutomationService } from '../services/automationService';
 import { ScheduleWhatsAppModal } from '../components/ScheduleWhatsAppModal';

@@ -13,7 +13,7 @@ import { useAthletes } from '../hooks/useAthletes';
 import { useAthleteActivity } from '../hooks/useAthleteActivity';
 import { AthleteService, CreateAthleteInput } from '../services/athleteService';
 import { supabase } from '@/services/supabaseClient';
-import { AthleteProfileService } from '../services/AthleteProfileService';
+import { AthleteProfileService } from '../services/athleteProfileService';
 import { MODALITY_CONFIG, TRAINING_MODALITIES } from '../types';
 import type { TrainingModality, AthleteLevel, Alert, ModalityLevel } from '../types';
 import { AthleteCard } from '../components/AthleteCard';
