@@ -21,6 +21,36 @@ export function calculateCP(qualityScore: number): number {
   return CP_FORMULA.base + Math.floor(clamped * CP_FORMULA.multiplier)
 }
 
+const REFLECTION_KEYWORDS = /percebi|aprendi|sinto|entendi|refleti|descobri|compreendi/i
+
+/**
+ * Heuristic quality scorer used when Gemini evaluation fails.
+ * Scores based on text length, reflection keywords, and punctuation.
+ * Returns a score in [0.15, 0.95] — gives CP range of ~4-19 instead of always 11.
+ */
+function computeHeuristicQuality(content: string): number {
+  const len = content.trim().length
+
+  // Base score from text length
+  let score: number
+  if (len < 20) score = 0.2
+  else if (len < 100) score = 0.4
+  else if (len < 300) score = 0.6
+  else score = 0.8
+
+  // Bonus for reflection/emotion keywords
+  if (REFLECTION_KEYWORDS.test(content)) {
+    score += 0.1
+  }
+
+  // Bonus for questions or exclamations (indicates engagement)
+  if (/[?!]/.test(content)) {
+    score += 0.05
+  }
+
+  return Math.max(0.15, Math.min(0.95, score))
+}
+
 export interface QualityEvaluationResult {
   cp_earned: number
   quality_score: number
@@ -58,19 +88,23 @@ export async function evaluateAndCalculateCP(
       assessment: result,
     }
   } catch (error) {
-    log.warn('Quality evaluation failed, using fallback:', error)
-    // Fallback: quality=0.5 → CP=11 (median, safe experience)
+    log.warn('Quality evaluation failed, using heuristic fallback:', error)
+    const heuristicScore = computeHeuristicQuality(content)
+    const cpEarned = calculateCP(heuristicScore)
+    log.info(`Heuristic scoring used: score=${heuristicScore.toFixed(2)}, cp=${cpEarned}`)
+
+    const tier = heuristicScore >= 0.7 ? 'high' : heuristicScore >= 0.4 ? 'medium' : 'low'
     return {
-      cp_earned: 11,
-      quality_score: 0.5,
+      cp_earned: cpEarned,
+      quality_score: heuristicScore,
       assessment: {
-        quality_score: 0.5,
-        relevance: 0.5,
-        depth: 0.5,
-        authenticity: 0.5,
-        clarity: 0.5,
+        quality_score: heuristicScore,
+        relevance: heuristicScore,
+        depth: heuristicScore,
+        authenticity: heuristicScore,
+        clarity: heuristicScore,
         feedback_message: 'Obrigado por compartilhar sua reflexao!',
-        feedback_tier: 'medium',
+        feedback_tier: tier,
       },
     }
   }

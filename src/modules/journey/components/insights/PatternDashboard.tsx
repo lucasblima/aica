@@ -11,6 +11,7 @@ import { EmotionTrendChart } from './EmotionTrendChart'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { ThemeClusters } from './ThemeClusters'
 import { SparklesIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { FeatureGate } from '@/modules/liferpg/components/FeatureGate'
 
 interface PatternDashboardProps {
   userId?: string
@@ -125,21 +126,25 @@ export function PatternDashboard({ userId }: PatternDashboardProps) {
         <ActivityHeatmap data={activityData} />
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-      >
-        <EmotionTrendChart data={emotionTrends} />
-      </motion.div>
+      <FeatureGate featureId="emotion_trends">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <EmotionTrendChart data={emotionTrends} />
+        </motion.div>
+      </FeatureGate>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <ThemeClusters themes={topThemes} isBackfilling={backfillProgress.isRunning} />
-      </motion.div>
+      <FeatureGate featureId="theme_clusters">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <ThemeClusters themes={topThemes} isBackfilling={backfillProgress.isRunning} />
+        </motion.div>
+      </FeatureGate>
     </div>
   )
 }

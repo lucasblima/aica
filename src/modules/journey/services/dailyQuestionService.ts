@@ -634,9 +634,9 @@ Gere uma pergunta reflexiva, personalizada e apropriada para este momento:
 
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      // Timeout de 3s para fallback rápido
+      // Timeout de 8s — Gemini 2.5 Flash needs more time with thinking tokens
       const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), 3000)
+        setTimeout(() => resolve(null), 8000)
       })
 
       const geminiPromise = client.call({
@@ -836,8 +836,63 @@ function getPoolQuestion(userId: string): DailyQuestion {
 }
 
 /**
+ * Level 1.5: Template-based question generation
+ * Uses the user context already built by getUserContext() to produce
+ * a contextual question without needing an AI call.
+ * Returns null if no meaningful context is available.
+ */
+function generateTemplateQuestion(context: UserContext): string | null {
+  const candidates: string[] = []
+
+  // Template based on recent emotions
+  const recentEmotions = context.momentHistory?.slice(0, 3).map(m => m.emotion).filter(Boolean) || []
+  if (recentEmotions.includes('stressed') || recentEmotions.includes('burnt out')) {
+    candidates.push('O que voce pode soltar hoje para aliviar a pressao?')
+  }
+  if (recentEmotions.includes('happy') || recentEmotions.includes('grateful')) {
+    candidates.push('O que contribuiu para essa energia positiva recente?')
+  }
+  if (recentEmotions.includes('anxious') || recentEmotions.includes('overwhelmed')) {
+    candidates.push('Qual e a menor acao que te ajudaria a se sentir mais no controle agora?')
+  }
+  if (recentEmotions.includes('sad') || recentEmotions.includes('depressed')) {
+    candidates.push('Qual pequeno gesto de cuidado voce pode fazer por si mesmo hoje?')
+  }
+
+  // Template based on critical areas
+  if (context.criticalAreas.length > 0) {
+    const area = context.criticalAreas[0]
+    candidates.push(`O que voce precisa para desbloquear progresso em ${area.areaName}?`)
+  }
+
+  // Template based on time of day
+  if (context.timeOfDay === 'morning') {
+    candidates.push('Qual e a sua intencao principal para hoje?')
+  } else if (context.timeOfDay === 'evening') {
+    candidates.push('Qual foi o momento mais significativo do seu dia?')
+  } else if (context.timeOfDay === 'afternoon') {
+    candidates.push('O que voce conquistou ate agora que merece reconhecimento?')
+  }
+
+  // Template based on Life Council insights
+  if (context.lifeCouncil?.headline) {
+    candidates.push('Refletindo sobre seu momento atual, o que voce gostaria de mudar primeiro?')
+  }
+
+  // Template based on patterns
+  if (context.patterns && context.patterns.length > 0) {
+    candidates.push('Voce notou algum padrao se repetindo na sua vida recentemente?')
+  }
+
+  if (candidates.length === 0) return null
+
+  // Pick a random candidate
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
+
+/**
  * Sistema em cascata para obter pergunta do dia
- * Level 1 → Level 2 → Level 3
+ * Level 1 → Level 1.5 → Level 2 → Level 3
  */
 export async function getDailyQuestionWithContext(
   userId: string
@@ -865,9 +920,35 @@ export async function getDailyQuestionWithContext(
       }
     }
 
-    log.debug('AI-driven question failed, trying journey fallback')
+    log.debug('AI-driven question failed, trying template fallback')
   } catch (error) {
     log.warn('Level 1 (AI-Driven) failed:', error)
+  }
+
+  try {
+    // LEVEL 1.5: Template-based fallback using already-fetched user context
+    const templateContext = await getUserContext(userId)
+    const templateQuestion = generateTemplateQuestion(templateContext)
+    if (templateQuestion) {
+      log.info('Using Level 1.5 template-based question')
+      const question: QuestionWithResponse = {
+        id: `template-${Date.now()}`,
+        question_text: templateQuestion,
+        category: 'reflection',
+        active: true,
+        created_at: generatedAt,
+      }
+
+      return {
+        question,
+        source: 'ai', // counts as AI-like since it's context-based
+        generatedAt,
+      }
+    }
+
+    log.debug('Template fallback produced no question, trying journey fallback')
+  } catch (error) {
+    log.warn('Level 1.5 (Template) failed:', error)
   }
 
   try {
@@ -907,20 +988,18 @@ export async function saveDailyResponse(
   source: 'ai' | 'journey' | 'pool'
 ): Promise<boolean> {
   try {
-    // Para perguntas AI, não temos registro persistente, apenas logs
-    if (source === 'ai') {
-      // Log para análise futura
-      log.debug(`AI Question Response: ${responseText.substring(0, 50)}...`)
-      return true
-    }
-
-    // Para perguntas de trilha ou pool, salvar normalmente
+    // Save ALL responses to question_responses, including AI-generated questions
     const { error } = await supabase.from('question_responses').insert({
       user_id: userId,
       question_id: questionId,
       response_text: responseText,
       responded_at: new Date().toISOString(),
+      ...(source === 'ai' ? { metadata: { source: 'ai', generated: true } } : {}),
     })
+
+    if (source === 'ai') {
+      log.info(`AI question response saved: questionId=${questionId}, length=${responseText.length}`)
+    }
 
     if (error) {
       log.error('Error saving response:', error)

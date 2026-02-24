@@ -47,6 +47,7 @@ import { useTourAutoStart } from '../../../hooks/useTourAutoStart'
 import { SettingsMenu, HelpButton } from '@/components'
 import { CeramicFilterTab } from '@/components/ui'
 import { InterviewCategoryPicker, InterviewSession as InterviewSessionView } from '../components/interviewer'
+import { FeatureGate } from '@/modules/liferpg/components/FeatureGate'
 
 // ── Skeleton Components ──────────────────────────────────────────
 
@@ -450,34 +451,40 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
             />
 
             {/* Weekly Summary */}
-            {isLoadingSummary ? (
-              <WeeklySummarySkeleton />
-            ) : summary ? (
-              <WeeklySummaryCard
-                summary={summary}
-                onAddReflection={handleAddReflection}
-              />
-            ) : (
-              <InsightsEmptyState />
-            )}
+            <FeatureGate featureId="weekly_summary">
+              {isLoadingSummary ? (
+                <WeeklySummarySkeleton />
+              ) : summary ? (
+                <WeeklySummaryCard
+                  summary={summary}
+                  onAddReflection={handleAddReflection}
+                />
+              ) : (
+                <InsightsEmptyState />
+              )}
+            </FeatureGate>
 
             {/* Pattern Dashboard (heatmap, trends, clusters) */}
-            <PatternDashboard userId={user?.id} />
+            <FeatureGate featureId="pattern_dashboard">
+              <PatternDashboard userId={user?.id} />
+            </FeatureGate>
 
             {/* Search — inline on desktop */}
-            <div className="ceramic-card p-6">
-              <JourneySearchPanel
-                onSearch={async (query) => { return await searchInMoments(query, 10) }}
-                onSearchEmotion={async (emotion) => { return await findByEmotion(emotion, 10) }}
-                onSearchTag={async (tag) => { return await findByTag(tag, 10) }}
-                onSearchGrowth={async () => { return await findGrowthMoments(10) }}
-                onSearchInsights={async (question) => { return await findInsights(question, 10) }}
-                results={searchResults}
-                isSearching={isSearching}
-                hasMoments={hasIndexedMoments}
-                onClear={clearSearchResults}
-              />
-            </div>
+            <FeatureGate featureId="semantic_search">
+              <div className="ceramic-card p-6">
+                <JourneySearchPanel
+                  onSearch={async (query) => { return await searchInMoments(query, 10) }}
+                  onSearchEmotion={async (emotion) => { return await findByEmotion(emotion, 10) }}
+                  onSearchTag={async (tag) => { return await findByTag(tag, 10) }}
+                  onSearchGrowth={async () => { return await findGrowthMoments(10) }}
+                  onSearchInsights={async (question) => { return await findInsights(question, 10) }}
+                  results={searchResults}
+                  isSearching={isSearching}
+                  hasMoments={hasIndexedMoments}
+                  onClear={clearSearchResults}
+                />
+              </div>
+            </FeatureGate>
           </div>
 
           {/* RIGHT COLUMN (2/5 = 40%) — Activities: Capture + Question + Timeline + Interview */}
@@ -645,18 +652,22 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
                 lastUpdated={userPatterns.lastSynthesizedAt}
               />
 
-              {isLoadingSummary ? (
-                <WeeklySummarySkeleton />
-              ) : summary ? (
-                <WeeklySummaryCard
-                  summary={summary}
-                  onAddReflection={handleAddReflection}
-                />
-              ) : (
-                <InsightsEmptyState />
-              )}
+              <FeatureGate featureId="weekly_summary">
+                {isLoadingSummary ? (
+                  <WeeklySummarySkeleton />
+                ) : summary ? (
+                  <WeeklySummaryCard
+                    summary={summary}
+                    onAddReflection={handleAddReflection}
+                  />
+                ) : (
+                  <InsightsEmptyState />
+                )}
+              </FeatureGate>
 
-              <PatternDashboard userId={user?.id} />
+              <FeatureGate featureId="pattern_dashboard">
+                <PatternDashboard userId={user?.id} />
+              </FeatureGate>
             </motion.div>
           )}
 
@@ -669,19 +680,22 @@ export function JourneyFullScreen({ onBack }: JourneyFullScreenProps) {
               animate="animate"
               exit="exit"
               transition={{ duration: 0.2 }}
-              className="ceramic-card p-6"
             >
-              <JourneySearchPanel
-                onSearch={async (query) => { return await searchInMoments(query, 10) }}
-                onSearchEmotion={async (emotion) => { return await findByEmotion(emotion, 10) }}
-                onSearchTag={async (tag) => { return await findByTag(tag, 10) }}
-                onSearchGrowth={async () => { return await findGrowthMoments(10) }}
-                onSearchInsights={async (question) => { return await findInsights(question, 10) }}
-                results={searchResults}
-                isSearching={isSearching}
-                hasMoments={hasIndexedMoments}
-                onClear={clearSearchResults}
-              />
+              <FeatureGate featureId="semantic_search">
+                <div className="ceramic-card p-6">
+                  <JourneySearchPanel
+                    onSearch={async (query) => { return await searchInMoments(query, 10) }}
+                    onSearchEmotion={async (emotion) => { return await findByEmotion(emotion, 10) }}
+                    onSearchTag={async (tag) => { return await findByTag(tag, 10) }}
+                    onSearchGrowth={async () => { return await findGrowthMoments(10) }}
+                    onSearchInsights={async (question) => { return await findInsights(question, 10) }}
+                    results={searchResults}
+                    isSearching={isSearching}
+                    hasMoments={hasIndexedMoments}
+                    onClear={clearSearchResults}
+                  />
+                </div>
+              </FeatureGate>
             </motion.div>
           )}
 
