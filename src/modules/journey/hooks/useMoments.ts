@@ -3,9 +3,10 @@
  * React hook for managing moments (CRUD operations)
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createNamespacedLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
+import { useJourneyFileSearch } from './useJourneyFileSearch'
 
 const log = createNamespacedLogger('useMoments')
 import {
@@ -32,6 +33,7 @@ interface UseMomentsOptions {
 export function useMoments(options: UseMomentsOptions = {}) {
   const { user } = useAuth()
   const { filter, limit = 50, autoFetch = true } = options
+  const { indexMoment: indexForSearch } = useJourneyFileSearch({ userId: user?.id, autoLoad: false })
 
   const [moments, setMoments] = useState<Moment[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -92,6 +94,14 @@ export function useMoments(options: UseMomentsOptions = {}) {
         // Add to beginning of list
         setMoments(prev => [newMoment, ...prev])
         setTotalCount(prev => prev + 1)
+
+        // Fire-and-forget: index for semantic search
+        if (newMoment.content && newMoment.content.trim().length >= 10) {
+          indexForSearch(newMoment as Moment).then(
+            () => log.info('Auto-indexed moment for semantic search:', newMoment.id),
+            (err) => log.warn('Auto-indexing failed (non-blocking):', err)
+          )
+        }
 
         return newMoment
       } catch (err) {
