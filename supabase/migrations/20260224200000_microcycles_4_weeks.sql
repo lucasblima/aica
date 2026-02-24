@@ -7,6 +7,11 @@
 ALTER TABLE public.microcycles
   DROP CONSTRAINT IF EXISTS microcycle_duration;
 
+-- 1a. Fix existing rows: extend end_date by 7 days (20 → 27 day span)
+UPDATE public.microcycles
+  SET end_date = end_date + INTERVAL '7 days'
+  WHERE end_date - start_date < 27;
+
 ALTER TABLE public.microcycles
   ADD CONSTRAINT microcycle_duration CHECK (end_date - start_date = 27);
   -- 4 weeks = 28 days, 0-27 inclusive
@@ -23,19 +28,23 @@ ALTER TABLE public.workout_slots
 ALTER TABLE public.workout_slots
   ADD CONSTRAINT workout_slots_week_number_check CHECK (week_number BETWEEN 1 AND 4);
 
--- 3. scheduled_workouts: expand week_number range 1-3 → 1-4
-ALTER TABLE public.scheduled_workouts
-  DROP CONSTRAINT IF EXISTS scheduled_workouts_week_number_check;
+-- 3. scheduled_workouts: skip — table has no week_number column
 
-ALTER TABLE public.scheduled_workouts
-  ADD CONSTRAINT scheduled_workouts_week_number_check CHECK (week_number BETWEEN 1 AND 4);
-
--- 4. athlete_feedback_entries: expand week_number range 1-3 → 1-4
-ALTER TABLE public.athlete_feedback_entries
-  DROP CONSTRAINT IF EXISTS athlete_feedback_entries_week_number_check;
-
-ALTER TABLE public.athlete_feedback_entries
-  ADD CONSTRAINT athlete_feedback_entries_week_number_check CHECK (week_number BETWEEN 1 AND 4);
+-- 4. athlete_feedback_entries: expand week_number range 1-3 → 1-4 (if column exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'athlete_feedback_entries'
+      AND column_name = 'week_number'
+  ) THEN
+    ALTER TABLE public.athlete_feedback_entries
+      DROP CONSTRAINT IF EXISTS athlete_feedback_entries_week_number_check;
+    ALTER TABLE public.athlete_feedback_entries
+      ADD CONSTRAINT athlete_feedback_entries_week_number_check CHECK (week_number BETWEEN 1 AND 4);
+  END IF;
+END $$;
 
 -- 5. RPC: get_my_athlete_profile() — LEAST(3→4) + include week focus fields
 CREATE OR REPLACE FUNCTION public.get_my_athlete_profile()
