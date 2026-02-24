@@ -62,6 +62,12 @@ export class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
+    // Skip auto-retry for chunk load errors — only a full page reload can fix stale 404s
+    if (isChunkLoadError(error)) {
+      log.debug('Chunk load error detected, skipping auto-retry (requires page reload)');
+      return;
+    }
+
     // Auto-retry logic
     const { autoRetryMs = 0, maxRetries = 3 } = this.props;
     if (autoRetryMs > 0 && this._retryCount < maxRetries) {

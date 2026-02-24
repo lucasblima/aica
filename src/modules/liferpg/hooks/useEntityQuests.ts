@@ -2,7 +2,7 @@
  * useEntityQuests — Load and manage quests for a persona
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { EntityQuest, QuestStatus } from '../types/liferpg';
@@ -33,6 +33,7 @@ export function useEntityQuests({
   const [quests, setQuests] = useState<EntityQuest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef(false);
 
   const loadQuests = useCallback(async () => {
     if (!personaId) return;
@@ -58,6 +59,7 @@ export function useEntityQuests({
     } catch (err) {
       log.error('Failed to load quests', { err });
       setError((err as Error).message);
+      errorRef.current = true;
     } finally {
       setLoading(false);
     }
@@ -136,10 +138,15 @@ export function useEntityQuests({
   }, []);
 
   useEffect(() => {
-    if (autoLoad && personaId) {
+    if (autoLoad && personaId && !errorRef.current) {
       loadQuests();
     }
   }, [autoLoad, personaId, loadQuests]);
 
-  return { quests, loading, error, reload: loadQuests, acceptQuest, completeQuest, skipQuest };
+  const reload = useCallback(async () => {
+    errorRef.current = false;
+    await loadQuests();
+  }, [loadQuests]);
+
+  return { quests, loading, error, reload, acceptQuest, completeQuest, skipQuest };
 }

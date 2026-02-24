@@ -3,7 +3,7 @@
  * Max 2 questions/day per user, diversified across entities.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { FeedbackQuestionWithPersona } from '../types/liferpg';
@@ -46,6 +46,7 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answeredToday, setAnsweredToday] = useState(0);
+  const errorRef = useRef(false);
 
   const dailyLimitReached = answeredToday >= MAX_DAILY_QUESTIONS;
 
@@ -80,6 +81,7 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
     } catch (err) {
       log.error('Failed to load feedback queue', { err });
       setError((err as Error).message);
+      errorRef.current = true;
     } finally {
       setLoading(false);
     }
@@ -164,7 +166,14 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
   }, []);
 
   useEffect(() => {
-    loadQuestions();
+    if (!errorRef.current) {
+      loadQuestions();
+    }
+  }, [loadQuestions]);
+
+  const reload = useCallback(async () => {
+    errorRef.current = false;
+    await loadQuestions();
   }, [loadQuestions]);
 
   const currentQuestion = dailyLimitReached ? null : questions[0] || null;
@@ -176,6 +185,6 @@ export function useFeedbackQueue(): UseFeedbackQueueReturn {
     dailyLimitReached,
     answerQuestion,
     skipQuestion,
-    reload: loadQuestions,
+    reload,
   };
 }
