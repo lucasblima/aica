@@ -9,13 +9,12 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Grid3X3, Zap, Clock, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useModuleRegistry, type ModuleRegistryEntry } from '@/hooks/useModuleRegistry';
+import { useModuleRegistry } from '@/hooks/useModuleRegistry';
 import { PageShell, CeramicLoadingState } from '@/components/ui';
 import { ModuleCard } from './ModuleCard';
-import { AIChatPreview } from './AIChatPreview';
 
 type FilterMode = 'all' | 'active' | 'coming-soon' | 'category';
 
@@ -61,8 +60,6 @@ export function ModuleHubPage() {
   } = useModuleRegistry();
 
   const [filter, setFilter] = useState<FilterMode>('all');
-  const [aiPreviewModule, setAiPreviewModule] = useState<ModuleRegistryEntry | null>(null);
-
   // Filter logic
   const filteredModules = useMemo(() => {
     switch (filter) {
@@ -162,9 +159,6 @@ export function ModuleHubPage() {
                         onJoinWaitlist={() => joinWaitlist(m.id)}
                         onLeaveWaitlist={() => leaveWaitlist(m.id)}
                         onNavigate={m.status === 'live' ? () => handleNavigateToModule(m.id) : undefined}
-                        onOpenAIPreview={
-                          m.ai_preview_enabled ? () => setAiPreviewModule(m) : undefined
-                        }
                       />
                     </motion.div>
                   ))}
@@ -187,9 +181,6 @@ export function ModuleHubPage() {
                   onJoinWaitlist={() => joinWaitlist(m.id)}
                   onLeaveWaitlist={() => leaveWaitlist(m.id)}
                   onNavigate={m.status === 'live' ? () => handleNavigateToModule(m.id) : undefined}
-                  onOpenAIPreview={
-                    m.ai_preview_enabled ? () => setAiPreviewModule(m) : undefined
-                  }
                 />
               </motion.div>
             ))}
@@ -203,18 +194,6 @@ export function ModuleHubPage() {
         )}
       </div>
 
-      {/* AI Chat Preview Modal */}
-      <AnimatePresence>
-        {aiPreviewModule && (
-          <AIChatPreview
-            module={aiPreviewModule}
-            isOnWaitlist={isOnWaitlist(aiPreviewModule.id)}
-            onJoinWaitlist={() => joinWaitlist(aiPreviewModule.id)}
-            onLeaveWaitlist={() => leaveWaitlist(aiPreviewModule.id)}
-            onClose={() => setAiPreviewModule(null)}
-          />
-        )}
-      </AnimatePresence>
     </PageShell>
   );
 }

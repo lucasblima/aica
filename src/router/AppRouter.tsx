@@ -92,8 +92,8 @@ const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default
 const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
 
-// Google Hub Module - Gmail + Drive integration
-const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ default: m.GoogleHubPage })));
+// Invites Dashboard - Manage sent invites
+const InvitesPage = lazy(() => import('../pages/InvitesPage'));
 
 // Module Hub - Coming Soon system (CS-004)
 const ModuleHubPage = lazy(() => import('../components/coming-soon/ModuleHubPage').then(m => ({ default: m.ModuleHubPage })));
@@ -829,10 +829,10 @@ export function AppRouter() {
                   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
                />
 
-               {/* Google Hub - Protected */}
+               {/* Invites Dashboard - Protected */}
                <Route
-                  path="/google-hub"
-                  element={<ProtectedRoute><GoogleHubPage /></ProtectedRoute>}
+                  path="/invites"
+                  element={<ProtectedRoute><InvitesPage /></ProtectedRoute>}
                />
 
                {/* Billing Module Routes - Protected */}
