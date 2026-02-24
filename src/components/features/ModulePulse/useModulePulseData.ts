@@ -62,12 +62,12 @@ export function useModulePulseData() {
 
       // Fire all queries in parallel
       const [fluxRes, journeyRes, financeRes, atlasRes, studioRes] = await Promise.all([
-        // Flux: workout_slots this week
+        // Flux: workout_slots created this week
         supabase
           .from('workout_slots')
           .select('*', { head: true, count: 'exact' })
-          .gte('slot_date', weekStartStr.split('T')[0])
-          .lte('slot_date', now.toISOString().split('T')[0]),
+          .eq('user_id', user.id)
+          .gte('created_at', weekStartStr),
 
         // Journey: moments today
         supabase
@@ -81,7 +81,7 @@ export function useModulePulseData() {
           .from('finance_transactions')
           .select('*', { head: true, count: 'exact' })
           .eq('user_id', user.id)
-          .gte('date', monthStart.split('T')[0]),
+          .gte('transaction_date', monthStart.split('T')[0]),
 
         // Atlas: open work_items
         supabase

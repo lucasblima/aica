@@ -834,16 +834,16 @@ export function AppRouter() {
                <Route path="/liferpg" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGMainView /></ErrorBoundary></ProtectedRoute>} />
                <Route path="/liferpg/:personaId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGDetailView /></ErrorBoundary></ProtectedRoute>} />
 
-               {/* Vida Page - Central hub (new default home) */}
+               {/* Home - ViewState-driven main app */}
                <Route
                   path="/"
-                  element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Vida" />}><VidaPage /></ErrorBoundary></ProtectedRoute>}
+                  element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
                />
 
-               {/* Legacy Home - ViewState-driven, kept for backward compat */}
+               {/* Vida Page - Central hub (WIP, future default) */}
                <Route
-                  path="/home-legacy"
-                  element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
+                  path="/vida"
+                  element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Vida" />}><VidaPage /></ErrorBoundary></ProtectedRoute>}
                />
 
                {/* 404 Not Found - Catch all unknown routes */}
