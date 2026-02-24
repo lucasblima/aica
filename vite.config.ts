@@ -20,11 +20,11 @@ export default defineConfig(() => {
         // Content Security Policy - defense against XSS attacks
         'Content-Security-Policy': [
           "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-inline/eval needed for React dev tools and HMR
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://withcallout.com", // unsafe-inline/eval needed for React dev tools and HMR
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // unsafe-inline needed for styled components
           "img-src 'self' data: https: blob:", // Allow images from data URIs, HTTPS, and blob URLs
           "font-src 'self' data: https://fonts.gstatic.com",
-          "connect-src 'self' https://ai.google.dev https://*.supabase.co wss://*.supabase.co https://n8n-n8n.w9jo16.easypanel.host https://project-management-docker.w9jo16.easypanel.host https://www.googleapis.com https://*.googleapis.com https://oauth2.googleapis.com https://accounts.google.com https://*.googleusercontent.com wss://generativelanguage.googleapis.com https://generativelanguage.googleapis.com",
+          "connect-src 'self' https://ai.google.dev https://*.supabase.co wss://*.supabase.co https://n8n-n8n.w9jo16.easypanel.host https://project-management-docker.w9jo16.easypanel.host https://www.googleapis.com https://*.googleapis.com https://oauth2.googleapis.com https://accounts.google.com https://*.googleusercontent.com wss://generativelanguage.googleapis.com https://generativelanguage.googleapis.com https://withcallout.com https://*.withcallout.com",
           "media-src 'self' blob: data:",
           "object-src 'none'",
           "frame-ancestors 'none'",
