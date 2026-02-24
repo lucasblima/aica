@@ -60,6 +60,19 @@ export function AicaChatFAB({
 
   const { context: chatContext, isLoading: contextLoading } = useChatContextData(isExpanded)
 
+  // Listen for external open requests (e.g. from VidaChatHero)
+  useEffect(() => {
+    const handleExternalOpen = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      setIsOpen(true)
+      if (detail?.message) {
+        setInput(detail.message)
+      }
+    }
+    window.addEventListener('aica-chat-open', handleExternalOpen)
+    return () => window.removeEventListener('aica-chat-open', handleExternalOpen)
+  }, [])
+
   // Escape cascade: sessions → expanded → close
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
