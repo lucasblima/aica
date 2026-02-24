@@ -40,3 +40,71 @@ CREATE TRIGGER trg_sync_athlete_avatar
   BEFORE INSERT OR UPDATE OF auth_user_id ON public.athletes
   FOR EACH ROW
   EXECUTE FUNCTION public.sync_athlete_avatar();
+
+-- 5. Update get_athletes_with_adherence RPC to include avatar_url
+--    Must DROP first because RETURNS TABLE signature changed (added avatar_url)
+DROP FUNCTION IF EXISTS public.get_athletes_with_adherence(UUID);
+
+CREATE FUNCTION public.get_athletes_with_adherence(p_user_id UUID)
+RETURNS TABLE (
+  id UUID,
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  modality TEXT,
+  level TEXT,
+  status TEXT,
+  invitation_status TEXT,
+  invitation_sent_at TIMESTAMPTZ,
+  invitation_email_status TEXT,
+  auth_user_id UUID,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  adherence_rate INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    a.id,
+    a.name,
+    a.email,
+    a.phone,
+    a.modality,
+    a.level,
+    a.status,
+    a.invitation_status,
+    a.invitation_sent_at,
+    a.invitation_email_status,
+    a.auth_user_id,
+    a.avatar_url,
+    a.created_at,
+    a.updated_at,
+    COALESCE(
+      CASE
+        WHEN slot_counts.total_slots = 0 THEN 0
+        ELSE ROUND((slot_counts.completed_slots::NUMERIC / slot_counts.total_slots::NUMERIC) * 100)::INTEGER
+      END,
+      0
+    ) AS adherence_rate
+  FROM public.athletes a
+  LEFT JOIN LATERAL (
+    SELECT
+      COUNT(*)::INTEGER AS total_slots,
+      COUNT(*) FILTER (WHERE ws.completed = true)::INTEGER AS completed_slots
+    FROM public.microcycles m
+    JOIN public.workout_slots ws ON ws.microcycle_id = m.id
+    WHERE m.athlete_id = a.id
+      AND m.status = 'active'
+  ) slot_counts ON true
+  WHERE a.user_id = p_user_id
+  ORDER BY a.name;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_athletes_with_adherence(UUID) TO authenticated;
