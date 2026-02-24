@@ -98,8 +98,19 @@ export function AthleteCard({
         {/* Header: Avatar + Name + Status */}
         <div className="flex items-start gap-3">
           {/* Avatar */}
-          <div className="ceramic-inset w-12 h-12 flex-shrink-0 flex items-center justify-center">
-            <User className="w-6 h-6 text-ceramic-text-secondary" />
+          <div className="ceramic-inset w-12 h-12 flex-shrink-0 flex items-center justify-center overflow-hidden rounded-xl">
+            {athlete.avatar_url ? (
+              <img
+                src={athlete.avatar_url}
+                alt={athlete.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <User className={`w-6 h-6 text-ceramic-text-secondary ${athlete.avatar_url ? 'hidden' : ''}`} />
           </div>
 
           {/* Name + Level + Modality */}

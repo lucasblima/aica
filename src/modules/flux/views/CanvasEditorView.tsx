@@ -3,7 +3,7 @@
  *
  * Features:
  * - 3-column layout: Library (sidebar) + Grid (center) + Editor (drawer)
- * - Dual view: Weekly (7 days) or Microcycle (3 weeks)
+ * - Dual view: Weekly (7 days) or Microcycle (4 weeks)
  * - Framer Motion drag-and-drop with magnetic snap
  * - Google Calendar integration (coach + athlete events)
  * - Real data from Supabase workout_slots + microcycles
@@ -24,6 +24,7 @@ import { isGoogleCalendarConnected } from '@/services/googleAuthService';
 import { hasCalendarWriteScope } from '@/services/googleCalendarTokenService';
 import type { WorkoutTemplate, WorkoutSlot, PaceZone } from '../types/flow';
 import type { WeekWorkout } from '../components/canvas/WeeklyGrid';
+import { MicrocycleService } from '../services/microcycleService';
 
 // Canvas components
 import { WorkoutBlockEditor } from '../components/canvas/WorkoutBlockEditor';
@@ -218,6 +219,8 @@ export default function CanvasEditorView() {
     startTime: string;
   } | null>(null);
   const [calSyncState, setCalSyncState] = useState<SyncState>('disconnected');
+  const [isReleasing, setIsReleasing] = useState(false);
+  const [microcycleStatus, setMicrocycleStatus] = useState<string | undefined>(undefined);
 
   // Calendar sync hook
   const {
@@ -289,6 +292,27 @@ export default function CanvasEditorView() {
     refresh: refreshCalendar,
   } = useCanvasCalendar({ weekStartDate, athleteId });
 
+  // Track microcycle status for Liberar Treino button
+  useEffect(() => {
+    setMicrocycleStatus(activeMicrocycle?.status);
+  }, [activeMicrocycle?.status]);
+
+  // Handler: release microcycle (draft → active)
+  const handleReleaseMicrocycle = useCallback(async () => {
+    if (!activeMicrocycle?.id) return;
+    setIsReleasing(true);
+    try {
+      const { data, error } = await MicrocycleService.activateMicrocycle(activeMicrocycle.id);
+      if (error) {
+        console.error('[CanvasEditorView] Error releasing microcycle:', error);
+      } else if (data) {
+        setMicrocycleStatus('active');
+      }
+    } finally {
+      setIsReleasing(false);
+    }
+  }, [activeMicrocycle?.id]);
+
   // If no athleteId, show athlete picker (after all hooks)
   if (!athleteId) {
     return (
@@ -307,7 +331,7 @@ export default function CanvasEditorView() {
   );
 
   const workoutsByWeek = useMemo<Record<number, WeekWorkout[]>>(() => {
-    const map: Record<number, WeekWorkout[]> = { 1: [], 2: [], 3: [] };
+    const map: Record<number, WeekWorkout[]> = { 1: [], 2: [], 3: [], 4: [] };
     for (const slot of slots) {
       const ww = slotToWeekWorkout(slot);
       if (map[slot.week_number]) {
@@ -541,6 +565,9 @@ export default function CanvasEditorView() {
         activeMicrocycleName={activeMicrocycle?.name || 'Ciclo'}
         weekWorkoutsForPublish={weekWorkoutsForPublish}
         microcycleId={activeMicrocycle?.id}
+        microcycleStatus={microcycleStatus}
+        onReleaseMicrocycle={handleReleaseMicrocycle}
+        isReleasing={isReleasing}
         calendarConnected={calendarConnected}
         athleteCalendarConnected={athleteCalendarConnected}
         showCoach={showCoach}

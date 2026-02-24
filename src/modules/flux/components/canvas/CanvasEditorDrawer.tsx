@@ -12,6 +12,7 @@ import {
   Calendar,
   CalendarCheck,
   Check,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -20,6 +21,7 @@ import {
   List,
   Loader2,
   RefreshCw,
+  Send,
   ShieldAlert,
   Upload,
 } from 'lucide-react';
@@ -275,6 +277,9 @@ export interface CanvasEditorDrawerProps {
   activeMicrocycleName: string | undefined;
   weekWorkoutsForPublish: WeekWorkoutForPublish[];
   microcycleId: string | undefined;
+  microcycleStatus?: string;
+  onReleaseMicrocycle?: () => void;
+  isReleasing?: boolean;
   // Calendar
   calendarConnected: boolean;
   athleteCalendarConnected: boolean;
@@ -304,6 +309,9 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
   activeMicrocycleName,
   weekWorkoutsForPublish,
   microcycleId,
+  microcycleStatus,
+  onReleaseMicrocycle,
+  isReleasing,
   calendarConnected,
   athleteCalendarConnected,
   showCoach,
@@ -416,11 +424,11 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="text-sm font-bold text-ceramic-text-primary px-3 min-w-[100px] text-center">
-                Semana {currentWeek} / 3
+                Semana {currentWeek} / 4
               </span>
               <button
-                onClick={() => setCurrentWeek((w) => Math.min(3, w + 1))}
-                disabled={currentWeek === 3}
+                onClick={() => setCurrentWeek((w) => Math.min(4, w + 1))}
+                disabled={currentWeek === 4}
                 className="p-1.5 disabled:opacity-30 hover:bg-ceramic-text-secondary/10 transition-colors rounded-lg"
                 style={{
                   boxShadow:
@@ -447,6 +455,28 @@ export const CanvasEditorDrawer: React.FC<CanvasEditorDrawerProps> = ({
               Calcular Cargas
             </span>
           </button>
+
+          {/* Liberar Treino / Status Badge */}
+          {microcycleStatus === 'draft' && onReleaseMicrocycle && (
+            <button
+              onClick={onReleaseMicrocycle}
+              disabled={isReleasing}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-400 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm shadow-md transition-all"
+            >
+              {isReleasing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {isReleasing ? 'Liberando...' : 'Liberar Treino'}
+            </button>
+          )}
+          {microcycleStatus === 'active' && (
+            <span className="flex items-center gap-1.5 px-3 py-1 bg-green-500/15 text-green-600 rounded-full text-xs font-bold uppercase tracking-wider">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Liberado
+            </span>
+          )}
 
           {athlete && (
             <PublishWhatsAppButton

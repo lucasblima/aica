@@ -87,6 +87,9 @@ export interface Athlete {
   onboarding_data?: Record<string, unknown>; // AI onboarding responses
   anamnesis?: AnamnesisData;
 
+  // Avatar (from auth.users raw_user_meta_data when linked)
+  avatar_url?: string;
+
   // User linking (athlete ↔ AICA user)
   auth_user_id?: string; // FK to auth.users — the athlete's own account
   linked_at?: string; // When the link was established

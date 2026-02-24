@@ -310,8 +310,19 @@ export default function AthleteDetailView() {
         <div className="ceramic-card p-6 space-y-4">
           {/* Avatar + Name + Level */}
           <div className="flex items-start gap-4">
-            <div className="ceramic-inset w-20 h-20 flex-shrink-0 flex items-center justify-center">
-              <User className="w-10 h-10 text-ceramic-text-secondary" />
+            <div className="ceramic-inset w-20 h-20 flex-shrink-0 flex items-center justify-center overflow-hidden rounded-xl">
+              {athlete.avatar_url ? (
+                <img
+                  src={athlete.avatar_url}
+                  alt={athlete.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <User className={`w-10 h-10 text-ceramic-text-secondary ${athlete.avatar_url ? 'hidden' : ''}`} />
             </div>
 
             <div className="flex-1 min-w-0">

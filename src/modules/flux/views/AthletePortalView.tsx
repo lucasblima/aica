@@ -452,7 +452,7 @@ export default function AthletePortalView() {
         </>
       ) : (
         <motion.section className="px-5" custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
-          <AthleteFeedbackView profile={profile} onRefetch={refetch} highlightSlotId={feedbackSlotId} />
+          <AthleteFeedbackView profile={profile} onRefetch={refetch} highlightSlotId={feedbackSlotId} selectedWeek={selectedWeek} />
         </motion.section>
       )}
     </div>

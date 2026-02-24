@@ -81,7 +81,8 @@ export function useCanvasDragDrop({
             name: `Microciclo ${monday.toLocaleDateString('pt-BR')}`,
             week_1_focus: 'volume' as MicrocycleWeekFocus,
             week_2_focus: 'intensity' as MicrocycleWeekFocus,
-            week_3_focus: 'recovery' as MicrocycleWeekFocus,
+            week_3_focus: 'intensity' as MicrocycleWeekFocus,
+            week_4_focus: 'recovery' as MicrocycleWeekFocus,
             start_date: monday.toISOString().split('T')[0],
           });
 

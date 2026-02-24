@@ -1,7 +1,7 @@
 /**
  * Microcycle Service
  *
- * CRUD operations for 3-week training blocks with load calculation and slot management
+ * CRUD operations for 4-week training blocks with load calculation and slot management
  */
 
 import { supabase } from '@/services/supabaseClient';
