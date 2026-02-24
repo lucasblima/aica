@@ -62,9 +62,21 @@ export class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
-    // Skip auto-retry for chunk load errors — only a full page reload can fix stale 404s
+    // Auto-reload for chunk load errors — stale 404s can only be fixed by a full page reload
     if (isChunkLoadError(error)) {
-      log.debug('Chunk load error detected, skipping auto-retry (requires page reload)');
+      const RELOAD_KEY = 'aica_chunk_reload_ts';
+      const lastReload = Number(sessionStorage.getItem(RELOAD_KEY) || '0');
+      const now = Date.now();
+
+      // Guard: only auto-reload if last reload was >10s ago (prevents infinite loop)
+      if (now - lastReload > 10_000) {
+        log.debug('Chunk load error detected, auto-reloading page to fetch fresh assets');
+        sessionStorage.setItem(RELOAD_KEY, String(now));
+        window.location.reload();
+        return;
+      }
+
+      log.debug('Chunk load error detected but recent reload already attempted, showing manual fallback');
       return;
     }
 
