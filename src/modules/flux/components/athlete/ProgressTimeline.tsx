@@ -79,6 +79,11 @@ export function ProgressTimeline({
         )}
       </div>
 
+      {/* Section label */}
+      <p className="text-[10px] font-bold text-ceramic-text-secondary uppercase tracking-wider">
+        Treinos Cumpridos
+      </p>
+
       {/* Week pills */}
       <div className="flex gap-2">
         {weeks.map((week, i) => {
@@ -148,7 +153,7 @@ export function ProgressTimeline({
 
               {/* Fraction */}
               <p className="text-[10px] text-ceramic-text-secondary">
-                {week.completedSlots}/{week.totalSlots}
+                {week.completedSlots}/{week.totalSlots} treinos
               </p>
 
               {/* Focus label */}

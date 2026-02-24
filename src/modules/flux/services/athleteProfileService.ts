@@ -224,6 +224,7 @@ export class AthleteProfileService {
   /**
    * Sync athlete profiles with selected modalities
    * Creates/updates profiles for selected modalities, deletes removed ones
+   * When modalityLevels is provided, uses per-modality levels instead of sharedData.level
    */
   static async syncProfilesForAthlete(
     athleteId: string,
@@ -234,6 +235,7 @@ export class AthleteProfileService {
       ftp?: number;
       pace_threshold?: string;
       css?: string;
+      modalityLevels?: Array<{ modality: TrainingModality; level: AthleteLevel }>;
     }
   ): Promise<{ data: AthleteProfile[] | null; error: any }> {
     try {
@@ -247,12 +249,20 @@ export class AthleteProfileService {
 
       const existingModalities = existingProfiles?.map((p) => p.modality) || [];
 
+      // Build per-modality level lookup from modalityLevels if provided
+      const levelByModality = new Map<TrainingModality, AthleteLevel>();
+      if (sharedData.modalityLevels) {
+        for (const ml of sharedData.modalityLevels) {
+          levelByModality.set(ml.modality, ml.level);
+        }
+      }
+
       // Upsert profiles for all selected modalities
       const upsertPromises = modalities.map((modality) =>
         this.upsertProfile({
           athlete_id: athleteId,
           modality,
-          level: sharedData.level,
+          level: levelByModality.get(modality) || sharedData.level,
           anamnesis: sharedData.anamnesis,
           ftp: modality === 'cycling' ? sharedData.ftp : undefined,
           pace_threshold: modality === 'running' ? sharedData.pace_threshold : undefined,
