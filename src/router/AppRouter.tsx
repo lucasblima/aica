@@ -32,6 +32,7 @@ const log = createNamespacedLogger('AppRouter');
 
 // Core Views - Frequently accessed, loaded lazily
 const Home = lazy(() => import('../pages/Home'));
+const VidaPage = lazy(() => import('../pages/VidaPage'));
 const AgendaView = lazy(() => import('../views/AgendaView').then(m => ({ default: m.AgendaView })));
 
 // Journey Module - Self-contained feature
@@ -833,9 +834,15 @@ export function AppRouter() {
                <Route path="/liferpg" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGMainView /></ErrorBoundary></ProtectedRoute>} />
                <Route path="/liferpg/:personaId" element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Life RPG" />}><LifeRPGDetailView /></ErrorBoundary></ProtectedRoute>} />
 
-               {/* Main App - Authenticated users (root path only, ViewState-driven) */}
+               {/* Vida Page - Central hub (new default home) */}
                <Route
                   path="/"
+                  element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Vida" />}><VidaPage /></ErrorBoundary></ProtectedRoute>}
+               />
+
+               {/* Legacy Home - ViewState-driven, kept for backward compat */}
+               <Route
+                  path="/home-legacy"
                   element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
                />
 
