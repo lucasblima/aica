@@ -23,7 +23,6 @@ import { ConnectionStatusDot } from '../components/ConnectionStatusDot';
 import { ParQCoachView } from '../components/parq/ParQCoachView';
 import {
   ArrowLeft,
-  User,
   Mail,
   Phone,
   Calendar,
@@ -38,6 +37,27 @@ import {
   Calculator,
   Save,
 } from 'lucide-react';
+
+const AVATAR_COLORS = [
+  'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
+  'bg-violet-500', 'bg-teal-500', 'bg-pink-500', 'bg-indigo-500',
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 import { ErrorBoundary, ModuleErrorFallback } from '@/components/ui/ErrorBoundary';
 
 export default function AthleteDetailView() {
@@ -322,7 +342,9 @@ export default function AthleteDetailView() {
                   }}
                 />
               ) : null}
-              <User className={`w-10 h-10 text-ceramic-text-secondary ${athlete.avatar_url ? 'hidden' : ''}`} />
+              <div className={`w-full h-full flex items-center justify-center ${getAvatarColor(athlete.name)} ${athlete.avatar_url ? 'hidden' : ''}`}>
+                <span className="text-white font-bold text-2xl">{getInitials(athlete.name)}</span>
+              </div>
             </div>
 
             <div className="flex-1 min-w-0">
