@@ -86,6 +86,8 @@ export default defineConfig(() => {
           skipWaiting: true,
           clientsClaim: true,
           cleanupOutdatedCaches: true,
+          // Vite hashed chunks already have unique filenames — skip cache-busting query params
+          dontCacheBustURLsMatching: /[-.][\da-f]{7,8}\./,
           // Prevent Workbox navigation fallback from serving index.html for /assets/ paths
           navigateFallbackDenylist: [/^\/assets\//, /^\/api\//],
           importScripts: ['/sw-share-target.js'],

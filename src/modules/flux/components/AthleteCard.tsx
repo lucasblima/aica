@@ -13,7 +13,28 @@ import { LevelBadge } from './LevelBadge';
 import { AlertBadge } from './AlertBadge';
 import { ConnectionStatusDot } from './ConnectionStatusDot';
 import { ParQStatusBadge } from './parq/ParQStatusBadge';
-import { User, AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, MessageCircle, MoreVertical, Edit2, Trash2, Mail, Copy, Check } from 'lucide-react';
+
+const AVATAR_COLORS = [
+  'bg-rose-500', 'bg-sky-500', 'bg-emerald-500', 'bg-amber-500',
+  'bg-violet-500', 'bg-teal-500', 'bg-pink-500', 'bg-indigo-500',
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 /** Lightweight feedback shape from workout_slots (not the orphaned Feedback interface) */
 export interface SlotFeedback {
@@ -98,8 +119,21 @@ export function AthleteCard({
         {/* Header: Avatar + Name + Status */}
         <div className="flex items-start gap-3">
           {/* Avatar */}
-          <div className="ceramic-inset w-12 h-12 flex-shrink-0 flex items-center justify-center">
-            <User className="w-6 h-6 text-ceramic-text-secondary" />
+          <div className="ceramic-inset w-12 h-12 flex-shrink-0 flex items-center justify-center overflow-hidden rounded-xl">
+            {athlete.avatar_url ? (
+              <img
+                src={athlete.avatar_url}
+                alt={athlete.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div className={`w-full h-full flex items-center justify-center ${getAvatarColor(athlete.name)} ${athlete.avatar_url ? 'hidden' : ''}`}>
+              <span className="text-white font-bold text-sm">{getInitials(athlete.name)}</span>
+            </div>
           </div>
 
           {/* Name + Level + Modality */}

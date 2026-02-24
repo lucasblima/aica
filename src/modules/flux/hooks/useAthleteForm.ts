@@ -134,6 +134,17 @@ export function useAthleteForm({
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
+  // Re-initialize form data when opening with new initialData
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(getInitialFormData());
+      setErrors({});
+      setSubmitError(null);
+      setSubmitSuccess(false);
+      setIsDirty(false);
+    }
+  }, [isOpen, getInitialFormData]);
+
   // Load athlete profiles when editing
   useEffect(() => {
     const loadProfiles = async () => {

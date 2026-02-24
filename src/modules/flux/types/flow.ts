@@ -134,13 +134,14 @@ export interface Microcycle {
   week_1_focus: MicrocycleWeekFocus;
   week_2_focus: MicrocycleWeekFocus;
   week_3_focus: MicrocycleWeekFocus;
+  week_4_focus: MicrocycleWeekFocus;
 
   // Date Range
   start_date: string; // ISO date
   end_date: string; // ISO date
 
   // Load Targets
-  target_weekly_load?: number[]; // [350, 400, 250]
+  target_weekly_load?: number[]; // [350, 400, 300, 250]
   actual_weekly_load?: number[]; // Auto-calculated
 
   // Status
@@ -163,6 +164,7 @@ export interface CreateMicrocycleInput {
   week_1_focus: MicrocycleWeekFocus;
   week_2_focus: MicrocycleWeekFocus;
   week_3_focus: MicrocycleWeekFocus;
+  week_4_focus: MicrocycleWeekFocus;
   start_date: string;
   target_weekly_load?: number[];
 }
@@ -183,7 +185,7 @@ export interface WorkoutSlot {
   template_id?: string;
 
   // Slot Position
-  week_number: number; // 1-3
+  week_number: number; // 1-4
   day_of_week: number; // 1-7
   start_time?: string; // "HH:MM" e.g. "09:00", "14:30"
 
