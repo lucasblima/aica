@@ -92,8 +92,8 @@ const PricingPage = lazy(() => import('../modules/billing').then(m => ({ default
 const UsageDashboardPage = lazy(() => import('../modules/billing').then(m => ({ default: m.UsageDashboardPage })));
 const ManageSubscriptionPage = lazy(() => import('../modules/billing').then(m => ({ default: m.ManageSubscriptionPage })));
 
-// Google Hub Module - Gmail + Drive integration
-const GoogleHubPage = lazy(() => import('../modules/google-hub').then(m => ({ default: m.GoogleHubPage })));
+// Invites Dashboard - Manage sent invites
+const InvitesPage = lazy(() => import('../pages/InvitesPage'));
 
 // Module Hub - Coming Soon system (CS-004)
 const ModuleHubPage = lazy(() => import('../components/coming-soon/ModuleHubPage').then(m => ({ default: m.ModuleHubPage })));
@@ -221,7 +221,9 @@ export function AppRouter() {
 
    // Sync view state with URL location
    useEffect(() => {
-      if (location.pathname.startsWith('/connections')) {
+      if (location.pathname === '/vida') {
+         setCurrentView('vida-new');
+      } else if (location.pathname.startsWith('/connections')) {
          setCurrentView('connections');
       }
    }, [location.pathname]);
@@ -232,6 +234,8 @@ export function AppRouter() {
          navigate('/connections');
       } else if (view === 'contacts') {
          navigate('/contacts');
+      } else if (view === 'vida-new') {
+         navigate('/vida');
       } else {
          // For non-router views, navigate to root and set state
          if (location.pathname !== '/') {
@@ -405,6 +409,26 @@ export function AppRouter() {
       ) : <CeramicLoadingState variant="page" />
    );
 
+   // ==================== VIDA PAGE (REDESIGNED) ====================
+   // Uses VidaPage with inline chat hero — validation at /vida before replacing Home
+   const renderVidaPage = () => (
+      userId ? (
+         <VidaPage
+            userId={userId}
+            userEmail={userEmail}
+            associations={associations}
+            lifeAreas={lifeAreas}
+            onLogout={() => supabase.auth.signOut()}
+            onNavigateToView={setCurrentView}
+            onNavigateToAICost={() => setCurrentView('ai-cost')}
+            onNavigateToFileSearch={() => setCurrentView('file-search-analytics')}
+            onOpenAssociation={handleOpenAssociation}
+            onSelectArchetype={handleSelectArchetype}
+            onCreateAssociation={handleCreateAssociation}
+         />
+      ) : <CeramicLoadingState variant="page" />
+   );
+
    // ==================== MEU DIA (AGENDA) VIEW ====================
    const renderAgenda = () => (
       userId ? (
@@ -534,6 +558,7 @@ export function AppRouter() {
          <div className="bg-ceramic-base min-h-screen font-sans text-ceramic-text-primary">
             <AnimatePresence mode="wait">
             {currentView === 'vida' && <motion.div key="vida" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderVida()}</motion.div>}
+            {currentView === 'vida-new' && <motion.div key="vida-new" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit">{renderVidaPage()}</motion.div>}
             {currentView === 'agenda' && <motion.div key="agenda" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Agenda" />}>{renderAgenda()}</ErrorBoundary></motion.div>}
             {currentView === 'connections' && <motion.div key="connections" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Connections" />}>{renderConnections()}</ErrorBoundary></motion.div>}
             {currentView === 'studio' && <motion.div key="studio" variants={pageTransitionVariants} initial="initial" animate="animate" exit="exit"><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Studio" />}>{renderStudio()}</ErrorBoundary></motion.div>}
@@ -804,10 +829,10 @@ export function AppRouter() {
                   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
                />
 
-               {/* Google Hub - Protected */}
+               {/* Invites Dashboard - Protected */}
                <Route
-                  path="/google-hub"
-                  element={<ProtectedRoute><GoogleHubPage /></ProtectedRoute>}
+                  path="/invites"
+                  element={<ProtectedRoute><InvitesPage /></ProtectedRoute>}
                />
 
                {/* Billing Module Routes - Protected */}
@@ -843,7 +868,7 @@ export function AppRouter() {
                {/* Vida Page - Central hub (WIP, future default) */}
                <Route
                   path="/vida"
-                  element={<ProtectedRoute><ErrorBoundary autoRetryMs={2000} maxRetries={3} fallback={<ModuleErrorFallback moduleName="Vida" />}><VidaPage /></ErrorBoundary></ProtectedRoute>}
+                  element={<ProtectedRoute>{renderMainApp()}</ProtectedRoute>}
                />
 
                {/* 404 Not Found - Catch all unknown routes */}
