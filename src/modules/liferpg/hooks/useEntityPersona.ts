@@ -2,7 +2,7 @@
  * useEntityPersona — Load persona + stats + HP
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { createNamespacedLogger } from '@/lib/logger';
 import type { EntityPersona, PersonaDashboardData } from '../types/liferpg';
@@ -31,6 +31,7 @@ export function useEntityPersona({
   const [dashboard, setDashboard] = useState<PersonaDashboardData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef(false);
 
   const loadDashboard = useCallback(async () => {
     if (!personaId) return;
@@ -61,6 +62,7 @@ export function useEntityPersona({
     } catch (err) {
       log.error('Failed to load persona dashboard', { err });
       setError((err as Error).message);
+      errorRef.current = true;
     } finally {
       setLoading(false);
     }
@@ -83,12 +85,17 @@ export function useEntityPersona({
   }, [personaId]);
 
   useEffect(() => {
-    if (autoLoad && personaId) {
+    if (autoLoad && personaId && !errorRef.current) {
       loadDashboard();
     }
   }, [autoLoad, personaId, loadDashboard]);
 
-  return { persona, dashboard, loading, error, reload: loadDashboard, updateHP };
+  const reload = useCallback(async () => {
+    errorRef.current = false;
+    await loadDashboard();
+  }, [loadDashboard]);
+
+  return { persona, dashboard, loading, error, reload, updateHP };
 }
 
 /**
@@ -98,6 +105,7 @@ export function useEntityPersonaList() {
   const [personas, setPersonas] = useState<EntityPersona[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,14 +127,22 @@ export function useEntityPersonaList() {
     } catch (err) {
       log.error('Failed to load personas', { err });
       setError((err as Error).message);
+      errorRef.current = true;
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    load();
+    if (!errorRef.current) {
+      load();
+    }
   }, [load]);
 
-  return { personas, loading, error, reload: load };
+  const reload = useCallback(async () => {
+    errorRef.current = false;
+    await load();
+  }, [load]);
+
+  return { personas, loading, error, reload };
 }

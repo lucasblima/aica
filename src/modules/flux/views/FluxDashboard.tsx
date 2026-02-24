@@ -127,10 +127,26 @@ export default function FluxDashboard() {
 
     const loadFeedbacks = async () => {
       const athleteIds = allAthletes.map((a) => a.id);
+
+      // Step 1: Get microcycles for these athletes to build athlete_id lookup
+      const { data: microcycles, error: mcError } = await supabase
+        .from('microcycles')
+        .select('id, athlete_id')
+        .in('athlete_id', athleteIds);
+
+      if (cancelled || mcError || !microcycles || microcycles.length === 0) return;
+
+      const microcycleIds = microcycles.map((m) => m.id);
+      const microcycleToAthlete: Record<string, string> = {};
+      for (const m of microcycles) {
+        microcycleToAthlete[m.id] = m.athlete_id;
+      }
+
+      // Step 2: Query workout_slots using microcycle_id (workout_slots has no athlete_id column)
       const { data, error } = await supabase
         .from('workout_slots')
-        .select('id, name, athlete_feedback, completed_at, rpe, athlete_id')
-        .in('athlete_id', athleteIds)
+        .select('id, name, athlete_feedback, completed_at, rpe, microcycle_id')
+        .in('microcycle_id', microcycleIds)
         .not('athlete_feedback', 'is', null)
         .order('completed_at', { ascending: false })
         .limit(100);
@@ -139,9 +155,11 @@ export default function FluxDashboard() {
 
       const grouped: Record<string, SlotFeedback[]> = {};
       for (const row of data) {
-        if (!grouped[row.athlete_id]) grouped[row.athlete_id] = [];
-        if (grouped[row.athlete_id].length < 3) {
-          grouped[row.athlete_id].push({
+        const athleteId = microcycleToAthlete[row.microcycle_id];
+        if (!athleteId) continue;
+        if (!grouped[athleteId]) grouped[athleteId] = [];
+        if (grouped[athleteId].length < 3) {
+          grouped[athleteId].push({
             id: row.id,
             name: row.name,
             athlete_feedback: row.athlete_feedback,
