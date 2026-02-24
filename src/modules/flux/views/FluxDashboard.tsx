@@ -362,9 +362,7 @@ export default function FluxDashboard() {
         trackAthleteCreated().catch(() => {});
       }
 
-      // Sync athlete profiles for all selected modalities
-      // Note: syncProfilesForAthlete expects simple modality array, not modalityLevels
-      // Level is managed per profile in athlete_profiles table
+      // Sync athlete profiles for all selected modalities with per-modality levels
       const { error: profileError } = await AthleteProfileService.syncProfilesForAthlete(
         athleteId,
         modalities,
@@ -374,6 +372,7 @@ export default function FluxDashboard() {
           ftp: athleteData.ftp,
           pace_threshold: athleteData.pace_threshold,
           css: athleteData.swim_css,
+          modalityLevels: modalityLevels as Array<{ modality: TrainingModality; level: AthleteLevel }>,
         }
       );
 

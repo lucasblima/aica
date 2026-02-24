@@ -1,7 +1,7 @@
 /**
- * MicrocycleGrid - 3-week overview component for the Flux Canvas
+ * MicrocycleGrid - 4-week overview component for the Flux Canvas
  *
- * Displays 3 weeks in compact horizontal strips with 7 mini-columns each.
+ * Displays 4 weeks in compact horizontal strips with 7 mini-columns each.
  * Workouts shown as small pills colored by modality.
  * Calendar busy slots shown as striped blocks (same pattern as WeeklyGrid).
  * Ceramic Renaissance design with Framer Motion animations.
@@ -47,9 +47,9 @@ interface MicrocycleGridProps {
     start_date: string;
     focus: string;
   };
-  workoutsByWeek: Record<number, WeekWorkout[]>; // week 1-3 -> workouts
+  workoutsByWeek: Record<number, WeekWorkout[]>; // week 1-4 -> workouts
   calendarEvents?: BusySlot[];
-  currentWeek: number; // Which week is "active" (1-3)
+  currentWeek: number; // Which week is "active" (1-4)
   startWeekOffset?: number; // Absolute week number of first week (for periodization labels)
   onWorkoutClick?: (workoutId: string) => void;
   onDropWorkout?: (weekNumber: number, dayOfWeek: number, templateData: string) => void;
@@ -66,7 +66,8 @@ const WEEKDAYS_SHORT = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] as const;
 const WEEK_LABELS: Record<number, string> = {
   1: 'Base',
   2: 'Progressao',
-  3: 'Recuperacao',
+  3: 'Intensidade',
+  4: 'Recuperacao',
 };
 
 /**
@@ -94,7 +95,7 @@ const MODALITY_PILL_STYLES: Record<WeekWorkout['modality'], { bg: string; text: 
 
 const MicrocycleGridSkeleton: React.FC = () => (
   <div className="space-y-4">
-    {[1, 2, 3].map((i) => (
+    {[1, 2, 3, 4].map((i) => (
       <div
         key={i}
         className="h-28 bg-ceramic-text-secondary/8 rounded-[20px] animate-pulse"
@@ -399,14 +400,14 @@ export const MicrocycleGrid: React.FC<MicrocycleGridProps> = ({
         </div>
       </div>
 
-      {/* 3 Week Strips */}
+      {/* 4 Week Strips */}
       <motion.div
         className="space-y-4"
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
       >
-        {[1, 2, 3].map((weekNum) => (
+        {[1, 2, 3, 4].map((weekNum) => (
           <WeekStrip
             key={weekNum}
             weekNumber={weekNum}

@@ -15,9 +15,11 @@ export interface AthleteFeedbackViewProps {
   profile: MyAthleteProfile;
   onRefetch: () => Promise<void>;
   highlightSlotId?: string | null;
+  /** When set, only the selected week is shown in the timeline */
+  selectedWeek?: number;
 }
 
-export function AthleteFeedbackView({ profile, onRefetch }: AthleteFeedbackViewProps) {
+export function AthleteFeedbackView({ profile, onRefetch, selectedWeek }: AthleteFeedbackViewProps) {
   const {
     weekSummaries,
     currentWeek,
@@ -26,6 +28,11 @@ export function AthleteFeedbackView({ profile, onRefetch }: AthleteFeedbackViewP
     isLoading,
     error,
   } = useAthleteFeedback(profile);
+
+  // Filter to selected week when provided
+  const filteredSummaries = selectedWeek != null
+    ? weekSummaries.filter((ws) => ws.weekNumber === selectedWeek)
+    : weekSummaries;
 
   const handleSubmitExercise = async (input: Parameters<typeof submitExerciseFeedback>[0]) => {
     await submitExerciseFeedback(input);
@@ -54,7 +61,7 @@ export function AthleteFeedbackView({ profile, onRefetch }: AthleteFeedbackViewP
         </div>
       ) : (
         <FeedbackTimeline
-          weekSummaries={weekSummaries}
+          weekSummaries={filteredSummaries}
           currentWeek={currentWeek}
           onSubmitExercise={handleSubmitExercise}
           isSubmitting={isSubmitting}
