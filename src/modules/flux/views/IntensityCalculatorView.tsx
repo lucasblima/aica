@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calculator } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IntensityCalculatorService } from '../services/intensityCalculatorService';
-import { AthleteProfileService } from '../services/AthleteProfileService';
+import { AthleteProfileService } from '../services/athleteProfileService';
 import type { FlowAthleteProfile, IntensityCalculation } from '../types/flow';
 import { MODALITY_CONFIG } from '../types/flux';
 

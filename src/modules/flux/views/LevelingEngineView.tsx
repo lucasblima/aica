@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { LevelingEngineService } from '../services/levelingEngineService';
-import { AthleteProfileService } from '../services/AthleteProfileService';
+import { AthleteProfileService } from '../services/athleteProfileService';
 import type { LevelingRecommendation, FlowAthleteProfile, AthleteLevel } from '../types/flow';
 
 export default function LevelingEngineView() {

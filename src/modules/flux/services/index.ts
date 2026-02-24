@@ -16,7 +16,7 @@ export { MicrocycleService } from './microcycleService';
 export { WorkoutSlotService } from './workoutSlotService';
 export type { CreateWorkoutSlotInput, UpdateWorkoutSlotInput } from './workoutSlotService';
 
-export { AthleteProfileService } from './AthleteProfileService';
+export { AthleteProfileService } from './athleteProfileService';
 
 export { AutomationService } from './automationService';
 export { AutomationEngineService } from './automationEngineService';
