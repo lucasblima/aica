@@ -1,246 +1,499 @@
 /**
- * VidaPage - Central hub of AICA Life OS
+ * VidaPage — Central hub of AICA Life OS
  *
- * Johnny Ive philosophy: radical simplicity, every pixel earns its place.
- * Inline chat center + module pulse + module grid.
+ * Home.tsx quality + inline chat hero.
+ * Accepts same props as Home for ViewState system compatibility.
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import {
-  Send,
-  Loader2,
-  Dumbbell,
-  Mic,
-  Wallet,
-  ClipboardList,
-  Compass,
-  Network,
-  Sparkles,
-  Calendar,
-} from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { useChatSession } from '@/hooks/useChatSession'
-import type { DisplayMessage } from '@/hooks/useChatSession'
-import { useConsciousnessPoints } from '@/modules/journey/hooks/useConsciousnessPoints'
-import { formatMarkdownToHTML } from '@/lib/formatMarkdown'
-import { staggerContainer, staggerItem } from '@/lib/animations/ceramic-motion'
-import { ModulePulse } from '@/components/features/ModulePulse'
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Wallet, Heart, Building2, BookOpen, Scale, Mic, Briefcase, Ticket, Compass, type LucideIcon } from 'lucide-react';
+import { HeaderGlobal, ProfileDrawer, ModuleCard, ExploreMoreSection, CreditBalanceWidget, InviteShareCard, InviteModal } from '../components';
+import { VidaChatHero } from '@/components/features/VidaChatHero';
+import { FinanceCard } from '../modules/finance/components/FinanceCard';
+import { GrantsCard } from '../modules/grants/components/GrantsCard';
+import { JourneyHeroCard } from '../modules/journey';
+import { FluxCard } from '../modules/flux';
+import { InterviewerCard } from '../modules/journey/components/interviewer';
+import { useConsciousnessPoints } from '../modules/journey/hooks/useConsciousnessPoints';
+import { LEVEL_COLORS } from '../modules/journey/types/consciousnessPoints';
+import { useGrantsHomeQuery } from '@/hooks/queries';
+import { ViewState } from '../../types';
+import { supabase } from '@/services/supabaseClient';
+import { useAuth } from '@/hooks/useAuth';
+import { createNamespacedLogger } from '@/lib/logger';
+import { cardElevationVariants } from '@/lib/animations/ceramic-motion';
 
-function getGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour >= 5 && hour < 12) return 'Bom dia'
-  if (hour >= 12 && hour < 18) return 'Boa tarde'
-  return 'Boa noite'
+const log = createNamespacedLogger('VidaPage');
+
+// Animation variants for card entrance choreography
+const cardVariants = {
+   hidden: {
+      opacity: 0,
+      y: 20,
+      rotateX: -5,
+      scale: 0.98
+   },
+   visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      scale: 1,
+      transition: {
+         delay: i * 0.08,
+         duration: 0.5,
+         ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number]
+      }
+   })
+};
+
+// MODULE_REGISTRY — typed config for all modules
+interface ModuleConfig {
+   id: string;
+   label: string;
+   icon: string;
+   route: ViewState | string;
+   type: 'core' | 'generic';
 }
 
-const MODULE_GRID = [
-  { key: 'flux', icon: Dumbbell, label: 'Flux', route: '/flux' },
-  { key: 'studio', icon: Mic, label: 'Studio', route: '/studio' },
-  { key: 'finance', icon: Wallet, label: 'Finance', route: '/finance' },
-  { key: 'atlas', icon: ClipboardList, label: 'Atlas', route: '/' },
-  { key: 'journey', icon: Sparkles, label: 'Jornada', route: '/' },
-  { key: 'connections', icon: Network, label: 'Conexoes', route: '/connections' },
-  { key: 'agenda', icon: Calendar, label: 'Agenda', route: '/' },
-  { key: 'grants', icon: Compass, label: 'Grants', route: '/' },
-] as const
+const MODULE_REGISTRY: ModuleConfig[] = [
+   { id: 'finance', label: 'Finanças', icon: '💰', route: 'finance', type: 'core' },
+   { id: 'grants', label: 'Captação', icon: '📄', route: 'grants', type: 'core' },
+   { id: 'flux', label: 'Flux', icon: '🏋️', route: 'flux', type: 'core' },
+   { id: 'studio', label: 'Studio', icon: '🎙️', route: 'studio', type: 'core' },
+   { id: 'connections', label: 'Conexões', icon: '🏢', route: 'connections', type: 'core' },
+   { id: 'eraforge', label: 'EraForge', icon: '🏛️', route: 'eraforge', type: 'core' },
+   { id: 'health', label: 'Saúde', icon: '🫀', route: 'health', type: 'generic' },
+   { id: 'education', label: 'Educação', icon: '📚', route: 'education', type: 'generic' },
+   { id: 'professional', label: 'Profissional', icon: '💼', route: 'professional', type: 'generic' },
+   { id: 'legal', label: 'Jurídico', icon: '⚖️', route: 'legal', type: 'generic' },
+];
 
-export default function VidaPage() {
-  const navigate = useNavigate()
-  const { user } = useAuth()
-  const { stats } = useConsciousnessPoints()
-  const {
-    messages,
-    isLoading,
-    error,
-    sendMessage,
-  } = useChatSession()
+interface VidaPageProps {
+   userId: string;
+   userEmail: string | null;
+   associations: any[];
+   lifeAreas: any[];
+   onLogout: () => void;
+   onNavigateToView: (view: ViewState) => void;
+   onNavigateToAICost: () => void;
+   onNavigateToFileSearch: () => void;
+   onOpenAssociation: (assoc: any) => void;
+   onSelectArchetype: (archetypeId: string | null) => void;
+   onCreateAssociation: () => void;
+}
 
-  const [input, setInput] = useState('')
-  const [chatExpanded, setChatExpanded] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+export default function VidaPage({
+   userId,
+   userEmail,
+   associations,
+   lifeAreas,
+   onLogout,
+   onNavigateToView,
+   onNavigateToAICost,
+   onNavigateToFileSearch,
+   onOpenAssociation,
+   onSelectArchetype,
+   onCreateAssociation
+}: VidaPageProps) {
+   const navigate = useNavigate();
+   const { user } = useAuth();
 
-  const firstName = useMemo(() => {
-    const meta = user?.user_metadata
-    const full = meta?.full_name || meta?.name || user?.email || ''
-    return full.split(' ')[0] || 'Voce'
-  }, [user])
+   const [modulesStatus, setModulesStatus] = useState<Record<string, number>>({});
+   const [isProfileDrawerOpen, setProfileDrawerOpen] = useState(false);
+   const [isInviteModalOpen, setInviteModalOpen] = useState(false);
 
-  // Expand chat when messages appear
-  useEffect(() => {
-    if (messages.length > 0) {
-      setChatExpanded(true)
-    }
-  }, [messages.length])
+   // Identity data from Journey CP system
+   const { stats: cpStats, progress: cpProgress } = useConsciousnessPoints();
 
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+   // User metadata for avatar and profile
+   const avatarUrl = useMemo(() => user?.user_metadata?.avatar_url, [user]);
+   const userName = useMemo(() => {
+      if (!user) return undefined;
+      return user.user_metadata?.full_name || user.email?.split('@')[0];
+   }, [user]);
 
-  const handleSend = useCallback(async () => {
-    const trimmed = input.trim()
-    if (!trimmed || isLoading) return
-    setInput('')
-    setChatExpanded(true)
-    await sendMessage(trimmed)
-  }, [input, isLoading, sendMessage])
+   const levelColor = useMemo(() => {
+      if (!cpStats) return undefined;
+      return LEVEL_COLORS[cpStats.level];
+   }, [cpStats]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }, [handleSend])
+   const progressPercentage = useMemo(() => {
+      if (!cpProgress) return 0;
+      return cpProgress.progress_percentage || 0;
+   }, [cpProgress]);
 
-  const handleModuleClick = useCallback((route: string, key: string) => {
-    // View-state driven modules navigate via state, not route
-    if (['atlas', 'journey', 'grants'].includes(key)) {
-      // These are view-state driven — navigate to root which triggers ViewState
-      // For now just navigate to / since they're rendered inline
-      navigate('/')
-      return
-    }
-    navigate(route)
-  }, [navigate])
+   useEffect(() => {
+      return () => { setProfileDrawerOpen(false); };
+   }, []);
 
-  return (
-    <div className="min-h-screen bg-ceramic-base">
-      <div className="max-w-lg mx-auto px-4 pt-8 pb-32 space-y-8">
-        {/* Greeting + Level */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex items-center justify-between"
-        >
-          <h1 className="text-2xl font-bold text-ceramic-text-primary">
-            {getGreeting()}, {firstName}
-          </h1>
-          {stats && (
-            <div className="flex items-center gap-1.5 bg-ceramic-cool rounded-full px-3 py-1">
-              <span className="text-xs font-bold text-ceramic-text-secondary">
-                Lv.{stats.level}
-              </span>
-              <span className="text-[10px] text-ceramic-text-secondary">
-                {stats.level_name}
-              </span>
+   const handleDeleteAccount = async () => {
+      try {
+         await supabase.auth.signOut();
+         window.location.href = '/';
+      } catch (error) {
+         log.error('Error deleting account:', error);
+         throw error;
+      }
+   };
+
+   // Grants Card data via React Query
+   const { data: grantsData } = useGrantsHomeQuery(!!userId);
+   const grantsActiveProjects = grantsData?.activeProjects ?? 0;
+   const grantsUpcomingDeadlines = grantsData?.upcomingDeadlines ?? [];
+   const grantsRecentProjects = grantsData?.recentProjects ?? [];
+
+   const handleTasksLoaded = useCallback((moduleId: string, taskCount: number) => {
+      setModulesStatus(prev => ({ ...prev, [moduleId]: taskCount }));
+   }, []);
+
+   const genericModules = MODULE_REGISTRY.filter(m => m.type === 'generic');
+   const activeGenericModules = genericModules.filter(m => (modulesStatus[m.id] || 0) > 0);
+   const inactiveModules = genericModules.filter(m => !modulesStatus[m.id] || modulesStatus[m.id] === 0);
+
+   const connectionCount = associations.filter(a => a.type !== 'personal').length;
+
+   const ICON_MAP: Record<string, LucideIcon> = {
+      health: Heart,
+      education: BookOpen,
+      professional: Briefcase,
+      legal: Scale,
+   };
+
+   const ACCENT_MAP: Record<string, string> = {
+      health: 'bg-ceramic-warning/10 border-ceramic-warning/20 text-ceramic-warning',
+      education: 'bg-ceramic-info/10 border-ceramic-info/20 text-ceramic-info',
+      professional: 'bg-ceramic-accent/10 border-ceramic-accent/20 text-ceramic-accent',
+      legal: 'bg-ceramic-text-secondary/10 border-ceramic-text-secondary/20 text-ceramic-text-secondary',
+   };
+
+   let cardIndex = 1; // Journey is 0
+
+   return (
+      <div className="h-screen w-full bg-ceramic-base flex flex-col overflow-hidden">
+         <HeaderGlobal
+            title="Minha Vida"
+            subtitle="LIFE OS"
+            userEmail={userEmail || undefined}
+            avatarUrl={avatarUrl}
+            userName={userName}
+            onLogout={onLogout}
+            onNavigateToAICost={onNavigateToAICost}
+            onNavigateToFileSearch={onNavigateToFileSearch}
+            onOpenProfile={() => setProfileDrawerOpen(true)}
+            level={cpStats?.level}
+            levelName={cpStats?.level_name}
+            levelColor={levelColor}
+            progressPercentage={progressPercentage}
+            totalPoints={cpStats?.total_points || 0}
+            currentStreak={cpStats?.current_streak || 0}
+            onAvatarClick={() => setProfileDrawerOpen(true)}
+         />
+
+         {/* Credit Balance - compact inline */}
+         {userId && (
+            <div className="px-6 pt-3 flex justify-end">
+               <CreditBalanceWidget compact showStats={false} />
             </div>
-          )}
-        </motion.div>
+         )}
 
-        {/* Inline Chat */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-ceramic-base rounded-2xl shadow-ceramic-emboss overflow-hidden"
-        >
-          {/* Chat messages (scrollable, shown when expanded) */}
-          {chatExpanded && messages.length > 0 && (
-            <div className="max-h-80 overflow-y-auto p-4 space-y-3">
-              {messages.map((msg: DisplayMessage) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                      msg.role === 'user'
-                        ? 'bg-amber-500 text-white rounded-br-md'
-                        : 'bg-ceramic-cool text-ceramic-text-primary rounded-bl-md'
-                    }`}
+         <main className="flex-1 overflow-y-auto px-6 pb-40 pt-4 space-y-4">
+            {/* Chat Hero — inline chat with expand/collapse */}
+            <motion.div
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.4 }}
+            >
+               <VidaChatHero />
+            </motion.div>
+
+            {/* Journey CTA — full width */}
+            <motion.div
+               variants={cardVariants}
+               initial="hidden"
+               animate="visible"
+               custom={0}
+            >
+               <JourneyHeroCard
+                  onOpenJourney={() => onNavigateToView('journey')}
+                  stats={cpStats}
+               />
+            </motion.div>
+
+            {/* Module cards grid — all compact */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+               {/* Finance */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  className="cursor-pointer"
+                  onClick={() => onNavigateToView('finance')}
+               >
+                  {userId ? (
+                     <FinanceCard userId={userId} compact />
+                  ) : (
+                     <ModuleCard
+                        moduleId="finance"
+                        title="Finanças"
+                        icon={Wallet}
+                        color="emerald"
+                        accentColor="bg-ceramic-success/10 border-ceramic-success/20 text-ceramic-success"
+                        compact
+                     />
+                  )}
+               </motion.div>
+
+               {/* Grants */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  className="cursor-pointer"
+                  onClick={() => onNavigateToView('grants')}
+               >
+                  <GrantsCard
+                     activeProjects={grantsActiveProjects}
+                     upcomingDeadlines={grantsUpcomingDeadlines}
+                     recentProjects={grantsRecentProjects}
+                     onOpenModule={() => onNavigateToView('grants')}
+                     onCreateProject={() => onNavigateToView('grants')}
+                     compact
+                  />
+               </motion.div>
+
+               {/* Flux */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+               >
+                  <FluxCard compact />
+               </motion.div>
+
+               {/* Studio */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('studio')}
+                  className="cursor-pointer"
+               >
+                  <motion.div
+                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
+                     style={{ background: 'linear-gradient(135deg, #F0EFE9 0%, #F5E6F0 100%)' }}
+                     variants={cardElevationVariants}
+                     initial="rest"
+                     whileHover="hover"
+                     whileTap="pressed"
                   >
-                    {msg.role === 'assistant' ? (
-                      <div
-                        className="prose prose-sm max-w-none [&_strong]:font-semibold [&_code]:text-xs [&_ul]:my-1 [&_li]:my-0"
-                        dangerouslySetInnerHTML={{ __html: formatMarkdownToHTML(msg.content) }}
-                      />
-                    ) : (
-                      <p>{msg.content}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+                     <Mic className="absolute -right-2 -bottom-2 w-20 h-20 text-ceramic-warning opacity-10" />
+                     <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="ceramic-inset p-1.5">
+                              <Mic className="w-4 h-4 text-ceramic-warning" />
+                           </div>
+                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Studio</span>
+                        </div>
+                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">Podcast Copilot</p>
+                     </div>
+                  </motion.div>
+               </motion.div>
 
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-ceramic-cool rounded-2xl rounded-bl-md px-4 py-2.5">
-                    <Loader2 size={16} className="animate-spin text-ceramic-text-secondary" />
-                  </div>
-                </div>
-              )}
+               {/* Connections */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('connections')}
+                  className="cursor-pointer"
+               >
+                  <motion.div
+                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
+                     variants={cardElevationVariants}
+                     initial="rest"
+                     whileHover="hover"
+                     whileTap="pressed"
+                  >
+                     <Building2 className="absolute -right-2 -bottom-2 w-20 h-20 text-ceramic-info opacity-10" />
+                     <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-center justify-between mb-2">
+                           <div className="flex items-center gap-2">
+                              <div className="ceramic-inset p-1.5">
+                                 <Building2 className="w-4 h-4 text-ceramic-info" />
+                              </div>
+                              <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Rede</span>
+                           </div>
+                           {connectionCount > 0 && (
+                              <div className="ceramic-inset px-2 py-0.5 rounded-full">
+                                 <span className="text-[10px] font-bold text-ceramic-info">{connectionCount}</span>
+                              </div>
+                           )}
+                        </div>
+                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">
+                           {connectionCount === 0 ? 'Mapeie seus relacionamentos' : `${connectionCount} conexões`}
+                        </p>
+                     </div>
+                  </motion.div>
+               </motion.div>
 
-              {error && (
-                <div className="text-center">
-                  <p className="text-xs text-ceramic-error">{error}</p>
-                </div>
-              )}
+               {/* Convites */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => navigate('/invites')}
+                  className="cursor-pointer"
+               >
+                  <motion.div
+                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
+                     style={{ background: 'linear-gradient(135deg, #F0EFE9 0%, #FEF3C7 100%)' }}
+                     variants={cardElevationVariants}
+                     initial="rest"
+                     whileHover="hover"
+                     whileTap="pressed"
+                  >
+                     <Ticket className="absolute -right-2 -bottom-2 w-20 h-20 text-amber-500 opacity-10" />
+                     <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="ceramic-inset p-1.5">
+                              <Ticket className="w-4 h-4 text-amber-500" />
+                           </div>
+                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">Convites</span>
+                        </div>
+                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">Gerencie seus convites</p>
+                     </div>
+                  </motion.div>
+               </motion.div>
 
-              <div ref={messagesEndRef} />
+               {/* Interviewer */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('journey')}
+                  className="cursor-pointer"
+               >
+                  <InterviewerCard compact />
+               </motion.div>
+
+               {/* EraForge */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+                  onClick={() => onNavigateToView('eraforge')}
+                  className="cursor-pointer"
+               >
+                  <motion.div
+                     className="ceramic-card relative overflow-hidden p-3 min-h-[100px] flex flex-col group"
+                     style={{ background: 'linear-gradient(135deg, #F0EFE9 0%, #F5E8DC 100%)' }}
+                     variants={cardElevationVariants}
+                     initial="rest"
+                     whileHover="hover"
+                     whileTap="pressed"
+                  >
+                     <Compass className="absolute -right-2 -bottom-2 w-20 h-20 text-amber-700 opacity-10" />
+                     <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="ceramic-inset p-1.5">
+                              <span className="text-lg">🏛️</span>
+                           </div>
+                           <span className="text-xs font-bold text-ceramic-text-secondary uppercase tracking-wider">EraForge</span>
+                        </div>
+                        <p className="text-xs text-ceramic-text-secondary line-clamp-1">Aventuras na Historia</p>
+                     </div>
+                  </motion.div>
+               </motion.div>
+
+               {/* Invite Share */}
+               <motion.div
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  custom={cardIndex++}
+               >
+                  <InviteShareCard onClick={() => setInviteModalOpen(true)} />
+               </motion.div>
+
+               {/* Active generic modules */}
+               {activeGenericModules.map(mod => (
+                  <motion.div
+                     key={mod.id}
+                     variants={cardVariants}
+                     initial="hidden"
+                     animate="visible"
+                     custom={cardIndex++}
+                     onClick={() => onNavigateToView(mod.route as ViewState)}
+                     className="cursor-pointer"
+                  >
+                     <ModuleCard
+                        moduleId={mod.id}
+                        title={mod.label}
+                        icon={ICON_MAP[mod.id] || Heart}
+                        color="slate"
+                        accentColor={ACCENT_MAP[mod.id] || ''}
+                        onTasksLoaded={handleTasksLoaded}
+                        compact
+                     />
+                  </motion.div>
+               ))}
             </div>
-          )}
 
-          {/* Chat input */}
-          <div className="flex items-center gap-2 p-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Como posso te ajudar?"
-              disabled={isLoading}
-              className="flex-1 bg-ceramic-cool rounded-xl px-4 py-3 text-sm text-ceramic-text-primary placeholder:text-ceramic-text-secondary/60 outline-none focus:ring-2 focus:ring-amber-500/30 transition-shadow"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className="shrink-0 w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center disabled:opacity-40 hover:bg-amber-600 transition-colors"
-              aria-label="Enviar"
-            >
-              <Send size={16} />
-            </button>
-          </div>
-        </motion.div>
+            {/* Hidden ModuleCards for generic module tracking */}
+            <div className="hidden">
+               {genericModules.map(mod => (
+                  <ModuleCard
+                     key={`tracker-${mod.id}`}
+                     moduleId={mod.id}
+                     title={mod.label}
+                     icon={ICON_MAP[mod.id] || Heart}
+                     color="slate"
+                     accentColor=""
+                     onTasksLoaded={handleTasksLoaded}
+                  />
+               ))}
+            </div>
 
-        {/* Module Pulse */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <ModulePulse />
-        </motion.div>
+            {/* Explore More — inactive generic modules */}
+            {inactiveModules.length > 0 && (
+               <ExploreMoreSection
+                  modules={inactiveModules.map(m => ({
+                     id: m.id,
+                     icon: m.icon,
+                     label: m.label,
+                  }))}
+                  onConfigure={(id) => {
+                     const mod = MODULE_REGISTRY.find(m => m.id === id);
+                     if (mod) onNavigateToView(mod.route as ViewState);
+                  }}
+               />
+            )}
+         </main>
 
-        {/* Module Grid */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-4 gap-3"
-        >
-          {MODULE_GRID.map(({ key, icon: Icon, label, route }) => (
-            <motion.button
-              key={key}
-              variants={staggerItem}
-              whileHover="hover"
-              whileTap="pressed"
-              onClick={() => handleModuleClick(route, key)}
-              className="flex flex-col items-center gap-2 py-3 rounded-xl bg-ceramic-base shadow-ceramic-emboss hover:shadow-lg transition-shadow"
-            >
-              <div className="w-10 h-10 rounded-full bg-ceramic-cool flex items-center justify-center">
-                <Icon size={18} className="text-ceramic-text-primary" />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-ceramic-text-secondary">
-                {label}
-              </span>
-            </motion.button>
-          ))}
-        </motion.div>
+         {/* Profile Drawer */}
+         <ProfileDrawer
+            isOpen={isProfileDrawerOpen}
+            onClose={() => setProfileDrawerOpen(false)}
+            userId={userId}
+            userEmail={userEmail || ''}
+            onDeleteAccount={handleDeleteAccount}
+         />
+
+         {/* Invite Modal */}
+         <InviteModal
+            isOpen={isInviteModalOpen}
+            onClose={() => setInviteModalOpen(false)}
+         />
       </div>
-    </div>
-  )
+   );
 }

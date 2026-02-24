@@ -66,6 +66,9 @@ export { ModuleAgentChat, ModuleAgentFAB, getModuleAgentConfig, MODULE_AGENT_CON
 // Module Pulse — Compact module status overview for VidaPage
 export { ModulePulse } from './ModulePulse';
 
+// Vida Chat Hero — Inline chat with expand/collapse
+export { VidaChatHero } from './VidaChatHero';
+
 // Universal Input Funnel — Multi-modal input (text + audio + photo)
 export { MultiModalInput } from './MultiModalInput';
 export type { MultiModalOutput } from './MultiModalInput';
