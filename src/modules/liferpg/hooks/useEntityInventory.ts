@@ -2,7 +2,7 @@
  * useEntityInventory — Load and manage inventory for a persona
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createNamespacedLogger } from '@/lib/logger';
 import {
   InventoryService,
@@ -53,6 +53,7 @@ export function useEntityInventory({
     categories: [] as string[],
     locations: [] as string[],
   });
+  const errorRef = useRef(false);
 
   const loadItems = useCallback(async () => {
     if (!personaId) return;
@@ -71,6 +72,7 @@ export function useEntityInventory({
     } catch (err) {
       log.error('Failed to load inventory', { err });
       setError((err as Error).message);
+      errorRef.current = true;
     } finally {
       setLoading(false);
     }
@@ -120,10 +122,15 @@ export function useEntityInventory({
   );
 
   useEffect(() => {
-    if (autoLoad && personaId) {
+    if (autoLoad && personaId && !errorRef.current) {
       loadItems();
     }
   }, [autoLoad, personaId, loadItems]);
+
+  const reload = useCallback(async () => {
+    errorRef.current = false;
+    await loadItems();
+  }, [loadItems]);
 
   return {
     items,
@@ -132,7 +139,7 @@ export function useEntityInventory({
     filters,
     setFilters,
     stats,
-    reload: loadItems,
+    reload,
     createItem,
     updateItem,
     deleteItem,
