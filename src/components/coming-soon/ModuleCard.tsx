@@ -21,7 +21,6 @@ interface ModuleCardProps {
   onJoinWaitlist?: () => Promise<boolean>;
   onLeaveWaitlist?: () => Promise<boolean>;
   onNavigate?: () => void;
-  onOpenAIPreview?: () => void;
 }
 
 export function ModuleCard({
@@ -30,7 +29,6 @@ export function ModuleCard({
   onJoinWaitlist,
   onLeaveWaitlist,
   onNavigate,
-  onOpenAIPreview,
 }: ModuleCardProps) {
   const colorPrimary = module.color_primary || '#F59E0B';
 
@@ -147,18 +145,6 @@ export function ModuleCard({
           <p className="text-xs text-ceramic-text-secondary leading-relaxed">
             {module.teaser_headline}
           </p>
-        )}
-
-        {/* AI preview button */}
-        {module.ai_preview_enabled && onOpenAIPreview && (
-          <button
-            onClick={onOpenAIPreview}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
-            style={{ backgroundColor: `${colorPrimary}10`, color: colorPrimary }}
-          >
-            <Sparkles className="w-3 h-3" />
-            Experimentar com IA
-          </button>
         )}
 
         {/* Waitlist */}
