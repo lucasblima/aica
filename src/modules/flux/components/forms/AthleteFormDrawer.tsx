@@ -19,7 +19,7 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronDown,
-  User,
+  User as UserIcon,
   Target,
   Heart,
   Info,
@@ -223,7 +223,7 @@ export default function AthleteFormDrawer({
                   >
                     <div className="flex items-center gap-3">
                       <div className="ceramic-inset p-2">
-                        <User className="w-4 h-4 text-ceramic-text-primary" />
+                        <UserIcon className="w-4 h-4 text-ceramic-text-primary" />
                       </div>
                       <span className="text-sm font-bold text-ceramic-text-primary">
                         1. Informacoes Basicas

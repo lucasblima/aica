@@ -446,7 +446,33 @@ export class AthleteService {
         };
       }
 
-      return { data: data || [], error: null };
+      // Enrich RPC results with avatar_url from athletes table
+      // (the RPC may not yet include avatar_url if migration is pending)
+      const rpcData = data || [];
+      if (rpcData.length > 0 && !('avatar_url' in (rpcData[0] || {}))) {
+        try {
+          const athleteIds = rpcData.map((a: { id: string }) => a.id);
+          const { data: avatarData } = await supabase
+            .from('athletes')
+            .select('id, avatar_url, practiced_modalities')
+            .in('id', athleteIds);
+
+          if (avatarData) {
+            const avatarMap = new Map(avatarData.map((a) => [a.id, a]));
+            for (const athlete of rpcData) {
+              const extra = avatarMap.get((athlete as { id: string }).id);
+              if (extra) {
+                (athlete as Record<string, unknown>).avatar_url = extra.avatar_url;
+                (athlete as Record<string, unknown>).practiced_modalities = extra.practiced_modalities;
+              }
+            }
+          }
+        } catch (enrichErr) {
+          console.warn('[AthleteService] Avatar enrichment failed (non-blocking):', enrichErr);
+        }
+      }
+
+      return { data: rpcData, error: null };
     } catch (error) {
       console.error('[AthleteService] Error fetching athletes with adherence:', error);
       return { data: null, error };
