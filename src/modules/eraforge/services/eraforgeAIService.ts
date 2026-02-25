@@ -17,7 +17,9 @@ import type {
   SimulationEvent,
   WorldMember,
   Turn,
+  SocialMode,
 } from '../types/eraforge.types';
+import { ERA_CONFIG } from '../types/eraforge.types';
 
 const log = createNamespacedLogger('EraforgeAIService');
 
@@ -78,6 +80,8 @@ async function invokeGameMaster<T>(
 export class EraforgeAIService {
   /**
    * Generate a historical scenario for the current era and child stats.
+   * Passes socialMode to the Edge Function so the AI varies the scenario type
+   * based on the era's social interaction level.
    */
   static async generateScenario(
     worldName: string,
@@ -85,7 +89,8 @@ export class EraforgeAIService {
     stats: Pick<WorldMember, 'knowledge' | 'cooperation' | 'courage'>,
     turnHistory?: Array<Pick<Turn, 'scenario' | 'decision'>>,
   ): Promise<{ data: GenerateScenarioResult | null; error: any }> {
-    log.debug('generateScenario', { worldName, era, stats });
+    const socialMode: SocialMode = ERA_CONFIG[era].socialMode;
+    log.debug('generateScenario', { worldName, era, stats, socialMode });
 
     const compactHistory = turnHistory?.slice(-5).map(t => ({
       title: t.scenario?.title,
@@ -95,6 +100,7 @@ export class EraforgeAIService {
     const result = await invokeGameMaster<TurnScenario>('generate_scenario', {
       era,
       worldName,
+      socialMode,
       memberStats: {
         knowledge: stats.knowledge,
         cooperation: stats.cooperation,

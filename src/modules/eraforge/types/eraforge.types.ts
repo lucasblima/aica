@@ -11,6 +11,12 @@
 // ============================================
 
 /**
+ * Social interaction mode that evolves with the era of civilization.
+ * Determines how children interact with each other in the world.
+ */
+export type SocialMode = 'solo' | 'encounter' | 'collaborative' | 'interdependent';
+
+/**
  * Historical eras available for world progression.
  * Maps to eraforge_worlds.current_era column.
  */
@@ -62,6 +68,8 @@ export interface ChildProfileCreateInput {
   avatar_emoji?: string;
   avatar_color?: string;
   birth_year?: number;
+  /** ISO timestamp of when the parent confirmed LGPD consent for this child profile */
+  consent_given_at?: string;
 }
 
 export interface ChildProfileUpdateInput {
@@ -241,6 +249,12 @@ export interface ParentalSettings {
   max_turns_per_day: number;
   pin_hash: string | null;
   voice_enabled: boolean;
+  /** HH:MM string — earliest time children are allowed to play */
+  allowed_start_time: string | null;
+  /** HH:MM string — latest time children are allowed to play */
+  allowed_end_time: string | null;
+  /** Whether simulation consequences mode is active */
+  simulation_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -248,11 +262,47 @@ export interface ParentalSettings {
 export interface ParentalSettingsCreateInput {
   max_turns_per_day?: number;
   voice_enabled?: boolean;
+  allowed_start_time?: string;
+  allowed_end_time?: string;
+  simulation_enabled?: boolean;
+  pin_hash?: string;
 }
 
 export interface ParentalSettingsUpdateInput {
   max_turns_per_day?: number;
   voice_enabled?: boolean;
+  allowed_start_time?: string;
+  allowed_end_time?: string;
+  simulation_enabled?: boolean;
+  pin_hash?: string;
+}
+
+// ============================================
+// SOCIAL EVOLUTION TYPES (EF-010)
+// ============================================
+
+/**
+ * Era-level progression configuration including social mode and unlock requirements.
+ */
+export interface EraProgression {
+  era: Era;
+  socialMode: SocialMode;
+  interactionLevel: number; // 0-100
+  unlockRequirement: {
+    totalKnowledge: number;
+    totalCooperation: number;
+    totalCourage: number;
+  };
+}
+
+/**
+ * Configuration for social scenarios based on the current era's social mode.
+ */
+export interface SocialScenarioConfig {
+  mode: SocialMode;
+  allowGroupDecisions: boolean;
+  showOtherMembers: boolean;
+  maxVisibleMembers: number;
 }
 
 // ============================================
@@ -330,19 +380,141 @@ export const ERA_LABELS: Record<Era, string> = {
 };
 
 /**
- * Display configuration for eras.
+ * Display configuration for eras including social evolution data.
+ * socialMode: maps each era to its social interaction mode.
+ * unlockRequirement: total world stats needed to unlock this era.
  */
-export const ERA_CONFIG: Record<Era, { label: string; icon: string; color: string; period: string }> = {
-  stone_age:              { label: 'Idade da Pedra',        icon: 'bone',      color: 'amber',   period: '~3M a.C. - 3500 a.C.' },
-  ancient_egypt:          { label: 'Egito Antigo',          icon: 'pyramid',   color: 'yellow',  period: '3100 a.C. - 30 a.C.' },
-  classical_greece:       { label: 'Grécia Clássica',       icon: 'columns',   color: 'blue',    period: '800 a.C. - 146 a.C.' },
-  roman_empire:           { label: 'Império Romano',        icon: 'shield',    color: 'red',     period: '27 a.C. - 476 d.C.' },
-  medieval:               { label: 'Idade Média',           icon: 'castle',    color: 'stone',   period: '476 - 1453' },
-  renaissance:            { label: 'Renascimento',          icon: 'palette',   color: 'purple',  period: '1300 - 1600' },
-  industrial_revolution:  { label: 'Revolução Industrial',  icon: 'cog',       color: 'gray',    period: '1760 - 1840' },
-  modern:                 { label: 'Era Moderna',           icon: 'globe',     color: 'green',   period: '1900 - presente' },
-  future:                 { label: 'Futuro',                icon: 'rocket',    color: 'cyan',    period: '2100+' },
+export const ERA_CONFIG: Record<Era, {
+  label: string;
+  icon: string;
+  color: string;
+  period: string;
+  socialMode: SocialMode;
+  unlockRequirement: { totalKnowledge: number; totalCooperation: number; totalCourage: number };
+}> = {
+  stone_age: {
+    label: 'Idade da Pedra',
+    icon: 'bone',
+    color: 'amber',
+    period: '~3M a.C. - 3500 a.C.',
+    socialMode: 'solo',
+    unlockRequirement: { totalKnowledge: 0, totalCooperation: 0, totalCourage: 0 },
+  },
+  ancient_egypt: {
+    label: 'Egito Antigo',
+    icon: 'pyramid',
+    color: 'yellow',
+    period: '3100 a.C. - 30 a.C.',
+    socialMode: 'encounter',
+    unlockRequirement: { totalKnowledge: 50, totalCooperation: 30, totalCourage: 20 },
+  },
+  classical_greece: {
+    label: 'Grécia Clássica',
+    icon: 'columns',
+    color: 'blue',
+    period: '800 a.C. - 146 a.C.',
+    socialMode: 'collaborative',
+    unlockRequirement: { totalKnowledge: 100, totalCooperation: 80, totalCourage: 60 },
+  },
+  roman_empire: {
+    label: 'Império Romano',
+    icon: 'shield',
+    color: 'red',
+    period: '27 a.C. - 476 d.C.',
+    socialMode: 'collaborative',
+    unlockRequirement: { totalKnowledge: 150, totalCooperation: 120, totalCourage: 100 },
+  },
+  medieval: {
+    label: 'Idade Média',
+    icon: 'castle',
+    color: 'stone',
+    period: '476 - 1453',
+    socialMode: 'collaborative',
+    unlockRequirement: { totalKnowledge: 200, totalCooperation: 160, totalCourage: 140 },
+  },
+  renaissance: {
+    label: 'Renascimento',
+    icon: 'palette',
+    color: 'purple',
+    period: '1300 - 1600',
+    socialMode: 'interdependent',
+    unlockRequirement: { totalKnowledge: 260, totalCooperation: 200, totalCourage: 180 },
+  },
+  industrial_revolution: {
+    label: 'Revolução Industrial',
+    icon: 'cog',
+    color: 'gray',
+    period: '1760 - 1840',
+    socialMode: 'interdependent',
+    unlockRequirement: { totalKnowledge: 320, totalCooperation: 260, totalCourage: 220 },
+  },
+  modern: {
+    label: 'Era Moderna',
+    icon: 'globe',
+    color: 'green',
+    period: '1900 - presente',
+    socialMode: 'interdependent',
+    unlockRequirement: { totalKnowledge: 400, totalCooperation: 340, totalCourage: 280 },
+  },
+  future: {
+    label: 'Futuro',
+    icon: 'rocket',
+    color: 'cyan',
+    period: '2100+',
+    socialMode: 'interdependent',
+    unlockRequirement: { totalKnowledge: 500, totalCooperation: 420, totalCourage: 360 },
+  },
 };
+
+// ============================================
+// SOCIAL EVOLUTION UTILITIES (EF-010)
+// ============================================
+
+/**
+ * Returns whether children can interact with each other in the given era.
+ * Solo eras have no interaction; other modes require at least 2 members.
+ */
+export function canInteract(era: Era, members: WorldMember[]): boolean {
+  const config = ERA_CONFIG[era];
+  switch (config.socialMode) {
+    case 'solo': return false;
+    case 'encounter': return members.length >= 2;
+    case 'collaborative': return true;
+    case 'interdependent': return true;
+  }
+}
+
+/**
+ * Returns the social scenario configuration for a given era.
+ * Controls UI rendering: whether to show other members, how many, and
+ * whether group decisions are allowed.
+ */
+export function getSocialScenarioConfig(era: Era): SocialScenarioConfig {
+  const mode = ERA_CONFIG[era].socialMode;
+  return {
+    mode,
+    allowGroupDecisions: mode === 'collaborative' || mode === 'interdependent',
+    showOtherMembers: mode !== 'solo',
+    maxVisibleMembers: mode === 'solo' ? 1 : mode === 'encounter' ? 2 : 4,
+  };
+}
+
+/**
+ * Aggregates stats across all world members.
+ * Used for era unlock progression checks.
+ */
+export function getWorldTotalStats(
+  members: WorldMember[],
+): { knowledge: number; cooperation: number; courage: number } {
+  return members.reduce(
+    (acc, m) => ({
+      knowledge: acc.knowledge + (m.knowledge || 0),
+      cooperation: acc.cooperation + (m.cooperation || 0),
+      courage: acc.courage + (m.courage || 0),
+    }),
+    { knowledge: 0, cooperation: 0, courage: 0 },
+  );
+}
 
 /**
  * Advisor configurations for display.

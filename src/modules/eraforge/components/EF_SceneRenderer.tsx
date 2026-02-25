@@ -16,9 +16,14 @@ import { AncientEgyptScene } from './scenes/AncientEgyptScene';
 import { ClassicalGreeceScene } from './scenes/ClassicalGreeceScene';
 import { MedievalScene } from './scenes/MedievalScene';
 import { Sun, Cloud, Mountain } from './scenes/SvgPrimitives';
+import type { SceneChild, SceneChildProps } from './scenes/types';
 
 interface EF_SceneRendererProps {
   era: Era;
+  /** Optional world members to render as characters in the scene */
+  members?: SceneChild[];
+  /** Whether the scene characters should animate */
+  isAnimating?: boolean;
 }
 
 const ERA_GRADIENTS: Record<Era, { from: string; to: string }> = {
@@ -33,14 +38,14 @@ const ERA_GRADIENTS: Record<Era, { from: string; to: string }> = {
   future:                { from: '#06b6d4', to: '#0e7490' },
 };
 
-const SCENE_COMPONENTS: Partial<Record<Era, React.FC>> = {
+const SCENE_COMPONENTS: Partial<Record<Era, React.FC<SceneChildProps>>> = {
   stone_age: StoneAgeScene,
   ancient_egypt: AncientEgyptScene,
   classical_greece: ClassicalGreeceScene,
   medieval: MedievalScene,
 };
 
-export function EF_SceneRenderer({ era }: EF_SceneRendererProps) {
+export function EF_SceneRenderer({ era, members, isAnimating = false }: EF_SceneRendererProps) {
   const gradient = ERA_GRADIENTS[era];
   const config = ERA_CONFIG[era];
   const SceneComponent = SCENE_COMPONENTS[era];
@@ -59,7 +64,7 @@ export function EF_SceneRenderer({ era }: EF_SceneRendererProps) {
         preserveAspectRatio="xMidYMid slice"
       >
         {SceneComponent ? (
-          <SceneComponent />
+          <SceneComponent children={members} isAnimating={isAnimating} />
         ) : (
           <g>
             <defs>
@@ -70,8 +75,8 @@ export function EF_SceneRenderer({ era }: EF_SceneRendererProps) {
             </defs>
             <rect width="400" height="180" fill={`url(#era-grad-${era})`} />
             <Sun cx={340} cy={40} r={20} />
-            <Cloud cx={80} cy={35} />
-            <Cloud cx={220} cy={50} />
+            <Cloud x={80} y={35} />
+            <Cloud x={220} y={50} />
             <Mountain x={0} y={120} width={160} height={60} color={gradient.to} />
             <Mountain x={120} y={120} width={200} height={60} color={gradient.from} />
           </g>
