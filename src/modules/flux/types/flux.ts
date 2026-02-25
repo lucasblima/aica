@@ -50,7 +50,7 @@ export type PlanStatus = 'pending' | 'sent' | 'acknowledged';
 /**
  * Alert types by category
  */
-export type AlertType = 'health' | 'motivation' | 'absence' | 'documents' | 'feedback_received' | 'custom';
+export type AlertType = 'health' | 'motivation' | 'absence' | 'documents' | 'financial' | 'feedback_received' | 'custom';
 
 /**
  * Alert severity levels
@@ -105,6 +105,9 @@ export interface Athlete {
   requires_clearance_cert?: boolean; // Physical activity clearance certificate required
   allow_parq_onboarding?: boolean; // Allow athlete to complete PAR-Q questionnaire
   parq_clearance_status?: 'pending' | 'cleared' | 'cleared_with_restrictions' | 'blocked' | 'expired';
+
+  // Financial status (coach-managed)
+  financial_status?: 'ok' | 'pending' | 'overdue';
 
   // Performance thresholds (for load calculation)
   ftp?: number; // Functional Threshold Power (watts) - cycling

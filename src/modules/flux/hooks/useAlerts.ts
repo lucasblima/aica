@@ -124,6 +124,43 @@ export function useAlerts(): UseAlertsReturn {
               created_at: new Date().toISOString(),
             });
           }
+
+          // Document-pending alert: athlete has PAR-Q pending/blocked/expired
+          if (athlete.parq_clearance_status &&
+              ['pending', 'blocked', 'expired'].includes(athlete.parq_clearance_status)) {
+            computed.push({
+              id: `doc-${athlete.id}`,
+              user_id: user.id,
+              athlete_id: athlete.id,
+              feedback_id: '',
+              alert_type: 'documents',
+              severity: athlete.parq_clearance_status === 'blocked' ? 'critical' : 'medium',
+              keywords_detected: ['documentos', 'saúde'],
+              message_preview: athlete.parq_clearance_status === 'expired'
+                ? `${athlete.name}: Documentos de saúde expirados`
+                : athlete.parq_clearance_status === 'blocked'
+                ? `${athlete.name}: Liberação médica necessária`
+                : `${athlete.name}: Documentos de saúde pendentes`,
+              created_at: new Date().toISOString(),
+            });
+          }
+
+          // Financial-pending alert: athlete has overdue/pending payment
+          if (athlete.financial_status && athlete.financial_status !== 'ok') {
+            computed.push({
+              id: `fin-${athlete.id}`,
+              user_id: user.id,
+              athlete_id: athlete.id,
+              feedback_id: '',
+              alert_type: 'financial',
+              severity: athlete.financial_status === 'overdue' ? 'high' : 'medium',
+              keywords_detected: ['financeiro', 'pagamento'],
+              message_preview: athlete.financial_status === 'overdue'
+                ? `${athlete.name}: Pagamento em atraso`
+                : `${athlete.name}: Pagamento pendente`,
+              created_at: new Date().toISOString(),
+            });
+          }
         }
       }
 
@@ -250,7 +287,7 @@ export function useAlerts(): UseAlertsReturn {
   // Acknowledge an alert
   const acknowledge = useCallback(async (alertId: string) => {
     // Only DB alerts can be acknowledged (derived alerts are transient)
-    if (alertId.startsWith('derived-')) return;
+    if (alertId.startsWith('derived-') || alertId.startsWith('doc-') || alertId.startsWith('fin-')) return;
 
     const { error: updateError } = await supabase
       .from('alerts')

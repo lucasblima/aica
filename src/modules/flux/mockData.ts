@@ -200,7 +200,7 @@ export const MOCK_ATHLETES_WITH_METRICS: AthleteWithMetrics[] = MOCK_ATHLETES.ma
 // GENERATE ALERTS FOR ATHLETES WITH ISSUES
 // ============================================
 
-const ALERT_TYPES: AlertType[] = ['health', 'motivation', 'absence', 'documents', 'custom'];
+const ALERT_TYPES: AlertType[] = ['health', 'motivation', 'absence', 'documents', 'financial', 'custom'];
 const ALERT_SEVERITIES: AlertSeverity[] = ['critical', 'high', 'medium', 'low'];
 const SEVERITY_WEIGHTS = [10, 20, 40, 30]; // 10% critical, 20% high, etc.
 
@@ -229,6 +229,11 @@ const ALERT_MESSAGES: Record<AlertType, string[]> = {
     'Exame cardiologico pendente - nunca apresentado.',
     'Documentacao incompleta para treino.',
   ],
+  financial: [
+    'Pagamento da mensalidade em atraso.',
+    'Pendencia financeira - 2 meses sem pagamento.',
+    'Pagamento pendente para renovacao do plano.',
+  ],
   custom: [
     'Preciso conversar sobre ajustes no treino.',
     'Mudanca de horario nos treinos.',
@@ -246,6 +251,7 @@ const CRITICAL_KEYWORDS: Record<AlertType, string[]> = {
   motivation: ['desistir', 'desanimado', 'dificil'],
   absence: ['faltei', 'perdi', 'nao consegui'],
   documents: ['vencido', 'pendente', 'incompleta'],
+  financial: ['atraso', 'pagamento', 'pendencia'],
   custom: ['pausar', 'conversar'],
   feedback_received: ['feedback', 'evolucao', 'resultado'],
 };

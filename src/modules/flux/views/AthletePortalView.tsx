@@ -33,6 +33,8 @@ import {
   LayoutGrid,
   List,
   MessageSquare,
+  CheckCircle,
+  FileText,
 } from 'lucide-react';
 
 const log = createNamespacedLogger('AthletePortalView');
@@ -382,6 +384,47 @@ export default function AthletePortalView() {
         <motion.section className="px-5 mb-4" custom={1} initial="hidden" animate="visible" variants={sectionVariants}>
           <ProgressTimeline weeks={weeks} currentWeek={micro.current_week || 1} microcycleName={micro.name} status={micro.status} selectedWeek={selectedWeek} onWeekSelect={setSelectedWeek} />
         </motion.section>
+      )}
+
+      {/* Microcycle Status Badge — #381: PENDENTE / LIBERADO */}
+      {micro && micro.status === 'draft' && (
+        <motion.div className="px-5 mb-3" custom={1.5} initial="hidden" animate="visible" variants={sectionVariants}>
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="text-sm font-bold text-amber-700">Treino Pendente</span>
+            <span className="text-xs text-amber-600">Aguardando liberacao do coach</span>
+          </div>
+        </motion.div>
+      )}
+      {micro && micro.status === 'active' && (
+        <motion.div className="px-5 mb-3" custom={1.5} initial="hidden" animate="visible" variants={sectionVariants}>
+          <div className="flex items-center gap-2 px-3 py-2 bg-ceramic-success/10 border border-ceramic-success/20 rounded-xl">
+            <CheckCircle className="w-4 h-4 text-ceramic-success flex-shrink-0" />
+            <span className="text-sm font-bold text-ceramic-success">Treino Liberado</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Document Pending Banner — #381 */}
+      {profile.parq_clearance_status &&
+       ['pending', 'blocked', 'expired'].includes(profile.parq_clearance_status) && (
+        <motion.div className="px-5 mb-3" custom={1.6} initial="hidden" animate="visible" variants={sectionVariants}>
+          <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-blue-800">Documentos Pendentes</p>
+              <p className="text-xs text-blue-600">
+                {profile.parq_clearance_status === 'expired'
+                  ? 'Seus documentos de saude expiraram'
+                  : profile.parq_clearance_status === 'blocked'
+                  ? 'Liberacao medica necessaria'
+                  : 'Complete seus documentos de saude'}
+              </p>
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {/* Week viewing indicator */}
